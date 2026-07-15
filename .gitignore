@@ -1,8 +1,6 @@
 __pycache__/
 *.pyc
 .venv/
-venv/
-logs/
-data/
-*.egg-info/
-.vscode/
+*.zip
+*.mp3
+*.wav
