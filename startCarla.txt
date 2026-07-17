@@ -1,7 +1,8 @@
 先启动 CARLA 服务端。在 PowerShell 中执行：
 conda activate carla
 cd F:\carla_driving_rstar\CARLA_0.9.16
-.\CarlaUE4.exe -quality-level=Low -carla-port=2000 -nosound -dx11
+.\CarlaUE4.exe -quality-level=Low -carla-port=2000 `
+  -nosound -dx12 -windowed -ResX=1280 -ResY=720
 保持这个窗口运行；-quality-level=Low 能降低显存占用。默认端口就是 2000。
 然后新开一个 PowerShell，连接并查看可用地图：
 conda activate carla
@@ -18,3 +19,15 @@ world = client.load_world("Town12")
 print(world.get_map().name)
 注意：load_world() 会重置当前世界，已生成的车辆、传感器和交通参与者都会销毁。因此应在创建车辆和传感器之前加载地图。
 你已安装的附加地图目录中包含 Town11、Town12、Town13、Town15。常用基础地图如 Town01 也可通过 get_available_maps() 的实际输出确认。
+
+先关闭全部 CARLA 进程：
+Get-Process CarlaUE4-Win64-Shipping -ErrorAction SilentlyContinue | Stop-Process -Force
+确认已经全部关闭：
+Get-Process CarlaUE4-Win64-Shipping -ErrorAction SilentlyContinue
+Test-NetConnection 127.0.0.1 -Port 2000
+然后只启动一个实例，不要重复写端口参数：
+cd F:\carla_driving_rstar\CARLA_0.9.16
+.\CarlaUE4.exe -quality-level=Low -carla-port=2000 -nosound -RenderOffScreen
+等待 20–40 秒后确认：
+Test-NetConnection 127.0.0.1 -Port 2000
+应返回 True。之后不要再手动开第二个 CARLA 窗口；

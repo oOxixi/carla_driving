@@ -10,6 +10,7 @@ from dataclasses import dataclass
 import math
 
 from car_control_A import ControlOutput, ExecutionFeedback, LongitudinalOutput, RuntimeVehicleState
+from car_control_B.schemas import LateralOutput
 
 
 def _finite_or_none(name: str, value: float | None) -> float | None:
@@ -69,3 +70,5 @@ class FrameResult:
     safety_reason: str
     safety_override: bool
     feedback: tuple[ExecutionFeedback, ...] = ()
+    raw_control: ControlOutput | None = None
+    lateral: LateralOutput | None = None

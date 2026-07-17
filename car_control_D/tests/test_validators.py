@@ -1,3 +1,4 @@
+from car_control_D.adapters import adapt_command
 from car_control_D.validators import validate_command, validate_control
 
 
@@ -31,3 +32,10 @@ def test_change_lane_requires_direction():
 def test_control_conflict_invalid():
     result = validate_control({"steer": 0.0, "throttle": 0.5, "brake": 0.5})
     assert not result.valid
+
+
+def test_zero_confidence_is_preserved_for_safety_validation():
+    command = adapt_command({"schema_version": "1.0", "command_id": "c0", "source_text": "?",
+                             "intent": "UNKNOWN", "confidence": 0.0, "intent_confidence": 0.0})
+    assert command.confidence == 0.0
+    assert command.intent_confidence == 0.0

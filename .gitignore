@@ -7,6 +7,7 @@ data/
 *.egg-info/
 .vscode/
 .worktrees/
+external/scenario_runner/
 
 # Local CARLA distribution and generated scenario evidence are reproducible,
 # but must not be committed to the source repository.

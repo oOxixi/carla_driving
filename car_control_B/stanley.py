@@ -17,7 +17,8 @@ class StanleyParams:
     max_steer_angle_rad: float = 0.60
     max_steer: float = 1.0
     max_steer_delta_per_step: float = 0.08
-    steer_sign: float = -1.0
+    # See PurePursuitParams.steer_sign for the CARLA 0.9.16 command mapping.
+    steer_sign: float = 1.0
     nearest_search_window: int | None = None
 
 
@@ -41,7 +42,8 @@ class StanleyController(LateralController):
         heading_error = wrap_angle_rad(path_heading - vehicle.yaw_rad)
         cte = signed_cross_track_error(points, nearest, vehicle.x_m, vehicle.y_m)
 
-        # cte>0 means vehicle is left of path, so math steering should be right (negative).
+        # cte>0 means vehicle is map-right of the path; correction is a
+        # negative steering command toward map-left.
         cte_term = -math.atan2(p.gain * cte, vehicle.speed_mps + p.softening_speed_mps)
         steer_math = wrap_angle_rad(heading_error + cte_term)
         steer = p.steer_sign * steer_math / max(p.max_steer_angle_rad, 1e-6)

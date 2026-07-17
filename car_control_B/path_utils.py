@@ -109,7 +109,7 @@ def compute_path_heading(points: Sequence[Point2D], index: int) -> float:
 
 
 def signed_cross_track_error(points: Sequence[Point2D], nearest_index: int, x: float, y: float) -> float:
-    """Signed lateral error. Positive means vehicle is left of path heading."""
+    """Signed lateral error; in CARLA coordinates positive is path-right."""
     heading = compute_path_heading(points, nearest_index)
     px, py = points[nearest_index]
     dx = x - px

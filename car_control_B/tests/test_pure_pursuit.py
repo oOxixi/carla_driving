@@ -15,15 +15,15 @@ def test_center_on_straight_near_zero():
     assert abs(out.steer) < 1e-6
 
 
-def test_left_of_path_turns_right_positive_carla_sign():
+def test_right_of_path_turns_left_negative_carla_sign():
     out = _controller().step(VehiclePose(0.0, 1.0, 0.0, 5.0), _ref())
-    assert out.steer > 0
+    assert out.steer < 0
     assert out.cross_track_error_m > 0
 
 
-def test_right_of_path_turns_left_negative_carla_sign():
+def test_left_of_path_turns_right_positive_carla_sign():
     out = _controller().step(VehiclePose(0.0, -1.0, 0.0, 5.0), _ref())
-    assert out.steer < 0
+    assert out.steer > 0
     assert out.cross_track_error_m < 0
 
 

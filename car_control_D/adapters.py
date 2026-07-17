@@ -49,6 +49,8 @@ def adapt_control(obj: Any) -> ControlOutput:
 
 def adapt_command(obj: Any) -> CommandView:
     d = _as_mapping(obj)
+    intent_confidence = optional_float(d.get("intent_confidence", d.get("confidence", 1.0)))
+    confidence = optional_float(d.get("confidence", d.get("intent_confidence", 1.0)))
     return CommandView(
         schema_version=str(d.get("schema_version", SCHEMA_VERSION)),
         command_id=str(d.get("command_id", "")),
@@ -56,13 +58,13 @@ def adapt_command(obj: Any) -> CommandView:
         intent=str(d.get("intent", "UNKNOWN")).upper(),
         parameters=dict(d.get("parameters", {}) or {}),
         asr_confidence=optional_float(d.get("asr_confidence")) if d.get("asr_confidence") is not None else None,
-        intent_confidence=optional_float(d.get("intent_confidence", d.get("confidence", 1.0))) or 1.0,
+        intent_confidence=1.0 if intent_confidence is None else intent_confidence,
         status=str(d.get("status", "valid")),
         ambiguity_type=str(d.get("ambiguity_type", "NONE")).upper(),
         confirm_required=bool(d.get("confirm_required", False)),
         errors=list(d.get("errors", []) or []),
         warnings=list(d.get("warnings", []) or []),
-        confidence=optional_float(d.get("confidence", d.get("intent_confidence", 1.0))) or 1.0,
+        confidence=1.0 if confidence is None else confidence,
         t_audio_start_ns=d.get("t_audio_start_ns"),
         t_asr_end_ns=d.get("t_asr_end_ns"),
         t_intent_end_ns=d.get("t_intent_end_ns"),

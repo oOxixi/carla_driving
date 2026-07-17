@@ -29,9 +29,10 @@ class PurePursuitParams:
     steer_gain: float = 1.0
     max_steer: float = 1.0
     max_steer_delta_per_step: float = 0.08
-    # For CARLA, positive steer usually turns right. Internal math positive is left,
-    # so default sign is -1.0. If your vehicle turns opposite, set +1.0.
-    steer_sign: float = -1.0
+    # On the CARLA 0.9.16 Model 3, positive VehicleControl steering follows
+    # positive map-right local_y.  This is verified by the CARLA closed-loop
+    # acceptance smoke test; do not invert it from a screenshot alone.
+    steer_sign: float = 1.0
     nearest_search_window: int | None = None
 
 
@@ -68,7 +69,7 @@ class PurePursuitController(LateralController):
         dx = target[0] - vehicle.x_m
         dy = target[1] - vehicle.y_m
 
-        # Transform map vector to ego frame: local_x front, local_y left.
+        # CARLA map/ego frame: local_x is forward and local_y is map-right.
         local_x = math.cos(vehicle.yaw_rad) * dx + math.sin(vehicle.yaw_rad) * dy
         local_y = -math.sin(vehicle.yaw_rad) * dx + math.cos(vehicle.yaw_rad) * dy
 

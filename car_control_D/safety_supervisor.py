@@ -47,6 +47,7 @@ class SafetySupervisor:
             raw = ControlOutput(throttle=0.0, brake=0.0, steer=0.0)
         vs = adapt_vehicle_state(vehicle_state or {})
         rv = adapt_risk(risk or {})
+        command_provided = command is not None
         cmd = adapt_command(command or {"schema_version":"1.0", "command_id":"", "source_text":"", "intent":"UNKNOWN"})
         cmd_result = validate_command(command or cmd.to_dict()) if command is not None else None
 
@@ -80,11 +81,12 @@ class SafetySupervisor:
             return stop("INVALID_CONTROL_OUTPUT")
         if watchdog_alerts:
             return stop("WATCHDOG_ALERT")
-        if cmd.intent in {"EMERGENCY_STOP", "STOP"}:
+        if command_provided and cmd.intent in {"EMERGENCY_STOP", "STOP"}:
             return stop(f"COMMAND_{cmd.intent}")
-        if cmd.intent == "UNKNOWN" or (cmd_result and not cmd_result.valid):
+        if command_provided and (cmd.intent == "UNKNOWN" or (cmd_result and not cmd_result.valid)):
             return stop("COMMAND_REJECTED", brake=cfg.hold_brake)
-        if cmd.confirm_required or cmd.ambiguity_type not in {"NONE", ""} or cmd.confidence < cfg.low_confidence_threshold:
+        if command_provided and (cmd.confirm_required or cmd.ambiguity_type not in {"NONE", ""} or
+                                 cmd.confidence < cfg.low_confidence_threshold):
             return stop("COMMAND_NEEDS_CONFIRMATION", brake=cfg.hold_brake)
         if rv.emergency_brake_requested:
             return stop("RISK_EMERGENCY_BRAKE_REQUESTED")

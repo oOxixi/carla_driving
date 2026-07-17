@@ -17,7 +17,7 @@ from dataclasses import dataclass
 import math
 from typing import Any, Mapping
 
-from car_control_A import DrivingCommand
+from car_control_A import DrivingCommand, ExecutionFeedback, ExecutionStatus
 
 
 VOICE_SCHEMA_VERSION = "1.0"
@@ -31,6 +31,14 @@ _COMPLEX_INTENTS = frozenset({
 
 
 @dataclass(frozen=True, slots=True)
+class VoiceDiagnostic:
+    """Normalized diagnostic emitted by either voice pipeline revision."""
+
+    code: str
+    message: str
+
+
+@dataclass(frozen=True, slots=True)
 class VoiceCommandMetadata:
     """Auditable voice fields which do not belong in A's minimal contract."""
 
@@ -39,8 +47,8 @@ class VoiceCommandMetadata:
     parameters: dict[str, object]
     status: str
     ambiguity_type: str
-    errors: tuple[str, ...]
-    warnings: tuple[str, ...]
+    errors: tuple[VoiceDiagnostic, ...]
+    warnings: tuple[VoiceDiagnostic, ...]
     t_audio_start_ns: int | None
     t_asr_end_ns: int | None
     t_intent_end_ns: int | None
@@ -52,6 +60,8 @@ class AdaptedVoiceCommand:
 
     command: DrivingCommand
     metadata: VoiceCommandMetadata
+    control_authorized: bool = True
+    feedback: ExecutionFeedback | None = None
 
 
 class VoiceCommandAdapter:
@@ -67,9 +77,15 @@ class VoiceCommandAdapter:
         envelope.  It intentionally is not inferred from voice timestamps, since
         monotonic host time and CARLA simulation time have distinct origins.
         """
-        if not isinstance(envelope, Mapping):
-            raise TypeError("envelope must be a mapping")
         now = _nonnegative_number("now_s", now_s)
+        if not isinstance(envelope, Mapping):
+            return self._rejected({}, now, "envelope must be a mapping")
+        try:
+            return self._adapt_validated(envelope, now)
+        except (TypeError, ValueError) as error:
+            return self._rejected(envelope, now, str(error))
+
+    def _adapt_validated(self, envelope: Mapping[str, object], now: float) -> AdaptedVoiceCommand:
         version = _required_text(envelope, "schema_version")
         if version != VOICE_SCHEMA_VERSION:
             raise ValueError(f"unsupported voice schema_version: {version!r}")
@@ -83,21 +99,21 @@ class VoiceCommandAdapter:
             raise TypeError("parameters must be a plain dict")
         status = _required_text(envelope, "status").lower()
         ambiguity_type = _required_text(envelope, "ambiguity_type")
-        errors = _string_tuple(envelope.get("errors", []), "errors")
-        warnings = _string_tuple(envelope.get("warnings", []), "warnings")
+        errors = _diagnostic_tuple(envelope.get("errors", []), "errors")
+        warnings = _diagnostic_tuple(envelope.get("warnings", []), "warnings")
         confidence = _confidence(envelope)
         confirm_required = _optional_bool(envelope, "confirm_required", default=False)
         ttl = envelope.get("valid_duration_s", self._default_ttl_s)
         expiry = now + _positive_number("valid_duration_s", ttl)
 
-        action, target_speed_mps, force_confirmation = self._runtime_fields(intent, parameters)
         invalid = status != "valid" or intent == "UNKNOWN" or bool(errors)
-        # Invalid or complex requests retain their original intent in metadata,
-        # but can only affect longitudinal control through the C safe fallback.
         if invalid:
-            action = "STOP"
-            target_speed_mps = None
-            force_confirmation = True
+            reason = "voice command is not valid"
+            if errors:
+                reason = "; ".join(item.code for item in errors)
+            return self._rejected(envelope, now, reason, errors=errors, warnings=warnings)
+
+        action, target_speed_mps, force_confirmation = self._runtime_fields(intent, parameters)
 
         command = DrivingCommand(
             command_id=command_id,
@@ -117,6 +133,44 @@ class VoiceCommandAdapter:
             t_intent_end_ns=_optional_timestamp(envelope, "t_intent_end_ns"),
         )
         return AdaptedVoiceCommand(command, metadata)
+
+    def _rejected(self, envelope: Mapping[str, object], now: float, reason: str, *,
+                  errors: tuple[VoiceDiagnostic, ...] | None = None,
+                  warnings: tuple[VoiceDiagnostic, ...] | None = None) -> AdaptedVoiceCommand:
+        """Return an auditable NO_OP without granting longitudinal authority."""
+        command_id = _safe_text(envelope.get("command_id"), "rejected-voice-command")
+        source_text = _safe_text(envelope.get("source_text"), "<unavailable>")
+        intent = _safe_text(envelope.get("intent"), "UNKNOWN").upper()
+        parameters = envelope.get("parameters")
+        safe_parameters = dict(parameters) if type(parameters) is dict else {}
+        status = _safe_text(envelope.get("status"), "invalid").lower()
+        ambiguity = _safe_text(envelope.get("ambiguity_type"), "UNKNOWN")
+        normalized_errors = errors if errors is not None else _diagnostic_tuple_lenient(envelope.get("errors"))
+        normalized_errors = normalized_errors + (VoiceDiagnostic("VEHICLE_ADAPTER_REJECTED", reason),)
+        normalized_warnings = warnings if warnings is not None else _diagnostic_tuple_lenient(envelope.get("warnings"))
+        ttl_value = envelope.get("valid_duration_s", self._default_ttl_s)
+        try:
+            ttl = _positive_number("valid_duration_s", ttl_value)
+        except (TypeError, ValueError):
+            ttl = self._default_ttl_s
+        command = DrivingCommand(
+            command_id=command_id,
+            received_at_s=now,
+            expires_at_s=now + ttl,
+            confidence=0.0,
+            action="NO_OP",
+            is_ambiguous=True,
+            confirmation_requested=False,
+        )
+        metadata = VoiceCommandMetadata(
+            source_text=source_text, intent=intent, parameters=safe_parameters, status=status,
+            ambiguity_type=ambiguity, errors=normalized_errors, warnings=normalized_warnings,
+            t_audio_start_ns=_optional_timestamp_lenient(envelope, "t_audio_start_ns"),
+            t_asr_end_ns=_optional_timestamp_lenient(envelope, "t_asr_end_ns"),
+            t_intent_end_ns=_optional_timestamp_lenient(envelope, "t_intent_end_ns"),
+        )
+        feedback = ExecutionFeedback(command_id, ExecutionStatus.REJECTED, now, reason)
+        return AdaptedVoiceCommand(command, metadata, control_authorized=False, feedback=feedback)
 
     @staticmethod
     def _runtime_fields(intent: str, parameters: Mapping[str, object]) -> tuple[str, float | None, bool]:
@@ -185,10 +239,33 @@ def _optional_bool(data: Mapping[str, object], name: str, *, default: bool) -> b
     return value
 
 
-def _string_tuple(value: object, name: str) -> tuple[str, ...]:
-    if type(value) is not list or any(type(item) is not str for item in value):
-        raise TypeError(f"{name} must be a list of strings")
-    return tuple(value)
+def _diagnostic_tuple(value: object, name: str) -> tuple[VoiceDiagnostic, ...]:
+    if type(value) is not list:
+        raise TypeError(f"{name} must be a list")
+    result: list[VoiceDiagnostic] = []
+    for item in value:
+        if type(item) is str and item.strip():
+            result.append(VoiceDiagnostic(item, item))
+        elif isinstance(item, Mapping):
+            code = item.get("code")
+            message = item.get("message")
+            if type(code) is not str or not code.strip() or type(message) is not str:
+                raise TypeError(f"{name} objects require non-empty code and string message")
+            result.append(VoiceDiagnostic(code, message))
+        else:
+            raise TypeError(f"{name} entries must be strings or {{code, message}} objects")
+    return tuple(result)
+
+
+def _diagnostic_tuple_lenient(value: object) -> tuple[VoiceDiagnostic, ...]:
+    try:
+        return _diagnostic_tuple(value if value is not None else [], "diagnostics")
+    except (TypeError, ValueError):
+        return ()
+
+
+def _safe_text(value: object, default: str) -> str:
+    return value.strip() if type(value) is str and value.strip() else default
 
 
 def _optional_timestamp(data: Mapping[str, object], name: str) -> int | None:
@@ -200,4 +277,11 @@ def _optional_timestamp(data: Mapping[str, object], name: str) -> int | None:
     return value
 
 
-__all__ = ["VOICE_SCHEMA_VERSION", "VoiceCommandMetadata", "AdaptedVoiceCommand", "VoiceCommandAdapter"]
+def _optional_timestamp_lenient(data: Mapping[str, object], name: str) -> int | None:
+    try:
+        return _optional_timestamp(data, name)
+    except (TypeError, ValueError):
+        return None
+
+
+__all__ = ["VOICE_SCHEMA_VERSION", "VoiceDiagnostic", "VoiceCommandMetadata", "AdaptedVoiceCommand", "VoiceCommandAdapter"]

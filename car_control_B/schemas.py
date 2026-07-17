@@ -101,9 +101,9 @@ class RouteReference:
 class LateralOutput:
     """B output to A/D.
 
-    steer follows CARLA-compatible convention used by this module by default:
-    positive means turn right, negative means turn left. If your CARLA vehicle
-    behaves the opposite, change the controller `steer_sign` parameter.
+    ``steer`` is passed directly to ``carla.VehicleControl``.  Its physical
+    left/right mapping is selected by the controller's ``steer_sign``
+    calibration rather than inferred by a downstream consumer.
     """
 
     steer: float
