@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from car_control_A import CarlaSession, ControlOutput, RuntimeVehicleState
+from car_control_A.routing import RouteReference
 from car_control_A.watchdog import RuntimeWatchdog
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
 from car_control_D import SafetyConfig, SafetySupervisor
@@ -27,6 +28,7 @@ from .carla_perception import (
 from .contracts import PerceptionFrame
 from .route_planner import build_route_reference, command_turn_direction
 from .runtime_loop import ControlRuntime
+from .scenario_execution import CommandTimeline, ScenarioSpec, resolve_scenario_command
 from .scenario_evidence import FrameTiming, ScenarioEvidenceRecorder
 
 
@@ -117,6 +119,46 @@ def _apply_virtual_scenario(scene: PerceptionFrame, ego: Any, origin: tuple[floa
         # cannot be displaced by CARLA's map-dependent spawn relocation.
         return replace(scene, lead_distance_m=max(0.1, initial_gap_m - travelled_m), lead_speed_mps=0.0)
     return scene
+
+
+def _scenario_facts(ego: Any, origin: tuple[float, float, float], spec: ScenarioSpec,
+                    *, frame: int, sim_time_s: float, elapsed_s: float) -> PerceptionFrame:
+    """Build deterministic scenario facts without touching the sensor bridge."""
+    location = ego.get_location()
+    travelled_m = math.dist((location.x, location.y, location.z), origin)
+    updates: dict[str, object] = {}
+    for actor in spec.actors:
+        actor_type = str(actor.get("type", "")).lower()
+        if actor_type == "traffic_light":
+            updates["traffic_light"] = str(actor.get("state", "UNKNOWN")).upper()
+            updates["distance_to_stop_line_m"] = max(0.0, float(actor.get("distance_to_stop_line_m", 0.0)) - travelled_m)
+        elif actor_type == "vehicle":
+            spawn, behavior = actor.get("spawn", {}), actor.get("behavior", {})
+            if isinstance(spawn, dict) and isinstance(behavior, dict):
+                initial_gap = float(spawn.get("x", 18.0))
+                initial_speed = float(behavior.get("initial_speed_mps", 0.0))
+                brake_at_s = float(behavior.get("brake_at_s", math.inf))
+                lead_speed = initial_speed if elapsed_s < brake_at_s else float(behavior.get("target_speed_mps", initial_speed))
+                updates["lead_distance_m"] = max(0.1, initial_gap + lead_speed * elapsed_s - travelled_m)
+                updates["lead_speed_mps"] = lead_speed
+    return PerceptionFrame(frame, sim_time_s, **updates)
+
+
+def _select_scene_facts(perception: PerceptionFrame, scenario: PerceptionFrame | None, mode: str) -> tuple[PerceptionFrame, dict[str, str]]:
+    """Select perception, scenario truth, or a perception-first fusion."""
+    if scenario is None or mode == "perception":
+        return perception, {}
+    fields = ("lead_distance_m", "lead_speed_mps", "distance_to_stop_line_m")
+    if mode == "scenario":
+        values = {name: getattr(scenario, name) for name in fields if getattr(scenario, name) is not None}
+        if scenario.traffic_light != "UNKNOWN":
+            values["traffic_light"] = scenario.traffic_light
+        return replace(perception, **values), {name: "SCENARIO_CONFIG_TRUTH" for name in values}
+    values = {name: getattr(scenario, name) for name in fields
+              if getattr(perception, name) is None and getattr(scenario, name) is not None}
+    if perception.traffic_light == "UNKNOWN" and scenario.traffic_light != "UNKNOWN":
+        values["traffic_light"] = scenario.traffic_light
+    return replace(perception, **values), {name: "SCENARIO_CONFIG_FALLBACK" for name in values}
 
 
 def _load_command(args: argparse.Namespace) -> dict[str, object] | None:
@@ -214,7 +256,22 @@ def _scenario_completed(args: argparse.Namespace, *, frames: int, final_speed_mp
 
 
 def run(args: argparse.Namespace) -> None:
+    spec = ScenarioSpec.load(args.scenario_file) if args.scenario_file else None
+    if args.validate_scenario_only:
+        if spec is None:
+            raise ValueError("--validate-scenario-only requires --scenario-file")
+        print(json.dumps({"scenario_id": spec.scenario_id, "map": spec.map_name,
+                          "duration_s": spec.duration_s, "frame_count": spec.frame_count,
+                          "commands": len(spec.commands), "actors": len(spec.actors), "validation": "PASS"},
+                         ensure_ascii=False, indent=2))
+        return
     import carla
+
+    if spec is not None:
+        args.map = spec.map_name
+        args.fixed_delta_s = spec.fixed_delta_s
+        args.frames = spec.frame_count if args.max_frames is None else min(spec.frame_count, args.max_frames)
+        args.scenario = spec.scenario_id
 
     recorder = _evidence_recorder(args)
     ego: Any | None = None
@@ -234,6 +291,11 @@ def run(args: argparse.Namespace) -> None:
             requested_map = args.map.rsplit("/", maxsplit=1)[-1]
             if current_map.lower() != requested_map.lower():
                 world = client.load_world(args.map)
+        if spec is not None:
+            weather = getattr(carla.WeatherParameters, spec.weather, None)
+            if weather is None:
+                raise ValueError(f"unknown CARLA weather preset: {spec.weather!r}")
+            world.set_weather(weather)
         world_map = world.get_map()
         blueprints = world.get_blueprint_library().filter("vehicle.*model3*")
         if not blueprints:
@@ -242,7 +304,8 @@ def run(args: argparse.Namespace) -> None:
         spawn_points = world_map.get_spawn_points()
         if not spawn_points:
             raise RuntimeError("map has no vehicle spawn points")
-        fsm_timeout_s = 15.0 if args.test_command_ttl_s is None else args.test_command_ttl_s + 1.0
+        fsm_timeout_s = (args.test_command_ttl_s + 1.0 if args.test_command_ttl_s is not None
+                         else max(15.0, spec.duration_s + 1.0) if spec is not None else 15.0)
         scenario_safety = SafetySupervisor(SafetyConfig(stop_line_guard_m=args.stop_line_guard_m))
         runtime = ControlRuntime(_acceptance_lateral_controller(), default_speed_mps=args.default_speed_mps,
                                  command_timeout_s=fsm_timeout_s, safety=scenario_safety)
@@ -291,12 +354,15 @@ def run(args: argparse.Namespace) -> None:
             # and receive an auditable terminal status.
             initial = world.get_snapshot()
             last_sim_time_s = initial.timestamp.elapsed_seconds
-            command: dict[str, object] | None
-            try:
-                command = _load_command(args)
-            except Exception as error:
-                command = _rejected_load_envelope(error)
-                print(f"warning: voice input rejected without changing vehicle control: {error}")
+            episode_start_s = last_sim_time_s
+            timeline = CommandTimeline(spec.commands) if spec is not None else None
+            command: dict[str, object] | None = None
+            if spec is None:
+                try:
+                    command = _load_command(args)
+                except Exception as error:
+                    command = _rejected_load_envelope(error)
+                    print(f"warning: voice input rejected without changing vehicle control: {error}")
             adapted = None
             if command is not None:
                 received_ns = time.monotonic_ns()
@@ -330,6 +396,11 @@ def run(args: argparse.Namespace) -> None:
                 snapshot = world.get_snapshot()
                 state = _vehicle_state(ego, frame, snapshot.timestamp.elapsed_seconds, world_map)
                 last_sim_time_s = state.sim_time_s
+                elapsed_s = state.sim_time_s - episode_start_s
+                if timeline is not None:
+                    for scheduled in timeline.due(elapsed_s):
+                        resolved = resolve_scenario_command(scheduled, requested_speed_mps=runtime.requested_speed_mps)
+                        runtime.submit_voice(resolved, now_s=state.sim_time_s)
                 if step_index and step_index % args.route_refresh_frames == 0 and not runtime.safety_latched:
                     route = build_route_reference(
                         world_map, ego, runtime.requested_speed_mps,
@@ -363,6 +434,10 @@ def run(args: argparse.Namespace) -> None:
                     sensor_startup_grace = step_index < args.sensor_startup_grace_frames
                     if not sensor_startup_grace:
                         watchdog_alerts.append(f"PERCEPTION_{type(error).__name__.upper()}")
+                if spec is not None:
+                    truth = _scenario_facts(ego, origin, spec, frame=frame, sim_time_s=state.sim_time_s, elapsed_s=elapsed_s)
+                    scene, fact_sources = _select_scene_facts(scene, truth, args.scenario_facts_mode)
+                    perception_sources.update(fact_sources)
                 sensor_ready_ns = time.monotonic_ns()
                 if not sensor_startup_grace and watchdog.check(now_s=time.monotonic()) is not None:
                     watchdog_alerts.append("RUNTIME_WATCHDOG_TIMEOUT")
@@ -477,6 +552,8 @@ def main() -> None:
     parser.add_argument("--timeout-s", type=float, default=30.0)
     parser.add_argument("--fixed-delta-s", type=float, default=0.05)
     parser.add_argument("--frames", type=int, default=200)
+    parser.add_argument("--max-frames", type=int,
+                        help="debug cap applied after --scenario-file calculates its normal duration")
     parser.add_argument("--realtime", action="store_true",
                         help="pace control frames in wall-clock time for visual observation")
     parser.add_argument("--print-every", type=int, default=10,
@@ -515,9 +592,17 @@ def main() -> None:
                         help="explicit test-only command TTL override; keeps long acceptance runs from expiring early")
     parser.add_argument("--command-json")
     parser.add_argument("--audio")
+    parser.add_argument("--scenario-file",
+                        help="run a validated scenarios/*.json contract (sets map, timestep and duration)")
+    parser.add_argument("--validate-scenario-only", action="store_true",
+                        help="validate --scenario-file without starting CARLA")
+    parser.add_argument("--scenario-facts-mode", choices=("perception", "scenario", "fuse"), default="fuse",
+                        help="perception: sensors/world only; scenario: configuration truth; fuse: perception first, scenario fills gaps")
     args = parser.parse_args()
     if args.print_every < 1:
         parser.error("--print-every must be >= 1")
+    if args.max_frames is not None and args.max_frames < 1:
+        parser.error("--max-frames must be >= 1")
     if (args.frames < 1 or args.warmup_frames < 0 or args.route_refresh_frames < 1
             or args.sensor_warmup_frames < 1 or args.sensor_startup_grace_frames < 0):
         parser.error("--frames, --route-refresh-frames and --sensor-warmup-frames must be positive; "

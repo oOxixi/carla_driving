@@ -10,6 +10,7 @@ from integration.carla_runner import (
     _acceptance_lateral_controller,
     _load_command,
     _rejected_load_envelope,
+    _select_scene_facts,
     _scenario_completed,
     _speed_mps,
     _warm_up_sensor_bridge,
@@ -28,6 +29,23 @@ def test_voice_load_failure_becomes_rejected_no_op() -> None:
     assert not adapted.control_authorized
     assert adapted.command.action == "NO_OP"
     assert adapted.feedback is not None
+
+
+def test_scenario_facts_can_override_or_only_fill_missing_perception() -> None:
+    perceived = PerceptionFrame(1, 0.05, lead_distance_m=8.0, traffic_light="UNKNOWN")
+    configured = PerceptionFrame(1, 0.05, lead_distance_m=15.0, lead_speed_mps=0.0,
+                                traffic_light="RED", distance_to_stop_line_m=20.0)
+
+    fused, fused_sources = _select_scene_facts(perceived, configured, "fuse")
+    assert fused.lead_distance_m == 8.0
+    assert fused.lead_speed_mps == 0.0
+    assert fused.traffic_light == "RED"
+    assert fused_sources["lead_speed_mps"] == "SCENARIO_CONFIG_FALLBACK"
+
+    truth, truth_sources = _select_scene_facts(perceived, configured, "scenario")
+    assert truth.lead_distance_m == 15.0
+    assert truth.traffic_light == "RED"
+    assert truth_sources["lead_distance_m"] == "SCENARIO_CONFIG_TRUTH"
 
 
 def test_load_command_rejects_non_object_json_before_runtime_logging(tmp_path) -> None:

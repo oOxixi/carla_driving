@@ -387,7 +387,22 @@ def _lane_metrics(world_map: Any, ego: Any, route: RouteReference | None) -> tup
     route_deviation: float | None = None
     if route is not None:
         ex, ey, _ = _xyz(location)
-        route_deviation = min(math.hypot(ex - x, ey - y) for x, y in route.points_xy_m)
+        points = route.points_xy_m
+        # Reference routes are sampled at a finite interval.  Measuring only
+        # to vertices exaggerates deviation midway through a long segment and
+        # can cause spurious safety intervention; use the nearest point on
+        # every polyline segment instead.
+        segment_distances: list[float] = []
+        for (ax, ay), (bx, by) in zip(points, points[1:]):
+            dx, dy = bx - ax, by - ay
+            length_squared = dx * dx + dy * dy
+            if length_squared <= 1e-12:
+                segment_distances.append(math.hypot(ex - ax, ey - ay))
+                continue
+            fraction = max(0.0, min(1.0, ((ex - ax) * dx + (ey - ay) * dy) / length_squared))
+            nearest_x, nearest_y = ax + fraction * dx, ay + fraction * dy
+            segment_distances.append(math.hypot(ex - nearest_x, ey - nearest_y))
+        route_deviation = min(segment_distances)
     elif lane_offset is not None:
         route_deviation = abs(lane_offset)
     return lane_offset, route_deviation
@@ -460,7 +475,7 @@ class CarlaPerceptionBridge:
         if lane_offset is not None:
             sources["lane_offset_m"] = "CARLA_MAP_WAYPOINT"
         if route_deviation is not None:
-            sources["route_deviation_m"] = "ROUTE_REFERENCE_NEAREST_POINT" if route else "CARLA_MAP_WAYPOINT"
+            sources["route_deviation_m"] = "ROUTE_REFERENCE_NEAREST_SEGMENT" if route else "CARLA_MAP_WAYPOINT"
         collision, lane_invasion = self._sensors.events.flags_for_frame(frame)
         red_light_violation = (
             traffic_light == "RED" and stop_distance is not None and stop_distance <= 0.5

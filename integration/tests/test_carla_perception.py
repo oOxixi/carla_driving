@@ -20,6 +20,7 @@ from integration.carla_perception import (
     PerceptionTimeoutError,
     attach_default_sensors,
     front_lidar_distance_m,
+    _lane_metrics,
 )
 
 
@@ -240,6 +241,17 @@ def test_bridge_combines_aligned_lidar_events_map_and_associated_actor_truth() -
     assert sample.source_by_field["lead_distance_m"] == "LIDAR_FRONT_CORRIDOR"
     assert sample.source_by_field["lead_speed_mps"] == "CARLA_TRUTH_LIDAR_ASSOCIATED_ACTOR"
     assert sample.source_by_field["distance_to_stop_line_m"] == "CARLA_MAP_STOP_WAYPOINT"
+
+
+def test_route_deviation_uses_nearest_polyline_segment_not_only_vertices() -> None:
+    """A midpoint above a sparse straight route is 3 m away, not sqrt(34)."""
+    ego = Actor(1, x=5.0, y=3.0)
+    route = RouteReference(((0.0, 0.0), (10.0, 0.0)), 0.0, 5.0)
+
+    lane_offset, route_deviation = _lane_metrics(WorldMap(), ego, route)
+
+    assert lane_offset == pytest.approx(3.0)
+    assert route_deviation == pytest.approx(3.0)
 
 
 def test_lidar_obstacle_without_actor_is_kept_as_stationary_hazard() -> None:

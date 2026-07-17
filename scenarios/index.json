@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "package_name": "carla_scenarios_four_types_full",
+  "description": "CARLA智能驾驶项目四类完整测试场景：smoke、lateral_B、safety_D、regression。",
+  "folders": {
+    "smoke": "主链路冒烟测试：A/B/C/D是否接通、日志是否生成。",
+    "lateral_B": "B横向控制专项：直道、偏移、缓弯、左右转、变道。",
+    "safety_D": "D安全仲裁专项：红灯、行人、前车、路线偏差、非法控制、低TTC。",
+    "regression": "综合回归：基础/进阶/挑战混合，多seed、多天气、多命令。"
+  },
+  "official_level_mapping": {
+    "basic": "基础场景：直道、控速、停车、保持车道、普通转向。",
+    "advanced": "进阶场景：路口、红灯、前车、行人、天气变化、变道。",
+    "challenge": "挑战场景：命令冲突、突发风险、非法控制注入、长时间稳定性、多seed回归。"
+  },
+  "recommended_order": [
+    "smoke/S00_chain_start.json",
+    "smoke/S01_set_speed_20.json",
+    "smoke/S03_stop.json",
+    "smoke/S04_emergency_stop.json",
+    "lateral_B/B01_straight_center.json",
+    "lateral_B/B02_straight_left_offset.json",
+    "lateral_B/B03_straight_right_offset.json",
+    "lateral_B/B04_smooth_left_curve.json",
+    "lateral_B/B05_smooth_right_curve.json",
+    "lateral_B/B06_left_turn.json",
+    "lateral_B/B07_right_turn.json",
+    "lateral_B/B08_lane_change_left.json",
+    "lateral_B/B09_lane_change_right.json",
+    "safety_D/D01_red_light_stop.json",
+    "safety_D/D02_pedestrian_crossing.json",
+    "safety_D/D03_front_vehicle_brake.json",
+    "safety_D/D07_low_ttc_emergency_brake.json",
+    "regression/REG_001_basic_clear_seed0.json",
+    "regression/REG_012_challenge_long_run_stability.json"
+  ],
+  "counts": {
+    "smoke": 5,
+    "lateral_B": 9,
+    "safety_D": 8,
+    "regression": 12,
+    "total": 34
+  }
+}

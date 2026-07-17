@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CARLA Scenario JSON Schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "scenario_id",
+    "category",
+    "official_level",
+    "map",
+    "weather",
+    "seed",
+    "runtime",
+    "ego_spawn",
+    "route",
+    "commands",
+    "expected"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "scenario_id": {
+      "type": "string"
+    },
+    "category": {
+      "enum": [
+        "smoke",
+        "lateral_B",
+        "safety_D",
+        "regression"
+      ]
+    },
+    "official_level": {
+      "enum": [
+        "basic",
+        "advanced",
+        "challenge"
+      ]
+    },
+    "map": {
+      "type": "string"
+    },
+    "weather": {
+      "type": "string"
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "runtime": {
+      "type": "object"
+    },
+    "ego_spawn": {
+      "type": "object"
+    },
+    "route": {
+      "type": "object"
+    },
+    "commands": {
+      "type": "array"
+    },
+    "actors": {
+      "type": "array"
+    },
+    "sensors": {
+      "type": "object"
+    },
+    "controllers": {
+      "type": "object"
+    },
+    "logging": {
+      "type": "object"
+    },
+    "expected": {
+      "type": "object"
+    }
+  }
+}

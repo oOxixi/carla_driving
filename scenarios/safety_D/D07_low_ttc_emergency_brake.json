@@ -1,0 +1,185 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "D07_low_ttc_emergency_brake",
+  "category": "safety_D",
+  "official_level": "challenge",
+  "description": "D安全：低TTC高风险场景，必须强制制动。",
+  "tags": [
+    "D",
+    "low_ttc",
+    "emergency_brake"
+  ],
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 0,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 20,
+    "max_startup_wait_s": 10
+  },
+  "ego_spawn": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5,
+    "yaw_deg": 0.0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "note": "A接入CARLA时，需要把局部坐标转换成CARLA世界坐标，或用CARLA waypoint生成车道中心线。",
+    "points_xy_m": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        10.0,
+        0.0
+      ],
+      [
+        20.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        40.0,
+        0.0
+      ],
+      [
+        50.0,
+        0.0
+      ],
+      [
+        60.0,
+        0.0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "加速往前",
+      "intent": "SET_SPEED",
+      "parameters": {
+        "target_speed_kph": 30
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "stopped_001",
+      "type": "vehicle",
+      "spawn": {
+        "x": 15.0,
+        "y": 0.0,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      },
+      "behavior": {
+        "mode": "static_obstacle"
+      }
+    }
+  ],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 5
+    },
+    "semantic_segmentation": {
+      "enabled": false,
+      "save_every_n_frames": 10
+    },
+    "collision": {
+      "enabled": true
+    },
+    "lane_invasion": {
+      "enabled": true
+    }
+  },
+  "controllers": {
+    "A_runtime": {
+      "only_apply_control_owner": true,
+      "required_outputs": [
+        "ExecutionFeedback",
+        "latency_trace",
+        "scenario_result"
+      ]
+    },
+    "B_lateral": {
+      "enabled": true,
+      "controller_candidates": [
+        "PurePursuitController",
+        "StanleyController"
+      ],
+      "required_outputs": [
+        "steer",
+        "cross_track_error_m",
+        "heading_error_rad",
+        "target_point_xy_m",
+        "lookahead_distance_m",
+        "controller_name"
+      ]
+    },
+    "C_longitudinal": {
+      "enabled": true,
+      "required_outputs": [
+        "throttle",
+        "brake",
+        "target_speed_mps",
+        "risk_metrics"
+      ]
+    },
+    "D_safety": {
+      "enabled": true,
+      "must_run_before_apply_control": true,
+      "required_outputs": [
+        "final_control",
+        "safety_override",
+        "override_reason",
+        "risk_metrics",
+        "score_report"
+      ]
+    }
+  },
+  "logging": {
+    "required_files": [
+      "logs/<scenario_id>/frame_log.jsonl",
+      "logs/<scenario_id>/event_log.jsonl",
+      "logs/<scenario_id>/result.json",
+      "logs/<scenario_id>/score_report.json"
+    ],
+    "required_frame_fields": [
+      "scenario_id",
+      "frame",
+      "sim_time_s",
+      "command_id",
+      "vehicle_state",
+      "B_lateral",
+      "C_longitudinal",
+      "raw_control",
+      "D_safety",
+      "final_control"
+    ]
+  },
+  "expected": {
+    "expected_safety_override": true,
+    "expected_reason_contains": [
+      "ttc",
+      "emergency"
+    ],
+    "must_emergency_brake": true,
+    "must_no_collision": true
+  },
+  "notes": []
+}
