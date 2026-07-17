@@ -8,11 +8,41 @@ their small duck-typed API at the connection boundary.
 from __future__ import annotations
 
 from collections import OrderedDict
-from copy import copy
 from dataclasses import dataclass, field
 import threading
 import time
 from typing import Any, Callable, Iterable
+
+
+def _clone_world_settings(settings: Any) -> Any:
+    """Clone CARLA ``WorldSettings`` without relying on Python pickling.
+
+    CARLA 0.9.16's Boost.Python ``WorldSettings`` explicitly rejects
+    ``copy.copy``.  Its public properties are nevertheless ordinary readable
+    and writable fields.  Reconstructing through the concrete settings class
+    keeps this module CARLA-import-free and also works with the fake settings
+    used in unit tests.
+    """
+    values: dict[str, Any] = {}
+    for name in dir(settings):
+        if name.startswith("_"):
+            continue
+        try:
+            value = getattr(settings, name)
+        except Exception:
+            continue
+        if not callable(value):
+            values[name] = value
+    try:
+        return type(settings)(**values)
+    except (TypeError, ValueError):
+        clone = type(settings)()
+        for name, value in values.items():
+            try:
+                setattr(clone, name, value)
+            except (AttributeError, TypeError):
+                continue
+        return clone
 
 
 class SensorFrameBuffer:
@@ -156,8 +186,8 @@ class SynchronousWorld:
         if self._active:
             raise RuntimeError("SynchronousWorld is already active")
         previous = self._world.get_settings()
-        self._previous_settings = copy(previous)
-        current = copy(previous)
+        self._previous_settings = _clone_world_settings(previous)
+        current = _clone_world_settings(previous)
         current.synchronous_mode = True
         current.fixed_delta_seconds = self._fixed_delta_seconds
         self._world.apply_settings(current)
@@ -173,7 +203,7 @@ class SynchronousWorld:
             except Exception:
                 pass
             finally:
-                self._world.apply_settings(copy(self._previous_settings))
+                self._world.apply_settings(_clone_world_settings(self._previous_settings))
                 self._previous_settings = None
             raise
         self._active = True
@@ -195,7 +225,7 @@ class SynchronousWorld:
             restore_error = error
         try:
             if self._previous_settings is not None:
-                self._world.apply_settings(copy(self._previous_settings))
+                self._world.apply_settings(_clone_world_settings(self._previous_settings))
         except Exception as error:
             if restore_error is None:
                 restore_error = error

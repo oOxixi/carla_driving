@@ -1,0 +1,13 @@
+# Do not send locally installed Windows CARLA binaries/maps to the Linux image.
+CARLA_0.9.16/
+AdditionalMaps_0.9.16/
+.git/
+.pytest_cache/
+.worktrees/
+.remember/
+external/
+artifacts/
+__pycache__/
+*.py[cod]
+*.log
+voice_group/__pycache__/

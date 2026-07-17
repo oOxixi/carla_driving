@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1.7
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+
+ARG WITH_VOICE=1
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu128
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    CARLA_HOST=carla \
+    CARLA_PORT=2000 \
+    MODELSCOPE_CACHE=/models/modelscope \
+    HF_HOME=/models/huggingface
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates curl python3 python3-pip python3-venv \
+        libsndfile1 portaudio19-dev libgl1 libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m pip install --break-system-packages --upgrade pip setuptools wheel
+
+WORKDIR /workspace
+COPY docker/requirements-controller.txt /tmp/requirements-controller.txt
+COPY docker/requirements-voice.txt /tmp/requirements-voice.txt
+# Install a Linux CARLA client from PyPI. The bundled cp312 Windows wheel is not copied.
+RUN python3 -m pip install --break-system-packages -r /tmp/requirements-controller.txt \
+    && if [ "$WITH_VOICE" = "1" ]; then \
+         python3 -m pip install --break-system-packages --index-url "$TORCH_INDEX_URL" torch torchaudio \
+         && python3 -m pip install --break-system-packages -r /tmp/requirements-voice.txt; \
+       fi
+
+COPY . /workspace
+COPY docker/entrypoints/controller.sh /usr/local/bin/controller-entrypoint
+RUN chmod +x /usr/local/bin/controller-entrypoint
+
+ENTRYPOINT ["/usr/local/bin/controller-entrypoint"]
+# The offline composition demo is the default image smoke test. Set
+# CONTROLLER_COMMAND to ``python3 -m integration.carla_runner ...`` for CARLA.
+CMD ["python3", "-m", "integration.demo_offline"]

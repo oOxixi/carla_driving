@@ -1,0 +1,53 @@
+name: carla-driving
+
+services:
+  carla:
+    image: ${CARLA_IMAGE:-carlasim/carla:0.9.16}
+    container_name: carla-server
+    # Keep the CARLA server separate so the algorithm runtime can be exported alone.
+    working_dir: /home/carla
+    entrypoint: ["/bin/bash", "-lc"]
+    command: >-
+      ./CarlaUE4.sh -RenderOffScreen -nosound -quality-level=${CARLA_QUALITY:-Low}
+      -carla-port=2000
+    ports:
+      - "${CARLA_PORT:-2000}:2000"
+      - "${CARLA_STREAM_PORT:-2001}:2001"
+      - "${CARLA_TM_PORT:-8000}:8000"
+    gpus: all
+    shm_size: ${CARLA_SHM_SIZE:-2gb}
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/2000'"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+
+  controller:
+    profiles: ["controller"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.controller
+      args:
+        WITH_VOICE: ${WITH_VOICE:-1}
+        TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu128}
+    image: ${CONTROLLER_IMAGE:-carla-driving-controller:0.1.0}
+    container_name: carla-controller
+    depends_on:
+      carla:
+        condition: service_healthy
+    environment:
+      CARLA_HOST: carla
+      CARLA_PORT: "2000"
+      MODELSCOPE_CACHE: /models/modelscope
+      HF_HOME: /models/huggingface
+      # Empty selects the offline composition smoke test from the Dockerfile.
+      CONTROLLER_COMMAND: ${CONTROLLER_COMMAND:-}
+    volumes:
+      - model-cache:/models
+      - ../artifacts:/workspace/artifacts
+    gpus: all
+    restart: "no"
+
+volumes:
+  model-cache:

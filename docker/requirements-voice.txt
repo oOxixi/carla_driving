@@ -1,0 +1,6 @@
+# Optional ASR/NLU stack enabled with --build-arg WITH_VOICE=1.
+soundfile>=0.12
+funasr>=1.1
+modelscope>=1.16
+peft>=0.12
+openpyxl>=3.1

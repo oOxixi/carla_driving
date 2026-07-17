@@ -7,3 +7,9 @@ data/
 *.egg-info/
 .vscode/
 .worktrees/
+
+# Local CARLA distribution and generated scenario evidence are reproducible,
+# but must not be committed to the source repository.
+CARLA_0.9.16/
+AdditionalMaps_0.9.16/
+artifacts/logs/

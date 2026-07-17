@@ -62,10 +62,15 @@ class StopController:
             return self.parameters.creep_speed_mps
         # v^2 = 2 a d.  Nominal planning deliberately uses comfortable
         # deceleration; the caller separately detects an unreachable stop.
-        kinematic_cap = max(0.0, (2.0 * self.parameters.comfortable_decel_mps2 * max(0.0, distance_m - self.parameters.hold_distance_m)) ** 0.5)
-        # Once a stop constraint exists it authorises deceleration, never a
-        # fresh acceleration toward the line.
-        return min(speed_mps - self.parameters.comfortable_decel_mps2 * max(0.0, dt_s), kinematic_cap)
+        # Reserve the distance travelled during the next control interval so
+        # the cap is already below current speed at the actual braking point,
+        # rather than allowing one more acceleration command at that boundary.
+        usable_distance = max(0.0, distance_m - self.parameters.hold_distance_m - speed_mps * dt_s)
+        kinematic_cap = max(0.0, (2.0 * self.parameters.comfortable_decel_mps2 * usable_distance) ** 0.5)
+        # The kinematic cap is permissive while the line is far away and only
+        # begins constraining the planner near the braking point. The planner's
+        # command ramp still prevents a fresh, abrupt acceleration.
+        return kinematic_cap
 
     def required_decel_mps2(self, speed_mps: float, distance_m: float | None) -> float:
         speed_mps = finite("speed_mps", speed_mps, minimum=0.0)

@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "command_id": "example-set-speed-18",
+  "source_text": "速度设为18公里每小时",
+  "intent": "SET_SPEED",
+  "parameters": {
+    "speed": 18,
+    "unit": "km/h"
+  },
+  "asr_confidence": 0.99,
+  "intent_confidence": 0.99,
+  "confidence": 0.99,
+  "status": "valid",
+  "ambiguity_type": "NONE",
+  "confirm_required": false,
+  "errors": [],
+  "warnings": [],
+  "valid_duration_s": 12.0
+}

@@ -84,6 +84,13 @@ def test_stop_controller_has_all_four_phases_and_creep_cap() -> None:
     assert output.target_speed_mps <= controller.stop_controller.parameters.creep_speed_mps
 
 
+def test_distant_stop_line_uses_kinematic_cap_without_premature_stop() -> None:
+    controller = LongitudinalController()
+    cap = controller.stop_controller.speed_cap_mps(1.0, 20.0, 0.05)
+    assert cap is not None
+    assert cap > 1.0
+
+
 def test_following_gap_and_ttc_emergency_request() -> None:
     following = FollowingController()
     risk = following.risk(ego_speed_mps=15.0, lead_distance_m=5.0, closing_speed_mps=10.0)

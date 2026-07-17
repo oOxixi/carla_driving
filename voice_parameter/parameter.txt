@@ -1,0 +1,16 @@
+我们输出的 DrivingCommand 长这样,想请你们确认字段能不能直接对上你们的输入:
+json{
+  "schema_version": "1.0",
+  "command_id": "cmd_4679fc8e",
+  "source_text": "进入隧道了，减速哈。",
+  "intent": "SLOW_DOWN",
+  "parameters": {"mode": "RELATIVE", "action": "DECELERATE"},
+  "asr_confidence": null,
+  "intent_confidence": 0.95,
+  "status": "valid",
+  "ambiguity_type": "NONE",
+  "confirm_required": false,
+  "errors": [],
+  "warnings": [],
+  "confidence": 0.95
+}
