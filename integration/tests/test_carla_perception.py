@@ -242,6 +242,20 @@ def test_bridge_combines_aligned_lidar_events_map_and_associated_actor_truth() -
     assert sample.source_by_field["distance_to_stop_line_m"] == "CARLA_MAP_STOP_WAYPOINT"
 
 
+def test_route_deviation_uses_polyline_segments_not_only_sparse_points() -> None:
+    ego, session = Actor(1, x=5.0, y=0.6), Session()
+    session.frame_buffer.push(RGB_SENSOR_ID, 43, Measurement(43))
+    session.frame_buffer.push(LIDAR_SENSOR_ID, 43, Measurement(43))
+    bridge = CarlaPerceptionBridge(World((ego,)), WorldMap(), ego, session, _suite(session))
+
+    sample = bridge.acquire(
+        43, 2.15, route=RouteReference(((0.0, 0.0), (10.0, 0.0)), 0.0, 5.0), timeout_s=0.01,
+    )
+
+    assert sample.frame.route_deviation_m == pytest.approx(0.6)
+    assert sample.source_by_field["route_deviation_m"] == "ROUTE_REFERENCE_NEAREST_SEGMENT"
+
+
 def test_lidar_obstacle_without_actor_is_kept_as_stationary_hazard() -> None:
     ego, session = Actor(1), Session()
     points = [[6.0, -0.2, 0.0], [6.1, 0.0, 0.0], [6.2, 0.2, 0.0]]

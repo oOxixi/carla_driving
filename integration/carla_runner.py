@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from car_control_A import CarlaSession, ControlOutput, RuntimeVehicleState
+from car_control_A.routing import RouteReference
 from car_control_A.watchdog import RuntimeWatchdog
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
 from car_control_D import SafetyConfig, SafetySupervisor
@@ -27,6 +28,7 @@ from .carla_perception import (
 from .contracts import PerceptionFrame
 from .route_planner import build_route_reference, command_turn_direction
 from .runtime_loop import ControlRuntime
+from .scenario_execution import CommandTimeline, ScenarioSpec, resolve_scenario_command
 from .scenario_evidence import FrameTiming, ScenarioEvidenceRecorder
 
 
@@ -119,6 +121,43 @@ def _apply_virtual_scenario(scene: PerceptionFrame, ego: Any, origin: tuple[floa
     return scene
 
 
+def _apply_scenario_facts(
+    scene: PerceptionFrame,
+    ego: Any,
+    origin: tuple[float, float, float],
+    spec: ScenarioSpec,
+    elapsed_s: float,
+) -> PerceptionFrame:
+    """Overlay explicit scenario fixtures and label them as contract truth."""
+    location = ego.get_location()
+    travelled_m = math.sqrt(
+        (location.x - origin[0]) ** 2
+        + (location.y - origin[1]) ** 2
+        + (location.z - origin[2]) ** 2
+    )
+    updates: dict[str, object] = {}
+    for actor in spec.actors:
+        actor_type = str(actor.get("type", "")).lower()
+        if actor_type == "traffic_light":
+            stop_line = float(actor.get("distance_to_stop_line_m", 0.0))
+            updates["traffic_light"] = str(actor.get("state", "UNKNOWN")).upper()
+            updates["distance_to_stop_line_m"] = max(0.0, stop_line - travelled_m)
+            continue
+        if actor_type == "vehicle":
+            spawn = actor.get("spawn", {})
+            behavior = actor.get("behavior", {})
+            if not isinstance(spawn, dict) or not isinstance(behavior, dict):
+                continue
+            initial_gap = float(spawn.get("x", 18.0))
+            initial_speed = float(behavior.get("initial_speed_mps", 0.0))
+            brake_at_s = float(behavior.get("brake_at_s", math.inf))
+            target_speed = float(behavior.get("target_speed_mps", initial_speed))
+            lead_speed = initial_speed if elapsed_s < brake_at_s else target_speed
+            updates["lead_distance_m"] = max(0.1, initial_gap + lead_speed * elapsed_s - travelled_m)
+            updates["lead_speed_mps"] = lead_speed
+    return replace(scene, **updates) if updates else scene
+
+
 def _load_command(args: argparse.Namespace) -> dict[str, object] | None:
     if args.command_json:
         command = json.loads(Path(args.command_json).read_text(encoding="utf-8"))
@@ -153,7 +192,7 @@ def _evidence_recorder(args: argparse.Namespace) -> ScenarioEvidenceRecorder | N
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     path = directory / f"{args.scenario}_{stamp}.jsonl"
     recorder = ScenarioEvidenceRecorder(path)
-    recorder.start_run(scenario_id=args.scenario, config={
+    recorder.start_run(scenario_id=args.scenario, difficulty=getattr(args, "scenario_difficulty", "basic"), config={
         key: value for key, value in vars(args).items()
         if type(value) in (str, int, float, bool) or value is None
     })
@@ -214,7 +253,35 @@ def _scenario_completed(args: argparse.Namespace, *, frames: int, final_speed_mp
 
 
 def run(args: argparse.Namespace) -> None:
+    spec = ScenarioSpec.load(args.scenario_file) if args.scenario_file else None
+    if args.validate_scenario_only:
+        if spec is None:
+            raise ValueError("--validate-scenario-only requires --scenario-file")
+        print(json.dumps({
+            "scenario_id": spec.scenario_id,
+            "official_level": spec.official_level,
+            "map": spec.map_name,
+            "weather": spec.weather,
+            "fixed_delta_s": spec.fixed_delta_s,
+            "duration_s": spec.duration_s,
+            "frame_count": spec.frame_count,
+            "route_points": len(spec.local_route_xy_m),
+            "commands": len(spec.commands),
+            "actors": len(spec.actors),
+            "validation": "PASS",
+        }, ensure_ascii=False, indent=2))
+        return
+
     import carla
+
+    if spec is not None:
+        args.map = None if args.use_current_map else spec.map_name
+        args.fixed_delta_s = spec.fixed_delta_s
+        args.frames = spec.frame_count
+        if args.max_frames is not None:
+            args.frames = min(args.frames, args.max_frames)
+        args.scenario = spec.scenario_id
+        args.scenario_difficulty = spec.official_level
 
     recorder = _evidence_recorder(args)
     ego: Any | None = None
@@ -234,6 +301,11 @@ def run(args: argparse.Namespace) -> None:
             requested_map = args.map.rsplit("/", maxsplit=1)[-1]
             if current_map.lower() != requested_map.lower():
                 world = client.load_world(args.map)
+        if spec is not None:
+            weather = getattr(carla.WeatherParameters, spec.weather, None)
+            if weather is None:
+                raise ValueError(f"CARLA has no WeatherParameters preset named {spec.weather!r}")
+            world.set_weather(weather)
         world_map = world.get_map()
         blueprints = world.get_blueprint_library().filter("vehicle.*model3*")
         if not blueprints:
@@ -242,7 +314,12 @@ def run(args: argparse.Namespace) -> None:
         spawn_points = world_map.get_spawn_points()
         if not spawn_points:
             raise RuntimeError("map has no vehicle spawn points")
-        fsm_timeout_s = 15.0 if args.test_command_ttl_s is None else args.test_command_ttl_s + 1.0
+        if args.test_command_ttl_s is not None:
+            fsm_timeout_s = args.test_command_ttl_s + 1.0
+        elif spec is not None:
+            fsm_timeout_s = max(15.0, spec.duration_s + 1.0)
+        else:
+            fsm_timeout_s = 15.0
         scenario_safety = SafetySupervisor(SafetyConfig(stop_line_guard_m=args.stop_line_guard_m))
         runtime = ControlRuntime(_acceptance_lateral_controller(), default_speed_mps=args.default_speed_mps,
                                  command_timeout_s=fsm_timeout_s, safety=scenario_safety)
@@ -291,12 +368,17 @@ def run(args: argparse.Namespace) -> None:
             # and receive an auditable terminal status.
             initial = world.get_snapshot()
             last_sim_time_s = initial.timestamp.elapsed_seconds
+            episode_start_s = last_sim_time_s
+            timeline = CommandTimeline(spec.commands) if spec is not None else None
             command: dict[str, object] | None
-            try:
-                command = _load_command(args)
-            except Exception as error:
-                command = _rejected_load_envelope(error)
-                print(f"warning: voice input rejected without changing vehicle control: {error}")
+            if spec is None:
+                try:
+                    command = _load_command(args)
+                except Exception as error:
+                    command = _rejected_load_envelope(error)
+                    print(f"warning: voice input rejected without changing vehicle control: {error}")
+            else:
+                command = None
             adapted = None
             if command is not None:
                 received_ns = time.monotonic_ns()
@@ -314,10 +396,22 @@ def run(args: argparse.Namespace) -> None:
             turn_direction = "STRAIGHT"
             if adapted is not None and adapted.control_authorized and not adapted.command.requires_confirmation:
                 turn_direction = command_turn_direction(command)
-            route = build_route_reference(
-                world_map, ego, runtime.requested_speed_mps,
-                turn_direction=turn_direction, distance_m=args.route_distance_m,
-            )
+            if spec is None:
+                route = build_route_reference(
+                    world_map, ego, runtime.requested_speed_mps,
+                    turn_direction=turn_direction, distance_m=args.route_distance_m,
+                )
+            else:
+                ego_transform = ego.get_transform()
+                route = RouteReference(
+                    spec.world_route(
+                        ego_transform.location.x,
+                        ego_transform.location.y,
+                        ego_transform.rotation.yaw,
+                    ),
+                    0.0,
+                    runtime.requested_speed_mps,
+                )
 
             watchdog = RuntimeWatchdog(
                 timeout_s=args.watchdog_timeout_s,
@@ -330,7 +424,34 @@ def run(args: argparse.Namespace) -> None:
                 snapshot = world.get_snapshot()
                 state = _vehicle_state(ego, frame, snapshot.timestamp.elapsed_seconds, world_map)
                 last_sim_time_s = state.sim_time_s
-                if step_index and step_index % args.route_refresh_frames == 0 and not runtime.safety_latched:
+                elapsed_s = state.sim_time_s - episode_start_s
+                if timeline is not None:
+                    for scheduled in timeline.due(elapsed_s):
+                        scenario_command = resolve_scenario_command(
+                            scheduled,
+                            requested_speed_mps=runtime.requested_speed_mps,
+                        )
+                        received_ns = time.monotonic_ns()
+                        scenario_adapted = runtime.submit_voice(scenario_command, now_s=state.sim_time_s)
+                        if recorder is not None:
+                            recorder.record_command(
+                                scenario_command,
+                                disposition=("ACCEPTED_SCENARIO" if scenario_adapted.control_authorized
+                                             else "REJECTED_SCENARIO_NO_OP"),
+                                adapted_command=scenario_adapted.command,
+                                received_ns=received_ns,
+                            )
+                            if scenario_adapted.feedback is not None:
+                                recorder.record_feedback(scenario_adapted.feedback)
+                        route = replace(route, target_speed_mps=runtime.requested_speed_mps)
+                ego_location = ego.get_location()
+                distance_to_route_end_m = math.hypot(
+                    ego_location.x - route.points_xy_m[-1][0],
+                    ego_location.y - route.points_xy_m[-1][1],
+                )
+                refresh_live_route = spec is None and step_index and step_index % args.route_refresh_frames == 0
+                extend_finished_scenario_route = spec is not None and distance_to_route_end_m <= 10.0
+                if ((refresh_live_route or extend_finished_scenario_route) and not runtime.safety_latched):
                     route = build_route_reference(
                         world_map, ego, runtime.requested_speed_mps,
                         distance_m=args.route_distance_m,
@@ -356,6 +477,9 @@ def run(args: argparse.Namespace) -> None:
                             perception_sources = {"scenario": "VIRTUAL_ACCEPTANCE_TRUTH"}
                         else:
                             perception_sources = {"scenario": "CARLA_WORLD_TRUTH"}
+                    if spec is not None:
+                        scene = _apply_scenario_facts(scene, ego, origin, spec, elapsed_s)
+                        perception_sources["scenario_contract"] = "SCENARIO_CONFIG_TRUTH"
                     watchdog.heartbeat("perception", now_s=time.monotonic())
                 except PerceptionAcquisitionError as error:
                     scene = PerceptionFrame(frame, state.sim_time_s)
@@ -413,7 +537,9 @@ def run(args: argparse.Namespace) -> None:
                 record = {
                     "record_type": "frame", "scenario": args.scenario,
                     "perception_mode": args.perception_mode, "frame": frame,
-                    "sim_time_s": state.sim_time_s, "speed_mps": state.speed_mps,
+                    "sim_time_s": state.sim_time_s, "elapsed_s": elapsed_s,
+                    "speed_mps": state.speed_mps, "x_m": state.x_m, "y_m": state.y_m,
+                    "z_m": state.z_m, "yaw_deg": state.yaw_deg, "lane_id": state.lane_id,
                     "target_speed_mps": None if result.longitudinal is None else result.longitudinal.target_speed_mps,
                     "longitudinal_state": None if result.longitudinal is None else result.longitudinal.state,
                     "ttc_s": None if result.longitudinal is None else result.longitudinal.risk.ttc_s,
@@ -477,6 +603,8 @@ def main() -> None:
     parser.add_argument("--timeout-s", type=float, default=30.0)
     parser.add_argument("--fixed-delta-s", type=float, default=0.05)
     parser.add_argument("--frames", type=int, default=200)
+    parser.add_argument("--max-frames", type=int,
+                        help="debug cap applied after a scenario file computes its normal frame count")
     parser.add_argument("--realtime", action="store_true",
                         help="pace control frames in wall-clock time for visual observation")
     parser.add_argument("--print-every", type=int, default=10,
@@ -515,9 +643,17 @@ def main() -> None:
                         help="explicit test-only command TTL override; keeps long acceptance runs from expiring early")
     parser.add_argument("--command-json")
     parser.add_argument("--audio")
+    parser.add_argument("--scenario-file",
+                        help="run a scenarios/*.json contract; overrides map, fixed delta, frames and scenario id")
+    parser.add_argument("--validate-scenario-only", action="store_true",
+                        help="load and validate --scenario-file without connecting to CARLA")
+    parser.add_argument("--use-current-map", action="store_true",
+                        help="debug only: run a scenario contract on the current CARLA map without load_world")
     args = parser.parse_args()
     if args.print_every < 1:
         parser.error("--print-every must be >= 1")
+    if args.max_frames is not None and args.max_frames < 1:
+        parser.error("--max-frames must be >= 1")
     if (args.frames < 1 or args.warmup_frames < 0 or args.route_refresh_frames < 1
             or args.sensor_warmup_frames < 1 or args.sensor_startup_grace_frames < 0):
         parser.error("--frames, --route-refresh-frames and --sensor-warmup-frames must be positive; "
