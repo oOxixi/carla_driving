@@ -24,11 +24,13 @@ from .carla_perception import (
     CarlaPerceptionBridge,
     PerceptionAcquisitionError,
     attach_default_sensors,
+    route_deviation_m,
 )
 from .contracts import PerceptionFrame
 from .route_planner import build_route_reference, command_turn_direction
 from .runtime_loop import ControlRuntime
-from .scenario_execution import CommandTimeline, ScenarioSpec, resolve_scenario_command
+from .rgb_detector import OnnxYoloDetector
+from .scenario_execution import CommandTimeline, ScenarioSpec, resolve_scenario_command, select_best_route_anchor
 from .scenario_evidence import FrameTiming, ScenarioEvidenceRecorder
 
 
@@ -121,14 +123,16 @@ def _apply_virtual_scenario(scene: PerceptionFrame, ego: Any, origin: tuple[floa
     return scene
 
 
-def _apply_scenario_facts(
-    scene: PerceptionFrame,
+def _scenario_facts(
     ego: Any,
     origin: tuple[float, float, float],
     spec: ScenarioSpec,
+    *,
+    frame: int,
+    sim_time_s: float,
     elapsed_s: float,
 ) -> PerceptionFrame:
-    """Overlay explicit scenario fixtures and label them as contract truth."""
+    """Build deterministic configured actors without mutating perception."""
     location = ego.get_location()
     travelled_m = math.sqrt(
         (location.x - origin[0]) ** 2
@@ -153,9 +157,78 @@ def _apply_scenario_facts(
             brake_at_s = float(behavior.get("brake_at_s", math.inf))
             target_speed = float(behavior.get("target_speed_mps", initial_speed))
             lead_speed = initial_speed if elapsed_s < brake_at_s else target_speed
-            updates["lead_distance_m"] = max(0.1, initial_gap + lead_speed * elapsed_s - travelled_m)
+            lead_travel_m = _lead_vehicle_travel_m(
+                elapsed_s, initial_speed, brake_at_s, target_speed,
+            )
+            updates["lead_distance_m"] = max(0.1, initial_gap + lead_travel_m - travelled_m)
             updates["lead_speed_mps"] = lead_speed
-    return replace(scene, **updates) if updates else scene
+            continue
+        if actor_type.startswith("walker"):
+            spawn = actor.get("spawn", {})
+            behavior = actor.get("behavior", {})
+            if not isinstance(spawn, dict) or not isinstance(behavior, dict):
+                continue
+            start_s = float(behavior.get("start_time_s", 0.0))
+            speed_mps = float(behavior.get("speed_mps", 0.0))
+            target = behavior.get("target_xy_m", [spawn.get("x", 0.0), spawn.get("y", 0.0)])
+            if not isinstance(target, list) or len(target) != 2 or elapsed_s < start_s:
+                continue
+            spawn_y = float(spawn.get("y", 0.0))
+            target_y = float(target[1])
+            direction = 1.0 if target_y >= spawn_y else -1.0
+            current_y = spawn_y + direction * speed_mps * (elapsed_s - start_s)
+            if min(spawn_y, target_y) - 1e-6 <= current_y <= max(spawn_y, target_y) + 1e-6 and abs(current_y) <= 2.0:
+                updates["lead_distance_m"] = max(0.1, float(spawn.get("x", 0.0)) - travelled_m)
+                updates["lead_speed_mps"] = 0.0
+    return PerceptionFrame(frame, sim_time_s, **updates)
+
+
+def _lead_vehicle_travel_m(
+    elapsed_s: float,
+    initial_speed_mps: float,
+    brake_at_s: float,
+    target_speed_mps: float,
+) -> float:
+    """Integrate the scenario lead's piecewise speed without a position jump at braking."""
+    before_brake_s = min(elapsed_s, brake_at_s)
+    after_brake_s = max(0.0, elapsed_s - brake_at_s)
+    return initial_speed_mps * before_brake_s + target_speed_mps * after_brake_s
+
+
+def _select_scene_facts(
+    perception: PerceptionFrame,
+    scenario: PerceptionFrame | None,
+    mode: str,
+) -> tuple[PerceptionFrame, dict[str, str]]:
+    """Select perception, scenario truth, or perception-first fallback."""
+    if mode not in {"perception", "scenario", "fuse"}:
+        raise ValueError(f"unsupported scenario facts mode: {mode!r}")
+    if scenario is None or mode == "perception":
+        return perception, {}
+
+    fact_fields = ("lead_distance_m", "lead_speed_mps", "distance_to_stop_line_m")
+    if mode == "scenario":
+        values = {
+            name: getattr(scenario, name)
+            for name in fact_fields
+            if getattr(scenario, name) is not None
+        }
+        if scenario.traffic_light != "UNKNOWN":
+            values["traffic_light"] = scenario.traffic_light
+        return replace(perception, **values), {
+            name: "SCENARIO_CONFIG_TRUTH" for name in values
+        }
+
+    values = {
+        name: getattr(scenario, name)
+        for name in fact_fields
+        if getattr(perception, name) is None and getattr(scenario, name) is not None
+    }
+    if perception.traffic_light == "UNKNOWN" and scenario.traffic_light != "UNKNOWN":
+        values["traffic_light"] = scenario.traffic_light
+    return replace(perception, **values), {
+        name: "SCENARIO_CONFIG_FALLBACK" for name in values
+    }
 
 
 def _load_command(args: argparse.Namespace) -> dict[str, object] | None:
@@ -184,7 +257,7 @@ def _load_command(args: argparse.Namespace) -> dict[str, object] | None:
     return None
 
 
-def _evidence_recorder(args: argparse.Namespace) -> ScenarioEvidenceRecorder | None:
+def _evidence_recorder(args: argparse.Namespace, spec: ScenarioSpec | None = None) -> ScenarioEvidenceRecorder | None:
     if args.no_log:
         return None
     directory = Path(args.log_dir)
@@ -195,7 +268,9 @@ def _evidence_recorder(args: argparse.Namespace) -> ScenarioEvidenceRecorder | N
     recorder.start_run(scenario_id=args.scenario, difficulty=getattr(args, "scenario_difficulty", "basic"), config={
         key: value for key, value in vars(args).items()
         if type(value) in (str, int, float, bool) or value is None
-    })
+    }, expected_route_deviation=(
+        spec is not None and spec.expected.get("expected_route_deviation_event") is True
+    ))
     print(f"run log: {path}")
     return recorder
 
@@ -252,6 +327,75 @@ def _scenario_completed(args: argparse.Namespace, *, frames: int, final_speed_mp
     return True
 
 
+def _expected_safety_completed(
+    spec: ScenarioSpec,
+    *,
+    frames: int,
+    final_speed_mps: float | None,
+    collision_seen: bool,
+    safety_reasons: set[str],
+) -> bool | None:
+    """Evaluate scenario contracts whose success is an intentional D intervention."""
+    expected = spec.expected
+    requires_override = expected.get("expected_safety_override") is True
+    requires_route_event = expected.get("expected_route_deviation_event") is True
+    requires_emergency = expected.get("must_emergency_brake") is True
+    if not (requires_override or requires_route_event or requires_emergency):
+        return None
+    if frames != spec.frame_count or final_speed_mps is None or collision_seen:
+        return False
+    meaningful = {reason for reason in safety_reasons if reason not in {"NONE", "PERCEPTION_STARTUP_GRACE"}}
+    if requires_override and not meaningful:
+        return False
+    if requires_route_event and not any("ROUTE_DEVIATION" in reason for reason in meaningful):
+        return False
+    if requires_emergency and not (
+        any("TTC" in reason or "EMERGENCY" in reason for reason in meaningful)
+        or final_speed_mps <= float(expected.get("stop_speed_threshold_mps", 0.3))
+    ):
+        return False
+    tokens = expected.get("expected_reason_contains", [])
+    if isinstance(tokens, list) and tokens:
+        joined = " ".join(meaningful).lower()
+        if not any(str(token).lower() in joined for token in tokens):
+            return False
+    return True
+
+
+def _scenario_raw_control_fault(spec: ScenarioSpec | None, elapsed_s: float) -> dict[str, object] | None:
+    """Build the one-shot pre-D fault required by D05/D06 contracts."""
+    if spec is None or elapsed_s < 5.0:
+        return None
+    expected = spec.expected
+    if expected.get("final_control_must_be_finite") is True:
+        return {"throttle": 0.0, "brake": 0.0, "steer": "NaN", "fault_injected": True}
+    if expected.get("final_control_no_throttle_brake_overlap") is True:
+        return {"throttle": 0.5, "brake": 0.5, "steer": 0.0, "fault_injected": True}
+    return None
+
+
+def _route_contract_completed(spec: ScenarioSpec | None, distance_to_route_end_m: float | None) -> bool | None:
+    """Evaluate explicit route-finish contracts instead of treating frame exhaustion as success."""
+    if spec is None or spec.expected.get("must_finish_route") is not True:
+        return None
+    return distance_to_route_end_m is not None and distance_to_route_end_m <= spec.finish_radius_m
+
+
+def _minimum_gap_contract_completed(spec: ScenarioSpec | None, min_gap_m: float | None) -> bool | None:
+    """Evaluate a declared front-gap floor as a hard scenario contract."""
+    if spec is None or "min_front_gap_m" not in spec.expected:
+        return None
+    required_m = float(spec.expected["min_front_gap_m"])
+    return min_gap_m is not None and min_gap_m >= required_m
+
+
+def _route_stop_trigger_m(speed_mps: float, finish_radius_m: float, decel_mps2: float = 2.0) -> float:
+    """Choose an endpoint braking trigger from current speed and a conservative service deceleration."""
+    if speed_mps < 0.0 or finish_radius_m < 0.0 or decel_mps2 <= 0.0:
+        raise ValueError("speed/finish radius must be non-negative and deceleration positive")
+    return max(finish_radius_m, speed_mps * speed_mps / (2.0 * decel_mps2) + 1.0)
+
+
 def run(args: argparse.Namespace) -> None:
     spec = ScenarioSpec.load(args.scenario_file) if args.scenario_file else None
     if args.validate_scenario_only:
@@ -274,6 +418,18 @@ def run(args: argparse.Namespace) -> None:
 
     import carla
 
+    detector = None
+    detector_model = getattr(args, "rgb_detector_model", None)
+    if detector_model:
+        if args.perception_mode != "sensors":
+            raise ValueError("--rgb-detector-model requires --perception-mode sensors")
+        detector = OnnxYoloDetector(
+            detector_model,
+            confidence_threshold=args.rgb_detector_confidence,
+            iou_threshold=args.rgb_detector_iou,
+            input_size=args.rgb_detector_input_size,
+        )
+
     if spec is not None:
         args.map = None if args.use_current_map else spec.map_name
         args.fixed_delta_s = spec.fixed_delta_s
@@ -283,13 +439,16 @@ def run(args: argparse.Namespace) -> None:
         args.scenario = spec.scenario_id
         args.scenario_difficulty = spec.official_level
 
-    recorder = _evidence_recorder(args)
+    recorder = _evidence_recorder(args, spec)
     ego: Any | None = None
     frames_completed = 0
     final_state: RuntimeVehicleState | None = None
     final_scene: PerceptionFrame | None = None
     min_gap_m: float | None = None
     collision_seen = False
+    safety_reasons: set[str] = set()
+    raw_control_fault_injected = False
+    final_route_end_distance_m: float | None = None
     runtime: ControlRuntime | None = None
     last_sim_time_s = 0.0
     try:
@@ -320,10 +479,55 @@ def run(args: argparse.Namespace) -> None:
             fsm_timeout_s = max(15.0, spec.duration_s + 1.0)
         else:
             fsm_timeout_s = 15.0
-        scenario_safety = SafetySupervisor(SafetyConfig(stop_line_guard_m=args.stop_line_guard_m))
+        route_deviation_trigger_m = 3.0
+        if spec is not None and "route_deviation_trigger_m" in spec.expected:
+            route_deviation_trigger_m = float(spec.expected["route_deviation_trigger_m"])
+        scenario_safety = SafetySupervisor(SafetyConfig(
+            stop_line_guard_m=args.stop_line_guard_m,
+            severe_route_deviation_m=route_deviation_trigger_m,
+        ))
         runtime = ControlRuntime(_acceptance_lateral_controller(), default_speed_mps=args.default_speed_mps,
                                  command_timeout_s=fsm_timeout_s, safety=scenario_safety)
-        spawn_transform = spawn_points[args.spawn_index % len(spawn_points)]
+        route_anchor = spawn_points[args.spawn_index % len(spawn_points)]
+        road_fit_required = (
+            spec is not None
+            and (spec.category == "lateral_B" or spec.expected.get("must_finish_route") is True)
+        )
+        if road_fit_required:
+            anchor_values = tuple(
+                (point.location.x, point.location.y, point.location.z, point.rotation.yaw)
+                for point in spawn_points
+            )
+
+            def distance_to_drivable(x_m: float, y_m: float, z_m: float) -> float:
+                location = carla.Location(x=x_m, y=y_m, z=z_m)
+                waypoint = world_map.get_waypoint(location, project_to_road=True)
+                if waypoint is None:
+                    return 1_000.0
+                center = waypoint.transform.location
+                return math.hypot(x_m - center.x, y_m - center.y)
+
+            anchor_index, anchor_score = select_best_route_anchor(
+                anchor_values, spec.local_route_xy_m, distance_to_drivable,
+            )
+            route_anchor = spawn_points[anchor_index]
+            print(f"route anchor: spawn_index={anchor_index} road_fit_score={anchor_score:.3f}")
+        spawn_transform = route_anchor
+        if spec is not None:
+            local_x, local_y, local_z, local_yaw = spec.ego_spawn_xyzyaw
+            anchor_yaw_rad = math.radians(route_anchor.rotation.yaw)
+            spawn_transform = carla.Transform(
+                carla.Location(
+                    x=route_anchor.location.x + local_x * math.cos(anchor_yaw_rad) - local_y * math.sin(anchor_yaw_rad),
+                    y=route_anchor.location.y + local_x * math.sin(anchor_yaw_rad) + local_y * math.cos(anchor_yaw_rad),
+                    z=route_anchor.location.z + max(0.0, local_z - 0.5),
+                ),
+                carla.Rotation(
+                    pitch=route_anchor.rotation.pitch,
+                    yaw=route_anchor.rotation.yaw + local_yaw,
+                    roll=route_anchor.rotation.roll,
+                ),
+            )
         spectator_transform = carla.Transform(
             carla.Location(x=spawn_transform.location.x, y=spawn_transform.location.y,
                            z=spawn_transform.location.z + 25.0),
@@ -355,7 +559,9 @@ def run(args: argparse.Namespace) -> None:
                 sensors = attach_default_sensors(
                     session, world, ego, carla, sensor_tick_s=args.fixed_delta_s,
                 )
-                perception_bridge = CarlaPerceptionBridge(world, world_map, ego, session, sensors)
+                perception_bridge = CarlaPerceptionBridge(
+                    world, world_map, ego, session, sensors, detector=detector,
+                )
                 _warm_up_sensor_bridge(
                     session, world, perception_bridge,
                     attempts=args.sensor_warmup_frames,
@@ -389,6 +595,7 @@ def run(args: argparse.Namespace) -> None:
                         disposition="ACCEPTED" if adapted.control_authorized else "REJECTED_NO_OP",
                         adapted_command=adapted.command,
                         received_ns=received_ns,
+                        submitted_sim_time_s=initial.timestamp.elapsed_seconds,
                     )
                     if adapted.feedback is not None:
                         recorder.record_feedback(adapted.feedback)
@@ -402,12 +609,11 @@ def run(args: argparse.Namespace) -> None:
                     turn_direction=turn_direction, distance_m=args.route_distance_m,
                 )
             else:
-                ego_transform = ego.get_transform()
                 route = RouteReference(
                     spec.world_route(
-                        ego_transform.location.x,
-                        ego_transform.location.y,
-                        ego_transform.rotation.yaw,
+                        route_anchor.location.x,
+                        route_anchor.location.y,
+                        route_anchor.rotation.yaw,
                     ),
                     0.0,
                     runtime.requested_speed_mps,
@@ -440,6 +646,7 @@ def run(args: argparse.Namespace) -> None:
                                              else "REJECTED_SCENARIO_NO_OP"),
                                 adapted_command=scenario_adapted.command,
                                 received_ns=received_ns,
+                                submitted_sim_time_s=state.sim_time_s,
                             )
                             if scenario_adapted.feedback is not None:
                                 recorder.record_feedback(scenario_adapted.feedback)
@@ -449,8 +656,27 @@ def run(args: argparse.Namespace) -> None:
                     ego_location.x - route.points_xy_m[-1][0],
                     ego_location.y - route.points_xy_m[-1][1],
                 )
+                final_route_end_distance_m = distance_to_route_end_m
+                finish_contract_route = (
+                    spec is not None
+                    and (
+                        spec.category == "lateral_B"
+                        or spec.expected.get("must_finish_route") is True
+                    )
+                    and distance_to_route_end_m <= _route_stop_trigger_m(
+                        state.speed_mps, spec.finish_radius_m,
+                    )
+                )
+                if finish_contract_route and runtime.requested_speed_mps > 0.0:
+                    runtime.requested_speed_mps = 0.0
+                    route = replace(route, target_speed_mps=0.0)
                 refresh_live_route = spec is None and step_index and step_index % args.route_refresh_frames == 0
-                extend_finished_scenario_route = spec is not None and distance_to_route_end_m <= 10.0
+                extend_finished_scenario_route = (
+                    spec is not None
+                    and spec.category != "lateral_B"
+                    and spec.expected.get("must_finish_route") is not True
+                    and distance_to_route_end_m <= 10.0
+                )
                 if ((refresh_live_route or extend_finished_scenario_route) and not runtime.safety_latched):
                     route = build_route_reference(
                         world_map, ego, runtime.requested_speed_mps,
@@ -477,9 +703,25 @@ def run(args: argparse.Namespace) -> None:
                             perception_sources = {"scenario": "VIRTUAL_ACCEPTANCE_TRUTH"}
                         else:
                             perception_sources = {"scenario": "CARLA_WORLD_TRUTH"}
+                    if spec is not None and perception_bridge is None:
+                        scene = replace(
+                            scene,
+                            route_deviation_m=route_deviation_m(state.x_m, state.y_m, route),
+                        )
+                        perception_sources["route_deviation_m"] = "ROUTE_REFERENCE_NEAREST_SEGMENT"
                     if spec is not None:
-                        scene = _apply_scenario_facts(scene, ego, origin, spec, elapsed_s)
-                        perception_sources["scenario_contract"] = "SCENARIO_CONFIG_TRUTH"
+                        configured_scene = _scenario_facts(
+                            ego,
+                            origin,
+                            spec,
+                            frame=frame,
+                            sim_time_s=state.sim_time_s,
+                            elapsed_s=elapsed_s,
+                        )
+                        scene, fact_sources = _select_scene_facts(
+                            scene, configured_scene, args.scenario_facts_mode,
+                        )
+                        perception_sources.update(fact_sources)
                     watchdog.heartbeat("perception", now_s=time.monotonic())
                 except PerceptionAcquisitionError as error:
                     scene = PerceptionFrame(frame, state.sim_time_s)
@@ -493,9 +735,14 @@ def run(args: argparse.Namespace) -> None:
 
                 command_id = runtime.active_command_id
                 decision_start_ns = time.monotonic_ns()
+                raw_control_override = None
+                if not raw_control_fault_injected:
+                    raw_control_override = _scenario_raw_control_fault(spec, elapsed_s)
+                    raw_control_fault_injected = raw_control_override is not None
                 result = runtime.step(
                     state, scene, route, dt_s=args.fixed_delta_s,
                     watchdog_alerts=tuple(watchdog_alerts),
+                    raw_control_override=raw_control_override,
                 )
                 if sensor_startup_grace:
                     result = replace(
@@ -504,6 +751,8 @@ def run(args: argparse.Namespace) -> None:
                         safety_reason="PERCEPTION_STARTUP_GRACE",
                         safety_override=True,
                     )
+                if result.safety_override:
+                    safety_reasons.add(result.safety_reason)
                 decision_end_ns = time.monotonic_ns()
                 ego.apply_control(carla.VehicleControl(
                     throttle=result.final_control.throttle,
@@ -561,14 +810,53 @@ def run(args: argparse.Namespace) -> None:
             )
             if feedback is not None and recorder is not None:
                 recorder.record_feedback(feedback)
-        completion = command_finished and _scenario_completed(
-            args, frames=frames_completed,
-            final_speed_mps=None if final_state is None else final_state.speed_mps,
-            final_scene=final_scene, min_gap_m=min_gap_m,
+        final_speed = None if final_state is None else final_state.speed_mps
+        expected_completion = None if spec is None else _expected_safety_completed(
+            spec,
+            frames=frames_completed,
+            final_speed_mps=final_speed,
             collision_seen=collision_seen,
+            safety_reasons=safety_reasons,
         )
+        completion = expected_completion if expected_completion is not None else (
+            command_finished and _scenario_completed(
+                args, frames=frames_completed,
+                final_speed_mps=final_speed,
+                final_scene=final_scene, min_gap_m=min_gap_m,
+                collision_seen=collision_seen,
+            )
+        )
+        route_contract_completion = _route_contract_completed(spec, final_route_end_distance_m)
+        if route_contract_completion is not None:
+            completion = completion and route_contract_completion
+        gap_contract_completion = _minimum_gap_contract_completed(spec, min_gap_m)
+        if gap_contract_completion is not None:
+            completion = completion and gap_contract_completion
         if recorder is not None:
-            recorder.complete(completion=completion, detail="scenario acceptance criteria evaluated")
+            summary = recorder.complete(
+                completion=completion,
+                detail="scenario acceptance criteria evaluated",
+                expected=None if spec is None else spec.expected,
+                acceptance_context={} if spec is None else {
+                    "route_finished": (
+                        final_route_end_distance_m is not None
+                        and final_route_end_distance_m <= spec.finish_radius_m
+                    ),
+                    "route_end_distance_m": final_route_end_distance_m,
+                    "expected_command_count": len(spec.commands),
+                    "configured_route_deviation_trigger_m": route_deviation_trigger_m,
+                },
+            )
+            acceptance = summary.get("acceptance")
+            print(json.dumps({
+                "record_type": "scenario_acceptance",
+                "scenario": args.scenario,
+                "status": summary["status"],
+                "score": summary["score"]["final_score"],
+                "checks": None if acceptance is None else acceptance["check_count"],
+                "failed_keys": [] if acceptance is None else acceptance["failed_keys"],
+                "unsupported_keys": [] if acceptance is None else acceptance["unsupported_keys"],
+            }, ensure_ascii=False))
     except BaseException as error:
         if ego is not None and getattr(ego, "is_alive", True):
             try:
@@ -625,6 +913,14 @@ def main() -> None:
                         help="maximum ticks used to obtain the first aligned RGB/LiDAR frame")
     parser.add_argument("--sensor-startup-grace-frames", type=int, default=2,
                         help="initial perception misses that brake without permanently latching watchdog")
+    parser.add_argument("--rgb-detector-model",
+                        help="optional Ultralytics-style ONNX model for RGB vehicle/person detection")
+    parser.add_argument("--rgb-detector-confidence", type=float, default=0.35,
+                        help="minimum RGB detector confidence")
+    parser.add_argument("--rgb-detector-iou", type=float, default=0.45,
+                        help="class-aware NMS IoU threshold")
+    parser.add_argument("--rgb-detector-input-size", type=int, default=640,
+                        help="fallback square input size for dynamic ONNX models")
     parser.add_argument("--watchdog-timeout-s", type=float, default=1.0)
     parser.add_argument("--watchdog-startup-grace-s", type=float, default=0.5)
     parser.add_argument("--route-distance-m", type=float, default=500.0)
@@ -649,6 +945,9 @@ def main() -> None:
                         help="load and validate --scenario-file without connecting to CARLA")
     parser.add_argument("--use-current-map", action="store_true",
                         help="debug only: run a scenario contract on the current CARLA map without load_world")
+    parser.add_argument("--scenario-facts-mode", choices=("perception", "scenario", "fuse"), default="fuse",
+                        help="perception: measured facts only; scenario: configured actors override; "
+                             "fuse: perception first, configured actors fill missing fields")
     args = parser.parse_args()
     if args.print_every < 1:
         parser.error("--print-every must be >= 1")
@@ -667,6 +966,12 @@ def main() -> None:
         parser.error("--watchdog-startup-grace-s must be non-negative")
     if args.test_command_ttl_s is not None and args.test_command_ttl_s <= 0.0:
         parser.error("--test-command-ttl-s must be positive")
+    if not 0.0 < args.rgb_detector_confidence <= 1.0:
+        parser.error("--rgb-detector-confidence must be in (0, 1]")
+    if not 0.0 < args.rgb_detector_iou <= 1.0:
+        parser.error("--rgb-detector-iou must be in (0, 1]")
+    if args.rgb_detector_input_size < 32:
+        parser.error("--rgb-detector-input-size must be >= 32")
     run(args)
 
 

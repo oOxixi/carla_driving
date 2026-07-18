@@ -1,0 +1,116 @@
+{
+  "acceptance": {
+    "check_count": 4,
+    "checks": [
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_pedestrian_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": 9,
+        "detail": "a safety takeover must be observed",
+        "key": "expected_safety_override",
+        "required": "> 0 frames",
+        "status": "PASS"
+      },
+      {
+        "actual": [
+          "CAUTION_TTC",
+          "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE",
+          "PERCEPTION_STARTUP_GRACE"
+        ],
+        "detail": "at least one expected token must appear",
+        "key": "expected_reason_contains",
+        "required": [
+          "pedestrian",
+          "ttc",
+          "front"
+        ],
+        "status": "PASS"
+      },
+      {
+        "actual": 3,
+        "detail": "safety/event evidence must exist",
+        "key": "must_generate_event",
+        "required": "> 0 events",
+        "status": "PASS"
+      }
+    ],
+    "failed_keys": [],
+    "passed": true,
+    "unsupported_keys": []
+  },
+  "collision_count": 0,
+  "command_count": 1,
+  "command_terminal_statuses": {
+    "scenario_cmd_000": "SUCCEEDED"
+  },
+  "completion": true,
+  "completion_basis": "explicit_expected_contracts",
+  "detail": "scenario acceptance criteria evaluated",
+  "difficulty": "advanced",
+  "final_speed_mps": 5.476283985387537,
+  "frames": 700,
+  "latency": {
+    "decision_avg_ms": 0.19857142857142857,
+    "decision_max_ms": 16.0,
+    "sensor_to_control_avg_ms": 0.24142857142857144,
+    "sensor_to_control_max_ms": 16.0
+  },
+  "min_gap_m": 4.991720251684168,
+  "min_ttc_s": 1.5174670213621964,
+  "red_light_violation_count": 0,
+  "route_deviation_count": 0,
+  "run_id": "821a5cc5ebd34271889f4f014f38e7e3",
+  "safety_override_episodes": 3,
+  "safety_override_frames": 9,
+  "scenario_id": "D02_pedestrian_crossing",
+  "score": {
+    "base_score": 25.0,
+    "deduction": 0.0,
+    "difficulty": "advanced",
+    "final_score": 25.0,
+    "scenario_id": "D02_pedestrian_crossing",
+    "serious_route_deviation": 0,
+    "serious_safety_events": 0,
+    "unfinished_tasks": 0
+  },
+  "score_report": {
+    "latency": {
+      "asr_avg_ms": null,
+      "e2e_avg_ms": 1000.0,
+      "e2e_count": 1,
+      "e2e_max_ms": 1000.0,
+      "e2e_under_150ms_rate": 0.0,
+      "intent_avg_ms": null
+    },
+    "scenario_scores": [
+      {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "advanced",
+        "final_score": 25.0,
+        "scenario_id": "D02_pedestrian_crossing",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      }
+    ],
+    "weighted_completion": {
+      "completion_rates": {
+        "advanced": 1.0,
+        "basic": 0.0,
+        "challenge": 0.0
+      },
+      "task_completion_score_25": 10.0,
+      "weighted_completion_rate": 0.4
+    }
+  },
+  "serious_route_deviation": 0,
+  "status": "SUCCEEDED",
+  "stop_error_m": null,
+  "unfinished_task_count": 0
+}

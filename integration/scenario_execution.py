@@ -10,11 +10,19 @@ from dataclasses import dataclass
 import json
 import math
 from pathlib import Path
-from typing import Iterable, Mapping
+from typing import Callable, Iterable, Mapping, Sequence
 
 
 SUPPORTED_LEVELS = frozenset({"basic", "advanced", "challenge"})
 DEFAULT_RELATIVE_SPEED_STEP_MPS = 5.0 / 3.6
+ROUTE_FOLLOWING_INTENTS = frozenset({
+    "KEEP_LANE",
+    "FOLLOW_ROUTE",
+    "TURN_LEFT",
+    "TURN_RIGHT",
+    "CHANGE_LANE_LEFT",
+    "CHANGE_LANE_RIGHT",
+})
 
 
 def _finite_number(value: object, name: str, *, minimum: float | None = None) -> float:
@@ -51,7 +59,9 @@ class ScenarioSpec:
     seed: int
     fixed_delta_s: float
     duration_s: float
+    ego_spawn_xyzyaw: tuple[float, float, float, float]
     local_route_xy_m: tuple[tuple[float, float], ...]
+    route_resample_interval_m: float
     finish_radius_m: float
     commands: tuple[ScheduledCommand, ...]
     actors: tuple[dict[str, object], ...]
@@ -76,8 +86,9 @@ class ScenarioSpec:
 
         runtime = data.get("runtime")
         route = data.get("route")
-        if type(runtime) is not dict or type(route) is not dict:
-            raise TypeError("runtime and route must be objects")
+        ego_spawn = data.get("ego_spawn")
+        if type(runtime) is not dict or type(route) is not dict or type(ego_spawn) is not dict:
+            raise TypeError("runtime, ego_spawn and route must be objects")
         if route.get("coordinate_type") != "scenario_local_xy_m":
             raise ValueError("only scenario_local_xy_m routes are currently supported")
         points = route.get("points_xy_m")
@@ -117,7 +128,18 @@ class ScenarioSpec:
             seed=seed,
             fixed_delta_s=_finite_number(runtime.get("fixed_delta_seconds"), "fixed_delta_seconds", minimum=0.001),
             duration_s=_finite_number(runtime.get("duration_s"), "duration_s", minimum=0.001),
+            ego_spawn_xyzyaw=(
+                _finite_number(ego_spawn.get("x", 0.0), "ego_spawn.x"),
+                _finite_number(ego_spawn.get("y", 0.0), "ego_spawn.y"),
+                _finite_number(ego_spawn.get("z", 0.5), "ego_spawn.z"),
+                _finite_number(ego_spawn.get("yaw_deg", 0.0), "ego_spawn.yaw_deg"),
+            ),
             local_route_xy_m=tuple(parsed_points),
+            route_resample_interval_m=_finite_number(
+                route.get("resample_interval_m", 1.0),
+                "route.resample_interval_m",
+                minimum=0.1,
+            ),
             finish_radius_m=_finite_number(route.get("finish_radius_m", 3.0), "finish_radius_m", minimum=0.0),
             commands=commands,
             actors=tuple(dict(item) for item in actors),
@@ -130,18 +152,41 @@ class ScenarioSpec:
         return max(1, math.ceil(self.duration_s / self.fixed_delta_s))
 
     def world_route(self, origin_x_m: float, origin_y_m: float, yaw_deg: float) -> tuple[tuple[float, float], ...]:
-        """Rotate the local scenario template and anchor it at the ego spawn."""
+        """Rotate, anchor and contract-resample the local scenario route."""
         origin_x = _finite_number(origin_x_m, "origin_x_m")
         origin_y = _finite_number(origin_y_m, "origin_y_m")
         yaw = math.radians(_finite_number(yaw_deg, "yaw_deg"))
         cos_yaw, sin_yaw = math.cos(yaw), math.sin(yaw)
-        return tuple(
+        transformed = tuple(
             (
                 origin_x + local_x * cos_yaw - local_y * sin_yaw,
                 origin_y + local_x * sin_yaw + local_y * cos_yaw,
             )
             for local_x, local_y in self.local_route_xy_m
         )
+        return _resample_polyline(transformed, self.route_resample_interval_m)
+
+
+def _resample_polyline(
+    points: Sequence[tuple[float, float]], spacing_m: float,
+) -> tuple[tuple[float, float], ...]:
+    """Return approximately uniform arc-length samples, preserving both ends."""
+    if len(points) < 2:
+        raise ValueError("route needs at least two points")
+    spacing = _finite_number(spacing_m, "spacing_m", minimum=0.1)
+    samples: list[tuple[float, float]] = [tuple(map(float, points[0]))]
+    for (ax, ay), (bx, by) in zip(points, points[1:]):
+        length = math.hypot(bx - ax, by - ay)
+        if length <= 1e-9:
+            continue
+        count = max(1, math.ceil(length / spacing))
+        samples.extend(
+            (ax + (bx - ax) * index / count, ay + (by - ay) * index / count)
+            for index in range(1, count + 1)
+        )
+    if len(samples) < 2:
+        raise ValueError("route length must be positive")
+    return tuple(samples)
 
 
 class CommandTimeline:
@@ -161,6 +206,43 @@ class CommandTimeline:
             due.append(dict(command.envelope))
             self._next_index += 1
         return tuple(due)
+
+
+def select_best_route_anchor(
+    anchors_xyzyaw: Sequence[tuple[float, float, float, float]],
+    local_route_xy_m: Sequence[tuple[float, float]],
+    distance_to_drivable_m: Callable[[float, float, float], float],
+    *,
+    sample_interval_m: float = 1.0,
+) -> tuple[int, float]:
+    """Choose the CARLA spawn whose real road best supports a local B route."""
+    if not anchors_xyzyaw:
+        raise ValueError("at least one route anchor is required")
+    if len(local_route_xy_m) < 2:
+        raise ValueError("local route needs at least two points")
+    interval = _finite_number(sample_interval_m, "sample_interval_m", minimum=0.1)
+    samples: list[tuple[float, float]] = [tuple(map(float, local_route_xy_m[0]))]
+    for (ax, ay), (bx, by) in zip(local_route_xy_m, local_route_xy_m[1:]):
+        length = math.hypot(bx - ax, by - ay)
+        count = max(1, math.ceil(length / interval))
+        samples.extend((ax + (bx - ax) * i / count, ay + (by - ay) * i / count) for i in range(1, count + 1))
+
+    best_index, best_score = 0, math.inf
+    for index, (origin_x, origin_y, origin_z, yaw_deg) in enumerate(anchors_xyzyaw):
+        yaw = math.radians(yaw_deg)
+        cos_yaw, sin_yaw = math.cos(yaw), math.sin(yaw)
+        distances = [
+            float(distance_to_drivable_m(
+                origin_x + local_x * cos_yaw - local_y * sin_yaw,
+                origin_y + local_x * sin_yaw + local_y * cos_yaw,
+                origin_z,
+            ))
+            for local_x, local_y in samples
+        ]
+        score = max(distances) + sum(distances) / len(distances)
+        if score < best_score:
+            best_index, best_score = index, score
+    return best_index, best_score
 
 
 def resolve_scenario_command(
@@ -187,8 +269,22 @@ def resolve_scenario_command(
         target_speed_mps = max(0.0, current_speed - step)
     elif intent == "SPEED_UP":
         target_speed_mps = current_speed + step
-    elif intent == "KEEP_LANE" and "target_speed_mps" in parameters:
-        target_speed_mps = _finite_number(parameters["target_speed_mps"], "target_speed_mps", minimum=0.0)
+    elif intent in ROUTE_FOLLOWING_INTENTS:
+        if "target_speed_mps" in parameters:
+            target_speed_mps = _finite_number(
+                parameters["target_speed_mps"], "target_speed_mps", minimum=0.0,
+            )
+        elif "speed" in parameters:
+            speed = _finite_number(parameters["speed"], "speed", minimum=0.0)
+            unit = str(parameters.get("unit", "km/h")).strip().lower().replace(" ", "")
+            if unit in {"km/h", "kph", "kmh"}:
+                target_speed_mps = speed / 3.6
+            elif unit in {"m/s", "mps"}:
+                target_speed_mps = speed
+            else:
+                raise ValueError(f"unsupported scenario speed unit: {unit!r}")
+        else:
+            target_speed_mps = current_speed
 
     if target_speed_mps is not None:
         resolved["scenario_original_intent"] = intent
@@ -240,5 +336,6 @@ __all__ = [
     "DEFAULT_RELATIVE_SPEED_STEP_MPS",
     "ScenarioSpec",
     "ScheduledCommand",
+    "select_best_route_anchor",
     "resolve_scenario_command",
 ]

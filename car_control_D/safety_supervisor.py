@@ -21,6 +21,9 @@ class SafetyConfig:
     stop_line_guard_m: float = 8.0
     max_lane_offset_m: float = 1.8
     severe_route_deviation_m: float = 3.0
+    route_recovery_max_speed_mps: float = 1.5
+    route_recovery_throttle: float = 0.15
+    route_recovery_steer_limit: float = 0.35
     low_confidence_threshold: float = 0.80
     hold_brake: float = 0.55
     emergency_brake: float = 1.0
@@ -77,7 +80,34 @@ class SafetySupervisor:
                 raw_control=raw,
             )
 
+        def recover_route() -> SafetyDecision:
+            steer = max(min(raw.steer, cfg.route_recovery_steer_limit), -cfg.route_recovery_steer_limit)
+            if vs.speed_mps >= cfg.route_recovery_max_speed_mps:
+                control = ControlOutput(
+                    throttle=0.0,
+                    brake=max(raw.brake, cfg.caution_brake),
+                    steer=steer,
+                )
+            elif raw.brake > 0.0:
+                control = ControlOutput(throttle=0.0, brake=raw.brake, steer=steer)
+            else:
+                control = ControlOutput(
+                    throttle=min(raw.throttle, cfg.route_recovery_throttle),
+                    brake=0.0,
+                    steer=steer,
+                )
+            return SafetyDecision(
+                final_control=control,
+                safety_override=True,
+                reason="ROUTE_DEVIATION_RECOVERY",
+                risk_metrics=metrics,
+                raw_control=raw,
+            )
+
         if not control_result.valid:
+            detail = "_".join(control_result.errors).upper().replace(" ", "_")
+            if "THROTTLE_AND_BRAKE_CONFLICT" in detail:
+                return stop("INVALID_CONTROL_OUTPUT_THROTTLE_BRAKE_CONFLICT")
             return stop("INVALID_CONTROL_OUTPUT")
         if watchdog_alerts:
             return stop("WATCHDOG_ALERT")
@@ -93,13 +123,23 @@ class SafetySupervisor:
         if rv.ttc_s is not None and rv.ttc_s <= cfg.low_ttc_s:
             return stop("LOW_TTC")
         if vs.front_distance_m is not None and vs.front_distance_m <= cfg.min_front_distance_m:
-            return stop("FRONT_OBSTACLE_TOO_CLOSE")
+            return stop("EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE")
         if vs.distance_to_stop_line_m is not None and vs.distance_to_stop_line_m <= cfg.stop_line_guard_m:
             if vs.traffic_light in {"RED", "YELLOW", "UNKNOWN"} and raw.throttle > 0.05:
-                return stop("STOP_LINE_OR_LIGHT_GUARD")
+                return stop("RED_LIGHT_STOP_LINE_GUARD")
         if vs.route_deviation_m is not None and abs(vs.route_deviation_m) >= cfg.severe_route_deviation_m:
-            return stop("SEVERE_ROUTE_DEVIATION")
-        if vs.lane_offset_m is not None and abs(vs.lane_offset_m) >= cfg.max_lane_offset_m:
+            return recover_route()
+        # CARLA's nearest-lane waypoint can jump to a neighbouring branch in a
+        # junction.  When an explicit route reference independently confirms
+        # that ego remains inside the allowed corridor, it is the stronger
+        # signal.  A missing or excessive route deviation still fails closed.
+        route_confirms_lane_safe = (
+            vs.route_deviation_m is not None
+            and abs(vs.route_deviation_m) < cfg.max_lane_offset_m
+        )
+        if (vs.lane_offset_m is not None
+                and abs(vs.lane_offset_m) >= cfg.max_lane_offset_m
+                and not route_confirms_lane_safe):
             return caution("LANE_OFFSET_TOO_LARGE")
         if rv.ttc_s is not None and rv.ttc_s <= cfg.caution_ttc_s:
             return caution("CAUTION_TTC")

@@ -14,6 +14,10 @@ external/scenario_runner/
 CARLA_0.9.16/
 AdditionalMaps_0.9.16/
 artifacts/logs/
+artifacts/models/*.onnx
+artifacts/.runtime/
+artifacts/.pytest*/
+.pytest_cache/
 *.zip
 *.mp3
 *.wav

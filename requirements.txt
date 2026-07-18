@@ -1,3 +1,5 @@
 carla==0.9.16
 numpy
+onnxruntime>=1.20
+Pillow>=10
 pygame

@@ -1,5 +1,7 @@
 # UTF-8 Linux-specific requirements. The root requirements.txt is for local Windows.
 carla==0.9.16
 numpy>=1.26
+onnxruntime>=1.20
+Pillow>=10
 pygame>=2.5
 pytest>=8.0

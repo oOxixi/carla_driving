@@ -42,6 +42,19 @@ def test_runtime_preserves_d_emergency_stop_authority():
     assert result.final_control.brake == 1.0
 
 
+def test_runtime_fault_override_is_checked_by_d_before_apply_control():
+    runtime = ControlRuntime(PurePursuitController())
+    result = runtime.step(
+        _vehicle(), PerceptionFrame(frame=1, sim_time_s=0.05), _route(), dt_s=0.05,
+        raw_control_override={"throttle": 0.5, "brake": 0.5, "steer": 0.0},
+    )
+    assert result.safety_override is True
+    assert result.safety_reason == "INVALID_CONTROL_OUTPUT_THROTTLE_BRAKE_CONFLICT"
+    assert result.final_control.throttle == 0.0
+    assert result.final_control.brake == 1.0
+    assert result.raw_control == {"throttle": 0.5, "brake": 0.5, "steer": 0.0}
+
+
 def test_runtime_fails_closed_on_misaligned_perception():
     runtime = ControlRuntime(PurePursuitController())
     runtime.submit_voice(_voice(), now_s=0.05)

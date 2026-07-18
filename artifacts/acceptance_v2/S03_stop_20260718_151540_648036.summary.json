@@ -1,0 +1,116 @@
+{
+  "acceptance": {
+    "check_count": 5,
+    "checks": [
+      {
+        "actual": true,
+        "detail": "requires logs_generated",
+        "key": "must_generate_logs",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": 1.3500000201165676,
+        "detail": "stop_latency_s must be <= expected maximum",
+        "key": "stop_within_s",
+        "required": 8.0,
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": 3.5964090901604936e-09,
+        "detail": "vehicle must stop after the applicable command",
+        "key": "must_stop_after_command",
+        "required": "<= 0.3 m/s",
+        "status": "PASS"
+      },
+      {
+        "actual": 3.5964090901604936e-09,
+        "detail": "final_speed_mps must be <= expected maximum",
+        "key": "stop_speed_threshold_mps",
+        "required": 0.3,
+        "status": "PASS"
+      }
+    ],
+    "failed_keys": [],
+    "passed": true,
+    "unsupported_keys": []
+  },
+  "collision_count": 0,
+  "command_count": 2,
+  "command_terminal_statuses": {
+    "scenario_cmd_000": "SUCCEEDED",
+    "scenario_cmd_001": "SUCCEEDED"
+  },
+  "completion": true,
+  "completion_basis": "explicit_expected_contracts",
+  "detail": "scenario acceptance criteria evaluated",
+  "difficulty": "basic",
+  "final_speed_mps": 3.5964090901604936e-09,
+  "frames": 500,
+  "latency": {
+    "decision_avg_ms": 0.062,
+    "decision_max_ms": 16.0,
+    "sensor_to_control_avg_ms": 0.062,
+    "sensor_to_control_max_ms": 16.0
+  },
+  "min_gap_m": null,
+  "min_ttc_s": null,
+  "red_light_violation_count": 0,
+  "route_deviation_count": 0,
+  "run_id": "6907b296015f42cd8eafbc08cf801fa3",
+  "safety_override_episodes": 0,
+  "safety_override_frames": 0,
+  "scenario_id": "S03_stop",
+  "score": {
+    "base_score": 25.0,
+    "deduction": 0.0,
+    "difficulty": "basic",
+    "final_score": 25.0,
+    "scenario_id": "S03_stop",
+    "serious_route_deviation": 0,
+    "serious_safety_events": 0,
+    "unfinished_tasks": 0
+  },
+  "score_report": {
+    "latency": {
+      "asr_avg_ms": null,
+      "e2e_avg_ms": 0.0,
+      "e2e_count": 2,
+      "e2e_max_ms": 0.0,
+      "e2e_under_150ms_rate": 1.0,
+      "intent_avg_ms": null
+    },
+    "scenario_scores": [
+      {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "basic",
+        "final_score": 25.0,
+        "scenario_id": "S03_stop",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      }
+    ],
+    "weighted_completion": {
+      "completion_rates": {
+        "advanced": 0.0,
+        "basic": 1.0,
+        "challenge": 0.0
+      },
+      "task_completion_score_25": 7.5,
+      "weighted_completion_rate": 0.3
+    }
+  },
+  "serious_route_deviation": 0,
+  "status": "SUCCEEDED",
+  "stop_error_m": null,
+  "unfinished_task_count": 0
+}

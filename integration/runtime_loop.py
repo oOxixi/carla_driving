@@ -146,7 +146,7 @@ class ControlRuntime:
         return feedback
 
     def step(self, vehicle: RuntimeVehicleState, scene: PerceptionFrame, route: RouteReference, *, dt_s: float,
-             watchdog_alerts: tuple[str, ...] = ()) -> FrameResult:
+             watchdog_alerts: tuple[str, ...] = (), raw_control_override: object | None = None) -> FrameResult:
         """Compose lateral, longitudinal and final safety arbitration for one aligned frame."""
         feedback = list(self._pending_feedback)
         self._pending_feedback.clear()
@@ -206,6 +206,7 @@ class ControlRuntime:
                     reason="command_stop_hold",
                 )
             raw = ControlOutput(longitudinal.control.throttle, longitudinal.control.brake, lateral.steer)
+            raw_for_safety = raw if raw_control_override is None else raw_control_override
             safety_command = self._active_voice
             if self._active_command is not None and (
                 self._active_command.action == "STOP" or self._active_command.requires_confirmation
@@ -213,14 +214,14 @@ class ControlRuntime:
                 # C owns comfortable STOP/confirmation deceleration. D still
                 # receives vehicle/risk/watchdog facts and remains final arbiter.
                 safety_command = None
-            safety = self.safety.arbitrate(raw, safety_vehicle_state(vehicle, scene), safety_command,
+            safety = self.safety.arbitrate(raw_for_safety, safety_vehicle_state(vehicle, scene), safety_command,
                                            longitudinal.risk, tuple(expired_alerts))
             final = ControlOutput(safety.final_control.throttle, safety.final_control.brake, safety.final_control.steer)
             completed = self._completion_feedback(vehicle)
             if completed is not None:
                 feedback.append(completed)
             return FrameResult(vehicle, final, longitudinal, safety.reason, safety.safety_override,
-                               tuple(feedback), raw, lateral)
+                               tuple(feedback), raw_for_safety, lateral)
         except Exception:
             if "INTEGRATION_FAILURE" not in self._latched_alerts:
                 self._latched_alerts.append("INTEGRATION_FAILURE")

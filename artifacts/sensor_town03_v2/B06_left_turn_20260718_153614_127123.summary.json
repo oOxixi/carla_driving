@@ -1,0 +1,119 @@
+{
+  "acceptance": {
+    "check_count": 5,
+    "checks": [
+      {
+        "actual": false,
+        "detail": "requires route_finished",
+        "key": "must_finish_route",
+        "required": true,
+        "status": "FAIL"
+      },
+      {
+        "actual": 1.5821877979637993,
+        "detail": "max_abs_cross_track_error_m must be <= expected maximum",
+        "key": "max_cross_track_error_m",
+        "required": 1.5,
+        "status": "FAIL"
+      },
+      {
+        "actual": 0.34233637360137026,
+        "detail": "max_abs_steer must be <= expected maximum",
+        "key": "max_abs_steer",
+        "required": 0.9,
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": "STRAIGHT",
+        "detail": "net ego yaw change determines turn direction",
+        "key": "turn_direction",
+        "required": "LEFT",
+        "status": "FAIL"
+      }
+    ],
+    "failed_keys": [
+      "must_finish_route",
+      "max_cross_track_error_m",
+      "turn_direction"
+    ],
+    "passed": false,
+    "unsupported_keys": []
+  },
+  "collision_count": 0,
+  "command_count": 1,
+  "command_terminal_statuses": {
+    "scenario_cmd_000": "SUCCEEDED"
+  },
+  "completion": false,
+  "completion_basis": "explicit_expected_contracts",
+  "detail": "scenario acceptance criteria evaluated",
+  "difficulty": "advanced",
+  "final_speed_mps": 6.210517508432769e-06,
+  "frames": 800,
+  "latency": {
+    "decision_avg_ms": 0.255,
+    "decision_max_ms": 16.0,
+    "sensor_to_control_avg_ms": 0.275,
+    "sensor_to_control_max_ms": 16.0
+  },
+  "min_gap_m": 30.95119857788086,
+  "min_ttc_s": 10.984616589768619,
+  "red_light_violation_count": 0,
+  "route_deviation_count": 0,
+  "run_id": "c5a9aaf9b9b74812908c6c2a33f5a95b",
+  "safety_override_episodes": 3,
+  "safety_override_frames": 584,
+  "scenario_id": "B06_left_turn",
+  "score": {
+    "base_score": 25.0,
+    "deduction": 5.0,
+    "difficulty": "advanced",
+    "final_score": 20.0,
+    "scenario_id": "B06_left_turn",
+    "serious_route_deviation": 0,
+    "serious_safety_events": 0,
+    "unfinished_tasks": 1
+  },
+  "score_report": {
+    "latency": {
+      "asr_avg_ms": null,
+      "e2e_avg_ms": 1000.0,
+      "e2e_count": 1,
+      "e2e_max_ms": 1000.0,
+      "e2e_under_150ms_rate": 0.0,
+      "intent_avg_ms": null
+    },
+    "scenario_scores": [
+      {
+        "base_score": 25.0,
+        "deduction": 5.0,
+        "difficulty": "advanced",
+        "final_score": 20.0,
+        "scenario_id": "B06_left_turn",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 1
+      }
+    ],
+    "weighted_completion": {
+      "completion_rates": {
+        "advanced": 0.0,
+        "basic": 0.0,
+        "challenge": 0.0
+      },
+      "task_completion_score_25": 0.0,
+      "weighted_completion_rate": 0.0
+    }
+  },
+  "serious_route_deviation": 0,
+  "status": "FAILED",
+  "stop_error_m": 0.9740128123816483,
+  "unfinished_task_count": 1
+}

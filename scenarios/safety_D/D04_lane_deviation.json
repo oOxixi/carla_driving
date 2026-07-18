@@ -19,7 +19,7 @@
   },
   "ego_spawn": {
     "x": 0.0,
-    "y": 3.0,
+    "y": 2.4,
     "z": 0.5,
     "yaw_deg": 0.0
   },
@@ -159,6 +159,7 @@
   },
   "expected": {
     "expected_route_deviation_event": true,
+    "route_deviation_trigger_m": 2.0,
     "max_allowed_cross_track_error_m": 2.5,
     "expected_safety_override_allowed": true,
     "must_generate_event": true

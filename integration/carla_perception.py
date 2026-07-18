@@ -12,7 +12,7 @@ Every derived field carries an explicit source label in ``PerceptionSample``.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import math
 import threading
 from types import MappingProxyType
@@ -24,6 +24,7 @@ from car_control_A import CarlaSession
 from car_control_A.routing import RouteReference
 
 from .contracts import PerceptionFrame
+from .rgb_detector import driving_corridor_detections
 
 
 RGB_SENSOR_ID = "rgb_front"
@@ -45,6 +46,10 @@ class PerceptionTimeoutError(PerceptionAcquisitionError, TimeoutError):
 
 class FrameAlignmentError(PerceptionAcquisitionError):
     """A callback payload was labelled with a different CARLA frame."""
+
+
+class ObjectDetectionError(PerceptionAcquisitionError):
+    """Configured RGB inference failed, so normal control is unsafe."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -373,6 +378,24 @@ def _traffic_light_and_stop_distance(ego: Any) -> tuple[str, float | None, str]:
     return state, None, "CARLA_EGO_TRAFFIC_LIGHT_STATE"
 
 
+def route_deviation_m(x_m: float, y_m: float, route: RouteReference) -> float:
+    """Return planar distance from a point to the nearest route segment."""
+    points = route.points_xy_m
+    if len(points) == 1:
+        return math.hypot(x_m - points[0][0], y_m - points[0][1])
+    segment_distances: list[float] = []
+    for (ax, ay), (bx, by) in zip(points, points[1:]):
+        dx, dy = bx - ax, by - ay
+        length_squared = dx * dx + dy * dy
+        if length_squared <= 1e-12:
+            segment_distances.append(math.hypot(x_m - ax, y_m - ay))
+            continue
+        projection = max(0.0, min(1.0, ((x_m - ax) * dx + (y_m - ay) * dy) / length_squared))
+        nearest_x, nearest_y = ax + projection * dx, ay + projection * dy
+        segment_distances.append(math.hypot(x_m - nearest_x, y_m - nearest_y))
+    return min(segment_distances)
+
+
 def _lane_metrics(world_map: Any, ego: Any, route: RouteReference | None) -> tuple[float | None, float | None]:
     location = ego.get_location()
     waypoint = world_map.get_waypoint(location, project_to_road=True)
@@ -387,21 +410,7 @@ def _lane_metrics(world_map: Any, ego: Any, route: RouteReference | None) -> tup
     route_deviation: float | None = None
     if route is not None:
         ex, ey, _ = _xyz(location)
-        points = route.points_xy_m
-        if len(points) == 1:
-            route_deviation = math.hypot(ex - points[0][0], ey - points[0][1])
-        else:
-            segment_distances: list[float] = []
-            for (ax, ay), (bx, by) in zip(points, points[1:]):
-                dx, dy = bx - ax, by - ay
-                length_squared = dx * dx + dy * dy
-                if length_squared <= 1e-12:
-                    segment_distances.append(math.hypot(ex - ax, ey - ay))
-                    continue
-                projection = max(0.0, min(1.0, ((ex - ax) * dx + (ey - ay) * dy) / length_squared))
-                nearest_x, nearest_y = ax + projection * dx, ay + projection * dy
-                segment_distances.append(math.hypot(ex - nearest_x, ey - nearest_y))
-            route_deviation = min(segment_distances)
+        route_deviation = route_deviation_m(ex, ey, route)
     elif lane_offset is not None:
         route_deviation = abs(lane_offset)
     return lane_offset, route_deviation
@@ -412,13 +421,14 @@ class CarlaPerceptionBridge:
 
     def __init__(
         self, world: Any, world_map: Any, ego: Any, session: CarlaSession,
-        sensors: AttachedCarlaSensors,
+        sensors: AttachedCarlaSensors, detector: Any | None = None,
     ) -> None:
         self._world = world
         self._map = world_map
         self._ego = ego
         self._session = session
         self._sensors = sensors
+        self._detector = detector
 
     def acquire(
         self, frame: int, sim_time_s: float, *, route: RouteReference | None = None,
@@ -444,19 +454,44 @@ class CarlaPerceptionBridge:
                 )
 
         sources: dict[str, str] = {}
+        detected_objects = ()
+        if self._detector is not None:
+            try:
+                detected_objects = tuple(self._detector.detect_measurement(rgb))
+            except Exception as error:
+                raise ObjectDetectionError(
+                    f"RGB ONNX detection failed for frame {frame}: {error}"
+                ) from error
+            sources["detected_objects"] = "RGB_ONNX_OBJECT_DETECTOR"
         lead_distance = front_lidar_distance_m(lidar)
         lead_speed: float | None = None
         if lead_distance is not None:
-            lead_speed = _associated_lead_speed(self._world, self._ego, lead_distance)
-            sources["lead_distance_m"] = "LIDAR_FRONT_CORRIDOR"
-            if lead_speed is None:
+            corridor_objects = driving_corridor_detections(detected_objects)
+            if self._detector is not None and corridor_objects:
+                selected = max(corridor_objects, key=lambda item: item.confidence)
+                detected_objects = tuple(
+                    replace(item, distance_m=lead_distance) if item is selected else item
+                    for item in detected_objects
+                )
+                lead_speed = 0.0
+                sources["lead_distance_m"] = "RGB_ONNX_LIDAR_FRONT_CORRIDOR"
+                sources["lead_speed_mps"] = "RGB_LIDAR_STATIC_OBSTACLE_ASSUMPTION"
+            elif self._detector is not None:
+                # A LiDAR obstacle must not disappear because RGB missed it.
                 # A detected but unclassified obstacle is conservatively
                 # treated as stationary.  It must not disappear from C/D just
                 # because actor association failed.
                 lead_speed = 0.0
+                sources["lead_distance_m"] = "LIDAR_UNCLASSIFIED_FRONT_CORRIDOR"
                 sources["lead_speed_mps"] = "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
             else:
-                sources["lead_speed_mps"] = "CARLA_TRUTH_LIDAR_ASSOCIATED_ACTOR"
+                lead_speed = _associated_lead_speed(self._world, self._ego, lead_distance)
+                sources["lead_distance_m"] = "LIDAR_FRONT_CORRIDOR"
+                if lead_speed is None:
+                    lead_speed = 0.0
+                    sources["lead_speed_mps"] = "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
+                else:
+                    sources["lead_speed_mps"] = "CARLA_TRUTH_LIDAR_ASSOCIATED_ACTOR"
 
         traffic_light, stop_distance, traffic_source = _traffic_light_and_stop_distance(self._ego)
         sources["traffic_light"] = traffic_source
@@ -497,5 +532,6 @@ class CarlaPerceptionBridge:
             collision=collision,
             red_light_violation=red_light_violation,
             lane_invasion=lane_invasion,
+            detected_objects=detected_objects,
         )
         return PerceptionSample(perception, MappingProxyType(sources), rgb, lidar)

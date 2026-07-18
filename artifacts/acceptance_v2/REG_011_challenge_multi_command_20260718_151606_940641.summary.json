@@ -1,0 +1,105 @@
+{
+  "acceptance": {
+    "check_count": 3,
+    "checks": [
+      {
+        "actual": false,
+        "detail": "requires commands_in_order",
+        "key": "must_execute_commands_in_order",
+        "required": true,
+        "status": "FAIL"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": 1.3420156109250694e-10,
+        "detail": "vehicle must stop after the applicable command",
+        "key": "must_stop_after_last_command",
+        "required": "<= 0.3 m/s",
+        "status": "PASS"
+      }
+    ],
+    "failed_keys": [
+      "must_execute_commands_in_order"
+    ],
+    "passed": false,
+    "unsupported_keys": []
+  },
+  "collision_count": 0,
+  "command_count": 3,
+  "command_terminal_statuses": {
+    "scenario_cmd_000": "FAILED",
+    "scenario_cmd_001": "SUCCEEDED",
+    "scenario_cmd_002": "SUCCEEDED"
+  },
+  "completion": false,
+  "completion_basis": "explicit_expected_contracts",
+  "detail": "scenario acceptance criteria evaluated",
+  "difficulty": "challenge",
+  "final_speed_mps": 1.3420156109250694e-10,
+  "frames": 700,
+  "latency": {
+    "decision_avg_ms": 0.24428571428571427,
+    "decision_max_ms": 16.0,
+    "sensor_to_control_avg_ms": 0.24428571428571427,
+    "sensor_to_control_max_ms": 16.0
+  },
+  "min_gap_m": null,
+  "min_ttc_s": null,
+  "red_light_violation_count": 0,
+  "route_deviation_count": 0,
+  "run_id": "275539e12947471b9cfb8efdd6d7f17b",
+  "safety_override_episodes": 0,
+  "safety_override_frames": 0,
+  "scenario_id": "REG_011_challenge_multi_command",
+  "score": {
+    "base_score": 25.0,
+    "deduction": 5.0,
+    "difficulty": "challenge",
+    "final_score": 20.0,
+    "scenario_id": "REG_011_challenge_multi_command",
+    "serious_route_deviation": 0,
+    "serious_safety_events": 0,
+    "unfinished_tasks": 1
+  },
+  "score_report": {
+    "latency": {
+      "asr_avg_ms": null,
+      "e2e_avg_ms": 0.0,
+      "e2e_count": 3,
+      "e2e_max_ms": 0.0,
+      "e2e_under_150ms_rate": 1.0,
+      "intent_avg_ms": null
+    },
+    "scenario_scores": [
+      {
+        "base_score": 25.0,
+        "deduction": 5.0,
+        "difficulty": "challenge",
+        "final_score": 20.0,
+        "scenario_id": "REG_011_challenge_multi_command",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 1
+      }
+    ],
+    "weighted_completion": {
+      "completion_rates": {
+        "advanced": 0.0,
+        "basic": 0.0,
+        "challenge": 0.0
+      },
+      "task_completion_score_25": 0.0,
+      "weighted_completion_rate": 0.0
+    }
+  },
+  "serious_route_deviation": 0,
+  "status": "FAILED",
+  "stop_error_m": null,
+  "unfinished_task_count": 1
+}
