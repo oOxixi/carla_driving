@@ -1,0 +1,73 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from queue import Empty, Queue
+from typing import Optional
+import numpy as np
+
+
+@dataclass(frozen=True)
+class RGBFrame:
+    frame: int
+    sim_time_s: float
+    image_bgr: np.ndarray
+    sensor_transform: object
+
+
+class FrontRGBCamera:
+    def __init__(
+        self,
+        world,
+        vehicle,
+        width: int = 1280,
+        height: int = 720,
+        fov_deg: float = 90.0,
+        sensor_tick: float = 0.05,
+        x_m: float = 1.5,
+        z_m: float = 2.4,
+        pitch_deg: float = -5.0,
+        queue_size: int = 4,
+    ) -> None:
+        import carla
+
+        self.width = int(width)
+        self.height = int(height)
+        self.fov_deg = float(fov_deg)
+        self._queue: Queue[RGBFrame] = Queue(maxsize=queue_size)
+        bp = world.get_blueprint_library().find("sensor.camera.rgb")
+        bp.set_attribute("image_size_x", str(self.width))
+        bp.set_attribute("image_size_y", str(self.height))
+        bp.set_attribute("fov", str(self.fov_deg))
+        bp.set_attribute("sensor_tick", str(float(sensor_tick)))
+        transform = carla.Transform(
+            carla.Location(x=float(x_m), z=float(z_m)),
+            carla.Rotation(pitch=float(pitch_deg)),
+        )
+        self.actor = world.spawn_actor(bp, transform, attach_to=vehicle)
+        self.actor.listen(self._on_image)
+
+    def _on_image(self, image) -> None:
+        array = np.frombuffer(image.raw_data, dtype=np.uint8)
+        array = array.reshape((image.height, image.width, 4))
+        bgr = array[:, :, :3].copy()
+        item = RGBFrame(
+            frame=int(image.frame),
+            sim_time_s=float(image.timestamp),
+            image_bgr=bgr,
+            sensor_transform=image.transform,
+        )
+        if self._queue.full():
+            try:
+                self._queue.get_nowait()
+            except Empty:
+                pass
+        self._queue.put_nowait(item)
+
+    def get(self, timeout_s: float = 2.0) -> RGBFrame:
+        return self._queue.get(timeout=float(timeout_s))
+
+    def destroy(self) -> None:
+        if getattr(self, "actor", None) is not None:
+            self.actor.stop()
+            self.actor.destroy()
+            self.actor = None

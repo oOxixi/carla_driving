@@ -1,0 +1,118 @@
+{
+  "schema_version": "1.0",
+  "frame": 0,
+  "sim_time_s": 0.0,
+  "sensor_id": "front_rgb",
+  "image_width": 1280,
+  "image_height": 720,
+  "objects": [
+    {
+      "track_id": "onnx_0",
+      "category": "PEDESTRIAN",
+      "confidence": 0.7995139360427856,
+      "bbox_xyxy": [
+        609,
+        432,
+        682,
+        649
+      ],
+      "image_region": "FRONT_CENTER",
+      "in_danger_zone": true,
+      "source": "ONNX_YOLO",
+      "metadata": {
+        "coco_class_id": 0
+      }
+    },
+    {
+      "track_id": "onnx_1",
+      "category": "TRAFFIC_LIGHT",
+      "confidence": 0.6616929769515991,
+      "bbox_xyxy": [
+        383,
+        251,
+        401,
+        292
+      ],
+      "image_region": "FRONT_LEFT",
+      "in_danger_zone": false,
+      "source": "ONNX_YOLO",
+      "metadata": {
+        "coco_class_id": 9
+      }
+    },
+    {
+      "track_id": "onnx_2",
+      "category": "TRAFFIC_LIGHT",
+      "confidence": 0.507522702217102,
+      "bbox_xyxy": [
+        117,
+        37,
+        171,
+        136
+      ],
+      "image_region": "FRONT_LEFT",
+      "in_danger_zone": false,
+      "source": "ONNX_YOLO",
+      "metadata": {
+        "coco_class_id": 9
+      }
+    },
+    {
+      "track_id": "onnx_3",
+      "category": "TRAFFIC_LIGHT",
+      "confidence": 0.4350258708000183,
+      "bbox_xyxy": [
+        314,
+        153,
+        351,
+        200
+      ],
+      "image_region": "FRONT_LEFT",
+      "in_danger_zone": false,
+      "source": "ONNX_YOLO",
+      "metadata": {
+        "coco_class_id": 9
+      }
+    },
+    {
+      "track_id": "onnx_4",
+      "category": "VEHICLE",
+      "confidence": 0.43222370743751526,
+      "bbox_xyxy": [
+        436,
+        319,
+        478,
+        343
+      ],
+      "image_region": "FRONT_CENTER",
+      "in_danger_zone": false,
+      "source": "ONNX_YOLO",
+      "metadata": {
+        "coco_class_id": 2
+      }
+    }
+  ],
+  "traffic_light": {
+    "state": "UNKNOWN",
+    "confidence": 0.6616929769515991,
+    "visible": true,
+    "bbox_xyxy": [
+      383,
+      251,
+      401,
+      292
+    ],
+    "source": "ONNX_YOLO"
+  },
+  "perception_status": "OK",
+  "latency_ms": 62.238,
+  "warnings": [
+    "TRAFFIC_LIGHT_COLOR_CLASSIFIER_NOT_CONFIGURED"
+  ],
+  "scene_summary": {
+    "front_vehicle": false,
+    "front_pedestrian": true,
+    "front_obstacle": true,
+    "red_light": false
+  }
+}
