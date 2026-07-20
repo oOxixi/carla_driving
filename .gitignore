@@ -17,6 +17,10 @@ artifacts/logs/
 artifacts/models/*.onnx
 artifacts/.runtime/
 artifacts/.pytest*/
+artifacts/pytest_*/
+artifacts/sensor_remaining_v1/
+artifacts/sensor_remaining_v2/
+artifacts/sensor_topology_v1/
 .pytest_cache/
 *.zip
 *.mp3

@@ -1,0 +1,657 @@
+"""Auditable evidence and score summaries for CARLA scenario runs.
+
+The recorder is intentionally CARLA-free.  ``integration.carla_runner`` (or a
+ScenarioRunner adapter) supplies plain controller contracts after each tick.
+One JSONL file then contains the complete causal chain for a run:
+
+``run_start -> command -> frame/feedback -> run_complete|run_failed``.
+
+Only vehicle-side contracts are imported here; voice output is retained as an
+opaque mapping so this module never depends on, or modifies, ``voice_group``.
+"""
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, is_dataclass
+from datetime import datetime, timezone
+from enum import Enum
+import json
+import math
+from pathlib import Path
+import time
+from typing import Any, Mapping
+from uuid import uuid4
+
+from car_control_D.official_score import OfficialScorer
+from .scenario_acceptance import evaluate_expected
+
+
+SERIOUS_ROUTE_DEVIATION_M = 3.0
+
+
+@dataclass(frozen=True, slots=True)
+class FrameTiming:
+    """Monotonic timestamps around one control decision.
+
+    All values use the same monotonic clock.  Optional sensor timing allows an
+    initial runner implementation to omit sensor instrumentation without
+    fabricating a latency value.
+    """
+
+    decision_start_ns: int
+    decision_end_ns: int
+    control_applied_ns: int
+    sensor_ready_ns: int | None = None
+
+    def __post_init__(self) -> None:
+        values = {
+            "sensor_ready_ns": self.sensor_ready_ns,
+            "decision_start_ns": self.decision_start_ns,
+            "decision_end_ns": self.decision_end_ns,
+            "control_applied_ns": self.control_applied_ns,
+        }
+        for name, value in values.items():
+            if value is not None and (type(value) is not int or value < 0):
+                raise ValueError(f"{name} must be a non-negative integer or None")
+        ordered = [value for value in (
+            self.sensor_ready_ns,
+            self.decision_start_ns,
+            self.decision_end_ns,
+            self.control_applied_ns,
+        ) if value is not None]
+        if ordered != sorted(ordered):
+            raise ValueError("frame timestamps must be monotonic")
+
+    def to_dict(self) -> dict[str, float | int | None]:
+        sensor_to_control = None
+        sensor_to_decision = None
+        if self.sensor_ready_ns is not None:
+            sensor_to_control = (self.control_applied_ns - self.sensor_ready_ns) / 1e6
+            sensor_to_decision = (self.decision_start_ns - self.sensor_ready_ns) / 1e6
+        return {
+            "sensor_ready_ns": self.sensor_ready_ns,
+            "decision_start_ns": self.decision_start_ns,
+            "decision_end_ns": self.decision_end_ns,
+            "control_applied_ns": self.control_applied_ns,
+            "sensor_to_decision_ms": sensor_to_decision,
+            "decision_ms": (self.decision_end_ns - self.decision_start_ns) / 1e6,
+            "decision_to_apply_ms": (self.control_applied_ns - self.decision_end_ns) / 1e6,
+            "sensor_to_control_ms": sensor_to_control,
+        }
+
+
+def _jsonable(value: Any) -> Any:
+    """Convert controller contracts to strict JSON without lossy string reprs."""
+    if value is None or type(value) in (str, int, bool):
+        return value
+    if type(value) is float:
+        if not math.isfinite(value):
+            raise ValueError("evidence values must be finite")
+        return value
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, Mapping):
+        return {str(key): _jsonable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(item) for item in value]
+    to_dict = getattr(value, "to_dict", None)
+    if callable(to_dict):
+        return _jsonable(to_dict())
+    if is_dataclass(value):
+        return _jsonable(asdict(value))
+    raise TypeError(f"unsupported evidence value: {type(value).__name__}")
+
+
+def _field(value: object, name: str, default: Any = None) -> Any:
+    if isinstance(value, Mapping):
+        return value.get(name, default)
+    return getattr(value, name, default)
+
+
+class ScenarioEvidenceRecorder:
+    """Write a unified JSONL audit trail and an adjacent score summary.
+
+    The class is deliberately stateful: invalid event order raises immediately,
+    preventing a successful-looking log that omitted ``run_start`` or emitted
+    frames after a terminal record.
+    """
+
+    def __init__(self, path: str | Path, *, scorer: OfficialScorer | None = None,
+                 clock_ns: Any = time.monotonic_ns) -> None:
+        self.path = Path(path)
+        self.summary_path = self.path.with_suffix(".summary.json")
+        self.scorer = scorer or OfficialScorer()
+        self._clock_ns = clock_ns
+        self._handle: Any | None = None
+        self._run_id: str | None = None
+        self._scenario_id = "UNKNOWN"
+        self._difficulty = "basic"
+        self._sequence = 0
+        self._terminal = False
+        self._frames = 0
+        self._commands: dict[str, dict[str, Any]] = {}
+        self._feedback_keys: set[tuple[str, str]] = set()
+        self._terminal_statuses: dict[str, str] = {}
+        self._min_gap_m: float | None = None
+        self._min_ttc_s: float | None = None
+        self._stationary_stop_error_m: float | None = None
+        self._last_speed_mps: float | None = None
+        self._safety_override_frames = 0
+        self._safety_override_episodes = 0
+        self._override_active = False
+        self._collisions = 0
+        self._red_violations = 0
+        self._route_deviations = 0
+        self._expected_route_deviation = False
+        self._last_collision = False
+        self._last_red_violation = False
+        self._last_route_deviation = False
+        self._frame_decision_ms: list[float] = []
+        self._frame_sensor_to_control_ms: list[float] = []
+        self._frame_times_s: list[float] = []
+        self._frame_speeds_mps: list[float] = []
+        self._cross_track_errors_m: list[float] = []
+        self._lane_offsets_m: list[float] = []
+        self._steer_samples: list[tuple[float, float]] = []
+        self._first_pose: tuple[float, float, float] | None = None
+        self._last_pose: tuple[float, float, float] | None = None
+        self._called_b = False
+        self._called_c = False
+        self._called_d = False
+        self._safety_reasons: set[str] = set()
+        self._max_speed_mps = 0.0
+        self._final_controls_finite = True
+        self._final_control_overlap_count = 0
+        self._emergency_brake_seen = False
+        self._acceptance_report: dict[str, Any] | None = None
+
+    @property
+    def run_id(self) -> str | None:
+        return self._run_id
+
+    def start_run(self, *, scenario_id: str, difficulty: str = "basic",
+                  config: Mapping[str, object] | None = None,
+                  expected_route_deviation: bool = False,
+                  run_id: str | None = None) -> str:
+        if self._handle is not None or self._terminal:
+            raise RuntimeError("recorder can only start one run")
+        if not scenario_id or not difficulty:
+            raise ValueError("scenario_id and difficulty must be non-empty")
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._handle = self.path.open("x", encoding="utf-8", newline="\n")
+        self._run_id = run_id or uuid4().hex
+        self._scenario_id = scenario_id
+        self._difficulty = difficulty
+        self._expected_route_deviation = bool(expected_route_deviation)
+        self._write("run_start", scenario_id=scenario_id, difficulty=difficulty,
+                    config=dict(config or {}))
+        return self._run_id
+
+    def record_command(self, command: Mapping[str, object], *, disposition: str,
+                       adapted_command: object | None = None,
+                       received_ns: int | None = None,
+                       submitted_sim_time_s: float | None = None) -> None:
+        self._ensure_active()
+        command_id = command.get("command_id")
+        if type(command_id) is not str or not command_id:
+            raise ValueError("command.command_id must be a non-empty string")
+        stamp = self._clock_ns() if received_ns is None else received_ns
+        if type(stamp) is not int or stamp < 0:
+            raise ValueError("received_ns must be a non-negative integer")
+        record = {
+            "command_id": command_id,
+            "disposition": disposition,
+            "received_ns": stamp,
+            "command": _jsonable(command),
+            "adapted_command": _jsonable(adapted_command),
+            "submitted_sim_time_s": submitted_sim_time_s,
+        }
+        # Keep canonical timestamp fields at the record root as well as inside
+        # the immutable command payload. D's existing latency scorer consumes
+        # this flat representation.
+        for name in ("t_audio_start_ns", "t_asr_end_ns", "t_intent_end_ns"):
+            if name in record["command"]:
+                record[name] = record["command"][name]
+        record["latency"] = self._command_latency(record["command"], stamp)
+        self._commands[command_id] = record
+        self._write("command", **record)
+
+    def record_frame(self, *, vehicle: object, scene: object, raw_control: object,
+                     final_control: object, safety_reason: str,
+                     safety_override: bool, timing: FrameTiming,
+                      command_id: str | None = None,
+                      fsm_state: str | None = None,
+                      longitudinal: object | None = None,
+                      lateral: object | None = None,
+                      perception_sources: Mapping[str, str] | None = None) -> None:
+        """Record one applied control frame and update scenario aggregates."""
+        self._ensure_active()
+        if type(safety_override) is not bool:
+            raise TypeError("safety_override must be bool")
+        frame = _field(vehicle, "frame")
+        sim_time_s = _field(vehicle, "sim_time_s")
+        speed_mps = _field(vehicle, "speed_mps")
+        if type(frame) is not int or type(sim_time_s) not in (int, float) or type(speed_mps) not in (int, float):
+            raise TypeError("vehicle must provide frame, sim_time_s and speed_mps")
+        latency = timing.to_dict()
+        self._frame_decision_ms.append(float(latency["decision_ms"]))
+        if latency["sensor_to_control_ms"] is not None:
+            self._frame_sensor_to_control_ms.append(float(latency["sensor_to_control_ms"]))
+        sim_time = float(sim_time_s)
+        speed = float(speed_mps)
+        self._frame_times_s.append(sim_time)
+        self._frame_speeds_mps.append(speed)
+        self._max_speed_mps = max(self._max_speed_mps, speed)
+
+        x_m, y_m, yaw_deg = (_field(vehicle, name) for name in ("x_m", "y_m", "yaw_deg"))
+        if all(type(value) in (int, float) for value in (x_m, y_m, yaw_deg)):
+            pose = (float(x_m), float(y_m), float(yaw_deg))
+            if self._first_pose is None:
+                self._first_pose = pose
+            self._last_pose = pose
+
+        cross_track_error = _field(lateral, "cross_track_error_m") if lateral is not None else None
+        lane_offset = _field(scene, "lane_offset_m")
+        steer = _field(lateral, "steer") if lateral is not None else None
+        if type(cross_track_error) in (int, float) and math.isfinite(float(cross_track_error)):
+            self._cross_track_errors_m.append(float(cross_track_error))
+        if type(lane_offset) in (int, float) and math.isfinite(float(lane_offset)):
+            self._lane_offsets_m.append(float(lane_offset))
+        if type(steer) in (int, float) and math.isfinite(float(steer)):
+            self._steer_samples.append((sim_time, float(steer)))
+        self._called_b = self._called_b or lateral is not None
+        self._called_c = self._called_c or longitudinal is not None
+        self._called_d = True
+
+        final_values = tuple(_field(final_control, name) for name in ("throttle", "brake", "steer"))
+        finite_final = all(
+            type(value) in (int, float) and not isinstance(value, bool) and math.isfinite(float(value))
+            for value in final_values
+        )
+        self._final_controls_finite = self._final_controls_finite and finite_final
+        if finite_final and float(final_values[0]) > 0.03 and float(final_values[1]) > 0.03:
+            self._final_control_overlap_count += 1
+        if safety_override:
+            self._safety_reasons.add(safety_reason)
+        if finite_final and safety_override and float(final_values[1]) >= 0.99:
+            self._emergency_brake_seen = True
+
+        risk = _field(longitudinal, "risk")
+        ttc_s = _field(risk, "ttc_s") if risk is not None else None
+        lead_distance_m = _field(scene, "lead_distance_m")
+        stop_distance_m = _field(scene, "distance_to_stop_line_m")
+        self._min_gap_m = self._minimum(self._min_gap_m, lead_distance_m)
+        self._min_ttc_s = self._minimum(self._min_ttc_s, ttc_s)
+        self._last_speed_mps = float(speed_mps)
+        if stop_distance_m is not None and float(speed_mps) <= 0.15:
+            self._stationary_stop_error_m = abs(float(stop_distance_m))
+
+        collision = bool(_field(scene, "collision", False))
+        red_violation = bool(_field(scene, "red_light_violation", False))
+        route_deviation_m = _field(scene, "route_deviation_m")
+        route_deviation = (
+            route_deviation_m is not None
+            and abs(float(route_deviation_m)) >= SERIOUS_ROUTE_DEVIATION_M
+        )
+        self._collisions += int(collision and not self._last_collision)
+        self._red_violations += int(red_violation and not self._last_red_violation)
+        self._route_deviations += int(route_deviation and not self._last_route_deviation)
+        self._last_collision = collision
+        self._last_red_violation = red_violation
+        self._last_route_deviation = route_deviation
+
+        if safety_override:
+            self._safety_override_frames += 1
+            if not self._override_active:
+                self._safety_override_episodes += 1
+        self._override_active = safety_override
+
+        if command_id in self._commands:
+            command_record = self._commands[command_id]
+            if "first_control_applied_ns" not in command_record:
+                applied_ns = timing.control_applied_ns
+                command_record["first_control_applied_ns"] = applied_ns
+                origin_ns = self._latency_origin_ns(command_record)
+                if origin_ns is not None and applied_ns >= origin_ns:
+                    command_record["e2e_latency_ms"] = (applied_ns - origin_ns) / 1e6
+        if speed <= 0.3:
+            for command_record in self._commands.values():
+                intent = str(command_record.get("command", {}).get("intent", "")).upper()
+                submitted = command_record.get("submitted_sim_time_s")
+                if (intent in {"STOP", "EMERGENCY_STOP"}
+                        and type(submitted) in (int, float)
+                        and sim_time >= float(submitted)
+                        and "first_stopped_sim_time_s" not in command_record):
+                    command_record["first_stopped_sim_time_s"] = sim_time
+                    command_record["stop_latency_s"] = sim_time - float(submitted)
+
+        self._frames += 1
+        self._write(
+            "frame", frame=frame, sim_time_s=float(sim_time_s), speed_mps=float(speed_mps),
+            vehicle=_jsonable(vehicle),
+            command_id=command_id, fsm_state=fsm_state,
+            scene=_jsonable(scene), perception_sources=_jsonable(perception_sources or {}),
+            longitudinal=_jsonable(longitudinal), lateral=_jsonable(lateral),
+            raw_control=_jsonable(raw_control), final_control=_jsonable(final_control),
+            safety={"override": safety_override, "reason": safety_reason},
+            latency=latency,
+        )
+
+    def record_runtime_frame(self, result: object, scene: object, *, raw_control: object,
+                             timing: FrameTiming, command_id: str | None = None,
+                             fsm_state: str | None = None,
+                             perception_sources: Mapping[str, str] | None = None) -> None:
+        """Convenience adapter for :class:`integration.contracts.FrameResult`.
+
+        ``raw_control`` stays mandatory: silently reconstructing it from the
+        final steer value would make a safety takeover impossible to audit.
+        All terminal feedback carried by the frame is emitted exactly once.
+        """
+        self.record_frame(
+            vehicle=_field(result, "vehicle"), scene=scene,
+            raw_control=raw_control, final_control=_field(result, "final_control"),
+            safety_reason=_field(result, "safety_reason", "UNKNOWN"),
+            safety_override=_field(result, "safety_override", False),
+            timing=timing, command_id=command_id, fsm_state=fsm_state,
+            longitudinal=_field(result, "longitudinal"), lateral=_field(result, "lateral"),
+            perception_sources=perception_sources,
+        )
+        for feedback in _field(result, "feedback", ()):
+            self.record_feedback(feedback)
+
+    def record_feedback(self, feedback: object) -> None:
+        self._ensure_active()
+        command_id = _field(feedback, "command_id")
+        status_value = _field(feedback, "status")
+        status = status_value.value if isinstance(status_value, Enum) else status_value
+        if type(command_id) is not str or type(status) is not str:
+            raise TypeError("feedback must provide string command_id and status")
+        key = (command_id, status)
+        if key in self._feedback_keys:
+            return
+        self._feedback_keys.add(key)
+        self._terminal_statuses[command_id] = status
+        self._write("feedback", feedback=_jsonable(feedback))
+
+    def complete(self, *, completion: bool | None = None, detail: str = "",
+                 expected: Mapping[str, object] | None = None,
+                 acceptance_context: Mapping[str, object] | None = None) -> dict[str, Any]:
+        self._ensure_active()
+        if completion is None:
+            if self._commands:
+                completion = any(status == "SUCCEEDED" for status in self._terminal_statuses.values())
+                basis = "command_terminal_status"
+            else:
+                completion = self._frames > 0
+                basis = "frames_without_command"
+        else:
+            basis = "explicit"
+        if expected is not None:
+            metrics = self._acceptance_metrics(expected, acceptance_context or {})
+            self._acceptance_report = evaluate_expected(expected, metrics)
+            completion = bool(completion and self._acceptance_report["passed"])
+            basis = "explicit_expected_contracts"
+        status = "SUCCEEDED" if completion else "FAILED"
+        summary = self._summary(status=status, completion=completion, completion_basis=basis, detail=detail)
+        self._write("run_complete", summary=summary)
+        self._write_summary(summary)
+        self._finish()
+        return summary
+
+    def fail(self, error: BaseException | str, *, detail: str = "") -> dict[str, Any]:
+        self._ensure_active()
+        error_type = type(error).__name__ if isinstance(error, BaseException) else "RuntimeError"
+        error_message = str(error)
+        summary = self._summary(status="FAILED", completion=False,
+                                completion_basis="runtime_failure", detail=detail)
+        self._write("run_failed", error={"type": error_type, "message": error_message}, summary=summary)
+        self._write_summary(summary)
+        self._finish()
+        return summary
+
+    def close(self) -> None:
+        """Close an unterminated recorder as a failed run, preserving evidence."""
+        if self._handle is not None and not self._terminal:
+            self.fail("recorder closed before a terminal run event")
+
+    def _summary(self, *, status: str, completion: bool,
+                 completion_basis: str, detail: str) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "run_id": self._run_id,
+            "scenario_id": self._scenario_id,
+            "difficulty": self._difficulty,
+            "status": status,
+            "completion": completion,
+            "completion_basis": completion_basis,
+            "detail": detail,
+            "frames": self._frames,
+            "command_count": len(self._commands),
+            "command_terminal_statuses": dict(self._terminal_statuses),
+            "stop_error_m": self._stationary_stop_error_m,
+            "final_speed_mps": self._last_speed_mps,
+            "min_gap_m": self._min_gap_m,
+            "min_ttc_s": self._min_ttc_s,
+            "collision_count": self._collisions,
+            "red_light_violation_count": self._red_violations,
+            "route_deviation_count": self._route_deviations,
+            "serious_route_deviation": 0 if self._expected_route_deviation else self._route_deviations,
+            "unfinished_task_count": 0 if completion else 1,
+            "safety_override_frames": self._safety_override_frames,
+            "safety_override_episodes": self._safety_override_episodes,
+            "latency": {
+                "decision_avg_ms": self._average(self._frame_decision_ms),
+                "decision_max_ms": max(self._frame_decision_ms, default=None),
+                "sensor_to_control_avg_ms": self._average(self._frame_sensor_to_control_ms),
+                "sensor_to_control_max_ms": max(self._frame_sensor_to_control_ms, default=None),
+            },
+        }
+        if self._acceptance_report is not None:
+            result["acceptance"] = self._acceptance_report
+        # D remains the only owner of official deduction/score semantics.
+        result["score"] = self.scorer.score_scenario(result).to_dict()
+        result["score_report"] = self.scorer.summarize(
+            [result], command_records=self._commands.values()
+        )
+        return result
+
+    def _acceptance_metrics(
+        self,
+        expected: Mapping[str, object],
+        context: Mapping[str, object],
+    ) -> dict[str, Any]:
+        abs_cte = [abs(value) for value in self._cross_track_errors_m]
+        steer_rates = [
+            abs(current_steer - previous_steer) / (current_time - previous_time)
+            for (previous_time, previous_steer), (current_time, current_steer)
+            in zip(self._steer_samples, self._steer_samples[1:])
+            if current_time > previous_time
+        ]
+        final_shift = None
+        yaw_change = None
+        turn_direction = "UNKNOWN"
+        if self._first_pose is not None and self._last_pose is not None:
+            start_x, start_y, start_yaw = self._first_pose
+            end_x, end_y, end_yaw = self._last_pose
+            yaw_rad = math.radians(start_yaw)
+            # Scenario convention is positive-left/negative-right. CARLA's
+            # local right vector has the opposite sign in this projection.
+            final_shift = math.sin(yaw_rad) * (end_x - start_x) - math.cos(yaw_rad) * (end_y - start_y)
+            yaw_change = (end_yaw - start_yaw + 180.0) % 360.0 - 180.0
+            # CARLA/Unreal is left-handed: negative yaw turns left.
+            turn_direction = "LEFT" if yaw_change <= -30.0 else "RIGHT" if yaw_change >= 30.0 else "STRAIGHT"
+
+        duration_s = 0.0
+        if len(self._frame_times_s) >= 2:
+            duration_s = self._frame_times_s[-1] - self._frame_times_s[0]
+            duration_s += self._frame_times_s[1] - self._frame_times_s[0]
+        elif self._frame_times_s:
+            duration_s = 0.0
+
+        marker = _field(expected, "speed_should_decrease_after_s")
+        speed_before = None
+        speed_after = None
+        if type(marker) in (int, float) and self._frame_times_s:
+            start_time = self._frame_times_s[0]
+            before = [
+                speed for stamp, speed in zip(self._frame_times_s, self._frame_speeds_mps)
+                if stamp - start_time <= float(marker)
+            ]
+            after = [
+                speed for stamp, speed in zip(self._frame_times_s, self._frame_speeds_mps)
+                if stamp - start_time > float(marker)
+            ]
+            speed_before = before[-1] if before else None
+            speed_after = after[-1] if after else None
+
+        stop_latencies = [
+            float(record["stop_latency_s"])
+            for record in self._commands.values()
+            if type(record.get("stop_latency_s")) in (int, float)
+        ]
+        command_ids = list(self._commands)
+        expected_count = int(context.get("expected_command_count", len(command_ids)))
+        expected_ids = [f"scenario_cmd_{index:03d}" for index in range(expected_count)]
+        submitted_times = [
+            record.get("submitted_sim_time_s") for record in self._commands.values()
+        ]
+        accepted_and_applied = all(
+            str(record.get("disposition", "")).startswith("ACCEPTED")
+            and "first_control_applied_ns" in record
+            for record in self._commands.values()
+        )
+        monotonic_submission = all(
+            type(stamp) in (int, float) for stamp in submitted_times
+        ) and list(submitted_times) == sorted(submitted_times)
+        all_commands_succeeded = (
+            len(command_ids) == expected_count
+            and all(self._terminal_statuses.get(command_id) == "SUCCEEDED" for command_id in command_ids)
+        )
+        stopped_before_line = (
+            self._stationary_stop_error_m is not None
+            and self._red_violations == 0
+            and self._last_speed_mps is not None
+            and self._last_speed_mps <= 0.3
+        )
+        metrics = {
+            "carla_started": self._frames > 0,
+            "spawned_ego": self._first_pose is not None,
+            "called_B": self._called_b,
+            "called_C": self._called_c,
+            "called_D": self._called_d,
+            "logs_generated": self.path.exists(),
+            "duration_s": duration_s,
+            "collision_count": self._collisions,
+            "red_light_violation_count": self._red_violations,
+            "route_deviation_count": self._route_deviations,
+            "max_speed_mps": self._max_speed_mps,
+            "final_speed_mps": self._last_speed_mps,
+            "min_gap_m": self._min_gap_m,
+            "max_abs_cross_track_error_m": max(abs_cte, default=None),
+            "max_abs_lane_offset_m": max((abs(value) for value in self._lane_offsets_m), default=None),
+            "mean_abs_cross_track_error_m": self._average(abs_cte),
+            "initial_cross_track_error_m": self._cross_track_errors_m[0] if self._cross_track_errors_m else None,
+            "final_abs_cross_track_error_m": abs(self._cross_track_errors_m[-1]) if self._cross_track_errors_m else None,
+            "cross_track_error_decreased": (
+                bool(self._cross_track_errors_m)
+                and abs(self._cross_track_errors_m[-1]) < abs(self._cross_track_errors_m[0])
+            ),
+            "max_abs_steer": max((abs(value) for _, value in self._steer_samples), default=None),
+            "max_steer_rate_per_s": max(steer_rates, default=None),
+            "final_lateral_shift_m": final_shift,
+            "yaw_change_deg": yaw_change,
+            "turn_direction": turn_direction,
+            "safety_override_frames": self._safety_override_frames,
+            "safety_reasons": sorted(self._safety_reasons),
+            "route_deviation_event_seen": any(
+                "ROUTE_DEVIATION" in reason for reason in self._safety_reasons
+            ),
+            "event_count": (
+                self._safety_override_episodes + self._collisions + self._red_violations + self._route_deviations
+            ),
+            "emergency_brake_seen": self._emergency_brake_seen,
+            "final_control_all_finite": self._final_controls_finite,
+            "final_control_overlap_count": self._final_control_overlap_count,
+            "commands_in_order": (
+                command_ids == expected_ids and accepted_and_applied and monotonic_submission
+            ),
+            "commands_all_succeeded": all_commands_succeeded,
+            "stop_latency_s": max(stop_latencies, default=None),
+            "speed_before_decrease_marker_mps": speed_before,
+            "speed_after_decrease_marker_mps": speed_after,
+            "stop_error_m": self._stationary_stop_error_m,
+            "stopped_before_stop_line": stopped_before_line,
+            "safety_priority_observed": (
+                self._safety_override_frames > 0 and stopped_before_line
+            ),
+            **dict(context),
+        }
+        return metrics
+
+    def _write(self, record_type: str, **fields: Any) -> None:
+        if self._handle is None:
+            raise RuntimeError("run has not started")
+        record = {
+            "record_type": record_type,
+            "schema_version": "1.0",
+            "run_id": self._run_id,
+            "sequence": self._sequence,
+            "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
+            **fields,
+        }
+        encoded = json.dumps(_jsonable(record), ensure_ascii=False, allow_nan=False, sort_keys=True)
+        self._handle.write(encoded + "\n")
+        self._handle.flush()
+        self._sequence += 1
+
+    def _write_summary(self, summary: Mapping[str, Any]) -> None:
+        self.summary_path.write_text(
+            json.dumps(_jsonable(summary), ensure_ascii=False, allow_nan=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+    def _ensure_active(self) -> None:
+        if self._handle is None:
+            raise RuntimeError("run has not started")
+        if self._terminal:
+            raise RuntimeError("run is already terminal")
+
+    def _finish(self) -> None:
+        self._terminal = True
+        assert self._handle is not None
+        self._handle.close()
+        self._handle = None
+
+    @staticmethod
+    def _minimum(current: float | None, candidate: object) -> float | None:
+        if candidate is None:
+            return current
+        value = float(candidate)
+        if not math.isfinite(value) or value < 0.0:
+            raise ValueError("distance and TTC metrics must be finite and non-negative")
+        return value if current is None else min(current, value)
+
+    @staticmethod
+    def _average(values: list[float]) -> float | None:
+        return sum(values) / len(values) if values else None
+
+    @staticmethod
+    def _command_latency(command: Mapping[str, Any], received_ns: int) -> dict[str, float | None]:
+        audio = command.get("t_audio_start_ns")
+        asr = command.get("t_asr_end_ns")
+        intent = command.get("t_intent_end_ns")
+        return {
+            "asr_ms": (asr - audio) / 1e6 if type(audio) is int and type(asr) is int and asr >= audio else None,
+            "intent_ms": (intent - asr) / 1e6 if type(asr) is int and type(intent) is int and intent >= asr else None,
+            "intent_to_submit_ms": (received_ns - intent) / 1e6
+            if type(intent) is int and received_ns >= intent else None,
+        }
+
+    @staticmethod
+    def _latency_origin_ns(command_record: Mapping[str, Any]) -> int | None:
+        command = command_record.get("command")
+        if isinstance(command, Mapping) and type(command.get("t_audio_start_ns")) is int:
+            return command["t_audio_start_ns"]
+        received = command_record.get("received_ns")
+        return received if type(received) is int else None
+
+
+__all__ = ["FrameTiming", "ScenarioEvidenceRecorder"]
