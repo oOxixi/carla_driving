@@ -1,0 +1,3 @@
+date,commit,scenario,run_index,carla_map,perception_mode,scenario_facts_mode,status,completion,final_score,max_cross_track_error_m,max_route_deviation_m,final_speed_mps,steer_sign,lookahead_min_m,lookahead_max_m,max_steer,max_steer_delta_per_step,snake_oscillation,wrong_turn,d_override,d_override_reason,evidence_jsonl,evidence_summary,notes
+2026-07-21,07a2224,B01_straight_center,1,TBD,world,fuse,NOT_RUN,TBD,TBD,TBD,TBD,TBD,1.0,3.5,10.0,0.60,0.04,TBD,TBD,TBD,TBD,TBD,TBD,Template row; replace after CARLA run
+
