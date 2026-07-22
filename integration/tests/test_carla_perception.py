@@ -22,6 +22,7 @@ from integration.carla_perception import (
     PerceptionDataError,
     PerceptionTimeoutError,
     attach_default_sensors,
+    attach_event_sensors,
     front_lidar_distance_m,
 )
 from integration.contracts import DetectedObject
@@ -213,6 +214,16 @@ def test_sensor_tick_tracks_world_fixed_delta() -> None:
     attach_default_sensors(session, world, ego, CarlaApi, sensor_tick_s=0.1)
     assert world.blueprints.items["sensor.camera.rgb"].attributes["sensor_tick"] == "0.1"
     assert world.blueprints.items["sensor.lidar.ray_cast"].attributes["sensor_tick"] == "0.1"
+
+
+def test_world_mode_event_suite_does_not_attach_rgb_or_lidar() -> None:
+    world, session, ego = World(), Session(), Actor(1)
+
+    attached = attach_event_sensors(session, world, ego, CarlaApi)
+
+    assert session.continuous == []
+    assert set(attached.actors) == {COLLISION_SENSOR_ID, LANE_INVASION_SENSOR_ID}
+    assert len(session.tracked) == 2
 
 
 def test_bridge_combines_aligned_lidar_events_map_and_associated_actor_truth() -> None:

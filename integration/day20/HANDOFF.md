@@ -1,5 +1,8 @@
 # Day20 第一组任务 Handoff
 
+> 入口说明（2026-07-23）：Day20 只交付 Qwen 高层决策原型。正式车辆验收使用
+> `python -m integration.carla_runner`；Day20 Ego 控制必须经过 D 最终仲裁。
+
 ## 完成状态
 
 Day20 第一组任务完成。

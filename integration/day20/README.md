@@ -1,5 +1,9 @@
 # Day20 第一组任务：CARLA + Qwen2.5-VL 多模态驾驶行为决策
 
+> 边界说明（2026-07-23）：这是第一组 Qwen 高层决策演示，不是正式场景验收
+> 入口。正式运行统一使用 `python -m integration.carla_runner`。本目录的 Ego
+> 控制适配器必须经过 D 安全仲裁，不能直接把 Qwen 结果下发给 CARLA。
+
 ## 状态
 
 Day20 第一组任务已完成。
@@ -7,7 +11,7 @@ Day20 第一组任务已完成。
 实现链路：
 
 CARLA RGB Camera + SceneState + Driver Instruction → Qwen2.5-VL →
-DrivingIntent → Safety Filter → Executor → CarlaControlAdapter →
+DrivingIntent → 输入清洗 → Executor → CarlaControlAdapter → D 最终仲裁 →
 VehicleControl
 
 ## 已完成内容
@@ -21,7 +25,7 @@ VehicleControl
 -   Qwen2.5-VL视觉语言推理
 -   JSON Intent解析
 -   DrivingIntent接口统一
--   Safety Filter安全层
+-   高层动作输入清洗（不替代D）
 -   CARLA闭环控制
 
 ## 目录说明

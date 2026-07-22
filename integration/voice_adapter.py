@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
-from typing import Any, Mapping
+from typing import Mapping
 
 from car_control_A import DrivingCommand, ExecutionFeedback, ExecutionStatus
 

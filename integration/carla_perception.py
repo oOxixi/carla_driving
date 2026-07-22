@@ -92,7 +92,11 @@ DEFAULT_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
         SensorMount(0.0, 0.0, 2.35),
         MappingProxyType({
             "channels": "32", "range": "80", "rotation_frequency": "20",
-            "points_per_second": "56000", "upper_fov": "10",
+            # At 56k points/s a 20 Hz scan produced only one or two returns
+            # from a passenger car 15--20 m ahead, below the three-point
+            # corridor cluster threshold on most frames.  The denser scan
+            # keeps that safety-critical range observable frame to frame.
+            "points_per_second": "224000", "upper_fov": "10",
             "lower_fov": "-30", "sensor_tick": "0.05",
         }),
     ),
@@ -104,6 +108,10 @@ DEFAULT_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
         LANE_INVASION_SENSOR_ID, "sensor.other.lane_invasion", SensorMount(0.0, 0.0, 0.0),
         MappingProxyType({}), continuous=False,
     ),
+)
+
+EVENT_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = tuple(
+    spec for spec in DEFAULT_SENSOR_SPECS if not spec.continuous
 )
 
 
@@ -245,6 +253,18 @@ def attach_default_sensors(
     return AttachedCarlaSensors(MappingProxyType(actors), events)
 
 
+def attach_event_sensors(
+    session: CarlaSession,
+    world: Any,
+    ego: Any,
+    carla_api: Any,
+) -> AttachedCarlaSensors:
+    """Attach collision/lane-invasion sensors without RGB/LiDAR streams."""
+    return attach_default_sensors(
+        session, world, ego, carla_api, specs=EVENT_SENSOR_SPECS,
+    )
+
+
 def _xyz(value: Any) -> tuple[float, float, float]:
     return float(value.x), float(value.y), float(value.z)
 
@@ -340,7 +360,7 @@ def _normalise_light_state(value: Any) -> str:
     return state if state in {"RED", "YELLOW", "GREEN"} else "UNKNOWN"
 
 
-def _traffic_light_and_stop_distance(ego: Any) -> tuple[str, float | None, str]:
+def traffic_light_and_stop_distance(ego: Any) -> tuple[str, float | None, str]:
     light = None
     get_light = getattr(ego, "get_traffic_light", None)
     if callable(get_light):
@@ -384,6 +404,17 @@ def _traffic_light_and_stop_distance(ego: Any) -> tuple[str, float | None, str]:
     return state, None, "CARLA_EGO_TRAFFIC_LIGHT_STATE"
 
 
+def actor_speed_limit_mps(ego: Any) -> float | None:
+    """Return CARLA's map speed limit in m/s when it is finite and positive."""
+    get_speed_limit = getattr(ego, "get_speed_limit", None)
+    if not callable(get_speed_limit):
+        return None
+    speed_limit_kph = float(get_speed_limit())
+    if not math.isfinite(speed_limit_kph) or speed_limit_kph <= 0.0:
+        return None
+    return speed_limit_kph / 3.6
+
+
 def route_deviation_m(x_m: float, y_m: float, route: RouteReference) -> float:
     """Return planar distance from a point to the nearest route segment."""
     points = route.points_xy_m
@@ -402,7 +433,8 @@ def route_deviation_m(x_m: float, y_m: float, route: RouteReference) -> float:
     return min(segment_distances)
 
 
-def _lane_metrics(world_map: Any, ego: Any, route: RouteReference | None) -> tuple[float | None, float | None]:
+def lane_metrics(world_map: Any, ego: Any, route: RouteReference | None) -> tuple[float | None, float | None]:
+    """Return signed lane-center offset and route deviation from CARLA map geometry."""
     location = ego.get_location()
     waypoint = world_map.get_waypoint(location, project_to_road=True)
     lane_offset: float | None = None
@@ -552,19 +584,15 @@ class CarlaPerceptionBridge:
         sources["c_fusion_mode"] = safety_summary.fusion_mode
         sources["c_recommended_action"] = safety_summary.recommended_action
 
-        traffic_light, stop_distance, traffic_source = _traffic_light_and_stop_distance(self._ego)
+        traffic_light, stop_distance, traffic_source = traffic_light_and_stop_distance(self._ego)
         sources["traffic_light"] = traffic_source
         if stop_distance is not None:
             sources["distance_to_stop_line_m"] = traffic_source
-        speed_limit = None
-        get_speed_limit = getattr(self._ego, "get_speed_limit", None)
-        if callable(get_speed_limit):
-            speed_limit_kph = float(get_speed_limit())
-            if math.isfinite(speed_limit_kph) and speed_limit_kph > 0.0:
-                speed_limit = speed_limit_kph / 3.6
-                sources["speed_limit_mps"] = "CARLA_MAP_SPEED_LIMIT"
+        speed_limit = actor_speed_limit_mps(self._ego)
+        if speed_limit is not None:
+            sources["speed_limit_mps"] = "CARLA_MAP_SPEED_LIMIT"
 
-        lane_offset, route_deviation = _lane_metrics(self._map, self._ego, route)
+        lane_offset, route_deviation = lane_metrics(self._map, self._ego, route)
         if lane_offset is not None:
             sources["lane_offset_m"] = "CARLA_MAP_WAYPOINT"
         if route_deviation is not None:

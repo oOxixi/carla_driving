@@ -9,10 +9,10 @@ from integration.day20.qwen_scene_adapter import (
 )
 
 
-from integration.day20.qwen_intent_schema import (
+from integration.day20.schemas import (
     DrivingIntent,
-    ActionStep,
-    validate_intent
+    Action,
+    validate_driving_intent,
 )
 
 
@@ -81,7 +81,7 @@ def parse_result(data):
 
         actions.append(
 
-            ActionStep(
+            Action(
 
                 action=
                     a.get(
@@ -220,7 +220,7 @@ def main():
 
         actions=[
 
-            ActionStep(
+            Action(
 
                 action=
                     "SET_SPEED",
@@ -259,7 +259,7 @@ def main():
 
 
     print(
-        validate_intent(intent)
+        validate_driving_intent(intent)
     )
 
 

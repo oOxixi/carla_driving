@@ -15,7 +15,7 @@ class IntentControlOutput:
     不产生steer/brake/throttle
     """
 
-    target_speed_kmh: float = 0.0
+    target_speed_kmh: float | None = None
 
     emergency_stop: bool = False
 

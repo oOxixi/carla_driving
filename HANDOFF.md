@@ -1,5 +1,9 @@
 # Day20 第一组任务 Handoff
 
+> 入口说明（2026-07-23）：本文件记录第一组 Qwen-VL 原型交付；正式车辆验收
+> 统一使用 `python -m integration.carla_runner`。Day20 Ego 控制现已强制经过 D，
+> 但本原型不替代正式 runner 的传感器同步、watchdog、场景验收与证据链。
+
 ## 完成状态
 
 Day20 第一组任务完成。

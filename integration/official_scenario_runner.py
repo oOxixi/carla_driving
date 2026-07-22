@@ -11,7 +11,6 @@ from dataclasses import dataclass
 import subprocess
 import sys
 from pathlib import Path
-from typing import Sequence
 
 
 SCENARIO_RUNNER_TAG = "v0.9.16"
