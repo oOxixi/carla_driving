@@ -29,3 +29,12 @@ artifacts/pytest-c-role-*/
 *.zip
 *.mp3
 *.wav
+
+# Local large models
+models/*
+!models/README.md
+
+# Backup files
+*.bak
+*.error_backup
+

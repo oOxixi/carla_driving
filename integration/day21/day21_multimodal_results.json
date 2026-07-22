@@ -1,0 +1,347 @@
+[
+  {
+    "case": "red_light",
+    "expected": "STOP",
+    "decision": {
+      "action": "STOP",
+      "confidence": 0.98,
+      "requires_confirmation": false,
+      "reason_zh": "红灯安全约束优先"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day21_828ca48f",
+      "source_text": "继续走",
+      "intent": "STOP",
+      "parameters": {},
+      "confidence": 0.98,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3542146571723757
+    },
+    "input": {
+      "voice": "继续走",
+      "safety_state": {
+        "traffic_light": "RED"
+      }
+    }
+  },
+  {
+    "case": "pedestrian",
+    "expected": "STOP",
+    "decision": {
+      "action": "STOP",
+      "confidence": 0.98,
+      "requires_confirmation": false,
+      "reason_zh": "检测到行人风险"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day21_0c2e00cb",
+      "source_text": "继续前进",
+      "intent": "STOP",
+      "parameters": {},
+      "confidence": 0.98,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3542146571739313
+    },
+    "input": {
+      "voice": "继续前进",
+      "safety_state": {
+        "pedestrian_risk": true
+      }
+    }
+  },
+  {
+    "case": "front_vehicle_slow",
+    "expected": "SET_SPEED",
+    "decision": {
+      "action": "SET_SPEED",
+      "target_speed_mps": 3.0,
+      "confidence": 0.9,
+      "requires_confirmation": false,
+      "reason_zh": "前车距离过近，降低速度"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day21_9797d682",
+      "source_text": "保持速度",
+      "intent": "SET_SPEED",
+      "parameters": {
+        "speed": 3.0,
+        "unit": "m/s"
+      },
+      "confidence": 0.9,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3542146571749710
+    },
+    "input": {
+      "voice": "保持速度",
+      "safety_state": {
+        "front_distance_m": 8
+      }
+    }
+  },
+  {
+    "case": "safe_drive",
+    "expected": "START",
+    "decision": {
+      "action": "START",
+      "target_speed_mps": null,
+      "confidence": 0.9,
+      "requires_confirmation": false,
+      "reason_zh": "安全状态正常"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day21_ddfd1fb8",
+      "source_text": "继续",
+      "intent": "START",
+      "parameters": {},
+      "confidence": 0.9,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3542146571757749
+    },
+    "input": {
+      "voice": "继续",
+      "safety_state": {
+        "front_distance_m": 50,
+        "input_confidence": 1.0
+      }
+    }
+  },
+  {
+    "case": "low_confidence",
+    "expected": "STOP_CONFIRM",
+    "decision": {
+      "action": "STOP",
+      "target_speed_mps": null,
+      "confidence": 0.5,
+      "requires_confirmation": true,
+      "reason_zh": "输入安全状态置信度不足，需要确认"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day21_f7cb05ba",
+      "source_text": "",
+      "intent": "STOP",
+      "parameters": {},
+      "confidence": 0.5,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": true,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3542146571765402
+    },
+    "input": {
+      "voice": "",
+      "safety_state": {
+        "input_confidence": 0.5
+      }
+    }
+  },
+  {
+    "case": "ttc_risk",
+    "expected": "EMERGENCY_STOP",
+    "decision": {
+      "action": "EMERGENCY_STOP",
+      "confidence": 0.99,
+      "requires_confirmation": false,
+      "reason_zh": "TTC风险过高"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day21_92edb9e6",
+      "source_text": "",
+      "intent": "EMERGENCY_STOP",
+      "parameters": {},
+      "confidence": 0.99,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3542146571772403
+    },
+    "input": {
+      "voice": "",
+      "safety_state": {
+        "ttc_s": 1.2
+      }
+    }
+  },
+  {
+    "case": "user_speed_up_conflict",
+    "expected": "STOP",
+    "decision": {
+      "action": "STOP",
+      "confidence": 0.98,
+      "requires_confirmation": false,
+      "reason_zh": "红灯安全约束优先"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day21_4f496d40",
+      "source_text": "加速",
+      "intent": "STOP",
+      "parameters": {},
+      "confidence": 0.98,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3542146571778468
+    },
+    "input": {
+      "voice": "加速",
+      "safety_state": {
+        "traffic_light": "RED"
+      }
+    }
+  },
+  {
+    "case": "rain",
+    "expected": "SET_SPEED",
+    "decision": {
+      "action": "SET_SPEED",
+      "target_speed_mps": 5.0,
+      "confidence": 0.85,
+      "requires_confirmation": false,
+      "reason_zh": "雨天降低速度保持安全"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day21_99027e07",
+      "source_text": "",
+      "intent": "SET_SPEED",
+      "parameters": {
+        "speed": 5.0,
+        "unit": "m/s"
+      },
+      "confidence": 0.85,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3542146571788485
+    },
+    "input": {
+      "voice": "",
+      "safety_state": {
+        "weather": "rain",
+        "front_distance_m": 50
+      }
+    }
+  },
+  {
+    "case": "obstacle",
+    "expected": "STOP",
+    "decision": {
+      "action": "STOP",
+      "target_speed_mps": null,
+      "confidence": 0.98,
+      "requires_confirmation": false,
+      "reason_zh": "检测到障碍物风险"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day21_4217be91",
+      "source_text": "",
+      "intent": "STOP",
+      "parameters": {},
+      "confidence": 0.98,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3542146571794007
+    },
+    "input": {
+      "voice": "",
+      "safety_state": {
+        "obstacle_risk": true
+      }
+    }
+  },
+  {
+    "case": "normal",
+    "expected": "START",
+    "decision": {
+      "action": "START",
+      "target_speed_mps": null,
+      "confidence": 0.9,
+      "requires_confirmation": false,
+      "reason_zh": "安全状态正常"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day21_9fa58c69",
+      "source_text": "继续",
+      "intent": "START",
+      "parameters": {},
+      "confidence": 0.9,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3542146571799704
+    },
+    "input": {
+      "voice": "继续",
+      "safety_state": {
+        "front_distance_m": 100,
+        "input_confidence": 1.0
+      }
+    }
+  }
+]
