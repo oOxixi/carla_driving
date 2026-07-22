@@ -12,7 +12,7 @@ from .qwen_vl_adapter import QwenVLAdapter
 from .scene_builder import build_scene_state
 from .parser import parse_intent
 from .schemas import validate_driving_intent
-from .day20_intent_executor import Day20IntentExecutor
+from .day20_intent_executor import Day20IntentExecutor, IntentControlOutput
 from .carla_control_adapter import CarlaControlAdapter
 from .safety_filter import safety_filter
 
@@ -107,7 +107,7 @@ def spawn_vehicle(
 
 
 
-def apply_speed(
+def apply_scenario_actor_speed(
     vehicle,
     throttle
 ):
@@ -129,7 +129,7 @@ def apply_speed(
 
 
 
-def brake(
+def brake_scenario_actor(
     vehicle
 ):
 
@@ -307,13 +307,7 @@ def main():
 
 
 
-        apply_speed(
-            ego,
-            0.35
-        )
-
-
-        apply_speed(
+        apply_scenario_actor_speed(
             front,
             0.25
         )
@@ -385,6 +379,17 @@ def main():
 
         controller=CarlaControlAdapter()
 
+        controller.apply(
+            ego,
+            IntentControlOutput(
+                target_speed_kmh=20.0,
+                reason="Day20 bootstrap through D",
+            ),
+            scene_state=build_scene_state(world, ego),
+            command_id="day20_bootstrap",
+            confidence=1.0,
+        )
+
 
 
         triggered=False
@@ -414,7 +419,7 @@ def main():
                 )
 
 
-                brake(
+                brake_scenario_actor(
                     front
                 )
 
@@ -635,7 +640,13 @@ def main():
 
                 ego,
 
-                target
+                target,
+
+                scene_state=scene,
+
+                command_id=intent.command_id,
+
+                confidence=intent.confidence,
 
             )
 

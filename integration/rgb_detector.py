@@ -8,7 +8,6 @@ outputs.  Only road-user classes required by C/D are retained.
 from __future__ import annotations
 
 from dataclasses import dataclass
-import math
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 

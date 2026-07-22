@@ -6,7 +6,6 @@ Run from repository root:
 
 from __future__ import annotations
 
-import math
 
 from .pure_pursuit import PurePursuitController, PurePursuitParams
 from .schemas import RouteReference, VehiclePose

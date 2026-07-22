@@ -3,6 +3,12 @@ from __future__ import annotations
 
 import math
 
+from integration.carla_perception import (
+    actor_speed_limit_mps,
+    lane_metrics,
+    traffic_light_and_stop_distance,
+)
+
 
 
 def calculate_distance(
@@ -82,10 +88,8 @@ def build_scene_state(
 
 
 
-    frame_id = (
-        world.get_snapshot()
-        .frame
-    )
+    snapshot = world.get_snapshot()
+    frame_id = snapshot.frame
 
 
 
@@ -95,13 +99,14 @@ def build_scene_state(
     velocity = ego.get_velocity()
 
 
-    speed = math.sqrt(
-        velocity.x**2
-        +
-        velocity.y**2
-        +
-        velocity.z**2
-    )
+    speed = math.hypot(velocity.x, velocity.y)
+
+    world_map = world.get_map()
+    waypoint = world_map.get_waypoint(ego_tf.location, project_to_road=True)
+    lane_id = int(waypoint.lane_id) if waypoint is not None else 0
+    lane_offset, route_deviation = lane_metrics(world_map, ego, None)
+    traffic_light, stop_distance, _ = traffic_light_and_stop_distance(ego)
+    speed_limit = actor_speed_limit_mps(ego)
 
 
     objects=[]
@@ -195,6 +200,10 @@ def build_scene_state(
 
             frame_id,
 
+        "sim_time_s":
+
+            float(snapshot.timestamp.elapsed_seconds),
+
 
 
         "ego":
@@ -211,7 +220,7 @@ def build_scene_state(
 
             "lane_id":
 
-                0
+                lane_id
 
         },
 
@@ -238,7 +247,27 @@ def build_scene_state(
 
         "objects":
 
-            objects
+            objects,
+
+        "traffic_light":
+
+            traffic_light,
+
+        "distance_to_stop_line_m":
+
+            stop_distance,
+
+        "speed_limit_mps":
+
+            speed_limit,
+
+        "lane_offset_m":
+
+            lane_offset,
+
+        "route_deviation_m":
+
+            route_deviation,
 
     }
 

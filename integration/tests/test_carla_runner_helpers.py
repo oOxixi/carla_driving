@@ -6,7 +6,7 @@ import pytest
 
 from car_control_B.schemas import RouteReference, VehiclePose
 
-from integration.carla_perception import PerceptionTimeoutError
+from integration.carla_perception import EventLedger, PerceptionTimeoutError
 from integration.carla_runner import (
     _acceptance_lateral_controller,
     _load_command,
@@ -16,6 +16,8 @@ from integration.carla_runner import (
     _rejected_load_envelope,
     _route_contract_completed,
     _route_stop_trigger_m,
+    _runtime_health_completed,
+    _scene_from_world,
     _scenario_raw_control_fault,
     _scenario_maneuver,
     _select_scene_facts,
@@ -88,6 +90,85 @@ def test_perception_mode_ignores_scenario_facts() -> None:
     selected, sources = _select_scene_facts(perceived, configured, "perception")
     assert selected is perceived
     assert sources == {}
+
+
+def test_world_scene_populates_lane_offset_and_route_deviation_from_map() -> None:
+    class Location:
+        x = 10.0
+        y = 1.5
+        z = 0.0
+
+        def distance(self, other):
+            return math.sqrt(
+                (self.x - other.x) ** 2
+                + (self.y - other.y) ** 2
+                + (self.z - other.z) ** 2
+            )
+
+    class Ego:
+        def get_location(self):
+            return Location()
+
+        def is_at_traffic_light(self):
+            return False
+
+        def get_speed_limit(self):
+            return 36.0
+
+        def get_velocity(self):
+            return Namespace(x=0.0, y=0.0, z=0.0)
+
+    class WorldMap:
+        def get_waypoint(self, location, project_to_road=True):
+            assert project_to_road is True
+            return Namespace(
+                transform=Namespace(
+                    location=Namespace(x=10.0, y=1.0, z=0.0),
+                    get_right_vector=lambda: Namespace(x=0.0, y=1.0, z=0.0),
+                ),
+            )
+
+    route = RouteReference([(0.0, 0.0), (20.0, 0.0)])
+    events = EventLedger()
+    events.collision_callback(Namespace(frame=42))
+    scene, sources = _scene_from_world(
+        WorldMap(), Ego(), 42, 2.1, route=route, events=events,
+    )
+
+    assert scene.lane_offset_m == pytest.approx(0.5)
+    assert scene.route_deviation_m == pytest.approx(1.5)
+    assert scene.speed_limit_mps == pytest.approx(10.0)
+    assert scene.collision is True
+    assert sources["lane_offset_m"] == "CARLA_MAP_WAYPOINT"
+    assert sources["route_deviation_m"] == "ROUTE_REFERENCE_NEAREST_SEGMENT"
+    assert sources["speed_limit_mps"] == "CARLA_MAP_SPEED_LIMIT"
+    assert sources["collision"] == "CARLA_COLLISION_EVENT"
+    for field in (
+        "traffic_light",
+        "speed_limit_mps",
+        "lane_offset_m",
+        "route_deviation_m",
+        "collision",
+        "red_light_violation",
+        "lane_invasion",
+    ):
+        assert field in sources
+
+
+def test_world_scene_leaves_lane_offset_unknown_without_map_waypoint() -> None:
+    ego = Namespace(
+        get_location=lambda: Namespace(x=1.0, y=2.0, z=0.0),
+        is_at_traffic_light=lambda: False,
+        get_velocity=lambda: Namespace(x=0.0, y=0.0, z=0.0),
+    )
+    world_map = Namespace(get_waypoint=lambda location, project_to_road=True: None)
+
+    scene, sources = _scene_from_world(world_map, ego, 1, 0.05)
+
+    assert scene.lane_offset_m is None
+    assert scene.route_deviation_m is None
+    assert sources["collision"] == "UNOBSERVED_NO_EVENT_SENSOR"
+    assert sources["lane_invasion"] == "UNOBSERVED_NO_EVENT_SENSOR"
 
 
 def test_invalid_scenario_facts_mode_is_rejected() -> None:
@@ -247,6 +328,17 @@ def test_scenario_completion_uses_safety_acceptance_conditions() -> None:
                                                                distance_to_stop_line_m=2.0),
                                    min_gap_m=None, collision_seen=False)
     assert _scenario_completed(_args("follow"), frames=100, final_speed_mps=2.0,
-                               final_scene=None, min_gap_m=3.1, collision_seen=False)
+                               final_scene=None, min_gap_m=3.1, collision_seen=False,
+                               max_speed_mps=2.0)
+    assert not _scenario_completed(_args("follow"), frames=100, final_speed_mps=0.0,
+                                   final_scene=None, min_gap_m=10.0, collision_seen=False,
+                                   max_speed_mps=0.0)
     assert not _scenario_completed(_args("emergency"), frames=100, final_speed_mps=0.5,
                                    final_scene=None, min_gap_m=4.0, collision_seen=False)
+
+
+def test_basic_scenario_rejects_runtime_health_fail_safe() -> None:
+    assert _runtime_health_completed({"NONE", "PERCEPTION_STARTUP_GRACE"})
+    assert not _runtime_health_completed({"WATCHDOG_ALERT"})
+    assert not _runtime_health_completed({"INTEGRATION_FAILURE"})
+    assert not _runtime_health_completed({"PERCEPTION_PERCEPTIONTIMEOUTERROR"})

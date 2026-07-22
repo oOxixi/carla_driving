@@ -22,9 +22,13 @@ from car_control_D import SafetyConfig, SafetySupervisor
 
 from .carla_perception import (
     CarlaPerceptionBridge,
+    EventLedger,
     PerceptionAcquisitionError,
+    actor_speed_limit_mps,
     attach_default_sensors,
-    route_deviation_m,
+    attach_event_sensors,
+    lane_metrics,
+    traffic_light_and_stop_distance,
 )
 from .contracts import PerceptionFrame
 from .route_planner import (
@@ -104,7 +108,16 @@ def _vehicle_state(ego: Any, frame: int, sim_time_s: float, world_map: Any) -> R
                                transform.rotation.yaw, str(waypoint.lane_id if waypoint else "0"))
 
 
-def _scene_from_world(world: Any, ego: Any, frame: int, sim_time_s: float, *, scenario_lead: Any | None = None) -> PerceptionFrame:
+def _scene_from_world(
+    world_map: Any,
+    ego: Any,
+    frame: int,
+    sim_time_s: float,
+    *,
+    route: RouteReference | None = None,
+    scenario_lead: Any | None = None,
+    events: EventLedger | None = None,
+) -> tuple[PerceptionFrame, dict[str, str]]:
     """Build scene truth; synthetic scenarios may nominate their only lead actor.
 
     Acceptance scenarios must not accidentally follow an unrelated vehicle
@@ -112,15 +125,60 @@ def _scene_from_world(world: Any, ego: Any, frame: int, sim_time_s: float, *, sc
     actor when a scenario-owned lead is supplied (or explicitly absent).
     """
     ego_location = ego.get_location()
+    sources: dict[str, str] = {}
     if scenario_lead is not None and getattr(scenario_lead, "is_alive", False):
         distance, lead_speed = (scenario_lead.get_location().distance(ego_location),
                                 _speed_mps(scenario_lead.get_velocity()))
+        sources["lead_distance_m"] = "CARLA_SCENARIO_ACTOR_DISTANCE"
+        sources["lead_speed_mps"] = "CARLA_SCENARIO_ACTOR_VELOCITY"
     else:
         distance = lead_speed = None
-    traffic_light = "UNKNOWN"
-    if ego.is_at_traffic_light():
-        traffic_light = str(ego.get_traffic_light_state()).split(".")[-1].upper()
-    return PerceptionFrame(frame, sim_time_s, distance, lead_speed, traffic_light=traffic_light)
+    traffic_light, stop_distance, traffic_source = traffic_light_and_stop_distance(ego)
+    sources["traffic_light"] = traffic_source
+    if stop_distance is not None:
+        sources["distance_to_stop_line_m"] = traffic_source
+    speed_limit = actor_speed_limit_mps(ego)
+    if speed_limit is not None:
+        sources["speed_limit_mps"] = "CARLA_MAP_SPEED_LIMIT"
+    lane_offset, route_deviation = lane_metrics(world_map, ego, route)
+    if lane_offset is not None:
+        sources["lane_offset_m"] = "CARLA_MAP_WAYPOINT"
+    if route_deviation is not None:
+        sources["route_deviation_m"] = (
+            "ROUTE_REFERENCE_NEAREST_SEGMENT" if route is not None else "CARLA_MAP_WAYPOINT"
+        )
+    if events is None:
+        collision = lane_invasion = False
+        sources["collision"] = "UNOBSERVED_NO_EVENT_SENSOR"
+        sources["lane_invasion"] = "UNOBSERVED_NO_EVENT_SENSOR"
+    else:
+        collision, lane_invasion = events.flags_for_frame(frame)
+        sources["collision"] = "CARLA_COLLISION_EVENT"
+        sources["lane_invasion"] = "CARLA_LANE_INVASION_EVENT"
+    red_light_violation = (
+        traffic_light == "RED" and stop_distance is not None and stop_distance <= 0.5
+        and _speed_mps(ego.get_velocity()) > 0.5
+    )
+    sources["red_light_violation"] = (
+        "CARLA_RED_LIGHT_STOP_LINE_CROSSING"
+        if stop_distance is not None
+        else "UNOBSERVED_NO_STOP_LINE_DISTANCE"
+    )
+    scene = PerceptionFrame(
+        frame,
+        sim_time_s,
+        distance,
+        lead_speed,
+        traffic_light=traffic_light,
+        distance_to_stop_line_m=stop_distance,
+        speed_limit_mps=speed_limit,
+        lane_offset_m=lane_offset,
+        route_deviation_m=route_deviation,
+        collision=collision,
+        red_light_violation=red_light_violation,
+        lane_invasion=lane_invasion,
+    )
+    return scene, sources
 
 
 def _spawn_static_lead(session: CarlaSession, world: Any, world_map: Any, ego: Any, blueprint: Any,
@@ -355,17 +413,31 @@ def _warm_up_sensor_bridge(session: Any, world: Any, bridge: CarlaPerceptionBrid
 
 def _scenario_completed(args: argparse.Namespace, *, frames: int, final_speed_mps: float | None,
                         final_scene: PerceptionFrame | None, min_gap_m: float | None,
-                        collision_seen: bool) -> bool:
+                        collision_seen: bool, max_speed_mps: float = 0.0) -> bool:
     if frames != args.frames or final_speed_mps is None or collision_seen:
         return False
     if args.scenario == "red_stop":
         return (final_scene is not None and final_scene.distance_to_stop_line_m is not None
                 and final_speed_mps <= 0.15 and final_scene.distance_to_stop_line_m <= 1.0)
     if args.scenario == "follow":
-        return min_gap_m is not None and min_gap_m >= 3.0
+        return min_gap_m is not None and min_gap_m >= 3.0 and max_speed_mps >= 0.2
     if args.scenario == "emergency":
         return final_speed_mps <= 0.15
-    return True
+    return max_speed_mps >= 0.2
+
+
+def _runtime_health_completed(safety_reasons: set[str]) -> bool:
+    """Reject ordinary scenario success after a runtime/integration fail-safe.
+
+    Intentional D interventions are evaluated separately by
+    ``_expected_safety_completed``.  The basic runner must not report success
+    merely because a watchdog-latched vehicle stayed still and avoided impact.
+    """
+    return not any(
+        reason in {"WATCHDOG_ALERT", "INTEGRATION_FAILURE"}
+        or (reason.startswith("PERCEPTION_") and reason != "PERCEPTION_STARTUP_GRACE")
+        for reason in safety_reasons
+    )
 
 
 def _expected_safety_completed(
@@ -490,6 +562,7 @@ def run(args: argparse.Namespace) -> None:
     safety_reasons: set[str] = set()
     raw_control_fault_injected = False
     final_route_end_distance_m: float | None = None
+    max_speed_mps = 0.0
     runtime: ControlRuntime | None = None
     last_sim_time_s = 0.0
     try:
@@ -593,6 +666,7 @@ def run(args: argparse.Namespace) -> None:
                 scenario_lead = _spawn_static_lead(session, world, world_map, ego, bp, lead_distance)
 
             perception_bridge = None
+            world_events: EventLedger | None = None
             if args.perception_mode == "sensors":
                 sensors = attach_default_sensors(
                     session, world, ego, carla, sensor_tick_s=args.fixed_delta_s,
@@ -606,6 +680,10 @@ def run(args: argparse.Namespace) -> None:
                     tick_timeout_s=args.timeout_s,
                     sensor_timeout_s=args.sensor_timeout_s,
                 )
+            elif args.perception_mode == "world":
+                world_events = attach_event_sensors(
+                    session, world, ego, carla,
+                ).events
 
             # Do not accept a command until required sensors are ready. This
             # guarantees that every accepted command can enter the frame loop
@@ -669,6 +747,7 @@ def run(args: argparse.Namespace) -> None:
                 frame = session.tick(args.timeout_s)
                 snapshot = world.get_snapshot()
                 state = _vehicle_state(ego, frame, snapshot.timestamp.elapsed_seconds, world_map)
+                max_speed_mps = max(max_speed_mps, state.speed_mps)
                 last_sim_time_s = state.sim_time_s
                 elapsed_s = state.sim_time_s - episode_start_s
                 if timeline is not None:
@@ -726,6 +805,7 @@ def run(args: argparse.Namespace) -> None:
 
                 perception_sources: dict[str, str] = {}
                 c_safety_state: dict[str, object] | None = None
+                perception_control_override: dict[str, object] | None = None
                 watchdog_alerts: list[str] = []
                 sensor_startup_grace = False
                 try:
@@ -737,24 +817,39 @@ def run(args: argparse.Namespace) -> None:
                         perception_sources = dict(sample.source_by_field)
                         c_safety_state = sample.safety_summary.to_dict()
                         if sample.safety_summary.fail_closed:
-                            watchdog_alerts.append(
+                            # C owns this perception-dependent control request;
+                            # it is not a runtime-health failure.  Feed a full
+                            # brake request through D for this frame without
+                            # poisoning the persistent watchdog latch.
+                            perception_control_override = {
+                                "throttle": 0.0,
+                                "brake": 1.0,
+                                "steer": 0.0,
+                            }
+                            perception_sources["c_control_override"] = (
                                 "C_FUSION_" + sample.safety_summary.reason.upper()
                             )
                     else:
-                        scene = _scene_from_world(
-                            world, ego, frame, state.sim_time_s, scenario_lead=scenario_lead,
+                        scene, perception_sources = _scene_from_world(
+                            world_map,
+                            ego,
+                            frame,
+                            state.sim_time_s,
+                            route=route,
+                            scenario_lead=scenario_lead,
+                            events=world_events,
                         )
                         if args.perception_mode == "virtual":
                             scene = _apply_virtual_scenario(scene, ego, origin, args)
-                            perception_sources = {"scenario": "VIRTUAL_ACCEPTANCE_TRUTH"}
+                            perception_sources["scenario"] = "VIRTUAL_ACCEPTANCE_TRUTH"
+                            if args.scenario == "red_stop":
+                                perception_sources["traffic_light"] = "VIRTUAL_ACCEPTANCE_TRUTH"
+                                perception_sources["distance_to_stop_line_m"] = "VIRTUAL_ACCEPTANCE_TRUTH"
+                            elif args.scenario in {"follow", "emergency"}:
+                                perception_sources["lead_distance_m"] = "VIRTUAL_ACCEPTANCE_TRUTH"
+                                perception_sources["lead_speed_mps"] = "VIRTUAL_ACCEPTANCE_TRUTH"
                         else:
-                            perception_sources = {"scenario": "CARLA_WORLD_TRUTH"}
-                    if spec is not None and perception_bridge is None:
-                        scene = replace(
-                            scene,
-                            route_deviation_m=route_deviation_m(state.x_m, state.y_m, route),
-                        )
-                        perception_sources["route_deviation_m"] = "ROUTE_REFERENCE_NEAREST_SEGMENT"
+                            perception_sources["scenario"] = "CARLA_WORLD_TRUTH"
                     if spec is not None:
                         configured_scene = _scenario_facts(
                             ego,
@@ -785,6 +880,8 @@ def run(args: argparse.Namespace) -> None:
                 if not raw_control_fault_injected:
                     raw_control_override = _scenario_raw_control_fault(spec, elapsed_s)
                     raw_control_fault_injected = raw_control_override is not None
+                if raw_control_override is None:
+                    raw_control_override = perception_control_override
                 result = runtime.step(
                     state, scene, route, dt_s=args.fixed_delta_s,
                     watchdog_alerts=tuple(watchdog_alerts),
@@ -866,11 +963,11 @@ def run(args: argparse.Namespace) -> None:
             safety_reasons=safety_reasons,
         )
         completion = expected_completion if expected_completion is not None else (
-            command_finished and _scenario_completed(
+            command_finished and _runtime_health_completed(safety_reasons) and _scenario_completed(
                 args, frames=frames_completed,
                 final_speed_mps=final_speed,
                 final_scene=final_scene, min_gap_m=min_gap_m,
-                collision_seen=collision_seen,
+                collision_seen=collision_seen, max_speed_mps=max_speed_mps,
             )
         )
         route_contract_completion = _route_contract_completed(spec, final_route_end_distance_m)

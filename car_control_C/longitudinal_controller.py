@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from car_control_A import ControlOutput, LongitudinalOutput, LongitudinalRequest, RiskMetrics
+from car_control_A import ControlOutput, LongitudinalOutput, LongitudinalRequest
 
 from .following_controller import FollowingController, FollowingParameters
 from .speed_pid import SpeedPID

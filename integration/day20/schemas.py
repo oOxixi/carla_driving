@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Dict, Any, List
+from dataclasses import dataclass
 
 
 ALLOWED_ACTIONS = {
@@ -51,7 +50,7 @@ class DrivingIntent:
 
     command_id: str
 
-    actions: List[Action]
+    actions: list[Action]
 
     confidence: float
 

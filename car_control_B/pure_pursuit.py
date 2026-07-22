@@ -9,7 +9,6 @@ from .lateral_controller_base import LateralController
 from .path_utils import (
     clamp,
     compute_path_heading,
-    estimate_curvature,
     find_lookahead_index,
     find_nearest_index,
     signed_cross_track_error,

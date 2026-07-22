@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import carla
 import os
-import time
 
 
 class CarlaRGBCamera:

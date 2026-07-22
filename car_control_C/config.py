@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import math
-from typing import Any
 
 
 CONFIG_SCHEMA_VERSION = "1.0"

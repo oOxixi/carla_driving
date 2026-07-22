@@ -1,464 +1,94 @@
-# Day20: CARLA + Qwen-VL 多模态自动驾驶高层决策闭环
+# CARLA 多模态驾驶控制闭环
 
-## 1. 项目简介
+本仓库的正式车辆运行与验收入口是：
 
-本目录实现 Day20 第一组任务：
-
-**CARLA 仿真环境 + RGB Camera + SceneState + Qwen2.5-VL 多模态大模型 +
-高层驾驶意图解析 + 安全执行闭环**
-
-系统目标：
-
--   在 CARLA 中生成真实驾驶场景
--   获取车辆 RGB 视觉信息
--   构建结构化 SceneState
--   输入驾驶员语音指令
--   使用 Qwen-VL 根据视觉和场景信息生成高层驾驶行为
--   将大模型输出转换为统一 DrivingIntent
--   经过执行器和 CARLA Control Adapter 输出车辆控制
-
-当前验证场景：
-
-> 前方车辆减速，驾驶员要求降低速度保持安全距离
-
-系统能够完成：
-
-    CARLA
-     |
-     | RGB Camera
-     |
-    SceneState
-     |
-    Qwen2.5-VL
-     |
-    DrivingIntent JSON
-     |
-    Intent Executor
-     |
-    CARLA Control Adapter
-     |
-    Vehicle Control
-
-------------------------------------------------------------------------
-
-# 2. 目录结构
-
-    integration/day20/
-
-    ├── carla_rgb_qwen_closed_loop.py
-    │
-    │   Day20完整闭环入口
-    │
-    ├── qwen_vl_adapter.py
-    │
-    │   Qwen2.5-VL接口
-    │   输入:
-    │       RGB image
-    │       Driver command
-    │       SceneState
-    │
-    │   输出:
-    │       JSON driving action
-    │
-    ├── scene_builder.py
-    │
-    │   CARLA环境解析
-    │   构建SceneState
-    │
-    ├── schemas.py
-    │
-    │   DrivingIntent统一数据结构
-    │
-    ├── parser.py
-    │
-    │   Qwen JSON -> DrivingIntent
-    │
-    ├── day20_intent_executor.py
-    │
-    │   高层行为执行逻辑
-    │
-    ├── carla_control_adapter.py
-    │
-    │   DrivingIntent -> CARLA VehicleControl
-    │
-    ├── safety_filter.py
-    │
-    │   安全约束接口
-    │
-    └── demos/
-
-------------------------------------------------------------------------
-
-# 3. 环境要求
-
-## 软件
-
-推荐环境：
-
-    Ubuntu 20.04+
-    Python 3.12
-    CARLA 0.9.x
-    CUDA 12.x
-    PyTorch
-    Transformers
-
-## Python依赖
-
-安装：
-
-    pip install torch
-    pip install transformers
-    pip install pillow
-    pip install qwen-vl-utils
-    pip install carla
-
-------------------------------------------------------------------------
-
-# 4. 模型准备
-
-项目默认：
-
-    models/Qwen2.5-VL-7B
-
-目录：
-
-    models/
-
-    └── Qwen2.5-VL-7B/
-        ├── config.json
-        ├── tokenizer
-        ├── model weights
-
-注意：
-
-模型文件不上传GitHub。
-
-其他用户需要：
-
-1.  下载 Qwen2.5-VL-7B
-2.  放入：
-
-```{=html}
-<!-- -->
-```
-    models/Qwen2.5-VL-7B
-
-------------------------------------------------------------------------
-
-# 5. CARLA启动
-
-启动CARLA Server：
-
-    ./CarlaUE4.sh
-
-默认：
-
-    127.0.0.1:2000
-
-------------------------------------------------------------------------
-
-# 6. 运行方式
-
-进入项目：
-
-    cd carla_driving
-
-启动Day20闭环：
-
-    python -m integration.day20.carla_rgb_qwen_closed_loop
-
-------------------------------------------------------------------------
-
-# 7. 输入接口
-
-## Qwen输入
-
-统一接口：
-
-``` python
-qwen.infer(
-    command_text,
-    scene_state,
-    image_path
-)
+```text
+python -m integration.carla_runner
 ```
 
-参数：
+正式控制顺序固定为：状态/感知 → A 命令与 FSM → B 横向 + C 纵向 →
+D 最终安全仲裁 → 唯一 `apply_control()`。Qwen 只输出高层动作，不能输出或绕过
+D 直接下发方向盘、油门和刹车。
 
-### command_text
+## 当前能力
 
-驾驶员语音转文本：
+- CARLA 0.9.16 同步控制与 Actor 生命周期管理；
+- RGB、LiDAR、碰撞、压线和地图状态桥接；
+- YOLO11 ONNX 道路参与者检测；
+- 定速、停车保持、前车跟随、TTC 与紧急制动；
+- Pure Pursuit/Stanley 横向控制；
+- D 对低 TTC、近距离障碍、红灯、路线偏差、异常命令和非法控制进行最终覆盖；
+- JSONL 逐帧日志、场景摘要和 34 个场景契约。
 
-例如：
+## 环境
 
-``` text
-前方车辆减速，请降低速度保持安全距离
+本仓库附带的 CARLA Python wheel 是 CPython 3.12 版本，请使用：
+
+```powershell
+py -3.12 -m pip install -r requirements.txt
 ```
 
-------------------------------------------------------------------------
+YOLO11 权重默认放在 Git 忽略目录：
 
-### scene_state
-
-结构：
-
-``` json
-{
- "frame_id":12345,
- "ego":{
-    "speed_kmh":20,
-    "lane_id":0
- },
- "weather":{
-    "rain":0,
-    "night":false
- },
- "objects":[
- {
-   "object_id":"55",
-   "category":"vehicle",
-   "distance_m":25,
-   "direction":"front",
-   "confidence":1.0
- }
- ]
-}
+```text
+artifacts/models/yolo11n.onnx
 ```
 
-------------------------------------------------------------------------
+启动 CARLA：
 
-### image_path
-
-RGB Camera输出：
-
-例如：
-
-    artifacts/day20_rgb_xxxxx.png
-
-Qwen-VL通过该图片进行视觉理解。
-
-------------------------------------------------------------------------
-
-# 8. Qwen输出接口
-
-模型必须输出：
-
-``` json
-{
- "actions":[
- {
-  "action":"SET_SPEED",
-  "target_id":"55",
-  "target_speed_kmh":20
- }
- ],
- "confidence":0.9,
- "reason":"front vehicle slowing"
-}
+```powershell
+Start-Process `
+  -FilePath ".\CARLA_0.9.16\CarlaUE4.exe" `
+  -ArgumentList "-quality-level=Low" `
+  -WindowStyle Hidden
 ```
 
-------------------------------------------------------------------------
+## 正式运行
 
-# 9. 支持Action
+world 模式用于控制与地图真值调试：
 
-当前支持：
-
-    START
-
-    STOP
-
-    SET_SPEED
-
-    TURN_LEFT
-
-    TURN_RIGHT
-
-    CHANGE_LANE_LEFT
-
-    CHANGE_LANE_RIGHT
-
-    AVOID_OBJECT
-
-    EMERGENCY_BRAKE
-
-    RETURN_TO_LANE
-
-禁止输出：
-
-    throttle
-    brake
-    steer
-
-大模型只负责高层决策。
-
-------------------------------------------------------------------------
-
-# 10. 数据流接口
-
-## SceneBuilder
-
-CARLA:
-
-    world
-    vehicle actors
-    sensor
-
-↓
-
-    SceneState
-
-------------------------------------------------------------------------
-
-## Parser
-
-Qwen JSON:
-
-↓
-
-    DrivingIntent
-
-统一格式：
-
-``` python
-DrivingIntent(
- command_id,
- actions,
- confidence,
- reason
-)
+```powershell
+py -3.12 -m integration.carla_runner `
+  --host 127.0.0.1 --port 2000 `
+  --perception-mode world `
+  --scenario cruise --frames 120
 ```
 
-------------------------------------------------------------------------
+sensors + YOLO11 模式用于真实传感器链验收：
 
-## Executor
-
-输入:
-
-    DrivingIntent
-
-输出:
-
-    ControlTarget
-
-例如：
-
-``` json
-{
-"target_speed_kmh":20,
-"stop":false,
-"emergency_stop":false
-}
+```powershell
+py -3.12 -m integration.carla_runner `
+  --host 127.0.0.1 --port 2000 `
+  --perception-mode sensors `
+  --scenario-facts-mode perception `
+  --rgb-detector-model artifacts/models/yolo11n.onnx `
+  --rgb-detector-confidence 0.25 `
+  --scenario follow --frames 120 `
+  --sensor-warmup-frames 30 --sensor-timeout-s 1.0
 ```
 
-------------------------------------------------------------------------
+`world`、`sensors` 和 `virtual` 的字段来源会写入 `perception_sources`；不得把
+world/virtual 真值描述为真实视觉检测。
 
-## Control Adapter
+## Qwen/Day20 边界
 
-输入：
+`integration/day20/` 保留第一组的 Qwen-VL 高层决策演示。该目录不是正式场景
+验收入口；其中 Ego 控制适配器也必须经过 D 仲裁。最终演示与批量回归以
+`integration.carla_runner` 生成的证据为准。
 
-    ControlTarget
+## 验证
 
-输出：
+```powershell
+python -m pytest -q `
+  car_control_A\tests `
+  car_control_B\tests `
+  car_control_C\tests `
+  car_control_D\tests `
+  integration\tests
 
-    carla.VehicleControl
+python tools\validate_scenarios.py
+python tools\validate_c_role.py
+```
 
-负责：
-
--   throttle
--   brake
--   steer
-
-------------------------------------------------------------------------
-
-# 11. 当前验证结果
-
-测试流程：
-
-    spawn ego vehicle
-
-    spawn front vehicle
-
-    RGB camera capture
-
-    front vehicle brake
-
-    SceneState detects vehicle
-
-    Qwen-VL receives:
-        RGB image
-        SceneState
-        driver command
-
-    Qwen outputs:
-        SET_SPEED
-
-    Executor generates:
-        target_speed
-
-    CARLA applies control
-
-------------------------------------------------------------------------
-
-# 12. 后续扩展接口
-
-后续任务可以直接扩展：
-
-## 更多视觉目标
-
-SceneState objects:
-
-    vehicle
-    pedestrian
-    traffic_light
-    obstacle
-
-------------------------------------------------------------------------
-
-## 更多驾驶任务
-
-增加：
-
-    lane change
-
-    emergency brake
-
-    pedestrian avoidance
-
-    traffic light stop
-
-------------------------------------------------------------------------
-
-## 替换模型
-
-只需要保持：
-
-    infer(
-     command_text,
-     scene_state,
-     image_path
-    )
-
-接口不变即可。
-
-------------------------------------------------------------------------
-
-# 13. 开发规范
-
-禁止：
-
--   修改DrivingIntent接口
--   绕过Parser直接控制车辆
--   Qwen输出底层控制量
-
-推荐：
-
-    Perception
-        |
-    Scene Representation
-        |
-    LLM Decision
-        |
-    Safety Layer
-        |
-    Vehicle Controller
-
-保持模块解耦。
+角色说明和接口边界见 `integration/HANDOFF.md`、`car_control_C/HANDOFF.md` 和
+`HANDOFF_yqq_0722.md`。
