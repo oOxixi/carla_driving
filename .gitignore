@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
+.pytest_cache/
 .venv/
 venv/
 logs/
@@ -14,6 +15,10 @@ external/scenario_runner/
 CARLA_0.9.16/
 AdditionalMaps_0.9.16/
 artifacts/logs/
+# Local upstream comparison/test scratch data (not project deliverables).
+artifacts/upstream_main/
+artifacts/current_head.bundle
+artifacts/pytest-c-role-*/
 *.zip
 *.mp3
 *.wav

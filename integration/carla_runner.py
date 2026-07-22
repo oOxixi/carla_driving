@@ -27,6 +27,7 @@ from .carla_perception import (
 )
 from .contracts import PerceptionFrame
 from .route_planner import build_route_reference, command_turn_direction
+from .rgb_detector import OnnxYoloDetector
 from .runtime_loop import ControlRuntime
 from .scenario_execution import CommandTimeline, ScenarioSpec, resolve_scenario_command
 from .scenario_evidence import FrameTiming, ScenarioEvidenceRecorder
@@ -267,6 +268,17 @@ def run(args: argparse.Namespace) -> None:
         return
     import carla
 
+    detector = None
+    if args.rgb_detector_model:
+        if args.perception_mode != "sensors":
+            raise ValueError("--rgb-detector-model requires --perception-mode sensors")
+        detector = OnnxYoloDetector(
+            args.rgb_detector_model,
+            confidence_threshold=args.rgb_detector_confidence,
+            iou_threshold=args.rgb_detector_iou,
+            input_size=args.rgb_detector_input_size,
+        )
+
     if spec is not None:
         args.map = spec.map_name
         args.fixed_delta_s = spec.fixed_delta_s
@@ -341,7 +353,9 @@ def run(args: argparse.Namespace) -> None:
                 sensors = attach_default_sensors(
                     session, world, ego, carla, sensor_tick_s=args.fixed_delta_s,
                 )
-                perception_bridge = CarlaPerceptionBridge(world, world_map, ego, session, sensors)
+                perception_bridge = CarlaPerceptionBridge(
+                    world, world_map, ego, session, sensors, detector=detector,
+                )
                 _warm_up_sensor_bridge(
                     session, world, perception_bridge,
                     attempts=args.sensor_warmup_frames,
@@ -409,6 +423,7 @@ def run(args: argparse.Namespace) -> None:
                     runtime.lateral.reset()
 
                 perception_sources: dict[str, str] = {}
+                c_safety_state: dict[str, object] | None = None
                 watchdog_alerts: list[str] = []
                 sensor_startup_grace = False
                 try:
@@ -418,6 +433,11 @@ def run(args: argparse.Namespace) -> None:
                         )
                         scene = sample.frame
                         perception_sources = dict(sample.source_by_field)
+                        c_safety_state = sample.safety_summary.to_dict()
+                        if sample.safety_summary.fail_closed:
+                            watchdog_alerts.append(
+                                "C_FUSION_" + sample.safety_summary.reason.upper()
+                            )
                     else:
                         scene = _scene_from_world(
                             world, ego, frame, state.sim_time_s, scenario_lead=scenario_lead,
@@ -478,6 +498,7 @@ def run(args: argparse.Namespace) -> None:
                         command_id=command_id,
                         fsm_state=runtime.fsm.state.value,
                         perception_sources=perception_sources,
+                        c_safety_state=c_safety_state,
                     )
 
                 frames_completed += 1
@@ -574,6 +595,14 @@ def main() -> None:
                         help="maximum ticks used to obtain the first aligned RGB/LiDAR frame")
     parser.add_argument("--sensor-startup-grace-frames", type=int, default=2,
                         help="initial perception misses that brake without permanently latching watchdog")
+    parser.add_argument("--rgb-detector-model",
+                        help="optional Ultralytics-style ONNX model for RGB road-user detection")
+    parser.add_argument("--rgb-detector-confidence", type=float, default=0.35,
+                        help="minimum RGB detector confidence")
+    parser.add_argument("--rgb-detector-iou", type=float, default=0.45,
+                        help="class-aware NMS IoU threshold")
+    parser.add_argument("--rgb-detector-input-size", type=int, default=640,
+                        help="fallback square input size for dynamic ONNX models")
     parser.add_argument("--watchdog-timeout-s", type=float, default=1.0)
     parser.add_argument("--watchdog-startup-grace-s", type=float, default=0.5)
     parser.add_argument("--route-distance-m", type=float, default=500.0)
@@ -616,6 +645,12 @@ def main() -> None:
         parser.error("--watchdog-startup-grace-s must be non-negative")
     if args.test_command_ttl_s is not None and args.test_command_ttl_s <= 0.0:
         parser.error("--test-command-ttl-s must be positive")
+    if not 0.0 < args.rgb_detector_confidence <= 1.0:
+        parser.error("--rgb-detector-confidence must be in (0, 1]")
+    if not 0.0 < args.rgb_detector_iou <= 1.0:
+        parser.error("--rgb-detector-iou must be in (0, 1]")
+    if args.rgb_detector_input_size < 32:
+        parser.error("--rgb-detector-input-size must be >= 32")
     run(args)
 
 

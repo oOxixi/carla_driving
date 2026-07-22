@@ -12,18 +12,20 @@ Every derived field carries an explicit source label in ``PerceptionSample``.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import math
 import threading
 from types import MappingProxyType
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 import numpy as np
 
 from car_control_A import CarlaSession
 from car_control_A.routing import RouteReference
+from car_control_C import ConservativeSensorFusion, SafetyStateSummary, VisualObservation
 
 from .contracts import PerceptionFrame
+from .rgb_detector import driving_corridor_detections
 
 
 RGB_SENSOR_ID = "rgb_front"
@@ -45,6 +47,14 @@ class PerceptionTimeoutError(PerceptionAcquisitionError, TimeoutError):
 
 class FrameAlignmentError(PerceptionAcquisitionError):
     """A callback payload was labelled with a different CARLA frame."""
+
+
+class PerceptionDataError(PerceptionAcquisitionError):
+    """A required sensor payload was present but malformed or unusable."""
+
+
+class ObjectDetectionError(PerceptionAcquisitionError):
+    """Configured RGB inference failed, so normal control is unsafe."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,6 +168,7 @@ class PerceptionSample:
     source_by_field: Mapping[str, str]
     rgb: Any
     lidar: Any
+    safety_summary: SafetyStateSummary
 
 
 def _make_transform(carla_api: Any, mount: SensorMount) -> Any:
@@ -413,13 +424,21 @@ class CarlaPerceptionBridge:
 
     def __init__(
         self, world: Any, world_map: Any, ego: Any, session: CarlaSession,
-        sensors: AttachedCarlaSensors,
+        sensors: AttachedCarlaSensors, detector: Any | None = None,
+        *,
+        visual_provider: Callable[[Any], VisualObservation] | None = None,
+        fusion: ConservativeSensorFusion | None = None,
     ) -> None:
+        if detector is not None and visual_provider is not None:
+            raise ValueError("configure detector or visual_provider, not both")
         self._world = world
         self._map = world_map
         self._ego = ego
         self._session = session
         self._sensors = sensors
+        self._detector = detector
+        self._visual_provider = visual_provider
+        self._fusion = fusion or ConservativeSensorFusion()
 
     def acquire(
         self, frame: int, sim_time_s: float, *, route: RouteReference | None = None,
@@ -445,19 +464,88 @@ class CarlaPerceptionBridge:
                 )
 
         sources: dict[str, str] = {}
-        lead_distance = front_lidar_distance_m(lidar)
+        detected_objects = ()
+        corridor_objects = ()
+        visual: VisualObservation
+        if self._detector is not None:
+            try:
+                detected_objects = tuple(self._detector.detect_measurement(rgb))
+                corridor_objects = driving_corridor_detections(detected_objects)
+            except Exception as error:
+                raise ObjectDetectionError(
+                    f"RGB ONNX detection failed for frame {frame}: {error}"
+                ) from error
+            sources["detected_objects"] = "RGB_ONNX_OBJECT_DETECTOR"
+            if corridor_objects:
+                selected = max(corridor_objects, key=lambda item: item.confidence)
+                visual = VisualObservation(
+                    frame, True, selected.class_name, selected.confidence,
+                    "RGB_ONNX_OBJECT_DETECTOR",
+                )
+            else:
+                visual = VisualObservation.unavailable(
+                    frame, source="RGB_ONNX_NO_CORRIDOR_OBJECT",
+                )
+        elif self._visual_provider is None:
+            visual = VisualObservation.unavailable(frame)
+        else:
+            try:
+                visual = self._visual_provider(rgb)
+                if not isinstance(visual, VisualObservation):
+                    raise TypeError("visual_provider must return VisualObservation")
+            except Exception as error:
+                raise ObjectDetectionError(
+                    f"configured RGB provider failed for frame {frame}: {error}"
+                ) from error
+            if visual.frame != frame:
+                raise ObjectDetectionError(
+                    f"configured RGB provider returned frame {visual.frame}, expected {frame}"
+                )
+
+        try:
+            lead_distance = front_lidar_distance_m(lidar)
+        except (TypeError, ValueError) as error:
+            raise PerceptionDataError(
+                f"LiDAR frame {frame} is unusable; normal control must be suppressed"
+            ) from error
         lead_speed: float | None = None
         if lead_distance is not None:
-            lead_speed = _associated_lead_speed(self._world, self._ego, lead_distance)
-            sources["lead_distance_m"] = "LIDAR_FRONT_CORRIDOR"
-            if lead_speed is None:
-                # A detected but unclassified obstacle is conservatively
-                # treated as stationary.  It must not disappear from C/D just
-                # because actor association failed.
+            if self._detector is not None and corridor_objects:
+                selected = max(corridor_objects, key=lambda item: item.confidence)
+                detected_objects = tuple(
+                    replace(item, distance_m=lead_distance) if item is selected else item
+                    for item in detected_objects
+                )
                 lead_speed = 0.0
+                sources["lead_distance_m"] = "RGB_ONNX_LIDAR_FRONT_CORRIDOR"
+                sources["lead_speed_mps"] = "RGB_LIDAR_STATIC_OBSTACLE_ASSUMPTION"
+            elif self._detector is not None:
+                lead_speed = 0.0
+                sources["lead_distance_m"] = "LIDAR_UNCLASSIFIED_FRONT_CORRIDOR"
                 sources["lead_speed_mps"] = "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
             else:
-                sources["lead_speed_mps"] = "CARLA_TRUTH_LIDAR_ASSOCIATED_ACTOR"
+                lead_speed = _associated_lead_speed(self._world, self._ego, lead_distance)
+                sources["lead_distance_m"] = "LIDAR_FRONT_CORRIDOR"
+                if lead_speed is None:
+                    # An unclassified obstacle must not disappear because
+                    # actor association or RGB semantics are unavailable.
+                    lead_speed = 0.0
+                    sources["lead_speed_mps"] = "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
+                else:
+                    sources["lead_speed_mps"] = "CARLA_TRUTH_LIDAR_ASSOCIATED_ACTOR"
+        safety_summary = self._fusion.update(
+            frame=frame,
+            sim_time_s=sim_time_s,
+            ego_speed_mps=_speed_mps(self._ego),
+            front_distance_m=lead_distance,
+            lidar_valid=True,
+            visual=visual,
+            lead_speed_mps=lead_speed,
+            lead_speed_source=sources.get("lead_speed_mps", "LEAD_TRACKER_UNAVAILABLE"),
+        )
+        sources["visual_object_class"] = visual.source
+        sources["c_fusion_mode"] = safety_summary.fusion_mode
+        sources["c_recommended_action"] = safety_summary.recommended_action
 
         traffic_light, stop_distance, traffic_source = _traffic_light_and_stop_distance(self._ego)
         sources["traffic_light"] = traffic_source
@@ -498,5 +586,6 @@ class CarlaPerceptionBridge:
             collision=collision,
             red_light_violation=red_light_violation,
             lane_invasion=lane_invasion,
+            detected_objects=detected_objects,
         )
-        return PerceptionSample(perception, MappingProxyType(sources), rgb, lidar)
+        return PerceptionSample(perception, MappingProxyType(sources), rgb, lidar, safety_summary)

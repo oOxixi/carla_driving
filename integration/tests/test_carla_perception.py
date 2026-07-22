@@ -7,6 +7,7 @@ import pytest
 
 from car_control_A.routing import RouteReference
 from car_control_A.simulator import SensorFrameBuffer
+from car_control_C import VisualObservation
 from integration.carla_perception import (
     COLLISION_SENSOR_ID,
     CONTINUOUS_SENSOR_IDS,
@@ -17,11 +18,14 @@ from integration.carla_perception import (
     CarlaPerceptionBridge,
     EventLedger,
     FrameAlignmentError,
+    ObjectDetectionError,
+    PerceptionDataError,
     PerceptionTimeoutError,
     attach_default_sensors,
     front_lidar_distance_m,
     _lane_metrics,
 )
+from integration.contracts import DetectedObject
 
 
 @dataclass
@@ -241,6 +245,9 @@ def test_bridge_combines_aligned_lidar_events_map_and_associated_actor_truth() -
     assert sample.source_by_field["lead_distance_m"] == "LIDAR_FRONT_CORRIDOR"
     assert sample.source_by_field["lead_speed_mps"] == "CARLA_TRUTH_LIDAR_ASSOCIATED_ACTOR"
     assert sample.source_by_field["distance_to_stop_line_m"] == "CARLA_MAP_STOP_WAYPOINT"
+    assert sample.safety_summary.front_distance_m == pytest.approx(11.84, abs=0.02)
+    assert sample.safety_summary.ttc_s == pytest.approx(5.92, abs=0.02)
+    assert not sample.safety_summary.visual_valid
 
 
 def test_route_deviation_uses_nearest_polyline_segment_not_only_vertices() -> None:
@@ -266,6 +273,110 @@ def test_lidar_obstacle_without_actor_is_kept_as_stationary_hazard() -> None:
     assert sample.frame.lead_distance_m == pytest.approx(6.02)
     assert sample.frame.lead_speed_mps == 0.0
     assert sample.source_by_field["lead_speed_mps"] == "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
+
+
+def test_rgb_detection_and_lidar_distance_replace_actor_truth_speed() -> None:
+    class Detector:
+        def detect_measurement(self, _measurement):
+            return (DetectedObject(2, "car", 0.9, (0.4, 0.3, 0.6, 0.8)),)
+
+    ego, lead, session = Actor(1, speed=5.0), Actor(2, x=12.0, speed=3.0), Session()
+    points = [[11.8, -0.2, 0.0], [12.0, 0.0, 0.0], [12.2, 0.2, 0.0]]
+    session.frame_buffer.push(RGB_SENSOR_ID, 5, Measurement(5))
+    session.frame_buffer.push(LIDAR_SENSOR_ID, 5, Measurement(5, points))
+    bridge = CarlaPerceptionBridge(
+        World((ego, lead)), WorldMap(), ego, session, _suite(session), detector=Detector(),
+    )
+
+    sample = bridge.acquire(5, 0.25, timeout_s=0.01)
+
+    assert sample.frame.lead_distance_m == pytest.approx(11.84, abs=0.02)
+    assert sample.frame.lead_speed_mps == 0.0
+    assert sample.frame.detected_objects[0].class_name == "car"
+    assert sample.frame.detected_objects[0].distance_m == pytest.approx(11.84, abs=0.02)
+    assert sample.safety_summary.object_class == "CAR"
+    assert sample.safety_summary.fused_valid
+    assert sample.source_by_field["detected_objects"] == "RGB_ONNX_OBJECT_DETECTOR"
+    assert sample.source_by_field["lead_distance_m"] == "RGB_ONNX_LIDAR_FRONT_CORRIDOR"
+    assert sample.source_by_field["lead_speed_mps"] == "RGB_LIDAR_STATIC_OBSTACLE_ASSUMPTION"
+
+
+def test_rgb_detector_failure_is_fail_closed() -> None:
+    class Detector:
+        def detect_measurement(self, _measurement):
+            raise RuntimeError("inference unavailable")
+
+    ego, session = Actor(1), Session()
+    session.frame_buffer.push(RGB_SENSOR_ID, 6, Measurement(6))
+    session.frame_buffer.push(LIDAR_SENSOR_ID, 6, Measurement(6))
+    bridge = CarlaPerceptionBridge(
+        World((ego,)), WorldMap(), ego, session, _suite(session), detector=Detector(),
+    )
+
+    with pytest.raises(ObjectDetectionError, match="inference unavailable") as caught:
+        bridge.acquire(6, 0.30, timeout_s=0.01)
+    assert caught.value.emergency_brake_required is True
+
+
+def test_configured_visual_provider_failure_is_fail_closed() -> None:
+    def provider(_measurement):
+        raise RuntimeError("provider unavailable")
+
+    ego, session = Actor(1), Session()
+    session.frame_buffer.push(RGB_SENSOR_ID, 15, Measurement(15))
+    session.frame_buffer.push(LIDAR_SENSOR_ID, 15, Measurement(15))
+    bridge = CarlaPerceptionBridge(
+        World((ego,)), WorldMap(), ego, session, _suite(session), visual_provider=provider,
+    )
+
+    with pytest.raises(ObjectDetectionError, match="provider unavailable") as caught:
+        bridge.acquire(15, 0.75, timeout_s=0.01)
+    assert caught.value.emergency_brake_required is True
+
+
+def test_upstream_rgb_semantics_are_fused_with_lidar_without_guessing() -> None:
+    ego, session = Actor(1, speed=5.0), Session()
+    points = [[6.0, -0.2, 0.0], [6.1, 0.0, 0.0], [6.2, 0.2, 0.0]]
+    session.frame_buffer.push(RGB_SENSOR_ID, 12, Measurement(12))
+    session.frame_buffer.push(LIDAR_SENSOR_ID, 12, Measurement(12, points))
+    bridge = CarlaPerceptionBridge(
+        World((ego,)), WorldMap(), ego, session, _suite(session),
+        visual_provider=lambda rgb: VisualObservation(rgb.frame, True, "pedestrian", 0.95, "RGB_TEST"),
+    )
+
+    sample = bridge.acquire(12, 0.6, timeout_s=0.01)
+
+    assert sample.safety_summary.object_class == "PEDESTRIAN"
+    assert sample.safety_summary.visual_valid
+    assert sample.safety_summary.fused_valid
+    assert sample.safety_summary.recommended_action == "EMERGENCY_BRAKE"
+    assert sample.source_by_field["visual_object_class"] == "RGB_TEST"
+
+
+def test_visual_hazard_without_lidar_range_requests_fail_closed_brake() -> None:
+    ego, session = Actor(1, speed=3.0), Session()
+    session.frame_buffer.push(RGB_SENSOR_ID, 13, Measurement(13))
+    session.frame_buffer.push(LIDAR_SENSOR_ID, 13, Measurement(13))
+    bridge = CarlaPerceptionBridge(
+        World((ego,)), WorldMap(), ego, session, _suite(session),
+        visual_provider=lambda rgb: VisualObservation(rgb.frame, True, "vehicle", 0.9),
+    )
+
+    sample = bridge.acquire(13, 0.65, timeout_s=0.01)
+
+    assert sample.safety_summary.fail_closed
+    assert sample.safety_summary.reason == "visual_hazard_without_range"
+
+
+def test_malformed_lidar_payload_is_a_fail_closed_acquisition_error() -> None:
+    ego, session = Actor(1), Session()
+    session.frame_buffer.push(RGB_SENSOR_ID, 14, Measurement(14))
+    session.frame_buffer.push(LIDAR_SENSOR_ID, 14, Measurement(14, [[1.0, 2.0]]))
+    bridge = CarlaPerceptionBridge(World((ego,)), WorldMap(), ego, session, _suite(session))
+
+    with pytest.raises(PerceptionDataError, match="normal control must be suppressed") as caught:
+        bridge.acquire(14, 0.7, timeout_s=0.01)
+    assert caught.value.emergency_brake_required is True
 
 
 def test_moving_through_red_stop_waypoint_sets_violation() -> None:

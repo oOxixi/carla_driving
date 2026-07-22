@@ -1,0 +1,32 @@
+[
+  {
+    "case": "lidar_invalid",
+    "visual_valid": false,
+    "lidar_valid": false,
+    "action": "FULL_BRAKE",
+    "reason": "lidar_invalid",
+    "throttle": 0.0,
+    "brake": 1.0,
+    "pass": true
+  },
+  {
+    "case": "rgb_hazard_without_lidar_range",
+    "visual_valid": true,
+    "lidar_valid": true,
+    "action": "FULL_BRAKE",
+    "reason": "visual_hazard_without_range",
+    "throttle": 0.0,
+    "brake": 1.0,
+    "pass": true
+  },
+  {
+    "case": "rgb_detector_unavailable_lidar_valid",
+    "visual_valid": false,
+    "lidar_valid": true,
+    "action": "KEEP_SPEED",
+    "reason": "front_hazard_outside_caution_threshold",
+    "throttle": null,
+    "brake": null,
+    "pass": true
+  }
+]
