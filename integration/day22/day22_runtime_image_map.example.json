@@ -1,0 +1,6 @@
+{
+  "red_light_near_stop_line": "artifacts/day22_runtime/red_light.png",
+  "pedestrian": "artifacts/day22_runtime/pedestrian.png",
+  "front_vehicle": "artifacts/day22_runtime/front_vehicle.png",
+  "no_false_pedestrian": "artifacts/day22_runtime/no_pedestrian.png"
+}

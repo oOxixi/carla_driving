@@ -1,0 +1,122 @@
+{
+  "schema_version": "1.1",
+  "validation_type": "REAL_QWEN2_5_VL_RUNTIME",
+  "total_cases": 12,
+  "runtime_success": 12,
+  "runtime_success_rate": 1.0,
+  "multimodal_image_cases": 4,
+  "text_only_cases": 8,
+  "qwen_format_valid": 12,
+  "qwen_format_valid_rate": 1.0,
+  "qwen_action_valid": 12,
+  "qwen_action_valid_rate": 1.0,
+  "qwen_raw_action_correct": 8,
+  "qwen_raw_action_accuracy": 0.6666666666666666,
+  "qwen_wrong_action_cases": [
+    {
+      "case": "ttc_emergency",
+      "expected": "EMERGENCY_STOP",
+      "qwen_raw_action": "SLOW_DOWN",
+      "qwen_reason": "前方距离不足",
+      "final_action": "EMERGENCY_STOP",
+      "final_source": "SAFETY_RULE"
+    },
+    {
+      "case": "safe",
+      "expected": "START",
+      "qwen_raw_action": "STOP",
+      "qwen_reason": "前方距离不足",
+      "final_action": "START",
+      "final_source": "QWEN_UNGROUNDED_REJECTED"
+    },
+    {
+      "case": "rain",
+      "expected": "SET_SPEED",
+      "qwen_raw_action": "STOP",
+      "qwen_reason": "推荐动作无",
+      "final_action": "SET_SPEED",
+      "final_source": "SAFETY_RULE"
+    },
+    {
+      "case": "no_false_pedestrian",
+      "expected": "START",
+      "qwen_raw_action": "STOP",
+      "qwen_reason": "前方距离不足",
+      "final_action": "START",
+      "final_source": "QWEN_UNGROUNDED_REJECTED"
+    }
+  ],
+  "short_explanation_cases": 12,
+  "short_explanation_rate": 1.0,
+  "forbidden_control_field_cases": [],
+  "hallucination_cases": [
+    {
+      "case": "safe",
+      "flags": [
+        "UNGROUNDED_CONSERVATIVE_ACTION",
+        "UNSUPPORTED_DISTANCE_RISK_CLAIM"
+      ]
+    },
+    {
+      "case": "rain",
+      "flags": [
+        "UNGROUNDED_CONSERVATIVE_ACTION"
+      ]
+    },
+    {
+      "case": "no_false_pedestrian",
+      "flags": [
+        "UNGROUNDED_CONSERVATIVE_ACTION",
+        "UNSUPPORTED_DISTANCE_RISK_CLAIM"
+      ]
+    }
+  ],
+  "safety_override_count": 4,
+  "safety_override_cases": [
+    {
+      "case": "ttc_emergency",
+      "qwen_raw_action": "SLOW_DOWN",
+      "final_action": "EMERGENCY_STOP",
+      "final_source": "SAFETY_RULE",
+      "final_reason": "TTC风险过高"
+    },
+    {
+      "case": "safe",
+      "qwen_raw_action": "STOP",
+      "final_action": "START",
+      "final_source": "QWEN_UNGROUNDED_REJECTED",
+      "final_reason": "结构化状态无风险"
+    },
+    {
+      "case": "rain",
+      "qwen_raw_action": "STOP",
+      "final_action": "SET_SPEED",
+      "final_source": "SAFETY_RULE",
+      "final_reason": "雨天降低速度"
+    },
+    {
+      "case": "no_false_pedestrian",
+      "qwen_raw_action": "STOP",
+      "final_action": "START",
+      "final_source": "QWEN_UNGROUNDED_REJECTED",
+      "final_reason": "结构化状态无风险"
+    }
+  ],
+  "final_action_correct": 12,
+  "final_action_accuracy": 1.0,
+  "final_confirmation_correct": 12,
+  "final_confirmation_accuracy": 1.0,
+  "runtime_error_cases": [],
+  "latency_s": {
+    "count": 12,
+    "mean": 1.8319583333333334,
+    "max": 2.5986,
+    "min": 1.6708
+  },
+  "notes": [
+    "Qwen raw semantic accuracy and final safety-covered accuracy are reported separately.",
+    "A wrong Qwen action may be overridden by deterministic safety policy.",
+    "Second-group control consumes only the final command.",
+    "Model weights are local dependencies and are not committed to Git."
+  ]
+}

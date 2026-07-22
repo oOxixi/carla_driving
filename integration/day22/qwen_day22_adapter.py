@@ -315,11 +315,74 @@ class Day22QwenAdapter:
             )
 
         if qwen_decision is not None:
-            return qwen_decision
+            return self._ground_safe_scene_qwen_decision(
+                context=context,
+                safety=safety,
+                qwen_decision=qwen_decision,
+            )
 
         return _make_decision(
             "START",
             confidence=0.90,
             reason_zh="安全状态正常",
             decision_source="DETERMINISTIC_BASELINE",
+        )
+
+    def _ground_safe_scene_qwen_decision(
+        self,
+        *,
+        context: Day22Context,
+        safety: Mapping[str, Any],
+        qwen_decision: dict[str, Any],
+    ) -> dict[str, Any]:
+        """
+        处理没有触发任何确定性风险规则的安全场景。
+
+        原则：
+        - 明确的用户停车/减速命令可以执行；
+        - Qwen仅凭图片或语言生成、但结构化状态不支持的危险判断，
+          不能直接改变车辆高层目标；
+        - 视觉危险必须先进入perception/safety_state统一接口，
+          不能绕过结构化感知接口。
+        """
+
+        action = str(qwen_decision.get("action", "")).upper()
+        voice = str(context.voice_command).strip()
+
+        stop_words = (
+            "停车",
+            "停下",
+            "停止",
+            "别走",
+            "不要走",
+            "紧急停车",
+        )
+
+        slow_words = (
+            "减速",
+            "慢一点",
+            "开慢",
+            "降低速度",
+        )
+
+        if action == "START":
+            return qwen_decision
+
+        if (
+            action in {"STOP", "EMERGENCY_STOP"}
+            and any(word in voice for word in stop_words)
+        ):
+            return qwen_decision
+
+        if (
+            action in {"SLOW_DOWN", "SET_SPEED"}
+            and any(word in voice for word in slow_words)
+        ):
+            return qwen_decision
+
+        return _make_decision(
+            "START",
+            confidence=0.90,
+            reason_zh="结构化状态无风险",
+            decision_source="QWEN_UNGROUNDED_REJECTED",
         )
