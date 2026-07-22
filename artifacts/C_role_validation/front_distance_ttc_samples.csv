@@ -1,0 +1,6 @@
+﻿frame,sim_time_s,front_distance_m,ego_speed_mps,lead_speed_mps,closing_speed_mps,ttc_s,visual_class,visual_valid,lidar_valid,fusion_mode,recommended_action,reason
+1,0.05,30.0,8.0,6.0,2.0,15.0,VEHICLE,True,True,RGB_LIDAR,KEEP_SPEED,front_hazard_outside_caution_threshold
+2,0.1,20.0,8.0,5.0,3.0,6.666666666666667,VEHICLE,True,True,RGB_LIDAR,KEEP_SPEED,front_hazard_outside_caution_threshold
+3,0.15,12.0,8.0,4.0,4.0,3.0,VEHICLE,True,True,RGB_LIDAR,KEEP_SPEED,front_hazard_outside_caution_threshold
+4,0.2,7.0,8.0,2.0,6.0,1.1666666666666667,VEHICLE,True,True,RGB_LIDAR,EMERGENCY_BRAKE,low_ttc
+5,0.25,4.0,8.0,0.0,8.0,0.5,VEHICLE,True,True,RGB_LIDAR,EMERGENCY_BRAKE,low_ttc

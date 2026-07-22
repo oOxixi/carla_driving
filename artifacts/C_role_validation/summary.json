@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "scope": "member_C_pre_CARLA_deterministic_acceptance",
+  "limitations": [
+    "This is a deterministic controller/fusion validation, not a live CARLA road test.",
+    "RGB semantics are injected for this deterministic curve; ONNX decoding and bridge failure behaviour are covered separately by integration tests."
+  ],
+  "upstream_sync": {
+    "repository": "https://github.com/oOxixi/carla_driving",
+    "main_observed_commit": "42ce0500150e5b3f150d987cfb225c8e33f9a0f0",
+    "rgb_onnx_source_commit": "ef7950a408e7fe4a647f23f2e667e377066612a1"
+  },
+  "parameters": {
+    "longitudinal": {
+      "max_lateral_accel_mps2": 2.5,
+      "command_accel_mps2": 1.5,
+      "command_decel_mps2": 3.0,
+      "max_accel_mps2": 2.5,
+      "max_decel_mps2": 5.0,
+      "max_control_delta_per_s": 2.0,
+      "hold_brake": 0.55,
+      "emergency_brake": 0.85,
+      "standstill_gap_m": 3.0,
+      "time_gap_s": 1.5,
+      "emergency_ttc_s": 1.5,
+      "comfortable_decel_mps2": 3.0
+    },
+    "safety_state": {
+      "visual_confidence_threshold": 0.6,
+      "caution_distance_m": 10.0,
+      "emergency_distance_m": 5.0,
+      "caution_ttc_s": 2.5,
+      "emergency_ttc_s": 1.5,
+      "max_observation_gap_s": 0.3,
+      "full_brake": 1.0
+    }
+  },
+  "metrics": {
+    "stop_time_s": 3.8,
+    "stop_distance_m": 15.647921,
+    "stop_curve_frames": 95,
+    "minimum_sample_ttc_s": 0.5
+  },
+  "checks": {
+    "distance_ttc_has_emergency_transition": true,
+    "stop_reached_within_8s": true,
+    "stop_hold_maintained_for_20_frames": true,
+    "all_fault_injections_pass": true
+  },
+  "status": "PASS",
+  "files": {
+    "front_distance_ttc_samples": "front_distance_ttc_samples.csv",
+    "stop_curve": "stop_curve.csv",
+    "fault_injection": "fault_injection.json"
+  }
+}

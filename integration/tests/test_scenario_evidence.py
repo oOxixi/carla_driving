@@ -40,6 +40,7 @@ def test_unified_evidence_is_auditable_and_scored(tmp_path):
         raw_control=ControlOutput(0.0, 0.4, 0.1), final_control=ControlOutput(0.0, 1.0, 0.0),
         safety_reason="STOP_LINE_GUARD", safety_override=True, timing=_timing(1_000),
         command_id="cmd-1", fsm_state="APPROACH_STOP", longitudinal=_longitudinal(2.5),
+        c_safety_state={"visual_valid": True, "lidar_valid": True, "fusion_mode": "RGB_LIDAR"},
     )
     recorder.record_feedback(ExecutionFeedback("cmd-1", ExecutionStatus.SUCCEEDED, 0.05, "stopped"))
     summary = recorder.complete()
@@ -53,6 +54,7 @@ def test_unified_evidence_is_auditable_and_scored(tmp_path):
     assert frame["raw_control"]["brake"] == 0.4
     assert frame["final_control"]["brake"] == 1.0
     assert frame["safety"] == {"override": True, "reason": "STOP_LINE_GUARD"}
+    assert frame["c_safety_state"]["fusion_mode"] == "RGB_LIDAR"
     assert frame["latency"]["decision_ms"] == pytest.approx(0.00001)
     assert records[1]["latency"] == {
         "asr_ms": 0.0002, "intent_ms": 0.0002, "intent_to_submit_ms": 0.0005,

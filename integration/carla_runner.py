@@ -725,6 +725,7 @@ def run(args: argparse.Namespace) -> None:
                     runtime.lateral.reset()
 
                 perception_sources: dict[str, str] = {}
+                c_safety_state: dict[str, object] | None = None
                 watchdog_alerts: list[str] = []
                 sensor_startup_grace = False
                 try:
@@ -734,6 +735,11 @@ def run(args: argparse.Namespace) -> None:
                         )
                         scene = sample.frame
                         perception_sources = dict(sample.source_by_field)
+                        c_safety_state = sample.safety_summary.to_dict()
+                        if sample.safety_summary.fail_closed:
+                            watchdog_alerts.append(
+                                "C_FUSION_" + sample.safety_summary.reason.upper()
+                            )
                     else:
                         scene = _scene_from_world(
                             world, ego, frame, state.sim_time_s, scenario_lead=scenario_lead,
@@ -816,6 +822,7 @@ def run(args: argparse.Namespace) -> None:
                         command_id=command_id,
                         fsm_state=runtime.fsm.state.value,
                         perception_sources=perception_sources,
+                        c_safety_state=c_safety_state,
                     )
 
                 frames_completed += 1

@@ -222,7 +222,8 @@ class ScenarioEvidenceRecorder:
                       fsm_state: str | None = None,
                       longitudinal: object | None = None,
                       lateral: object | None = None,
-                      perception_sources: Mapping[str, str] | None = None) -> None:
+                      perception_sources: Mapping[str, str] | None = None,
+                      c_safety_state: object | None = None) -> None:
         """Record one applied control frame and update scenario aggregates."""
         self._ensure_active()
         if type(safety_override) is not bool:
@@ -330,6 +331,7 @@ class ScenarioEvidenceRecorder:
             vehicle=_jsonable(vehicle),
             command_id=command_id, fsm_state=fsm_state,
             scene=_jsonable(scene), perception_sources=_jsonable(perception_sources or {}),
+            c_safety_state=_jsonable(c_safety_state),
             longitudinal=_jsonable(longitudinal), lateral=_jsonable(lateral),
             raw_control=_jsonable(raw_control), final_control=_jsonable(final_control),
             safety={"override": safety_override, "reason": safety_reason},
@@ -339,7 +341,8 @@ class ScenarioEvidenceRecorder:
     def record_runtime_frame(self, result: object, scene: object, *, raw_control: object,
                              timing: FrameTiming, command_id: str | None = None,
                              fsm_state: str | None = None,
-                             perception_sources: Mapping[str, str] | None = None) -> None:
+                             perception_sources: Mapping[str, str] | None = None,
+                             c_safety_state: object | None = None) -> None:
         """Convenience adapter for :class:`integration.contracts.FrameResult`.
 
         ``raw_control`` stays mandatory: silently reconstructing it from the
@@ -353,7 +356,7 @@ class ScenarioEvidenceRecorder:
             safety_override=_field(result, "safety_override", False),
             timing=timing, command_id=command_id, fsm_state=fsm_state,
             longitudinal=_field(result, "longitudinal"), lateral=_field(result, "lateral"),
-            perception_sources=perception_sources,
+            perception_sources=perception_sources, c_safety_state=c_safety_state,
         )
         for feedback in _field(result, "feedback", ()):
             self.record_feedback(feedback)
