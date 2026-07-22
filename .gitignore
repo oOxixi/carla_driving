@@ -1,6 +1,5 @@
 __pycache__/
 *.pyc
-.pytest_cache/
 .venv/
 venv/
 logs/
@@ -23,6 +22,10 @@ artifacts/sensor_remaining_v1/
 artifacts/sensor_remaining_v2/
 artifacts/sensor_topology_v1/
 .pytest_cache/
+# Local comparison and test scratch data; never project deliverables.
+artifacts/upstream_main/
+artifacts/current_head.bundle
+artifacts/pytest-c-role-*/
 *.zip
 *.mp3
 *.wav

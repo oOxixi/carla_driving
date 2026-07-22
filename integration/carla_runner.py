@@ -775,10 +775,6 @@ def run(args: argparse.Namespace) -> None:
                     sensor_startup_grace = step_index < args.sensor_startup_grace_frames
                     if not sensor_startup_grace:
                         watchdog_alerts.append(f"PERCEPTION_{type(error).__name__.upper()}")
-                if spec is not None:
-                    truth = _scenario_facts(ego, origin, spec, frame=frame, sim_time_s=state.sim_time_s, elapsed_s=elapsed_s)
-                    scene, fact_sources = _select_scene_facts(scene, truth, args.scenario_facts_mode)
-                    perception_sources.update(fact_sources)
                 sensor_ready_ns = time.monotonic_ns()
                 if not sensor_startup_grace and watchdog.check(now_s=time.monotonic()) is not None:
                     watchdog_alerts.append("RUNTIME_WATCHDOG_TIMEOUT")

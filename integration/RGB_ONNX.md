@@ -40,3 +40,22 @@ If the configured model cannot load or inference fails, perception raises a
 fail-closed error and normal propulsion is suppressed.  Model weights are not
 committed by default.  Confirm the model license and competition distribution
 rules before packaging third-party weights.
+
+## C-side conservative safety summary
+
+The frame log also records `c_safety_state`, including `visual_valid`,
+`lidar_valid`, `fused_valid`, `front_distance_m`, `closing_speed_mps`, `ttc_s`,
+`fusion_mode`, `recommended_action`, `reason`, and `source_by_field`.
+
+- Missing or low-confidence RGB semantics never invent an object class; LiDAR
+  can still independently request slowing or braking.
+- An RGB corridor hazard without a usable LiDAR range produces
+  `FULL_BRAKE / visual_hazard_without_range`.
+- A LiDAR obstacle missed by RGB remains `LIDAR_ONLY` and is treated
+  conservatively as stationary when no reliable lead speed is available.
+- Malformed LiDAR data, detector load failure, or inference failure suppresses
+  normal propulsion through the fail-closed path.
+
+The central-image corridor is an explicit heuristic, not lane segmentation.
+Keep `source_by_field` in evidence and distinguish sensor perception from
+scenario-injected or CARLA-world facts.
