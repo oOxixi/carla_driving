@@ -1,0 +1,508 @@
+[
+  {
+    "case": "red_light_near_stop_line",
+    "expected": "STOP",
+    "expected_confirmation": false,
+    "input": {
+      "voice_command": "继续走",
+      "safety_state": {
+        "traffic_light": "RED",
+        "distance_to_stop_line_m": 5.0
+      },
+      "perception": {},
+      "scene_state": {}
+    },
+    "decision": {
+      "action": "STOP",
+      "confidence": 0.98,
+      "requires_confirmation": false,
+      "reason_zh": "红灯安全约束优先",
+      "decision_source": "SAFETY_RULE"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day22_ae456bad",
+      "source_text": "继续走",
+      "intent": "STOP",
+      "parameters": {},
+      "confidence": 0.98,
+      "intent_confidence": 0.98,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3554481043750220,
+      "reason_zh": "红灯安全约束优先"
+    }
+  },
+  {
+    "case": "pedestrian",
+    "expected": "STOP",
+    "expected_confirmation": false,
+    "input": {
+      "voice_command": "继续",
+      "safety_state": {
+        "object_class": "PEDESTRIAN",
+        "object_confidence": 0.95,
+        "visual_valid": true
+      },
+      "perception": {},
+      "scene_state": {}
+    },
+    "decision": {
+      "action": "STOP",
+      "confidence": 0.98,
+      "requires_confirmation": false,
+      "reason_zh": "检测到可靠行人风险",
+      "decision_source": "SAFETY_RULE"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day22_a31f9cba",
+      "source_text": "继续",
+      "intent": "STOP",
+      "parameters": {},
+      "confidence": 0.98,
+      "intent_confidence": 0.98,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3554481043801721,
+      "reason_zh": "检测到可靠行人风险"
+    }
+  },
+  {
+    "case": "front_vehicle",
+    "expected": "SLOW_DOWN",
+    "expected_confirmation": false,
+    "input": {
+      "voice_command": "保持速度",
+      "safety_state": {
+        "front_distance_m": 8.0,
+        "closing_speed_mps": 1.0,
+        "ttc_s": 8.0,
+        "lidar_valid": true
+      },
+      "perception": {},
+      "scene_state": {}
+    },
+    "decision": {
+      "action": "SLOW_DOWN",
+      "confidence": 0.9,
+      "requires_confirmation": false,
+      "reason_zh": "前方距离不足",
+      "decision_source": "SAFETY_RULE",
+      "target_speed_mps": 3.0
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day22_0f9fede9",
+      "source_text": "保持速度",
+      "intent": "SLOW_DOWN",
+      "parameters": {
+        "speed": 3.0,
+        "unit": "m/s"
+      },
+      "confidence": 0.9,
+      "intent_confidence": 0.9,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3554481043836151,
+      "reason_zh": "前方距离不足"
+    }
+  },
+  {
+    "case": "ttc_emergency",
+    "expected": "EMERGENCY_STOP",
+    "expected_confirmation": false,
+    "input": {
+      "voice_command": "继续",
+      "safety_state": {
+        "front_distance_m": 4.0,
+        "closing_speed_mps": 4.0,
+        "ttc_s": 1.0,
+        "lidar_valid": true
+      },
+      "perception": {},
+      "scene_state": {}
+    },
+    "decision": {
+      "action": "EMERGENCY_STOP",
+      "confidence": 0.99,
+      "requires_confirmation": false,
+      "reason_zh": "TTC风险过高",
+      "decision_source": "SAFETY_RULE"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day22_77c88f95",
+      "source_text": "继续",
+      "intent": "EMERGENCY_STOP",
+      "parameters": {},
+      "confidence": 0.99,
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3554481043867696,
+      "reason_zh": "TTC风险过高"
+    }
+  },
+  {
+    "case": "low_confidence",
+    "expected": "STOP",
+    "expected_confirmation": true,
+    "input": {
+      "voice_command": "继续",
+      "safety_state": {
+        "input_confidence": 0.4
+      },
+      "perception": {},
+      "scene_state": {}
+    },
+    "decision": {
+      "action": "STOP",
+      "confidence": 0.4,
+      "requires_confirmation": true,
+      "reason_zh": "安全输入置信度不足",
+      "decision_source": "SAFETY_RULE"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day22_45d6f0a6",
+      "source_text": "继续",
+      "intent": "STOP",
+      "parameters": {},
+      "confidence": 0.4,
+      "intent_confidence": 0.4,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": true,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3554481043889835,
+      "reason_zh": "安全输入置信度不足"
+    }
+  },
+  {
+    "case": "safe",
+    "expected": "START",
+    "expected_confirmation": false,
+    "input": {
+      "voice_command": "继续",
+      "safety_state": {
+        "front_distance_m": 50.0,
+        "input_confidence": 1.0,
+        "lidar_valid": true
+      },
+      "perception": {},
+      "scene_state": {}
+    },
+    "decision": {
+      "action": "START",
+      "confidence": 0.9,
+      "requires_confirmation": false,
+      "reason_zh": "安全状态正常",
+      "decision_source": "DETERMINISTIC_BASELINE"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day22_530a148c",
+      "source_text": "继续",
+      "intent": "START",
+      "parameters": {},
+      "confidence": 0.9,
+      "intent_confidence": 0.9,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3554481043910797,
+      "reason_zh": "安全状态正常"
+    }
+  },
+  {
+    "case": "rain",
+    "expected": "SET_SPEED",
+    "expected_confirmation": false,
+    "input": {
+      "voice_command": "继续",
+      "safety_state": {
+        "weather": "rain",
+        "lidar_valid": true
+      },
+      "perception": {},
+      "scene_state": {}
+    },
+    "decision": {
+      "action": "SET_SPEED",
+      "confidence": 0.85,
+      "requires_confirmation": false,
+      "reason_zh": "雨天降低速度",
+      "decision_source": "SAFETY_RULE",
+      "target_speed_mps": 5.0
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day22_acfa8a82",
+      "source_text": "继续",
+      "intent": "SET_SPEED",
+      "parameters": {
+        "speed": 5.0,
+        "unit": "m/s"
+      },
+      "confidence": 0.85,
+      "intent_confidence": 0.85,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3554481043935194,
+      "reason_zh": "雨天降低速度"
+    }
+  },
+  {
+    "case": "user_speed_conflict",
+    "expected": "STOP",
+    "expected_confirmation": false,
+    "input": {
+      "voice_command": "加速",
+      "safety_state": {
+        "traffic_light": "RED",
+        "distance_to_stop_line_m": 4.0
+      },
+      "perception": {},
+      "scene_state": {}
+    },
+    "decision": {
+      "action": "STOP",
+      "confidence": 0.98,
+      "requires_confirmation": false,
+      "reason_zh": "红灯安全约束优先",
+      "decision_source": "SAFETY_RULE"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day22_75359ed5",
+      "source_text": "加速",
+      "intent": "STOP",
+      "parameters": {},
+      "confidence": 0.98,
+      "intent_confidence": 0.98,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3554481043953808,
+      "reason_zh": "红灯安全约束优先"
+    }
+  },
+  {
+    "case": "lidar_only",
+    "expected": "SLOW_DOWN",
+    "expected_confirmation": false,
+    "input": {
+      "voice_command": "继续",
+      "safety_state": {
+        "front_distance_m": 8.0,
+        "lidar_valid": true,
+        "visual_valid": false,
+        "object_class": null,
+        "object_confidence": 0.0,
+        "fusion_mode": "LIDAR_ONLY"
+      },
+      "perception": {},
+      "scene_state": {}
+    },
+    "decision": {
+      "action": "SLOW_DOWN",
+      "confidence": 0.9,
+      "requires_confirmation": false,
+      "reason_zh": "前方距离不足",
+      "decision_source": "SAFETY_RULE",
+      "target_speed_mps": 3.0
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day22_cc428c78",
+      "source_text": "继续",
+      "intent": "SLOW_DOWN",
+      "parameters": {
+        "speed": 3.0,
+        "unit": "m/s"
+      },
+      "confidence": 0.9,
+      "intent_confidence": 0.9,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3554481043977496,
+      "reason_zh": "前方距离不足"
+    }
+  },
+  {
+    "case": "full_brake",
+    "expected": "STOP",
+    "expected_confirmation": false,
+    "input": {
+      "voice_command": "继续",
+      "safety_state": {
+        "recommended_action": "FULL_BRAKE",
+        "fusion_mode": "FAIL_CLOSED"
+      },
+      "perception": {},
+      "scene_state": {}
+    },
+    "decision": {
+      "action": "STOP",
+      "confidence": 0.99,
+      "requires_confirmation": false,
+      "reason_zh": "安全模块要求停车",
+      "decision_source": "SAFETY_RULE"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day22_03a962c9",
+      "source_text": "继续",
+      "intent": "STOP",
+      "parameters": {},
+      "confidence": 0.99,
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3554481043995446,
+      "reason_zh": "安全模块要求停车"
+    }
+  },
+  {
+    "case": "no_false_pedestrian",
+    "expected": "START",
+    "expected_confirmation": false,
+    "input": {
+      "voice_command": "继续",
+      "safety_state": {
+        "front_distance_m": 80.0,
+        "object_class": null,
+        "object_confidence": 0.0,
+        "visual_valid": false,
+        "lidar_valid": true
+      },
+      "perception": {},
+      "scene_state": {}
+    },
+    "decision": {
+      "action": "START",
+      "confidence": 0.9,
+      "requires_confirmation": false,
+      "reason_zh": "安全状态正常",
+      "decision_source": "DETERMINISTIC_BASELINE"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day22_ba8f3866",
+      "source_text": "继续",
+      "intent": "START",
+      "parameters": {},
+      "confidence": 0.9,
+      "intent_confidence": 0.9,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": false,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3554481044025363,
+      "reason_zh": "安全状态正常"
+    }
+  },
+  {
+    "case": "sensor_missing",
+    "expected": "STOP",
+    "expected_confirmation": true,
+    "input": {
+      "voice_command": "继续",
+      "safety_state": {
+        "visual_valid": false,
+        "lidar_valid": false,
+        "fused_valid": false,
+        "input_confidence": 0.3
+      },
+      "perception": {},
+      "scene_state": {}
+    },
+    "decision": {
+      "action": "STOP",
+      "confidence": 0.99,
+      "requires_confirmation": true,
+      "reason_zh": "LiDAR无效安全停车",
+      "decision_source": "SAFETY_RULE"
+    },
+    "command": {
+      "schema_version": "1.0",
+      "command_id": "qwen_day22_c692c7d7",
+      "source_text": "继续",
+      "intent": "STOP",
+      "parameters": {},
+      "confidence": 0.99,
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "ambiguity_type": "NONE",
+      "confirm_required": true,
+      "errors": [],
+      "warnings": [],
+      "valid_duration_s": 3.0,
+      "t_audio_start_ns": null,
+      "t_asr_end_ns": null,
+      "t_intent_end_ns": 3554481044043322,
+      "reason_zh": "LiDAR无效安全停车"
+    }
+  }
+]
