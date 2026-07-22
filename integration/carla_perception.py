@@ -49,10 +49,6 @@ class FrameAlignmentError(PerceptionAcquisitionError):
     """A callback payload was labelled with a different CARLA frame."""
 
 
-class PerceptionDataError(PerceptionAcquisitionError):
-    """A required sensor payload was present but malformed or unusable."""
-
-
 class ObjectDetectionError(PerceptionAcquisitionError):
     """Configured RGB inference failed, so normal control is unsafe."""
 
@@ -384,6 +380,24 @@ def _traffic_light_and_stop_distance(ego: Any) -> tuple[str, float | None, str]:
     return state, None, "CARLA_EGO_TRAFFIC_LIGHT_STATE"
 
 
+def route_deviation_m(x_m: float, y_m: float, route: RouteReference) -> float:
+    """Return planar distance from a point to the nearest route segment."""
+    points = route.points_xy_m
+    if len(points) == 1:
+        return math.hypot(x_m - points[0][0], y_m - points[0][1])
+    segment_distances: list[float] = []
+    for (ax, ay), (bx, by) in zip(points, points[1:]):
+        dx, dy = bx - ax, by - ay
+        length_squared = dx * dx + dy * dy
+        if length_squared <= 1e-12:
+            segment_distances.append(math.hypot(x_m - ax, y_m - ay))
+            continue
+        projection = max(0.0, min(1.0, ((x_m - ax) * dx + (y_m - ay) * dy) / length_squared))
+        nearest_x, nearest_y = ax + projection * dx, ay + projection * dy
+        segment_distances.append(math.hypot(x_m - nearest_x, y_m - nearest_y))
+    return min(segment_distances)
+
+
 def _lane_metrics(world_map: Any, ego: Any, route: RouteReference | None) -> tuple[float | None, float | None]:
     location = ego.get_location()
     waypoint = world_map.get_waypoint(location, project_to_road=True)
@@ -398,22 +412,7 @@ def _lane_metrics(world_map: Any, ego: Any, route: RouteReference | None) -> tup
     route_deviation: float | None = None
     if route is not None:
         ex, ey, _ = _xyz(location)
-        points = route.points_xy_m
-        # Reference routes are sampled at a finite interval.  Measuring only
-        # to vertices exaggerates deviation midway through a long segment and
-        # can cause spurious safety intervention; use the nearest point on
-        # every polyline segment instead.
-        segment_distances: list[float] = []
-        for (ax, ay), (bx, by) in zip(points, points[1:]):
-            dx, dy = bx - ax, by - ay
-            length_squared = dx * dx + dy * dy
-            if length_squared <= 1e-12:
-                segment_distances.append(math.hypot(ex - ax, ey - ay))
-                continue
-            fraction = max(0.0, min(1.0, ((ex - ax) * dx + (ey - ay) * dy) / length_squared))
-            nearest_x, nearest_y = ax + fraction * dx, ay + fraction * dy
-            segment_distances.append(math.hypot(ex - nearest_x, ey - nearest_y))
-        route_deviation = min(segment_distances)
+        route_deviation = route_deviation_m(ex, ey, route)
     elif lane_offset is not None:
         route_deviation = abs(lane_offset)
     return lane_offset, route_deviation
@@ -425,9 +424,6 @@ class CarlaPerceptionBridge:
     def __init__(
         self, world: Any, world_map: Any, ego: Any, session: CarlaSession,
         sensors: AttachedCarlaSensors, detector: Any | None = None,
-        *,
-        visual_provider: Callable[[Any], VisualObservation] | None = None,
-        fusion: ConservativeSensorFusion | None = None,
     ) -> None:
         if detector is not None and visual_provider is not None:
             raise ValueError("configure detector or visual_provider, not both")
@@ -437,8 +433,6 @@ class CarlaPerceptionBridge:
         self._session = session
         self._sensors = sensors
         self._detector = detector
-        self._visual_provider = visual_provider
-        self._fusion = fusion or ConservativeSensorFusion()
 
     def acquire(
         self, frame: int, sim_time_s: float, *, route: RouteReference | None = None,
@@ -465,51 +459,18 @@ class CarlaPerceptionBridge:
 
         sources: dict[str, str] = {}
         detected_objects = ()
-        corridor_objects = ()
-        visual: VisualObservation
         if self._detector is not None:
             try:
                 detected_objects = tuple(self._detector.detect_measurement(rgb))
-                corridor_objects = driving_corridor_detections(detected_objects)
             except Exception as error:
                 raise ObjectDetectionError(
                     f"RGB ONNX detection failed for frame {frame}: {error}"
                 ) from error
             sources["detected_objects"] = "RGB_ONNX_OBJECT_DETECTOR"
-            if corridor_objects:
-                selected = max(corridor_objects, key=lambda item: item.confidence)
-                visual = VisualObservation(
-                    frame, True, selected.class_name, selected.confidence,
-                    "RGB_ONNX_OBJECT_DETECTOR",
-                )
-            else:
-                visual = VisualObservation.unavailable(
-                    frame, source="RGB_ONNX_NO_CORRIDOR_OBJECT",
-                )
-        elif self._visual_provider is None:
-            visual = VisualObservation.unavailable(frame)
-        else:
-            try:
-                visual = self._visual_provider(rgb)
-                if not isinstance(visual, VisualObservation):
-                    raise TypeError("visual_provider must return VisualObservation")
-            except Exception as error:
-                raise ObjectDetectionError(
-                    f"configured RGB provider failed for frame {frame}: {error}"
-                ) from error
-            if visual.frame != frame:
-                raise ObjectDetectionError(
-                    f"configured RGB provider returned frame {visual.frame}, expected {frame}"
-                )
-
-        try:
-            lead_distance = front_lidar_distance_m(lidar)
-        except (TypeError, ValueError) as error:
-            raise PerceptionDataError(
-                f"LiDAR frame {frame} is unusable; normal control must be suppressed"
-            ) from error
+        lead_distance = front_lidar_distance_m(lidar)
         lead_speed: float | None = None
         if lead_distance is not None:
+            corridor_objects = driving_corridor_detections(detected_objects)
             if self._detector is not None and corridor_objects:
                 selected = max(corridor_objects, key=lambda item: item.confidence)
                 detected_objects = tuple(
@@ -520,6 +481,10 @@ class CarlaPerceptionBridge:
                 sources["lead_distance_m"] = "RGB_ONNX_LIDAR_FRONT_CORRIDOR"
                 sources["lead_speed_mps"] = "RGB_LIDAR_STATIC_OBSTACLE_ASSUMPTION"
             elif self._detector is not None:
+                # A LiDAR obstacle must not disappear because RGB missed it.
+                # A detected but unclassified obstacle is conservatively
+                # treated as stationary.  It must not disappear from C/D just
+                # because actor association failed.
                 lead_speed = 0.0
                 sources["lead_distance_m"] = "LIDAR_UNCLASSIFIED_FRONT_CORRIDOR"
                 sources["lead_speed_mps"] = "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
@@ -527,25 +492,10 @@ class CarlaPerceptionBridge:
                 lead_speed = _associated_lead_speed(self._world, self._ego, lead_distance)
                 sources["lead_distance_m"] = "LIDAR_FRONT_CORRIDOR"
                 if lead_speed is None:
-                    # An unclassified obstacle must not disappear because
-                    # actor association or RGB semantics are unavailable.
                     lead_speed = 0.0
                     sources["lead_speed_mps"] = "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
                 else:
                     sources["lead_speed_mps"] = "CARLA_TRUTH_LIDAR_ASSOCIATED_ACTOR"
-        safety_summary = self._fusion.update(
-            frame=frame,
-            sim_time_s=sim_time_s,
-            ego_speed_mps=_speed_mps(self._ego),
-            front_distance_m=lead_distance,
-            lidar_valid=True,
-            visual=visual,
-            lead_speed_mps=lead_speed,
-            lead_speed_source=sources.get("lead_speed_mps", "LEAD_TRACKER_UNAVAILABLE"),
-        )
-        sources["visual_object_class"] = visual.source
-        sources["c_fusion_mode"] = safety_summary.fusion_mode
-        sources["c_recommended_action"] = safety_summary.recommended_action
 
         traffic_light, stop_distance, traffic_source = _traffic_light_and_stop_distance(self._ego)
         sources["traffic_light"] = traffic_source

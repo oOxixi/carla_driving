@@ -1,0 +1,71 @@
+{
+  "collision_count": 0,
+  "command_count": 1,
+  "command_terminal_statuses": {
+    "scenario_cmd_000": "FAILED"
+  },
+  "completion": false,
+  "completion_basis": "explicit",
+  "detail": "scenario acceptance criteria evaluated",
+  "difficulty": "challenge",
+  "final_speed_mps": 0.0,
+  "frames": 400,
+  "latency": {
+    "decision_avg_ms": 0.0,
+    "decision_max_ms": 0.0,
+    "sensor_to_control_avg_ms": 0.0,
+    "sensor_to_control_max_ms": 0.0
+  },
+  "min_gap_m": 4.958814994192137,
+  "min_ttc_s": 2.792377937432667,
+  "red_light_violation_count": 0,
+  "route_deviation_count": 0,
+  "run_id": "3a715c9e44574736b1e1dd80344aad1a",
+  "safety_override_episodes": 1,
+  "safety_override_frames": 296,
+  "scenario_id": "D07_low_ttc_emergency_brake",
+  "score": {
+    "base_score": 25.0,
+    "deduction": 5.0,
+    "difficulty": "challenge",
+    "final_score": 20.0,
+    "scenario_id": "D07_low_ttc_emergency_brake",
+    "serious_route_deviation": 0,
+    "serious_safety_events": 0,
+    "unfinished_tasks": 1
+  },
+  "score_report": {
+    "latency": {
+      "asr_avg_ms": null,
+      "e2e_avg_ms": 0.0,
+      "e2e_count": 1,
+      "e2e_max_ms": 0.0,
+      "e2e_under_150ms_rate": 1.0,
+      "intent_avg_ms": null
+    },
+    "scenario_scores": [
+      {
+        "base_score": 25.0,
+        "deduction": 5.0,
+        "difficulty": "challenge",
+        "final_score": 20.0,
+        "scenario_id": "D07_low_ttc_emergency_brake",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 1
+      }
+    ],
+    "weighted_completion": {
+      "completion_rates": {
+        "advanced": 0.0,
+        "basic": 0.0,
+        "challenge": 0.0
+      },
+      "task_completion_score_25": 0.0,
+      "weighted_completion_rate": 0.0
+    }
+  },
+  "status": "FAILED",
+  "stop_error_m": null,
+  "unfinished_task_count": 1
+}

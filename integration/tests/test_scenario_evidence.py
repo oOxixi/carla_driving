@@ -101,6 +101,91 @@ def test_failure_always_emits_terminal_record_and_summary(tmp_path):
         recorder.record_feedback(ExecutionFeedback("cmd", ExecutionStatus.FAILED, 0.0, "late"))
 
 
+def test_expected_lateral_offset_is_not_scored_as_serious_route_deviation(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "offset.jsonl")
+    recorder.start_run(scenario_id="B02")
+    for frame, deviation in ((1, 1.1), (2, 0.4), (3, 3.1)):
+        recorder.record_frame(
+            vehicle=_vehicle(frame, 2.0),
+            scene=PerceptionFrame(frame, frame * 0.05, route_deviation_m=deviation),
+            raw_control=ControlOutput(0.1, 0.0, 0.0),
+            final_control=ControlOutput(0.1, 0.0, 0.0),
+            safety_reason="NONE",
+            safety_override=False,
+            timing=_timing(frame * 100),
+        )
+    summary = recorder.complete(completion=True)
+    assert summary["route_deviation_count"] == 1
+
+
+def test_expected_route_deviation_remains_evidence_without_score_deduction(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "expected-deviation.jsonl")
+    recorder.start_run(scenario_id="D04", expected_route_deviation=True)
+    recorder.record_frame(
+        vehicle=_vehicle(1, 0.0),
+        scene=PerceptionFrame(1, 0.05, route_deviation_m=4.0),
+        raw_control=ControlOutput(0.0, 0.0, 0.0),
+        final_control=ControlOutput(0.0, 1.0, 0.0),
+        safety_reason="SEVERE_ROUTE_DEVIATION",
+        safety_override=True,
+        timing=_timing(100),
+    )
+    summary = recorder.complete(completion=True)
+    assert summary["route_deviation_count"] == 1
+    assert summary["serious_route_deviation"] == 0
+    assert summary["score"]["final_score"] == 25.0
+
+
+def test_expected_contract_failure_downgrades_explicit_completion(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "strict.jsonl")
+    recorder.start_run(scenario_id="B01")
+    recorder.record_frame(
+        vehicle=_vehicle(1, 2.0),
+        scene=PerceptionFrame(1, 0.05, route_deviation_m=0.5),
+        raw_control=ControlOutput(0.1, 0.0, 0.0),
+        final_control=ControlOutput(0.1, 0.0, 0.0),
+        safety_reason="NONE",
+        safety_override=False,
+        timing=_timing(100),
+        lateral={"cross_track_error_m": 0.8, "steer": 0.1},
+    )
+    summary = recorder.complete(
+        completion=True,
+        expected={"max_cross_track_error_m": 0.5, "must_no_collision": True},
+    )
+    assert summary["status"] == "FAILED"
+    assert summary["acceptance"]["failed_keys"] == ["max_cross_track_error_m"]
+    assert summary["unfinished_task_count"] == 1
+
+
+def test_command_order_accepts_applied_command_that_is_later_superseded(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "ordered.jsonl", clock_ns=lambda: 1_000)
+    recorder.start_run(scenario_id="REG_011")
+    for index, sim_time in enumerate((0.0, 7.0, 14.0)):
+        command_id = f"scenario_cmd_{index:03d}"
+        recorder.record_command(
+            {"command_id": command_id, "intent": "SET_SPEED" if index < 2 else "STOP"},
+            disposition="ACCEPTED_SCENARIO",
+            submitted_sim_time_s=sim_time,
+        )
+        recorder.record_frame(
+            vehicle=RuntimeVehicleState(index + 1, sim_time + 0.05, 0.0, 0.0, 0.0, 0.0, 0.0, "1"),
+            scene=PerceptionFrame(index + 1, sim_time + 0.05),
+            raw_control=ControlOutput(0.0, 0.5, 0.0),
+            final_control=ControlOutput(0.0, 0.5, 0.0),
+            safety_reason="NONE",
+            safety_override=False,
+            timing=_timing((index + 1) * 100),
+            command_id=command_id,
+        )
+    summary = recorder.complete(
+        completion=True,
+        expected={"must_execute_commands_in_order": True, "must_stop_after_last_command": True},
+        acceptance_context={"expected_command_count": 3},
+    )
+    assert summary["acceptance"]["passed"] is True
+
+
 def test_invalid_timing_and_non_finite_evidence_are_rejected(tmp_path):
     with pytest.raises(ValueError, match="monotonic"):
         FrameTiming(20, 10, 30)
@@ -109,3 +194,38 @@ def test_invalid_timing_and_non_finite_evidence_are_rejected(tmp_path):
     with pytest.raises(ValueError, match="finite"):
         recorder.record_command({"command_id": "cmd", "confidence": float("nan")}, disposition="REJECTED")
     recorder.fail("invalid command")
+
+
+@pytest.mark.parametrize(
+    ("end_y", "end_yaw", "expected_shift", "expected_turn"),
+    [(-3.5, -45.0, 3.5, "LEFT"), (3.5, 45.0, -3.5, "RIGHT")],
+)
+def test_carla_left_handed_pose_metrics_use_scenario_left_positive_convention(
+    tmp_path, end_y, end_yaw, expected_shift, expected_turn,
+):
+    recorder = ScenarioEvidenceRecorder(tmp_path / f"pose-{expected_turn}.jsonl")
+    recorder.start_run(scenario_id=f"POSE_{expected_turn}")
+    poses = ((0.0, 0.0, 0.0), (20.0, end_y, end_yaw))
+    for frame, (x_m, y_m, yaw_deg) in enumerate(poses, start=1):
+        vehicle = RuntimeVehicleState(frame, frame * 0.05, 2.0, x_m, y_m, 0.0, yaw_deg, "1")
+        recorder.record_frame(
+            vehicle=vehicle,
+            scene=PerceptionFrame(frame, frame * 0.05, lane_offset_m=end_y / 2.0),
+            raw_control=ControlOutput(0.1, 0.0, 0.0),
+            final_control=ControlOutput(0.1, 0.0, 0.0),
+            safety_reason="NONE",
+            safety_override=False,
+            timing=_timing(frame * 100),
+            lateral={"cross_track_error_m": 0.0, "steer": 0.0},
+        )
+    summary = recorder.complete(
+        expected={
+            "final_lateral_shift_m": expected_shift,
+            "turn_direction": expected_turn,
+            "max_lane_center_offset_m": 2.0,
+        },
+    )
+    metrics = {item["key"]: item for item in summary["acceptance"]["checks"]}
+    assert metrics["final_lateral_shift_m"]["status"] == "PASS"
+    assert metrics["turn_direction"]["status"] == "PASS"
+    assert metrics["max_lane_center_offset_m"]["actual"] == pytest.approx(abs(end_y) / 2.0)

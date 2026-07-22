@@ -1,0 +1,116 @@
+{
+  "acceptance": {
+    "check_count": 4,
+    "checks": [
+      {
+        "actual": 4.83557236790076,
+        "detail": "min_gap_m must be >= expected minimum",
+        "key": "min_front_gap_m",
+        "required": 2.5,
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": 140,
+        "detail": "permission only; takeover is not required",
+        "key": "expected_safety_override_allowed",
+        "required": "allowed",
+        "status": "PASS"
+      },
+      {
+        "actual": [
+          "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE",
+          "PERCEPTION_STARTUP_GRACE",
+          "WATCHDOG_ALERT"
+        ],
+        "detail": "at least one expected token must appear",
+        "key": "expected_reason_contains",
+        "required": [
+          "ttc",
+          "front",
+          "gap"
+        ],
+        "status": "PASS"
+      }
+    ],
+    "failed_keys": [],
+    "passed": true,
+    "unsupported_keys": []
+  },
+  "collision_count": 0,
+  "command_count": 1,
+  "command_terminal_statuses": {
+    "scenario_cmd_000": "EXPIRED"
+  },
+  "completion": true,
+  "completion_basis": "explicit_expected_contracts",
+  "detail": "scenario acceptance criteria evaluated",
+  "difficulty": "advanced",
+  "final_speed_mps": 0.2593821015450237,
+  "frames": 700,
+  "latency": {
+    "decision_avg_ms": 0.26857142857142857,
+    "decision_max_ms": 16.0,
+    "sensor_to_control_avg_ms": 0.31142857142857144,
+    "sensor_to_control_max_ms": 16.0
+  },
+  "min_gap_m": 4.83557236790076,
+  "min_ttc_s": 2.9686224126531044,
+  "red_light_violation_count": 0,
+  "route_deviation_count": 0,
+  "run_id": "8c89c85c07ad4cddaee7d1f3fd6b57ba",
+  "safety_override_episodes": 24,
+  "safety_override_frames": 140,
+  "scenario_id": "D03_front_vehicle_brake",
+  "score": {
+    "base_score": 25.0,
+    "deduction": 0.0,
+    "difficulty": "advanced",
+    "final_score": 25.0,
+    "scenario_id": "D03_front_vehicle_brake",
+    "serious_route_deviation": 0,
+    "serious_safety_events": 0,
+    "unfinished_tasks": 0
+  },
+  "score_report": {
+    "latency": {
+      "asr_avg_ms": null,
+      "e2e_avg_ms": 1016.0,
+      "e2e_count": 1,
+      "e2e_max_ms": 1016.0,
+      "e2e_under_150ms_rate": 0.0,
+      "intent_avg_ms": null
+    },
+    "scenario_scores": [
+      {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "advanced",
+        "final_score": 25.0,
+        "scenario_id": "D03_front_vehicle_brake",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      }
+    ],
+    "weighted_completion": {
+      "completion_rates": {
+        "advanced": 1.0,
+        "basic": 0.0,
+        "challenge": 0.0
+      },
+      "task_completion_score_25": 10.0,
+      "weighted_completion_rate": 0.4
+    }
+  },
+  "serious_route_deviation": 0,
+  "status": "SUCCEEDED",
+  "stop_error_m": null,
+  "unfinished_task_count": 0
+}

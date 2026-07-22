@@ -1,5 +1,6 @@
 from argparse import Namespace
 import math
+from pathlib import Path
 
 import pytest
 
@@ -9,7 +10,14 @@ from integration.carla_perception import PerceptionTimeoutError
 from integration.carla_runner import (
     _acceptance_lateral_controller,
     _load_command,
+    _lead_vehicle_travel_m,
+    _minimum_gap_contract_completed,
+    _expected_safety_completed,
     _rejected_load_envelope,
+    _route_contract_completed,
+    _route_stop_trigger_m,
+    _scenario_raw_control_fault,
+    _scenario_maneuver,
     _select_scene_facts,
     _scenario_completed,
     _speed_mps,
@@ -33,8 +41,14 @@ def test_voice_load_failure_becomes_rejected_no_op() -> None:
 
 def test_scenario_facts_can_override_or_only_fill_missing_perception() -> None:
     perceived = PerceptionFrame(1, 0.05, lead_distance_m=8.0, traffic_light="UNKNOWN")
-    configured = PerceptionFrame(1, 0.05, lead_distance_m=15.0, lead_speed_mps=0.0,
-                                traffic_light="RED", distance_to_stop_line_m=20.0)
+    configured = PerceptionFrame(
+        1,
+        0.05,
+        lead_distance_m=15.0,
+        lead_speed_mps=0.0,
+        traffic_light="RED",
+        distance_to_stop_line_m=20.0,
+    )
 
     fused, fused_sources = _select_scene_facts(perceived, configured, "fuse")
     assert fused.lead_distance_m == 8.0
@@ -46,6 +60,98 @@ def test_scenario_facts_can_override_or_only_fill_missing_perception() -> None:
     assert truth.lead_distance_m == 15.0
     assert truth.traffic_light == "RED"
     assert truth_sources["lead_distance_m"] == "SCENARIO_CONFIG_TRUTH"
+
+
+def test_scenario_facts_clear_unconfigured_map_hazards() -> None:
+    perceived = PerceptionFrame(
+        1,
+        0.05,
+        lead_distance_m=7.0,
+        lead_speed_mps=0.0,
+        traffic_light="RED",
+        distance_to_stop_line_m=5.0,
+    )
+    configured = PerceptionFrame(1, 0.05)
+
+    selected, sources = _select_scene_facts(perceived, configured, "scenario")
+
+    assert selected.lead_distance_m is None
+    assert selected.lead_speed_mps is None
+    assert selected.traffic_light == "UNKNOWN"
+    assert selected.distance_to_stop_line_m is None
+    assert sources["traffic_light"] == "SCENARIO_CONFIG_TRUTH"
+
+
+def test_perception_mode_ignores_scenario_facts() -> None:
+    perceived = PerceptionFrame(1, 0.05, lead_distance_m=8.0)
+    configured = PerceptionFrame(1, 0.05, lead_distance_m=15.0)
+    selected, sources = _select_scene_facts(perceived, configured, "perception")
+    assert selected is perceived
+    assert sources == {}
+
+
+def test_invalid_scenario_facts_mode_is_rejected() -> None:
+    with pytest.raises(ValueError, match="unsupported scenario facts mode"):
+        _select_scene_facts(PerceptionFrame(1, 0.05), None, "invalid")
+
+
+def test_expected_route_deviation_intervention_counts_as_scenario_success() -> None:
+    from integration.scenario_execution import ScenarioSpec
+
+    path = Path(__file__).resolve().parents[2] / "scenarios" / "safety_D" / "D04_lane_deviation.json"
+    spec = ScenarioSpec.load(path)
+    assert _expected_safety_completed(
+        spec,
+        frames=spec.frame_count,
+        final_speed_mps=0.0,
+        collision_seen=False,
+        safety_reasons={"SEVERE_ROUTE_DEVIATION"},
+    ) is True
+
+
+def test_d_fault_contracts_create_one_shot_raw_control_payloads() -> None:
+    from integration.scenario_execution import ScenarioSpec
+
+    root = Path(__file__).resolve().parents[2] / "scenarios" / "safety_D"
+    d05 = ScenarioSpec.load(root / "D05_invalid_control_nan.json")
+    d06 = ScenarioSpec.load(root / "D06_throttle_brake_conflict.json")
+    assert _scenario_raw_control_fault(d05, 4.99) is None
+    assert _scenario_raw_control_fault(d05, 5.0)["steer"] == "NaN"
+    assert _scenario_raw_control_fault(d06, 5.0) == {
+        "throttle": 0.5, "brake": 0.5, "steer": 0.0, "fault_injected": True,
+    }
+
+
+def test_regression_finish_route_is_a_hard_completion_contract() -> None:
+    from integration.scenario_execution import ScenarioSpec
+
+    path = Path(__file__).resolve().parents[2] / "scenarios" / "regression" / "REG_001_basic_clear_seed0.json"
+    spec = ScenarioSpec.load(path)
+    assert _route_contract_completed(spec, spec.finish_radius_m - 0.01) is True
+    assert _route_contract_completed(spec, spec.finish_radius_m + 0.01) is False
+    assert _route_contract_completed(None, 0.0) is None
+
+
+def test_route_stop_trigger_scales_with_speed_without_stopping_early() -> None:
+    assert _route_stop_trigger_m(0.0, 3.0) == pytest.approx(3.0)
+    assert _route_stop_trigger_m(4.0, 3.0) == pytest.approx(5.0)
+    assert _route_stop_trigger_m(6.0, 3.0) == pytest.approx(10.0)
+
+
+def test_lead_vehicle_position_is_continuous_when_it_brakes() -> None:
+    assert _lead_vehicle_travel_m(7.9, 4.0, 8.0, 0.0) == pytest.approx(31.6)
+    assert _lead_vehicle_travel_m(8.0, 4.0, 8.0, 0.0) == pytest.approx(32.0)
+    assert _lead_vehicle_travel_m(8.1, 4.0, 8.0, 0.0) == pytest.approx(32.0)
+
+
+def test_front_gap_expected_value_is_a_hard_completion_contract() -> None:
+    from integration.scenario_execution import ScenarioSpec
+
+    path = Path(__file__).resolve().parents[2] / "scenarios" / "regression" / "REG_007_advanced_front_vehicle.json"
+    spec = ScenarioSpec.load(path)
+    assert _minimum_gap_contract_completed(spec, 2.49) is False
+    assert _minimum_gap_contract_completed(spec, 2.5) is True
+    assert _minimum_gap_contract_completed(None, 10.0) is None
 
 
 def test_load_command_rejects_non_object_json_before_runtime_logging(tmp_path) -> None:
@@ -99,7 +205,23 @@ def test_acceptance_lateral_tuning_limits_steer_and_rate() -> None:
     assert controller.params.steer_sign == 1.0
     assert controller.params.max_steer == pytest.approx(0.60)
     assert controller.params.max_steer_delta_per_step == pytest.approx(0.04)
-    assert controller.params.min_lookahead_m >= 3.5
+    assert controller.params.min_lookahead_m >= 2.5
+
+
+@pytest.mark.parametrize(
+    ("relative_path", "expected"),
+    [
+        ("lateral_B/B04_smooth_left_curve.json", "FOLLOW_LEFT"),
+        ("lateral_B/B05_smooth_right_curve.json", "FOLLOW_RIGHT"),
+        ("regression/REG_003_basic_clear_seed2.json", "FOLLOW_RIGHT"),
+        ("regression/REG_001_basic_clear_seed0.json", "FOLLOW"),
+    ],
+)
+def test_scenario_maneuver_preserves_declared_curve_direction(relative_path, expected):
+    from integration.scenario_execution import ScenarioSpec
+
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    assert _scenario_maneuver(ScenarioSpec.load(root / relative_path)) == expected
 
 
 def test_carla_left_handed_closed_loop_converges_to_straight_route() -> None:

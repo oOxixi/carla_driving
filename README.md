@@ -1,244 +1,464 @@
-# CARLA 多模态语音车辆控制系统
+# Day20: CARLA + Qwen-VL 多模态自动驾驶高层决策闭环
 
-本项目面向 CARLA 0.9.16 的智能驾驶语音控制仿真验证。系统把语音组输出的结构化意图、车辆状态、RGB/LiDAR 感知和场景配置接入同一条安全控制链路，并在每个 CARLA 同步帧只下发一次最终控制指令。
+## 1. 项目简介
 
-当前可验证定速、减速、停车、紧急制动、跟车、红灯/停止线约束、异常命令安全降级，以及基于场景 JSON 的命令时间轴测试。复杂转弯、变道、绕障意图在未接入具体多模态决策结果时会进入确认并安全停车，不会擅自生成横向动作。
+本目录实现 Day20 第一组任务：
 
-## 项目结构
+**CARLA 仿真环境 + RGB Camera + SceneState + Qwen2.5-VL 多模态大模型 +
+高层驾驶意图解析 + 安全执行闭环**
 
-```text
-car_control_A/   运行时契约、命令 FSM、同步 CARLA 生命周期、watchdog
-car_control_B/   横向控制：Pure Pursuit、Stanley、路线跟踪
-car_control_C/   纵向控制：PID、停车、跟车、TTC、速度规划
-car_control_D/   最终安全仲裁和风险覆盖
-integration/     语音适配、传感器桥、CARLA 运行器、日志、场景执行
-voice_group/     语音组代码；车辆侧只通过协议调用，不修改此目录
-scenarios/       Town03 为主的 JSON 场景：smoke、横向、安全、回归
-tools/           场景静态校验工具
-scripts/         ScenarioRunner 获取与执行脚本
-docker/          Docker 构建、运行、导出说明
-artifacts/       输入命令、运行日志和镜像归档
+系统目标：
+
+-   在 CARLA 中生成真实驾驶场景
+-   获取车辆 RGB 视觉信息
+-   构建结构化 SceneState
+-   输入驾驶员语音指令
+-   使用 Qwen-VL 根据视觉和场景信息生成高层驾驶行为
+-   将大模型输出转换为统一 DrivingIntent
+-   经过执行器和 CARLA Control Adapter 输出车辆控制
+
+当前验证场景：
+
+> 前方车辆减速，驾驶员要求降低速度保持安全距离
+
+系统能够完成：
+
+    CARLA
+     |
+     | RGB Camera
+     |
+    SceneState
+     |
+    Qwen2.5-VL
+     |
+    DrivingIntent JSON
+     |
+    Intent Executor
+     |
+    CARLA Control Adapter
+     |
+    Vehicle Control
+
+------------------------------------------------------------------------
+
+# 2. 目录结构
+
+    integration/day20/
+
+    ├── carla_rgb_qwen_closed_loop.py
+    │
+    │   Day20完整闭环入口
+    │
+    ├── qwen_vl_adapter.py
+    │
+    │   Qwen2.5-VL接口
+    │   输入:
+    │       RGB image
+    │       Driver command
+    │       SceneState
+    │
+    │   输出:
+    │       JSON driving action
+    │
+    ├── scene_builder.py
+    │
+    │   CARLA环境解析
+    │   构建SceneState
+    │
+    ├── schemas.py
+    │
+    │   DrivingIntent统一数据结构
+    │
+    ├── parser.py
+    │
+    │   Qwen JSON -> DrivingIntent
+    │
+    ├── day20_intent_executor.py
+    │
+    │   高层行为执行逻辑
+    │
+    ├── carla_control_adapter.py
+    │
+    │   DrivingIntent -> CARLA VehicleControl
+    │
+    ├── safety_filter.py
+    │
+    │   安全约束接口
+    │
+    └── demos/
+
+------------------------------------------------------------------------
+
+# 3. 环境要求
+
+## 软件
+
+推荐环境：
+
+    Ubuntu 20.04+
+    Python 3.12
+    CARLA 0.9.x
+    CUDA 12.x
+    PyTorch
+    Transformers
+
+## Python依赖
+
+安装：
+
+    pip install torch
+    pip install transformers
+    pip install pillow
+    pip install qwen-vl-utils
+    pip install carla
+
+------------------------------------------------------------------------
+
+# 4. 模型准备
+
+项目默认：
+
+    models/Qwen2.5-VL-7B
+
+目录：
+
+    models/
+
+    └── Qwen2.5-VL-7B/
+        ├── config.json
+        ├── tokenizer
+        ├── model weights
+
+注意：
+
+模型文件不上传GitHub。
+
+其他用户需要：
+
+1.  下载 Qwen2.5-VL-7B
+2.  放入：
+
+```{=html}
+<!-- -->
+```
+    models/Qwen2.5-VL-7B
+
+------------------------------------------------------------------------
+
+# 5. CARLA启动
+
+启动CARLA Server：
+
+    ./CarlaUE4.sh
+
+默认：
+
+    127.0.0.1:2000
+
+------------------------------------------------------------------------
+
+# 6. 运行方式
+
+进入项目：
+
+    cd carla_driving
+
+启动Day20闭环：
+
+    python -m integration.day20.carla_rgb_qwen_closed_loop
+
+------------------------------------------------------------------------
+
+# 7. 输入接口
+
+## Qwen输入
+
+统一接口：
+
+``` python
+qwen.infer(
+    command_text,
+    scene_state,
+    image_path
+)
 ```
 
-## 架构与数据流
+参数：
 
-```text
-语音 WAV / 命令 JSON / 场景命令时间轴
-              │
-              ▼
-VoiceCommandAdapter ──► BehaviorFSM（确认、有效期、终态）
-              │
-              ▼
-CARLA RGB + LiDAR + 事件传感器 ─► CarlaPerceptionBridge ─► PerceptionFrame
-场景配置真值 ────────────────────────────────────────────────┘（可选融合）
-              │
-              ▼
-RouteReference ─► B 横向控制 ─┐
-PerceptionFrame ─► C 纵向控制 ├─► D 安全仲裁 ─► CARLA VehicleControl
-                              ┘             （每帧一次）
-              │
-              ▼
-ScenarioEvidenceRecorder ─► JSONL 帧日志 + summary.json
+### command_text
+
+驾驶员语音转文本：
+
+例如：
+
+``` text
+前方车辆减速，请降低速度保持安全距离
 ```
 
-| 模块 | 职责                                                          | 主要输出                                                           |
-| ---- | ------------------------------------------------------------- | ------------------------------------------------------------------ |
-| A    | 命令生命周期、同步 tick、Actor/传感器清理、watchdog、运行编排 | `RuntimeVehicleState`、`DrivingCommand`、`ExecutionFeedback` |
-| B    | 根据路线计算转向；不控制油门/制动                             | `LateralOutput.steer`                                            |
-| C    | 速度 PID、跟车时距、停车、TTC、油门/制动互斥                  | `LongitudinalOutput`                                             |
-| D    | 对 B/C 原始控制做最终安全约束和覆盖                           | `ControlOutput`                                                  |
+------------------------------------------------------------------------
 
-## 环境要求
+### scene_state
 
-- Windows 10/11、Conda 环境 `carla`、Python 3.12。
-- CARLA 0.9.16，默认目录：`F:\carla_driving_rstar\CARLA_0.9.16`。
-- NVIDIA GPU；RTX 50 系列笔记本建议使用 `-dx12`，避免 `-dx11` 初始化传感器时 UE 崩溃。
+结构：
 
-```powershell
-conda activate carla
-pip install -r requirements.txt
-```
-
-运行本地语音识别还需按语音组文档准备 `torch`、`torchaudio`、FunASR 模型缓存。只测试车辆控制时无需加载语音模型。
-
-## 启动 CARLA
-
-先关闭已有服务，确保 2000 端口只由一个实例使用：
-
-```powershell
-Get-Process CarlaUE4-Win64-Shipping -ErrorAction SilentlyContinue | Stop-Process -Force
-```
-
-在新终端启动服务端：
-
-```powershell
-conda activate carla
-cd F:\carla_driving_rstar\CARLA_0.9.16
-.\CarlaUE4.exe -quality-level=Low -carla-port=2000 `
-  -nosound -dx12 -windowed -ResX=1280 -ResY=720
-```
-
-确认服务连接：
-
-```powershell
-python -c "import carla; c=carla.Client('127.0.0.1',2000); c.set_timeout(30); print(c.get_world().get_map().name)"
-```
-
-> 控制器运行时不要手动 `load_world()`；加载地图会销毁当前车辆和传感器。使用 `--scenario-file` 时运行器会按场景要求加载 Town03。
-
-## 快速开始
-
-以下命令都在仓库根目录 `F:\carla_driving_rstar` 执行。
-
-### 使用 JSON 命令测试完整车辆控制
-
-`artifacts/command.json` 是无需 ASR 的测试输入：
-
-```powershell
-conda activate carla
-python -m integration.carla_runner `
-  --host 127.0.0.1 --port 2000 `
-  --timeout-s 60 --warmup-frames 40 --sensor-warmup-frames 20 `
-  --sensor-timeout-s 1 --frames 200 --realtime `
-  --perception-mode sensors --scenario cruise `
-  --command-json artifacts/command.json --test-command-ttl-s 15
-```
-
-`sensors` 是推荐模式：RGB/LiDAR 必须与当前世界帧对齐；超时会制动并由 watchdog 保护。控制台和 `artifacts/logs/` 都会输出日志。
-
-### 基础控制场景
-
-```powershell
-# 跟车
-python -m integration.carla_runner --host 127.0.0.1 --port 2000 `
-  --timeout-s 60 --warmup-frames 40 --frames 600 --realtime `
-  --scenario follow --lead-distance-m 18 --command-json artifacts/command.json
-
-# 红灯/停止线
-python -m integration.carla_runner --host 127.0.0.1 --port 2000 `
-  --timeout-s 60 --warmup-frames 40 --frames 600 --realtime `
-  --scenario red_stop --stop-line-m 20 --command-json artifacts/command.json
-
-# 紧急制动
-python -m integration.carla_runner --host 127.0.0.1 --port 2000 `
-  --timeout-s 60 --warmup-frames 40 --frames 300 --realtime `
-  --scenario emergency --emergency-distance-m 6 --command-json artifacts/command.json
-```
-
-### 语音输入
-
-传入真实、可读取的 WAV 文件。文件不存在或语音结果异常时，车辆侧会记录为 `REJECTED/NO_OP`，不会让入口崩溃或误控车辆。
-
-```powershell
-python -m integration.carla_runner `
-  --host 127.0.0.1 --port 2000 --frames 300 --realtime `
-  --perception-mode sensors --audio F:\audio\command.wav
-```
-
-## 场景 JSON 与事实源模式
-
-场景文件位于 `scenarios/`，包含 34 个 smoke、横向 B、安全 D 与回归用例，可配置地图、天气、固定步长、时长、前车/红灯事实和命令时间轴。
-
-离线校验场景，不启动 CARLA：
-
-```powershell
-python tools/validate_scenarios.py
-python -m integration.carla_runner `
-  --scenario-file scenarios/smoke/S01_set_speed_20.json `
-  --validate-scenario-only
-```
-
-运行 Town03 场景：
-
-```powershell
-python -m integration.carla_runner `
-  --host 127.0.0.1 --port 2000 `
-  --scenario-file scenarios/smoke/S01_set_speed_20.json `
-  --scenario-facts-mode fuse --perception-mode sensors --realtime
-```
-
-| `--scenario-facts-mode` | 行为                                   | 用途               |
-| ------------------------- | -------------------------------------- | ------------------ |
-| `perception`            | 仅使用传感器/世界桥输出                | 真实感知链路验证   |
-| `scenario`              | 对前车、红灯、停止线等字段使用场景真值 | 可重复控制算法验收 |
-| `fuse`（默认）          | 感知优先，缺失字段由场景真值补足       | 推荐回归模式       |
-
-日志 `perception_sources` 会逐字段标明来源，例如 `LIDAR_FRONT_CORRIDOR`、`CARLA_MAP_STOP_WAYPOINT`、`SCENARIO_CONFIG_FALLBACK` 或 `SCENARIO_CONFIG_TRUTH`。
-
-## 模块接口
-
-### 语音组到车辆组的命令信封
-
-`integration.voice_adapter.VoiceCommandAdapter` 接受如下 JSON。非法字段、`status != valid`、错误诊断或不支持单位都会变为安全的 `NO_OP + REJECTED`。
-
-```json
+``` json
 {
-  "schema_version": "1.0",
-  "command_id": "set-speed-001",
-  "source_text": "速度设为十八公里每小时",
-  "intent": "SET_SPEED",
-  "parameters": {"speed": 18, "unit": "km/h"},
-  "intent_confidence": 0.99,
-  "confidence": 0.99,
-  "status": "valid",
-  "ambiguity_type": "NONE",
-  "confirm_required": false,
-  "errors": [], "warnings": [], "valid_duration_s": 15
+ "frame_id":12345,
+ "ego":{
+    "speed_kmh":20,
+    "lane_id":0
+ },
+ "weather":{
+    "rain":0,
+    "night":false
+ },
+ "objects":[
+ {
+   "object_id":"55",
+   "category":"vehicle",
+   "distance_m":25,
+   "direction":"front",
+   "confidence":1.0
+ }
+ ]
 }
 ```
 
-| 对象                    | 重要字段                                                                 | 用途                          |
-| ----------------------- | ------------------------------------------------------------------------ | ----------------------------- |
-| `RuntimeVehicleState` | `frame`、`sim_time_s`、`speed_mps`、位置、`yaw_deg`、`lane_id` | A 向 B/C/D 提供车辆状态       |
-| `PerceptionFrame`     | 前车距离/速度、信号灯、停止线、限速、路线偏差、碰撞                      | 感知或场景事实输入            |
-| `RouteReference`      | `points_xy_m`、曲率、目标速度                                          | A 向 B 提供局部路线           |
-| `LateralOutput`       | `steer`、横向/航向误差、目标点                                         | B 输出                        |
-| `LongitudinalOutput`  | 油门、制动、目标速度、风险指标                                           | C 输出                        |
-| `ControlOutput`       | `throttle`、`brake`、`steer`                                       | D 仲裁后的唯一 CARLA 下发控制 |
+------------------------------------------------------------------------
 
-所有纵向计算使用 SI 单位。A 是唯一调用 `world.tick()` 和 `ego.apply_control()` 的模块。油门与制动互斥；命令终态为 `SUCCEEDED`、`FAILED`、`REJECTED`、`EXPIRED` 或 `TIMED_OUT`。
+### image_path
 
-## 日志与测试
+RGB Camera输出：
 
-每次运行默认生成：
+例如：
 
-```text
-artifacts/logs/<scenario>_<timestamp>.jsonl
-artifacts/logs/<scenario>_<timestamp>.summary.json
+    artifacts/day20_rgb_xxxxx.png
+
+Qwen-VL通过该图片进行视觉理解。
+
+------------------------------------------------------------------------
+
+# 8. Qwen输出接口
+
+模型必须输出：
+
+``` json
+{
+ "actions":[
+ {
+  "action":"SET_SPEED",
+  "target_id":"55",
+  "target_speed_kmh":20
+ }
+ ],
+ "confidence":0.9,
+ "reason":"front vehicle slowing"
+}
 ```
 
-重点检查 `final_control`（油门/制动互斥）、`route_deviation_m`、`ttc_s`、`safety.override/reason`、`perception_sources` 和 `latency`。
+------------------------------------------------------------------------
 
-运行纯 Python 回归测试：
+# 9. 支持Action
 
-```powershell
-conda activate carla
-python -m pytest car_control_A/tests car_control_B/tests car_control_C/tests car_control_D/tests integration/tests -q
+当前支持：
+
+    START
+
+    STOP
+
+    SET_SPEED
+
+    TURN_LEFT
+
+    TURN_RIGHT
+
+    CHANGE_LANE_LEFT
+
+    CHANGE_LANE_RIGHT
+
+    AVOID_OBJECT
+
+    EMERGENCY_BRAKE
+
+    RETURN_TO_LANE
+
+禁止输出：
+
+    throttle
+    brake
+    steer
+
+大模型只负责高层决策。
+
+------------------------------------------------------------------------
+
+# 10. 数据流接口
+
+## SceneBuilder
+
+CARLA:
+
+    world
+    vehicle actors
+    sensor
+
+↓
+
+    SceneState
+
+------------------------------------------------------------------------
+
+## Parser
+
+Qwen JSON:
+
+↓
+
+    DrivingIntent
+
+统一格式：
+
+``` python
+DrivingIntent(
+ command_id,
+ actions,
+ confidence,
+ reason
+)
 ```
 
-CARLA 烟测需要先启动服务端，再执行“快速开始”或“场景 JSON”中的命令。
+------------------------------------------------------------------------
 
-## Docker
+## Executor
 
-Docker 配置位于 `docker/`。Windows 本地 CARLA 与 Linux 容器 CARLA 不能直接复制；容器控制器可连接容器 CARLA，或经 `host.docker.internal` 连接本机服务。
+输入:
 
-```powershell
-Copy-Item docker/.env.example docker/.env
-.\docker\scripts\verify-stack.ps1 -BuildController
-docker compose --env-file docker/.env -f docker/compose.yaml up -d carla
+    DrivingIntent
+
+输出:
+
+    ControlTarget
+
+例如：
+
+``` json
+{
+"target_speed_kmh":20,
+"stop":false,
+"emergency_stop":false
+}
 ```
 
-导出镜像：
+------------------------------------------------------------------------
 
-```powershell
-.\docker\scripts\export-images.ps1
-```
+## Control Adapter
 
-详见 [docker/README.md](docker/README.md)。
+输入：
 
-## 已知边界
+    ControlTarget
 
-- RGB/LiDAR 已真实挂载、同步并用于前向障碍距离；图像目标检测和独立交通灯识别尚未接入，部分字段仍使用 CARLA 地图/Actor 真值并在日志中标注来源。
-- 场景真值模式仅用于可重复测试，不能作为真实感知能力指标。
-- 当前没有交付复杂变道、绕障或转弯的多模态决策模型；这类语音意图会安全降级。
-- 不提交本地 CARLA 二进制、地图、模型缓存、运行日志或 `external/scenario_runner/`。
+输出：
+
+    carla.VehicleControl
+
+负责：
+
+-   throttle
+-   brake
+-   steer
+
+------------------------------------------------------------------------
+
+# 11. 当前验证结果
+
+测试流程：
+
+    spawn ego vehicle
+
+    spawn front vehicle
+
+    RGB camera capture
+
+    front vehicle brake
+
+    SceneState detects vehicle
+
+    Qwen-VL receives:
+        RGB image
+        SceneState
+        driver command
+
+    Qwen outputs:
+        SET_SPEED
+
+    Executor generates:
+        target_speed
+
+    CARLA applies control
+
+------------------------------------------------------------------------
+
+# 12. 后续扩展接口
+
+后续任务可以直接扩展：
+
+## 更多视觉目标
+
+SceneState objects:
+
+    vehicle
+    pedestrian
+    traffic_light
+    obstacle
+
+------------------------------------------------------------------------
+
+## 更多驾驶任务
+
+增加：
+
+    lane change
+
+    emergency brake
+
+    pedestrian avoidance
+
+    traffic light stop
+
+------------------------------------------------------------------------
+
+## 替换模型
+
+只需要保持：
+
+    infer(
+     command_text,
+     scene_state,
+     image_path
+    )
+
+接口不变即可。
+
+------------------------------------------------------------------------
+
+# 13. 开发规范
+
+禁止：
+
+-   修改DrivingIntent接口
+-   绕过Parser直接控制车辆
+-   Qwen输出底层控制量
+
+推荐：
+
+    Perception
+        |
+    Scene Representation
+        |
+    LLM Decision
+        |
+    Safety Layer
+        |
+    Vehicle Controller
+
+保持模块解耦。

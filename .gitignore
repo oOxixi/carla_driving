@@ -15,10 +15,14 @@ external/scenario_runner/
 CARLA_0.9.16/
 AdditionalMaps_0.9.16/
 artifacts/logs/
-# Local upstream comparison/test scratch data (not project deliverables).
-artifacts/upstream_main/
-artifacts/current_head.bundle
-artifacts/pytest-c-role-*/
+artifacts/models/*.onnx
+artifacts/.runtime/
+artifacts/.pytest*/
+artifacts/pytest_*/
+artifacts/sensor_remaining_v1/
+artifacts/sensor_remaining_v2/
+artifacts/sensor_topology_v1/
+.pytest_cache/
 *.zip
 *.mp3
 *.wav

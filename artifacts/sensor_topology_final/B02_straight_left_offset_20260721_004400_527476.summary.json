@@ -1,0 +1,122 @@
+{
+  "acceptance": {
+    "check_count": 6,
+    "checks": [
+      {
+        "actual": true,
+        "detail": "requires cross_track_error_decreased",
+        "key": "cross_track_error_should_decrease",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": 0.999995695555964,
+        "detail": "max_abs_cross_track_error_m must be <= expected maximum",
+        "key": "max_cross_track_error_m",
+        "required": 1.5,
+        "status": "PASS"
+      },
+      {
+        "actual": 0.0018080986351301231,
+        "detail": "final_abs_cross_track_error_m must be <= expected maximum",
+        "key": "final_cross_track_error_m",
+        "required": 0.5,
+        "status": "PASS"
+      },
+      {
+        "actual": 0.99999566765824,
+        "detail": "max_abs_lane_offset_m must be <= expected maximum",
+        "key": "max_lane_center_offset_m",
+        "required": 2.2,
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": 0.999995695555964,
+        "detail": "initial signed CTE tolerance is 0.35 m",
+        "key": "initial_offset_y_m",
+        "required": 1.0,
+        "status": "PASS"
+      }
+    ],
+    "failed_keys": [],
+    "passed": true,
+    "unsupported_keys": []
+  },
+  "collision_count": 0,
+  "command_count": 1,
+  "command_terminal_statuses": {
+    "scenario_cmd_000": "SUCCEEDED"
+  },
+  "completion": true,
+  "completion_basis": "explicit_expected_contracts",
+  "detail": "scenario acceptance criteria evaluated",
+  "difficulty": "basic",
+  "final_speed_mps": 0.058976079350620866,
+  "frames": 600,
+  "latency": {
+    "decision_avg_ms": 0.3333333333333333,
+    "decision_max_ms": 16.0,
+    "sensor_to_control_avg_ms": 0.36,
+    "sensor_to_control_max_ms": 16.0
+  },
+  "min_gap_m": 18.35507583618164,
+  "min_ttc_s": 5.572024086210911,
+  "red_light_violation_count": 0,
+  "route_deviation_count": 0,
+  "run_id": "b76331e5d20243c88214dc33236b2c8a",
+  "safety_override_episodes": 1,
+  "safety_override_frames": 1,
+  "scenario_id": "B02_straight_left_offset",
+  "score": {
+    "base_score": 25.0,
+    "deduction": 0.0,
+    "difficulty": "basic",
+    "final_score": 25.0,
+    "scenario_id": "B02_straight_left_offset",
+    "serious_route_deviation": 0,
+    "serious_safety_events": 0,
+    "unfinished_tasks": 0
+  },
+  "score_report": {
+    "latency": {
+      "asr_avg_ms": null,
+      "e2e_avg_ms": 1016.0,
+      "e2e_count": 1,
+      "e2e_max_ms": 1016.0,
+      "e2e_under_150ms_rate": 0.0,
+      "intent_avg_ms": null
+    },
+    "scenario_scores": [
+      {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "basic",
+        "final_score": 25.0,
+        "scenario_id": "B02_straight_left_offset",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      }
+    ],
+    "weighted_completion": {
+      "completion_rates": {
+        "advanced": 0.0,
+        "basic": 1.0,
+        "challenge": 0.0
+      },
+      "task_completion_score_25": 7.5,
+      "weighted_completion_rate": 0.3
+    }
+  },
+  "serious_route_deviation": 0,
+  "status": "SUCCEEDED",
+  "stop_error_m": null,
+  "unfinished_task_count": 0
+}

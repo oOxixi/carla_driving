@@ -1,0 +1,115 @@
+{
+  "acceptance": {
+    "check_count": 5,
+    "checks": [
+      {
+        "actual": 2.4000004915840063,
+        "detail": "max_abs_cross_track_error_m must be <= expected maximum",
+        "key": "max_allowed_cross_track_error_m",
+        "required": 2.5,
+        "status": "PASS"
+      },
+      {
+        "actual": 114,
+        "detail": "permission only; takeover is not required",
+        "key": "expected_safety_override_allowed",
+        "required": "allowed",
+        "status": "PASS"
+      },
+      {
+        "actual": true,
+        "detail": "an intentional D route-recovery event must be observed",
+        "key": "expected_route_deviation_event",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": 2.0,
+        "detail": "D must use the scenario-declared route recovery trigger",
+        "key": "route_deviation_trigger_m",
+        "required": 2.0,
+        "status": "PASS"
+      },
+      {
+        "actual": 2,
+        "detail": "safety/event evidence must exist",
+        "key": "must_generate_event",
+        "required": "> 0 events",
+        "status": "PASS"
+      }
+    ],
+    "failed_keys": [],
+    "passed": true,
+    "unsupported_keys": []
+  },
+  "collision_count": 0,
+  "command_count": 1,
+  "command_terminal_statuses": {
+    "scenario_cmd_000": "SUCCEEDED"
+  },
+  "completion": true,
+  "completion_basis": "explicit_expected_contracts",
+  "detail": "scenario acceptance criteria evaluated",
+  "difficulty": "advanced",
+  "final_speed_mps": 4.131948964800414,
+  "frames": 500,
+  "latency": {
+    "decision_avg_ms": 0.222,
+    "decision_max_ms": 16.0,
+    "sensor_to_control_avg_ms": 0.252,
+    "sensor_to_control_max_ms": 16.0
+  },
+  "min_gap_m": 9.58208179473877,
+  "min_ttc_s": 2.4594099081637486,
+  "red_light_violation_count": 0,
+  "route_deviation_count": 0,
+  "run_id": "2d40149582454c5190ae85eb4d2a4c66",
+  "safety_override_episodes": 2,
+  "safety_override_frames": 114,
+  "scenario_id": "D04_lane_deviation",
+  "score": {
+    "base_score": 25.0,
+    "deduction": 0.0,
+    "difficulty": "advanced",
+    "final_score": 25.0,
+    "scenario_id": "D04_lane_deviation",
+    "serious_route_deviation": 0,
+    "serious_safety_events": 0,
+    "unfinished_tasks": 0
+  },
+  "score_report": {
+    "latency": {
+      "asr_avg_ms": null,
+      "e2e_avg_ms": 1015.0,
+      "e2e_count": 1,
+      "e2e_max_ms": 1015.0,
+      "e2e_under_150ms_rate": 0.0,
+      "intent_avg_ms": null
+    },
+    "scenario_scores": [
+      {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "advanced",
+        "final_score": 25.0,
+        "scenario_id": "D04_lane_deviation",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      }
+    ],
+    "weighted_completion": {
+      "completion_rates": {
+        "advanced": 1.0,
+        "basic": 0.0,
+        "challenge": 0.0
+      },
+      "task_completion_score_25": 10.0,
+      "weighted_completion_rate": 0.4
+    }
+  },
+  "serious_route_deviation": 0,
+  "status": "SUCCEEDED",
+  "stop_error_m": null,
+  "unfinished_task_count": 0
+}

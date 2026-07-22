@@ -1,0 +1,132 @@
+from __future__ import annotations
+
+from typing import Iterable, List, Optional, Sequence, Tuple
+import numpy as np
+
+
+def build_camera_intrinsic(width: int, height: int, fov_deg: float) -> np.ndarray:
+    focal = width / (2.0 * np.tan(np.deg2rad(fov_deg) / 2.0))
+    k = np.identity(3, dtype=np.float64)
+    k[0, 0] = focal
+    k[1, 1] = focal
+    k[0, 2] = width / 2.0
+    k[1, 2] = height / 2.0
+    return k
+
+
+def world_to_camera_matrix(sensor_transform) -> np.ndarray:
+    return np.asarray(sensor_transform.get_inverse_matrix(), dtype=np.float64)
+
+
+def project_world_point(location, world_to_camera: np.ndarray, intrinsic: np.ndarray) -> Optional[Tuple[float, float, float]]:
+    point = np.array([location.x, location.y, location.z, 1.0], dtype=np.float64)
+    p = world_to_camera @ point
+    # CARLA/Unreal: x forward, y right, z up. Camera projection expects z forward.
+    camera = np.array([p[1], -p[2], p[0]], dtype=np.float64)
+    depth = float(camera[2])
+    if depth <= 0.1:
+        return None
+    uvw = intrinsic @ camera
+    return float(uvw[0] / uvw[2]), float(uvw[1] / uvw[2]), depth
+
+
+def bbox_world_vertices(actor) -> Iterable:
+    bbox = actor.bounding_box
+    transform = actor.get_transform()
+    return bbox.get_world_vertices(transform)
+
+
+def project_actor_bbox(
+    actor,
+    world_to_camera: np.ndarray,
+    intrinsic: np.ndarray,
+    width: int,
+    height: int,
+    near_clip_m: float = 0.5,
+) -> Optional[Tuple[int, int, int, int]]:
+    """Project a CARLA actor 3D bounding box into image coordinates.
+
+    Reject partially-behind-camera boxes instead of clipping them into a
+    huge false-positive rectangle.
+    """
+
+    projected_points: List[Tuple[float, float, float]] = []
+
+    vertices = list(bbox_world_vertices(actor))
+    if not vertices:
+        return None
+
+    for vertex in vertices:
+        projected = project_world_point(
+            vertex,
+            world_to_camera,
+            intrinsic,
+        )
+
+        # If any bounding-box vertex is behind or extremely close to the
+        # camera plane, the 2D projection becomes unstable. Reject it.
+        if projected is None:
+            return None
+
+        u, v, depth = projected
+        if depth <= near_clip_m:
+            return None
+
+        projected_points.append((u, v, depth))
+
+    if len(projected_points) < 8:
+        return None
+
+    xs = [p[0] for p in projected_points]
+    ys = [p[1] for p in projected_points]
+
+    raw_x1 = min(xs)
+    raw_y1 = min(ys)
+    raw_x2 = max(xs)
+    raw_y2 = max(ys)
+
+    # Completely outside the image.
+    if raw_x2 < 0 or raw_y2 < 0:
+        return None
+    if raw_x1 >= width or raw_y1 >= height:
+        return None
+
+    x1 = max(0, min(width - 1, int(raw_x1)))
+    y1 = max(0, min(height - 1, int(raw_y1)))
+    x2 = max(0, min(width - 1, int(raw_x2)))
+    y2 = max(0, min(height - 1, int(raw_y2)))
+
+    box_width = x2 - x1
+    box_height = y2 - y1
+
+    if box_width < 3 or box_height < 3:
+        return None
+
+    # Reject extreme projections caused by near-camera geometry.
+    if box_width > width * 0.95:
+        return None
+    if box_height > height * 0.95:
+        return None
+
+    return x1, y1, x2, y2
+
+def image_region(bbox: Sequence[int], width: int) -> str:
+    x1, _, x2, _ = bbox
+    center = (x1 + x2) / 2.0
+    if center < width / 3.0:
+        return "FRONT_LEFT"
+    if center > 2.0 * width / 3.0:
+        return "FRONT_RIGHT"
+    return "FRONT_CENTER"
+
+
+def is_in_danger_zone(bbox: Sequence[int], width: int, height: int) -> bool:
+    x1, y1, x2, y2 = bbox
+    center_x = (x1 + x2) / 2.0
+    bottom_y = y2
+    width_ratio = (x2 - x1) / max(width, 1)
+    return (
+        width * 0.28 <= center_x <= width * 0.72
+        and bottom_y >= height * 0.48
+        and width_ratio >= 0.025
+    )

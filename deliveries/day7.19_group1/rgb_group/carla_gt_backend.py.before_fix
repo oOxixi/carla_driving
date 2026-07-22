@@ -1,0 +1,143 @@
+from __future__ import annotations
+
+from typing import List, Tuple
+
+from .geometry import (
+    build_camera_intrinsic,
+    image_region,
+    is_in_danger_zone,
+    project_actor_bbox,
+    world_to_camera_matrix,
+)
+from .schemas import Detection, TrafficLightObservation
+
+
+def _category(type_id: str) -> str:
+    tid = type_id.lower()
+    if tid.startswith("vehicle."):
+        if "bicycle" in tid or "bike" in tid:
+            return "BICYCLE"
+        if "motorcycle" in tid:
+            return "MOTORCYCLE"
+        return "VEHICLE"
+    if tid.startswith("walker.pedestrian"):
+        return "PEDESTRIAN"
+    if "trafficcone" in tid or "traffic_cone" in tid:
+        return "TRAFFIC_CONE"
+    if "barrier" in tid or "roadblock" in tid:
+        return "ROADBLOCK"
+    if tid.startswith("traffic.traffic_light"):
+        return "TRAFFIC_LIGHT"
+    return "UNKNOWN"
+
+
+def _light_state(actor) -> str:
+    try:
+        value = str(actor.get_state()).split(".")[-1].upper()
+    except Exception:
+        return "UNKNOWN"
+    return value if value in {"RED", "YELLOW", "GREEN", "OFF"} else "UNKNOWN"
+
+
+class CarlaGroundTruthBackend:
+    """Simulation-only backend used to freeze interfaces before an ONNX model is ready.
+
+    It projects CARLA actor bounding boxes into the RGB image. Never claim these
+    results are real RGB model accuracy; mark them as CARLA_GT in reports.
+    """
+
+    name = "CARLA_GT"
+
+    def __init__(self, world, ego_vehicle, width: int, height: int, fov_deg: float, max_distance_m: float = 80.0) -> None:
+        self.world = world
+        self.ego_vehicle = ego_vehicle
+        self.width = int(width)
+        self.height = int(height)
+        self.max_distance_m = float(max_distance_m)
+        self.k = build_camera_intrinsic(width, height, fov_deg)
+
+    def infer(self, image_bgr, sensor_transform) -> Tuple[List[Detection], TrafficLightObservation, List[str]]:
+        w2c = world_to_camera_matrix(sensor_transform)
+        ego_location = self.ego_vehicle.get_location()
+        detections: List[Detection] = []
+        light_candidates = []
+
+        for actor in self.world.get_actors():
+            if actor.id == self.ego_vehicle.id:
+                continue
+            category = _category(actor.type_id)
+            if category == "UNKNOWN":
+                continue
+            distance = ego_location.distance(actor.get_location())
+            if distance > self.max_distance_m:
+                continue
+            bbox = project_actor_bbox(actor, w2c, self.k, self.width, self.height)
+            if bbox is None:
+                continue
+                        box_width = bbox[2] - bbox[0]
+            box_height = bbox[3] - bbox[1]
+            box_area_ratio = (
+                box_width * box_height
+                / float(self.width * self.height)
+            )
+
+            # CARLA traffic-light actor bounding boxes can become extremely
+            # large when the pole or trigger geometry is close to/behind the
+            # camera. Such boxes are unsuitable as visual GT.
+            if category == "TRAFFIC_LIGHT":
+                if box_area_ratio > 0.12:
+                    continue
+                if box_width > self.width * 0.45:
+                    continue
+                if box_height > self.height * 0.55:
+                    continue
+
+	    region = image_region(bbox, self.width)
+                        geometric_danger = is_in_danger_zone(
+                bbox,
+                self.width,
+                self.height,
+            )
+
+            danger = (
+                geometric_danger
+                if category
+                in {
+                    "VEHICLE",
+                    "PEDESTRIAN",
+                    "BICYCLE",
+                    "MOTORCYCLE",
+                    "TRAFFIC_CONE",
+                    "ROADBLOCK",
+                }
+                else False
+            )
+            confidence = max(0.55, 1.0 - distance / (self.max_distance_m * 1.3))
+            det = Detection(
+                track_id=f"carla_{actor.id}",
+                category=category,
+                confidence=min(confidence, 0.99),
+                bbox_xyxy=bbox,
+                image_region=region,
+                in_danger_zone=danger,
+                source=self.name,
+                metadata={"actor_id": actor.id, "distance_m_debug": round(distance, 2)},
+            )
+            detections.append(det)
+            if category == "TRAFFIC_LIGHT":
+                area = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
+                light_candidates.append((danger, area, det, _light_state(actor)))
+
+        detections.sort(key=lambda d: (not d.in_danger_zone, -d.confidence))
+        if light_candidates:
+            _, _, det, state = sorted(light_candidates, key=lambda item: (not item[0], -item[1]))[0]
+            light = TrafficLightObservation(
+                state=state,
+                confidence=det.confidence,
+                visible=True,
+                bbox_xyxy=det.bbox_xyxy,
+                source=self.name,
+            )
+        else:
+            light = TrafficLightObservation()
+        return detections, light, ["SIMULATION_GT_BACKEND_NOT_FOR_REAL_MODEL_ACCURACY"]
