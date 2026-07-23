@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json
+
 import torch
 from PIL import Image
 
@@ -8,6 +8,8 @@ from transformers import (
     Qwen2_5_VLForConditionalGeneration,
     AutoProcessor,
 )
+
+from .qwen_prompt import build_decision_prompt
 
 
 class QwenVLAdapter:
@@ -42,136 +44,15 @@ class QwenVLAdapter:
         )
 
 
-
     def build_prompt(
         self,
         command_text,
-        scene_state
+        scene_state,
     ):
-
-
-        return f"""
-
-你是自动驾驶行为决策模块。
-
-
-你的任务:
-
-融合:
-
-1.驾驶员语音指令
-2.RGB摄像头视觉信息
-3.SceneState环境状态
-
-
-输出车辆高层驾驶行为。
-
-
-注意:
-
-你不是车辆控制器。
-
-
-禁止输出:
-
-throttle
-
-brake
-
-steer
-
-
-禁止输出:
-
-方向盘
-
-油门
-
-刹车
-
-
-
-只能输出:
-
-START
-
-STOP
-
-SET_SPEED
-
-TURN_LEFT
-
-TURN_RIGHT
-
-CHANGE_LANE_LEFT
-
-CHANGE_LANE_RIGHT
-
-AVOID_OBJECT
-
-EMERGENCY_BRAKE
-
-RETURN_TO_LANE
-
-
-
-必须严格输出JSON。
-
-
-格式:
-
-{{
-"actions":[
-{{
-"action":"",
-"target_id":"",
-"target_speed_kmh":0
-}}
-],
-"confidence":0.0,
-"reason":""
-}}
-
-
-
-视觉融合要求:
-
-1.
-必须检查RGB图像。
-
-2.
-必须结合SceneState。
-
-3.
-如果SceneState存在车辆，
-但RGB没有观察到对应目标，
-不要直接输出避障或跟车动作。
-
-4.
-reason必须说明视觉依据。
-
-
-
-当前驾驶员指令:
-
-{command_text}
-
-
-
-当前SceneState:
-
-{json.dumps(
-scene_state,
-ensure_ascii=False
-)}
-
-
-
-只输出JSON，不要解释。
-
-
-"""
-
+        return build_decision_prompt(
+            command_text=command_text,
+            scene_state=scene_state,
+        )
 
 
 
