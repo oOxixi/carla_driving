@@ -15,6 +15,7 @@ from .schemas import validate_driving_intent
 from .day20_intent_executor import Day20IntentExecutor, IntentControlOutput
 from .carla_control_adapter import CarlaControlAdapter
 from .safety_filter import safety_filter
+from .decision_trace import build_decision_trace
 
 
 
@@ -544,6 +545,9 @@ def main():
                 raw
             )
 
+            qwen_intent_before_safety = (
+                intent.to_dict()
+            )
 
 
             # =========================
@@ -664,17 +668,49 @@ def main():
 
 
             save_json(
-
                 "carla_control.json",
-
                 result
-
             )
 
+            trace = build_decision_trace(
+                command=command,
+                scene_state=scene,
+                rgb_path=rgb["path"],
+                qwen_raw_output=raw,
+                driving_intent=intent,
+                executor_target=target,
+                control_result=result,
+            )
 
+            trace["qwen"][
+                "parsed_intent_before_safety"
+            ] = qwen_intent_before_safety
+
+            trace["execution"][
+                "safety_filtered_intent"
+            ] = intent.to_dict()
+
+            trace_path = save_json(
+                "decision_trace.json",
+                trace
+            )
+
+            print(
+                "===== DECISION TRACE ====="
+            )
+            print(
+                json.dumps(
+                    trace["consistency"],
+                    indent=2,
+                    ensure_ascii=False,
+                )
+            )
+            print(
+                "decision trace:",
+                trace_path
+            )
 
             decision_done=True
-
 
             break
 
