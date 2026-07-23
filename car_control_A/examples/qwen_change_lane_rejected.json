@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "command_id": "qwen-demo-change-lane-left",
+  "action": "CHANGE_LANE_LEFT",
+  "confidence": 0.82,
+  "reason": "requested manoeuvre is outside the frozen demo subset",
+  "visual_valid": true,
+  "timestamp_ns": 0,
+  "valid_duration_s": 3.0
+}

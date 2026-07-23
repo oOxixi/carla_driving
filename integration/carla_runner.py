@@ -6,15 +6,19 @@ The default path consumes frame-aligned RGB/LiDAR and event sensors. Explicit
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import math
+import sys
 import time
+import zipfile
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
 
 from car_control_A import CarlaSession, ControlOutput, RuntimeVehicleState
+from car_control_A.high_level_command import HighLevelCommandAdapter, is_high_level_command
 from car_control_A.routing import RouteReference
 from car_control_A.watchdog import RuntimeWatchdog
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
@@ -336,6 +340,8 @@ def _load_command(args: argparse.Namespace) -> dict[str, object] | None:
         if not isinstance(command, Mapping):
             raise TypeError("voice command JSON root must be an object")
         command = dict(command)
+        if is_high_level_command(command):
+            command = HighLevelCommandAdapter().adapt(command)
         if args.test_command_ttl_s is not None:
             command["valid_duration_s"] = args.test_command_ttl_s
         return command
@@ -509,6 +515,58 @@ def _route_stop_trigger_m(speed_mps: float, finish_radius_m: float, decel_mps2: 
     return max(finish_radius_m, speed_mps * speed_mps / (2.0 * decel_mps2) + 1.0)
 
 
+def _map_short_name(map_name: str) -> str:
+    return map_name.rsplit("/", maxsplit=1)[-1]
+
+
+def _map_contract_name(map_name: str) -> str:
+    short_name = _map_short_name(map_name)
+    return short_name[:-4] if short_name.lower().endswith("_opt") else short_name
+
+
+def _select_load_map(requested_map: str, available_maps: tuple[str, ...]) -> str:
+    requested_short = _map_short_name(requested_map)
+    if requested_short.lower().endswith("_opt"):
+        return requested_map
+    optimized_short = f"{requested_short}_Opt"
+    for available in available_maps:
+        if _map_short_name(available).lower() == optimized_short.lower():
+            return optimized_short
+    return requested_map
+
+
+def _import_carla_api() -> Any:
+    try:
+        return importlib.import_module("carla")
+    except ModuleNotFoundError as error:
+        if error.name != "carla":
+            raise
+
+    py_tag = f"cp{sys.version_info.major}{sys.version_info.minor}"
+    project_root = Path(__file__).resolve().parents[1]
+    candidate_roots = (
+        project_root / "simulator" / "carla0916" / "PythonAPI" / "carla" / "dist",
+        project_root.parent / "simulator" / "carla0916" / "PythonAPI" / "carla" / "dist",
+    )
+    for root in candidate_roots:
+        wheels = sorted(root.glob(f"carla-0.9.16-{py_tag}-{py_tag}-*.whl"))
+        if not wheels:
+            continue
+        wheel = wheels[0]
+        extract_root = Path("/tmp") / "carla_python_api" / wheel.stem
+        if not extract_root.exists():
+            extract_root.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(wheel) as archive:
+                archive.extractall(extract_root)
+        sys.path.insert(0, str(extract_root))
+        return importlib.import_module("carla")
+    searched = ", ".join(str(root) for root in candidate_roots)
+    raise ModuleNotFoundError(
+        f"No CARLA Python API for {py_tag}; searched {searched}. "
+        "Use Python 3.10/3.11/3.12 with the bundled CARLA 0.9.16 wheel."
+    )
+
+
 def run(args: argparse.Namespace) -> None:
     spec = ScenarioSpec.load(args.scenario_file) if args.scenario_file else None
     if args.validate_scenario_only:
@@ -529,7 +587,7 @@ def run(args: argparse.Namespace) -> None:
         }, ensure_ascii=False, indent=2))
         return
 
-    import carla
+    carla = _import_carla_api()
 
     detector = None
     detector_model = getattr(args, "rgb_detector_model", None)
@@ -570,10 +628,11 @@ def run(args: argparse.Namespace) -> None:
         client.set_timeout(args.timeout_s)
         world = client.get_world()
         if args.map:
-            current_map = world.get_map().name.rsplit("/", maxsplit=1)[-1]
-            requested_map = args.map.rsplit("/", maxsplit=1)[-1]
-            if current_map.lower() != requested_map.lower():
-                world = client.load_world(args.map)
+            current_map = world.get_map().name
+            requested_map = args.map
+            if _map_contract_name(current_map).lower() != _map_contract_name(requested_map).lower():
+                load_map = _select_load_map(requested_map, tuple(client.get_available_maps()))
+                world = client.load_world(load_map)
         if spec is not None:
             weather = getattr(carla.WeatherParameters, spec.weather, None)
             if weather is None:

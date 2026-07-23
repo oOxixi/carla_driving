@@ -66,6 +66,8 @@ class ControlRuntime:
         if adapted.command.action == "SET_SPEED" and adapted.command.target_speed_mps is not None and not adapted.command.requires_confirmation:
             self.requested_speed_mps = adapted.command.target_speed_mps
             self._stop_hold = False
+        elif adapted.command.action == "KEEP_LANE" and not adapted.command.requires_confirmation:
+            self._stop_hold = False
         elif adapted.command.action in {"STOP", "EMERGENCY_BRAKE"}:
             self.requested_speed_mps = 0.0
         return adapted
@@ -125,6 +127,8 @@ class ControlRuntime:
             self._active_voice["ambiguity_type"] = "NONE"
         if command.action == "SET_SPEED" and command.target_speed_mps is not None:
             self.requested_speed_mps = command.target_speed_mps
+            self._stop_hold = False
+        elif command.action == "KEEP_LANE":
             self._stop_hold = False
         elif command.action in {"STOP", "EMERGENCY_BRAKE"}:
             self.requested_speed_mps = 0.0
@@ -252,6 +256,10 @@ class ControlRuntime:
         elif command.action in {"STOP", "EMERGENCY_BRAKE"}:
             succeeded = vehicle.speed_mps <= self.fuzzy_policy.config.standstill_speed_mps
             detail = "vehicle stopped"
+        elif command.action == "KEEP_LANE":
+            self._success_frames += 1
+            succeeded = self._success_frames >= 3
+            detail = "lane keeping command accepted"
         if not succeeded:
             return None
         result = self.fsm.complete(command.command_id, now_s=vehicle.sim_time_s, detail=detail)

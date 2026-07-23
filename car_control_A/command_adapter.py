@@ -8,11 +8,11 @@ this module intentionally never invents a manoeuvre for a complex utterance.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import StrEnum
 import math
 import re
 from typing import Protocol, runtime_checkable
 
+from compat import StrEnum
 from .contracts import DrivingCommand
 
 

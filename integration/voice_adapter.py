@@ -5,10 +5,11 @@ timestamps for latency measurement.  CARLA commands instead expire on simulation
 time.  ``VoiceCommandAdapter`` is the single boundary that records the former as
 metadata and creates the latter when the envelope reaches the CARLA frame loop.
 
-Complex manoeuvres are never silently converted into a steering or speed command.
-They are emitted as a confirmation-gated ``MULTIMODAL_DECISION`` command, which C
+Complex manoeuvres are never silently converted into a steering command. They
+are emitted as a confirmation-gated ``MULTIMODAL_DECISION`` command, which C
 will bring to a safe stop until the future decision provider returns a concrete
-command.
+command. The frozen 7/24 high-level subset additionally executes SLOW_DOWN and
+KEEP_LANE because they have deterministic C/A semantics.
 """
 
 from __future__ import annotations
@@ -26,7 +27,7 @@ _ALLOWED_INTENTS = frozenset({
     "PULL_OVER", "AVOID_OBSTACLE", "CHANGE_LANE", "KEEP_LANE", "FOLLOW_ROUTE", "TURN", "UNKNOWN",
 })
 _COMPLEX_INTENTS = frozenset({
-    "SPEED_UP", "SLOW_DOWN", "PULL_OVER", "AVOID_OBSTACLE", "CHANGE_LANE", "KEEP_LANE", "FOLLOW_ROUTE", "TURN",
+    "SPEED_UP", "PULL_OVER", "AVOID_OBSTACLE", "CHANGE_LANE", "FOLLOW_ROUTE", "TURN",
 })
 
 
@@ -179,26 +180,37 @@ class VoiceCommandAdapter:
         if intent == "STOP":
             return "STOP", None, False
         if intent == "SET_SPEED":
-            speed = parameters.get("speed")
-            if type(speed) not in (int, float) or isinstance(speed, bool):
-                raise ValueError("SET_SPEED requires numeric parameters.speed")
-            unit = parameters.get("unit", "km/h")
-            if type(unit) is not str:
-                raise TypeError("SET_SPEED parameters.unit must be a string")
-            normalized_unit = unit.strip().lower().replace(" ", "")
-            if normalized_unit in {"km/h", "kph", "kmh", "公里/小时", "千米/小时"}:
-                target = float(speed) / 3.6
-            elif normalized_unit in {"m/s", "mps", "米/秒"}:
-                target = float(speed)
-            else:
-                raise ValueError(f"unsupported SET_SPEED unit: {unit!r}")
-            if not math.isfinite(target) or target < 0.0:
-                raise ValueError("SET_SPEED target speed must be finite and non-negative")
-            return "SET_SPEED", target, False
+            return _speed_command_fields(parameters, intent)
+        if intent == "SLOW_DOWN":
+            return _speed_command_fields(parameters, intent)
+        if intent == "KEEP_LANE":
+            return "KEEP_LANE", None, False
         if intent in _COMPLEX_INTENTS:
             return "MULTIMODAL_DECISION", None, True
         # UNKNOWN is handled by the invalid envelope path in adapt().
         return "STOP", None, True
+
+
+def _speed_command_fields(intent_parameters: Mapping[str, object], intent: str) -> tuple[str, float, bool]:
+    parameters = intent_parameters
+    if intent == "SET_SPEED" or intent == "SLOW_DOWN":
+        speed = parameters.get("speed")
+        if type(speed) not in (int, float) or isinstance(speed, bool):
+            raise ValueError(f"{intent} requires numeric parameters.speed")
+        unit = parameters.get("unit", "km/h")
+        if type(unit) is not str:
+            raise TypeError(f"{intent} parameters.unit must be a string")
+        normalized_unit = unit.strip().lower().replace(" ", "")
+        if normalized_unit in {"km/h", "kph", "kmh", "公里/小时", "千米/小时"}:
+            target = float(speed) / 3.6
+        elif normalized_unit in {"m/s", "mps", "米/秒"}:
+            target = float(speed)
+        else:
+            raise ValueError(f"unsupported {intent} unit: {unit!r}")
+        if not math.isfinite(target) or target < 0.0:
+            raise ValueError(f"{intent} target speed must be finite and non-negative")
+        return "SET_SPEED", target, False
+    raise ValueError(f"unsupported speed intent: {intent}")
 
 
 def _required_text(data: Mapping[str, object], name: str) -> str:
