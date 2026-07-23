@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "command_id": "set-speed-valid-001",
+  "source_text": "请以每小时十八公里保持车道行驶",
+  "intent": "SET_SPEED",
+  "parameters": {
+    "speed": 18.0,
+    "unit": "km/h"
+  },
+  "confidence": 1.0,
+  "intent_confidence": 1.0,
+  "status": "valid",
+  "ambiguity_type": "NONE",
+  "confirm_required": false,
+  "errors": [],
+  "warnings": [],
+  "valid_duration_s": 60.0,
+  "t_audio_start_ns": null,
+  "t_asr_end_ns": null,
+  "t_intent_end_ns": null
+}
