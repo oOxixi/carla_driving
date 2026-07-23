@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from integration.day20.decision_trace import (
     build_decision_trace,
 )
@@ -148,3 +150,22 @@ def test_mismatched_speed_is_inconsistent():
         is False
     )
     assert trace["consistency"]["status"] == "INCONSISTENT"
+
+
+def test_closed_loop_writes_decision_trace():
+    source = Path(
+        "integration/day20/"
+        "carla_rgb_qwen_closed_loop.py"
+    ).read_text(
+        encoding="utf-8"
+    )
+
+    assert (
+        "from .decision_trace import "
+        "build_decision_trace"
+        in source
+    )
+    assert "qwen_intent_before_safety" in source
+    assert "build_decision_trace(" in source
+    assert '"decision_trace.json"' in source
+    assert '"safety_filtered_intent"' in source
