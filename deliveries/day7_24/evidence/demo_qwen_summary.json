@@ -1,0 +1,385 @@
+[
+  {
+    "case": "red_light_near_stop_line",
+    "expected": "STOP",
+    "qwen_action": "STOP",
+    "qwen_confidence": 0.0,
+    "qwen_reason": "红灯且接近停止线",
+    "qwen_validation": {
+      "format_valid": true,
+      "parse_error": null,
+      "parsed": {
+        "action": "STOP",
+        "target_speed_mps": null,
+        "confidence": 0.0,
+        "requires_confirmation": false,
+        "reason_zh": "红灯且接近停止线"
+      },
+      "action_valid": true,
+      "forbidden_control_fields": [],
+      "explanation_short": true,
+      "hallucination_flags": []
+    },
+    "final_decision": {
+      "action": "STOP",
+      "confidence": 0.98,
+      "requires_confirmation": false,
+      "reason_zh": "红灯安全约束优先",
+      "decision_source": "SAFETY_RULE"
+    },
+    "correct": true,
+    "latency_s": 2.5986
+  },
+  {
+    "case": "pedestrian",
+    "expected": "STOP",
+    "qwen_action": "STOP",
+    "qwen_confidence": 0.95,
+    "qwen_reason": "前方有行人",
+    "qwen_validation": {
+      "format_valid": true,
+      "parse_error": null,
+      "parsed": {
+        "action": "STOP",
+        "target_speed_mps": null,
+        "confidence": 0.95,
+        "requires_confirmation": false,
+        "reason_zh": "前方有行人"
+      },
+      "action_valid": true,
+      "forbidden_control_fields": [],
+      "explanation_short": true,
+      "hallucination_flags": []
+    },
+    "final_decision": {
+      "action": "STOP",
+      "confidence": 0.98,
+      "requires_confirmation": false,
+      "reason_zh": "检测到可靠行人风险",
+      "decision_source": "SAFETY_RULE"
+    },
+    "correct": true,
+    "latency_s": 1.8962
+  },
+  {
+    "case": "front_vehicle",
+    "expected": "SLOW_DOWN",
+    "qwen_action": "SLOW_DOWN",
+    "qwen_confidence": 1.0,
+    "qwen_reason": "前方距离不足",
+    "qwen_validation": {
+      "format_valid": true,
+      "parse_error": null,
+      "parsed": {
+        "action": "SLOW_DOWN",
+        "target_speed_mps": null,
+        "confidence": 1.0,
+        "requires_confirmation": false,
+        "reason_zh": "前方距离不足"
+      },
+      "action_valid": true,
+      "forbidden_control_fields": [],
+      "explanation_short": true,
+      "hallucination_flags": []
+    },
+    "final_decision": {
+      "action": "SLOW_DOWN",
+      "confidence": 0.9,
+      "requires_confirmation": false,
+      "reason_zh": "前方距离不足",
+      "decision_source": "SAFETY_RULE",
+      "target_speed_mps": 3.0
+    },
+    "correct": true,
+    "latency_s": 1.9393
+  },
+  {
+    "case": "ttc_emergency",
+    "expected": "EMERGENCY_STOP",
+    "qwen_action": "?",
+    "qwen_confidence": "?",
+    "qwen_reason": "",
+    "qwen_validation": {
+      "format_valid": true,
+      "parse_error": null,
+      "parsed": {
+        "action": "SLOW_DOWN",
+        "target_speed_mps": null,
+        "confidence": 1.0,
+        "requires_confirmation": false,
+        "reason_zh": "前方距离不足"
+      },
+      "action_valid": true,
+      "forbidden_control_fields": [],
+      "explanation_short": true,
+      "hallucination_flags": []
+    },
+    "final_decision": {
+      "action": "EMERGENCY_STOP",
+      "confidence": 0.99,
+      "requires_confirmation": false,
+      "reason_zh": "TTC风险过高",
+      "decision_source": "SAFETY_RULE"
+    },
+    "correct": true,
+    "latency_s": 1.7222
+  },
+  {
+    "case": "low_confidence",
+    "expected": "STOP",
+    "qwen_action": "?",
+    "qwen_confidence": "?",
+    "qwen_reason": "",
+    "qwen_validation": {
+      "format_valid": true,
+      "parse_error": null,
+      "parsed": {
+        "action": "STOP",
+        "target_speed_mps": null,
+        "confidence": 0.4,
+        "requires_confirmation": false,
+        "reason_zh": "感知数据缺失"
+      },
+      "action_valid": true,
+      "forbidden_control_fields": [],
+      "explanation_short": true,
+      "hallucination_flags": []
+    },
+    "final_decision": {
+      "action": "STOP",
+      "confidence": 0.4,
+      "requires_confirmation": true,
+      "reason_zh": "安全输入置信度不足",
+      "decision_source": "SAFETY_RULE"
+    },
+    "correct": true,
+    "latency_s": 1.6708
+  },
+  {
+    "case": "safe",
+    "expected": "START",
+    "qwen_action": "?",
+    "qwen_confidence": "?",
+    "qwen_reason": "",
+    "qwen_validation": {
+      "format_valid": true,
+      "parse_error": null,
+      "parsed": {
+        "action": "STOP",
+        "target_speed_mps": null,
+        "confidence": 0.0,
+        "requires_confirmation": false,
+        "reason_zh": "前方距离不足"
+      },
+      "action_valid": true,
+      "forbidden_control_fields": [],
+      "explanation_short": true,
+      "hallucination_flags": [
+        "UNGROUNDED_CONSERVATIVE_ACTION",
+        "UNSUPPORTED_DISTANCE_RISK_CLAIM"
+      ]
+    },
+    "final_decision": {
+      "action": "START",
+      "confidence": 0.9,
+      "requires_confirmation": false,
+      "reason_zh": "结构化状态无风险",
+      "decision_source": "QWEN_UNGROUNDED_REJECTED"
+    },
+    "correct": true,
+    "latency_s": 1.6753
+  },
+  {
+    "case": "rain",
+    "expected": "SET_SPEED",
+    "qwen_action": "?",
+    "qwen_confidence": "?",
+    "qwen_reason": "",
+    "qwen_validation": {
+      "format_valid": true,
+      "parse_error": null,
+      "parsed": {
+        "action": "STOP",
+        "target_speed_mps": null,
+        "confidence": 0.0,
+        "requires_confirmation": false,
+        "reason_zh": "推荐动作无"
+      },
+      "action_valid": true,
+      "forbidden_control_fields": [],
+      "explanation_short": true,
+      "hallucination_flags": [
+        "UNGROUNDED_CONSERVATIVE_ACTION"
+      ]
+    },
+    "final_decision": {
+      "action": "SET_SPEED",
+      "confidence": 0.85,
+      "requires_confirmation": false,
+      "reason_zh": "雨天降低速度",
+      "decision_source": "SAFETY_RULE",
+      "target_speed_mps": 5.0
+    },
+    "correct": true,
+    "latency_s": 1.6761
+  },
+  {
+    "case": "user_speed_conflict",
+    "expected": "STOP",
+    "qwen_action": "?",
+    "qwen_confidence": "?",
+    "qwen_reason": "",
+    "qwen_validation": {
+      "format_valid": true,
+      "parse_error": null,
+      "parsed": {
+        "action": "STOP",
+        "target_speed_mps": null,
+        "confidence": 0.0,
+        "requires_confirmation": false,
+        "reason_zh": "红灯且接近停止线"
+      },
+      "action_valid": true,
+      "forbidden_control_fields": [],
+      "explanation_short": true,
+      "hallucination_flags": []
+    },
+    "final_decision": {
+      "action": "STOP",
+      "confidence": 0.98,
+      "requires_confirmation": false,
+      "reason_zh": "红灯安全约束优先",
+      "decision_source": "SAFETY_RULE"
+    },
+    "correct": true,
+    "latency_s": 1.7636
+  },
+  {
+    "case": "lidar_only",
+    "expected": "SLOW_DOWN",
+    "qwen_action": "?",
+    "qwen_confidence": "?",
+    "qwen_reason": "",
+    "qwen_validation": {
+      "format_valid": true,
+      "parse_error": null,
+      "parsed": {
+        "action": "SLOW_DOWN",
+        "target_speed_mps": null,
+        "confidence": 0.0,
+        "requires_confirmation": false,
+        "reason_zh": "前方距离不足"
+      },
+      "action_valid": true,
+      "forbidden_control_fields": [],
+      "explanation_short": true,
+      "hallucination_flags": []
+    },
+    "final_decision": {
+      "action": "SLOW_DOWN",
+      "confidence": 0.9,
+      "requires_confirmation": false,
+      "reason_zh": "前方距离不足",
+      "decision_source": "SAFETY_RULE",
+      "target_speed_mps": 3.0
+    },
+    "correct": true,
+    "latency_s": 1.7408
+  },
+  {
+    "case": "full_brake",
+    "expected": "STOP",
+    "qwen_action": "?",
+    "qwen_confidence": "?",
+    "qwen_reason": "",
+    "qwen_validation": {
+      "format_valid": true,
+      "parse_error": null,
+      "parsed": {
+        "action": "STOP",
+        "target_speed_mps": null,
+        "confidence": 1.0,
+        "requires_confirmation": false,
+        "reason_zh": "强制停车条件满足"
+      },
+      "action_valid": true,
+      "forbidden_control_fields": [],
+      "explanation_short": true,
+      "hallucination_flags": []
+    },
+    "final_decision": {
+      "action": "STOP",
+      "confidence": 0.99,
+      "requires_confirmation": false,
+      "reason_zh": "安全模块要求停车",
+      "decision_source": "SAFETY_RULE"
+    },
+    "correct": true,
+    "latency_s": 1.7159
+  },
+  {
+    "case": "no_false_pedestrian",
+    "expected": "START",
+    "qwen_action": "STOP",
+    "qwen_confidence": 0.0,
+    "qwen_reason": "前方距离不足",
+    "qwen_validation": {
+      "format_valid": true,
+      "parse_error": null,
+      "parsed": {
+        "action": "STOP",
+        "target_speed_mps": null,
+        "confidence": 0.0,
+        "requires_confirmation": false,
+        "reason_zh": "前方距离不足"
+      },
+      "action_valid": true,
+      "forbidden_control_fields": [],
+      "explanation_short": true,
+      "hallucination_flags": [
+        "UNGROUNDED_CONSERVATIVE_ACTION",
+        "UNSUPPORTED_DISTANCE_RISK_CLAIM"
+      ]
+    },
+    "final_decision": {
+      "action": "START",
+      "confidence": 0.9,
+      "requires_confirmation": false,
+      "reason_zh": "结构化状态无风险",
+      "decision_source": "QWEN_UNGROUNDED_REJECTED"
+    },
+    "correct": true,
+    "latency_s": 1.8984
+  },
+  {
+    "case": "sensor_missing",
+    "expected": "STOP",
+    "qwen_action": "?",
+    "qwen_confidence": "?",
+    "qwen_reason": "",
+    "qwen_validation": {
+      "format_valid": true,
+      "parse_error": null,
+      "parsed": {
+        "action": "STOP",
+        "target_speed_mps": null,
+        "confidence": 0.0,
+        "requires_confirmation": false,
+        "reason_zh": "感知数据无效"
+      },
+      "action_valid": true,
+      "forbidden_control_fields": [],
+      "explanation_short": true,
+      "hallucination_flags": []
+    },
+    "final_decision": {
+      "action": "STOP",
+      "confidence": 0.99,
+      "requires_confirmation": true,
+      "reason_zh": "LiDAR无效安全停车",
+      "decision_source": "SAFETY_RULE"
+    },
+    "correct": true,
+    "latency_s": 1.6863
+  }
+]

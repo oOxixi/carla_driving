@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "frame": 1200,
+  "visual_valid": true,
+  "lidar_valid": true,
+  "fused_valid": true,
+  "detected_objects": [
+    {
+      "id": "det_1",
+      "class": "person",
+      "confidence": 0.89
+    },
+    {
+      "id": "det_2",
+      "class": "car",
+      "confidence": 0.85
+    }
+  ],
+  "detection_mode": "ONNX",
+  "detection_time_ms": 336.9
+}
