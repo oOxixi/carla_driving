@@ -11,7 +11,9 @@ from integration.carla_runner import (
     _acceptance_lateral_controller,
     _load_command,
     _lead_vehicle_travel_m,
+    _map_contract_name,
     _minimum_gap_contract_completed,
+    _select_load_map,
     _expected_safety_completed,
     _rejected_load_envelope,
     _route_contract_completed,
@@ -62,6 +64,14 @@ def test_scenario_facts_can_override_or_only_fill_missing_perception() -> None:
     assert truth.lead_distance_m == 15.0
     assert truth.traffic_light == "RED"
     assert truth_sources["lead_distance_m"] == "SCENARIO_CONFIG_TRUTH"
+
+
+def test_requested_town_prefers_optimized_map_when_available() -> None:
+    available = ("/Game/Carla/Maps/Town01", "/Game/Carla/Maps/Town03_Opt")
+
+    assert _map_contract_name("Carla/Maps/Town03_Opt") == "Town03"
+    assert _select_load_map("Town03", available) == "Town03_Opt"
+    assert _select_load_map("Town02", available) == "Town02"
 
 
 def test_scenario_facts_clear_unconfigured_map_hazards() -> None:
@@ -241,6 +251,27 @@ def test_load_command_rejects_non_object_json_before_runtime_logging(tmp_path) -
     args = Namespace(command_json=str(path), audio=None, test_command_ttl_s=None)
     with pytest.raises(TypeError, match="JSON root must be an object"):
         _load_command(args)
+
+
+def test_load_command_accepts_qwen_high_level_json(tmp_path) -> None:
+    path = tmp_path / "qwen_command.json"
+    path.write_text(
+        """{
+          "schema_version": "1.0",
+          "command_id": "qwen-keep-lane",
+          "action": "KEEP_LANE",
+          "confidence": 0.92,
+          "reason": "clear lane",
+          "visual_valid": true,
+          "valid_duration_s": 3.0
+        }""",
+        encoding="utf-8",
+    )
+    args = Namespace(command_json=str(path), audio=None, test_command_ttl_s=None)
+    command = _load_command(args)
+
+    assert command["intent"] == "KEEP_LANE"
+    assert command["source_text"] == "KEEP_LANE: clear lane"
 
 
 def test_sensor_warmup_retries_until_an_aligned_frame_arrives() -> None:

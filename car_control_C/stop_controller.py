@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import StrEnum
+from compat import StrEnum
 from .validation import finite
 
 

@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "command_id": "qwen-demo-set-speed-20",
+  "action": "SET_SPEED",
+  "target_speed_mps": 5.5555555556,
+  "confidence": 0.95,
+  "reason": "clear lane, cruise at 20 km/h",
+  "visual_valid": true,
+  "timestamp_ns": 0,
+  "valid_duration_s": 30.0
+}

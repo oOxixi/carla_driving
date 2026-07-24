@@ -46,7 +46,22 @@ def test_safe_simple_intents(intent: str, action: str) -> None:
     assert not adapted.command.requires_confirmation
 
 
-@pytest.mark.parametrize("intent", ["SPEED_UP", "SLOW_DOWN", "PULL_OVER", "AVOID_OBSTACLE", "CHANGE_LANE", "KEEP_LANE", "FOLLOW_ROUTE", "TURN"])
+def test_frozen_high_level_slow_down_and_keep_lane_are_executable() -> None:
+    slow = VoiceCommandAdapter().adapt(envelope(
+        intent="SLOW_DOWN",
+        parameters={"speed": 2.0, "unit": "m/s"},
+    ), now_s=1.0)
+    keep = VoiceCommandAdapter().adapt(envelope(intent="KEEP_LANE", parameters={}), now_s=1.0)
+
+    assert slow.control_authorized
+    assert slow.command.action == "SET_SPEED"
+    assert slow.command.target_speed_mps == pytest.approx(2.0)
+    assert keep.control_authorized
+    assert keep.command.action == "KEEP_LANE"
+    assert not keep.command.requires_confirmation
+
+
+@pytest.mark.parametrize("intent", ["SPEED_UP", "PULL_OVER", "AVOID_OBSTACLE", "CHANGE_LANE", "FOLLOW_ROUTE", "TURN"])
 def test_complex_intents_are_confirmation_gated(intent: str) -> None:
     adapted = VoiceCommandAdapter().adapt(envelope(intent=intent, parameters={}), now_s=1.0)
     assert adapted.command.action == "MULTIMODAL_DECISION"

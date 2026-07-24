@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import StrEnum
 
+from compat import StrEnum
 from .contracts import DrivingCommand, ExecutionFeedback, ExecutionStatus
 
 
@@ -134,6 +134,7 @@ class BehaviorFSM:
         return {
             "STOP": BehaviorState.APPROACH_STOP,
             "EMERGENCY_BRAKE": BehaviorState.EMERGENCY_BRAKE,
+            "KEEP_LANE": BehaviorState.LANE_FOLLOW,
             "SET_SPEED": BehaviorState.LANE_FOLLOW,
             "FOLLOW": BehaviorState.FOLLOWING,
             "YIELD": BehaviorState.YIELDING,

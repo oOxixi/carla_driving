@@ -13,11 +13,13 @@ from .contracts import (
     SignalState,
     TrafficConstraint,
 )
+from .high_level_command import HighLevelCommandAdapter, is_high_level_command
 from .simulator import ActorRegistry, CarlaSession, SensorFrameBuffer, SynchronousWorld
 
 __all__ = [
     "CONTRACT_VERSION", "SignalState", "RuntimeVehicleState", "DrivingCommand", "TrafficConstraint",
     "LongitudinalRequest", "ControlOutput", "RiskMetrics", "LongitudinalOutput",
     "ExecutionStatus", "ExecutionFeedback",
+    "HighLevelCommandAdapter", "is_high_level_command",
     "ActorRegistry", "CarlaSession", "SensorFrameBuffer", "SynchronousWorld",
 ]
