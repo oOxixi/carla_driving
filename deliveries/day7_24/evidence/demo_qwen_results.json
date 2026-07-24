@@ -1,0 +1,20 @@
+[
+  {
+    "case": "案例1: 正常避障 (CONSISTENT)",
+    "trace": "CONSISTENT",
+    "expected": "CONSISTENT",
+    "match": true
+  },
+  {
+    "case": "案例2: 红灯安全覆写 (CONSISTENT_WITH_SAFETY_OVERRIDE)",
+    "trace": "CONSISTENT_WITH_SAFETY_OVERRIDE",
+    "expected": "CONSISTENT_WITH_SAFETY_OVERRIDE",
+    "match": true
+  },
+  {
+    "case": "案例3: 幻觉拦截 (INCONSISTENT)",
+    "trace": "INCONSISTENT",
+    "expected": "INCONSISTENT",
+    "match": true
+  }
+]
