@@ -82,13 +82,17 @@ class DrivingIntent:
 
 
 
+def validate_driving_intent(intent: DrivingIntent):
 
-def validate_driving_intent(intent:DrivingIntent):
+    errors = []
 
-    errors=[]
-
+    if not intent.actions:
+        errors.append(
+            "actions must not be empty"
+        )
 
     for action in intent.actions:
+
 
         if action.action not in ALLOWED_ACTIONS:
 
