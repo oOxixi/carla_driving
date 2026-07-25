@@ -45,6 +45,11 @@ def build_high_level_command(
     target_speed = decision.get("target_speed_mps")
     if action in {"SET_SPEED", "SLOW_DOWN"} and target_speed is not None:
         high_level["target_speed_mps"] = max(0.0, float(target_speed))
+    if "visual_valid" in decision:
+        visual_valid = decision["visual_valid"]
+        if type(visual_valid) is not bool:
+            raise TypeError("visual_valid must be bool")
+        high_level["visual_valid"] = visual_valid
 
     return high_level
 
