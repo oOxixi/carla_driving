@@ -1,0 +1,60 @@
+{
+  "name": "carla_multimodal_v1",
+  "version": "FILL_SEMVER",
+  "created_at": "FILL_ISO8601",
+  "owners": ["FILL_TEAM_OR_ROLE"],
+  "purpose": "Language-conditioned multimodal driving perception, high-level decision and closed-loop acceptance.",
+  "sources": [
+    {
+      "kind": "carla",
+      "version": "0.9.16",
+      "license": "FILL_EXACT_LICENSE_OR_TERMS",
+      "source_url": "https://carla.org/"
+    }
+  ],
+  "modalities": ["rgb_front", "lidar_roof", "audio", "asr_text", "ego_state", "control"],
+  "counts": {
+    "records": 0,
+    "sequences": 0,
+    "train_records": 0,
+    "val_records": 0,
+    "test_records": 0
+  },
+  "coverage": {
+    "maps": [],
+    "scenario_ids": [],
+    "difficulties": ["basic", "advanced", "challenge"],
+    "weather": [],
+    "language_variants": ["mandarin", "dialect", "noise", "negation", "compound", "ambiguous"]
+  },
+  "split_policy": {
+    "group_keys": ["sequence_id", "scenario_id", "seed"],
+    "frame_level_random_split": false,
+    "test_frozen": false
+  },
+  "annotation": {
+    "guideline_version": "FILL_ME",
+    "review_policy": "Two independent reviewers for expected actions and target association; adjudicate conflicts.",
+    "label_map": "annotations/label_map.json"
+  },
+  "quality": {
+    "schema": "schema.json",
+    "validator": "tools/validate_multimodal_dataset.py",
+    "validation_report": "FILL_ME",
+    "known_issues": []
+  },
+  "privacy": {
+    "contains_real_people": false,
+    "contains_personal_data": false,
+    "notes": "FILL_ME"
+  },
+  "limitations": [
+    "CARLA synthetic appearance does not fully represent real-world sensor distribution.",
+    "Local proxy test results do not represent the organizer hidden evaluation set."
+  ],
+  "storage": {
+    "uri": "FILL_DATA_LOCATION",
+    "manifest_sha256": "FILL_64_HEX",
+    "repository_contains_large_media": false
+  }
+}

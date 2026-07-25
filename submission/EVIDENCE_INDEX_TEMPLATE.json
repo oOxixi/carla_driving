@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0.0",
+  "submission": {
+    "team": "FILL_ME",
+    "repository": "FILL_ME",
+    "branch": "FILL_ME",
+    "commit": "FILL_40_CHAR_SHA",
+    "created_at": "FILL_ISO8601",
+    "carla_version": "0.9.16"
+  },
+  "environment": {
+    "os": "FILL_ME",
+    "cpu": "FILL_ME",
+    "gpu": "FILL_ME",
+    "driver": "FILL_ME",
+    "python": "FILL_ME",
+    "carla_launch_command": "FILL_ME",
+    "environment_report": "evidence/environment.json"
+  },
+  "artifacts": {
+    "dataset_schema": "datasets/multimodal_v1/schema.json",
+    "dataset_manifest": "FILL_ME",
+    "model_manifest": "FILL_ME",
+    "pytest_report": "FILL_ME",
+    "scenario_summary": "FILL_ME",
+    "latency_summary": "FILL_ME",
+    "demo_video": "FILL_ME"
+  },
+  "representative_runs": [
+    {
+      "run_id": "basic_s01_seed_FILL",
+      "difficulty": "basic",
+      "scenario_id": "S01_set_speed_20",
+      "map": "Town03",
+      "seed": 0,
+      "mode": "sensors+perception+qwen",
+      "result": "FILL_PASS_OR_FAIL",
+      "metrics": {
+        "task_success": null,
+        "collision": null,
+        "red_light_violation": null,
+        "minimum_gap_m": null,
+        "p95_end_to_end_ms": null
+      },
+      "evidence": {
+        "run_report": "FILL_ME",
+        "raw_log": "FILL_ME",
+        "records_jsonl": "FILL_ME",
+        "video": "FILL_ME"
+      },
+      "sha256": {
+        "run_report": "FILL_ME",
+        "raw_log": "FILL_ME"
+      },
+      "notes": ""
+    },
+    {
+      "run_id": "advanced_real_actor_seed_FILL",
+      "difficulty": "advanced",
+      "scenario_id": "FILL_REAL_ACTOR_SCENARIO",
+      "map": "Town03",
+      "seed": 0,
+      "mode": "sensors+perception+qwen",
+      "result": "FILL_PASS_OR_FAIL",
+      "metrics": {},
+      "evidence": {},
+      "sha256": {},
+      "notes": "必须证明 actor 确实生成且决策使用真实传感器，不得仅依赖场景配置事实。"
+    },
+    {
+      "run_id": "challenge_d08_seed_FILL",
+      "difficulty": "challenge",
+      "scenario_id": "D08_command_conflict_red_light_continue",
+      "map": "Town03",
+      "seed": 0,
+      "mode": "sensors+perception+qwen",
+      "result": "FILL_PASS_OR_FAIL",
+      "metrics": {
+        "safety_override_expected": true,
+        "safety_override_observed": null,
+        "red_light_violation": null
+      },
+      "evidence": {},
+      "sha256": {},
+      "notes": "注明红灯信号来自 RGB、地图、配置回退或多源融合。"
+    }
+  ]
+}
+
