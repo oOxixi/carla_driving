@@ -110,6 +110,44 @@ DEFAULT_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
     ),
 )
 
+LOW_RESOURCE_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
+    CarlaSensorSpec(
+        RGB_SENSOR_ID,
+        "sensor.camera.rgb",
+        SensorMount(1.5, 0.0, 2.2, pitch_deg=-8.0),
+        MappingProxyType({
+            "image_size_x": "400", "image_size_y": "225", "fov": "100",
+            "sensor_tick": "0.05",
+        }),
+    ),
+    CarlaSensorSpec(
+        LIDAR_SENSOR_ID,
+        "sensor.lidar.ray_cast",
+        SensorMount(0.0, 0.0, 2.35),
+        MappingProxyType({
+            "channels": "16", "range": "60", "rotation_frequency": "20",
+            "points_per_second": "112000", "upper_fov": "10",
+            "lower_fov": "-30", "sensor_tick": "0.05",
+        }),
+    ),
+    DEFAULT_SENSOR_SPECS[2],
+    DEFAULT_SENSOR_SPECS[3],
+)
+
+SENSOR_PROFILES: Mapping[str, tuple[CarlaSensorSpec, ...]] = MappingProxyType({
+    "default": DEFAULT_SENSOR_SPECS,
+    "low": LOW_RESOURCE_SENSOR_SPECS,
+})
+
+
+def sensor_specs_for_profile(profile: str) -> tuple[CarlaSensorSpec, ...]:
+    key = str(profile).strip().lower()
+    try:
+        return SENSOR_PROFILES[key]
+    except KeyError as error:
+        raise ValueError(f"unknown sensor profile: {profile!r}") from error
+
+
 EVENT_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = tuple(
     spec for spec in DEFAULT_SENSOR_SPECS if not spec.continuous
 )

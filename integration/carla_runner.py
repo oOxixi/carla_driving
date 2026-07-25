@@ -32,6 +32,7 @@ from .carla_perception import (
     attach_default_sensors,
     attach_event_sensors,
     lane_metrics,
+    sensor_specs_for_profile,
     traffic_light_and_stop_distance,
 )
 from .contracts import PerceptionFrame
@@ -727,18 +728,27 @@ def run(args: argparse.Namespace) -> None:
             perception_bridge = None
             world_events: EventLedger | None = None
             if args.perception_mode == "sensors":
+                sensor_profile = getattr(args, "sensor_profile", "default")
+                print(
+                    f"sensor stage: attaching profile={sensor_profile}",
+                    flush=True,
+                )
                 sensors = attach_default_sensors(
-                    session, world, ego, carla, sensor_tick_s=args.fixed_delta_s,
+                    session, world, ego, carla,
+                    specs=sensor_specs_for_profile(sensor_profile),
+                    sensor_tick_s=args.fixed_delta_s,
                 )
                 perception_bridge = CarlaPerceptionBridge(
                     world, world_map, ego, session, sensors, detector=detector,
                 )
+                print("sensor stage: warming up RGB/LiDAR", flush=True)
                 _warm_up_sensor_bridge(
                     session, world, perception_bridge,
                     attempts=args.sensor_warmup_frames,
                     tick_timeout_s=args.timeout_s,
                     sensor_timeout_s=args.sensor_timeout_s,
                 )
+                print("sensor stage: RGB/LiDAR ready", flush=True)
             elif args.perception_mode == "world":
                 world_events = attach_event_sensors(
                     session, world, ego, carla,
@@ -1122,6 +1132,9 @@ def main() -> None:
                         help="maximum ticks used to obtain the first aligned RGB/LiDAR frame")
     parser.add_argument("--sensor-startup-grace-frames", type=int, default=2,
                         help="initial perception misses that brake without permanently latching watchdog")
+    parser.add_argument("--sensor-profile", choices=("default", "low"), default="default",
+                        help="default uses full validation density; low reduces RGB/LiDAR load "
+                             "for unstable Windows/UE4 hosts")
     parser.add_argument("--rgb-detector-model",
                         help="optional Ultralytics-style ONNX model for RGB vehicle/person detection")
     parser.add_argument("--rgb-detector-confidence", type=float, default=0.35,

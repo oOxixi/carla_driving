@@ -43,7 +43,11 @@ def main() -> None:
 
         command = build_command(decision, case["voice"])
 
-        assert command["intent"] == decision["action"]
+        expected_runtime_intent = (
+            "KEEP_LANE" if decision["action"] == "START"
+            else decision["action"]
+        )
+        assert command["intent"] == expected_runtime_intent
         assert command["confirm_required"] == (
             decision["requires_confirmation"]
         )

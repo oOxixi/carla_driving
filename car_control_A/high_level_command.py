@@ -87,9 +87,20 @@ class HighLevelCommandAdapter:
         warnings: list[dict[str, str]] = []
         errors: list[dict[str, str]] = []
 
-        intent, parameters, confirm_required = self._runtime_fields(action, payload, warnings)
+        intent, parameters, action_confirmation = self._runtime_fields(
+            action, payload, warnings,
+        )
         if intent == "UNKNOWN":
             errors.append({"code": "UNKNOWN_ACTION", "message": f"unsupported action: {action}"})
+
+        requested_confirmation = _confirmation_requested(payload)
+        confirm_required = action_confirmation or requested_confirmation
+        if action_confirmation:
+            ambiguity_type = "UNSUPPORTED_ACTION"
+        elif requested_confirmation:
+            ambiguity_type = "MODEL_CONFIRMATION_REQUIRED"
+        else:
+            ambiguity_type = "NONE"
 
         if payload.get("visual_valid") is False:
             warnings.append({
@@ -107,7 +118,7 @@ class HighLevelCommandAdapter:
             "confidence": confidence,
             "intent_confidence": confidence,
             "status": "invalid" if errors else "valid",
-            "ambiguity_type": "UNSUPPORTED_ACTION" if confirm_required else "NONE",
+            "ambiguity_type": ambiguity_type,
             "confirm_required": confirm_required,
             "errors": errors,
             "warnings": warnings,
@@ -118,6 +129,7 @@ class HighLevelCommandAdapter:
             "high_level_action": action,
             "reason": _optional_text(payload, "reason") or _optional_text(payload, "reason_zh"),
             "visual_valid": payload.get("visual_valid"),
+            "decision_source": _optional_text(payload, "decision_source"),
         }
 
     def _runtime_fields(
@@ -266,6 +278,20 @@ def _optional_timestamp_lenient(data: Mapping[str, object], name: str) -> int | 
         return _optional_timestamp(data, name)
     except (TypeError, ValueError):
         return None
+
+
+def _confirmation_requested(data: Mapping[str, object]) -> bool:
+    values = [
+        data[name]
+        for name in ("requires_confirmation", "confirm_required")
+        if name in data
+    ]
+    for value in values:
+        if type(value) is not bool:
+            raise TypeError(
+                "requires_confirmation/confirm_required must be bool"
+            )
+    return any(values)
 
 
 __all__ = [

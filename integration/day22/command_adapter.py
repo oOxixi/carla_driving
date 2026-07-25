@@ -4,6 +4,8 @@ import time
 import uuid
 from typing import Any, Mapping
 
+from car_control_A.high_level_command import HighLevelCommandAdapter
+
 
 SUPPORTED_INTENTS = {
     "START",
@@ -14,46 +16,47 @@ SUPPORTED_INTENTS = {
 }
 
 
-def build_command(
+def build_high_level_command(
     decision: Mapping[str, Any],
     source_text: str,
+    *,
+    command_id: str | None = None,
 ) -> dict[str, Any]:
     action = str(decision.get("action", "")).strip().upper()
 
     if action not in SUPPORTED_INTENTS:
         raise ValueError(f"unsupported Day22 action: {action}")
 
-    parameters: dict[str, Any] = {}
-
-    if action in {"SET_SPEED", "SLOW_DOWN"}:
-        target_speed = decision.get("target_speed_mps")
-
-        if target_speed is not None:
-            parameters = {
-                "speed": max(0.0, float(target_speed)),
-                "unit": "m/s",
-            }
-
-    return {
+    high_level: dict[str, Any] = {
         "schema_version": "1.0",
-        "command_id": "qwen_day22_" + uuid.uuid4().hex[:8],
+        "command_id": command_id or "qwen_day22_" + uuid.uuid4().hex[:8],
         "source_text": str(source_text),
-        "intent": action,
-        "parameters": parameters,
+        "action": action,
         "confidence": float(decision.get("confidence", 0.0)),
-        "intent_confidence": float(
-            decision.get("confidence", 0.0)
-        ),
-        "status": "valid",
-        "ambiguity_type": "NONE",
-        "confirm_required": bool(
+        "requires_confirmation": bool(
             decision.get("requires_confirmation", False)
         ),
-        "errors": [],
-        "warnings": [],
         "valid_duration_s": 3.0,
-        "t_audio_start_ns": None,
-        "t_asr_end_ns": None,
-        "t_intent_end_ns": time.monotonic_ns(),
+        "timestamp_ns": time.monotonic_ns(),
         "reason_zh": str(decision.get("reason_zh", "")),
+        "decision_source": str(decision.get("decision_source", "UNKNOWN")),
     }
+
+    target_speed = decision.get("target_speed_mps")
+    if action in {"SET_SPEED", "SLOW_DOWN"} and target_speed is not None:
+        high_level["target_speed_mps"] = max(0.0, float(target_speed))
+
+    return high_level
+
+
+def build_command(
+    decision: Mapping[str, Any],
+    source_text: str,
+) -> dict[str, Any]:
+    """Build the frozen A runtime envelope from a Day22 decision."""
+    return HighLevelCommandAdapter().adapt(
+        build_high_level_command(decision, source_text)
+    )
+
+
+__all__ = ["SUPPORTED_INTENTS", "build_command", "build_high_level_command"]
