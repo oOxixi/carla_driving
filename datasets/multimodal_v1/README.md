@@ -87,3 +87,30 @@ python tools/validate_multimodal_dataset.py `
 
 真实数据集增加 `--check-files --dataset-root <数据集根目录>`。验证器检查必填字段、ID 唯一性、路径安全、时间值、动作空间和跨 split 的 sequence 泄漏。
 
+## 7. 从采集清单构建
+
+`tools/build_multimodal_dataset.py` 接收一行一帧的规范化采集 JSONL，
+校验 RGB/LiDAR/音频相对路径，计算媒体 SHA-256，并按
+`sequence_id + scenario_id + seed` 确定性写入三个 split：
+
+```powershell
+python tools/build_multimodal_dataset.py capture.jsonl `
+  --dataset-root D:/carla_capture `
+  --output-root D:/carla_multimodal_v1 `
+  --sequence-id town03_d03_seed0 `
+  --scenario-id D03_front_vehicle_brake `
+  --seed 0 --difficulty advanced --map Town03 `
+  --git-commit 6eb269a `
+  --config-sha256 <64位配置SHA256>
+```
+
+输出包括 `records/{train,val,test}.jsonl`、三个 sequence 清单和
+`evidence/quality_report.json`。之后必须把三个 split 一起校验，才能发现跨文件泄漏：
+
+```powershell
+python tools/validate_multimodal_dataset.py `
+  D:/carla_multimodal_v1/records/train.jsonl `
+  D:/carla_multimodal_v1/records/val.jsonl `
+  D:/carla_multimodal_v1/records/test.jsonl `
+  --check-files --dataset-root D:/carla_capture
+```

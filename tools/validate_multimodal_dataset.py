@@ -13,7 +13,9 @@ LEVELS = {"command_only", "perception", "decision", "closed_loop"}
 ACTIONS = {
     "START",
     "STOP",
+    "SLOW_DOWN",
     "SET_SPEED",
+    "EMERGENCY_STOP",
     "TURN_LEFT",
     "TURN_RIGHT",
     "CHANGE_LANE_LEFT",
@@ -191,14 +193,62 @@ def validate_dataset(
     return errors
 
 
+def validate_dataset_files(
+    jsonl_paths: Iterable[Path],
+    *,
+    dataset_root: Path | None = None,
+    check_files: bool = False,
+) -> list[str]:
+    """Validate all split files together so cross-file leakage is visible."""
+    errors: list[str] = []
+    sample_locations: dict[str, str] = {}
+    sequence_splits: dict[str, str] = {}
+    for jsonl_path in jsonl_paths:
+        errors.extend(
+            validate_dataset(
+                jsonl_path,
+                dataset_root=dataset_root,
+                check_files=check_files,
+            )
+        )
+        with jsonl_path.open("r", encoding="utf-8") as stream:
+            for line_number, raw_line in enumerate(stream, start=1):
+                if not raw_line.strip():
+                    continue
+                try:
+                    record = json.loads(raw_line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(record, dict):
+                    continue
+                location = f"{jsonl_path}:{line_number}"
+                sample_id = record.get("sample_id")
+                if isinstance(sample_id, str):
+                    previous = sample_locations.setdefault(sample_id, location)
+                    if previous != location:
+                        errors.append(
+                            f"{location}: duplicate sample_id {sample_id!r}; first at {previous}"
+                        )
+                sequence_id = record.get("sequence_id")
+                split = record.get("split")
+                if isinstance(sequence_id, str) and split in SPLITS:
+                    previous_split = sequence_splits.setdefault(sequence_id, split)
+                    if previous_split != split:
+                        errors.append(
+                            f"{location}: sequence {sequence_id!r} leaks across "
+                            f"{previous_split}/{split}"
+                        )
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("jsonl", type=Path)
+    parser.add_argument("jsonl", nargs="+", type=Path)
     parser.add_argument("--dataset-root", type=Path)
     parser.add_argument("--check-files", action="store_true")
     args = parser.parse_args()
 
-    errors = validate_dataset(
+    errors = validate_dataset_files(
         args.jsonl,
         dataset_root=args.dataset_root,
         check_files=args.check_files,
@@ -208,7 +258,7 @@ def main() -> int:
             print(f"ERROR: {error}")
         print(f"FAILED: {len(errors)} error(s)")
         return 1
-    print(f"PASS: {args.jsonl}")
+    print("PASS: " + ", ".join(str(path) for path in args.jsonl))
     return 0
 
 

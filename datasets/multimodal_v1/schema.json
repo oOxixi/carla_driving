@@ -285,7 +285,9 @@
           "enum": [
             "START",
             "STOP",
+            "SLOW_DOWN",
             "SET_SPEED",
+            "EMERGENCY_STOP",
             "TURN_LEFT",
             "TURN_RIGHT",
             "CHANGE_LANE_LEFT",
