@@ -20,8 +20,12 @@ from integration.carla_runner import (
     _route_stop_trigger_m,
     _runtime_health_completed,
     _scene_from_world,
+    _scenario_actor,
     _scenario_raw_control_fault,
     _scenario_maneuver,
+    _scenario_local_transform,
+    _scenario_traffic_light_observation,
+    _scenario_vehicle_speed_mps,
     _select_scene_facts,
     _scenario_completed,
     _speed_mps,
@@ -233,6 +237,110 @@ def test_lead_vehicle_position_is_continuous_when_it_brakes() -> None:
     assert _lead_vehicle_travel_m(7.9, 4.0, 8.0, 0.0) == pytest.approx(31.6)
     assert _lead_vehicle_travel_m(8.0, 4.0, 8.0, 0.0) == pytest.approx(32.0)
     assert _lead_vehicle_travel_m(8.1, 4.0, 8.0, 0.0) == pytest.approx(32.0)
+
+
+def test_scenario_actor_lookup_is_unique_and_explicit() -> None:
+    spec = Namespace(
+        scenario_id="D03",
+        actors=(
+            {"type": "vehicle", "actor_id": "lead"},
+            {"type": "traffic_light", "state": "red"},
+        ),
+    )
+    assert _scenario_actor(spec, "vehicle")["actor_id"] == "lead"
+    assert _scenario_actor(spec, "walker.pedestrian") is None
+
+    duplicate = Namespace(
+        scenario_id="bad",
+        actors=({"type": "vehicle"}, {"type": "vehicle"}),
+    )
+    with pytest.raises(ValueError, match="multiple"):
+        _scenario_actor(duplicate, "vehicle")
+
+
+def test_submission_scenarios_declare_expected_real_actor_types() -> None:
+    from integration.scenario_execution import ScenarioSpec
+
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    s01 = ScenarioSpec.load(root / "smoke" / "S01_set_speed_20.json")
+    d03 = ScenarioSpec.load(root / "safety_D" / "D03_front_vehicle_brake.json")
+    d08 = ScenarioSpec.load(
+        root / "safety_D" / "D08_command_conflict_red_light_continue.json"
+    )
+    assert _scenario_actor(s01, "vehicle") is None
+    assert _scenario_actor(s01, "traffic_light") is None
+    assert _scenario_actor(d03, "vehicle")["actor_id"] == "lead_001"
+    assert _scenario_actor(d08, "traffic_light")["state"].lower() == "red"
+
+
+def test_scenario_vehicle_changes_to_braking_target_at_declared_time() -> None:
+    actor = {
+        "behavior": {
+            "initial_speed_mps": 5.0,
+            "brake_at_s": 6.0,
+            "target_speed_mps": 0.5,
+        }
+    }
+    assert _scenario_vehicle_speed_mps(actor, 5.99) == pytest.approx(5.0)
+    assert _scenario_vehicle_speed_mps(actor, 6.0) == pytest.approx(0.5)
+
+
+def test_scenario_local_actor_transform_rotates_with_ego_heading() -> None:
+    class Location:
+        def __init__(self, x=0.0, y=0.0, z=0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Rotation:
+        def __init__(self, pitch=0.0, yaw=0.0, roll=0.0):
+            self.pitch, self.yaw, self.roll = pitch, yaw, roll
+
+    class Transform:
+        def __init__(self, location, rotation):
+            self.location, self.rotation = location, rotation
+
+    carla_api = Namespace(Location=Location, Rotation=Rotation, Transform=Transform)
+    anchor = Transform(Location(10.0, 20.0, 1.0), Rotation(yaw=90.0))
+    result = _scenario_local_transform(
+        carla_api,
+        anchor,
+        {"x": 18.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+    )
+    assert result.location.x == pytest.approx(10.0)
+    assert result.location.y == pytest.approx(38.0)
+    assert result.rotation.yaw == pytest.approx(90.0)
+
+
+def test_real_traffic_light_observation_replaces_config_fallback_provenance() -> None:
+    class Location:
+        def __init__(self, x, y, z=0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Transform:
+        def __init__(self, location):
+            self.location = location
+
+        def get_forward_vector(self):
+            return Namespace(x=1.0, y=0.0, z=0.0)
+
+    ego = Namespace(
+        get_location=lambda: Location(0.0, 0.0),
+        get_transform=lambda: Transform(Location(0.0, 0.0)),
+    )
+    light = Namespace(
+        get_state=lambda: "TrafficLightState.Red",
+        get_stop_waypoints=lambda: (
+            Namespace(transform=Transform(Location(12.0, 0.0))),
+        ),
+    )
+    observed, sources = _scenario_traffic_light_observation(
+        PerceptionFrame(10, 0.5),
+        ego,
+        light,
+    )
+    assert observed.traffic_light == "RED"
+    assert observed.distance_to_stop_line_m == pytest.approx(12.0)
+    assert sources["traffic_light"] == "CARLA_SCENARIO_TRAFFIC_LIGHT_ACTOR_STOP_WAYPOINT"
+    assert "FALLBACK" not in sources["traffic_light"]
 
 
 def test_front_gap_expected_value_is_a_hard_completion_contract() -> None:

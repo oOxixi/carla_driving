@@ -214,6 +214,257 @@ def _spawn_static_lead(session: CarlaSession, world: Any, world_map: Any, ego: A
     raise RuntimeError("cannot place lead vehicle: all forward candidate positions are occupied")
 
 
+def _scenario_actor(spec: ScenarioSpec | None, actor_type: str) -> dict[str, object] | None:
+    """Return the unique configured actor of ``actor_type``.
+
+    Submission scenarios deliberately support one owned lead vehicle and one
+    owned traffic light.  Failing on duplicates is safer than silently binding
+    perception evidence to an arbitrary actor.
+    """
+    if spec is None:
+        return None
+    expected = actor_type.strip().lower()
+    matches = [
+        actor for actor in spec.actors
+        if str(actor.get("type", "")).strip().lower() == expected
+    ]
+    if len(matches) > 1:
+        raise ValueError(
+            f"scenario {spec.scenario_id!r} declares multiple {actor_type!r} actors"
+        )
+    return matches[0] if matches else None
+
+
+def _scenario_local_transform(
+    carla_api: Any,
+    anchor_transform: Any,
+    spawn: Mapping[str, object],
+    *,
+    forward_offset_m: float = 0.0,
+) -> Any:
+    """Convert a scenario-local actor pose to a CARLA world transform."""
+    local_x = float(spawn.get("x", 0.0)) + float(forward_offset_m)
+    local_y = float(spawn.get("y", 0.0))
+    local_z = float(spawn.get("z", 0.5))
+    local_yaw = float(spawn.get("yaw_deg", 0.0))
+    yaw_rad = math.radians(float(anchor_transform.rotation.yaw))
+    cos_yaw, sin_yaw = math.cos(yaw_rad), math.sin(yaw_rad)
+    origin = anchor_transform.location
+    return carla_api.Transform(
+        carla_api.Location(
+            x=float(origin.x) + local_x * cos_yaw - local_y * sin_yaw,
+            y=float(origin.y) + local_x * sin_yaw + local_y * cos_yaw,
+            z=float(origin.z) + max(0.0, local_z - 0.5),
+        ),
+        carla_api.Rotation(
+            pitch=float(getattr(anchor_transform.rotation, "pitch", 0.0)),
+            yaw=float(anchor_transform.rotation.yaw) + local_yaw,
+            roll=float(getattr(anchor_transform.rotation, "roll", 0.0)),
+        ),
+    )
+
+
+def _scenario_vehicle_speed_mps(
+    actor_spec: Mapping[str, object],
+    elapsed_s: float,
+) -> float:
+    behavior = actor_spec.get("behavior", {})
+    if not isinstance(behavior, Mapping):
+        raise TypeError("scenario vehicle behavior must be an object")
+    initial = max(0.0, float(behavior.get("initial_speed_mps", 0.0)))
+    brake_at = float(behavior.get("brake_at_s", math.inf))
+    target = max(0.0, float(behavior.get("target_speed_mps", initial)))
+    return initial if float(elapsed_s) < brake_at else target
+
+
+def _spawn_scenario_vehicle(
+    session: CarlaSession,
+    world: Any,
+    carla_api: Any,
+    ego: Any,
+    fallback_blueprint: Any,
+    actor_spec: Mapping[str, object],
+) -> Any:
+    """Spawn a real CARLA lead vehicle from a scenario actor declaration."""
+    spawn = actor_spec.get("spawn", {})
+    if not isinstance(spawn, Mapping):
+        raise TypeError("scenario vehicle spawn must be an object")
+    library = world.get_blueprint_library()
+    blueprint_id = actor_spec.get("blueprint_id")
+    if isinstance(blueprint_id, str) and blueprint_id:
+        blueprint = library.find(blueprint_id)
+    else:
+        fallback_id = getattr(fallback_blueprint, "id", None)
+        blueprint = library.find(fallback_id) if fallback_id and callable(getattr(library, "find", None)) else fallback_blueprint
+    if blueprint is None:
+        raise LookupError(f"scenario vehicle blueprint not found: {blueprint_id!r}")
+    if callable(getattr(blueprint, "has_attribute", None)) and blueprint.has_attribute("role_name"):
+        blueprint.set_attribute(
+            "role_name",
+            str(actor_spec.get("actor_id", "scenario_lead")),
+        )
+
+    ego_transform = ego.get_transform()
+    lead = None
+    for offset_m in (0.0, 2.0, 4.0, 6.0):
+        transform = _scenario_local_transform(
+            carla_api, ego_transform, spawn, forward_offset_m=offset_m,
+        )
+        lead = world.try_spawn_actor(blueprint, transform)
+        if lead is not None:
+            break
+    if lead is None:
+        raise RuntimeError("cannot spawn configured scenario lead vehicle")
+
+    lead = session.track_actor(lead)
+    set_physics = getattr(lead, "set_simulate_physics", None)
+    if callable(set_physics):
+        set_physics(True)
+    set_autopilot = getattr(lead, "set_autopilot", None)
+    if callable(set_autopilot):
+        set_autopilot(False)
+    desired_speed = _scenario_vehicle_speed_mps(actor_spec, 0.0)
+    set_velocity = getattr(lead, "set_target_velocity", None)
+    if callable(set_velocity):
+        forward = lead.get_transform().get_forward_vector()
+        set_velocity(carla_api.Vector3D(
+            x=float(forward.x) * desired_speed,
+            y=float(forward.y) * desired_speed,
+            z=0.0,
+        ))
+    print(
+        "scenario actor: spawned real lead "
+        f"id={actor_spec.get('actor_id', 'scenario_lead')} "
+        f"distance_m={lead.get_location().distance(ego.get_location()):.2f}",
+        flush=True,
+    )
+    return lead
+
+
+def _update_scenario_vehicle(
+    lead: Any,
+    actor_spec: Mapping[str, object],
+    elapsed_s: float,
+    carla_api: Any,
+) -> None:
+    """Apply a small deterministic speed controller to a scenario vehicle."""
+    if lead is None or not getattr(lead, "is_alive", True):
+        raise RuntimeError("configured scenario lead vehicle is not alive")
+    desired = _scenario_vehicle_speed_mps(actor_spec, elapsed_s)
+    current = _speed_mps(lead.get_velocity())
+    error = desired - current
+    if error < -0.15:
+        throttle, brake = 0.0, min(1.0, 0.25 + (-error / 3.0))
+    elif error > 0.15:
+        throttle, brake = min(0.45, 0.12 + error / 6.0), 0.0
+    else:
+        throttle, brake = (0.08 if desired > 0.1 else 0.0), 0.0
+    lead.apply_control(carla_api.VehicleControl(
+        throttle=throttle,
+        brake=brake,
+        steer=0.0,
+        hand_brake=False,
+        reverse=False,
+        manual_gear_shift=False,
+    ))
+
+
+def _scenario_traffic_light_distance(spec: ScenarioSpec | None) -> float | None:
+    actor = _scenario_actor(spec, "traffic_light")
+    if actor is None:
+        return None
+    distance = float(actor.get("distance_to_stop_line_m", 0.0))
+    if not math.isfinite(distance) or distance <= 0.0:
+        raise ValueError("scenario traffic-light distance_to_stop_line_m must be positive")
+    return distance
+
+
+def _traffic_light_scenario_anchor(
+    world: Any,
+    world_map: Any,
+    carla_api: Any,
+    distance_to_stop_line_m: float,
+) -> tuple[Any, Any]:
+    """Return a real signal and a driving-lane transform behind its stop line."""
+    actors = world.get_actors()
+    lights = list(
+        actors.filter("traffic.traffic_light*")
+        if callable(getattr(actors, "filter", None))
+        else ()
+    )
+    lights.sort(key=lambda actor: int(getattr(actor, "id", 0)))
+    candidates: list[tuple[int, Any, Any]] = []
+    for light in lights:
+        getter = getattr(light, "get_stop_waypoints", None)
+        if not callable(getter):
+            continue
+        for waypoint in getter() or ():
+            transform = waypoint.transform
+            forward = transform.get_forward_vector()
+            stop_location = transform.location
+            behind = carla_api.Location(
+                x=float(stop_location.x) - float(forward.x) * distance_to_stop_line_m,
+                y=float(stop_location.y) - float(forward.y) * distance_to_stop_line_m,
+                z=float(stop_location.z),
+            )
+            driving = world_map.get_waypoint(behind, project_to_road=True)
+            if driving is None:
+                continue
+            driving_transform = driving.transform
+            spawn_transform = carla_api.Transform(
+                carla_api.Location(
+                    x=float(driving_transform.location.x),
+                    y=float(driving_transform.location.y),
+                    z=float(driving_transform.location.z) + 0.5,
+                ),
+                carla_api.Rotation(
+                    pitch=float(getattr(driving_transform.rotation, "pitch", 0.0)),
+                    yaw=float(driving_transform.rotation.yaw),
+                    roll=float(getattr(driving_transform.rotation, "roll", 0.0)),
+                ),
+            )
+            candidates.append((int(getattr(light, "id", 0)), light, spawn_transform))
+    if not candidates:
+        raise RuntimeError("current map has no usable traffic-light stop waypoint")
+    _, light, transform = min(candidates, key=lambda item: item[0])
+    return light, transform
+
+
+def _scenario_traffic_light_observation(
+    scene: PerceptionFrame,
+    ego: Any,
+    light: Any,
+) -> tuple[PerceptionFrame, dict[str, str]]:
+    """Bind D08 to the selected real CARLA signal and map stop waypoint."""
+    state = str(light.get_state()).split(".")[-1].upper()
+    if state not in {"RED", "YELLOW", "GREEN"}:
+        raise RuntimeError(f"selected CARLA traffic light has unsupported state {state!r}")
+    ego_location = ego.get_location()
+    forward = ego.get_transform().get_forward_vector()
+    distances: list[float] = []
+    getter = getattr(light, "get_stop_waypoints", None)
+    if callable(getter):
+        for waypoint in getter() or ():
+            location = waypoint.transform.location
+            along = (
+                (float(location.x) - float(ego_location.x)) * float(forward.x)
+                + (float(location.y) - float(ego_location.y)) * float(forward.y)
+            )
+            if along >= -0.5:
+                distances.append(max(0.0, along))
+    if not distances:
+        raise RuntimeError("selected CARLA traffic light has no forward stop waypoint")
+    source = "CARLA_SCENARIO_TRAFFIC_LIGHT_ACTOR_STOP_WAYPOINT"
+    return replace(
+        scene,
+        traffic_light=state,
+        distance_to_stop_line_m=min(distances),
+    ), {
+        "traffic_light": source,
+        "distance_to_stop_line_m": source,
+    }
+
+
 def _apply_virtual_scenario(scene: PerceptionFrame, ego: Any, origin: tuple[float, float, float], args: argparse.Namespace) -> PerceptionFrame:
     location = ego.get_location()
     travelled_m = math.sqrt((location.x - origin[0]) ** 2 + (location.y - origin[1]) ** 2 + (location.z - origin[2]) ** 2)
@@ -610,6 +861,17 @@ def run(args: argparse.Namespace) -> None:
             args.frames = min(args.frames, args.max_frames)
         args.scenario = spec.scenario_id
         args.scenario_difficulty = spec.official_level
+        owns_real_scene_actor = (
+            _scenario_actor(spec, "vehicle") is not None
+            or _scenario_actor(spec, "traffic_light") is not None
+        )
+        if owns_real_scene_actor and args.scenario_facts_mode != "perception":
+            print(
+                "scenario facts: forcing perception mode because the scenario "
+                "owns real CARLA actors",
+                flush=True,
+            )
+            args.scenario_facts_mode = "perception"
 
     recorder = _evidence_recorder(args, spec)
     ego: Any | None = None
@@ -624,6 +886,9 @@ def run(args: argparse.Namespace) -> None:
     max_speed_mps = 0.0
     runtime: ControlRuntime | None = None
     last_sim_time_s = 0.0
+    scenario_traffic_light: Any | None = None
+    traffic_light_original_state: Any | None = None
+    traffic_light_original_frozen: bool | None = None
     try:
         client = carla.Client(args.host, args.port)
         client.set_timeout(args.timeout_s)
@@ -683,6 +948,33 @@ def run(args: argparse.Namespace) -> None:
                 f"route anchor: spawn_index={anchor_index} maneuver={maneuver} "
                 f"topology_score={anchor_score:.3f}"
             )
+        traffic_light_distance = _scenario_traffic_light_distance(spec)
+        if traffic_light_distance is not None:
+            scenario_traffic_light, route_anchor = _traffic_light_scenario_anchor(
+                world, world_map, carla, traffic_light_distance,
+            )
+            traffic_light_original_state = scenario_traffic_light.get_state()
+            frozen_getter = getattr(scenario_traffic_light, "is_frozen", None)
+            traffic_light_original_frozen = (
+                bool(frozen_getter()) if callable(frozen_getter) else False
+            )
+            configured_light = _scenario_actor(spec, "traffic_light")
+            assert configured_light is not None
+            configured_state = str(configured_light.get("state", "RED")).strip().title()
+            desired_state = getattr(carla.TrafficLightState, configured_state, None)
+            if desired_state is None:
+                raise ValueError(
+                    f"CARLA has no TrafficLightState {configured_state!r}"
+                )
+            scenario_traffic_light.set_state(desired_state)
+            scenario_traffic_light.freeze(True)
+            print(
+                "scenario actor: bound real traffic light "
+                f"id={getattr(scenario_traffic_light, 'id', 'unknown')} "
+                f"state={configured_state.upper()} "
+                f"stop_distance_m={traffic_light_distance:.2f}",
+                flush=True,
+            )
         spawn_transform = route_anchor
         if spec is not None:
             local_x, local_y, local_z, local_yaw = spec.ego_spawn_xyzyaw
@@ -721,6 +1013,11 @@ def run(args: argparse.Namespace) -> None:
             origin = (start_location.x, start_location.y, start_location.z)
 
             scenario_lead = None
+            scenario_lead_spec = _scenario_actor(spec, "vehicle")
+            if scenario_lead_spec is not None:
+                scenario_lead = _spawn_scenario_vehicle(
+                    session, world, carla, ego, bp, scenario_lead_spec,
+                )
             if args.perception_mode in {"sensors", "world"} and args.scenario in {"follow", "emergency"}:
                 lead_distance = args.lead_distance_m if args.scenario == "follow" else args.emergency_distance_m
                 scenario_lead = _spawn_static_lead(session, world, world_map, ego, bp, lead_distance)
@@ -819,6 +1116,10 @@ def run(args: argparse.Namespace) -> None:
                 max_speed_mps = max(max_speed_mps, state.speed_mps)
                 last_sim_time_s = state.sim_time_s
                 elapsed_s = state.sim_time_s - episode_start_s
+                if scenario_lead is not None and scenario_lead_spec is not None:
+                    _update_scenario_vehicle(
+                        scenario_lead, scenario_lead_spec, elapsed_s, carla,
+                    )
                 if timeline is not None:
                     for scheduled in timeline.due(elapsed_s):
                         scenario_command = resolve_scenario_command(
@@ -919,6 +1220,11 @@ def run(args: argparse.Namespace) -> None:
                                 perception_sources["lead_speed_mps"] = "VIRTUAL_ACCEPTANCE_TRUTH"
                         else:
                             perception_sources["scenario"] = "CARLA_WORLD_TRUTH"
+                    if scenario_traffic_light is not None:
+                        scene, traffic_sources = _scenario_traffic_light_observation(
+                            scene, ego, scenario_traffic_light,
+                        )
+                        perception_sources.update(traffic_sources)
                     if spec is not None:
                         configured_scene = _scenario_facts(
                             ego,
@@ -1101,6 +1407,19 @@ def run(args: argparse.Namespace) -> None:
     finally:
         if recorder is not None:
             recorder.close()
+        if scenario_traffic_light is not None:
+            try:
+                if traffic_light_original_state is not None:
+                    scenario_traffic_light.set_state(traffic_light_original_state)
+                scenario_traffic_light.freeze(
+                    False if traffic_light_original_frozen is None
+                    else traffic_light_original_frozen
+                )
+            except Exception as error:
+                print(
+                    f"warning: failed to restore scenario traffic light: {error}",
+                    flush=True,
+                )
 
 
 def main() -> None:
