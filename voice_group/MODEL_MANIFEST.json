@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "base_model": {
+    "name": "iic/SenseVoiceSmall",
+    "source": "https://www.modelscope.cn/models/iic/SenseVoiceSmall",
+    "license": "FunASR Model Open Source License Agreement 1.1",
+    "license_source": "https://github.com/modelscope/FunASR/blob/main/MODEL_LICENSE"
+  },
+  "adapters": [
+    {
+      "path": "lora_dialect/adapter_model.safetensors",
+      "bytes": 6922192,
+      "sha256": "38d541099157ba5c35d8256f2ebd8a374cae85a5ca7eb9b2a7cb8a033c624de1",
+      "peft_type": "LORA",
+      "rank": 8,
+      "alpha": 16,
+      "dropout": 0.05,
+      "production_active": true
+    },
+    {
+      "path": "lora_finetuned/adapter_model.safetensors",
+      "bytes": 6922192,
+      "sha256": "87cea17b9208e009e2e306fd8000ec14edbbc3a1835b65fd3bd85ec043062ff5",
+      "peft_type": "LORA",
+      "rank": 8,
+      "alpha": 16,
+      "dropout": 0.05,
+      "production_active": false
+    }
+  ],
+  "integrity_command": "python tools/verify_voice_weights.py"
+}

@@ -11,21 +11,88 @@
 """
 import os, sys, time, json, uuid
 
-# 相对路径导入：B 的模块就在本文件同级目录
-_HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(_HERE, "vehicle_nlu"))   # 让 "from src.xxx" 生效
-sys.path.insert(0, _HERE)                                # 让 "from nlu_b2.xxx" 生效
-
-from asr_vad import ASR
-from src.b1_service import process_asr_text
-from nlu_b2.parser import parse_command
+if __package__:
+    from .asr_vad import ASR
+    from .asr_cascade import (
+        CascadeConfig,
+        FasterWhisperVerifier,
+        apply_verification,
+        mark_verifier_unavailable,
+        needs_verification,
+    )
+    from .vehicle_nlu.src.b1_service import process_asr_text
+    from .nlu_b2.parser import parse_command
+else:
+    # 兼容直接执行 ``python voice_group/pipeline.py audio.wav``。
+    _HERE = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, _HERE)
+    from asr_vad import ASR
+    from asr_cascade import (
+        CascadeConfig,
+        FasterWhisperVerifier,
+        apply_verification,
+        mark_verifier_unavailable,
+        needs_verification,
+    )
+    from vehicle_nlu.src.b1_service import process_asr_text
+    from nlu_b2.parser import parse_command
 
 _asr = None
+_verifier = None
+_cascade_config = None
+
+
 def _get_asr():
     global _asr
     if _asr is None:
         _asr = ASR()
     return _asr
+
+
+def _get_cascade_config():
+    global _cascade_config
+    if _cascade_config is None:
+        _cascade_config = CascadeConfig.from_environment()
+    return _cascade_config
+
+
+def _get_verifier():
+    global _verifier
+    if _verifier is None:
+        _verifier = FasterWhisperVerifier(_get_cascade_config())
+    return _verifier
+
+
+def preload_voice_models() -> dict:
+    """Load both ASR models before timed command handling starts."""
+    started = time.monotonic_ns()
+    _get_asr()
+    primary_loaded = time.monotonic_ns()
+    config = _get_cascade_config()
+    if config.enabled:
+        _get_verifier().warmup()
+    completed = time.monotonic_ns()
+    return {
+        "cascade_enabled": config.enabled,
+        "primary_load_ms": round((primary_loaded - started) / 1e6, 1),
+        "verifier_load_ms": round((completed - primary_loaded) / 1e6, 1),
+        "total_load_ms": round((completed - started) / 1e6, 1),
+    }
+
+
+def _text_to_command(text: str, command_id: str, confidence=None) -> dict:
+    b1 = process_asr_text(
+        request_id=command_id,
+        text=text,
+        asr_confidence=confidence,
+    )
+    b2 = parse_command(b1)
+    return {
+        "source_text": text,
+        "intent": b2.get("intent"),
+        "parameters": b2.get("slots", {}),
+        "status": b2.get("status"),
+    }
 
 
 def audio_to_command(audio, t_audio_start_ns: int = None) -> dict:
@@ -68,6 +135,34 @@ def audio_to_command(audio, t_audio_start_ns: int = None) -> dict:
             "total_ms": round((t_end - t0) / 1e6, 1),
         },
     }
+    cascade_config = _get_cascade_config()
+    if cascade_config.enabled and needs_verification(cmd):
+        verification_started = time.monotonic_ns()
+        try:
+            verification = _get_verifier().transcribe(audio)
+            secondary = _text_to_command(
+                verification["text"],
+                f"{cmd_id}-verify",
+                verification.get("calibrated_confidence"),
+            )
+            cmd = apply_verification(
+                cmd,
+                verification,
+                secondary,
+                minimum_confidence=(
+                    cascade_config.minimum_calibrated_confidence
+                ),
+            )
+        except Exception as error:
+            cmd = mark_verifier_unavailable(cmd, error)
+        cmd["_latency"]["verification_ms"] = round(
+            (time.monotonic_ns() - verification_started) / 1e6,
+            1,
+        )
+        cmd["_latency"]["total_ms"] = round(
+            (time.monotonic_ns() - t0) / 1e6,
+            1,
+        )
     return cmd
 
 

@@ -12,6 +12,7 @@ ASR + VAD 模块（A 的最终交付，含语音活动检测）—— 东风智�
     asr = ASR()
     out = asr.transcribe("test.wav")   # 自动 VAD 截静音后识别
 """
+import os
 import time, re
 from pathlib import Path
 import numpy as np
@@ -36,17 +37,57 @@ def _corr(t):
     return t
 
 
+def _local_model_or_id(environment_name: str, cache_name: str, model_id: str):
+    """Prefer an explicit/local ModelScope snapshot for offline startup."""
+    configured = os.getenv(environment_name)
+    if configured:
+        path = Path(configured).expanduser()
+        if not path.is_dir():
+            raise FileNotFoundError(
+                f"{environment_name} does not point to a model directory: {path}"
+            )
+        return str(path)
+    cached = (
+        Path.home()
+        / ".cache"
+        / "modelscope"
+        / "models"
+        / cache_name
+        / "snapshots"
+        / "master"
+    )
+    return str(cached) if cached.is_dir() else model_id
+
+
 class ASR:
     def __init__(self, device=DEVICE, lora_dir=LORA_DIR):
         # 识别模型（微调版）
-        self.am = AutoModel(model="iic/SenseVoiceSmall", device=device, disable_update=True)
+        sensevoice_model = _local_model_or_id(
+            "SENSEVOICE_MODEL_PATH",
+            "iic--SenseVoiceSmall",
+            "iic/SenseVoiceSmall",
+        )
+        self.am = AutoModel(
+            model=sensevoice_model,
+            device=device,
+            disable_update=True,
+        )
         lora_path = Path(lora_dir)
         if not lora_path.is_dir():
             raise FileNotFoundError(f"local LoRA directory not found: {lora_path}")
         self.am.model = PeftModel.from_pretrained(self.am.model, str(lora_path)).to(device)
         self.am.model.eval()
         # VAD 模型（FunASR 自带的 FSMN-VAD）
-        self.vad = AutoModel(model="fsmn-vad", device=device, disable_update=True)
+        vad_model = _local_model_or_id(
+            "FSMN_VAD_MODEL_PATH",
+            "iic--speech_fsmn_vad_zh-cn-16k-common-pytorch",
+            "fsmn-vad",
+        )
+        self.vad = AutoModel(
+            model=vad_model,
+            device=device,
+            disable_update=True,
+        )
         # 预热
         try:
             self.am.generate(input=np.zeros(16000, dtype="float32"), language="auto", use_itn=True)

@@ -61,6 +61,21 @@ def test_frozen_high_level_slow_down_and_keep_lane_are_executable() -> None:
     assert not keep.command.requires_confirmation
 
 
+def test_relative_slow_down_uses_conservative_default_instead_of_no_op() -> None:
+    adapted = VoiceCommandAdapter(default_slow_speed_mps=2.0).adapt(
+        envelope(
+            intent="SLOW_DOWN",
+            parameters={"mode": "RELATIVE", "action": "DECELERATE"},
+        ),
+        now_s=1.0,
+    )
+
+    assert adapted.control_authorized
+    assert adapted.command.action == "SET_SPEED"
+    assert adapted.command.target_speed_mps == pytest.approx(2.0)
+    assert not adapted.command.requires_confirmation
+
+
 @pytest.mark.parametrize("intent", ["SPEED_UP", "PULL_OVER", "AVOID_OBSTACLE", "CHANGE_LANE", "FOLLOW_ROUTE", "TURN"])
 def test_complex_intents_are_confirmation_gated(intent: str) -> None:
     adapted = VoiceCommandAdapter().adapt(envelope(intent=intent, parameters={}), now_s=1.0)

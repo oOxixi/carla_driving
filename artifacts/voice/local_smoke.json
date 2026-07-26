@@ -1,0 +1,102 @@
+{
+  "schema_version": "1.0",
+  "generated_at_utc": "2026-07-26T13:27:18.602268+00:00",
+  "condition": "clean",
+  "manifest": "D:\\AppStoreDownload\\CARLA_Latest\\my_project_merged\\voice_group\\test_samples\\manifest.json",
+  "audio_root": "D:\\AppStoreDownload\\CARLA_Latest\\my_project_merged\\voice_group\\test_samples",
+  "git_commit": "033b007a1b621a586b4e229cbcd7655af8fe3cd1",
+  "sample_limit": 1,
+  "noise_calibration": null,
+  "overall": {
+    "total": 1,
+    "inference_success": 1,
+    "asr_exact_accuracy": 1.0,
+    "asr_character_accuracy": 1.0,
+    "intent_accuracy": 1.0,
+    "slot_accuracy": 1.0,
+    "latency": {
+      "asr_ms": {
+        "count": 1,
+        "mean_ms": 140.0,
+        "p95_ms": 140.0,
+        "p99_ms": 140.0,
+        "max_ms": 140.0
+      },
+      "nlu_ms": {
+        "count": 1,
+        "mean_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0,
+        "max_ms": 0.0
+      },
+      "total_ms": {
+        "count": 1,
+        "mean_ms": 140.0,
+        "p95_ms": 140.0,
+        "p99_ms": 140.0,
+        "max_ms": 140.0
+      }
+    }
+  },
+  "by_language": {
+    "普通话": {
+      "total": 1,
+      "inference_success": 1,
+      "asr_exact_accuracy": 1.0,
+      "asr_character_accuracy": 1.0,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "latency": {
+        "asr_ms": {
+          "count": 1,
+          "mean_ms": 140.0,
+          "p95_ms": 140.0,
+          "p99_ms": 140.0,
+          "max_ms": 140.0
+        },
+        "nlu_ms": {
+          "count": 1,
+          "mean_ms": 0.0,
+          "p95_ms": 0.0,
+          "p99_ms": 0.0,
+          "max_ms": 0.0
+        },
+        "total_ms": {
+          "count": 1,
+          "mean_ms": 140.0,
+          "p95_ms": 140.0,
+          "p99_ms": 140.0,
+          "max_ms": 140.0
+        }
+      }
+    }
+  },
+  "inference_errors": [],
+  "intent_failures": [],
+  "records": [
+    {
+      "index": 1,
+      "language": "普通话",
+      "audio": "D:\\AppStoreDownload\\CARLA_Latest\\my_project_merged\\voice_group\\test_samples\\mandarin\\0001.mp3",
+      "reference_text": "带我去吃饭。",
+      "expected_intent": "UNKNOWN",
+      "expected_slots": {},
+      "inference_ok": true,
+      "source_text": "带我去吃饭。",
+      "actual_intent": "UNKNOWN",
+      "actual_slots": {},
+      "status": "unknown",
+      "asr_confidence": null,
+      "asr_exact": true,
+      "reference_chars": 5,
+      "edit_distance": 0,
+      "intent_ok": true,
+      "slots_ok": true,
+      "latency": {
+        "asr_ms": 140.0,
+        "nlu_ms": 0.0,
+        "total_ms": 140.0
+      }
+    }
+  ]
+}

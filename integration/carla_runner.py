@@ -619,7 +619,10 @@ def _load_command(args: argparse.Namespace) -> dict[str, object] | None:
             raise FileNotFoundError(
                 f"audio file not found: {audio_path}. Pass an existing 16 kHz mono WAV path via --audio."
             )
-        from voice_group.pipeline import audio_to_command
+        from voice_group.pipeline import audio_to_command, preload_voice_models
+
+        preload = preload_voice_models()
+        print(f"voice model preload: {preload}", flush=True)
         command = audio_to_command(str(audio_path))
         if not isinstance(command, Mapping):
             raise TypeError("voice pipeline result must be an object")

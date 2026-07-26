@@ -1,0 +1,4 @@
+# Windows-only CUDA 12 runtime required by CTranslate2/faster-whisper.
+# Install after requirements.txt. The NVIDIA driver may be newer than CUDA 12.
+nvidia-cublas-cu12==12.6.4.1
+nvidia-cudnn-cu12==9.5.1.17

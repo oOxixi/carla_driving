@@ -1,6 +1,6 @@
 # 语音组交付包 · 使用说明（车辆控制组本地部署）
 
-语音链路：音频 → 识别(A) → 意图(B1) → 槽位(B2) → **DrivingCommand**。
+语音链路：音频 → SenseVoice 主识别 → 条件 Whisper 复核 → 意图(B1) → 槽位(B2) → **DrivingCommand**。
 一句话调用：`from pipeline import audio_to_command`。
 
 > ⚠️ 需要 **NVIDIA GPU + CUDA 驱动**（模型在 GPU 上跑）。纯 CPU 也能跑但很慢。
@@ -25,7 +25,7 @@ pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
 **3. 装其余依赖**
 ```bash
-pip install funasr modelscope peft soundfile openpyxl
+pip install -r voice_group/requirements.txt
 conda install -c conda-forge ffmpeg -y      # 音频解码需要
 ```
 
@@ -34,8 +34,10 @@ conda install -c conda-forge ffmpeg -y      # 音频解码需要
 voice_group/
 ├── pipeline.py              # 主入口（audio_to_command）
 ├── asr_vad.py               # A：识别+VAD+微调
+├── asr_cascade.py           # 关键控制指令的条件复核与置信度校准
 ├── asr_lora.py              # A：识别（无VAD版，备用）
-├── lora_finetuned/          # ★ 微调权重，必须保留
+├── lora_dialect/            # ★ 当前生产 LoRA 权重，必须保留
+├── lora_finetuned/          # 备用 LoRA，当前入口不加载
 ├── vehicle_nlu/src/         # B1：意图识别
 ├── nlu_b2/                  # B2：槽位提取
 └── README_delivery.md       # 本文件
@@ -56,7 +58,7 @@ print(cmd["intent"], cmd["parameters"])   # 例：SLOW_DOWN {'mode':'RELATIVE',.
 python pipeline.py 指令音频.wav
 ```
 
-首次运行会自动下载 SenseVoice + VAD 模型（约几百 MB，需联网一次；国内走 ModelScope 较快）。
+首次运行会下载 SenseVoice、VAD 和 faster-whisper small。后续启动优先读取本地缓存；可用 `SENSEVOICE_MODEL_PATH`、`FSMN_VAD_MODEL_PATH` 显式指定离线 snapshot。级联评分策略与实测结果见 `CASCADE_ASR_EVAL_20260726.md`。
 
 ## 四、输出：DrivingCommand
 ```json
@@ -74,10 +76,44 @@ python pipeline.py 指令音频.wav
 - `status != "valid"` 或 `confirm_required=true` → 请勿直接执行，做减速/停车/请求确认。
 - 支持的意图：SET_SPEED / CHANGE_LANE / PULL_OVER / STOP / EMERGENCY_STOP / AVOID_OBSTACLE / KEEP_LANE / SLOW_DOWN / SPEED_UP / TURN / KEEP_LANE，及 UNKNOWN。
 
-## 五、性能实测（语音组环境）
-- 普通话识别：干净 99.5% / 带噪 99.2%
-- 解析延时（B1+B2）：约 8ms
-- 端到端：约 135ms
+## 五、验收与证据
+
+标准文本回归（完整读取 250 条清单，不启动 ASR）：
+
+```bash
+python -m pytest -q voice_group/tests
+```
+
+服务器真实音频：
+
+```bash
+python tools/evaluate_voice_audio.py \
+  --condition clean \
+  --output artifacts/voice_clean.json
+```
+
+经声级计校准的 50 dBA 噪声录音应保持与 manifest 相同的相对路径，再运行：
+
+```bash
+python tools/evaluate_voice_audio.py \
+  --condition noise_50dba \
+  --audio-root /data/voice_50dba \
+  --noise-level-dba 50 \
+  --calibration-log /data/voice_50dba/calibration.txt \
+  --output artifacts/voice_noise_50dba.json
+```
+
+工具输出逐语言 ASR/意图/槽位准确率，以及 ASR、NLU、端到端的 mean/P95/P99/max 延迟。数字音频幅值不能证明绝对 50 dBA，因此没有校准记录时工具拒绝生成“50 dBA”证据。
+
+2026-07-26 本机 RTX 5060 最终干净音频结果：
+
+- 250/250 推理成功；
+- ASR 字符准确率 99.24%；
+- 意图准确率 99.60%，槽位准确率 99.20%；
+- 端到端 mean/P95/P99/max：91.32/109/172/172 ms；
+- 详细证据：`artifacts/voice/local_clean_250_final_20260726.{json,md}`。
+
+注意：当前 SenseVoice/FunASR 返回 `asr_confidence=null`，置信度覆盖率为 0%。低置信度拦截逻辑已有自动测试，但生产后端必须实际提供经过校准的 score 才能生效。
 
 ## 六、常见问题
 - `cuda.is_available()=False` → PyTorch 的 CUDA 版本和驱动不匹配，重装对应 cuXXX 版本。
@@ -85,5 +121,11 @@ python pipeline.py 指令音频.wav
 - 读不了 mp3 → `conda install -c conda-forge ffmpeg`。
 - 首次运行卡在下载 → 需联网下模型，或配置 ModelScope 缓存。
 
-## 七、字段对接（★ 请与语音组确认）
-若你们期望的字段名/槽位键与上面不同，告诉语音组，我们改 `pipeline.py` 的组装部分即可。
+## 七、字段与模型完整性
+
+- 完整接口：`voice_group/voice_group_interface_spec.md`
+- 服务器音频验收：`voice_group/SERVER_AUDIO_EVAL.md`
+- Windows 本机环境：`voice_group/LOCAL_WINDOWS_EVAL.md`
+- 模型清单与 SHA-256：`voice_group/MODEL_MANIFEST.json`
+- 校验命令：`python tools/verify_voice_weights.py`
+- 许可证与归属：`voice_group/LICENSES.md`

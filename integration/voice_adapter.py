@@ -68,8 +68,17 @@ class AdaptedVoiceCommand:
 class VoiceCommandAdapter:
     """Validate and safely adapt the JSON returned by ``voice_group.pipeline``."""
 
-    def __init__(self, *, default_ttl_s: float = 3.0) -> None:
+    def __init__(
+        self,
+        *,
+        default_ttl_s: float = 3.0,
+        default_slow_speed_mps: float = 2.0,
+    ) -> None:
         self._default_ttl_s = _positive_number("default_ttl_s", default_ttl_s)
+        self._default_slow_speed_mps = _nonnegative_number(
+            "default_slow_speed_mps",
+            default_slow_speed_mps,
+        )
 
     def adapt(self, envelope: Mapping[str, object], *, now_s: float) -> AdaptedVoiceCommand:
         """Create a CARLA-time command from a voice envelope.
@@ -173,8 +182,11 @@ class VoiceCommandAdapter:
         feedback = ExecutionFeedback(command_id, ExecutionStatus.REJECTED, now, reason)
         return AdaptedVoiceCommand(command, metadata, control_authorized=False, feedback=feedback)
 
-    @staticmethod
-    def _runtime_fields(intent: str, parameters: Mapping[str, object]) -> tuple[str, float | None, bool]:
+    def _runtime_fields(
+        self,
+        intent: str,
+        parameters: Mapping[str, object],
+    ) -> tuple[str, float | None, bool]:
         if intent == "EMERGENCY_STOP":
             return "EMERGENCY_BRAKE", None, False
         if intent == "STOP":
@@ -182,6 +194,12 @@ class VoiceCommandAdapter:
         if intent == "SET_SPEED":
             return _speed_command_fields(parameters, intent)
         if intent == "SLOW_DOWN":
+            if (
+                parameters.get("mode") == "RELATIVE"
+                and parameters.get("action") == "DECELERATE"
+                and "speed" not in parameters
+            ):
+                return "SET_SPEED", self._default_slow_speed_mps, False
             return _speed_command_fields(parameters, intent)
         if intent == "KEEP_LANE":
             return "KEEP_LANE", None, False
