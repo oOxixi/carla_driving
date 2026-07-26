@@ -82,7 +82,7 @@ SHA-256 634279b40c07c6391472c51ad45b81ebc48706a9a1fe72dd3396322acd0c053b
 - `integration/sensor_stability.py`
 - `integration/tests/test_carla_runner_helpers.py`
 
-当前补丁相对原始提交为 104 行新增、20 行删除；`git diff --check` 通过。补丁目前未提交、未推送，便于审阅后自行决定是否合入。
+本次测试以原始提交 `bbfbeddffda65ec9270baed6154dc50207d7a155` 为起点；修复后相对该提交为 104 行新增、20 行删除，`git diff --check` 通过。上述代码修复、回归测试及实跑证据现已提交并推送至 `7.25` 分支；“原始提交”仅表示测试起点，不代表当前分支 HEAD。
 
 ## 4. 六项传感器门禁
 
@@ -227,4 +227,4 @@ CARLA 服务仍在运行；本次测试未关闭用户启动的服务。完整�
 - `jsonl_integrity_audit.log`：9 轮 5,400 帧独立审计结果。
 - `final_carla_state.log`：退出清理状态。
 
-最终工作树预期保持：3 个受控代码/测试文件为未提交修改，`artifacts/ubuntu_0726_retest/` 为新增证据目录；未修改或覆盖用户其他工作。
+代码修复、测试与 `artifacts/ubuntu_0726_retest/` 证据目录均已纳入 `7.25` 分支提交，不再是未提交补丁；测试起点仍按本报告记录为 `bbfbeddffda65ec9270baed6154dc50207d7a155`。
