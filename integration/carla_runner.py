@@ -277,6 +277,17 @@ def _scenario_vehicle_speed_mps(
     return initial if float(elapsed_s) < brake_at else target
 
 
+def _signed_forward_speed_mps(actor: Any) -> float:
+    """Return actor velocity projected onto its current forward direction."""
+    velocity = actor.get_velocity()
+    forward = actor.get_transform().get_forward_vector()
+    return (
+        float(velocity.x) * float(forward.x)
+        + float(velocity.y) * float(forward.y)
+        + float(velocity.z) * float(forward.z)
+    )
+
+
 def _spawn_scenario_vehicle(
     session: CarlaSession,
     world: Any,
@@ -326,16 +337,21 @@ def _spawn_scenario_vehicle(
     desired_speed = _scenario_vehicle_speed_mps(actor_spec, 0.0)
     set_velocity = getattr(lead, "set_target_velocity", None)
     if callable(set_velocity):
-        forward = lead.get_transform().get_forward_vector()
+        # A newly spawned CARLA actor can report its default transform until
+        # the next world tick.  The transform used for spawning is already
+        # authoritative and prevents an initial velocity in the wrong world
+        # direction during sensor warm-up.
+        forward = transform.get_forward_vector()
         set_velocity(carla_api.Vector3D(
             x=float(forward.x) * desired_speed,
             y=float(forward.y) * desired_speed,
             z=0.0,
         ))
+    intended_distance = transform.location.distance(ego.get_location())
     print(
         "scenario actor: spawned real lead "
         f"id={actor_spec.get('actor_id', 'scenario_lead')} "
-        f"distance_m={lead.get_location().distance(ego.get_location()):.2f}",
+        f"distance_m={intended_distance:.2f}",
         flush=True,
     )
     return lead
@@ -351,7 +367,7 @@ def _update_scenario_vehicle(
     if lead is None or not getattr(lead, "is_alive", True):
         raise RuntimeError("configured scenario lead vehicle is not alive")
     desired = _scenario_vehicle_speed_mps(actor_spec, elapsed_s)
-    current = _speed_mps(lead.get_velocity())
+    current = _signed_forward_speed_mps(lead)
     error = desired - current
     if error < -0.15:
         throttle, brake = 0.0, min(1.0, 0.25 + (-error / 3.0))
@@ -653,20 +669,27 @@ def _rejected_load_envelope(error: BaseException) -> dict[str, object]:
 
 def _warm_up_sensor_bridge(session: Any, world: Any, bridge: CarlaPerceptionBridge, *, attempts: int,
                            tick_timeout_s: float, sensor_timeout_s: float) -> None:
-    """Wait for the first aligned RGB/LiDAR frame before command execution."""
+    """Wait for a stable aligned RGB/LiDAR stream before command execution."""
     last_error: PerceptionAcquisitionError | None = None
+    required_streak = min(2, attempts)
+    aligned_streak = 0
     for _ in range(attempts):
         frame = session.tick(tick_timeout_s)
         snapshot = world.get_snapshot()
         sim_time_s = snapshot.timestamp.elapsed_seconds
         try:
             bridge.acquire(frame, sim_time_s, timeout_s=sensor_timeout_s)
-            return
+            aligned_streak += 1
+            if aligned_streak >= required_streak:
+                return
         except PerceptionAcquisitionError as error:
             last_error = error
+            aligned_streak = 0
     if last_error is not None:
         raise last_error
-    raise RuntimeError("sensor warm-up requires at least one attempt")
+    raise RuntimeError(
+        f"sensor warm-up did not produce {required_streak} consecutive aligned frames"
+    )
 
 
 def _scenario_completed(args: argparse.Namespace, *, frames: int, final_speed_mps: float | None,

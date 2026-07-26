@@ -260,15 +260,40 @@ def run_sensor_probe(
             f"requested_frames={frames}",
             flush=True,
         )
-        startup_misses = 0
-        stream_started = False
-        while aligned_frames < frames:
+        # CARLA GPU and ray-cast sensors can emit one frame immediately after
+        # attachment and then have a single pipeline bubble before settling
+        # into their steady cadence.  Do not mistake that isolated first
+        # callback for a fully warmed stream: require two consecutive exact-
+        # frame samples before starting the measured stability window.
+        warmup_required = min(2, startup_frames)
+        warmup_streak = 0
+        warmup_attempts = 0
+        while warmup_streak < warmup_required:
+            frame = session.tick(timeout_s)
+            received = counter.wait_for_frame(
+                sensor_ids, frame, timeout_s=sensor_timeout_s,
+            )
+            warmup_attempts += 1
+            warmup_streak = warmup_streak + 1 if received else 0
+            print(
+                f"probe stage=startup_wait attempt={warmup_attempts}/{startup_frames} "
+                f"frame={frame} aligned={received} streak={warmup_streak}/{warmup_required} "
+                f"counts={counter.counts()}",
+                flush=True,
+            )
+            if warmup_attempts >= startup_frames and warmup_streak < warmup_required:
+                reason = (
+                    f"sensor startup did not produce {warmup_required} consecutive aligned "
+                    f"frames in {startup_frames} attempts; counts={counter.counts()}"
+                )
+                break
+
+        while warmup_streak >= warmup_required and aligned_frames < frames:
             frame = session.tick(timeout_s)
             received = counter.wait_for_frame(
                 sensor_ids, frame, timeout_s=sensor_timeout_s,
             )
             if received:
-                stream_started = True
                 aligned_frames += 1
                 if aligned_frames == 1 or aligned_frames % 25 == 0 or aligned_frames == frames:
                     print(
@@ -276,14 +301,6 @@ def run_sensor_probe(
                         f"counts={counter.counts()}",
                         flush=True,
                     )
-                continue
-            if not stream_started and startup_misses < startup_frames:
-                startup_misses += 1
-                print(
-                    f"probe stage=startup_wait miss={startup_misses}/{startup_frames} "
-                    f"frame={frame} counts={counter.counts()}",
-                    flush=True,
-                )
                 continue
             reason = (
                 f"sensor callback timeout at simulation frame {frame}; "

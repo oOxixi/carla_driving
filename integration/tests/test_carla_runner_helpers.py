@@ -28,6 +28,7 @@ from integration.carla_runner import (
     _scenario_vehicle_speed_mps,
     _select_scene_facts,
     _scenario_completed,
+    _signed_forward_speed_mps,
     _speed_mps,
     _warm_up_sensor_bridge,
 )
@@ -285,6 +286,16 @@ def test_scenario_vehicle_changes_to_braking_target_at_declared_time() -> None:
     assert _scenario_vehicle_speed_mps(actor, 6.0) == pytest.approx(0.5)
 
 
+def test_scenario_vehicle_speed_is_signed_along_actor_heading() -> None:
+    actor = Namespace(
+        get_velocity=lambda: Namespace(x=3.0, y=4.0, z=0.0),
+        get_transform=lambda: Namespace(
+            get_forward_vector=lambda: Namespace(x=-0.6, y=-0.8, z=0.0),
+        ),
+    )
+    assert _signed_forward_speed_mps(actor) == pytest.approx(-5.0)
+
+
 def test_scenario_local_actor_transform_rotates_with_ego_heading() -> None:
     class Location:
         def __init__(self, x=0.0, y=0.0, z=0.0):
@@ -382,7 +393,7 @@ def test_load_command_accepts_qwen_high_level_json(tmp_path) -> None:
     assert command["source_text"] == "KEEP_LANE: clear lane"
 
 
-def test_sensor_warmup_retries_until_an_aligned_frame_arrives() -> None:
+def test_sensor_warmup_retries_until_two_consecutive_aligned_frames_arrive() -> None:
     class Session:
         def __init__(self):
             self.frame = 10
@@ -412,7 +423,40 @@ def test_sensor_warmup_retries_until_an_aligned_frame_arrives() -> None:
     bridge = Bridge()
     _warm_up_sensor_bridge(session, World(session), bridge, attempts=3,
                            tick_timeout_s=60.0, sensor_timeout_s=0.5)
-    assert bridge.calls == 2
+    assert bridge.calls == 3
+
+
+def test_sensor_warmup_resets_streak_after_pipeline_bubble() -> None:
+    class Session:
+        def __init__(self):
+            self.frame = 10
+
+        def tick(self, timeout):
+            self.frame += 1
+            return self.frame
+
+    class World:
+        def __init__(self, session):
+            self.session = session
+
+        def get_snapshot(self):
+            return Namespace(timestamp=Namespace(elapsed_seconds=self.session.frame * 0.05))
+
+    class Bridge:
+        def __init__(self):
+            self.calls = 0
+
+        def acquire(self, frame, sim_time_s, timeout_s):
+            self.calls += 1
+            if self.calls == 2:
+                raise PerceptionTimeoutError("pipeline bubble")
+            return object()
+
+    session = Session()
+    bridge = Bridge()
+    _warm_up_sensor_bridge(session, World(session), bridge, attempts=4,
+                           tick_timeout_s=60.0, sensor_timeout_s=0.5)
+    assert bridge.calls == 4
 
 
 def test_vehicle_speed_ignores_vertical_spawn_settling() -> None:

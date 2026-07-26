@@ -1,0 +1,9 @@
+{
+  "map": "Carla/Maps/Town03_Opt",
+  "synchronous_mode": false,
+  "fixed_delta_seconds": null,
+  "vehicles": 0,
+  "sensors": 0,
+  "traffic_lights": 38,
+  "traffic_lights_frozen": 0
+}
