@@ -138,6 +138,15 @@ class ControlRuntime:
         """Explicitly release a persistent watchdog/integration stop after recovery."""
         self._latched_alerts.clear()
 
+    def clear_safety_alerts(self, alerts: tuple[str, ...]) -> None:
+        """Clear only explicitly recovered alerts, preserving unrelated faults."""
+        if type(alerts) is not tuple or any(type(alert) is not str or not alert for alert in alerts):
+            raise TypeError("alerts must be a tuple of non-empty strings")
+        recovered = set(alerts)
+        self._latched_alerts = [
+            alert for alert in self._latched_alerts if alert not in recovered
+        ]
+
     def fail_active(self, *, now_s: float, detail: str) -> ExecutionFeedback | None:
         """Terminate the active command when its outer runtime cannot continue."""
         command_id = self._active_command_id

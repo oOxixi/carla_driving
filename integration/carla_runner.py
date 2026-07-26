@@ -9,6 +9,7 @@ import argparse
 import importlib
 import json
 import math
+import os
 import sys
 import time
 import zipfile
@@ -36,13 +37,17 @@ from .carla_perception import (
     traffic_light_and_stop_distance,
 )
 from .contracts import PerceptionFrame
+from .qwen_async import AsyncQwenDecisionBridge
+from .qwen_boundary import QwenInputContext
+from .qwen_remote_backend import OpenAICompatibleQwenVLBackend
+from .qwen_vl_adapter import StrictQwenVLAdapter
 from .route_planner import (
     build_route_reference,
     command_turn_direction,
     select_topology_route_anchor,
 )
 from .runtime_loop import ControlRuntime
-from .rgb_detector import OnnxYoloDetector
+from .rgb_detector import OnnxYoloDetector, carla_rgb_array
 from .scenario_execution import CommandTimeline, ScenarioSpec, resolve_scenario_command
 from .scenario_evidence import FrameTiming, ScenarioEvidenceRecorder
 
@@ -630,6 +635,128 @@ def _load_command(args: argparse.Namespace) -> dict[str, object] | None:
     return None
 
 
+def _qwen_voice_command(args: argparse.Namespace, spec: ScenarioSpec | None) -> str:
+    explicit = str(getattr(args, "qwen_voice_command", "") or "").strip()
+    if explicit:
+        return explicit
+    if spec is None:
+        raise ValueError("--qwen-remote requires --qwen-voice-command or a scenario file")
+    if len(spec.commands) != 1 or spec.commands[0].time_s > 1e-9:
+        raise ValueError(
+            "remote Qwen scenario mode currently requires exactly one command at time_s=0"
+        )
+    source_text = str(spec.commands[0].envelope.get("source_text", "")).strip()
+    if not source_text:
+        raise ValueError("scenario command must provide source_text for remote Qwen")
+    return source_text
+
+
+def _qwen_desired_speed_mps(args: argparse.Namespace, spec: ScenarioSpec | None) -> float:
+    fallback = float(args.default_speed_mps)
+    if spec is None or len(spec.commands) != 1:
+        return fallback
+    resolved = resolve_scenario_command(
+        spec.commands[0].envelope,
+        requested_speed_mps=fallback,
+    )
+    parameters = resolved.get("parameters")
+    if not isinstance(parameters, Mapping):
+        return fallback
+    speed = parameters.get("speed")
+    if type(speed) not in (int, float) or isinstance(speed, bool):
+        return fallback
+    value = float(speed)
+    unit = str(parameters.get("unit", "m/s")).strip().lower().replace(" ", "")
+    if unit in {"m/s", "mps", "米/秒"}:
+        return value
+    if unit in {"km/h", "kph", "kmh", "公里/小时", "千米/小时"}:
+        return value / 3.6
+    raise ValueError(f"unsupported Qwen desired-speed unit: {unit!r}")
+
+
+def _save_qwen_rgb_image(
+    measurement: Any,
+    image_root: str | Path,
+    *,
+    request_id: str,
+) -> str:
+    """Persist one aligned CARLA RGB frame and return an image-root-relative ref."""
+    try:
+        from PIL import Image
+    except ImportError as error:
+        raise RuntimeError("remote Qwen live mode requires Pillow") from error
+    root = Path(image_root).expanduser().resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    safe_id = "".join(character for character in request_id if character.isalnum() or character in "-_")
+    if not safe_id:
+        raise ValueError("request_id has no filesystem-safe characters")
+    path = root / f"{safe_id}.jpg"
+    Image.fromarray(carla_rgb_array(measurement), mode="RGB").save(
+        path,
+        format="JPEG",
+        quality=90,
+        optimize=True,
+    )
+    return path.relative_to(root).as_posix()
+
+
+def _build_qwen_context(
+    *,
+    request_id: str,
+    voice_command: str,
+    rgb_ref: str,
+    state: RuntimeVehicleState,
+    scene: PerceptionFrame,
+    behavior_state: str,
+    desired_speed_mps: float,
+    route_end_distance_m: float | None,
+    c_safety_state: Mapping[str, object] | None,
+) -> QwenInputContext:
+    detected_objects = [
+        {
+            "class_name": item.class_name,
+            "confidence": item.confidence,
+            "distance_m": item.distance_m,
+            "bbox_xyxy_norm": list(item.bbox_xyxy_norm),
+        }
+        for item in scene.detected_objects
+    ]
+    safety = dict(c_safety_state or {})
+    return QwenInputContext(
+        request_id=request_id,
+        frame=state.frame,
+        sim_time_s=state.sim_time_s,
+        voice_command=voice_command,
+        rgb_ref=rgb_ref,
+        scene_state={
+            "speed_mps": state.speed_mps,
+            "behavior_state": behavior_state,
+            "desired_speed_mps": desired_speed_mps,
+            "route_end_distance_m": route_end_distance_m,
+        },
+        perception={
+            "lead_distance_m": scene.lead_distance_m,
+            "lead_speed_mps": scene.lead_speed_mps,
+            "traffic_light": scene.traffic_light,
+            "distance_to_stop_line_m": scene.distance_to_stop_line_m,
+            "speed_limit_mps": scene.speed_limit_mps,
+            "lane_offset_m": scene.lane_offset_m,
+            "route_deviation_m": scene.route_deviation_m,
+            "detected_objects": detected_objects,
+            "visual_valid": True,
+        },
+        safety_state={
+            "collision": scene.collision,
+            "red_light_violation": scene.red_light_violation,
+            "lane_invasion": scene.lane_invasion,
+            "minimum_ttc_s": safety.get("ttc_s"),
+            "recommended_action": safety.get("recommended_action"),
+            "fusion_mode": safety.get("fusion_mode"),
+            "fused_valid": safety.get("fused_valid"),
+        },
+    )
+
+
 def _evidence_recorder(args: argparse.Namespace, spec: ScenarioSpec | None = None) -> ScenarioEvidenceRecorder | None:
     if args.no_log:
         return None
@@ -862,6 +989,15 @@ def run(args: argparse.Namespace) -> None:
         }, ensure_ascii=False, indent=2))
         return
 
+    qwen_enabled = bool(getattr(args, "qwen_remote", False))
+    qwen_voice_text = _qwen_voice_command(args, spec) if qwen_enabled else ""
+    qwen_desired_speed_mps = (
+        _qwen_desired_speed_mps(args, spec) if qwen_enabled else float(args.default_speed_mps)
+    )
+    qwen_image_root = Path(
+        getattr(args, "qwen_image_dir", "artifacts/runtime/qwen_live")
+    ).expanduser().resolve()
+
     carla = _import_carla_api()
 
     detector = None
@@ -912,7 +1048,40 @@ def run(args: argparse.Namespace) -> None:
     scenario_traffic_light: Any | None = None
     traffic_light_original_state: Any | None = None
     traffic_light_original_frozen: bool | None = None
+    qwen_backend: OpenAICompatibleQwenVLBackend | None = None
+    qwen_adapter: StrictQwenVLAdapter | None = None
+    qwen_bridge: AsyncQwenDecisionBridge | None = None
+    qwen_submitted = False
+    qwen_ready = False
+    qwen_terminal_recorded = False
+    qwen_request_id: str | None = None
+    qwen_status = "DISABLED" if not qwen_enabled else "NOT_SUBMITTED"
     try:
+        if qwen_enabled:
+            qwen_backend = OpenAICompatibleQwenVLBackend(
+                base_url=args.qwen_base_url,
+                api_key=os.environ.get("QWEN_API_KEY", "unused"),
+                model=args.qwen_model,
+                timeout_s=args.qwen_request_timeout_s,
+                max_tokens=args.qwen_max_tokens,
+                image_max_side=args.qwen_image_max_side,
+                jpeg_quality=args.qwen_jpeg_quality,
+            )
+            qwen_adapter = StrictQwenVLAdapter(
+                qwen_backend,
+                image_root=qwen_image_root,
+            )
+            qwen_bridge = AsyncQwenDecisionBridge(
+                qwen_adapter.infer,
+                ttl_s=args.qwen_decision_ttl_s,
+                max_inference_s=args.qwen_max_inference_s,
+                command_ttl_s=args.qwen_command_ttl_s,
+            )
+            print(
+                "qwen stage: remote backend ready "
+                f"base_url={args.qwen_base_url} model={args.qwen_model}",
+                flush=True,
+            )
         client = carla.Client(args.host, args.port)
         client.set_timeout(args.timeout_s)
         world = client.get_world()
@@ -948,7 +1117,8 @@ def run(args: argparse.Namespace) -> None:
             stop_line_guard_m=args.stop_line_guard_m,
             severe_route_deviation_m=route_deviation_trigger_m,
         ))
-        runtime = ControlRuntime(_acceptance_lateral_controller(), default_speed_mps=args.default_speed_mps,
+        runtime = ControlRuntime(_acceptance_lateral_controller(),
+                                 default_speed_mps=0.0 if qwen_enabled else args.default_speed_mps,
                                  command_timeout_s=fsm_timeout_s, safety=scenario_safety)
         route_anchor = spawn_points[args.spawn_index % len(spawn_points)]
         topology_route: RouteReference | None = None
@@ -1030,7 +1200,10 @@ def run(args: argparse.Namespace) -> None:
                 session.tick(args.timeout_s)
             ego = session.spawn_ego(bp, spawn_transform)
             ego.set_simulate_physics(True)
-            ego.set_autopilot(False)
+            # A freshly spawned actor has autopilot disabled. Calling
+            # set_autopilot(False) still asks CARLA 0.9.16 to create/connect a
+            # Traffic Manager server and can fail when its default port is
+            # already occupied, even though this runner never uses TM.
             session.tick(args.timeout_s)
             start_location = ego.get_location()
             origin = (start_location.x, start_location.y, start_location.z)
@@ -1080,9 +1253,15 @@ def run(args: argparse.Namespace) -> None:
             initial = world.get_snapshot()
             last_sim_time_s = initial.timestamp.elapsed_seconds
             episode_start_s = last_sim_time_s
-            timeline = CommandTimeline(spec.commands) if spec is not None else None
+            timeline = (
+                CommandTimeline(spec.commands)
+                if spec is not None and not qwen_enabled
+                else None
+            )
             command: dict[str, object] | None
-            if spec is None:
+            if qwen_enabled:
+                command = None
+            elif spec is None:
                 try:
                     command = _load_command(args)
                 except Exception as error:
@@ -1201,12 +1380,14 @@ def run(args: argparse.Namespace) -> None:
                 perception_control_override: dict[str, object] | None = None
                 watchdog_alerts: list[str] = []
                 sensor_startup_grace = False
+                qwen_rgb_measurement: Any | None = None
                 try:
                     if perception_bridge is not None:
                         sample = perception_bridge.acquire(
                             frame, state.sim_time_s, route=route, timeout_s=args.sensor_timeout_s,
                         )
                         scene = sample.frame
+                        qwen_rgb_measurement = sample.rgb
                         perception_sources = dict(sample.source_by_field)
                         c_safety_state = sample.safety_summary.to_dict()
                         if sample.safety_summary.fail_closed:
@@ -1268,6 +1449,124 @@ def run(args: argparse.Namespace) -> None:
                     sensor_startup_grace = step_index < args.sensor_startup_grace_frames
                     if not sensor_startup_grace:
                         watchdog_alerts.append(f"PERCEPTION_{type(error).__name__.upper()}")
+
+                if qwen_bridge is not None:
+                    if not qwen_submitted and qwen_rgb_measurement is not None:
+                        run_token = (
+                            recorder.run_id
+                            if recorder is not None and recorder.run_id is not None
+                            else str(time.monotonic_ns())
+                        )
+                        qwen_request_id = f"qwen-{run_token}-{frame}"
+                        rgb_ref = _save_qwen_rgb_image(
+                            qwen_rgb_measurement,
+                            qwen_image_root,
+                            request_id=qwen_request_id,
+                        )
+                        qwen_context = _build_qwen_context(
+                            request_id=qwen_request_id,
+                            voice_command=qwen_voice_text,
+                            rgb_ref=rgb_ref,
+                            state=state,
+                            scene=scene,
+                            behavior_state=runtime.fsm.state.value,
+                            desired_speed_mps=qwen_desired_speed_mps,
+                            route_end_distance_m=distance_to_route_end_m,
+                            c_safety_state=c_safety_state,
+                        )
+                        qwen_bridge.submit(qwen_context, now_s=state.sim_time_s)
+                        qwen_submitted = True
+                        qwen_status = "PENDING"
+                        if recorder is not None:
+                            recorder.record_qwen_event(
+                                request_id=qwen_request_id,
+                                status="PENDING",
+                                context=qwen_context.to_payload(),
+                            )
+                        print(
+                            f"qwen stage: submitted request_id={qwen_request_id} frame={frame}",
+                            flush=True,
+                        )
+
+                    # A terminal result is consumed exactly once. Continuing to
+                    # poll a READY result would eventually reclassify the
+                    # already-submitted command as STALE after its decision TTL.
+                    qwen_result = (
+                        qwen_bridge.latest(now_s=state.sim_time_s)
+                        if qwen_submitted and not qwen_terminal_recorded
+                        else None
+                    )
+                    if qwen_result is not None:
+                        qwen_status = qwen_result.status
+                        if qwen_result.ready and not qwen_terminal_recorded:
+                            runtime.clear_safety_alerts(("QWEN_PENDING",))
+                            if qwen_result.runtime_command is None:
+                                raise RuntimeError("ready Qwen result has no runtime command")
+                            high_level = dict(qwen_result.high_level_command or {})
+                            runtime_command = dict(qwen_result.runtime_command)
+                            if str(high_level.get("action", "")).upper() == "START":
+                                runtime.requested_speed_mps = qwen_desired_speed_mps
+                            received_ns = time.monotonic_ns()
+                            qwen_adapted = runtime.submit_voice(
+                                runtime_command,
+                                now_s=state.sim_time_s,
+                            )
+                            if not qwen_adapted.control_authorized:
+                                qwen_status = "ERROR"
+                                watchdog_alerts.append("QWEN_ERROR")
+                            else:
+                                qwen_ready = True
+                                route = replace(
+                                    route,
+                                    target_speed_mps=runtime.requested_speed_mps,
+                                )
+                            if recorder is not None:
+                                recorder.record_qwen_event(
+                                    request_id=qwen_request_id or "unknown-qwen-request",
+                                    status="READY" if qwen_ready else "ERROR",
+                                    high_level_command=high_level,
+                                    runtime_command=runtime_command,
+                                    trace=None if qwen_adapter is None else qwen_adapter.last_trace,
+                                    error=None if qwen_ready else "Qwen command rejected by A boundary",
+                                )
+                                recorder.record_command(
+                                    runtime_command,
+                                    disposition=(
+                                        "ACCEPTED_QWEN_REMOTE"
+                                        if qwen_adapted.control_authorized
+                                        else "REJECTED_QWEN_REMOTE_NO_OP"
+                                    ),
+                                    adapted_command=qwen_adapted.command,
+                                    received_ns=received_ns,
+                                    submitted_sim_time_s=state.sim_time_s,
+                                )
+                                if qwen_adapted.feedback is not None:
+                                    recorder.record_feedback(qwen_adapted.feedback)
+                            qwen_terminal_recorded = True
+                            print(
+                                "qwen stage: decision "
+                                + json.dumps(high_level, ensure_ascii=False, sort_keys=True),
+                                flush=True,
+                            )
+                        elif not qwen_result.ready:
+                            watchdog_alerts.extend(qwen_result.watchdog_alerts)
+                            if (
+                                qwen_result.status in {"TIMEOUT", "STALE", "ERROR"}
+                                and not qwen_terminal_recorded
+                            ):
+                                if recorder is not None:
+                                    recorder.record_qwen_event(
+                                        request_id=qwen_request_id or "unknown-qwen-request",
+                                        status=qwen_result.status,
+                                        trace=None if qwen_adapter is None else qwen_adapter.last_trace,
+                                        error=qwen_result.error,
+                                    )
+                                qwen_terminal_recorded = True
+                                print(
+                                    f"qwen stage: {qwen_result.status} error={qwen_result.error}",
+                                    flush=True,
+                                )
+                    perception_sources["qwen_status"] = qwen_status
                 sensor_ready_ns = time.monotonic_ns()
                 if not sensor_startup_grace and watchdog.check(now_s=time.monotonic()) is not None:
                     watchdog_alerts.append("RUNTIME_WATCHDOG_TIMEOUT")
@@ -1292,7 +1591,11 @@ def run(args: argparse.Namespace) -> None:
                         safety_reason="PERCEPTION_STARTUP_GRACE",
                         safety_override=True,
                     )
-                if result.safety_override:
+                if result.safety_override and not (
+                    qwen_enabled
+                    and qwen_status == "PENDING"
+                    and result.safety_reason == "WATCHDOG_ALERT"
+                ):
                     safety_reasons.add(result.safety_reason)
                 decision_end_ns = time.monotonic_ns()
                 ego.apply_control(carla.VehicleControl(
@@ -1338,6 +1641,7 @@ def run(args: argparse.Namespace) -> None:
                     "distance_to_stop_line_m": scene.distance_to_stop_line_m,
                     "control": result.final_control.to_dict(), "safety": result.safety_reason,
                     "safety_override": result.safety_override,
+                    "qwen_status": qwen_status,
                 }
                 if step_index % args.print_every == 0 or step_index == args.frames - 1:
                     print(json.dumps(record, ensure_ascii=False))
@@ -1374,6 +1678,8 @@ def run(args: argparse.Namespace) -> None:
         gap_contract_completion = _minimum_gap_contract_completed(spec, min_gap_m)
         if gap_contract_completion is not None:
             completion = completion and gap_contract_completion
+        if qwen_enabled:
+            completion = completion and qwen_ready and qwen_status == "READY"
         if recorder is not None:
             expected_contract = None if spec is None else dict(spec.expected)
             if expected_contract is not None and road_fit_required:
@@ -1428,6 +1734,10 @@ def run(args: argparse.Namespace) -> None:
                 pass
         raise
     finally:
+        if qwen_bridge is not None:
+            qwen_bridge.close()
+        if qwen_backend is not None:
+            qwen_backend.close()
         if recorder is not None:
             recorder.close()
         if scenario_traffic_light is not None:
@@ -1485,6 +1795,29 @@ def main() -> None:
                         help="class-aware NMS IoU threshold")
     parser.add_argument("--rgb-detector-input-size", type=int, default=640,
                         help="fallback square input size for dynamic ONNX models")
+    parser.add_argument("--qwen-remote", action="store_true",
+                        help="use an OpenAI-compatible remote Qwen2.5-VL backend for the high-level command")
+    parser.add_argument("--qwen-voice-command",
+                        help="Chinese command sent to Qwen; a one-command scenario can supply source_text")
+    parser.add_argument("--qwen-base-url",
+                        default=os.environ.get("QWEN_BASE_URL", "http://127.0.0.1:18000/v1"),
+                        help="OpenAI-compatible /v1 endpoint; QWEN_API_KEY is read only from the environment")
+    parser.add_argument("--qwen-model",
+                        default=os.environ.get("QWEN_MODEL", "qwen2.5-vl"),
+                        help="remote served model name")
+    parser.add_argument("--qwen-request-timeout-s", type=float, default=15.0,
+                        help="OpenAI client wall-clock timeout")
+    parser.add_argument("--qwen-max-inference-s", type=float, default=10.0,
+                        help="fail-closed wall-clock deadline enforced by the async bridge")
+    parser.add_argument("--qwen-decision-ttl-s", type=float, default=12.0,
+                        help="maximum simulation-time age of a usable Qwen result")
+    parser.add_argument("--qwen-command-ttl-s", type=float, default=30.0,
+                        help="maximum simulation-time duration for the accepted runtime command")
+    parser.add_argument("--qwen-max-tokens", type=int, default=192)
+    parser.add_argument("--qwen-image-max-side", type=int, default=768)
+    parser.add_argument("--qwen-jpeg-quality", type=int, default=75)
+    parser.add_argument("--qwen-image-dir", default="artifacts/runtime/qwen_live",
+                        help="local replay images; this directory is gitignored")
     parser.add_argument("--watchdog-timeout-s", type=float, default=1.0)
     parser.add_argument("--watchdog-startup-grace-s", type=float, default=0.5)
     parser.add_argument("--route-distance-m", type=float, default=500.0)
@@ -1536,6 +1869,31 @@ def main() -> None:
         parser.error("--rgb-detector-iou must be in (0, 1]")
     if args.rgb_detector_input_size < 32:
         parser.error("--rgb-detector-input-size must be >= 32")
+    if args.qwen_remote and not args.validate_scenario_only:
+        if args.perception_mode != "sensors":
+            parser.error("--qwen-remote requires --perception-mode sensors")
+        if not args.realtime:
+            parser.error("--qwen-remote requires --realtime so remote latency tracks simulation time")
+        if args.command_json or args.audio:
+            parser.error("--qwen-remote cannot be combined with --command-json or --audio")
+        if not args.qwen_voice_command and not args.scenario_file:
+            parser.error("--qwen-remote requires --qwen-voice-command or --scenario-file")
+        if not str(args.qwen_base_url).strip() or not str(args.qwen_model).strip():
+            parser.error("--qwen-base-url and --qwen-model must be non-empty")
+        if not str(args.qwen_image_dir).strip():
+            parser.error("--qwen-image-dir must be non-empty")
+    for name in (
+        "qwen_request_timeout_s",
+        "qwen_max_inference_s",
+        "qwen_decision_ttl_s",
+        "qwen_command_ttl_s",
+    ):
+        if getattr(args, name) <= 0.0:
+            parser.error(f"--{name.replace('_', '-')} must be positive")
+    if args.qwen_max_tokens < 1 or args.qwen_image_max_side < 1:
+        parser.error("--qwen-max-tokens and --qwen-image-max-side must be positive")
+    if not 1 <= args.qwen_jpeg_quality <= 95:
+        parser.error("--qwen-jpeg-quality must be in [1, 95]")
     run(args)
 
 

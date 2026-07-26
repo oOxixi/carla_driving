@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import time
 import uuid
 from typing import Any, Mapping
@@ -21,11 +22,19 @@ def build_high_level_command(
     source_text: str,
     *,
     command_id: str | None = None,
+    valid_duration_s: float = 3.0,
 ) -> dict[str, Any]:
     action = str(decision.get("action", "")).strip().upper()
 
     if action not in SUPPORTED_INTENTS:
         raise ValueError(f"unsupported Day22 action: {action}")
+    if (
+        type(valid_duration_s) not in (int, float)
+        or isinstance(valid_duration_s, bool)
+        or not math.isfinite(float(valid_duration_s))
+        or valid_duration_s <= 0.0
+    ):
+        raise ValueError("valid_duration_s must be finite and positive")
 
     high_level: dict[str, Any] = {
         "schema_version": "1.0",
@@ -36,7 +45,7 @@ def build_high_level_command(
         "requires_confirmation": bool(
             decision.get("requires_confirmation", False)
         ),
-        "valid_duration_s": 3.0,
+        "valid_duration_s": float(valid_duration_s),
         "timestamp_ns": time.monotonic_ns(),
         "reason_zh": str(decision.get("reason_zh", "")),
         "decision_source": str(decision.get("decision_source", "UNKNOWN")),

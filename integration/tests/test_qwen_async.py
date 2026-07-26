@@ -53,7 +53,11 @@ def test_submit_is_non_blocking_and_returns_runtime_command() -> None:
             "requires_confirmation": False,
         }
 
-    with AsyncQwenDecisionBridge(infer, ttl_s=2.0) as bridge:
+    with AsyncQwenDecisionBridge(
+        infer,
+        ttl_s=2.0,
+        command_ttl_s=25.0,
+    ) as bridge:
         started = time.monotonic()
         sequence = bridge.submit(Context("设置速度"), now_s=10.0)
         elapsed = time.monotonic() - started
@@ -67,6 +71,7 @@ def test_submit_is_non_blocking_and_returns_runtime_command() -> None:
         assert result.ready
         assert result.runtime_command["intent"] == "SET_SPEED"
         assert result.runtime_command["parameters"]["speed"] == 4.0
+        assert result.runtime_command["valid_duration_s"] == 25.0
 
 
 def test_expired_result_is_stale_and_not_executable() -> None:

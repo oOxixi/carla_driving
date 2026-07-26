@@ -161,6 +161,30 @@ def test_watchdog_stop_is_latched_until_explicit_reset():
     assert not runtime.safety_latched
 
 
+def test_clear_safety_alerts_releases_only_named_recovered_faults():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.step(
+        _vehicle(),
+        PerceptionFrame(frame=1, sim_time_s=0.05),
+        _route(),
+        dt_s=0.05,
+        watchdog_alerts=("QWEN_PENDING", "SENSOR_TIMEOUT"),
+    )
+
+    runtime.clear_safety_alerts(("QWEN_PENDING",))
+
+    assert runtime.safety_latched
+    still_stopped = runtime.step(
+        _vehicle(frame=2, time=0.10),
+        PerceptionFrame(frame=2, sim_time_s=0.10),
+        _route(),
+        dt_s=0.05,
+    )
+    assert still_stopped.final_control.brake == 1.0
+    runtime.clear_safety_alerts(("SENSOR_TIMEOUT",))
+    assert not runtime.safety_latched
+
+
 def test_low_confidence_command_can_be_confirmed_then_execute():
     runtime = ControlRuntime(PurePursuitController(), default_speed_mps=0.0)
     command = _voice()

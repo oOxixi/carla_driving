@@ -100,18 +100,44 @@ class QwenBoundaryFailure:
             raise ValueError("fail-closed result requires a watchdog alert")
 
 
+def _strip_optional_markdown_fence(text: str) -> str:
+    """Allow ```json ... ``` wrappers that VL servers commonly emit."""
+
+    stripped = text.strip()
+    if not stripped.startswith("```"):
+        return stripped
+
+    lines = stripped.splitlines()
+    if len(lines) < 3 or lines[0].strip().lower() not in {"```", "```json"}:
+        raise ValueError("Qwen response has an invalid Markdown fence")
+    if lines[-1].strip() != "```":
+        raise ValueError("Qwen response has an unterminated Markdown fence")
+    return "\n".join(lines[1:-1]).strip()
+
+
+def _loads_single_json_object(text: str) -> object:
+    cleaned = _strip_optional_markdown_fence(text)
+    try:
+        payload, end = json.JSONDecoder().raw_decode(cleaned)
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            "Qwen response must be one JSON object without prose"
+        ) from error
+
+    if cleaned[end:].strip():
+        raise ValueError("Qwen response must be one JSON object without prose")
+    return payload
+
+
 def validate_qwen_response(payload: object) -> dict[str, Any]:
     """Parse and strictly normalize one high-level Qwen decision.
 
-    Markdown fences, extra prose, unknown fields and low-level controls are
-    rejected.  The returned plain dict is safe to pass to the Day22 command
-    adapter.
+    Optional Markdown code fences around a single JSON object are accepted.
+    Extra prose, unknown fields and low-level controls are rejected.  The
+    returned plain dict is safe to pass to the Day22 command adapter.
     """
     if type(payload) is str:
-        try:
-            payload = json.loads(payload)
-        except json.JSONDecodeError as error:
-            raise ValueError("Qwen response must be one JSON object without prose") from error
+        payload = _loads_single_json_object(payload)
     if not isinstance(payload, Mapping):
         raise TypeError("Qwen response must be a mapping or JSON object string")
     keys = set(payload)

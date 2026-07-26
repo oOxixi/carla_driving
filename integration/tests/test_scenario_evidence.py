@@ -196,6 +196,37 @@ def test_invalid_timing_and_non_finite_evidence_are_rejected(tmp_path):
     recorder.fail("invalid command")
 
 
+def test_qwen_request_and_result_are_recorded_without_credentials(tmp_path):
+    path = tmp_path / "qwen.jsonl"
+    recorder = ScenarioEvidenceRecorder(path, clock_ns=lambda: 1_000)
+    recorder.start_run(
+        scenario_id="QWEN_REMOTE",
+        config={"qwen_model": "qwen2.5-vl"},
+    )
+    recorder.record_qwen_event(
+        request_id="qwen-1",
+        status="PENDING",
+        context={"voice_command": "停车", "rgb_ref": "qwen-1.jpg"},
+    )
+    recorder.record_qwen_event(
+        request_id="qwen-1",
+        status="READY",
+        high_level_command={"action": "STOP"},
+        runtime_command={"command_id": "qwen_async_00000001", "intent": "STOP"},
+        trace={"latency_ms": 1911.74, "raw_output": '{"action":"STOP"}'},
+    )
+    recorder.complete(completion=True)
+
+    records = [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+    ]
+    qwen_records = [item for item in records if item["record_type"] == "qwen_decision"]
+    assert [item["status"] for item in qwen_records] == ["PENDING", "READY"]
+    assert qwen_records[1]["trace"]["latency_ms"] == 1911.74
+    assert "api_key" not in path.read_text(encoding="utf-8").lower()
+
+
 @pytest.mark.parametrize(
     ("end_y", "end_yaw", "expected_shift", "expected_turn"),
     [(-3.5, -45.0, 3.5, "LEFT"), (3.5, 45.0, -3.5, "RIGHT")],

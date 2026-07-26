@@ -32,11 +32,24 @@ class QwenVLInferenceTrace:
     completed_ns: int
     image_path: str | None
     raw_output: str
-    decision: Mapping[str, Any]
+    decision: Mapping[str, Any] | None
+    error: str | None = None
 
     @property
     def latency_ms(self) -> float:
         return (self.completed_ns - self.started_ns) / 1e6
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "request_id": self.request_id,
+            "started_ns": self.started_ns,
+            "completed_ns": self.completed_ns,
+            "latency_ms": self.latency_ms,
+            "image_path": self.image_path,
+            "raw_output": self.raw_output,
+            "decision": None if self.decision is None else dict(self.decision),
+            "error": self.error,
+        }
 
 
 class StrictQwenVLAdapter:
@@ -87,22 +100,30 @@ class StrictQwenVLAdapter:
         image_path = self._resolve_image(context.rgb_ref)
         prompt = build_strict_qwen_prompt(context)
         started_ns = time.monotonic_ns()
-        raw = self._backend.generate(prompt=prompt, image_path=image_path)
-        completed_ns = time.monotonic_ns()
-        if type(raw) is not str or not raw.strip():
-            raise ValueError("Qwen backend returned an empty non-text response")
-        decision = validate_qwen_response(raw)
-        trace = QwenVLInferenceTrace(
-            request_id=context.request_id,
-            started_ns=started_ns,
-            completed_ns=completed_ns,
-            image_path=None if image_path is None else str(image_path),
-            raw_output=raw,
-            decision=dict(decision),
-        )
-        with self._trace_lock:
-            self._last_trace = trace
-        return decision
+        raw = ""
+        decision: dict[str, Any] | None = None
+        trace_error: str | None = None
+        try:
+            raw = self._backend.generate(prompt=prompt, image_path=image_path)
+            if type(raw) is not str or not raw.strip():
+                raise ValueError("Qwen backend returned an empty non-text response")
+            decision = validate_qwen_response(raw)
+            return decision
+        except Exception as error:
+            trace_error = f"{type(error).__name__}: {error}"
+            raise
+        finally:
+            trace = QwenVLInferenceTrace(
+                request_id=context.request_id,
+                started_ns=started_ns,
+                completed_ns=time.monotonic_ns(),
+                image_path=None if image_path is None else str(image_path),
+                raw_output=raw if type(raw) is str else repr(raw),
+                decision=None if decision is None else dict(decision),
+                error=trace_error,
+            )
+            with self._trace_lock:
+                self._last_trace = trace
 
     def __call__(self, context: QwenInputContext) -> dict[str, Any]:
         return self.infer(context)

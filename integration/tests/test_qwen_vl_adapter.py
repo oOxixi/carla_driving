@@ -77,7 +77,10 @@ def test_adapter_rejects_prose_low_level_controls_and_empty_output(
     adapter = StrictQwenVLAdapter(FakeBackend(response))
     with pytest.raises((TypeError, ValueError)):
         adapter(_context())
-    assert adapter.last_trace is None
+    assert adapter.last_trace is not None
+    assert adapter.last_trace.decision is None
+    assert adapter.last_trace.error is not None
+    assert adapter.last_trace.raw_output == response
 
 
 def test_adapter_rejects_image_reference_escape(tmp_path: Path) -> None:

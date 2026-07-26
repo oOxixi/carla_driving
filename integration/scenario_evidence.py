@@ -215,6 +215,35 @@ class ScenarioEvidenceRecorder:
         self._commands[command_id] = record
         self._write("command", **record)
 
+    def record_qwen_event(
+        self,
+        *,
+        request_id: str,
+        status: str,
+        context: Mapping[str, object] | None = None,
+        high_level_command: Mapping[str, object] | None = None,
+        runtime_command: Mapping[str, object] | None = None,
+        trace: object | None = None,
+        error: str | None = None,
+    ) -> None:
+        """Record a remote Qwen request/result without storing credentials."""
+        self._ensure_active()
+        if type(request_id) is not str or not request_id:
+            raise ValueError("request_id must be a non-empty string")
+        normalized_status = str(status).strip().upper()
+        if normalized_status not in {"PENDING", "READY", "TIMEOUT", "STALE", "ERROR"}:
+            raise ValueError("unsupported Qwen evidence status")
+        self._write(
+            "qwen_decision",
+            request_id=request_id,
+            status=normalized_status,
+            context=_jsonable(context),
+            high_level_command=_jsonable(high_level_command),
+            runtime_command=_jsonable(runtime_command),
+            trace=_jsonable(trace),
+            error=error,
+        )
+
     def record_frame(self, *, vehicle: object, scene: object, raw_control: object,
                      final_control: object, safety_reason: str,
                      safety_override: bool, timing: FrameTiming,

@@ -50,6 +50,33 @@ def test_valid_response_is_normalized() -> None:
     assert command["visual_valid"] is True
 
 
+def test_complete_markdown_fenced_response_is_accepted() -> None:
+    decision = validate_qwen_response(
+        "```json\n"
+        '{"action":"SET_SPEED","confidence":0.8,'
+        '"requires_confirmation":false,"target_speed_mps":5.0,'
+        '"reason_zh":"道路安全","decision_source":"QWEN_VL"}'
+        "\n```"
+    )
+
+    assert decision["action"] == "SET_SPEED"
+    assert decision["target_speed_mps"] == 5.0
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        "```json\n{\"action\":\"STOP\"}",
+        "说明如下\n```json\n{\"action\":\"STOP\"}\n```",
+        "```python\n{\"action\":\"STOP\"}\n```",
+        "```json\n{\"action\":\"STOP\"}\n```\n额外说明",
+    ],
+)
+def test_malformed_fence_or_prose_is_rejected(response: str) -> None:
+    with pytest.raises(ValueError):
+        validate_qwen_response(response)
+
+
 @pytest.mark.parametrize(
     ("payload", "message"),
     [
