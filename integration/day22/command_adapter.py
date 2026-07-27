@@ -50,6 +50,11 @@ def build_high_level_command(
         if type(visual_valid) is not bool:
             raise TypeError("visual_valid must be bool")
         high_level["visual_valid"] = visual_valid
+    if "target_track_id" in decision:
+        target_track_id = decision["target_track_id"]
+        if type(target_track_id) is not str or not target_track_id.strip():
+            raise TypeError("target_track_id must be a non-empty string")
+        high_level["target_track_id"] = target_track_id.strip()
 
     return high_level
 

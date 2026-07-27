@@ -34,7 +34,14 @@ def _load_cases(path: Path) -> list[dict[str, Any]]:
     return cases
 
 
-def _context(case: dict[str, Any], image_name: str, index: int) -> QwenInputContext:
+def _context(
+    case: dict[str, Any],
+    fallback_image_name: str | None,
+    index: int,
+) -> QwenInputContext:
+    image_name = case.get("rgb_ref", fallback_image_name)
+    if not image_name:
+        raise ValueError(f"case {case.get('case_id', index)!r} has no rgb_ref")
     return QwenInputContext(
         request_id=str(case["case_id"]),
         frame=index,
@@ -80,11 +87,22 @@ def _evaluate(case: dict[str, Any], decision: dict[str, Any]) -> dict[str, bool]
             and abs(float(actual) - float(expected["target_speed_mps"]))
             <= float(expected.get("speed_tolerance_mps", 0.2))
         )
+    target_association_ok = True
+    if "target_track_id" in expected:
+        target_association_ok = (
+            decision.get("target_track_id") == expected["target_track_id"]
+        )
     return {
         "action": action_ok,
         "confirmation": confirmation_ok,
         "target_speed": speed_ok,
-        "all": action_ok and confirmation_ok and speed_ok,
+        "target_association": target_association_ok,
+        "all": (
+            action_ok
+            and confirmation_ok
+            and speed_ok
+            and target_association_ok
+        ),
     }
 
 
@@ -92,22 +110,44 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("cases", type=Path)
     parser.add_argument("--model-path", required=True, type=Path)
-    parser.add_argument("--image", required=True, type=Path)
+    image_group = parser.add_mutually_exclusive_group(required=True)
+    image_group.add_argument(
+        "--image",
+        type=Path,
+        help="fallback image used by cases without rgb_ref",
+    )
+    image_group.add_argument(
+        "--image-root",
+        type=Path,
+        help="root for each case's relative rgb_ref",
+    )
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--max-new-tokens", type=int, default=192)
     args = parser.parse_args()
 
     cases = _load_cases(args.cases)
-    image = args.image.resolve()
+    image = args.image.resolve() if args.image else None
+    image_root = args.image_root.resolve() if args.image_root else image.parent
+    fallback_image_name = image.name if image else None
+    image_refs = [
+        str(case.get("rgb_ref", fallback_image_name))
+        for case in cases
+    ]
+    for image_ref in sorted(set(image_refs)):
+        resolved = (image_root / image_ref).resolve()
+        if image_root not in resolved.parents and resolved != image_root:
+            raise ValueError(f"rgb_ref escapes image root: {image_ref!r}")
+        if not resolved.is_file():
+            raise FileNotFoundError(f"rgb_ref not found: {resolved}")
     adapter = StrictQwenVLAdapter.from_local_checkpoint(
         args.model_path,
-        image_root=image.parent,
+        image_root=image_root,
         max_new_tokens=args.max_new_tokens,
     )
     records: list[dict[str, Any]] = []
     for index, case in enumerate(cases):
         try:
-            decision = adapter(_context(case, image.name, index))
+            decision = adapter(_context(case, fallback_image_name, index))
             trace = adapter.last_trace
             assert trace is not None
             checks = _evaluate(case, decision)
@@ -133,6 +173,7 @@ def main() -> int:
                     "action": False,
                     "confirmation": False,
                     "target_speed": False,
+                    "target_association": False,
                     "all": False,
                 },
             }
@@ -146,11 +187,20 @@ def main() -> int:
     ]
     total = len(records)
     count = lambda key: sum(record["checks"][key] for record in records)
+    target_records = [
+        record
+        for case, record in zip(cases, records)
+        if "target_track_id" in case.get("expected", {})
+    ]
+    target_correct = sum(
+        record["checks"]["target_association"] for record in target_records
+    )
     report = {
         "schema_version": "1.0",
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "dataset_kind": "frozen_local_proxy_not_official",
-        "rgb_source": str(image),
+        "rgb_source": str(image) if image else str(image_root),
+        "distinct_rgb_refs": len(set(image_refs)),
         "model_path": str(args.model_path.resolve()),
         "total": total,
         "ready": sum(record["status"] == "READY" for record in records),
@@ -160,8 +210,10 @@ def main() -> int:
             "confirmation_accuracy": count("confirmation") / total,
             "target_speed_accuracy": count("target_speed") / total,
             "all_contract_accuracy": count("all") / total,
-            "target_association_accuracy": None,
-            "target_association_note": "unsupported by frozen Qwen response schema",
+            "target_association_accuracy": (
+                target_correct / len(target_records) if target_records else None
+            ),
+            "target_association_cases": len(target_records),
         },
         "latency_ms": {
             "mean": statistics.fmean(latencies) if latencies else None,

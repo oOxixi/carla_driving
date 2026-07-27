@@ -1,0 +1,363 @@
+"""Collect real CARLA RGB frames with deterministic multi-vehicle annotations."""
+from __future__ import annotations
+
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+import math
+from pathlib import Path
+import queue
+import random
+from typing import Any
+
+import carla
+import numpy as np
+
+
+def _jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _same_direction(first: carla.Waypoint, second: carla.Waypoint) -> bool:
+    a = first.transform.get_forward_vector()
+    b = second.transform.get_forward_vector()
+    return a.x * b.x + a.y * b.y + a.z * b.z > 0.8
+
+
+def _adjacent_waypoint(waypoint: carla.Waypoint) -> tuple[carla.Waypoint | None, str]:
+    for candidate, relation in (
+        (waypoint.get_left_lane(), "left_adjacent"),
+        (waypoint.get_right_lane(), "right_adjacent"),
+    ):
+        if (
+            candidate is not None
+            and candidate.lane_type == carla.LaneType.Driving
+            and _same_direction(waypoint, candidate)
+        ):
+            return candidate, relation
+    return None, ""
+
+
+def _lifted(transform: carla.Transform, z_offset: float = 0.35) -> carla.Transform:
+    location = transform.location
+    return carla.Transform(
+        carla.Location(x=location.x, y=location.y, z=location.z + z_offset),
+        transform.rotation,
+    )
+
+
+def _distance(first: carla.Location, second: carla.Location) -> float:
+    dx = first.x - second.x
+    dy = first.y - second.y
+    dz = first.z - second.z
+    return math.sqrt(dx * dx + dy * dy + dz * dz)
+
+
+def _camera_intrinsic(width: int, height: int, fov_degrees: float) -> np.ndarray:
+    focal = width / (2.0 * math.tan(math.radians(fov_degrees) / 2.0))
+    matrix = np.identity(3)
+    matrix[0, 0] = matrix[1, 1] = focal
+    matrix[0, 2] = width / 2.0
+    matrix[1, 2] = height / 2.0
+    return matrix
+
+
+def _project_bbox(
+    actor: carla.Actor,
+    camera: carla.Sensor,
+    width: int,
+    height: int,
+    fov_degrees: float,
+) -> list[float] | None:
+    inverse = np.array(camera.get_transform().get_inverse_matrix())
+    intrinsic = _camera_intrinsic(width, height, fov_degrees)
+    pixels: list[tuple[float, float]] = []
+    for vertex in actor.bounding_box.get_world_vertices(actor.get_transform()):
+        world = np.array([vertex.x, vertex.y, vertex.z, 1.0])
+        sensor = inverse @ world
+        conventional = np.array([sensor[1], -sensor[2], sensor[0]])
+        if conventional[2] <= 0.1:
+            continue
+        projected = intrinsic @ conventional
+        x = float(projected[0] / projected[2])
+        y = float(projected[1] / projected[2])
+        pixels.append((x, y))
+    if not pixels:
+        return None
+    left = max(0.0, min(x for x, _ in pixels))
+    top = max(0.0, min(y for _, y in pixels))
+    right = min(float(width - 1), max(x for x, _ in pixels))
+    bottom = min(float(height - 1), max(y for _, y in pixels))
+    if right - left < 2.0 or bottom - top < 2.0:
+        return None
+    return [
+        round(left / width, 6),
+        round(top / height, 6),
+        round(right / width, 6),
+        round(bottom / height, 6),
+    ]
+
+
+def _spawn_vehicle(
+    world: carla.World,
+    blueprint: carla.ActorBlueprint,
+    transform: carla.Transform,
+) -> carla.Vehicle:
+    actor = world.try_spawn_actor(blueprint, _lifted(transform))
+    if actor is None:
+        raise RuntimeError(f"could not spawn vehicle at {transform.location}")
+    actor.set_simulate_physics(False)
+    return actor
+
+
+def _select_layout(
+    world_map: carla.Map,
+    spawn_points: list[carla.Transform],
+    seed: int,
+) -> tuple[carla.Transform, carla.Waypoint, carla.Waypoint, str]:
+    start = seed % len(spawn_points)
+    for offset in range(len(spawn_points)):
+        ego_transform = spawn_points[(start + offset) % len(spawn_points)]
+        ego_waypoint = world_map.get_waypoint(
+            ego_transform.location,
+            project_to_road=True,
+            lane_type=carla.LaneType.Driving,
+        )
+        ahead = ego_waypoint.next(16.0)
+        if not ahead:
+            continue
+        center = ahead[0]
+        adjacent, relation = _adjacent_waypoint(center)
+        if adjacent is not None:
+            return ego_transform, center, adjacent, relation
+        farther = ego_waypoint.next(27.0)
+        if farther:
+            return ego_transform, center, farther[0], "far_ahead"
+    raise RuntimeError("no usable two-target road layout found")
+
+
+def _collect_one(
+    world: carla.World,
+    seed: int,
+    image_dir: Path,
+    width: int,
+    height: int,
+    fov: float,
+    actors: list[carla.Actor],
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    rng = random.Random(seed)
+    blueprints = world.get_blueprint_library()
+    vehicle_blueprints = sorted(
+        blueprints.filter("vehicle.*"),
+        key=lambda item: item.id,
+    )
+    preferred = [
+        blueprint
+        for blueprint in vehicle_blueprints
+        if int(blueprint.get_attribute("number_of_wheels").as_int()) == 4
+    ]
+    ego_blueprint = blueprints.find("vehicle.tesla.model3")
+    target_blueprints = preferred or vehicle_blueprints
+    spawn_points = world.get_map().get_spawn_points()
+    ego_transform, center_waypoint, second_waypoint, second_relation = _select_layout(
+        world.get_map(), spawn_points, seed,
+    )
+
+    ego = _spawn_vehicle(world, ego_blueprint, ego_transform)
+    actors.append(ego)
+    center = _spawn_vehicle(
+        world,
+        target_blueprints[rng.randrange(len(target_blueprints))],
+        center_waypoint.transform,
+    )
+    actors.append(center)
+    second = _spawn_vehicle(
+        world,
+        target_blueprints[rng.randrange(len(target_blueprints))],
+        second_waypoint.transform,
+    )
+    actors.append(second)
+
+    camera_blueprint = blueprints.find("sensor.camera.rgb")
+    camera_blueprint.set_attribute("image_size_x", str(width))
+    camera_blueprint.set_attribute("image_size_y", str(height))
+    camera_blueprint.set_attribute("fov", str(fov))
+    camera_blueprint.set_attribute("sensor_tick", "0.05")
+    camera = world.spawn_actor(
+        camera_blueprint,
+        carla.Transform(carla.Location(x=1.5, z=1.7)),
+        attach_to=ego,
+    )
+    actors.append(camera)
+    frames: queue.Queue[carla.Image] = queue.Queue()
+    camera.listen(frames.put)
+    for _ in range(4):
+        world.tick()
+    image = frames.get(timeout=10.0)
+    while not frames.empty():
+        image = frames.get_nowait()
+
+    image_name = f"town03opt_target_seed_{seed:02d}.png"
+    image_path = image_dir / image_name
+    image.save_to_disk(str(image_path))
+
+    ego_location = ego.get_location()
+    ids = {
+        "center": f"vehicle_center_seed_{seed:02d}",
+        "second": f"vehicle_{second_relation}_seed_{seed:02d}",
+    }
+    objects = []
+    for label, actor, relation in (
+        ("center", center, "center_ahead"),
+        ("second", second, second_relation),
+    ):
+        bbox = _project_bbox(actor, camera, width, height, fov)
+        if bbox is None:
+            raise RuntimeError(
+                f"target {label} is not visible for seed {seed}"
+            )
+        objects.append(
+            {
+                "track_id": ids[label],
+                "carla_actor_id": actor.id,
+                "class": "vehicle",
+                "relation": relation,
+                "distance_m": round(_distance(ego_location, actor.get_location()), 3),
+                "bbox_xyxy_norm": bbox,
+                "blueprint": actor.type_id,
+                "source": "carla_ground_truth_projection",
+            }
+        )
+
+    scene_id = f"town03opt_multi_target_seed_{seed:02d}"
+    relative_ref = f"images/{image_name}"
+    scene = {
+        "scene_id": scene_id,
+        "seed": seed,
+        "map": world.get_map().name,
+        "frame": image.frame,
+        "rgb_ref": relative_ref,
+        "rgb_sha256": _sha256(image_path),
+        "image_size": [width, height],
+        "ego_actor_id": ego.id,
+        "objects": objects,
+    }
+    second_phrase = {
+        "left_adjacent": "左侧相邻车道的车辆",
+        "right_adjacent": "右侧相邻车道的车辆",
+        "far_ahead": "较远的前车",
+    }[second_relation]
+    cases = [
+        {
+            "case_id": f"{scene_id}_center",
+            "category": "target_association",
+            "rgb_ref": relative_ref,
+            "voice_command": "减速并跟随正前方的车辆",
+            "perception": {"detected_objects": objects},
+            "expected": {
+                "actions": ["SLOW_DOWN", "FOLLOW_VEHICLE"],
+                "requires_confirmation": False,
+                "target_track_id": ids["center"],
+            },
+        },
+        {
+            "case_id": f"{scene_id}_second",
+            "category": "target_association",
+            "rgb_ref": relative_ref,
+            "voice_command": f"减速并跟随{second_phrase}",
+            "perception": {"detected_objects": objects},
+            "expected": {
+                "actions": ["SLOW_DOWN", "FOLLOW_VEHICLE"],
+                "requires_confirmation": False,
+                "target_track_id": ids["second"],
+            },
+        },
+    ]
+    return scene, cases
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=2000)
+    parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--seeds", default="0,1,2,3,4")
+    parser.add_argument("--width", type=int, default=800)
+    parser.add_argument("--height", type=int, default=450)
+    parser.add_argument("--fov", type=float, default=90.0)
+    args = parser.parse_args()
+
+    seeds = [int(item.strip()) for item in args.seeds.split(",") if item.strip()]
+    output_dir = args.output_dir.resolve()
+    image_dir = output_dir / "images"
+    image_dir.mkdir(parents=True, exist_ok=True)
+    client = carla.Client(args.host, args.port)
+    client.set_timeout(20.0)
+    world = client.get_world()
+    original_settings = world.get_settings()
+    settings = world.get_settings()
+    settings.synchronous_mode = True
+    settings.fixed_delta_seconds = 0.05
+    world.apply_settings(settings)
+
+    scenes: list[dict[str, Any]] = []
+    cases: list[dict[str, Any]] = []
+    try:
+        for seed in seeds:
+            actors: list[carla.Actor] = []
+            try:
+                scene, scene_cases = _collect_one(
+                    world,
+                    seed,
+                    image_dir,
+                    args.width,
+                    args.height,
+                    args.fov,
+                    actors,
+                )
+                scenes.append(scene)
+                cases.extend(scene_cases)
+                print(json.dumps(scene, ensure_ascii=False), flush=True)
+            finally:
+                for actor in reversed(actors):
+                    if actor.is_alive:
+                        actor.destroy()
+                world.tick()
+    finally:
+        world.apply_settings(original_settings)
+
+    _jsonl(output_dir / "scenes.jsonl", scenes)
+    _jsonl(output_dir / "cases.jsonl", cases)
+    report = {
+        "schema_version": "1.0",
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "source": "real_carla_0.9.16_rgb_and_actor_ground_truth",
+        "map": world.get_map().name,
+        "seeds": seeds,
+        "scene_count": len(scenes),
+        "case_count": len(cases),
+        "distinct_rgb_refs": len({scene["rgb_ref"] for scene in scenes}),
+        "all_targets_projected": True,
+    }
+    (output_dir / "collection_report.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps(report, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

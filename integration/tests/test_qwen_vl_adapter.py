@@ -99,3 +99,40 @@ def test_prompt_serializes_frozen_context_and_never_requests_controls() -> None:
     assert "明确的停车、紧急停车" in prompt
     assert "TTC不大于2秒" in prompt
     assert "绝不能包含target_speed_mps" in prompt
+    assert "target_track_id" in prompt
+    assert "禁止编造" in prompt
+
+
+def test_adapter_accepts_only_target_ids_present_in_perception() -> None:
+    context = QwenInputContext(
+        request_id="target-1",
+        frame=1,
+        sim_time_s=0.05,
+        voice_command="跟随最近的前车",
+        rgb_ref=None,
+        scene_state={},
+        perception={
+            "detected_objects": [
+                {"track_id": "vehicle_near", "class": "vehicle"},
+            ],
+        },
+        safety_state={},
+    )
+    valid = StrictQwenVLAdapter(FakeBackend(json.dumps({
+        "action": "SLOW_DOWN",
+        "target_speed_mps": 3.0,
+        "target_track_id": "vehicle_near",
+        "confidence": 0.9,
+        "requires_confirmation": False,
+    })))
+    assert valid(context)["target_track_id"] == "vehicle_near"
+
+    fabricated = StrictQwenVLAdapter(FakeBackend(json.dumps({
+        "action": "SLOW_DOWN",
+        "target_speed_mps": 3.0,
+        "target_track_id": "vehicle_missing",
+        "confidence": 0.9,
+        "requires_confirmation": False,
+    })))
+    with pytest.raises(ValueError, match="not present"):
+        fabricated(context)

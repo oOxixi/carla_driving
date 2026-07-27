@@ -9,6 +9,8 @@
 5. `OFFLINE_VALIDATION_0725.md`：Qwen 严格边界、语言代理集、数据集构建和回放的本机验证记录。
 6. `REAL_CLOSED_LOOP_EVIDENCE_20260727.md`：真实 Qwen、RGB/LiDAR、CARLA 控制闭环及三个代表场景证据。
 7. `BATCH_QWEN_SCENARIO_EVIDENCE_20260728.md`：真实 Qwen 冻结代理集批测和三场景 60 次多 seed 实跑。
+8. `QWEN_TARGET_ASSOCIATION_EVIDENCE_20260728.md`：5 张真实 CARLA RGB、
+   10 条多目标指令及两轮 100% 目标关联复测证据。
 
 比赛细则来源：<https://acndoaymjsa1.feishu.cn/docx/QVlodTanIo1IRhx7AcMcvA7RndQ>，本次核对日期为 2026-07-25，页面显示最新修改日期为 07 月 17 日。
 

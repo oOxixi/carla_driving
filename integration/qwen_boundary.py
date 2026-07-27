@@ -18,7 +18,7 @@ _REQUIRED_RESPONSE_FIELDS = frozenset({
     "action", "confidence", "requires_confirmation",
 })
 _OPTIONAL_RESPONSE_FIELDS = frozenset({
-    "target_speed_mps", "reason_zh", "decision_source", "visual_valid",
+    "target_speed_mps", "target_track_id", "reason_zh", "decision_source", "visual_valid",
 })
 _ALLOWED_RESPONSE_FIELDS = _REQUIRED_RESPONSE_FIELDS | _OPTIONAL_RESPONSE_FIELDS
 
@@ -164,6 +164,10 @@ def validate_qwen_response(payload: object) -> dict[str, Any]:
     for name in ("reason_zh", "decision_source"):
         if name in payload:
             normalized[name] = _nonempty_text(payload[name], name)
+    if "target_track_id" in payload:
+        normalized["target_track_id"] = _nonempty_text(
+            payload["target_track_id"], "target_track_id",
+        )
     if "visual_valid" in payload:
         if type(payload["visual_valid"]) is not bool:
             raise TypeError("visual_valid must be bool")

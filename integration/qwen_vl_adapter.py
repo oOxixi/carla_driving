@@ -92,6 +92,7 @@ class StrictQwenVLAdapter:
         if type(raw) is not str or not raw.strip():
             raise ValueError("Qwen backend returned an empty non-text response")
         decision = validate_qwen_response(raw)
+        _validate_target_reference(decision, context)
         trace = QwenVLInferenceTrace(
             request_id=context.request_id,
             started_ns=started_ns,
@@ -137,6 +138,13 @@ def build_strict_qwen_prompt(context: QwenInputContext) -> str:
         "\n\n只输出一个JSON对象，不要Markdown、解释或额外文字。"
         "\n必填字段：action, confidence, requires_confirmation。"
         "\n可选字段：target_speed_mps, reason_zh, decision_source, visual_valid。"
+        "\n目标关联可选字段：target_track_id。它只能精确复制"
+        "perception.detected_objects中真实存在的track_id，禁止编造。"
+        "\n如果用户命令包含“正前方、左侧、右侧、相邻车道、较近、较远、跟随”等"
+        "目标描述，并且detected_objects中存在唯一匹配项，target_track_id不是可选项，"
+        "必须输出；不得用target_speed_mps、reason_zh或decision_source代替它。"
+        "\n示例：命令要求跟随右侧相邻车道车辆，匹配对象track_id为vehicle_right_01，"
+        "则输出必须包含\"target_track_id\":\"vehicle_right_01\"。"
         "\naction只能是START、STOP、SLOW_DOWN、SET_SPEED、EMERGENCY_STOP。"
         "\nSET_SPEED必须包含target_speed_mps；其他无关字段禁止出现。"
         "\nconfidence范围0到1；requires_confirmation和visual_valid必须是JSON布尔值。"
@@ -152,9 +160,32 @@ def build_strict_qwen_prompt(context: QwenInputContext) -> str:
         "EMERGENCY_STOP时输出EMERGENCY_STOP。安全规则覆盖用户继续行驶指令。"
         "\n5. STOP、START、EMERGENCY_STOP绝不能包含target_speed_mps；"
         "SET_SPEED必须包含该字段。"
+        "\n6. 用户指令明确指向某个检测目标时必须输出对应target_track_id；"
+        "目标不唯一时不得猜测，应要求确认且省略target_track_id。"
         "\n\n输入：\n"
         + json.dumps(input_payload, ensure_ascii=False, allow_nan=False, sort_keys=True)
     )
+
+
+def _validate_target_reference(
+    decision: Mapping[str, Any],
+    context: QwenInputContext,
+) -> None:
+    target = decision.get("target_track_id")
+    if target is None:
+        return
+    objects = context.perception.get("detected_objects", [])
+    if not isinstance(objects, list):
+        raise ValueError("perception.detected_objects must be a list")
+    available = {
+        str(item.get("track_id"))
+        for item in objects
+        if isinstance(item, Mapping) and item.get("track_id") is not None
+    }
+    if target not in available:
+        raise ValueError(
+            f"Qwen target_track_id is not present in perception: {target!r}"
+        )
 
 
 class TransformersQwen25VLBackend:

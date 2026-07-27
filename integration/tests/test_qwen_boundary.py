@@ -41,11 +41,13 @@ def test_valid_response_is_normalized() -> None:
         "reason_zh": "道路安全",
         "decision_source": "QWEN_VL",
         "visual_valid": True,
+        "target_track_id": "vehicle_12",
     }))
 
     assert decision["action"] == "SET_SPEED"
     assert decision["target_speed_mps"] == 4.0
     assert decision["requires_confirmation"] is False
+    assert decision["target_track_id"] == "vehicle_12"
     command = build_high_level_command(decision, "慢一点", command_id="qwen-1")
     assert command["visual_valid"] is True
 
