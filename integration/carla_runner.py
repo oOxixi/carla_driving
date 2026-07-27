@@ -735,14 +735,17 @@ def _expected_safety_completed(
     """Evaluate scenario contracts whose success is an intentional D intervention."""
     expected = spec.expected
     requires_override = expected.get("expected_safety_override") is True
+    allows_override = expected.get("expected_safety_override_allowed") is True
     requires_route_event = expected.get("expected_route_deviation_event") is True
     requires_emergency = expected.get("must_emergency_brake") is True
-    if not (requires_override or requires_route_event or requires_emergency):
+    if not (requires_override or allows_override or requires_route_event or requires_emergency):
         return None
     if frames != spec.frame_count or final_speed_mps is None or collision_seen:
         return False
     meaningful = {reason for reason in safety_reasons if reason not in {"NONE", "PERCEPTION_STARTUP_GRACE"}}
     if requires_override and not meaningful:
+        return False
+    if allows_override and not _runtime_health_completed(safety_reasons):
         return False
     if requires_route_event and not any("ROUTE_DEVIATION" in reason for reason in meaningful):
         return False
@@ -1347,14 +1350,6 @@ def run(args: argparse.Namespace) -> None:
                 if args.realtime:
                     time.sleep(args.fixed_delta_s)
 
-        command_finished = runtime is None or runtime.active_command_id is None
-        if not command_finished and runtime is not None:
-            feedback = runtime.fail_active(
-                now_s=last_sim_time_s,
-                detail="scenario frame budget ended before command completion",
-            )
-            if feedback is not None and recorder is not None:
-                recorder.record_feedback(feedback)
         final_speed = None if final_state is None else final_state.speed_mps
         expected_completion = None if spec is None else _expected_safety_completed(
             spec,
@@ -1363,6 +1358,14 @@ def run(args: argparse.Namespace) -> None:
             collision_seen=collision_seen,
             safety_reasons=safety_reasons,
         )
+        command_finished = runtime is None or runtime.active_command_id is None
+        if not command_finished and expected_completion is not True and runtime is not None:
+            feedback = runtime.fail_active(
+                now_s=last_sim_time_s,
+                detail="scenario frame budget ended before command completion",
+            )
+            if feedback is not None and recorder is not None:
+                recorder.record_feedback(feedback)
         completion = expected_completion if expected_completion is not None else (
             command_finished and _runtime_health_completed(safety_reasons) and _scenario_completed(
                 args, frames=frames_completed,

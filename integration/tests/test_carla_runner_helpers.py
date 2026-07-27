@@ -205,6 +205,34 @@ def test_expected_route_deviation_intervention_counts_as_scenario_success() -> N
     ) is True
 
 
+def test_allowed_safety_override_continuous_contract_counts_as_scenario_success() -> None:
+    from integration.scenario_execution import ScenarioSpec
+
+    path = Path(__file__).resolve().parents[2] / "scenarios" / "safety_D" / "D03_front_vehicle_brake.json"
+    spec = ScenarioSpec.load(path)
+    assert _expected_safety_completed(
+        spec,
+        frames=spec.frame_count,
+        final_speed_mps=3.0,
+        collision_seen=False,
+        safety_reasons={"EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE"},
+    ) is True
+
+
+def test_allowed_safety_override_does_not_hide_runtime_failure() -> None:
+    from integration.scenario_execution import ScenarioSpec
+
+    path = Path(__file__).resolve().parents[2] / "scenarios" / "safety_D" / "D03_front_vehicle_brake.json"
+    spec = ScenarioSpec.load(path)
+    assert _expected_safety_completed(
+        spec,
+        frames=spec.frame_count,
+        final_speed_mps=0.0,
+        collision_seen=False,
+        safety_reasons={"WATCHDOG_ALERT", "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE"},
+    ) is False
+
+
 def test_d_fault_contracts_create_one_shot_raw_control_payloads() -> None:
     from integration.scenario_execution import ScenarioSpec
 

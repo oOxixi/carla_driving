@@ -50,6 +50,39 @@ def test_valid_response_is_normalized() -> None:
     assert command["visual_valid"] is True
 
 
+def test_single_json_fence_is_normalized_without_weakening_schema() -> None:
+    decision = validate_qwen_response(
+        """```json
+{"action":"STOP","confidence":0.95,"requires_confirmation":false}
+```"""
+    )
+
+    assert decision == {
+        "action": "STOP",
+        "confidence": 0.95,
+        "requires_confirmation": False,
+    }
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "说明如下：\n```json\n"
+        '{"action":"STOP","confidence":0.95,"requires_confirmation":false}\n'
+        "```",
+        "```json\n"
+        '{"action":"STOP","confidence":0.95,"requires_confirmation":false}\n'
+        "```\n额外说明",
+        "```json\n"
+        '{"action":"STOP","confidence":0.95,"requires_confirmation":false}\n'
+        "```\n```json\n{}\n```",
+    ],
+)
+def test_fenced_response_still_rejects_prose_or_multiple_objects(payload: str) -> None:
+    with pytest.raises(ValueError, match="without prose"):
+        validate_qwen_response(payload)
+
+
 @pytest.mark.parametrize(
     ("payload", "message"),
     [

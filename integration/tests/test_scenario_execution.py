@@ -31,6 +31,15 @@ def test_speed_command_is_normalized_for_voice_adapter() -> None:
     assert command["parameters"] == {"speed": 20, "unit": "km/h"}
 
 
+def test_scenario_command_ttl_covers_remaining_runtime() -> None:
+    spec = ScenarioSpec.load(
+        SCENARIO_ROOT / "safety_D" / "D03_front_vehicle_brake.json"
+    )
+    command = spec.commands[0]
+
+    assert command.envelope["valid_duration_s"] > spec.duration_s - command.time_s
+
+
 def test_world_route_rotates_local_template_around_spawn() -> None:
     spec = ScenarioSpec.load(SCENARIO_ROOT / "smoke" / "S01_set_speed_20.json")
     route = spec.world_route(100.0, 200.0, 90.0)

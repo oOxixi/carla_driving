@@ -1,0 +1,51 @@
+{
+  "frame": 140499,
+  "perception": {
+    "collision": false,
+    "detected_objects": [],
+    "distance_to_stop_line_m": null,
+    "frame": 140499,
+    "lane_invasion": false,
+    "lane_offset_m": 5.574456451995502e-09,
+    "lead_distance_m": null,
+    "lead_speed_mps": null,
+    "red_light_violation": false,
+    "route_deviation_m": 5.574456451995502e-09,
+    "sim_time_s": 1397.3962090751156,
+    "speed_limit_mps": 8.333333333333334,
+    "traffic_light": "UNKNOWN"
+  },
+  "request_id": "qwen-carla-140499",
+  "rgb_ref": "rgb_00140499.png",
+  "safety_state": {
+    "closing_speed_mps": null,
+    "distance_to_stop_line_m": null,
+    "frame": 140499,
+    "front_distance_m": null,
+    "fused_valid": false,
+    "fusion_mode": "NO_OBSTACLE",
+    "input_confidence": 1.0,
+    "lidar_valid": true,
+    "object_class": null,
+    "object_confidence": null,
+    "reason": "no_front_hazard_observed",
+    "recommended_action": "KEEP_SPEED",
+    "schema_version": "1.0",
+    "sim_time_s": 1397.3962090751156,
+    "source_by_field": {
+      "lidar": "LIDAR_FRONT_CORRIDOR",
+      "visual": "RGB_DETECTOR_UNAVAILABLE"
+    },
+    "traffic_light": "UNKNOWN",
+    "ttc_s": null,
+    "visual_valid": false
+  },
+  "scene_state": {
+    "ego_speed_mps": 0.0,
+    "map": "Carla/Maps/Town03_Opt",
+    "weather": "WeatherParameters(cloudiness=10.000000, precipitation=0.000000, precipitation_deposits=0.000000, wind_intensity=10.000000, sun_azimuth_angle=180.000000, sun_altitude_angle=30.000000, fog_density=2.000000, fog_distance=0.750000, fog_falloff=0.100000, wetness=0.000000, scattering_intensity=1.000000, mie_scattering_scale=0.030000, rayleigh_scattering_scale=0.033100, dust_storm=0.000000)"
+  },
+  "schema_version": "1.0",
+  "sim_time_s": 1397.3962090751156,
+  "voice_command": "请以每秒4米的速度沿当前道路直行"
+}

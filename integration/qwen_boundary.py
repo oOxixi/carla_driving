@@ -5,6 +5,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 import json
 import math
+import re
 from types import MappingProxyType
 from typing import Any
 
@@ -103,11 +104,13 @@ class QwenBoundaryFailure:
 def validate_qwen_response(payload: object) -> dict[str, Any]:
     """Parse and strictly normalize one high-level Qwen decision.
 
-    Markdown fences, extra prose, unknown fields and low-level controls are
-    rejected.  The returned plain dict is safe to pass to the Day22 command
-    adapter.
+    A single JSON-only Markdown fence is normalized because Qwen2.5-VL may
+    add that wrapper even when explicitly asked for raw JSON.  Extra prose,
+    multiple fences, unknown fields and low-level controls remain rejected.
+    The returned plain dict is safe to pass to the Day22 command adapter.
     """
     if type(payload) is str:
+        payload = _unwrap_single_json_fence(payload)
         try:
             payload = json.loads(payload)
         except json.JSONDecodeError as error:
@@ -159,6 +162,20 @@ def validate_qwen_response(payload: object) -> dict[str, Any]:
             raise TypeError("visual_valid must be bool")
         normalized["visual_valid"] = payload["visual_valid"]
     return normalized
+
+
+def _unwrap_single_json_fence(payload: str) -> str:
+    stripped = payload.strip()
+    if not stripped.startswith("```"):
+        return stripped
+    match = re.fullmatch(
+        r"```(?:json)?[ \t]*\r?\n(?P<body>[\s\S]*?)\r?\n```",
+        stripped,
+        flags=re.IGNORECASE,
+    )
+    if match is None or "```" in match.group("body"):
+        raise ValueError("Qwen response must be one JSON object without prose")
+    return match.group("body").strip()
 
 
 def fail_closed(status: str, error: str) -> QwenBoundaryFailure:
