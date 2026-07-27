@@ -26,16 +26,22 @@ external setup. Do not relabel the synthetic result as a 50 dBA result.
   - 3 correct transcripts were unstable
   - therefore consistency is not used as a confidence score
   - evidence: `asr_consistency_20260726.json`
+- Conditional calibrated verification:
+  - SenseVoice remains the primary recognizer;
+  - faster-whisper small verifies 155/250 safety-relevant commands;
+  - calibrated verifier-confidence coverage: 62.00%;
+  - verifier failure enters the confirmation gate instead of silently bypassing review;
+  - evidence: `local_clean_250_cascade_priority_20260726.json`
 - Automated repository tests: 361 passed, 1 skipped.
 
 ## Still requires external evidence
 
 - Formal 50 dBA evaluation requires calibrated acoustic playback/recording,
   a sound-level meter reading in the 49–51 dBA range, and the calibration log.
-- The current SenseVoice/FunASR response exposes no calibrated utterance
-  confidence, so measured confidence coverage is 0%. The parser safely blocks
-  an explicitly low score when a backend provides one. Raw CTC posterior and
-  transcript consistency were tested and rejected as misleading substitutes.
+- SenseVoice/FunASR still exposes no calibrated utterance confidence. This is
+  recorded separately from the calibrated faster-whisper verifier confidence;
+  it is no longer an unresolved architecture choice. Raw CTC posterior and
+  transcript consistency remain rejected as misleading substitutes.
 - The 250-file manifest audio is synthesized speech. It is real model
   inference over real audio files, but it must not be described as recordings
   from human speakers.
