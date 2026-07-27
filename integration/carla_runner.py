@@ -400,6 +400,8 @@ def _traffic_light_scenario_anchor(
     world_map: Any,
     carla_api: Any,
     distance_to_stop_line_m: float,
+    *,
+    candidate_index: int = 0,
 ) -> tuple[Any, Any]:
     """Return a real signal and a driving-lane transform behind its stop line."""
     actors = world.get_actors()
@@ -442,7 +444,8 @@ def _traffic_light_scenario_anchor(
             candidates.append((int(getattr(light, "id", 0)), light, spawn_transform))
     if not candidates:
         raise RuntimeError("current map has no usable traffic-light stop waypoint")
-    _, light, transform = min(candidates, key=lambda item: item[0])
+    candidates.sort(key=lambda item: item[0])
+    _, light, transform = candidates[candidate_index % len(candidates)]
     return light, transform
 
 
@@ -890,6 +893,9 @@ def run(args: argparse.Namespace) -> None:
             args.frames = min(args.frames, args.max_frames)
         args.scenario = spec.scenario_id
         args.scenario_difficulty = spec.official_level
+        args.evidence_seed = spec.seed if args.seed is None else args.seed
+        if args.seed is not None:
+            args.spawn_index = args.seed
         owns_real_scene_actor = (
             _scenario_actor(spec, "vehicle") is not None
             or _scenario_actor(spec, "traffic_light") is not None
@@ -962,7 +968,12 @@ def run(args: argparse.Namespace) -> None:
             spec is not None
             and (spec.category == "lateral_B" or spec.expected.get("must_finish_route") is True)
         )
-        if road_fit_required:
+        seeded_route_anchor = (
+            spec is not None
+            and args.seed is not None
+            and _scenario_traffic_light_distance(spec) is None
+        )
+        if road_fit_required or seeded_route_anchor:
             maneuver = _scenario_maneuver(spec)
             anchor_index, topology_route, anchor_score = select_topology_route_anchor(
                 world_map,
@@ -973,14 +984,30 @@ def run(args: argparse.Namespace) -> None:
                 forbidden_points_xy=_traffic_light_stop_points(world),
             )
             route_anchor = spawn_points[anchor_index]
+            seed_offset_m = float(getattr(args, "evidence_seed", 0) % 5) * 2.0
+            if seeded_route_anchor and seed_offset_m > 0.0:
+                anchor_waypoint = world_map.get_waypoint(
+                    route_anchor.location, project_to_road=True,
+                )
+                advanced = tuple(anchor_waypoint.next(seed_offset_m)) if anchor_waypoint else ()
+                if advanced:
+                    advanced_transform = advanced[0].transform
+                    advanced_transform.location.z = route_anchor.location.z
+                    route_anchor = advanced_transform
             print(
                 f"route anchor: spawn_index={anchor_index} maneuver={maneuver} "
-                f"topology_score={anchor_score:.3f}"
+                f"topology_score={anchor_score:.3f} seed_offset_m={seed_offset_m:.1f}"
             )
         traffic_light_distance = _scenario_traffic_light_distance(spec)
         if traffic_light_distance is not None:
+            seeded_stop_distance_m = traffic_light_distance + (
+                (getattr(args, "evidence_seed", 0) % 5) - 2
+            ) * 0.5
             scenario_traffic_light, route_anchor = _traffic_light_scenario_anchor(
-                world, world_map, carla, traffic_light_distance,
+                world,
+                world_map,
+                carla,
+                seeded_stop_distance_m,
             )
             traffic_light_original_state = scenario_traffic_light.get_state()
             frozen_getter = getattr(scenario_traffic_light, "is_frozen", None)
@@ -1001,7 +1028,7 @@ def run(args: argparse.Namespace) -> None:
                 "scenario actor: bound real traffic light "
                 f"id={getattr(scenario_traffic_light, 'id', 'unknown')} "
                 f"state={configured_state.upper()} "
-                f"stop_distance_m={traffic_light_distance:.2f}",
+                f"stop_distance_m={seeded_stop_distance_m:.2f}",
                 flush=True,
             )
         spawn_transform = route_anchor
@@ -1468,6 +1495,11 @@ def main() -> None:
                         help="directory for automatic per-run JSONL evidence logs")
     parser.add_argument("--no-log", action="store_true", help="disable automatic JSONL evidence logging")
     parser.add_argument("--spawn-index", type=int, default=0)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help="evidence seed override; selects deterministic spawn/signal candidates",
+    )
     parser.add_argument("--warmup-frames", type=int, default=40,
                         help="synchronous ticks used to stream a tiled map before spawning ego")
     parser.add_argument("--map", help="optional CARLA map name, e.g. Town05; omit to use current world")

@@ -232,6 +232,7 @@ def select_topology_route_anchor(
     target_speed_mps: float,
     distance_m: float,
     forbidden_points_xy: Sequence[tuple[float, float]] = (),
+    candidate_index: int = 0,
 ) -> tuple[int, RouteReference, float]:
     """Pick a spawn whose generated route is legal, long enough and avoids lights."""
     if not spawn_points:
@@ -285,7 +286,8 @@ def select_topology_route_anchor(
         candidates.append((score, index, route))
     if not candidates:
         raise RuntimeError(f"no Town route supports maneuver {action}")
-    score, index, route = min(candidates, key=lambda item: (item[0], item[1]))
+    candidates.sort(key=lambda item: (item[0], item[1]))
+    score, index, route = candidates[candidate_index % len(candidates)]
     if score >= 1_000.0:
         raise RuntimeError(f"no Town route has the required topology for {action}")
     return index, route, score

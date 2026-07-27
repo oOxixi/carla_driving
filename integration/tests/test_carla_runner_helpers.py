@@ -191,6 +191,47 @@ def test_invalid_scenario_facts_mode_is_rejected() -> None:
         _select_scene_facts(PerceptionFrame(1, 0.05), None, "invalid")
 
 
+def test_traffic_light_anchor_uses_seeded_candidate_index() -> None:
+    from integration.carla_runner import _traffic_light_scenario_anchor
+
+    class Location:
+        def __init__(self, x=0.0, y=0.0, z=0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Rotation:
+        def __init__(self, pitch=0.0, yaw=0.0, roll=0.0):
+            self.pitch, self.yaw, self.roll = pitch, yaw, roll
+
+    class Transform:
+        def __init__(self, location, rotation=None):
+            self.location = location
+            self.rotation = rotation or Rotation()
+
+        def get_forward_vector(self):
+            return Namespace(x=1.0, y=0.0)
+
+    def light(actor_id: int, x: float):
+        waypoint = Namespace(transform=Transform(Location(x=x)))
+        return Namespace(id=actor_id, get_stop_waypoints=lambda: [waypoint])
+
+    lights = [light(20, 20.0), light(10, 10.0)]
+    world = Namespace(
+        get_actors=lambda: Namespace(filter=lambda pattern: lights),
+    )
+    world_map = Namespace(
+        get_waypoint=lambda location, project_to_road=True: Namespace(
+            transform=Transform(location),
+        ),
+    )
+    carla_api = Namespace(Location=Location, Rotation=Rotation, Transform=Transform)
+
+    selected, _ = _traffic_light_scenario_anchor(
+        world, world_map, carla_api, 12.0, candidate_index=1,
+    )
+
+    assert selected.id == 20
+
+
 def test_expected_route_deviation_intervention_counts_as_scenario_success() -> None:
     from integration.scenario_execution import ScenarioSpec
 

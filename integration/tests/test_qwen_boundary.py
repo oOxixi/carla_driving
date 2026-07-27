@@ -116,6 +116,30 @@ def test_rejects_malformed_or_unsafe_responses(payload: object, message: str) ->
         validate_qwen_response(payload)
 
 
+@pytest.mark.parametrize("action", ["STOP", "EMERGENCY_STOP"])
+def test_discards_safe_zero_speed_annotation_for_stop(action: str) -> None:
+    assert validate_qwen_response({
+        "action": action,
+        "confidence": 1.0,
+        "requires_confirmation": False,
+        "target_speed_mps": 0,
+    }) == {
+        "action": action,
+        "confidence": 1.0,
+        "requires_confirmation": False,
+    }
+
+
+def test_rejects_nonzero_speed_annotation_for_stop() -> None:
+    with pytest.raises(ValueError, match="must not include target_speed_mps"):
+        validate_qwen_response({
+            "action": "STOP",
+            "confidence": 1.0,
+            "requires_confirmation": False,
+            "target_speed_mps": 1.0,
+        })
+
+
 def test_fail_closed_maps_model_states_to_watchdog_alerts() -> None:
     assert fail_closed("PENDING", "waiting").watchdog_alerts == ("QWEN_PENDING",)
     assert fail_closed("TIMEOUT", "slow").watchdog_alerts == ("QWEN_TIMEOUT",)

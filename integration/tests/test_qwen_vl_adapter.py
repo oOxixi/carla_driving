@@ -95,3 +95,7 @@ def test_prompt_serializes_frozen_context_and_never_requests_controls() -> None:
     assert '"traffic_light": "RED"' in prompt
     assert "throttle, brake, steer" in prompt
     assert "action只能是" in prompt
+    assert "20km/h=5.56m/s" in prompt
+    assert "明确的停车、紧急停车" in prompt
+    assert "TTC不大于2秒" in prompt
+    assert "绝不能包含target_speed_mps" in prompt

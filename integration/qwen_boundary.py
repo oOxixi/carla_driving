@@ -149,11 +149,18 @@ def validate_qwen_response(payload: object) -> dict[str, Any]:
     if action == "SET_SPEED" and target is None:
         raise ValueError("SET_SPEED requires target_speed_mps")
     if target is not None:
-        if action not in {"SET_SPEED", "SLOW_DOWN"}:
-            raise ValueError(f"{action} must not include target_speed_mps")
-        normalized["target_speed_mps"] = _bounded_number(
+        normalized_target = _bounded_number(
             target, "target_speed_mps", 0.0, 50.0,
         )
+        if action in {"STOP", "EMERGENCY_STOP"} and normalized_target == 0.0:
+            # Qwen sometimes annotates an explicit zero target for a stop.
+            # Discard that safety-equivalent redundancy at the high-level
+            # boundary; all non-zero or incompatible combinations still fail.
+            pass
+        elif action not in {"SET_SPEED", "SLOW_DOWN"}:
+            raise ValueError(f"{action} must not include target_speed_mps")
+        else:
+            normalized["target_speed_mps"] = normalized_target
     for name in ("reason_zh", "decision_source"):
         if name in payload:
             normalized[name] = _nonempty_text(payload[name], name)

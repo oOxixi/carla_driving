@@ -142,6 +142,16 @@ def build_strict_qwen_prompt(context: QwenInputContext) -> str:
         "\nconfidence范围0到1；requires_confirmation和visual_valid必须是JSON布尔值。"
         "\n禁止字段：throttle, brake, steer, steering_angle, wheel_angle。"
         "\n推荐设置decision_source为QWEN_VL。"
+        "\n\n确定性决策规则："
+        "\n1. 公里每小时必须除以3.6转换为米每秒，例如18km/h=5m/s，"
+        "20km/h=5.56m/s，30km/h=8.33m/s。"
+        "\n2. 明确的停车、紧急停车及因红灯/TTC危险产生的安全停车不需要确认，"
+        "requires_confirmation=false。"
+        "\n3. 只有目标不明确、多个目标、视觉无效或输入置信度不足时才要求确认。"
+        "\n4. 红灯或safety_state推荐STOP时输出STOP；TTC不大于2秒或推荐"
+        "EMERGENCY_STOP时输出EMERGENCY_STOP。安全规则覆盖用户继续行驶指令。"
+        "\n5. STOP、START、EMERGENCY_STOP绝不能包含target_speed_mps；"
+        "SET_SPEED必须包含该字段。"
         "\n\n输入：\n"
         + json.dumps(input_payload, ensure_ascii=False, allow_nan=False, sort_keys=True)
     )
