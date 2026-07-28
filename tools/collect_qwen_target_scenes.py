@@ -110,14 +110,14 @@ def _project_bbox(
     ]
 
 
-def _spawn_vehicle(
+def _spawn_actor(
     world: carla.World,
     blueprint: carla.ActorBlueprint,
     transform: carla.Transform,
-) -> carla.Vehicle:
+) -> carla.Actor:
     actor = world.try_spawn_actor(blueprint, _lifted(transform))
     if actor is None:
-        raise RuntimeError(f"could not spawn vehicle at {transform.location}")
+        raise RuntimeError(f"could not spawn actor at {transform.location}")
     actor.set_simulate_physics(False)
     return actor
 
@@ -126,6 +126,8 @@ def _select_layout(
     world_map: carla.Map,
     spawn_points: list[carla.Transform],
     seed: int,
+    *,
+    occlusion: bool,
 ) -> tuple[carla.Transform, carla.Waypoint, carla.Waypoint, str]:
     start = seed % len(spawn_points)
     for offset in range(len(spawn_points)):
@@ -135,10 +137,15 @@ def _select_layout(
             project_to_road=True,
             lane_type=carla.LaneType.Driving,
         )
-        ahead = ego_waypoint.next(16.0)
+        ahead = ego_waypoint.next(12.0 if occlusion else 16.0)
         if not ahead:
             continue
         center = ahead[0]
+        if occlusion:
+            farther = ego_waypoint.next(24.0)
+            if farther:
+                return ego_transform, center, farther[0], "far_ahead_occluded"
+            continue
         adjacent, relation = _adjacent_waypoint(center)
         if adjacent is not None:
             return ego_transform, center, adjacent, relation
@@ -156,6 +163,10 @@ def _collect_one(
     height: int,
     fov: float,
     actors: list[carla.Actor],
+    *,
+    weather_profile: str,
+    pedestrian_second: bool,
+    occlusion: bool,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     rng = random.Random(seed)
     blueprints = world.get_blueprint_library()
@@ -170,22 +181,32 @@ def _collect_one(
     ]
     ego_blueprint = blueprints.find("vehicle.tesla.model3")
     target_blueprints = preferred or vehicle_blueprints
+    walker_blueprints = sorted(
+        blueprints.filter("walker.pedestrian.*"),
+        key=lambda item: item.id,
+    )
     spawn_points = world.get_map().get_spawn_points()
     ego_transform, center_waypoint, second_waypoint, second_relation = _select_layout(
-        world.get_map(), spawn_points, seed,
+        world.get_map(), spawn_points, seed, occlusion=occlusion,
     )
 
-    ego = _spawn_vehicle(world, ego_blueprint, ego_transform)
+    ego = _spawn_actor(world, ego_blueprint, ego_transform)
     actors.append(ego)
-    center = _spawn_vehicle(
+    center = _spawn_actor(
         world,
         target_blueprints[rng.randrange(len(target_blueprints))],
         center_waypoint.transform,
     )
     actors.append(center)
-    second = _spawn_vehicle(
+    if pedestrian_second:
+        if not walker_blueprints:
+            raise RuntimeError("no pedestrian blueprint is available")
+        second_blueprint = walker_blueprints[rng.randrange(len(walker_blueprints))]
+    else:
+        second_blueprint = target_blueprints[rng.randrange(len(target_blueprints))]
+    second = _spawn_actor(
         world,
-        target_blueprints[rng.randrange(len(target_blueprints))],
+        second_blueprint,
         second_waypoint.transform,
     )
     actors.append(second)
@@ -216,12 +237,21 @@ def _collect_one(
     ego_location = ego.get_location()
     ids = {
         "center": f"vehicle_center_seed_{seed:02d}",
-        "second": f"vehicle_{second_relation}_seed_{seed:02d}",
+        "second": (
+            f"pedestrian_{second_relation}_seed_{seed:02d}"
+            if pedestrian_second
+            else f"vehicle_{second_relation}_seed_{seed:02d}"
+        ),
     }
     objects = []
-    for label, actor, relation in (
-        ("center", center, "center_ahead"),
-        ("second", second, second_relation),
+    for label, actor, relation, class_name in (
+        ("center", center, "center_ahead", "vehicle"),
+        (
+            "second",
+            second,
+            second_relation,
+            "pedestrian" if pedestrian_second else "vehicle",
+        ),
     ):
         bbox = _project_bbox(actor, camera, width, height, fov)
         if bbox is None:
@@ -232,7 +262,7 @@ def _collect_one(
             {
                 "track_id": ids[label],
                 "carla_actor_id": actor.id,
-                "class": "vehicle",
+                "class": class_name,
                 "relation": relation,
                 "distance_m": round(_distance(ego_location, actor.get_location()), 3),
                 "bbox_xyxy_norm": bbox,
@@ -247,6 +277,7 @@ def _collect_one(
         "scene_id": scene_id,
         "seed": seed,
         "map": world.get_map().name,
+        "weather_profile": weather_profile,
         "frame": image.frame,
         "rgb_ref": relative_ref,
         "rgb_sha256": _sha256(image_path),
@@ -258,13 +289,23 @@ def _collect_one(
         "left_adjacent": "左侧相邻车道的车辆",
         "right_adjacent": "右侧相邻车道的车辆",
         "far_ahead": "较远的前车",
+        "far_ahead_occluded": "被前车部分遮挡的较远车辆",
     }[second_relation]
+    if pedestrian_second:
+        side = "左侧" if second_relation == "left_adjacent" else "右侧"
+        second_phrase = f"{side}相邻车道的行人"
+    second_command = (
+        f"减速并避让{second_phrase}"
+        if pedestrian_second
+        else f"减速并跟随{second_phrase}"
+    )
     cases = [
         {
             "case_id": f"{scene_id}_center",
             "category": "target_association",
             "rgb_ref": relative_ref,
             "voice_command": "减速并跟随正前方的车辆",
+            "scene_state": {"weather_profile": weather_profile},
             "perception": {"detected_objects": objects},
             "expected": {
                 "actions": ["SLOW_DOWN", "FOLLOW_VEHICLE"],
@@ -276,7 +317,8 @@ def _collect_one(
             "case_id": f"{scene_id}_second",
             "category": "target_association",
             "rgb_ref": relative_ref,
-            "voice_command": f"减速并跟随{second_phrase}",
+            "voice_command": second_command,
+            "scene_state": {"weather_profile": weather_profile},
             "perception": {"detected_objects": objects},
             "expected": {
                 "actions": ["SLOW_DOWN", "FOLLOW_VEHICLE"],
@@ -297,9 +339,39 @@ def main() -> int:
     parser.add_argument("--width", type=int, default=800)
     parser.add_argument("--height", type=int, default=450)
     parser.add_argument("--fov", type=float, default=90.0)
+    parser.add_argument(
+        "--weather-profiles",
+        default="clear_day",
+        help="comma-separated cycle: clear_day,hard_rain,night,fog,sunset",
+    )
+    parser.add_argument(
+        "--pedestrian-seeds",
+        default="",
+        help="comma-separated seeds whose second target is a pedestrian",
+    )
+    parser.add_argument(
+        "--occlusion-seeds",
+        default="",
+        help="comma-separated seeds using two same-lane vehicles",
+    )
     args = parser.parse_args()
 
     seeds = [int(item.strip()) for item in args.seeds.split(",") if item.strip()]
+    weather_profiles = [
+        item.strip() for item in args.weather_profiles.split(",") if item.strip()
+    ]
+    pedestrian_seeds = {
+        int(item.strip())
+        for item in args.pedestrian_seeds.split(",")
+        if item.strip()
+    }
+    occlusion_seeds = {
+        int(item.strip())
+        for item in args.occlusion_seeds.split(",")
+        if item.strip()
+    }
+    if not weather_profiles:
+        raise ValueError("at least one weather profile is required")
     output_dir = args.output_dir.resolve()
     image_dir = output_dir / "images"
     image_dir.mkdir(parents=True, exist_ok=True)
@@ -307,6 +379,7 @@ def main() -> int:
     client.set_timeout(20.0)
     world = client.get_world()
     original_settings = world.get_settings()
+    original_weather = world.get_weather()
     settings = world.get_settings()
     settings.synchronous_mode = True
     settings.fixed_delta_seconds = 0.05
@@ -318,6 +391,32 @@ def main() -> int:
         for seed in seeds:
             actors: list[carla.Actor] = []
             try:
+                weather_profile = weather_profiles[len(scenes) % len(weather_profiles)]
+                weather_options = {
+                    "clear_day": carla.WeatherParameters.ClearNoon,
+                    "hard_rain": carla.WeatherParameters.HardRainNoon,
+                    "sunset": carla.WeatherParameters.ClearSunset,
+                    "night": carla.WeatherParameters(
+                        cloudiness=20.0,
+                        precipitation=0.0,
+                        sun_altitude_angle=-25.0,
+                        fog_density=5.0,
+                    ),
+                    "fog": carla.WeatherParameters(
+                        cloudiness=80.0,
+                        precipitation=10.0,
+                        sun_altitude_angle=15.0,
+                        fog_density=65.0,
+                        fog_distance=5.0,
+                        fog_falloff=1.0,
+                    ),
+                }
+                try:
+                    world.set_weather(weather_options[weather_profile])
+                except KeyError as error:
+                    raise ValueError(
+                        f"unknown weather profile: {weather_profile!r}"
+                    ) from error
                 scene, scene_cases = _collect_one(
                     world,
                     seed,
@@ -326,6 +425,9 @@ def main() -> int:
                     args.height,
                     args.fov,
                     actors,
+                    weather_profile=weather_profile,
+                    pedestrian_second=seed in pedestrian_seeds,
+                    occlusion=seed in occlusion_seeds,
                 )
                 scenes.append(scene)
                 cases.extend(scene_cases)
@@ -336,6 +438,7 @@ def main() -> int:
                         actor.destroy()
                 world.tick()
     finally:
+        world.set_weather(original_weather)
         world.apply_settings(original_settings)
 
     _jsonl(output_dir / "scenes.jsonl", scenes)
@@ -346,6 +449,9 @@ def main() -> int:
         "source": "real_carla_0.9.16_rgb_and_actor_ground_truth",
         "map": world.get_map().name,
         "seeds": seeds,
+        "weather_profiles": weather_profiles,
+        "pedestrian_seeds": sorted(pedestrian_seeds),
+        "occlusion_seeds": sorted(occlusion_seeds),
         "scene_count": len(scenes),
         "case_count": len(cases),
         "distinct_rgb_refs": len({scene["rgb_ref"] for scene in scenes}),

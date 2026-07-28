@@ -101,6 +101,8 @@ def test_prompt_serializes_frozen_context_and_never_requests_controls() -> None:
     assert "绝不能包含target_speed_mps" in prompt
     assert "target_track_id" in prompt
     assert "禁止编造" in prompt
+    assert "行人、骑行者、被遮挡目标" in prompt
+    assert "无论action是SLOW_DOWN还是STOP都不得漏掉" in prompt
 
 
 def test_adapter_accepts_only_target_ids_present_in_perception() -> None:

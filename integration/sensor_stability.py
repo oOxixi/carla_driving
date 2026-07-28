@@ -209,12 +209,19 @@ def run_sensor_probe(
     startup_frames: int = 10,
     spawn_index: int = 0,
     expected_map: str | None = None,
+    minimum_wall_duration_s: float = 0.0,
 ) -> SensorProbeResult:
     """Run a live probe against the currently loaded CARLA world."""
     if type(frames) is not int or frames < 1:
         raise ValueError("frames must be a positive integer")
     if type(startup_frames) is not int or startup_frames < 0:
         raise ValueError("startup_frames must be a non-negative integer")
+    if (
+        type(minimum_wall_duration_s) not in (int, float)
+        or not math.isfinite(float(minimum_wall_duration_s))
+        or minimum_wall_duration_s < 0
+    ):
+        raise ValueError("minimum_wall_duration_s must be finite and non-negative")
     specs = selected_sensor_specs(mode, profile)
     sensor_ids = tuple(spec.sensor_id for spec in specs)
     started_at = time.monotonic()
@@ -288,14 +295,24 @@ def run_sensor_probe(
                 )
                 break
 
-        while warmup_streak >= warmup_required and aligned_frames < frames:
+        measurement_started_at = time.monotonic()
+        expected_duration_frames = int(minimum_wall_duration_s / fixed_delta_s)
+        progress_interval = max(25, max(frames, expected_duration_frames) // 20)
+        while warmup_streak >= warmup_required and (
+            aligned_frames < frames
+            or time.monotonic() - measurement_started_at < minimum_wall_duration_s
+        ):
             frame = session.tick(timeout_s)
             received = counter.wait_for_frame(
                 sensor_ids, frame, timeout_s=sensor_timeout_s,
             )
             if received:
                 aligned_frames += 1
-                if aligned_frames == 1 or aligned_frames % 25 == 0 or aligned_frames == frames:
+                if (
+                    aligned_frames == 1
+                    or aligned_frames % progress_interval == 0
+                    or aligned_frames == frames
+                ):
                     print(
                         f"probe progress={aligned_frames}/{frames} frame={frame} "
                         f"counts={counter.counts()}",
@@ -340,6 +357,12 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--startup-frames", type=int, default=10)
     parser.add_argument("--spawn-index", type=int, default=0)
     parser.add_argument("--expected-map")
+    parser.add_argument(
+        "--minimum-wall-seconds",
+        type=float,
+        default=0.0,
+        help="continue after the frame target until this measured wall time is reached",
+    )
     return parser
 
 
@@ -361,6 +384,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             startup_frames=args.startup_frames,
             spawn_index=args.spawn_index,
             expected_map=args.expected_map,
+            minimum_wall_duration_s=args.minimum_wall_seconds,
         )
     except Exception as error:
         print(
