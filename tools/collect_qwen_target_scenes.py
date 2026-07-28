@@ -167,6 +167,7 @@ def _collect_one(
     weather_profile: str,
     pedestrian_second: bool,
     occlusion: bool,
+    dense_target_count: int,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     rng = random.Random(seed)
     blueprints = world.get_blueprint_library()
@@ -210,6 +211,45 @@ def _collect_one(
         second_waypoint.transform,
     )
     actors.append(second)
+    target_specs: list[tuple[str, carla.Actor, str, str]] = [
+        ("center", center, "center_ahead", "vehicle"),
+        (
+            "second",
+            second,
+            second_relation,
+            "pedestrian" if pedestrian_second else "vehicle",
+        ),
+    ]
+    ego_waypoint = world.get_map().get_waypoint(
+        ego_transform.location,
+        project_to_road=True,
+        lane_type=carla.LaneType.Driving,
+    )
+    for dense_index in range(max(0, dense_target_count - 2)):
+        dense_actor = None
+        for retry in range(6):
+            distance_m = 30.0 + dense_index * 8.0 + retry * 1.5
+            candidates = ego_waypoint.next(distance_m)
+            if not candidates:
+                continue
+            dense_actor = world.try_spawn_actor(
+                target_blueprints[rng.randrange(len(target_blueprints))],
+                _lifted(candidates[0].transform),
+            )
+            if dense_actor is not None:
+                dense_actor.set_simulate_physics(False)
+                break
+        if dense_actor is None:
+            continue
+        actors.append(dense_actor)
+        target_specs.append(
+            (
+                f"dense_{dense_index}",
+                dense_actor,
+                f"dense_ahead_{dense_index + 1}",
+                "vehicle",
+            )
+        )
 
     camera_blueprint = blueprints.find("sensor.camera.rgb")
     camera_blueprint.set_attribute("image_size_x", str(width))
@@ -224,18 +264,50 @@ def _collect_one(
     actors.append(camera)
     frames: queue.Queue[carla.Image] = queue.Queue()
     camera.listen(frames.put)
+    lidar_blueprint = blueprints.find("sensor.lidar.ray_cast")
+    lidar_blueprint.set_attribute("sensor_tick", "0.05")
+    lidar_blueprint.set_attribute("range", "50")
+    lidar_blueprint.set_attribute("channels", "32")
+    lidar_blueprint.set_attribute("points_per_second", "120000")
+    lidar = world.spawn_actor(
+        lidar_blueprint,
+        carla.Transform(carla.Location(x=0.0, z=2.2)),
+        attach_to=ego,
+    )
+    actors.append(lidar)
+    lidar_frames: queue.Queue[carla.LidarMeasurement] = queue.Queue()
+    lidar.listen(lidar_frames.put)
     for _ in range(4):
         world.tick()
     image = frames.get(timeout=10.0)
     while not frames.empty():
         image = frames.get_nowait()
+    lidar_measurement = lidar_frames.get(timeout=10.0)
+    while lidar_measurement.frame < image.frame:
+        lidar_measurement = lidar_frames.get(timeout=10.0)
+    while image.frame < lidar_measurement.frame:
+        image = frames.get(timeout=10.0)
+    if lidar_measurement.frame != image.frame:
+        raise RuntimeError(
+            f"could not align RGB/LiDAR frames: rgb={image.frame}, "
+            f"lidar={lidar_measurement.frame}"
+        )
 
     image_name = f"town03opt_target_seed_{seed:02d}.png"
     image_path = image_dir / image_name
     image.save_to_disk(str(image_path))
+    lidar_name = f"town03opt_target_seed_{seed:02d}.npy"
+    lidar_path = image_dir.parent / "lidar"
+    lidar_path.mkdir(parents=True, exist_ok=True)
+    lidar_file = lidar_path / lidar_name
+    lidar_points = np.frombuffer(
+        lidar_measurement.raw_data,
+        dtype=np.float32,
+    ).reshape((-1, 4)).copy()
+    np.save(lidar_file, lidar_points)
 
     ego_location = ego.get_location()
-    ids = {
+    ids: dict[str, str] = {
         "center": f"vehicle_center_seed_{seed:02d}",
         "second": (
             f"pedestrian_{second_relation}_seed_{seed:02d}"
@@ -243,16 +315,12 @@ def _collect_one(
             else f"vehicle_{second_relation}_seed_{seed:02d}"
         ),
     }
+    for dense_index in range(max(0, len(target_specs) - 2)):
+        ids[f"dense_{dense_index}"] = (
+            f"vehicle_dense_ahead_{dense_index + 1}_seed_{seed:02d}"
+        )
     objects = []
-    for label, actor, relation, class_name in (
-        ("center", center, "center_ahead", "vehicle"),
-        (
-            "second",
-            second,
-            second_relation,
-            "pedestrian" if pedestrian_second else "vehicle",
-        ),
-    ):
+    for label, actor, relation, class_name in target_specs:
         bbox = _project_bbox(actor, camera, width, height, fov)
         if bbox is None:
             raise RuntimeError(
@@ -281,6 +349,9 @@ def _collect_one(
         "frame": image.frame,
         "rgb_ref": relative_ref,
         "rgb_sha256": _sha256(image_path),
+        "lidar_ref": f"lidar/{lidar_name}",
+        "lidar_sha256": _sha256(lidar_file),
+        "lidar_point_count": int(lidar_points.shape[0]),
         "image_size": [width, height],
         "ego_actor_id": ego.id,
         "objects": objects,
@@ -306,7 +377,15 @@ def _collect_one(
             "rgb_ref": relative_ref,
             "voice_command": "减速并跟随正前方的车辆",
             "scene_state": {"weather_profile": weather_profile},
-            "perception": {"detected_objects": objects},
+            "perception": {
+                "detected_objects": objects,
+                "lidar_summary": {
+                    "valid": True,
+                    "point_count": int(lidar_points.shape[0]),
+                    "front_corridor_min_m": _front_corridor_min(lidar_points),
+                    "source": "raw_carla_lidar",
+                },
+            },
             "expected": {
                 "actions": ["SLOW_DOWN", "FOLLOW_VEHICLE"],
                 "requires_confirmation": False,
@@ -319,7 +398,15 @@ def _collect_one(
             "rgb_ref": relative_ref,
             "voice_command": second_command,
             "scene_state": {"weather_profile": weather_profile},
-            "perception": {"detected_objects": objects},
+            "perception": {
+                "detected_objects": objects,
+                "lidar_summary": {
+                    "valid": True,
+                    "point_count": int(lidar_points.shape[0]),
+                    "front_corridor_min_m": _front_corridor_min(lidar_points),
+                    "source": "raw_carla_lidar",
+                },
+            },
             "expected": {
                 "actions": ["SLOW_DOWN", "FOLLOW_VEHICLE"],
                 "requires_confirmation": False,
@@ -328,6 +415,22 @@ def _collect_one(
         },
     ]
     return scene, cases
+
+
+def _front_corridor_min(points: np.ndarray) -> float | None:
+    """Summarize raw CARLA LiDAR for the high-level four-modal context."""
+    if points.ndim != 2 or points.shape[1] < 3:
+        raise ValueError("LiDAR points must be an Nx4-like array")
+    mask = (
+        (points[:, 0] > 0.5)
+        & (points[:, 0] < 50.0)
+        & (np.abs(points[:, 1]) <= 2.0)
+        & (points[:, 2] > -2.5)
+        & (points[:, 2] < 2.5)
+    )
+    if not np.any(mask):
+        return None
+    return round(float(np.min(points[mask, 0])), 3)
 
 
 def main() -> int:
@@ -354,6 +457,12 @@ def main() -> int:
         default="",
         help="comma-separated seeds using two same-lane vehicles",
     )
+    parser.add_argument(
+        "--dense-target-count",
+        type=int,
+        default=2,
+        help="total projected actors per scene; values above two add same-lane distractors",
+    )
     args = parser.parse_args()
 
     seeds = [int(item.strip()) for item in args.seeds.split(",") if item.strip()]
@@ -372,6 +481,8 @@ def main() -> int:
     }
     if not weather_profiles:
         raise ValueError("at least one weather profile is required")
+    if args.dense_target_count < 2 or args.dense_target_count > 8:
+        raise ValueError("dense-target-count must be in [2, 8]")
     output_dir = args.output_dir.resolve()
     image_dir = output_dir / "images"
     image_dir.mkdir(parents=True, exist_ok=True)
@@ -428,6 +539,7 @@ def main() -> int:
                     weather_profile=weather_profile,
                     pedestrian_second=seed in pedestrian_seeds,
                     occlusion=seed in occlusion_seeds,
+                    dense_target_count=args.dense_target_count,
                 )
                 scenes.append(scene)
                 cases.extend(scene_cases)
@@ -452,6 +564,7 @@ def main() -> int:
         "weather_profiles": weather_profiles,
         "pedestrian_seeds": sorted(pedestrian_seeds),
         "occlusion_seeds": sorted(occlusion_seeds),
+        "dense_target_count": args.dense_target_count,
         "scene_count": len(scenes),
         "case_count": len(cases),
         "distinct_rgb_refs": len({scene["rgb_ref"] for scene in scenes}),

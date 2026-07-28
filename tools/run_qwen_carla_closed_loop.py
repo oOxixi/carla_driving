@@ -42,7 +42,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--target-speed-mps", type=float, default=4.0)
     parser.add_argument("--media-stride", type=int, default=10)
     parser.add_argument("--sensor-profile", choices=("low", "default"), default="low")
-    parser.add_argument("--max-new-tokens", type=int, default=192)
+    parser.add_argument("--max-new-tokens", type=int, default=64)
     return parser
 
 

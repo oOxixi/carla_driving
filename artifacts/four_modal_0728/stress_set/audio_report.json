@@ -1,0 +1,8 @@
+{
+  "case_count": 320,
+  "unique_audio_count": 7,
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "rate": "+0%",
+  "kind": "synthetic_tts_for_real_asr_regression",
+  "eligible_for_50dba_claim": false
+}

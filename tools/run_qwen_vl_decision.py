@@ -38,7 +38,7 @@ def main() -> int:
     parser.add_argument("context_json", type=Path)
     parser.add_argument("--model-path", required=True, type=Path)
     parser.add_argument("--image-root", type=Path)
-    parser.add_argument("--max-new-tokens", type=int, default=192)
+    parser.add_argument("--max-new-tokens", type=int, default=64)
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     try:

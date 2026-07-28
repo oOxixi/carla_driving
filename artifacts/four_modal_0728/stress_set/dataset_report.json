@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-07-28T13:54:32.256753+00:00",
+  "source_collection": "/home/tiaozhansai/carla_driving_fullchain_0728/artifacts/four_modal_0728/collection",
+  "source_scene_count": 20,
+  "source_case_count": 40,
+  "case_count": 320,
+  "variant_counts": {
+    "baseline": 40,
+    "exposure_low": 40,
+    "exposure_high": 40,
+    "motion_blur": 40,
+    "partial_occlusion": 40,
+    "detector_false_positive": 40,
+    "detector_miss": 40,
+    "detector_bbox_shift": 40
+  },
+  "split_counts": {
+    "train": 208,
+    "val": 80,
+    "test": 32
+  },
+  "all_cases_have_four_modal_contract": true,
+  "all_lidar_files_hashed": true,
+  "limitations": [
+    "Exposure, motion blur and partial occlusion are deterministic augmentations of real CARLA RGB frames.",
+    "Detector-error records are structured fault-injection cases.",
+    "Audio references are populated by the separate TTS/audio capture step before full-chain evaluation."
+  ]
+}

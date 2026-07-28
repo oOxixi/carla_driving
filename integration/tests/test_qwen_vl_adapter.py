@@ -4,9 +4,14 @@ import json
 from pathlib import Path
 
 import pytest
+from PIL import Image
 
 from integration.qwen_boundary import QwenInputContext
-from integration.qwen_vl_adapter import StrictQwenVLAdapter, build_strict_qwen_prompt
+from integration.qwen_vl_adapter import (
+    StrictQwenVLAdapter,
+    build_strict_qwen_prompt,
+    crop_road_roi,
+)
 
 
 class FakeBackend:
@@ -138,3 +143,186 @@ def test_adapter_accepts_only_target_ids_present_in_perception() -> None:
     })))
     with pytest.raises(ValueError, match="not present"):
         fabricated(context)
+
+
+def test_adapter_rejects_semantic_target_substitution() -> None:
+    context = QwenInputContext(
+        request_id="semantic-substitution",
+        frame=1,
+        sim_time_s=0.1,
+        voice_command="减速并跟随正前方的车辆",
+        rgb_ref=None,
+        scene_state={},
+        perception={"detected_objects": [{
+            "track_id": "vehicle_far",
+            "class": "vehicle",
+            "relation": "far_ahead",
+        }]},
+        safety_state={},
+    )
+    adapter = StrictQwenVLAdapter(FakeBackend(json.dumps({
+        "action": "SLOW_DOWN",
+        "confidence": 1.0,
+        "requires_confirmation": False,
+        "target_track_id": "vehicle_far",
+    })))
+
+    with pytest.raises(ValueError, match="explicit voice target is absent"):
+        adapter(context)
+
+
+def test_adapter_accepts_fail_closed_when_explicit_target_absent() -> None:
+    context = QwenInputContext(
+        request_id="semantic-absent-safe",
+        frame=1,
+        sim_time_s=0.1,
+        voice_command="减速并跟随左侧相邻车道的车辆",
+        rgb_ref=None,
+        scene_state={},
+        perception={"detected_objects": []},
+        safety_state={},
+    )
+    adapter = StrictQwenVLAdapter(FakeBackend(json.dumps({
+        "action": "STOP",
+        "confidence": 0.4,
+        "requires_confirmation": True,
+    })))
+
+    assert adapter(context)["action"] == "STOP"
+
+
+def test_adapter_grounds_approximate_distance_target() -> None:
+    context = QwenInputContext(
+        request_id="distance-target",
+        frame=1,
+        sim_time_s=0.1,
+        voice_command="减速并跟随距离约26米的前车",
+        rgb_ref=None,
+        scene_state={},
+        perception={"detected_objects": [
+            {
+                "track_id": "vehicle_26m",
+                "class": "vehicle",
+                "relation": "far_ahead",
+                "distance_m": 26.4,
+            },
+            {
+                "track_id": "vehicle_46m",
+                "class": "vehicle",
+                "relation": "dense_ahead_3",
+                "distance_m": 46.0,
+            },
+        ]},
+        safety_state={},
+    )
+    adapter = StrictQwenVLAdapter(FakeBackend(json.dumps({
+        "action": "SLOW_DOWN",
+        "confidence": 1.0,
+        "requires_confirmation": False,
+        "target_track_id": "vehicle_26m",
+    })))
+
+    assert adapter(context)["target_track_id"] == "vehicle_26m"
+
+
+def test_adapter_corrects_qwen_to_unique_distance_target() -> None:
+    context = QwenInputContext(
+        request_id="distance-correction",
+        frame=1,
+        sim_time_s=0.1,
+        voice_command="减速并跟随距离约26米的前车",
+        rgb_ref=None,
+        scene_state={},
+        perception={"detected_objects": [
+            {
+                "track_id": "vehicle_26m",
+                "class": "vehicle",
+                "relation": "far_ahead",
+                "distance_m": 26.4,
+            },
+            {
+                "track_id": "vehicle_46m",
+                "class": "vehicle",
+                "relation": "dense_ahead_3",
+                "distance_m": 46.0,
+            },
+        ]},
+        safety_state={},
+    )
+    adapter = StrictQwenVLAdapter(FakeBackend(json.dumps({
+        "action": "SLOW_DOWN",
+        "confidence": 1.0,
+        "requires_confirmation": False,
+        "target_track_id": "vehicle_46m",
+    })))
+
+    assert adapter(context)["target_track_id"] == "vehicle_26m"
+    assert adapter.last_trace is not None
+    assert adapter.last_trace.target_grounding["status"] == (
+        "CORRECTED_UNIQUE"
+    )
+
+
+def test_adapter_ignores_low_confidence_false_positive_for_grounding() -> None:
+    context = QwenInputContext(
+        request_id="false-positive",
+        frame=1,
+        sim_time_s=0.1,
+        voice_command="减速并跟随正前方的车辆",
+        rgb_ref=None,
+        scene_state={},
+        perception={"detected_objects": [
+            {
+                "track_id": "vehicle_real",
+                "class": "vehicle",
+                "relation": "center_ahead",
+            },
+            {
+                "track_id": "vehicle_ghost",
+                "class": "vehicle",
+                "relation": "center_ahead",
+                "confidence": 0.31,
+            },
+        ]},
+        safety_state={},
+    )
+    adapter = StrictQwenVLAdapter(FakeBackend(json.dumps({
+        "action": "SLOW_DOWN",
+        "confidence": 1.0,
+        "requires_confirmation": False,
+        "target_track_id": "vehicle_real",
+    })))
+
+    assert adapter(context)["target_track_id"] == "vehicle_real"
+
+
+def test_road_roi_crop_removes_only_vertical_bands() -> None:
+    image = Image.new("RGB", (800, 450), color=(1, 2, 3))
+
+    cropped, metadata = crop_road_roi(
+        image,
+        top_ratio=0.04,
+        bottom_ratio=0.08,
+    )
+
+    assert cropped.size == (800, 396)
+    assert metadata["original_size"] == [800, 450]
+    assert metadata["crop_box_xyxy"] == [0, 18, 800, 414]
+    assert metadata["retained_pixel_ratio"] == 0.88
+
+
+@pytest.mark.parametrize(
+    ("top_ratio", "bottom_ratio"),
+    [(0.5, 0.0), (0.0, 0.5), (0.4, 0.4)],
+)
+def test_road_roi_crop_rejects_empty_or_excessive_crop(
+    top_ratio: float,
+    bottom_ratio: float,
+) -> None:
+    image = Image.new("RGB", (20, 10))
+    with pytest.raises(ValueError):
+        crop_road_roi(
+            image,
+            top_ratio=top_ratio,
+            bottom_ratio=bottom_ratio,
+        )

@@ -21,7 +21,7 @@ class Qwen25VLRuntime:
         self,
         model_path: str = "models/Qwen2.5-VL-7B",
         *,
-        max_new_tokens: int = 192,
+        max_new_tokens: int = 64,
     ) -> None:
         model_dir = Path(model_path)
 

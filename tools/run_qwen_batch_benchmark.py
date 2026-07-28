@@ -122,7 +122,7 @@ def main() -> int:
         help="root for each case's relative rgb_ref",
     )
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--max-new-tokens", type=int, default=192)
+    parser.add_argument("--max-new-tokens", type=int, default=64)
     args = parser.parse_args()
 
     cases = _load_cases(args.cases)
