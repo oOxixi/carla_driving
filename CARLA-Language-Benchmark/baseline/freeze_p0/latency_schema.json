@@ -1,0 +1,15 @@
+{
+  "version": "latency_protocol_v1",
+  "clock": "monotonic",
+  "unit": "milliseconds",
+  "stages": [
+    "asr",
+    "perception",
+    "fusion",
+    "decision",
+    "safety",
+    "control",
+    "end_to_end"
+  ],
+  "requirement": "every optimization must report all stages"
+}
