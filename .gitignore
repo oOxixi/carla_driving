@@ -18,6 +18,8 @@ artifacts/logs/
 artifacts/models/*.onnx
 artifacts/.runtime/
 artifacts/voice/cuda12_wheel_check/
+artifacts/runtime/
+artifacts/qwen_remote_live/
 artifacts/.pytest*/
 artifacts/pytest_*/
 artifacts/sensor_remaining_v1/
@@ -39,4 +41,3 @@ models/*
 # Backup files
 *.bak
 *.error_backup
-

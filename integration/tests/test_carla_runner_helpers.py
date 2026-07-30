@@ -2,8 +2,10 @@ from argparse import Namespace
 import math
 from pathlib import Path
 
+import numpy as np
 import pytest
 
+from car_control_A import RuntimeVehicleState
 from car_control_B.schemas import RouteReference, VehiclePose
 
 from integration.carla_perception import EventLedger, PerceptionTimeoutError
@@ -13,6 +15,10 @@ from integration.carla_runner import (
     _lead_vehicle_travel_m,
     _map_contract_name,
     _minimum_gap_contract_completed,
+    _build_qwen_context,
+    _qwen_desired_speed_mps,
+    _qwen_voice_command,
+    _save_qwen_rgb_image,
     _select_load_map,
     _expected_safety_completed,
     _rejected_load_envelope,
@@ -32,7 +38,8 @@ from integration.carla_runner import (
     _speed_mps,
     _warm_up_sensor_bridge,
 )
-from integration.contracts import PerceptionFrame
+from integration.contracts import DetectedObject, PerceptionFrame
+from integration.scenario_execution import ScenarioSpec
 from integration.voice_adapter import VoiceCommandAdapter
 
 
@@ -77,6 +84,64 @@ def test_requested_town_prefers_optimized_map_when_available() -> None:
     assert _map_contract_name("Carla/Maps/Town03_Opt") == "Town03"
     assert _select_load_map("Town03", available) == "Town03_Opt"
     assert _select_load_map("Town02", available) == "Town02"
+
+
+def test_qwen_helpers_use_scenario_command_and_target_speed() -> None:
+    scenario_path = (
+        Path(__file__).resolve().parents[2]
+        / "scenarios"
+        / "smoke"
+        / "S01_set_speed_20.json"
+    )
+    spec = ScenarioSpec.load(scenario_path)
+    args = Namespace(qwen_voice_command=None, default_speed_mps=2.0)
+
+    assert _qwen_voice_command(args, spec) == "设置速度到20公里每小时"
+    assert _qwen_desired_speed_mps(args, spec) == pytest.approx(20.0 / 3.6)
+
+    args.qwen_voice_command = "显式指令"
+    assert _qwen_voice_command(args, spec) == "显式指令"
+
+
+def test_qwen_rgb_image_and_context_are_replayable(tmp_path: Path) -> None:
+    measurement = Namespace(
+        rgb_array=np.full((8, 12, 3), [10, 20, 30], dtype=np.uint8)
+    )
+    rgb_ref = _save_qwen_rgb_image(
+        measurement,
+        tmp_path,
+        request_id="request-1",
+    )
+    assert rgb_ref == "request-1.jpg"
+    assert (tmp_path / rgb_ref).is_file()
+
+    state = RuntimeVehicleState(7, 1.25, 2.5, 1.0, 2.0, 0.0, 5.0, "1")
+    detection = DetectedObject(2, "car", 0.9, (0.1, 0.2, 0.4, 0.8), 12.0)
+    scene = PerceptionFrame(
+        7,
+        1.25,
+        lead_distance_m=12.0,
+        lead_speed_mps=2.0,
+        traffic_light="GREEN",
+        detected_objects=(detection,),
+    )
+    context = _build_qwen_context(
+        request_id="request-1",
+        voice_command="设置速度到每秒五米",
+        rgb_ref=rgb_ref,
+        state=state,
+        scene=scene,
+        behavior_state="STOPPED",
+        desired_speed_mps=5.0,
+        route_end_distance_m=50.0,
+        c_safety_state={"ttc_s": 6.0, "fusion_mode": "RGB_LIDAR"},
+    )
+
+    payload = context.to_payload()
+    assert payload["rgb_ref"] == "request-1.jpg"
+    assert payload["scene_state"]["desired_speed_mps"] == 5.0
+    assert payload["perception"]["detected_objects"][0]["class_name"] == "car"
+    assert payload["safety_state"]["minimum_ttc_s"] == 6.0
 
 
 def test_scenario_facts_clear_unconfigured_map_hazards() -> None:
