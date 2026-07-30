@@ -20,6 +20,20 @@ from .perception_bridge import longitudinal_request, safety_vehicle_state
 from .voice_adapter import AdaptedVoiceCommand, VoiceCommandAdapter
 
 
+_TERMINAL_SAFETY_REASONS = {
+    "INVALID_CONTROL_OUTPUT",
+    "INVALID_CONTROL_OUTPUT_THROTTLE_BRAKE_CONFLICT",
+    "INVALID_VEHICLE_STATE",
+    "INVALID_RISK_STATE",
+    "COLLISION_DETECTED",
+    "RED_LIGHT_VIOLATION_DETECTED",
+    "RISK_EMERGENCY_BRAKE_REQUESTED",
+    "LOW_TTC",
+    "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE",
+    "RED_LIGHT_STOP_LINE_GUARD",
+}
+
+
 class ControlRuntime:
     """Owns command state and composes B/C/D in one deterministic frame order."""
     def __init__(self, lateral: LateralController, *, longitudinal: LongitudinalController | None = None,
@@ -171,10 +185,13 @@ class ControlRuntime:
                     self._latched_alerts.append(alert)
             self.requested_speed_mps = 0.0
             if self._active_command_id is not None:
-                failed = self.fsm.fail(self._active_command_id, now_s=vehicle.sim_time_s,
-                                       detail="watchdog alert: " + ", ".join(watchdog_alerts))
-                if failed is not None:
-                    feedback.append(failed)
+                overridden = self.fsm.safety_override(
+                    self._active_command_id,
+                    now_s=vehicle.sim_time_s,
+                    detail="watchdog alert: " + ", ".join(watchdog_alerts),
+                )
+                if overridden is not None:
+                    feedback.append(overridden)
                 self._clear_active_command()
         expired_alerts = list(self._latched_alerts)
         # Adapter rejections are audit-only NO_OP results. Even if a faulty
@@ -183,6 +200,7 @@ class ControlRuntime:
         for item in lifecycle_feedback:
             if item.command_id == self._active_command_id and item.status in {
                 ExecutionStatus.EXPIRED, ExecutionStatus.TIMED_OUT, ExecutionStatus.REJECTED, ExecutionStatus.FAILED,
+                ExecutionStatus.SAFETY_OVERRIDE,
             }:
                 # No stale voice command may retain propulsion authority after a
                 # terminal failure/expiry. D receives the alert and becomes the
@@ -230,9 +248,26 @@ class ControlRuntime:
             safety = self.safety.arbitrate(raw_for_safety, safety_vehicle_state(vehicle, scene), safety_command,
                                            longitudinal.risk, tuple(expired_alerts))
             final = ControlOutput(safety.final_control.throttle, safety.final_control.brake, safety.final_control.steer)
-            completed = self._completion_feedback(vehicle)
-            if completed is not None:
-                feedback.append(completed)
+            command_owned_override = (
+                safety.safety_override
+                and safety.reason in _TERMINAL_SAFETY_REASONS
+                and self._active_command_id is not None
+            )
+            if command_owned_override:
+                overridden = self.fsm.safety_override(
+                    self._active_command_id,
+                    now_s=vehicle.sim_time_s,
+                    detail=f"safety supervisor override: {safety.reason}",
+                )
+                if overridden is not None:
+                    feedback.append(overridden)
+                self.requested_speed_mps = 0.0
+                self._stop_hold = True
+                self._clear_active_command()
+            else:
+                completed = self._completion_feedback(vehicle)
+                if completed is not None:
+                    feedback.append(completed)
             return FrameResult(vehicle, final, longitudinal, safety.reason, safety.safety_override,
                                tuple(feedback), raw_for_safety, lateral)
         except Exception:

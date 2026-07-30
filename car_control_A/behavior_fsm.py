@@ -94,6 +94,15 @@ class BehaviorFSM:
             return due
         return self._finish(command_id, ExecutionStatus.FAILED, now_s, detail).feedback
 
+    def safety_override(self, command_id: str, *, now_s: float, detail: str) -> ExecutionFeedback | None:
+        """Terminate a command whose authority was pre-empted by D."""
+        if command_id not in self._active:
+            return self._terminal.get(command_id)
+        due = self._due_feedback(command_id, now_s)
+        if due is not None:
+            return due
+        return self._finish(command_id, ExecutionStatus.SAFETY_OVERRIDE, now_s, detail).feedback
+
     def tick(self, *, now_s: float) -> tuple[ExecutionFeedback, ...]:
         feedback: list[ExecutionFeedback] = []
         for command_id in tuple(self._active):

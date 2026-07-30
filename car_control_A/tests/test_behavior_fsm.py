@@ -58,3 +58,12 @@ def test_complete_and_fail_enforce_expiry_or_timeout_without_prior_tick() -> Non
     timeout_fsm = BehaviorFSM(command_timeout_s=2.0)
     timeout_fsm.submit(DrivingCommand("timeout", 1.0, 10.0, 0.99, "STOP"), now_s=1.0)
     assert timeout_fsm.fail("timeout", now_s=3.1, detail="too late").status is ExecutionStatus.TIMED_OUT
+
+
+def test_safety_override_is_terminal_and_idempotent() -> None:
+    fsm = BehaviorFSM()
+    fsm.submit(command("speed", action="SET_SPEED", target_speed_mps=5.0), now_s=1.0)
+    overridden = fsm.safety_override("speed", now_s=2.0, detail="LOW_TTC")
+    assert overridden is not None
+    assert overridden.status is ExecutionStatus.SAFETY_OVERRIDE
+    assert fsm.safety_override("speed", now_s=2.1, detail="again") is overridden

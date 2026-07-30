@@ -154,6 +154,8 @@ def test_watchdog_stop_is_latched_until_explicit_reset():
     alerted = runtime.step(_vehicle(), PerceptionFrame(frame=1, sim_time_s=0.05), _route(), dt_s=0.05,
                            watchdog_alerts=("SENSOR_TIMEOUT",))
     assert alerted.final_control.brake == 1.0 and runtime.safety_latched
+    assert any(item.status.value == "SAFETY_OVERRIDE" for item in alerted.feedback)
+    assert runtime.active_command_id is None
     still_stopped = runtime.step(_vehicle(frame=2, time=0.10), PerceptionFrame(frame=2, sim_time_s=0.10),
                                  _route(), dt_s=0.05)
     assert still_stopped.final_control.brake == 1.0
@@ -264,3 +266,31 @@ def test_outer_runtime_can_fail_active_command_explicitly():
     assert feedback is not None and feedback.status.value == "FAILED"
     assert runtime.active_command_id is None
     assert runtime.requested_speed_mps == 0.0
+
+
+def test_external_hazard_emits_safety_override_terminal_feedback():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.submit_voice(_voice(), now_s=0.05)
+    scene = PerceptionFrame(
+        frame=1,
+        sim_time_s=0.05,
+        traffic_light="RED",
+        distance_to_stop_line_m=5.0,
+    )
+    result = runtime.step(_vehicle(speed=3.0), scene, _route(), dt_s=0.05)
+    terminal = [item for item in result.feedback if item.command_id == "voice-1"]
+    assert result.safety_reason == "RED_LIGHT_STOP_LINE_GUARD"
+    assert result.final_control.brake == 1.0
+    assert len(terminal) == 1
+    assert terminal[0].status.value == "SAFETY_OVERRIDE"
+    assert runtime.active_command_id is None
+
+
+def test_transient_route_recovery_does_not_discard_high_level_command():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.submit_voice(_voice(), now_s=0.05)
+    scene = PerceptionFrame(frame=1, sim_time_s=0.05, route_deviation_m=3.5)
+    result = runtime.step(_vehicle(speed=1.0), scene, _route(), dt_s=0.05)
+    assert result.safety_reason == "ROUTE_DEVIATION_RECOVERY"
+    assert runtime.active_command_id == "voice-1"
+    assert not any(item.status.value == "SAFETY_OVERRIDE" for item in result.feedback)

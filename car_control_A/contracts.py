@@ -317,6 +317,7 @@ class ExecutionStatus(StrEnum):
     REJECTED = "REJECTED"
     EXPIRED = "EXPIRED"
     TIMED_OUT = "TIMED_OUT"
+    SAFETY_OVERRIDE = "SAFETY_OVERRIDE"
 
 
 @dataclass(frozen=True, slots=True)

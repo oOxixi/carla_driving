@@ -74,6 +74,9 @@ def adapt_command(obj: Any) -> CommandView:
 
 def adapt_vehicle_state(obj: Any) -> VehicleStateView:
     d = _as_mapping(obj)
+    traffic_light = str(_get(d, "traffic_light", "signal_state", default="UNKNOWN")).upper()
+    if traffic_light not in {"RED", "YELLOW", "GREEN", "UNKNOWN"}:
+        raise ValueError("traffic_light must be RED/YELLOW/GREEN/UNKNOWN")
     return VehicleStateView(
         frame=int(_get(d, "frame", "frame_id", default=0) or 0),
         sim_time_s=optional_float(_get(d, "sim_time_s", "sim_time", default=0.0)) or 0.0,
@@ -85,7 +88,7 @@ def adapt_vehicle_state(obj: Any) -> VehicleStateView:
         lane_id=int(_get(d, "lane_id", default=0) or 0),
         front_distance_m=optional_float(_get(d, "front_distance_m", "front_distance", default=None)),
         distance_to_stop_line_m=optional_float(_get(d, "distance_to_stop_line_m", "stop_line_distance", default=None)),
-        traffic_light=str(_get(d, "traffic_light", "signal_state", default="UNKNOWN")).upper(),
+        traffic_light=traffic_light,
         lane_offset_m=optional_float(_get(d, "lane_offset_m", "lane_offset", default=None)),
         route_deviation_m=optional_float(_get(d, "route_deviation_m", "route_deviation", default=None)),
         collision=bool(_get(d, "collision", default=False)),
