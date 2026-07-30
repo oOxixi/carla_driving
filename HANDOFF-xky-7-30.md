@@ -75,3 +75,7 @@
   - 进度日志：`artifacts/d_0730_matrix_full.log`
   - 最终报告：`artifacts/d_0730_matrix/scenario_matrix_report.json`
   - 单次证据：`artifacts/d_0730_matrix/<scenario>/seed_<n>/run_<nn>/`
+- 60 分钟 RGB+LiDAR 连续稳定性任务已排队，将在矩阵结束后自动启动：
+  - 等待/启动进程 PID：`2205610`
+  - 运行日志：`artifacts/d_0730_soak.log`
+  - 调度日志：`artifacts/d_0730_soak_supervisor.log`
