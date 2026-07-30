@@ -65,6 +65,10 @@ def test_unified_evidence_is_auditable_and_scored(tmp_path):
     assert summary["min_ttc_s"] == 2.5
     assert summary["safety_override_episodes"] == 1
     assert summary["score"]["scenario_id"] == "S04"
+    assert summary["latency"]["decision_p95_ms"] == pytest.approx(0.00001)
+    assert summary["latency"]["decision_p99_ms"] == pytest.approx(0.00001)
+    assert summary["latency"]["sensor_to_control_p95_ms"] == pytest.approx(0.00003)
+    assert summary["latency"]["sensor_to_control_p99_ms"] == pytest.approx(0.00003)
     assert summary["score_report"]["latency"]["asr_avg_ms"] == pytest.approx(0.0002)
     assert path.with_suffix(".summary.json").is_file()
 

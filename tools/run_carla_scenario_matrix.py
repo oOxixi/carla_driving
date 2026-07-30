@@ -17,6 +17,37 @@ def _latest_summary(directory: Path) -> Path | None:
     return summaries[-1] if summaries else None
 
 
+def _record_from_summary(
+    *,
+    scenario: Path,
+    seed: int,
+    repeat: int,
+    returncode: int,
+    summary_path: Path | None,
+    summary: dict[str, Any],
+    resumed: bool = False,
+) -> dict[str, Any]:
+    latency = summary.get("latency") or {}
+    return {
+        "scenario": scenario.stem,
+        "seed": seed,
+        "repeat": repeat + 1,
+        "returncode": returncode,
+        "status": summary.get("status", "NO_SUMMARY"),
+        "summary": None if summary_path is None else str(summary_path),
+        "resumed": resumed,
+        "score": (summary.get("score") or {}).get("final_score"),
+        "collision_count": summary.get("collision_count"),
+        "red_light_violation_count": summary.get("red_light_violation_count"),
+        "route_deviation_count": summary.get("route_deviation_count"),
+        "min_gap_m": summary.get("min_gap_m"),
+        "sensor_to_control_avg_ms": latency.get("sensor_to_control_avg_ms"),
+        "sensor_to_control_p95_ms": latency.get("sensor_to_control_p95_ms"),
+        "sensor_to_control_p99_ms": latency.get("sensor_to_control_p99_ms"),
+        "sensor_to_control_max_ms": latency.get("sensor_to_control_max_ms"),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scenario", action="append", required=True, type=Path)
@@ -25,6 +56,15 @@ def main() -> int:
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--carla-pythonpath", type=Path)
     parser.add_argument("--timeout-s", type=float, default=90.0)
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=2000)
+    parser.add_argument(
+        "--scenario-facts-mode",
+        choices=("perception", "scenario", "fuse"),
+        default="perception",
+    )
+    parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--use-current-map", action="store_true")
     args = parser.parse_args()
     seeds = [int(value) for value in args.seeds.split(",")]
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -40,17 +80,38 @@ def main() -> int:
             for repeat in range(args.repeats_per_seed):
                 run_dir = args.output_dir / scenario.stem / f"seed_{seed}" / f"run_{repeat + 1:02d}"
                 run_dir.mkdir(parents=True, exist_ok=True)
+                existing_summary = _latest_summary(run_dir)
+                if args.resume and existing_summary is not None:
+                    existing = json.loads(existing_summary.read_text(encoding="utf-8"))
+                    if existing.get("status") == "SUCCEEDED":
+                        record = _record_from_summary(
+                            scenario=scenario,
+                            seed=seed,
+                            repeat=repeat,
+                            returncode=0,
+                            summary_path=existing_summary,
+                            summary=existing,
+                            resumed=True,
+                        )
+                        records.append(record)
+                        print(json.dumps(record, ensure_ascii=False), flush=True)
+                        continue
                 command = [
                     sys.executable, "-m", "integration.carla_runner",
+                    "--host", args.host,
+                    "--port", str(args.port),
                     "--scenario-file", str(scenario),
                     "--seed", str(seed),
                     "--perception-mode", "sensors",
+                    "--scenario-facts-mode", args.scenario_facts_mode,
                     "--sensor-profile", "low",
                     "--sensor-timeout-s", "10",
                     "--sensor-warmup-frames", "15",
                     "--log-dir", str(run_dir),
                     "--print-every", "1000000",
                 ]
+                if args.use_current_map:
+                    command.append("--use-current-map")
                 print(
                     f"RUN scenario={scenario.stem} seed={seed} repeat={repeat + 1}",
                     flush=True,
@@ -75,24 +136,14 @@ def main() -> int:
                         if summary_path is not None
                         else {}
                     )
-                    record = {
-                        "scenario": scenario.stem,
-                        "seed": seed,
-                        "repeat": repeat + 1,
-                        "returncode": result.returncode,
-                        "status": summary.get("status", "NO_SUMMARY"),
-                        "summary": None if summary_path is None else str(summary_path),
-                        "score": (summary.get("score") or {}).get("final_score"),
-                        "collision_count": summary.get("collision_count"),
-                        "red_light_violation_count": summary.get("red_light_violation_count"),
-                        "min_gap_m": summary.get("min_gap_m"),
-                        "sensor_to_control_avg_ms": (
-                            summary.get("latency") or {}
-                        ).get("sensor_to_control_avg_ms"),
-                        "sensor_to_control_max_ms": (
-                            summary.get("latency") or {}
-                        ).get("sensor_to_control_max_ms"),
-                    }
+                    record = _record_from_summary(
+                        scenario=scenario,
+                        seed=seed,
+                        repeat=repeat,
+                        returncode=result.returncode,
+                        summary_path=summary_path,
+                        summary=summary,
+                    )
                 except subprocess.TimeoutExpired as error:
                     (run_dir / "console.log").write_text(
                         (error.stdout or "") + "\nTIMEOUT\n" + (error.stderr or ""),
@@ -134,6 +185,22 @@ def main() -> int:
             ),
             "mean_run_sensor_to_control_avg_ms": (
                 statistics.fmean(latencies) if latencies else None
+            ),
+            "max_run_sensor_to_control_p95_ms": max(
+                (
+                    record["sensor_to_control_p95_ms"]
+                    for record in selected
+                    if record.get("sensor_to_control_p95_ms") is not None
+                ),
+                default=None,
+            ),
+            "max_run_sensor_to_control_p99_ms": max(
+                (
+                    record["sensor_to_control_p99_ms"]
+                    for record in selected
+                    if record.get("sensor_to_control_p99_ms") is not None
+                ),
+                default=None,
             ),
             "max_sensor_to_control_ms": max(
                 (

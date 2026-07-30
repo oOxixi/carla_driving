@@ -471,8 +471,12 @@ class ScenarioEvidenceRecorder:
             "safety_override_episodes": self._safety_override_episodes,
             "latency": {
                 "decision_avg_ms": self._average(self._frame_decision_ms),
+                "decision_p95_ms": self._percentile(self._frame_decision_ms, 0.95),
+                "decision_p99_ms": self._percentile(self._frame_decision_ms, 0.99),
                 "decision_max_ms": max(self._frame_decision_ms, default=None),
                 "sensor_to_control_avg_ms": self._average(self._frame_sensor_to_control_ms),
+                "sensor_to_control_p95_ms": self._percentile(self._frame_sensor_to_control_ms, 0.95),
+                "sensor_to_control_p99_ms": self._percentile(self._frame_sensor_to_control_ms, 0.99),
                 "sensor_to_control_max_ms": max(self._frame_sensor_to_control_ms, default=None),
             },
         }
@@ -664,6 +668,14 @@ class ScenarioEvidenceRecorder:
     @staticmethod
     def _average(values: list[float]) -> float | None:
         return sum(values) / len(values) if values else None
+
+    @staticmethod
+    def _percentile(values: list[float], percentile: float) -> float | None:
+        if not values:
+            return None
+        ordered = sorted(values)
+        index = max(0, math.ceil(percentile * len(ordered)) - 1)
+        return ordered[index]
 
     @staticmethod
     def _command_latency(command: Mapping[str, Any], received_ns: int) -> dict[str, float | None]:
