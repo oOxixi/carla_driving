@@ -1,0 +1,15 @@
+{
+  "version": "validation_v1",
+  "rules": [
+    "same dataset",
+    "same seed",
+    "same metric",
+    "same latency definition",
+    "same evidence format"
+  ],
+  "forbidden": [
+    "changing validation samples",
+    "removing failed cases",
+    "changing metric after experiment"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "freeze": "completed",
+  "directory": "/home/dcase_task2/dongfeng_voice/carla_driving/artifacts/baseline_freeze_p0_v3",
+  "files": 5,
+  "git_commit": "b9150fcbda6959fcd6c50269b09b431b750632ba"
+}
