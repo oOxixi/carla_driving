@@ -58,3 +58,20 @@
 - `SAFETY_OVERRIDE` 是合法且可审计的终态，不应改写为普通 `FAILED`。
 - D03/D08 的正式传感器验收必须使用真实 perception 来源，不能把 scenario truth 当作实测感知。
 - 如果先用 `scenario` 或 `fuse` 模式校准 actor，只能标注为场景契约测试，不能替代正式 sensors/perception 证据。
+
+## 7/30 Ubuntu 实跑进度
+
+- 服务器 worktree：`/home/tiaozhansai/carla_driving_new_0730`
+- CARLA：0.9.16，GPU 0，`Town03_Opt`，端口 2000
+- 模式：`perception-mode=sensors`、`scenario-facts-mode=perception`
+- 单次冒烟：
+  - S01：通过，25 分
+  - D03：通过，25 分，真实前车 actor 和 LiDAR 距离生效
+  - D08：通过，25 分，产生 `RED_LIGHT_STOP_LINE_GUARD` 和 `SAFETY_OVERRIDE`
+- 5-seed 校准：三场景共 `15/15` 通过，碰撞/闯灯/路线偏离均为 0。
+- 校准中最差单次 P95：D03 `1.848416 ms`，低于 5 ms。
+- 正式 `5 seeds × 20 runs × 3 scenarios` 已用断点续跑启动：
+  - PID：`2197516`
+  - 进度日志：`artifacts/d_0730_matrix_full.log`
+  - 最终报告：`artifacts/d_0730_matrix/scenario_matrix_report.json`
+  - 单次证据：`artifacts/d_0730_matrix/<scenario>/seed_<n>/run_<nn>/`
