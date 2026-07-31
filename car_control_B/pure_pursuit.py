@@ -72,7 +72,8 @@ class PurePursuitController(LateralController):
         local_x = math.cos(vehicle.yaw_rad) * dx + math.sin(vehicle.yaw_rad) * dy
         local_y = -math.sin(vehicle.yaw_rad) * dx + math.cos(vehicle.yaw_rad) * dy
 
-        if local_x <= 0.05:
+        target_is_behind = local_x <= 0.05
+        if target_is_behind:
             steer_math = 0.0
         else:
             alpha = math.atan2(local_y, local_x)
@@ -99,6 +100,6 @@ class PurePursuitController(LateralController):
             lookahead_distance_m=lookahead,
             nearest_index=nearest,
             target_index=target_idx,
-            status="OK",
-            reason="PURE_PURSUIT",
+            status="INVALID" if target_is_behind else "OK",
+            reason="TARGET_BEHIND_EGO" if target_is_behind else "PURE_PURSUIT",
         )

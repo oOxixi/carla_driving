@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-07-31T05:59:04.480934+00:00",
+  "command": "conda run -n carla312 env PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q --junitxml=artifacts/second_group_20260731/tests/pytest_full.xml",
+  "tests": 471,
+  "passed": 470,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 1,
+  "duration_s": 2.557,
+  "plugin_autoload_disabled": true,
+  "junit_xml": "artifacts/second_group_20260731/tests/pytest_full.xml"
+}

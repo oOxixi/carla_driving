@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-07-31T04:36:35.692890+00:00",
+  "status": "PASS",
+  "required": {
+    "qwen": false,
+    "carla": false
+  },
+  "failed_checks": [],
+  "checks": {
+    "interfaces": {
+      "status": "PASS",
+      "interfaces": [
+        {
+          "name": "control_command",
+          "schema": "interfaces/control_command.schema.json",
+          "sha256": "5ceaece9c662931111c5dd72941c588163ee6e782c0dbb5ff0227d48784e71f9",
+          "example_valid": true
+        },
+        {
+          "name": "decision_plan",
+          "schema": "interfaces/decision_plan.schema.json",
+          "sha256": "4b8a68fba3cc86845c92866c852cba898b0155ed5167fdafccd1b0276f2f39e1",
+          "example_valid": true
+        },
+        {
+          "name": "driving_command",
+          "schema": "interfaces/driving_command.schema.json",
+          "sha256": "527000618dd245166eaa8fceaeaa86a4783a2a970de5fc3257afb32ce0be30ba",
+          "example_valid": true
+        },
+        {
+          "name": "execution_feedback",
+          "schema": "interfaces/execution_feedback.schema.json",
+          "sha256": "211b47e342e1389ab341cbbc79cc61ec91afc52dd6b621adbca47f54eee4a8d1",
+          "example_valid": true
+        },
+        {
+          "name": "model_request",
+          "schema": "interfaces/model_request.schema.json",
+          "sha256": "53fe5c63f80a409a99ff975bcf1d316c4c824e01451982350d3ae2def96853e4",
+          "example_valid": true
+        },
+        {
+          "name": "perception_state",
+          "schema": "interfaces/perception_state.schema.json",
+          "sha256": "e3d3ecb439b6f355e228a58c406aa80e28adf8601114066e6cb25b2886b56e16",
+          "example_valid": true
+        }
+      ]
+    },
+    "dependencies": {
+      "status": "PASS",
+      "modules": {
+        "carla": {
+          "available": true,
+          "version": null
+        },
+        "numpy": {
+          "available": true,
+          "version": "1.26.4"
+        },
+        "PIL": {
+          "available": true,
+          "version": "12.3.0"
+        },
+        "onnxruntime": {
+          "available": true,
+          "version": "1.27.0"
+        },
+        "jsonschema": {
+          "available": true,
+          "version": "4.26.0"
+        },
+        "torch": {
+          "available": true,
+          "version": "2.11.0+cu130"
+        },
+        "transformers": {
+          "available": true,
+          "version": "5.14.1"
+        }
+      }
+    },
+    "qwen": {
+      "status": "UNAVAILABLE",
+      "reason": "URLError: <urlopen error [Errno 1] Operation not permitted>",
+      "http_reachable": false,
+      "http_result": "URLError: <urlopen error [Errno 1] Operation not permitted>"
+    },
+    "carla": {
+      "status": "UNAVAILABLE",
+      "host": "127.0.0.1",
+      "port": 2000,
+      "error": "RuntimeError: time-out of 500ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:2000"
+    }
+  }
+}

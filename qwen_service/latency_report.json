@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-07-31T00:00:00+08:00",
+  "scope": "real historical Qwen2.5-VL-7B proxy-set evidence",
+  "source": [
+    "artifacts/qwen_robustness_0728/qwen_report_round2.json",
+    "artifacts/qwen_robustness_0728/qwen_report_round3.json"
+  ],
+  "requests": 40,
+  "correct": 40,
+  "schema_valid": 40,
+  "latency_ms": {"mean": 2351.405620825, "p95": 2478.4190806, "p99": 4211.3791986, "max": 4212.124055},
+  "vram_mib": null,
+  "throughput_requests_per_s": null,
+  "target_p95_ms": 300.0,
+  "target_met": false,
+  "limitations": [
+    "The measurements were produced on a different host recorded in repository evidence.",
+    "No current-host Qwen checkpoint is available for a fresh benchmark.",
+    "VRAM and throughput were not recorded in the source reports and are not fabricated here."
+  ]
+}

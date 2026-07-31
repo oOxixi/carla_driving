@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://carla-driving.local/interfaces/decision_plan.schema.json",
+  "title": "DecisionPlan V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "request_id", "command_id", "intent", "behavior",
+    "parameters", "confidence", "reason_code", "created_at_ns", "valid_until_ns"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "request_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "command_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "intent": {"enum": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW", "CHANGE_LANE", "TURN", "PULL_OVER", "REJECT"]},
+    "target_id": {"type": ["string", "null"], "maxLength": 128},
+    "behavior": {"enum": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT", "TURN_LEFT", "TURN_RIGHT", "PULL_OVER", "HOLD"]},
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target_speed_mps": {"type": "number", "minimum": 0, "maximum": 50},
+        "time_gap_s": {"type": "number", "minimum": 0.5, "maximum": 10}
+      }
+    },
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "reason_code": {"type": "string", "minLength": 1, "maxLength": 128},
+    "created_at_ns": {"type": "integer", "minimum": 0},
+    "valid_until_ns": {"type": "integer", "minimum": 1},
+    "requires_confirmation": {"type": "boolean", "default": false},
+    "model_id": {"type": "string", "minLength": 1, "maxLength": 256}
+  },
+  "examples": [
+    {
+      "schema_version": "1.0",
+      "request_id": "qwen-0001",
+      "command_id": "voice-0002",
+      "intent": "FOLLOW",
+      "target_id": "vehicle-right-01",
+      "behavior": "FOLLOW",
+      "parameters": {"target_speed_mps": 4.0, "time_gap_s": 2.0},
+      "confidence": 0.93,
+      "reason_code": "UNIQUE_RIGHT_TARGET",
+      "created_at_ns": 2100000000,
+      "valid_until_ns": 2300000000,
+      "requires_confirmation": false,
+      "model_id": "Qwen2.5-VL-7B-Instruct"
+    }
+  ]
+}

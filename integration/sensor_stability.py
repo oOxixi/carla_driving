@@ -19,6 +19,7 @@ from car_control_A import CarlaSession
 from .carla_perception import (
     CarlaSensorSpec,
     LIDAR_SENSOR_ID,
+    RADAR_SENSOR_ID,
     RGB_SENSOR_ID,
     sensor_specs_for_profile,
 )
@@ -27,7 +28,9 @@ from .carla_perception import (
 SENSOR_MODES: dict[str, tuple[str, ...]] = {
     "rgb": (RGB_SENSOR_ID,),
     "lidar": (LIDAR_SENSOR_ID,),
+    "radar": (RADAR_SENSOR_ID,),
     "both": (RGB_SENSOR_ID, LIDAR_SENSOR_ID),
+    "all": (RGB_SENSOR_ID, LIDAR_SENSOR_ID, RADAR_SENSOR_ID),
 }
 
 
@@ -37,7 +40,7 @@ def map_contract_name(name: str) -> str:
 
 
 def selected_sensor_specs(mode: str, profile: str) -> tuple[CarlaSensorSpec, ...]:
-    """Select only continuous RGB/LiDAR specs for a probe invocation."""
+    """Select the requested continuous sensor specs for a probe invocation."""
     key = str(mode).strip().lower()
     try:
         requested = SENSOR_MODES[key]

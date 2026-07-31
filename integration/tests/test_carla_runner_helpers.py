@@ -528,6 +528,37 @@ def test_sensor_warmup_resets_streak_after_pipeline_bubble() -> None:
     assert bridge.calls == 4
 
 
+def test_sensor_warmup_consumes_configured_frames_after_early_stability() -> None:
+    class Session:
+        def __init__(self):
+            self.frame = 10
+
+        def tick(self, timeout):
+            self.frame += 1
+            return self.frame
+
+    class World:
+        def __init__(self, session):
+            self.session = session
+
+        def get_snapshot(self):
+            return Namespace(timestamp=Namespace(elapsed_seconds=self.session.frame * 0.05))
+
+    class Bridge:
+        def __init__(self):
+            self.calls = 0
+
+        def acquire(self, frame, sim_time_s, timeout_s):
+            self.calls += 1
+            return object()
+
+    session = Session()
+    bridge = Bridge()
+    _warm_up_sensor_bridge(session, World(session), bridge, attempts=5,
+                           tick_timeout_s=60.0, sensor_timeout_s=0.5)
+    assert bridge.calls == 5
+
+
 def test_vehicle_speed_ignores_vertical_spawn_settling() -> None:
     velocity = Namespace(x=3.0, y=4.0, z=-9.8)
     assert _speed_mps(velocity) == pytest.approx(5.0)

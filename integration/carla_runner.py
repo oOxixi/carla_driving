@@ -12,7 +12,7 @@ import math
 import sys
 import time
 import zipfile
-from dataclasses import replace
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
@@ -23,6 +23,8 @@ from car_control_A.routing import RouteReference
 from car_control_A.watchdog import RuntimeWatchdog
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
 from car_control_D import SafetyConfig, SafetySupervisor
+from qwen_service.client import QwenServiceClient
+from runtime import OrchestratorConfig, PipelineOrchestrator
 
 from .carla_perception import (
     CarlaPerceptionBridge,
@@ -36,15 +38,27 @@ from .carla_perception import (
     traffic_light_and_stop_distance,
 )
 from .contracts import PerceptionFrame
+from .live_voice import LiveVoiceConfig, LiveVoiceSource
 from .route_planner import (
     build_route_reference,
     command_turn_direction,
     select_topology_route_anchor,
+    warm_heading_waypoint_cache,
 )
+from .qwen_image_stager import QwenImageStager
 from .runtime_loop import ControlRuntime
 from .rgb_detector import OnnxYoloDetector
 from .scenario_execution import CommandTimeline, ScenarioSpec, resolve_scenario_command
 from .scenario_evidence import FrameTiming, ScenarioEvidenceRecorder
+from .second_group_runtime import CanonicalRuntimeBridge
+
+
+@dataclass(frozen=True, slots=True)
+class _DeferredCommand:
+    envelope: dict[str, object]
+    received_ns: int
+    origin: str
+    audio_duration_s: float | None = None
 
 
 def _speed_mps(vector: Any) -> float:
@@ -64,6 +78,21 @@ def _acceptance_lateral_controller() -> PurePursuitController:
         max_steer_delta_per_step=0.04,
         # Calibrated against a CARLA 0.9.16 Model 3 closed-loop route run.
         steer_sign=1.0,
+    ))
+
+
+def _follow_ego_spectator(world: Any, ego: Any, carla: Any) -> None:
+    """Keep the graphical spectator behind the ego during live demonstrations."""
+    transform = ego.get_transform()
+    location = transform.location
+    forward = transform.get_forward_vector()
+    world.get_spectator().set_transform(carla.Transform(
+        carla.Location(
+            x=location.x - 8.0 * forward.x,
+            y=location.y - 8.0 * forward.y,
+            z=location.z + 4.0,
+        ),
+        carla.Rotation(pitch=-15.0, yaw=transform.rotation.yaw),
     ))
 
 
@@ -686,11 +715,11 @@ def _warm_up_sensor_bridge(session: Any, world: Any, bridge: CarlaPerceptionBrid
         try:
             bridge.acquire(frame, sim_time_s, timeout_s=sensor_timeout_s)
             aligned_streak += 1
-            if aligned_streak >= required_streak:
-                return
         except PerceptionAcquisitionError as error:
             last_error = error
             aligned_streak = 0
+    if aligned_streak >= required_streak:
+        return
     if last_error is not None:
         raise last_error
     raise RuntimeError(
@@ -871,6 +900,9 @@ def run(args: argparse.Namespace) -> None:
         }, ensure_ascii=False, indent=2))
         return
 
+    if args.live_mic and (args.audio or args.command_json or args.scenario_file):
+        raise ValueError("--live-mic cannot be combined with --audio, --command-json, or --scenario-file")
+
     carla = _import_carla_api()
 
     detector = None
@@ -922,9 +954,18 @@ def run(args: argparse.Namespace) -> None:
     runtime: ControlRuntime | None = None
     last_sim_time_s = 0.0
     scenario_traffic_light: Any | None = None
+    live_voice: LiveVoiceSource | None = None
+    canonical_orchestrator: PipelineOrchestrator | None = None
+    canonical_bridge: CanonicalRuntimeBridge | None = None
+    qwen_image_stager: QwenImageStager | None = None
+    deferred_commands: list[_DeferredCommand] = []
     traffic_light_original_state: Any | None = None
     traffic_light_original_frozen: bool | None = None
     try:
+        if args.live_mic:
+            live_voice = LiveVoiceSource(LiveVoiceConfig(source=args.live_mic_source))
+            print("live voice: preloading ASR models", flush=True)
+            print(f"live voice preload: {live_voice.preload()}", flush=True)
         client = carla.Client(args.host, args.port)
         client.set_timeout(args.timeout_s)
         world = client.get_world()
@@ -962,6 +1003,33 @@ def run(args: argparse.Namespace) -> None:
         ))
         runtime = ControlRuntime(_acceptance_lateral_controller(), default_speed_mps=args.default_speed_mps,
                                  command_timeout_s=fsm_timeout_s, safety=scenario_safety)
+        if args.qwen_service_url:
+            qwen_image_stager = QwenImageStager(
+                args.qwen_image_root,
+                ref_prefix=args.qwen_image_prefix,
+            )
+            qwen_client = QwenServiceClient(
+                args.qwen_service_url,
+                timeout_s=max(0.1, args.qwen_timeout_ms / 1000.0 + 0.05),
+                request_transform=qwen_image_stager.prepare_request,
+            )
+            canonical_orchestrator = PipelineOrchestrator(
+                infer=qwen_client,
+                config=OrchestratorConfig(
+                    qwen_queue_size=args.qwen_queue_size,
+                    model_timeout_ms=args.qwen_timeout_ms,
+                ),
+            )
+            canonical_bridge = CanonicalRuntimeBridge(runtime, canonical_orchestrator)
+            print(json.dumps({
+                "record_type": "canonical_routing_ready",
+                "qwen_service_url": args.qwen_service_url,
+                "qwen_timeout_ms": args.qwen_timeout_ms,
+                "qwen_queue_size": args.qwen_queue_size,
+                "qwen_image_root": str(args.qwen_image_root),
+                "qwen_image_prefix": args.qwen_image_prefix,
+                "policy": "FAST_DIRECT_SLOW_ASYNC_FAIL_CLOSED",
+            }, ensure_ascii=False), flush=True)
         route_anchor = spawn_points[args.spawn_index % len(spawn_points)]
         topology_route: RouteReference | None = None
         road_fit_required = (
@@ -1107,6 +1175,13 @@ def run(args: argparse.Namespace) -> None:
                     session, world, ego, carla,
                 ).events
 
+            if live_voice is not None:
+                live_voice.start()
+                print(
+                    "live voice: READY - speak a command, then pause briefly",
+                    flush=True,
+                )
+
             # Do not accept a command until required sensors are ready. This
             # guarantees that every accepted command can enter the frame loop
             # and receive an auditable terminal status.
@@ -1115,7 +1190,7 @@ def run(args: argparse.Namespace) -> None:
             episode_start_s = last_sim_time_s
             timeline = CommandTimeline(spec.commands) if spec is not None else None
             command: dict[str, object] | None
-            if spec is None:
+            if spec is None and live_voice is None:
                 try:
                     command = _load_command(args)
                 except Exception as error:
@@ -1126,17 +1201,22 @@ def run(args: argparse.Namespace) -> None:
             adapted = None
             if command is not None:
                 received_ns = time.monotonic_ns()
-                adapted = runtime.submit_voice(command, now_s=initial.timestamp.elapsed_seconds)
-                if recorder is not None:
-                    recorder.record_command(
-                        command,
-                        disposition="ACCEPTED" if adapted.control_authorized else "REJECTED_NO_OP",
-                        adapted_command=adapted.command,
-                        received_ns=received_ns,
-                        submitted_sim_time_s=initial.timestamp.elapsed_seconds,
-                    )
-                    if adapted.feedback is not None:
-                        recorder.record_feedback(adapted.feedback)
+                if canonical_bridge is not None:
+                    deferred_commands.append(_DeferredCommand(
+                        dict(command), received_ns, "INITIAL",
+                    ))
+                else:
+                    adapted = runtime.submit_voice(command, now_s=initial.timestamp.elapsed_seconds)
+                    if recorder is not None:
+                        recorder.record_command(
+                            command,
+                            disposition="ACCEPTED" if adapted.control_authorized else "REJECTED_NO_OP",
+                            adapted_command=adapted.command,
+                            received_ns=received_ns,
+                            submitted_sim_time_s=initial.timestamp.elapsed_seconds,
+                        )
+                        if adapted.feedback is not None:
+                            recorder.record_feedback(adapted.feedback)
 
             turn_direction = "STRAIGHT"
             if adapted is not None and adapted.control_authorized and not adapted.command.requires_confirmation:
@@ -1159,14 +1239,32 @@ def run(args: argparse.Namespace) -> None:
                     runtime.requested_speed_mps,
                 )
 
+            if spec is None:
+                route_index_started_ns = time.monotonic_ns()
+                indexed_waypoints = warm_heading_waypoint_cache(world_map)
+                print(json.dumps({
+                    "record_type": "route_heading_index_ready",
+                    "waypoints": indexed_waypoints,
+                    "latency_ms": (
+                        time.monotonic_ns() - route_index_started_ns
+                    ) / 1e6,
+                }, ensure_ascii=False), flush=True)
+
             watchdog = RuntimeWatchdog(
                 timeout_s=args.watchdog_timeout_s,
                 required_modules=("perception", "control"),
                 startup_grace_s=args.watchdog_startup_grace_s,
                 started_at_s=time.monotonic(),
             )
+            # The synchronous simulator is frozen while ``world.tick()`` is
+            # waiting for UE rendering/physics.  Exclude that external frame
+            # source wait (and optional visual pacing) from module-health time.
+            watchdog.pause(now_s=time.monotonic())
             for step_index in range(args.frames):
+                simulator_tick_start_ns = time.monotonic_ns()
                 frame = session.tick(args.timeout_s)
+                simulator_tick_end_ns = time.monotonic_ns()
+                watchdog.resume(now_s=time.monotonic())
                 snapshot = world.get_snapshot()
                 state = _vehicle_state(ego, frame, snapshot.timestamp.elapsed_seconds, world_map)
                 max_speed_mps = max(max_speed_mps, state.speed_mps)
@@ -1183,19 +1281,70 @@ def run(args: argparse.Namespace) -> None:
                             requested_speed_mps=runtime.requested_speed_mps,
                         )
                         received_ns = time.monotonic_ns()
-                        scenario_adapted = runtime.submit_voice(scenario_command, now_s=state.sim_time_s)
-                        if recorder is not None:
-                            recorder.record_command(
-                                scenario_command,
-                                disposition=("ACCEPTED_SCENARIO" if scenario_adapted.control_authorized
-                                             else "REJECTED_SCENARIO_NO_OP"),
-                                adapted_command=scenario_adapted.command,
-                                received_ns=received_ns,
-                                submitted_sim_time_s=state.sim_time_s,
+                        if canonical_bridge is not None:
+                            deferred_commands.append(_DeferredCommand(
+                                dict(scenario_command), received_ns, "SCENARIO",
+                            ))
+                        else:
+                            scenario_adapted = runtime.submit_voice(
+                                scenario_command, now_s=state.sim_time_s,
                             )
-                            if scenario_adapted.feedback is not None:
-                                recorder.record_feedback(scenario_adapted.feedback)
-                        route = replace(route, target_speed_mps=runtime.requested_speed_mps)
+                            if recorder is not None:
+                                recorder.record_command(
+                                    scenario_command,
+                                    disposition=("ACCEPTED_SCENARIO" if scenario_adapted.control_authorized
+                                                 else "REJECTED_SCENARIO_NO_OP"),
+                                    adapted_command=scenario_adapted.command,
+                                    received_ns=received_ns,
+                                    submitted_sim_time_s=state.sim_time_s,
+                                )
+                                if scenario_adapted.feedback is not None:
+                                    recorder.record_feedback(scenario_adapted.feedback)
+                            route = replace(route, target_speed_mps=runtime.requested_speed_mps)
+                if live_voice is not None:
+                    for live_result in live_voice.poll():
+                        if live_result.error is not None:
+                            print(json.dumps({
+                                "record_type": "live_voice_error",
+                                "error": live_result.error,
+                            }, ensure_ascii=False), flush=True)
+                            continue
+                        assert live_result.command is not None
+                        live_command = dict(live_result.command)
+                        if args.test_command_ttl_s is not None:
+                            live_command["valid_duration_s"] = args.test_command_ttl_s
+                        received_ns = time.monotonic_ns()
+                        if canonical_bridge is not None:
+                            deferred_commands.append(_DeferredCommand(
+                                live_command, received_ns, "LIVE_MIC", live_result.duration_s,
+                            ))
+                        else:
+                            live_adapted = runtime.submit_voice(
+                                live_command, now_s=state.sim_time_s,
+                            )
+                            if recorder is not None:
+                                recorder.record_command(
+                                    live_command,
+                                    disposition=("ACCEPTED_LIVE_MIC" if live_adapted.control_authorized
+                                                 else "REJECTED_LIVE_MIC_NO_OP"),
+                                    adapted_command=live_adapted.command,
+                                    received_ns=received_ns,
+                                    submitted_sim_time_s=state.sim_time_s,
+                                )
+                                if live_adapted.feedback is not None:
+                                    recorder.record_feedback(live_adapted.feedback)
+                            print(json.dumps({
+                                "record_type": "live_voice_command",
+                                "source_text": live_command.get("source_text"),
+                                "intent": live_command.get("intent"),
+                                "status": live_command.get("status"),
+                                "confirm_required": live_command.get("confirm_required"),
+                                "control_authorized": live_adapted.control_authorized,
+                                "audio_duration_s": round(live_result.duration_s, 2),
+                            }, ensure_ascii=False), flush=True)
+                            route = replace(
+                                route, target_speed_mps=runtime.requested_speed_mps,
+                            )
                 ego_location = ego.get_location()
                 distance_to_route_end_m = math.hypot(
                     ego_location.x - route.points_xy_m[-1][0],
@@ -1215,31 +1364,54 @@ def run(args: argparse.Namespace) -> None:
                 if finish_contract_route and runtime.requested_speed_mps > 0.0:
                     runtime.requested_speed_mps = 0.0
                     route = replace(route, target_speed_mps=0.0)
-                refresh_live_route = spec is None and step_index and step_index % args.route_refresh_frames == 0
+                # A live route is already 500 m by default. Re-projecting every
+                # N frames can snap an ego at a crossing to a geometrically
+                # nearer road whose heading points behind the vehicle. Extend
+                # only near the route end and keep a rejected replacement from
+                # corrupting the active reference.
+                refresh_live_route = (
+                    spec is None
+                    and distance_to_route_end_m <= max(10.0, state.speed_mps * 5.0)
+                )
                 extend_finished_scenario_route = (
                     spec is not None
                     and spec.category != "lateral_B"
                     and spec.expected.get("must_finish_route") is not True
                     and distance_to_route_end_m <= 10.0
                 )
+                route_refresh_alerts: list[str] = []
                 if ((refresh_live_route or extend_finished_scenario_route) and not runtime.safety_latched):
-                    route = build_route_reference(
-                        world_map, ego, runtime.requested_speed_mps,
-                        distance_m=args.route_distance_m,
-                    )
-                    runtime.lateral.reset()
+                    try:
+                        candidate_route = build_route_reference(
+                            world_map, ego, runtime.requested_speed_mps,
+                            distance_m=args.route_distance_m,
+                        )
+                        route = candidate_route
+                        runtime.lateral.reset()
+                    except Exception as error:
+                        route_refresh_alerts.append("ROUTE_REFRESH_INVALID")
+                        print(json.dumps({
+                            "record_type": "route_refresh_rejected",
+                            "frame": frame,
+                            "error_type": type(error).__name__,
+                            "error": str(error),
+                            "action": "KEEP_OLD_ROUTE_AND_FAIL_CLOSED",
+                        }, ensure_ascii=False), flush=True)
 
                 perception_sources: dict[str, str] = {}
                 c_safety_state: dict[str, object] | None = None
                 perception_control_override: dict[str, object] | None = None
-                watchdog_alerts: list[str] = []
+                watchdog_alerts: list[str] = list(route_refresh_alerts)
                 sensor_startup_grace = False
+                current_rgb: Any | None = None
+                perception_start_ns = time.monotonic_ns()
                 try:
                     if perception_bridge is not None:
                         sample = perception_bridge.acquire(
                             frame, state.sim_time_s, route=route, timeout_s=args.sensor_timeout_s,
                         )
                         scene = sample.frame
+                        current_rgb = sample.rgb
                         perception_sources = dict(sample.source_by_field)
                         c_safety_state = sample.safety_summary.to_dict()
                         if sample.safety_summary.fail_closed:
@@ -1302,6 +1474,152 @@ def run(args: argparse.Namespace) -> None:
                     if not sensor_startup_grace:
                         watchdog_alerts.append(f"PERCEPTION_{type(error).__name__.upper()}")
                 sensor_ready_ns = time.monotonic_ns()
+                if canonical_bridge is not None:
+                    canonical_mode = (
+                        "sensor_failure" if "failure" in perception_sources
+                        else args.perception_mode
+                    )
+                    if (
+                        canonical_mode == "sensors"
+                        and perception_sources.get("radar_modality")
+                        == "CARLA_RADAR_FRAME_ALIGNED"
+                    ):
+                        canonical_mode = "sensors_radar"
+                    queued_now = tuple(deferred_commands)
+                    deferred_commands.clear()
+                    for deferred in queued_now:
+                        rgb_ref = None
+                        staged_command_id = str(
+                            deferred.envelope.get("command_id", "")
+                        )
+                        if current_rgb is not None and qwen_image_stager is not None:
+                            rgb_ref = qwen_image_stager.stage(
+                                staged_command_id, current_rgb, frame_id=frame,
+                            )
+                        submission = canonical_bridge.submit(
+                            deferred.envelope,
+                            scene,
+                            state,
+                            sim_time_s=state.sim_time_s,
+                            perception_mode=canonical_mode,
+                            received_at_ns=deferred.received_ns,
+                            rgb_ref=rgb_ref,
+                        )
+                        if (
+                            qwen_image_stager is not None
+                            and submission.orchestration.disposition != "SLOW_PENDING"
+                        ):
+                            qwen_image_stager.discard(staged_command_id)
+                        runtime_adapted = submission.runtime_adapted
+                        if recorder is not None:
+                            recorder.record_command(
+                                deferred.envelope,
+                                disposition=(
+                                    f"{deferred.origin}_{submission.orchestration.disposition}"
+                                ),
+                                adapted_command=(
+                                    None if runtime_adapted is None
+                                    else runtime_adapted.command
+                                ),
+                                received_ns=deferred.received_ns,
+                                submitted_sim_time_s=state.sim_time_s,
+                            )
+                            recorder.record_canonical_routing(
+                                phase="SUBMIT",
+                                command_id=submission.orchestration.command_id,
+                                payload={
+                                    "canonical_command": submission.canonical_command,
+                                    "perception_state": submission.perception_state,
+                                    "orchestration": submission.orchestration,
+                                },
+                            )
+                            if submission.safety_envelope is not None:
+                                recorder.record_command(
+                                    submission.safety_envelope,
+                                    disposition="INTERNAL_QWEN_WAIT_STOP",
+                                    adapted_command=(
+                                        None if submission.safety_adapted is None
+                                        else submission.safety_adapted.command
+                                    ),
+                                    received_ns=sensor_ready_ns,
+                                    submitted_sim_time_s=state.sim_time_s,
+                                )
+                            for feedback in submission.feedbacks:
+                                recorder.record_feedback(feedback)
+                            if (
+                                submission.safety_adapted is not None
+                                and submission.safety_adapted.feedback is not None
+                            ):
+                                recorder.record_feedback(submission.safety_adapted.feedback)
+                        queue_snapshot = submission.orchestration.queues
+                        print(json.dumps({
+                            "record_type": "canonical_command_route",
+                            "origin": deferred.origin,
+                            "command_id": submission.orchestration.command_id,
+                            "source_text": deferred.envelope.get("source_text"),
+                            "intent": submission.canonical_command["intent"],
+                            "disposition": submission.orchestration.disposition,
+                            "reason_code": submission.orchestration.reason_code,
+                            "queues": (
+                                None if queue_snapshot is None
+                                else asdict(queue_snapshot)
+                            ),
+                        }, ensure_ascii=False), flush=True)
+                        if deferred.origin == "LIVE_MIC":
+                            print(json.dumps({
+                                "record_type": "live_voice_command",
+                                "source_text": deferred.envelope.get("source_text"),
+                                "intent": deferred.envelope.get("intent"),
+                                "status": deferred.envelope.get("status"),
+                                "confirm_required": deferred.envelope.get("confirm_required"),
+                                "control_authorized": (
+                                    runtime_adapted is not None
+                                    and runtime_adapted.control_authorized
+                                ),
+                                "routing_disposition": submission.orchestration.disposition,
+                                "audio_duration_s": (
+                                    None if deferred.audio_duration_s is None
+                                    else round(deferred.audio_duration_s, 2)
+                                ),
+                            }, ensure_ascii=False), flush=True)
+
+                    resolutions = canonical_bridge.poll(
+                        scene,
+                        state,
+                        sim_time_s=state.sim_time_s,
+                        perception_mode=canonical_mode,
+                        captured_at_ns=sensor_ready_ns,
+                    )
+                    for resolution in resolutions:
+                        if qwen_image_stager is not None:
+                            qwen_image_stager.discard(resolution.command_id)
+                        if recorder is not None:
+                            recorder.record_canonical_routing(
+                                phase="RESOLVE",
+                                command_id=resolution.command_id,
+                                payload=resolution,
+                            )
+                            for feedback in resolution.feedbacks:
+                                recorder.record_feedback(feedback)
+                            if resolution.vehicle_feedback is not None:
+                                recorder.record_feedback(resolution.vehicle_feedback)
+                        print(json.dumps({
+                            "record_type": "canonical_slow_result",
+                            "command_id": resolution.command_id,
+                            "disposition": resolution.disposition,
+                            "feedback": list(resolution.feedbacks),
+                            "runtime_intent": (
+                                None if resolution.runtime_envelope is None
+                                else resolution.runtime_envelope.get("intent")
+                            ),
+                        }, ensure_ascii=False), flush=True)
+                    if queued_now or resolutions:
+                        route = replace(
+                            route, target_speed_mps=runtime.requested_speed_mps,
+                        )
+                    perception_sources["canonical_state"] = (
+                        "PERCEPTION_STATE_V1_" + canonical_mode.upper()
+                    )
                 if not sensor_startup_grace and watchdog.check(now_s=time.monotonic()) is not None:
                     watchdog_alerts.append("RUNTIME_WATCHDOG_TIMEOUT")
 
@@ -1334,6 +1652,8 @@ def run(args: argparse.Namespace) -> None:
                     steer=result.final_control.steer,
                     hand_brake=False, reverse=False, manual_gear_shift=False,
                 ))
+                if args.follow_spectator or args.live_mic:
+                    _follow_ego_spectator(world, ego, carla)
                 control_applied_ns = time.monotonic_ns()
                 watchdog.heartbeat("control", now_s=time.monotonic())
                 timing = FrameTiming(
@@ -1341,6 +1661,9 @@ def run(args: argparse.Namespace) -> None:
                     decision_start_ns=decision_start_ns,
                     decision_end_ns=decision_end_ns,
                     control_applied_ns=control_applied_ns,
+                    simulator_tick_start_ns=simulator_tick_start_ns,
+                    simulator_tick_end_ns=simulator_tick_end_ns,
+                    perception_start_ns=perception_start_ns,
                 )
                 if recorder is not None:
                     recorder.record_runtime_frame(
@@ -1374,8 +1697,42 @@ def run(args: argparse.Namespace) -> None:
                 }
                 if step_index % args.print_every == 0 or step_index == args.frames - 1:
                     print(json.dumps(record, ensure_ascii=False))
+                watchdog.pause(now_s=time.monotonic())
                 if args.realtime:
-                    time.sleep(args.fixed_delta_s)
+                    # ``--realtime`` targets one wall-clock period per frame;
+                    # it must not add a full period after tick+control work.
+                    active_wall_s = (
+                        time.monotonic_ns() - simulator_tick_start_ns
+                    ) / 1e9
+                    remaining_s = args.fixed_delta_s - active_wall_s
+                    if remaining_s > 0.0:
+                        time.sleep(remaining_s)
+
+        if canonical_bridge is not None:
+            unresolved = canonical_bridge.fail_all_pending(
+                sim_time_s=last_sim_time_s,
+                emitted_at_ns=time.monotonic_ns(),
+            )
+            for resolution in unresolved:
+                if qwen_image_stager is not None:
+                    qwen_image_stager.discard(resolution.command_id)
+                if recorder is not None:
+                    recorder.record_canonical_routing(
+                        phase="RUNTIME_END",
+                        command_id=resolution.command_id,
+                        payload=resolution,
+                    )
+                    for feedback in resolution.feedbacks:
+                        recorder.record_feedback(feedback)
+                    if resolution.vehicle_feedback is not None:
+                        recorder.record_feedback(resolution.vehicle_feedback)
+                print(json.dumps({
+                    "record_type": "canonical_slow_result",
+                    "command_id": resolution.command_id,
+                    "disposition": resolution.disposition,
+                    "feedback": list(resolution.feedbacks),
+                    "runtime_intent": None,
+                }, ensure_ascii=False), flush=True)
 
         final_speed = None if final_state is None else final_state.speed_mps
         expected_completion = None if spec is None else _expected_safety_completed(
@@ -1386,10 +1743,15 @@ def run(args: argparse.Namespace) -> None:
             safety_reasons=safety_reasons,
         )
         command_finished = runtime is None or runtime.active_command_id is None
-        if not command_finished and expected_completion is not True and runtime is not None:
+        if not command_finished and runtime is not None:
+            detail = (
+                "scenario safety constraints prevented command completion before frame budget ended"
+                if expected_completion is True
+                else "scenario frame budget ended before command completion"
+            )
             feedback = runtime.fail_active(
                 now_s=last_sim_time_s,
-                detail="scenario frame budget ended before command completion",
+                detail=detail,
             )
             if feedback is not None and recorder is not None:
                 recorder.record_feedback(feedback)
@@ -1461,6 +1823,10 @@ def run(args: argparse.Namespace) -> None:
                 pass
         raise
     finally:
+        if live_voice is not None:
+            live_voice.stop()
+        if canonical_orchestrator is not None:
+            canonical_orchestrator.close()
         if recorder is not None:
             recorder.close()
         if scenario_traffic_light is not None:
@@ -1505,7 +1871,7 @@ def main() -> None:
     parser.add_argument("--map", help="optional CARLA map name, e.g. Town05; omit to use current world")
     parser.add_argument("--default-speed-mps", type=float, default=5.0)
     parser.add_argument("--perception-mode", choices=("sensors", "world", "virtual"), default="sensors",
-                        help="sensors uses aligned RGB/LiDAR; world is a debug truth bridge; virtual is deterministic test-only input")
+                        help="sensors uses required RGB/LiDAR plus optional aligned Radar; world is a debug truth bridge; virtual is deterministic test-only input")
     parser.add_argument("--sensor-timeout-s", type=float, default=0.5,
                         help="wall-clock wait for one aligned RGB/LiDAR frame")
     parser.add_argument("--sensor-warmup-frames", type=int, default=10,
@@ -1513,7 +1879,7 @@ def main() -> None:
     parser.add_argument("--sensor-startup-grace-frames", type=int, default=2,
                         help="initial perception misses that brake without permanently latching watchdog")
     parser.add_argument("--sensor-profile", choices=("default", "low"), default="default",
-                        help="default uses full validation density; low reduces RGB/LiDAR load "
+                        help="default uses full validation density; low reduces RGB/LiDAR/Radar load "
                              "for unstable Windows/UE4 hosts")
     parser.add_argument("--rgb-detector-model",
                         help="optional Ultralytics-style ONNX model for RGB vehicle/person detection")
@@ -1541,6 +1907,27 @@ def main() -> None:
                         help="explicit test-only command TTL override; keeps long acceptance runs from expiring early")
     parser.add_argument("--command-json")
     parser.add_argument("--audio")
+    parser.add_argument("--live-mic", action="store_true",
+                        help="continuously segment and recognize PulseAudio microphone commands")
+    parser.add_argument("--live-mic-source", default="@DEFAULT_SOURCE@",
+                        help="PulseAudio source name used by --live-mic")
+    parser.add_argument("--qwen-service-url",
+                        help="enable frozen V1 routing and use this async Qwen service URL")
+    parser.add_argument("--qwen-timeout-ms", type=float, default=300.0,
+                        help="wall-clock deadline for one complex Qwen request")
+    parser.add_argument("--qwen-queue-size", type=int, default=1,
+                        help="bounded pending Qwen request queue; newest request wins")
+    parser.add_argument(
+        "--qwen-image-root", type=Path,
+        default=Path(__file__).resolve().parents[1],
+        help="shared filesystem root configured on the Qwen service",
+    )
+    parser.add_argument(
+        "--qwen-image-prefix", default="artifacts/second_group_20260731/qwen_images",
+        help="safe relative subdirectory for asynchronously staged RGB frames",
+    )
+    parser.add_argument("--follow-spectator", action="store_true",
+                        help="move the graphical spectator camera behind the ego each frame")
     parser.add_argument("--scenario-file",
                         help="run a scenarios/*.json contract; overrides map, fixed delta, frames and scenario id")
     parser.add_argument("--validate-scenario-only", action="store_true",
@@ -1568,6 +1955,10 @@ def main() -> None:
         parser.error("--watchdog-startup-grace-s must be non-negative")
     if args.test_command_ttl_s is not None and args.test_command_ttl_s <= 0.0:
         parser.error("--test-command-ttl-s must be positive")
+    if args.qwen_timeout_ms <= 0.0:
+        parser.error("--qwen-timeout-ms must be positive")
+    if args.qwen_queue_size < 1:
+        parser.error("--qwen-queue-size must be >= 1")
     if not 0.0 < args.rgb_detector_confidence <= 1.0:
         parser.error("--rgb-detector-confidence must be in (0, 1]")
     if not 0.0 < args.rgb_detector_iou <= 1.0:

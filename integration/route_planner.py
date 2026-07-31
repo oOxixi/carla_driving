@@ -7,6 +7,7 @@ command.  It does not pretend to be a global navigation service.
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 from typing import Any, Iterable, Sequence
 
 from car_control_A.routing import RouteReference
@@ -18,6 +19,17 @@ _MANEUVERS = {
     "FOLLOW", "FOLLOW_LEFT", "FOLLOW_RIGHT",
     "TURN_LEFT", "TURN_RIGHT", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
 }
+_HEADING_GRID_CELL_M = 5.0
+
+
+@dataclass(frozen=True, slots=True)
+class _WaypointSpatialIndex:
+    world_map: Any
+    step_m: float
+    buckets: dict[tuple[int, int], tuple[Any, ...]]
+
+
+_WAYPOINT_INDEX_BY_MAP_ID: dict[int, _WaypointSpatialIndex] = {}
 
 
 def _wrap_degrees(angle: float) -> float:
@@ -82,6 +94,130 @@ def _is_driving_lane(waypoint: Any | None) -> bool:
 
 def _same_direction(first: Any, second: Any, tolerance_deg: float = 45.0) -> bool:
     return abs(_wrap_degrees(_yaw(second) - _yaw(first))) <= tolerance_deg
+
+
+def _ego_yaw_deg(ego_or_location: Any) -> float | None:
+    """Return actor/transform yaw without guessing it from a bare Location."""
+    if callable(getattr(ego_or_location, "get_transform", None)):
+        transform = ego_or_location.get_transform()
+        return float(transform.rotation.yaw)
+    rotation = getattr(ego_or_location, "rotation", None)
+    if rotation is not None and hasattr(rotation, "yaw"):
+        return float(rotation.yaw)
+    return None
+
+
+def _waypoint_distance_m(waypoint: Any, location: Any) -> float:
+    candidate = waypoint.transform.location
+    return math.hypot(float(candidate.x) - float(location.x), float(candidate.y) - float(location.y))
+
+
+def warm_heading_waypoint_cache(world_map: Any, *, search_step_m: float = 1.0) -> int:
+    """Build a process-local spatial index outside the active control loop."""
+    if not math.isfinite(float(search_step_m)) or search_step_m <= 0.0:
+        raise ValueError("search_step_m must be finite and positive")
+    key = id(world_map)
+    cached = _WAYPOINT_INDEX_BY_MAP_ID.get(key)
+    if cached is not None and cached.world_map is world_map and cached.step_m == float(search_step_m):
+        return sum(len(values) for values in cached.buckets.values())
+    generate = getattr(world_map, "generate_waypoints", None)
+    if not callable(generate):
+        raise RuntimeError("map cannot enumerate waypoints")
+    mutable: dict[tuple[int, int], list[Any]] = {}
+    count = 0
+    for candidate in generate(float(search_step_m)):
+        if not _is_driving_lane(candidate):
+            continue
+        location = candidate.transform.location
+        cell = (
+            math.floor(float(location.x) / _HEADING_GRID_CELL_M),
+            math.floor(float(location.y) / _HEADING_GRID_CELL_M),
+        )
+        mutable.setdefault(cell, []).append(candidate)
+        count += 1
+    buckets = {cell: tuple(values) for cell, values in mutable.items()}
+    _WAYPOINT_INDEX_BY_MAP_ID[key] = _WaypointSpatialIndex(
+        world_map, float(search_step_m), buckets,
+    )
+    return count
+
+
+def _nearby_indexed_waypoints(
+    world_map: Any,
+    location: Any,
+    *,
+    search_radius_m: float,
+    search_step_m: float,
+) -> tuple[Any, ...]:
+    warm_heading_waypoint_cache(world_map, search_step_m=search_step_m)
+    index = _WAYPOINT_INDEX_BY_MAP_ID[id(world_map)]
+    center_x = math.floor(float(location.x) / _HEADING_GRID_CELL_M)
+    center_y = math.floor(float(location.y) / _HEADING_GRID_CELL_M)
+    extent = int(math.ceil(search_radius_m / _HEADING_GRID_CELL_M))
+    return tuple(
+        waypoint
+        for dx in range(-extent, extent + 1)
+        for dy in range(-extent, extent + 1)
+        for waypoint in index.buckets.get((center_x + dx, center_y + dy), ())
+    )
+
+
+def select_heading_compatible_waypoint(
+    world_map: Any,
+    ego_or_location: Any,
+    *,
+    max_heading_error_deg: float = 45.0,
+    search_radius_m: float = 5.0,
+    search_step_m: float = 1.0,
+) -> Any:
+    """Project to a nearby driving lane that agrees with the ego heading.
+
+    CARLA's ``get_waypoint(project_to_road=True)`` minimizes geometric
+    distance only. At stacked/crossing road geometry that can select a road
+    whose tangent points behind the vehicle. A bare ``Location`` has no
+    heading, so scenario builders retain the legacy nearest projection; live
+    actor routes always apply this direction gate.
+    """
+    if max_heading_error_deg <= 0.0 or max_heading_error_deg > 90.0:
+        raise ValueError("max_heading_error_deg must be in (0, 90]")
+    if search_radius_m <= 0.0 or search_step_m <= 0.0:
+        raise ValueError("search radius and step must be positive")
+    location = ego_or_location.get_location() if hasattr(ego_or_location, "get_location") else ego_or_location
+    nearest = world_map.get_waypoint(location, project_to_road=True)
+    if not _is_driving_lane(nearest):
+        raise RuntimeError("route anchor is not on a driving lane")
+    ego_yaw = _ego_yaw_deg(ego_or_location)
+    if ego_yaw is None:
+        return nearest
+    nearest_error = abs(_wrap_degrees(_yaw(nearest) - ego_yaw))
+    if nearest_error <= max_heading_error_deg:
+        return nearest
+
+    candidates: list[tuple[float, float, float, Any]] = []
+    for candidate in _nearby_indexed_waypoints(
+        world_map,
+        location,
+        search_radius_m=search_radius_m,
+        search_step_m=search_step_m,
+    ):
+        if not _is_driving_lane(candidate):
+            continue
+        distance = _waypoint_distance_m(candidate, location)
+        if distance > search_radius_m:
+            continue
+        heading_error = abs(_wrap_degrees(_yaw(candidate) - ego_yaw))
+        if heading_error > max_heading_error_deg:
+            continue
+        # Distance remains primary inside the direction gate; the small yaw
+        # term provides deterministic preference between overlapping lanes.
+        score = distance + heading_error / max_heading_error_deg
+        candidates.append((score, heading_error, distance, candidate))
+    if not candidates:
+        raise RuntimeError(
+            "no nearby driving waypoint agrees with ego heading; route refresh rejected"
+        )
+    candidates.sort(key=lambda item: (item[0], item[1], item[2], _yaw(item[3])))
+    return candidates[0][3]
 
 
 def _next_straight(waypoint: Any, step_m: float) -> Any | None:
@@ -314,7 +450,7 @@ def build_route_reference(
         raise ValueError("step_m must be finite and positive")
 
     location = ego_or_location.get_location() if hasattr(ego_or_location, "get_location") else ego_or_location
-    waypoint = world_map.get_waypoint(location, project_to_road=True)
+    waypoint = select_heading_compatible_waypoint(world_map, ego_or_location)
     points: list[tuple[float, float]] = []
     branch_consumed = False
     max_steps = max(2, int(math.ceil(distance_m / step_m)) + 1)
@@ -357,5 +493,7 @@ __all__ = [
     "build_route_reference",
     "build_scenario_route_reference",
     "command_turn_direction",
+    "select_heading_compatible_waypoint",
     "select_topology_route_anchor",
+    "warm_heading_waypoint_cache",
 ]

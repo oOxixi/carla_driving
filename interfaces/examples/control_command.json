@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "command_id": "voice-0001",
+  "path_type": "FAST",
+  "behavior": "SET_SPEED",
+  "target": {"target_id": null, "target_speed_mps": 5.5555555556, "time_gap_s": null},
+  "limits": {"max_speed_mps": 8.3333333333, "max_accel_mps2": 2.5, "max_decel_mps2": 5.0},
+  "issued_at_ns": 1050000000,
+  "deadline_ns": 4000000000,
+  "source": "DETERMINISTIC_FAST_PATH",
+  "confidence": 0.98,
+  "reason_code": "FAST_SET_SPEED"
+}

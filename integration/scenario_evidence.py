@@ -41,9 +41,15 @@ class FrameTiming:
     decision_end_ns: int
     control_applied_ns: int
     sensor_ready_ns: int | None = None
+    simulator_tick_start_ns: int | None = None
+    simulator_tick_end_ns: int | None = None
+    perception_start_ns: int | None = None
 
     def __post_init__(self) -> None:
         values = {
+            "simulator_tick_start_ns": self.simulator_tick_start_ns,
+            "simulator_tick_end_ns": self.simulator_tick_end_ns,
+            "perception_start_ns": self.perception_start_ns,
             "sensor_ready_ns": self.sensor_ready_ns,
             "decision_start_ns": self.decision_start_ns,
             "decision_end_ns": self.decision_end_ns,
@@ -52,7 +58,14 @@ class FrameTiming:
         for name, value in values.items():
             if value is not None and (type(value) is not int or value < 0):
                 raise ValueError(f"{name} must be a non-negative integer or None")
+        if (self.simulator_tick_start_ns is None) != (self.simulator_tick_end_ns is None):
+            raise ValueError("simulator tick timestamps must be provided together")
+        if self.perception_start_ns is not None and self.sensor_ready_ns is None:
+            raise ValueError("perception_start_ns requires sensor_ready_ns")
         ordered = [value for value in (
+            self.simulator_tick_start_ns,
+            self.simulator_tick_end_ns,
+            self.perception_start_ns,
             self.sensor_ready_ns,
             self.decision_start_ns,
             self.decision_end_ns,
@@ -62,12 +75,33 @@ class FrameTiming:
             raise ValueError("frame timestamps must be monotonic")
 
     def to_dict(self) -> dict[str, float | int | None]:
+        simulator_tick_ms = None
+        if self.simulator_tick_start_ns is not None and self.simulator_tick_end_ns is not None:
+            simulator_tick_ms = (
+                self.simulator_tick_end_ns - self.simulator_tick_start_ns
+            ) / 1e6
+        perception_acquire_ms = None
+        if self.perception_start_ns is not None and self.sensor_ready_ns is not None:
+            perception_acquire_ms = (
+                self.sensor_ready_ns - self.perception_start_ns
+            ) / 1e6
+        pipeline_active_ms = None
+        if self.simulator_tick_end_ns is not None:
+            pipeline_active_ms = (
+                self.control_applied_ns - self.simulator_tick_end_ns
+            ) / 1e6
         sensor_to_control = None
         sensor_to_decision = None
         if self.sensor_ready_ns is not None:
             sensor_to_control = (self.control_applied_ns - self.sensor_ready_ns) / 1e6
             sensor_to_decision = (self.decision_start_ns - self.sensor_ready_ns) / 1e6
         return {
+            "simulator_tick_start_ns": self.simulator_tick_start_ns,
+            "simulator_tick_end_ns": self.simulator_tick_end_ns,
+            "simulator_tick_ms": simulator_tick_ms,
+            "perception_start_ns": self.perception_start_ns,
+            "perception_acquire_ms": perception_acquire_ms,
+            "pipeline_active_ms": pipeline_active_ms,
             "sensor_ready_ns": self.sensor_ready_ns,
             "decision_start_ns": self.decision_start_ns,
             "decision_end_ns": self.decision_end_ns,
@@ -147,6 +181,9 @@ class ScenarioEvidenceRecorder:
         self._last_route_deviation = False
         self._frame_decision_ms: list[float] = []
         self._frame_sensor_to_control_ms: list[float] = []
+        self._frame_simulator_tick_ms: list[float] = []
+        self._frame_perception_acquire_ms: list[float] = []
+        self._frame_pipeline_active_ms: list[float] = []
         self._frame_times_s: list[float] = []
         self._frame_speeds_mps: list[float] = []
         self._cross_track_errors_m: list[float] = []
@@ -235,6 +272,12 @@ class ScenarioEvidenceRecorder:
             raise TypeError("vehicle must provide frame, sim_time_s and speed_mps")
         latency = timing.to_dict()
         self._frame_decision_ms.append(float(latency["decision_ms"]))
+        if latency["simulator_tick_ms"] is not None:
+            self._frame_simulator_tick_ms.append(float(latency["simulator_tick_ms"]))
+        if latency["perception_acquire_ms"] is not None:
+            self._frame_perception_acquire_ms.append(float(latency["perception_acquire_ms"]))
+        if latency["pipeline_active_ms"] is not None:
+            self._frame_pipeline_active_ms.append(float(latency["pipeline_active_ms"]))
         if latency["sensor_to_control_ms"] is not None:
             self._frame_sensor_to_control_ms.append(float(latency["sensor_to_control_ms"]))
         sim_time = float(sim_time_s)
@@ -375,6 +418,21 @@ class ScenarioEvidenceRecorder:
         self._terminal_statuses[command_id] = status
         self._write("feedback", feedback=_jsonable(feedback))
 
+    def record_canonical_routing(self, *, phase: str, command_id: str,
+                                 payload: object) -> None:
+        """Persist A/B canonical objects without parsing their implementation."""
+        self._ensure_active()
+        if type(phase) is not str or not phase:
+            raise ValueError("phase must be a non-empty string")
+        if type(command_id) is not str or not command_id:
+            raise ValueError("command_id must be a non-empty string")
+        self._write(
+            "canonical_routing",
+            phase=phase,
+            command_id=command_id,
+            payload=_jsonable(payload),
+        )
+
     def complete(self, *, completion: bool | None = None, detail: str = "",
                  expected: Mapping[str, object] | None = None,
                  acceptance_context: Mapping[str, object] | None = None) -> dict[str, Any]:
@@ -441,9 +499,25 @@ class ScenarioEvidenceRecorder:
             "safety_override_frames": self._safety_override_frames,
             "safety_override_episodes": self._safety_override_episodes,
             "latency": {
+                "simulator_tick_avg_ms": self._average(self._frame_simulator_tick_ms),
+                "simulator_tick_p95_ms": self._percentile(self._frame_simulator_tick_ms, 0.95),
+                "simulator_tick_p99_ms": self._percentile(self._frame_simulator_tick_ms, 0.99),
+                "simulator_tick_max_ms": max(self._frame_simulator_tick_ms, default=None),
+                "perception_acquire_avg_ms": self._average(self._frame_perception_acquire_ms),
+                "perception_acquire_p95_ms": self._percentile(self._frame_perception_acquire_ms, 0.95),
+                "perception_acquire_p99_ms": self._percentile(self._frame_perception_acquire_ms, 0.99),
+                "perception_acquire_max_ms": max(self._frame_perception_acquire_ms, default=None),
+                "pipeline_active_avg_ms": self._average(self._frame_pipeline_active_ms),
+                "pipeline_active_p95_ms": self._percentile(self._frame_pipeline_active_ms, 0.95),
+                "pipeline_active_p99_ms": self._percentile(self._frame_pipeline_active_ms, 0.99),
+                "pipeline_active_max_ms": max(self._frame_pipeline_active_ms, default=None),
                 "decision_avg_ms": self._average(self._frame_decision_ms),
+                "decision_p95_ms": self._percentile(self._frame_decision_ms, 0.95),
+                "decision_p99_ms": self._percentile(self._frame_decision_ms, 0.99),
                 "decision_max_ms": max(self._frame_decision_ms, default=None),
                 "sensor_to_control_avg_ms": self._average(self._frame_sensor_to_control_ms),
+                "sensor_to_control_p95_ms": self._percentile(self._frame_sensor_to_control_ms, 0.95),
+                "sensor_to_control_p99_ms": self._percentile(self._frame_sensor_to_control_ms, 0.99),
                 "sensor_to_control_max_ms": max(self._frame_sensor_to_control_ms, default=None),
             },
         }
@@ -635,6 +709,17 @@ class ScenarioEvidenceRecorder:
     @staticmethod
     def _average(values: list[float]) -> float | None:
         return sum(values) / len(values) if values else None
+
+    @staticmethod
+    def _percentile(values: list[float], quantile: float) -> float | None:
+        if not values:
+            return None
+        ordered = sorted(values)
+        position = (len(ordered) - 1) * quantile
+        lower = int(position)
+        upper = min(lower + 1, len(ordered) - 1)
+        fraction = position - lower
+        return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
 
     @staticmethod
     def _command_latency(command: Mapping[str, Any], received_ns: int) -> dict[str, float | None]:

@@ -7,7 +7,9 @@ from integration.route_planner import (
     build_lane_change_route_reference,
     build_route_reference,
     command_turn_direction,
+    select_heading_compatible_waypoint,
     select_topology_route_anchor,
+    warm_heading_waypoint_cache,
 )
 
 
@@ -41,6 +43,21 @@ class Map:
         return self.root
 
 
+class Actor:
+    def __init__(self, x, y, yaw):
+        self.location = SimpleNamespace(x=x, y=y)
+        self.transform = SimpleNamespace(
+            location=self.location,
+            rotation=SimpleNamespace(yaw=yaw),
+        )
+
+    def get_location(self):
+        return self.location
+
+    def get_transform(self):
+        return self.transform
+
+
 def _fork():
     root = Waypoint(0, 0, 0)
     left = Waypoint(2, -2, -45)
@@ -71,6 +88,76 @@ def test_route_rejects_invalid_parameters():
     location = SimpleNamespace(x=0, y=0)
     with pytest.raises(ValueError):
         build_route_reference(Map(_fork()), location, 5.0, turn_direction="UTURN")
+
+
+def test_live_anchor_rejects_nearest_crossing_lane_and_selects_heading_match():
+    wrong = Waypoint(-48.9, 15.7, 89.84)
+    correct = Waypoint(-49.5, 15.1, -55.3)
+    correct.children = [Waypoint(-48.4, 13.5, -55.3)]
+    correct.children[0].children = [Waypoint(-47.3, 11.9, -55.3)]
+
+    class CrossingMap:
+        def get_waypoint(self, _location, project_to_road=True):
+            assert project_to_road
+            return wrong
+
+        def generate_waypoints(self, step_m):
+            assert step_m == 1.0
+            return [wrong, correct]
+
+    actor = Actor(-48.926, 15.745, -52.07)
+    selected = select_heading_compatible_waypoint(CrossingMap(), actor)
+    assert selected is correct
+    route = build_route_reference(
+        CrossingMap(), actor, 5.5556, distance_m=3.0, step_m=1.0,
+    )
+    assert route.points_xy_m[0] == pytest.approx((-49.5, 15.1))
+    first_heading = math.degrees(math.atan2(
+        route.points_xy_m[1][1] - route.points_xy_m[0][1],
+        route.points_xy_m[1][0] - route.points_xy_m[0][0],
+    ))
+    heading_error = (first_heading - actor.transform.rotation.yaw + 180) % 360 - 180
+    assert abs(heading_error) < 10.0
+
+
+def test_live_anchor_fails_closed_without_heading_compatible_lane():
+    wrong = Waypoint(0.0, 0.0, 180.0)
+
+    class WrongOnlyMap:
+        def get_waypoint(self, _location, project_to_road=True):
+            return wrong
+
+        def generate_waypoints(self, _step):
+            return [wrong]
+
+    with pytest.raises(RuntimeError, match="no nearby driving waypoint"):
+        select_heading_compatible_waypoint(
+            WrongOnlyMap(), Actor(0.0, 0.0, 0.0),
+        )
+
+
+def test_heading_waypoint_spatial_index_is_warmed_once_and_reused() -> None:
+    wrong = Waypoint(0.0, 0.0, 180.0)
+    correct = Waypoint(1.0, 0.0, 0.0)
+
+    class CountingMap:
+        def __init__(self):
+            self.calls = 0
+
+        def get_waypoint(self, _location, project_to_road=True):
+            return wrong
+
+        def generate_waypoints(self, _step):
+            self.calls += 1
+            return [wrong, correct]
+
+    world_map = CountingMap()
+    assert warm_heading_waypoint_cache(world_map) == 2
+    assert warm_heading_waypoint_cache(world_map) == 2
+    assert select_heading_compatible_waypoint(
+        world_map, Actor(0.0, 0.0, 0.0),
+    ) is correct
+    assert world_map.calls == 1
 
 
 def _parallel_lanes(length=100):

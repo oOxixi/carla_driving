@@ -240,3 +240,21 @@ def test_outer_runtime_can_fail_active_command_explicitly():
     assert feedback is not None and feedback.status.value == "FAILED"
     assert runtime.active_command_id is None
     assert runtime.requested_speed_mps == 0.0
+
+
+def test_invalid_lateral_reference_is_latched_and_full_braked():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.submit_voice(_voice(), now_s=0.05)
+    behind_route = RouteReference(((-20.0, 0.0), (-10.0, 0.0), (-1.0, 0.0)), 0.0, 5.0)
+    result = runtime.step(
+        _vehicle(speed=5.0),
+        PerceptionFrame(frame=1, sim_time_s=0.05),
+        behind_route,
+        dt_s=0.05,
+    )
+    assert result.lateral is not None and result.lateral.status == "INVALID"
+    assert result.safety_reason == "WATCHDOG_ALERT"
+    assert result.final_control.throttle == 0.0
+    assert result.final_control.brake == 1.0
+    assert runtime.safety_latched
+    assert any(item.status.value == "FAILED" for item in result.feedback)

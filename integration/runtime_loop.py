@@ -183,6 +183,21 @@ class ControlRuntime:
                 self._clear_active_command()
         try:
             lateral = self.lateral.step_any(vehicle, route)
+            if lateral.status != "OK":
+                alert = f"LATERAL_{lateral.reason}"
+                if alert not in self._latched_alerts:
+                    self._latched_alerts.append(alert)
+                expired_alerts.append(alert)
+                self.requested_speed_mps = 0.0
+                if self._active_command_id is not None:
+                    failed = self.fsm.fail(
+                        self._active_command_id,
+                        now_s=vehicle.sim_time_s,
+                        detail=f"invalid lateral reference: {lateral.reason}",
+                    )
+                    if failed is not None:
+                        feedback.append(failed)
+                    self._clear_active_command()
             request = longitudinal_request(vehicle, scene, requested_speed_mps=self.requested_speed_mps,
                                            path_curvature_per_m=route.curvature_per_m)
             if self._active_command is not None and self._active_command.requires_confirmation:

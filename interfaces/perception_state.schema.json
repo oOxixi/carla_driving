@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://carla-driving.local/interfaces/perception_state.schema.json",
+  "title": "PerceptionState V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "frame_id", "sim_time_s", "captured_at_ns", "coordinate_frame",
+    "objects", "traffic_light", "ttc_s", "min_gap_m", "risk_level",
+    "modality_valid", "stale", "sync"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "frame_id": {"type": "integer", "minimum": 0},
+    "sim_time_s": {"type": "number", "minimum": 0},
+    "captured_at_ns": {"type": "integer", "minimum": 0},
+    "coordinate_frame": {"const": "ego_front_x_left_y_up_z_m"},
+    "objects": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["track_id", "class", "position_m", "velocity_mps", "distance_m", "confidence", "sources"],
+        "properties": {
+          "track_id": {"type": "string", "minLength": 1, "maxLength": 128},
+          "class": {"enum": ["vehicle", "pedestrian", "cyclist", "obstacle", "unknown"]},
+          "position_m": {
+            "type": "array", "minItems": 3, "maxItems": 3,
+            "items": {"type": "number"}
+          },
+          "velocity_mps": {
+            "type": "array", "minItems": 3, "maxItems": 3,
+            "items": {"type": "number"}
+          },
+          "distance_m": {"type": "number", "minimum": 0},
+          "ttc_s": {"type": ["number", "null"], "minimum": 0},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "sources": {
+            "type": "array", "minItems": 1, "uniqueItems": true,
+            "items": {"enum": ["RGB", "RADAR", "LIDAR", "WORLD"]}
+          },
+          "bbox_xyxy_norm": {
+            "type": ["array", "null"], "minItems": 4, "maxItems": 4,
+            "items": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        }
+      }
+    },
+    "traffic_light": {"enum": ["RED", "YELLOW", "GREEN", "UNKNOWN"]},
+    "distance_to_stop_line_m": {"type": ["number", "null"], "minimum": 0},
+    "speed_limit_mps": {"type": ["number", "null"], "minimum": 0},
+    "ttc_s": {"type": ["number", "null"], "minimum": 0},
+    "min_gap_m": {"type": ["number", "null"], "minimum": 0},
+    "risk_level": {"enum": ["LOW", "CAUTION", "HIGH", "EMERGENCY", "UNKNOWN"]},
+    "modality_valid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rgb", "radar", "lidar", "vehicle_state"],
+      "properties": {
+        "rgb": {"type": "boolean"},
+        "radar": {"type": "boolean"},
+        "lidar": {"type": "boolean"},
+        "vehicle_state": {"type": "boolean"}
+      }
+    },
+    "stale": {"type": "boolean"},
+    "sync": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference_frame_id", "max_skew_ms", "within_tolerance"],
+      "properties": {
+        "reference_frame_id": {"type": "integer", "minimum": 0},
+        "max_skew_ms": {"type": "number", "minimum": 0},
+        "within_tolerance": {"type": "boolean"},
+        "missing_modalities": {
+          "type": "array", "uniqueItems": true,
+          "items": {"enum": ["RGB", "RADAR", "LIDAR", "VEHICLE_STATE"]}
+        }
+      }
+    },
+    "degraded_reason_codes": {
+      "type": "array", "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    }
+  },
+  "examples": [
+    {
+      "schema_version": "1.0",
+      "frame_id": 120,
+      "sim_time_s": 6.0,
+      "captured_at_ns": 3000000000,
+      "coordinate_frame": "ego_front_x_left_y_up_z_m",
+      "objects": [
+        {
+          "track_id": "vehicle-0001",
+          "class": "vehicle",
+          "position_m": [12.0, -3.5, 0.0],
+          "velocity_mps": [4.0, 0.0, 0.0],
+          "distance_m": 12.5,
+          "ttc_s": null,
+          "confidence": 0.94,
+          "sources": ["RGB", "RADAR", "LIDAR"],
+          "bbox_xyxy_norm": [0.62, 0.40, 0.79, 0.76]
+        }
+      ],
+      "traffic_light": "GREEN",
+      "distance_to_stop_line_m": null,
+      "speed_limit_mps": 8.3333333333,
+      "ttc_s": null,
+      "min_gap_m": 12.5,
+      "risk_level": "LOW",
+      "modality_valid": {"rgb": true, "radar": true, "lidar": true, "vehicle_state": true},
+      "stale": false,
+      "sync": {
+        "reference_frame_id": 120,
+        "max_skew_ms": 18.0,
+        "within_tolerance": true,
+        "missing_modalities": []
+      },
+      "degraded_reason_codes": []
+    }
+  ]
+}

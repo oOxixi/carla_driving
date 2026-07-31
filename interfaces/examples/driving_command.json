@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "command_id": "voice-0001",
+  "source_text": "速度设为20公里每小时",
+  "intent": "SET_SPEED",
+  "parameters": {"target_speed_mps": 5.5555555556},
+  "confidence": 0.98,
+  "received_at_ns": 1000000000,
+  "deadline_ns": 4000000000,
+  "source": "VOICE",
+  "ambiguity": "NONE",
+  "requires_confirmation": false
+}

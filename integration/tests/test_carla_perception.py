@@ -13,6 +13,7 @@ from integration.carla_perception import (
     CONTINUOUS_SENSOR_IDS,
     LANE_INVASION_SENSOR_ID,
     LIDAR_SENSOR_ID,
+    RADAR_SENSOR_ID,
     RGB_SENSOR_ID,
     AttachedCarlaSensors,
     CarlaPerceptionBridge,
@@ -24,6 +25,7 @@ from integration.carla_perception import (
     attach_default_sensors,
     attach_event_sensors,
     front_lidar_distance_m,
+    front_radar_target,
 )
 from integration.contracts import DetectedObject
 
@@ -192,6 +194,20 @@ class Measurement:
         self.points = np.empty((0, 3), dtype=np.float32) if points is None else np.asarray(points, dtype=np.float32)
 
 
+@dataclass
+class RadarDetection:
+    depth: float
+    azimuth: float = 0.0
+    altitude: float = 0.0
+    velocity: float = 0.0
+
+
+class RadarMeasurement:
+    def __init__(self, frame, detections):
+        self.frame = frame
+        self.detections = tuple(detections)
+
+
 def _suite(session, events=None):
     return AttachedCarlaSensors({}, events or EventLedger())
 
@@ -201,7 +217,10 @@ def test_attach_default_sensor_suite_configures_continuous_and_event_callbacks()
     attached = attach_default_sensors(session, world, ego, CarlaApi)
 
     assert tuple(item[0] for item in session.continuous) == CONTINUOUS_SENSOR_IDS
-    assert set(attached.actors) == {RGB_SENSOR_ID, LIDAR_SENSOR_ID, COLLISION_SENSOR_ID, LANE_INVASION_SENSOR_ID}
+    assert set(attached.actors) == {
+        RGB_SENSOR_ID, LIDAR_SENSOR_ID, RADAR_SENSOR_ID,
+        COLLISION_SENSOR_ID, LANE_INVASION_SENSOR_ID,
+    }
     assert len(session.tracked) == 2
     assert world.blueprints.items["sensor.camera.rgb"].attributes["sensor_tick"] == "0.05"
     collision_sensor = next(item[3] for item in world.spawned if item[0] == "sensor.other.collision")
@@ -214,6 +233,7 @@ def test_sensor_tick_tracks_world_fixed_delta() -> None:
     attach_default_sensors(session, world, ego, CarlaApi, sensor_tick_s=0.1)
     assert world.blueprints.items["sensor.camera.rgb"].attributes["sensor_tick"] == "0.1"
     assert world.blueprints.items["sensor.lidar.ray_cast"].attributes["sensor_tick"] == "0.1"
+    assert world.blueprints.items["sensor.other.radar"].attributes["sensor_tick"] == "0.1"
 
 
 def test_world_mode_event_suite_does_not_attach_rgb_or_lidar() -> None:
@@ -258,6 +278,41 @@ def test_bridge_combines_aligned_lidar_events_map_and_associated_actor_truth() -
     assert sample.safety_summary.front_distance_m == pytest.approx(11.84, abs=0.02)
     assert sample.safety_summary.ttc_s == pytest.approx(5.92, abs=0.02)
     assert not sample.safety_summary.visual_valid
+
+
+def test_exact_frame_radar_velocity_overrides_static_rgb_assumption() -> None:
+    class Detector:
+        def detect_measurement(self, _measurement):
+            return (DetectedObject(2, "car", 0.9, (0.4, 0.3, 0.6, 0.8)),)
+
+    ego, session = Actor(1, speed=5.0), Session()
+    points = [[11.8, -0.2, 0.0], [12.0, 0.0, 0.0], [12.2, 0.2, 0.0]]
+    session.frame_buffer.push(RGB_SENSOR_ID, 44, Measurement(44))
+    session.frame_buffer.push(LIDAR_SENSOR_ID, 44, Measurement(44, points))
+    session.frame_buffer.push(
+        RADAR_SENSOR_ID, 44, RadarMeasurement(44, (RadarDetection(10.5, velocity=2.0),)),
+    )
+    bridge = CarlaPerceptionBridge(
+        World((ego,)), WorldMap(), ego, session, _suite(session), detector=Detector(),
+    )
+
+    sample = bridge.acquire(44, 2.2, timeout_s=0.01)
+
+    assert sample.radar is not None
+    assert sample.frame.lead_speed_mps == pytest.approx(3.0)
+    assert sample.source_by_field["radar_modality"] == "CARLA_RADAR_FRAME_ALIGNED"
+    assert sample.source_by_field["radar_observation"] == "RADAR_FRONT_CORRIDOR_ASSOCIATED"
+    assert sample.source_by_field["lead_speed_mps"] == "RADAR_LIDAR_ASSOCIATED_RADIAL_VELOCITY"
+
+
+def test_front_radar_target_rejects_off_corridor_and_nonfinite_returns() -> None:
+    target = front_radar_target(RadarMeasurement(1, (
+        RadarDetection(8.5, azimuth=0.0, velocity=1.5),
+        RadarDetection(8.5, azimuth=0.7, velocity=9.0),
+        RadarDetection(float("nan"), velocity=0.0),
+    )))
+    assert target.distance_m == pytest.approx(10.0)
+    assert target.closing_speed_mps == pytest.approx(1.5)
 
 
 def test_route_deviation_uses_polyline_segments_not_only_sparse_points() -> None:

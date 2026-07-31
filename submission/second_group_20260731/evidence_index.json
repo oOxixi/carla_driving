@@ -1,0 +1,880 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-07-31T05:59:04.603823+00:00",
+  "repository": "https://github.com/oOxixi/carla_driving.git",
+  "branch": "main",
+  "base_commit": "b9150fcbda6959fcd6c50269b09b431b750632ba",
+  "working_tree_clean": false,
+  "working_tree_status": [
+    "M car_control_A/simulator.py",
+    " M car_control_A/tests/test_simulator.py",
+    " M car_control_A/tests/test_watchdog.py",
+    " M car_control_A/watchdog.py",
+    " M car_control_B/pure_pursuit.py",
+    " M car_control_B/tests/test_pure_pursuit.py",
+    " M car_control_D/__init__.py",
+    " M car_control_D/safety_supervisor.py",
+    " M car_control_D/tests/test_safety_supervisor.py",
+    " M integration/carla_perception.py",
+    " M integration/carla_runner.py",
+    " M integration/route_planner.py",
+    " M integration/runtime_loop.py",
+    " M integration/scenario_evidence.py",
+    " M integration/sensor_stability.py",
+    " M integration/tests/test_carla_perception.py",
+    " M integration/tests/test_carla_runner_helpers.py",
+    " M integration/tests/test_route_planner.py",
+    " M integration/tests/test_runtime_loop.py",
+    " M integration/tests/test_scenario_evidence.py",
+    " M integration/tests/test_sensor_profiles.py",
+    " M integration/tests/test_sensor_stability.py",
+    " M requirements.txt",
+    "?? artifacts/live_voice_demo/",
+    "?? artifacts/second_group_20260731/",
+    "?? artifacts/voice_carla_test_20260730/",
+    "?? car_control_D/control_benchmark.json",
+    "?? car_control_D/control_runtime.py",
+    "?? car_control_D/execution_feedback.py",
+    "?? docs/SECOND_GROUP_RUNBOOK.md",
+    "?? \"docs/\\347\\254\\254\\344\\272\\214\\347\\273\\204\\345\\256\\236\\346\\226\\275\\344\\270\\216\\351\\252\\214\\346\\224\\266\\346\\200\\273\\347\\273\\223_20260731.md\"",
+    "?? integration/canonical_bridge.py",
+    "?? integration/live_voice.py",
+    "?? integration/qwen_image_stager.py",
+    "?? integration/second_group_runtime.py",
+    "?? integration/tests/test_canonical_bridge.py",
+    "?? integration/tests/test_interface_schemas.py",
+    "?? integration/tests/test_live_voice.py",
+    "?? integration/tests/test_qwen_image_stager.py",
+    "?? integration/tests/test_qwen_service.py",
+    "?? integration/tests/test_role_a_orchestrator.py",
+    "?? integration/tests/test_role_c_perception.py",
+    "?? integration/tests/test_role_d_control_runtime.py",
+    "?? integration/tests/test_second_group_runtime.py",
+    "?? interfaces/",
+    "?? perception/",
+    "?? qwen_service/",
+    "?? run_full_pipeline.sh",
+    "?? runtime/",
+    "?? submission/second_group_20260731/",
+    "?? tools/benchmark_control_runtime.py",
+    "?? tools/benchmark_perception_pipeline.py",
+    "?? tools/generate_second_group_evidence.py"
+  ],
+  "tracked_diff_sha256": "9f853f5483010d4081564edcf21e96c00c17d1d3a007b53052263f4d224c3d87",
+  "tracked_diff_bytes": 97382,
+  "carla_version": "0.9.16",
+  "source_files": [
+    {
+      "path": "car_control_A/watchdog.py",
+      "sha256": "a3bf6559d19b0d587411d9cd18559355a8a45080a3c2a331daf56d07f5ff8630",
+      "bytes": 3726,
+      "status": "CURRENT"
+    },
+    {
+      "path": "car_control_D/control_runtime.py",
+      "sha256": "5ed964862ba1dc6e1b362e94556ca81978c6c87bc8466cc608946c9559a64dd2",
+      "bytes": 7417,
+      "status": "CURRENT"
+    },
+    {
+      "path": "car_control_D/execution_feedback.py",
+      "sha256": "fe2f8d50c26cf1c57f35d5e5521018764f93b93a39a86252e0e64aead0c63f75",
+      "bytes": 7699,
+      "status": "CURRENT"
+    },
+    {
+      "path": "docs/SECOND_GROUP_RUNBOOK.md",
+      "sha256": "a6f8eb4f2ad74d7d74b4cc374f9821fad338ddacb80c4f6a705095aa62857e78",
+      "bytes": 4150,
+      "status": "CURRENT"
+    },
+    {
+      "path": "integration/canonical_bridge.py",
+      "sha256": "253ffcc0d2fc7febf18e59778378b0ecdebbbd80560bbd4fdaf6763674b6abed",
+      "bytes": 9139,
+      "status": "CURRENT"
+    },
+    {
+      "path": "integration/carla_perception.py",
+      "sha256": "fdb066ce022e579bca4621a9dc34ca145e24144a4a5f48d28c1ac51852a86778",
+      "bytes": 31366,
+      "status": "CURRENT"
+    },
+    {
+      "path": "integration/carla_runner.py",
+      "sha256": "945171efc0f07307dbe957c5cd8bee13d26d6b3081f3bd763fa523853fa8d403",
+      "bytes": 96402,
+      "status": "CURRENT"
+    },
+    {
+      "path": "integration/qwen_image_stager.py",
+      "sha256": "5cadd76687cc0701bf2537b15c781583b065d302d598f293b96c28de34ea7549",
+      "bytes": 2590,
+      "status": "CURRENT"
+    },
+    {
+      "path": "integration/route_planner.py",
+      "sha256": "20c5865fa27e77f5b28ec1f2a70af020536a93586128b29727e2454c125eea58",
+      "bytes": 19976,
+      "status": "CURRENT"
+    },
+    {
+      "path": "integration/runtime_loop.py",
+      "sha256": "f8375e3734b8ff802420ec748db5dffcacb1c5f410eaeda12f0f2d3b7823ab5b",
+      "bytes": 15157,
+      "status": "CURRENT"
+    },
+    {
+      "path": "integration/scenario_evidence.py",
+      "sha256": "44c54d585edadb8ab96739e313a09b2d8e20a8d3fd21079e1d4f527e1a5e261c",
+      "bytes": 36799,
+      "status": "CURRENT"
+    },
+    {
+      "path": "integration/second_group_runtime.py",
+      "sha256": "4821233a06d53e2b4835d7536797e59b1a8979e4fbdb1105a57c0791a3e1f6fc",
+      "bytes": 14032,
+      "status": "CURRENT"
+    },
+    {
+      "path": "interfaces/control_command.schema.json",
+      "sha256": "5ceaece9c662931111c5dd72941c588163ee6e782c0dbb5ff0227d48784e71f9",
+      "bytes": 2382,
+      "status": "CURRENT"
+    },
+    {
+      "path": "interfaces/decision_plan.schema.json",
+      "sha256": "4b8a68fba3cc86845c92866c852cba898b0155ed5167fdafccd1b0276f2f39e1",
+      "bytes": 2159,
+      "status": "CURRENT"
+    },
+    {
+      "path": "interfaces/driving_command.schema.json",
+      "sha256": "527000618dd245166eaa8fceaeaa86a4783a2a970de5fc3257afb32ce0be30ba",
+      "bytes": 2156,
+      "status": "CURRENT"
+    },
+    {
+      "path": "interfaces/execution_feedback.schema.json",
+      "sha256": "211b47e342e1389ab341cbbc79cc61ec91afc52dd6b621adbca47f54eee4a8d1",
+      "bytes": 2150,
+      "status": "CURRENT"
+    },
+    {
+      "path": "interfaces/model_request.schema.json",
+      "sha256": "53fe5c63f80a409a99ff975bcf1d316c4c824e01451982350d3ae2def96853e4",
+      "bytes": 3743,
+      "status": "CURRENT"
+    },
+    {
+      "path": "interfaces/perception_state.schema.json",
+      "sha256": "e3d3ecb439b6f355e228a58c406aa80e28adf8601114066e6cb25b2886b56e16",
+      "bytes": 4553,
+      "status": "CURRENT"
+    },
+    {
+      "path": "qwen_service/server.py",
+      "sha256": "566c3baa9bd228c70319dab3156339ed847126f58f1d8971076b7477834c45d3",
+      "bytes": 5547,
+      "status": "CURRENT"
+    },
+    {
+      "path": "qwen_service/service.py",
+      "sha256": "3de215837681f7c7147d8f1fba732e5d9232eceafa721aac1eef610e73fff14e",
+      "bytes": 16251,
+      "status": "CURRENT"
+    },
+    {
+      "path": "run_full_pipeline.sh",
+      "sha256": "0bbd373738426ca14dbd6b91d2488a5b624e1f078e9c978e1741a4ef930e65cf",
+      "bytes": 4404,
+      "status": "CURRENT"
+    }
+  ],
+  "current_evidence": [
+    {
+      "path": "artifacts/second_group_20260731/d03_d08_sensor_rerun_with_full_timing/D03_front_vehicle_brake/seed_0/run_01/D03_front_vehicle_brake_20260731_134256_909531.jsonl",
+      "sha256": "c51004264f6f8d9d496b4ea7dfba72594f2f09f6c0f62ba15a0e42780023f044",
+      "bytes": 2617158,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/d03_d08_sensor_rerun_with_full_timing/D03_front_vehicle_brake/seed_0/run_01/D03_front_vehicle_brake_20260731_134256_909531.summary.json",
+      "sha256": "703c17a075eea3962e87b8d0e74517c3958b7c86e91e3a232402b5a3e98f5eeb",
+      "bytes": 3252,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/d08_terminal_feedback_rerun/D08_command_conflict_red_light_continue/seed_0/run_01/D08_command_conflict_red_light_continue_20260731_134636_447605.jsonl",
+      "sha256": "8a5464e1d4e36b8609332bd715ac124df37dadf83b5f91b3614fa6009e10f7cd",
+      "bytes": 1898976,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/d08_terminal_feedback_rerun/D08_command_conflict_red_light_continue/seed_0/run_01/D08_command_conflict_red_light_continue_20260731_134636_447605.summary.json",
+      "sha256": "41f9525d8f9ae5d692dee5bfcf38d8861d9e3bfa6b42d42962fb70e4f1523df2",
+      "bytes": 3286,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/environment_snapshot.json",
+      "sha256": "6b51465b0a9fc227d1883fe8c88503896748aa2a127c7700e477a88012325467",
+      "bytes": 1266,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/live_carla_acceptance_summary.json",
+      "sha256": "7e6bd96d8d8a1eeeda6e3b40ea2b1cbb60574b695019a33e5505037115212b5c",
+      "bytes": 15280,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/perception_benchmark.json",
+      "sha256": "c6cf9657320f0826d0e103d911b81cda06af0c61e1897e08dadaefd952e6c5a2",
+      "bytes": 632,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/s01_sensor_rerun_with_full_timing/S01_set_speed_20/seed_0/run_01/S01_set_speed_20_20260731_134119_972553.jsonl",
+      "sha256": "9bf88659c4d76187c45047df30df2e3b16834d456942c5a0204f2936e0483958",
+      "bytes": 2272596,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/s01_sensor_rerun_with_full_timing/S01_set_speed_20/seed_0/run_01/S01_set_speed_20_20260731_134119_972553.summary.json",
+      "sha256": "c528bd4461b40dc52c4201e67ec0a48046b069b132c226b6d38ee9a567a39f01",
+      "bytes": 3549,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/scenario_smoke_after_changes/S01_set_speed_20/seed_0/run_01/S01_set_speed_20_20260731_133446_729088.jsonl",
+      "sha256": "08187c6c1783b019b41f39c15a8d351febd9852c2ebc3a5d4ec138c0bb9f6cf5",
+      "bytes": 2143328,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/scenario_smoke_after_changes/S01_set_speed_20/seed_0/run_01/S01_set_speed_20_20260731_133446_729088.summary.json",
+      "sha256": "e0a0f36e405aadc38e30dc3a7b00f7c6b18278b9ecac6514656f2b18beb7d6e9",
+      "bytes": 3372,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/sensor_probe_all_town10hd.log",
+      "sha256": "5edc423265f2c0b7052dba8901f306a6dcd591aead3d28eea29a7621e75bf41b",
+      "bytes": 1875,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/tests/pytest_full.xml",
+      "sha256": "b8e2091a7f5fafffa3f39aaa222888fc0da08170794147522c37dbebab20a3d9",
+      "bytes": 67986,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/tests/pytest_full_result.json",
+      "sha256": "a8601c93f25800b4c07177a40c0537bb3053d64a184548a09482e52d6dbfcb90",
+      "bytes": 458,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/town10hd_speed20_watchdog_fixed/cruise_20260731_132933_143725.jsonl",
+      "sha256": "11f6662b901e4e271d1210a55bb70eaf37ab8b87ca7c0a7493c3970adb3616ae",
+      "bytes": 4451243,
+      "status": "CURRENT"
+    },
+    {
+      "path": "artifacts/second_group_20260731/town10hd_speed20_watchdog_fixed/cruise_20260731_132933_143725.summary.json",
+      "sha256": "e6bc177bd11f7256c36ac746ecc1573d8ba0e589afe5c03b84e1d82858f2abb9",
+      "bytes": 1953,
+      "status": "CURRENT"
+    },
+    {
+      "path": "car_control_D/control_benchmark.json",
+      "sha256": "c124535f8f45ceb76c656a56aedb39ac334a7f077a403695bcad1379e32858eb",
+      "bytes": 681,
+      "status": "CURRENT"
+    },
+    {
+      "path": "docs/第二组实施与验收总结_20260731.md",
+      "sha256": "a532c12306ea033fc0410dbcdcf2c0e6aaa0ed596e91f3274c86649ece58573b",
+      "bytes": 20509,
+      "status": "CURRENT"
+    },
+    {
+      "path": "qwen_service/latency_report.json",
+      "sha256": "38e182f8c74373a81ffb99d851b76f21e2c4a2ac0f7708b71be2047ba83f0f56",
+      "bytes": 836,
+      "status": "CURRENT"
+    },
+    {
+      "path": "qwen_service/model_benchmark.json",
+      "sha256": "eba20dde934ee3a7999c62c2a79555fd4b02e01c34974224723c2f1208407b86",
+      "bytes": 1973,
+      "status": "CURRENT"
+    }
+  ],
+  "historical_pre_change_context": [
+    {
+      "path": "artifacts/scenario_matrix_0727_final/scenario_matrix_report.json",
+      "sha256": "ca3ef270f110b20716b7ef0fc6af2d60af2016ad7ecd8a56f006b60e0aceaa87",
+      "bytes": 32925,
+      "status": "HISTORICAL_PRE_CHANGE"
+    },
+    {
+      "path": "artifacts/long_stability_0728/report_30min.json",
+      "sha256": "9224fd792bd0bc726dbd003262a754d93438f6cc301eafc9b6c0c99ad3dcf8f8",
+      "bytes": 126750,
+      "status": "HISTORICAL_PRE_CHANGE"
+    },
+    {
+      "path": "artifacts/four_modal_0728/full_chain_report_v2.json",
+      "sha256": "c939b332763b36acaf0e8bf5ecfbb5901a2468a1dc3fbcb188c4ae487c0ae94b",
+      "bytes": 976892,
+      "status": "HISTORICAL_PRE_CHANGE"
+    },
+    {
+      "path": "artifacts/four_modal_0728/qwen_model_manifest.json",
+      "sha256": "c3e7085a6adac022b7e858912c534fd8a08384445b608226fda6695092621f66",
+      "bytes": 3098,
+      "status": "HISTORICAL_PRE_CHANGE"
+    }
+  ],
+  "machine_results": {
+    "pytest": {
+      "schema_version": "1.0",
+      "created_at_utc": "2026-07-31T05:59:04.480934+00:00",
+      "command": "conda run -n carla312 env PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q --junitxml=artifacts/second_group_20260731/tests/pytest_full.xml",
+      "tests": 471,
+      "passed": 470,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "duration_s": 2.557,
+      "plugin_autoload_disabled": true,
+      "junit_xml": "artifacts/second_group_20260731/tests/pytest_full.xml"
+    },
+    "representative_carla": {
+      "schema_version": "1.0",
+      "created_at_utc": "2026-07-31T05:59:04.590757+00:00",
+      "scope": "current-host CARLA 0.9.16 representative runs; one seed and one accepted run per scenario",
+      "not_formal_matrix": true,
+      "runs": {
+        "S01_set_speed_20": {
+          "scenario_id": "S01_set_speed_20",
+          "status": "SUCCEEDED",
+          "score": 25.0,
+          "frames": 600,
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "route_deviation_count": 0,
+          "min_gap_m": 12.577547654324862,
+          "final_speed_mps": 4.998324769214593,
+          "command_terminal_statuses": {
+            "scenario_cmd_000": "SUCCEEDED"
+          },
+          "safety_reasons": {
+            "NONE": 600
+          },
+          "latency_ms": {
+            "simulator_tick_ms": {
+              "count": 600,
+              "mean": 0.8769614149999999,
+              "p95": 1.2092038,
+              "p99": 1.5989200599999998,
+              "max": 6.347115
+            },
+            "perception_acquire_ms": {
+              "count": 600,
+              "mean": 60.31482912333333,
+              "p95": 70.64977149999999,
+              "p99": 74.09765795,
+              "max": 83.518319
+            },
+            "pipeline_active_ms": {
+              "count": 600,
+              "mean": 60.721771805,
+              "p95": 70.99144129999999,
+              "p99": 74.34452053,
+              "max": 83.849886
+            },
+            "sensor_to_control_ms": {
+              "count": 600,
+              "mean": 0.26946606666666667,
+              "p95": 0.40560915,
+              "p99": 0.4414314399999999,
+              "max": 0.473654
+            },
+            "decision_ms": {
+              "count": 600,
+              "mean": 0.24745958666666668,
+              "p95": 0.37671289999999996,
+              "p99": 0.40942323999999997,
+              "max": 0.44392
+            }
+          },
+          "acceptance": {
+            "check_count": 6,
+            "checks": [
+              {
+                "actual": true,
+                "detail": "requires logs_generated",
+                "key": "must_generate_logs",
+                "required": true,
+                "status": "PASS"
+              },
+              {
+                "actual": 0.0026307784624277756,
+                "detail": "max_abs_cross_track_error_m must be <= expected maximum",
+                "key": "max_cross_track_error_m",
+                "required": 1.0,
+                "status": "PASS"
+              },
+              {
+                "actual": 0,
+                "detail": "collision_count must be zero",
+                "key": "must_no_collision",
+                "required": 0,
+                "status": "PASS"
+              },
+              {
+                "actual": 0,
+                "detail": "route_deviation_count must be zero",
+                "key": "must_no_route_deviation",
+                "required": 0,
+                "status": "PASS"
+              },
+              {
+                "actual": 17.993969169172534,
+                "detail": "final speed must meet target tolerance",
+                "key": "target_speed_kph",
+                "required": {
+                  "target": 20.0,
+                  "tolerance": 5.0
+                },
+                "status": "PASS"
+              },
+              {
+                "actual": 5,
+                "detail": "evaluated by target_speed_kph check",
+                "key": "speed_tolerance_kph",
+                "required": "paired with target_speed_kph",
+                "status": "PASS"
+              }
+            ],
+            "failed_keys": [],
+            "passed": true,
+            "unsupported_keys": []
+          },
+          "jsonl": "artifacts/second_group_20260731/s01_sensor_rerun_with_full_timing/S01_set_speed_20/seed_0/run_01/S01_set_speed_20_20260731_134119_972553.jsonl",
+          "summary_json": "artifacts/second_group_20260731/s01_sensor_rerun_with_full_timing/S01_set_speed_20/seed_0/run_01/S01_set_speed_20_20260731_134119_972553.summary.json"
+        },
+        "D03_front_vehicle_brake": {
+          "scenario_id": "D03_front_vehicle_brake",
+          "status": "SUCCEEDED",
+          "score": 25.0,
+          "frames": 700,
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "route_deviation_count": 0,
+          "min_gap_m": 2.7586268186569214,
+          "final_speed_mps": 9.38655188156836e-05,
+          "command_terminal_statuses": {
+            "scenario_cmd_000": "SUCCEEDED"
+          },
+          "safety_reasons": {
+            "NONE": 320,
+            "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE": 380
+          },
+          "latency_ms": {
+            "simulator_tick_ms": {
+              "count": 700,
+              "mean": 0.9526846414285713,
+              "p95": 1.2902306,
+              "p99": 1.56106082,
+              "max": 2.457817
+            },
+            "perception_acquire_ms": {
+              "count": 700,
+              "mean": 63.861032037142856,
+              "p95": 68.91771935,
+              "p99": 71.54965783,
+              "max": 75.883212
+            },
+            "pipeline_active_ms": {
+              "count": 700,
+              "mean": 64.21735088142857,
+              "p95": 69.32266125,
+              "p99": 71.94972636,
+              "max": 76.2941
+            },
+            "sensor_to_control_ms": {
+              "count": 700,
+              "mean": 0.2712709185714286,
+              "p95": 0.41547279999999975,
+              "p99": 0.47377965,
+              "max": 0.648159
+            },
+            "decision_ms": {
+              "count": 700,
+              "mean": 0.25335879142857143,
+              "p95": 0.39359249999999996,
+              "p99": 0.45027448999999997,
+              "max": 0.594065
+            }
+          },
+          "acceptance": {
+            "check_count": 4,
+            "checks": [
+              {
+                "actual": 2.7586268186569214,
+                "detail": "min_gap_m must be >= expected minimum",
+                "key": "min_front_gap_m",
+                "required": 2.5,
+                "status": "PASS"
+              },
+              {
+                "actual": 0,
+                "detail": "collision_count must be zero",
+                "key": "must_no_collision",
+                "required": 0,
+                "status": "PASS"
+              },
+              {
+                "actual": 380,
+                "detail": "permission only; takeover is not required",
+                "key": "expected_safety_override_allowed",
+                "required": "allowed",
+                "status": "PASS"
+              },
+              {
+                "actual": [
+                  "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE"
+                ],
+                "detail": "at least one expected token must appear",
+                "key": "expected_reason_contains",
+                "required": [
+                  "ttc",
+                  "front",
+                  "gap"
+                ],
+                "status": "PASS"
+              }
+            ],
+            "failed_keys": [],
+            "passed": true,
+            "unsupported_keys": []
+          },
+          "jsonl": "artifacts/second_group_20260731/d03_d08_sensor_rerun_with_full_timing/D03_front_vehicle_brake/seed_0/run_01/D03_front_vehicle_brake_20260731_134256_909531.jsonl",
+          "summary_json": "artifacts/second_group_20260731/d03_d08_sensor_rerun_with_full_timing/D03_front_vehicle_brake/seed_0/run_01/D03_front_vehicle_brake_20260731_134256_909531.summary.json"
+        },
+        "D08_command_conflict_red_light_continue": {
+          "scenario_id": "D08_command_conflict_red_light_continue",
+          "status": "SUCCEEDED",
+          "score": 25.0,
+          "frames": 500,
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "route_deviation_count": 0,
+          "min_gap_m": 12.918579073936073,
+          "final_speed_mps": 0.0,
+          "command_terminal_statuses": {
+            "scenario_cmd_000": "FAILED"
+          },
+          "safety_reasons": {
+            "NONE": 86,
+            "RED_LIGHT_STOP_LINE_GUARD": 414
+          },
+          "latency_ms": {
+            "simulator_tick_ms": {
+              "count": 500,
+              "mean": 0.726701724,
+              "p95": 0.9326299499999999,
+              "p99": 1.1070672999999993,
+              "max": 1.539589
+            },
+            "perception_acquire_ms": {
+              "count": 500,
+              "mean": 38.314850316,
+              "p95": 40.098662999999995,
+              "p99": 40.66944916,
+              "max": 44.704769
+            },
+            "pipeline_active_ms": {
+              "count": 500,
+              "mean": 38.64363622,
+              "p95": 40.38352505,
+              "p99": 40.99425811,
+              "max": 44.967335
+            },
+            "sensor_to_control_ms": {
+              "count": 500,
+              "mean": 0.23650375399999998,
+              "p95": 0.3305597999999998,
+              "p99": 0.38667437,
+              "max": 0.630636
+            },
+            "decision_ms": {
+              "count": 500,
+              "mean": 0.22001632599999998,
+              "p95": 0.30968605,
+              "p99": 0.35827338,
+              "max": 0.61768
+            }
+          },
+          "acceptance": {
+            "check_count": 4,
+            "checks": [
+              {
+                "actual": 414,
+                "detail": "a safety takeover must be observed",
+                "key": "expected_safety_override",
+                "required": "> 0 frames",
+                "status": "PASS"
+              },
+              {
+                "actual": [
+                  "RED_LIGHT_STOP_LINE_GUARD"
+                ],
+                "detail": "at least one expected token must appear",
+                "key": "expected_reason_contains",
+                "required": [
+                  "red",
+                  "safety"
+                ],
+                "status": "PASS"
+              },
+              {
+                "actual": true,
+                "detail": "vehicle must stop without a red-light violation",
+                "key": "must_stop_before_stop_line",
+                "required": true,
+                "status": "PASS"
+              },
+              {
+                "actual": true,
+                "detail": "D must override the conflicting command and stop",
+                "key": "safety_priority_over_command",
+                "required": true,
+                "status": "PASS"
+              }
+            ],
+            "failed_keys": [],
+            "passed": true,
+            "unsupported_keys": []
+          },
+          "jsonl": "artifacts/second_group_20260731/d08_terminal_feedback_rerun/D08_command_conflict_red_light_continue/seed_0/run_01/D08_command_conflict_red_light_continue_20260731_134636_447605.jsonl",
+          "summary_json": "artifacts/second_group_20260731/d08_terminal_feedback_rerun/D08_command_conflict_red_light_continue/seed_0/run_01/D08_command_conflict_red_light_continue_20260731_134636_447605.summary.json"
+        }
+      },
+      "cold_start_failure_retained": {
+        "scenario_id": "S01_set_speed_20",
+        "status": "FAILED",
+        "score": 20.0,
+        "frames": 600,
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "min_gap_m": 12.909530587189781,
+        "final_speed_mps": 0.0,
+        "command_terminal_statuses": {
+          "scenario_cmd_000": "FAILED"
+        },
+        "safety_reasons": {
+          "NONE": 48,
+          "WATCHDOG_ALERT": 552
+        },
+        "latency_ms": {
+          "simulator_tick_ms": {
+            "count": 600,
+            "mean": 7.1563207816666665,
+            "p95": 1.0452718999999993,
+            "p99": 2.1982920799999994,
+            "max": 1177.185664
+          },
+          "perception_acquire_ms": {
+            "count": 0,
+            "mean": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "pipeline_active_ms": {
+            "count": 0,
+            "mean": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "sensor_to_control_ms": {
+            "count": 600,
+            "mean": 0.21287836333333335,
+            "p95": 0.28658465,
+            "p99": 0.31546622,
+            "max": 0.432392
+          },
+          "decision_ms": {
+            "count": 600,
+            "mean": 0.19777355333333332,
+            "p95": 0.2660695,
+            "p99": 0.28975987,
+            "max": 0.411998
+          }
+        },
+        "acceptance": {
+          "check_count": 6,
+          "checks": [
+            {
+              "actual": true,
+              "detail": "requires logs_generated",
+              "key": "must_generate_logs",
+              "required": true,
+              "status": "PASS"
+            },
+            {
+              "actual": 0.002466240956153049,
+              "detail": "max_abs_cross_track_error_m must be <= expected maximum",
+              "key": "max_cross_track_error_m",
+              "required": 1.0,
+              "status": "PASS"
+            },
+            {
+              "actual": 0,
+              "detail": "collision_count must be zero",
+              "key": "must_no_collision",
+              "required": 0,
+              "status": "PASS"
+            },
+            {
+              "actual": 0,
+              "detail": "route_deviation_count must be zero",
+              "key": "must_no_route_deviation",
+              "required": 0,
+              "status": "PASS"
+            },
+            {
+              "actual": 0.0,
+              "detail": "final speed must meet target tolerance",
+              "key": "target_speed_kph",
+              "required": {
+                "target": 20.0,
+                "tolerance": 5.0
+              },
+              "status": "FAIL"
+            },
+            {
+              "actual": 5,
+              "detail": "evaluated by target_speed_kph check",
+              "key": "speed_tolerance_kph",
+              "required": "paired with target_speed_kph",
+              "status": "PASS"
+            }
+          ],
+          "failed_keys": [
+            "target_speed_kph"
+          ],
+          "passed": false,
+          "unsupported_keys": []
+        },
+        "jsonl": "artifacts/second_group_20260731/scenario_smoke_after_changes/S01_set_speed_20/seed_0/run_01/S01_set_speed_20_20260731_133446_729088.jsonl",
+        "summary_json": "artifacts/second_group_20260731/scenario_smoke_after_changes/S01_set_speed_20/seed_0/run_01/S01_set_speed_20_20260731_133446_729088.summary.json"
+      },
+      "town10hd_speed20_regression": {
+        "scenario_id": "cruise",
+        "status": "SUCCEEDED",
+        "score": 25.0,
+        "frames": 1600,
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "min_gap_m": null,
+        "final_speed_mps": 5.3381364804814595,
+        "command_terminal_statuses": {
+          "town10hd-speed20-route-regression": "SUCCEEDED"
+        },
+        "safety_reasons": {
+          "NONE": 1516,
+          "RED_LIGHT_STOP_LINE_GUARD": 84
+        },
+        "latency_ms": {
+          "simulator_tick_ms": {
+            "count": 1600,
+            "mean": 1.21330858375,
+            "p95": 1.7236664499999999,
+            "p99": 2.8400825199999997,
+            "max": 7.741347
+          },
+          "perception_acquire_ms": {
+            "count": 0,
+            "mean": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "pipeline_active_ms": {
+            "count": 0,
+            "mean": null,
+            "p95": null,
+            "p99": null,
+            "max": null
+          },
+          "sensor_to_control_ms": {
+            "count": 1600,
+            "mean": 23.681527894374998,
+            "p95": 80.07190804999999,
+            "p99": 81.14285928999999,
+            "max": 86.956694
+          },
+          "decision_ms": {
+            "count": 1600,
+            "mean": 0.333552256875,
+            "p95": 0.5018445,
+            "p99": 0.5918603400000001,
+            "max": 0.947844
+          }
+        },
+        "acceptance": null,
+        "jsonl": "artifacts/second_group_20260731/town10hd_speed20_watchdog_fixed/cruise_20260731_132933_143725.jsonl",
+        "summary_json": "artifacts/second_group_20260731/town10hd_speed20_watchdog_fixed/cruise_20260731_132933_143725.summary.json"
+      },
+      "targets": {
+        "real_perception_p95_ms_max": 30.0,
+        "real_perception_p95_by_scenario_ms": {
+          "S01_set_speed_20": 70.64977149999999,
+          "D03_front_vehicle_brake": 68.91771935,
+          "D08_command_conflict_red_light_continue": 40.098662999999995
+        },
+        "real_perception_target_met": false,
+        "pipeline_period_p95_ms_max_for_20hz": 50.0,
+        "pipeline_active_p95_by_scenario_ms": {
+          "S01_set_speed_20": 70.99144129999999,
+          "D03_front_vehicle_brake": 69.32266125,
+          "D08_command_conflict_red_light_continue": 40.38352505
+        },
+        "pipeline_20hz_target_met": false,
+        "decision_p95_ms_max": 5.0,
+        "decision_target_met": true
+      }
+    },
+    "formal_matrix": {
+      "status": "NOT_RUN_STAGE_GATE_FAILED",
+      "required": "S01/D03/D08, at least 5 seeds and 20 total runs per scenario",
+      "reason": "current-host real perception P95 exceeds 30 ms and Qwen production weights are missing"
+    },
+    "stability_60_min": {
+      "status": "NOT_RUN_STAGE_GATE_FAILED",
+      "reason": "formal real-model/real-sensor stage gate is not satisfied; historical 30-minute run is not promoted"
+    },
+    "qwen_current_host": {
+      "status": "BLOCKED_MODEL_MISSING",
+      "production_ready": false,
+      "historical_7b_p95_ms": 2478.4190806,
+      "target_p95_ms": 300.0
+    }
+  },
+  "integrity_policy": {
+    "synthetic_perception_benchmark_is_live_carla_evidence": false,
+    "deterministic_qwen_backend_is_production_evidence": false,
+    "historical_matrix_is_current_change_evidence": false,
+    "historical_30_min_is_60_min_evidence": false
+  }
+}
