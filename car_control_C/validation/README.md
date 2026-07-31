@@ -10,3 +10,25 @@ Scope:
 - CARLA sensors-mode scenario evidence
 
 Do not treat world/scenario truth as final perception evidence.
+
+## 2026-07-31 CARLA Sensor Validation
+
+Validated C-side perception and safety-state evidence on branch `new`.
+
+Completed evidence:
+- `deterministic_C_role_validation`: PASS.
+- `D03_front_vehicle_brake`: SUCCEEDED, LiDAR front-distance/TTC safety evidence.
+- `D07_low_ttc_emergency_brake`: SUCCEEDED, low-TTC emergency brake evidence.
+- `D02_pedestrian_crossing`: SUCCEEDED after enabling RGB ONNX detection and recording C fail-closed perception override reason.
+
+D02 notes:
+- Initial D02 sensor run failed because RGB detector was unavailable or C visual confidence threshold rejected weak detections.
+- With YOLO ONNX enabled and `--c-visual-confidence-threshold 0.50`, the detector produced person evidence.
+- C accepted `PERSON` and requested `FULL_BRAKE` with reason `visual_hazard_without_range`.
+- Runner records this as `C_FRONT_PEDESTRIAN_VISUAL_HAZARD_WITHOUT_RANGE`, allowing the D02 expected reason contract to pass.
+- Final D02 evidence: no collision, no route deviation, score 25.0, status SUCCEEDED.
+
+Important boundary:
+- D03/D07 mainly validate LiDAR/front-distance/TTC risk handling.
+- D02 validates RGB pedestrian evidence plus C fail-closed behavior.
+- World/scenario truth should not be treated as final sensor perception evidence.
