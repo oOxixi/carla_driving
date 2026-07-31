@@ -1,0 +1,34 @@
+{
+  "acceptance": {
+    "passed": true,
+    "rule": "both safety_arbitration.p95_ms and integrated_control_step.p95_ms <= threshold_p95_ms"
+  },
+  "benchmark": "control_safety_hot_path",
+  "environment": {
+    "platform": "Linux-6.8.0-41-generic-x86_64-with-glibc2.39",
+    "python": "3.11.15"
+  },
+  "generated_at_utc": "2026-07-30T14:52:17.999198+00:00",
+  "iterations_per_path": 10000,
+  "results": {
+    "integrated_control_step": {
+      "max_ms": 5.407573,
+      "mean_ms": 0.13050998360000002,
+      "p50_ms": 0.11433,
+      "p95_ms": 0.171063,
+      "p99_ms": 0.34069,
+      "samples": 10000
+    },
+    "safety_arbitration": {
+      "max_ms": 0.070904,
+      "mean_ms": 0.0273713691,
+      "p50_ms": 0.027025,
+      "p95_ms": 0.028798,
+      "p99_ms": 0.039851,
+      "samples": 10000
+    }
+  },
+  "schema_version": "1.0",
+  "threshold_p95_ms": 5.0,
+  "warmup_iterations_per_path": 1000
+}

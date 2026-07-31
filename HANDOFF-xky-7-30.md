@@ -79,3 +79,26 @@
   - 等待/启动进程 PID：`2205610`
   - 运行日志：`artifacts/d_0730_soak.log`
   - 调度日志：`artifacts/d_0730_soak_supervisor.log`
+
+## 7/31 最终矩阵结果
+
+本节替代上面的“进行中”状态：
+
+- 正式矩阵已完成：S01、D03、D08 各 `5 seeds × 20 runs`，共 `300/300` 通过。
+- 每次最低得分均为 25 分。
+- 碰撞、闯红灯、严重路线偏离、未完成任务均为 0。
+- 300 个命令全部有唯一终态：
+  - S01：`SUCCEEDED × 100`
+  - D03：`SAFETY_OVERRIDE × 100`
+  - D08：`SAFETY_OVERRIDE × 100`
+- 最差单次运行 sensor-to-control P95：
+  - S01：`3.647185 ms`
+  - D03：`2.140257 ms`
+  - D08：`1.318166 ms`
+- D03 全矩阵最小车距：`4.871918 m`。
+- D08 最大停车线误差：`0.972321 m`。
+- 正式证据目录：`artifacts/d_0730_final/`。
+- 原 60 分钟调度任务因 `integration.sensor_stability` 缺少模块入口而空退出；入口已修复并验证。
+- 真实 60 分钟 RGB+LiDAR 测试已重新启动：
+  - PID：`1407530`
+  - 日志：`artifacts/d_0731_soak_60min.log`
