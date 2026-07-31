@@ -23,6 +23,7 @@ from car_control_A.high_level_command import HighLevelCommandAdapter, is_high_le
 from car_control_A.routing import RouteReference
 from car_control_A.watchdog import RuntimeWatchdog
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
+from car_control_C import ConservativeSensorFusion, SafetyStateParameters
 from car_control_D import SafetyConfig, SafetySupervisor
 
 from .carla_perception import (
@@ -854,6 +855,21 @@ def _runtime_health_completed(safety_reasons: set[str]) -> bool:
     )
 
 
+def _c_perception_safety_reason(c_safety_state: Mapping[str, object] | None) -> str | None:
+    """Convert C fail-closed perception summaries into acceptance evidence."""
+    if not c_safety_state:
+        return None
+    action = str(c_safety_state.get("recommended_action", "")).strip().upper()
+    if action not in {"FULL_BRAKE", "EMERGENCY_BRAKE"}:
+        return None
+    object_class = str(c_safety_state.get("object_class") or "HAZARD").strip().upper()
+    if object_class in {"PERSON", "PEDESTRIAN"}:
+        object_class = "PEDESTRIAN"
+    reason = str(c_safety_state.get("reason") or "FAIL_CLOSED").strip().upper()
+    reason = "".join(char if char.isalnum() else "_" for char in reason).strip("_")
+    return f"C_FRONT_{object_class}_{reason or 'FAIL_CLOSED'}"
+
+
 def _expected_safety_completed(
     spec: ScenarioSpec,
     *,
@@ -1264,8 +1280,12 @@ def run(args: argparse.Namespace) -> None:
                     specs=sensor_specs_for_profile(sensor_profile),
                     sensor_tick_s=args.fixed_delta_s,
                 )
+                c_fusion = ConservativeSensorFusion(SafetyStateParameters(
+                    visual_confidence_threshold=args.c_visual_confidence_threshold,
+                ))
                 perception_bridge = CarlaPerceptionBridge(
-                    world, world_map, ego, session, sensors, detector=detector,
+                    world, world_map, ego, session, sensors,
+                    detector=detector, fusion=c_fusion,
                 )
                 print("sensor stage: warming up RGB/LiDAR", flush=True)
                 _warm_up_sensor_bridge(
@@ -1411,6 +1431,7 @@ def run(args: argparse.Namespace) -> None:
                 perception_sources: dict[str, str] = {}
                 c_safety_state: dict[str, object] | None = None
                 perception_control_override: dict[str, object] | None = None
+                c_perception_override_reason: str | None = None
                 watchdog_alerts: list[str] = []
                 sensor_startup_grace = False
                 qwen_rgb_measurement: Any | None = None
@@ -1433,6 +1454,7 @@ def run(args: argparse.Namespace) -> None:
                                 "brake": 1.0,
                                 "steer": 0.0,
                             }
+                            c_perception_override_reason = _c_perception_safety_reason(c_safety_state)
                             perception_sources["c_control_override"] = (
                                 "C_FUSION_" + sample.safety_summary.reason.upper()
                             )
@@ -1622,6 +1644,12 @@ def run(args: argparse.Namespace) -> None:
                         result,
                         final_control=ControlOutput(0.0, 1.0, 0.0),
                         safety_reason="PERCEPTION_STARTUP_GRACE",
+                        safety_override=True,
+                    )
+                elif c_perception_override_reason is not None and not result.safety_override:
+                    result = replace(
+                        result,
+                        safety_reason=c_perception_override_reason,
                         safety_override=True,
                     )
                 if result.safety_override and not (
@@ -1833,6 +1861,8 @@ def main() -> None:
                         help="class-aware NMS IoU threshold")
     parser.add_argument("--rgb-detector-input-size", type=int, default=640,
                         help="fallback square input size for dynamic ONNX models")
+    parser.add_argument("--c-visual-confidence-threshold", type=float, default=0.60,
+                        help="C-side minimum visual confidence accepted by safety fusion")
     parser.add_argument("--qwen-remote", action="store_true",
                         help="use an OpenAI-compatible remote Qwen2.5-VL backend for the high-level command")
     parser.add_argument("--qwen-voice-command",
@@ -1907,6 +1937,8 @@ def main() -> None:
         parser.error("--rgb-detector-iou must be in (0, 1]")
     if args.rgb_detector_input_size < 32:
         parser.error("--rgb-detector-input-size must be >= 32")
+    if not 0.0 <= args.c_visual_confidence_threshold <= 1.0:
+        parser.error("--c-visual-confidence-threshold must be in [0, 1]")
     if args.qwen_remote and not args.validate_scenario_only:
         if args.perception_mode != "sensors":
             parser.error("--qwen-remote requires --perception-mode sensors")

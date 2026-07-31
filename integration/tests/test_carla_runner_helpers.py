@@ -339,6 +339,29 @@ def test_allowed_safety_override_does_not_hide_runtime_failure() -> None:
     ) is False
 
 
+def test_c_perception_fail_closed_reason_counts_as_front_pedestrian_evidence() -> None:
+    import integration.carla_runner as runner
+    from integration.scenario_execution import ScenarioSpec
+
+    reason = runner._c_perception_safety_reason({
+        "recommended_action": "FULL_BRAKE",
+        "object_class": "PERSON",
+        "reason": "visual_hazard_without_range",
+    })
+
+    assert reason == "C_FRONT_PEDESTRIAN_VISUAL_HAZARD_WITHOUT_RANGE"
+
+    path = Path(__file__).resolve().parents[2] / "scenarios" / "safety_D" / "D02_pedestrian_crossing.json"
+    spec = ScenarioSpec.load(path)
+    assert _expected_safety_completed(
+        spec,
+        frames=spec.frame_count,
+        final_speed_mps=0.0,
+        collision_seen=False,
+        safety_reasons={reason, "RED_LIGHT_STOP_LINE_GUARD"},
+    ) is True
+
+
 def test_d_fault_contracts_create_one_shot_raw_control_payloads() -> None:
     from integration.scenario_execution import ScenarioSpec
 
