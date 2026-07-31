@@ -1,0 +1,88 @@
+{
+  "overall_status": "passed_with_documented_seed_limitation",
+  "source": {
+    "path": "C:\\Users\\bhwl\\carla_driving\\CARLA-Language-Benchmark\\datasets\\final_benchmark\\CARLA_language_benchmark_v1_deduplicated.json",
+    "sha256": "182333bba54b46451d53322cfc38180cd33b37741bb3a1f2d34d493e9732715e",
+    "record_count": 4102
+  },
+  "configuration": {
+    "split_seed": 20260728,
+    "target_ratios": {
+      "train": 0.7,
+      "val": 0.15,
+      "test": 0.15
+    },
+    "scene_signature_ignored_keys": [
+      "id",
+      "track_id"
+    ]
+  },
+  "grouping": {
+    "template_group_count": 879,
+    "scene_group_count": 590,
+    "source_seed_group_count": 0,
+    "connected_component_count": 285,
+    "largest_component_size": 455
+  },
+  "source_seed": {
+    "status": "missing",
+    "field_paths": {},
+    "require_source_seed": false,
+    "explanation": "未发现源 seed 字段，因此当前只能证明模板和场景隔离；split_seed 只能保证划分可复现，不能替代源 seed 隔离。"
+  },
+  "splits": {
+    "train": {
+      "path": "C:\\Users\\bhwl\\carla_driving\\CARLA-Language-Benchmark\\datasets\\splits\\group1_task3_v1_dedup\\train.json",
+      "sha256": "cc04e56c173eafd146b1e24ad415dae0f98b441b15cbc471023ef31e2668a575",
+      "count": 2872,
+      "actual_ratio": 0.7001462701121404,
+      "target_ratio": 0.7
+    },
+    "val": {
+      "path": "C:\\Users\\bhwl\\carla_driving\\CARLA-Language-Benchmark\\datasets\\splits\\group1_task3_v1_dedup\\val.json",
+      "sha256": "b6aa9e9227c3a8cfa9dc9663711c0895cda4f8de5e8c0ff98b5481713a808a69",
+      "count": 615,
+      "actual_ratio": 0.1499268649439298,
+      "target_ratio": 0.15
+    },
+    "test": {
+      "path": "C:\\Users\\bhwl\\carla_driving\\CARLA-Language-Benchmark\\datasets\\splits\\group1_task3_v1_dedup\\test.json",
+      "sha256": "73a18de7439f577f498a65222fb9b6c282b394c349444b08eb340692ce53d1f0",
+      "count": 615,
+      "actual_ratio": 0.1499268649439298,
+      "target_ratio": 0.15
+    }
+  },
+  "duplicate_check": {
+    "group_count": 0,
+    "extra_record_count": 0,
+    "examples": []
+  },
+  "label_conflict_check": {
+    "group_count": 0,
+    "examples": []
+  },
+  "cross_split_leakage": {
+    "total_group_count": 0,
+    "template": {
+      "group_count": 0,
+      "examples": []
+    },
+    "scene": {
+      "group_count": 0,
+      "examples": []
+    },
+    "source_seed": {
+      "group_count": 0,
+      "examples": []
+    },
+    "duplicate_fingerprint": {
+      "group_count": 0,
+      "examples": []
+    }
+  },
+  "outputs": {
+    "manifest": "C:\\Users\\bhwl\\carla_driving\\CARLA-Language-Benchmark\\datasets\\splits\\group1_task3_v1_dedup\\split_manifest.json",
+    "report": "C:\\Users\\bhwl\\carla_driving\\artifacts\\group1_task3\\split_audit_dedup.json"
+  }
+}
