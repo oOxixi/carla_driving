@@ -13,5 +13,12 @@
 - `scenario_matrix_full.log`：批量执行控制台记录。
 - `scenario_matrix_seed_calibration.log`：首轮 5-seed 校准记录。
 - `control_benchmark_ubuntu_0730.json`：Ubuntu 控制热路径基准。
+- `sensor_soak_60min.log`：60 分钟 RGB+LiDAR 连续稳定性原始日志。
 
-60 分钟 RGB+LiDAR 连续稳定性测试正在服务器运行，完成后需补入最终结果。
+60 分钟 RGB+LiDAR 连续稳定性测试已通过：
+
+- 实际持续时间：`3607.802 s`
+- 对齐帧：`100210`
+- RGB/LiDAR 回调：各 `100213`
+- 无效回调：两路均为 `0`
+- CARLA 地图：`Town03_Opt`

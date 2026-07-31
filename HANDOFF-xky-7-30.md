@@ -102,3 +102,13 @@
 - 真实 60 分钟 RGB+LiDAR 测试已重新启动：
   - PID：`1407530`
   - 日志：`artifacts/d_0731_soak_60min.log`
+
+## 7/31 稳定性最终结果
+
+- 60 分钟 RGB+LiDAR 连续测试已成功结束。
+- 实际持续：`3607.802 s`。
+- RGB/LiDAR 同帧对齐：`100210` 帧。
+- RGB 回调：`100213`；LiDAR 回调：`100213`。
+- 两路无效回调均为 `0`。
+- CARLA 全程保持运行，最终结果为 `success=true`。
+- 已归档日志：`artifacts/d_0730_final/sensor_soak_60min.log`。

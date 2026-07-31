@@ -86,13 +86,29 @@
     "scenario_matrix_seed_calibration.log": {
       "purpose": "initial five-seed calibration console evidence",
       "sha256": "082f2cbea6877a4941596f32f85b9a56ea54c7ae41349362956a878486fbeab5"
+    },
+    "sensor_soak_60min.log": {
+      "purpose": "continuous aligned RGB and LiDAR CARLA sensor soak",
+      "sha256": "e93bf65fd65714efda0a892f59a10e7223aaf720f8c909abfbab9551b736faf9"
     }
   },
-  "remaining": {
+  "stability": {
     "rgb_lidar_60_minute_soak": {
-      "status": "RUNNING",
-      "server_pid": 1407530,
-      "log": "artifacts/d_0731_soak_60min.log"
+      "status": "SUCCEEDED",
+      "duration_s": 3607.802,
+      "aligned_frames": 100210,
+      "callback_counts": {
+        "rgb_front": 100213,
+        "lidar_roof": 100213
+      },
+      "invalid_callbacks": {
+        "rgb_front": 0,
+        "lidar_roof": 0
+      },
+      "map": "Carla/Maps/Town03_Opt",
+      "sensor_profile": "low",
+      "reason": "requested aligned frames received"
     }
-  }
+  },
+  "remaining": {}
 }
