@@ -1,0 +1,274 @@
+{
+  "schema_version": "2.0.0",
+  "created_at_utc": "2026-07-28T15:33:09.731100+00:00",
+  "submission": {
+    "repository": "https://github.com/oOxixi/carla_driving.git",
+    "branch": "main",
+    "base_commit": "7dbe22695c3d84454c0c606521a8f10526c05631",
+    "working_tree_clean": false,
+    "working_tree_change_count": 2,
+    "source_worktree_clean": true,
+    "evidence_packaging_change_count": 2,
+    "carla_version": "0.9.16"
+  },
+  "real_model_chain": {
+    "models_unchanged": {
+      "asr": "SenseVoice/FunASR",
+      "multimodal": "Qwen2.5-VL-7B-Instruct"
+    },
+    "real_model_inference": true,
+    "scope": "synthetic TTS audio -> real SenseVoice/NLU -> real RGB and raw-CARLA-LiDAR summary -> real Qwen -> strict boundary -> deterministic D safety -> final control",
+    "case_count": 320,
+    "metrics": {
+      "answerable_joint_accuracy": 1.0,
+      "asr_exact_accuracy": 1.0,
+      "voice_command_valid_rate": 1.0,
+      "answerable_semantic_accuracy": 1.0,
+      "answerable_target_association_accuracy": 1.0,
+      "raw_qwen_target_association_accuracy": 0.975,
+      "grounding_correction_count": 7,
+      "answerable_confirmation_accuracy": 1.0,
+      "safety_fault_fail_closed_accuracy": 1.0,
+      "full_chain_contract_accuracy": 1.0,
+      "latency": {
+        "voice": {
+          "mean_ms": 107.30194001875,
+          "p95_ms": 117.0711411,
+          "p99_ms": 122.91403643000001,
+          "max_ms": 127.029306
+        },
+        "qwen": {
+          "mean_ms": 2293.9115844125,
+          "p95_ms": 2479.58141755,
+          "p99_ms": 2538.1823055799996,
+          "max_ms": 3679.008775
+        },
+        "post_qwen_control": {
+          "mean_ms": 0.1594775,
+          "p95_ms": 0.22777735000000005,
+          "p99_ms": 0.33374750000000003,
+          "max_ms": 0.42029
+        },
+        "audio_to_final_control": {
+          "mean_ms": 2401.3736857343747,
+          "p95_ms": 2585.6811046000003,
+          "p99_ms": 2651.98013296,
+          "max_ms": 3784.524626
+        }
+      },
+      "passes_thresholds": true
+    },
+    "report": {
+      "path": "artifacts/four_modal_0728/full_chain_report_v2.json",
+      "sha256": "c939b332763b36acaf0e8bf5ecfbb5901a2468a1dc3fbcb188c4ae487c0ae94b",
+      "bytes": 976892
+    },
+    "qwen_model_manifest": {
+      "path": "artifacts/four_modal_0728/qwen_model_manifest.json",
+      "sha256": "c3e7085a6adac022b7e858912c534fd8a08384445b608226fda6695092621f66",
+      "bytes": 3098
+    },
+    "run_log": {
+      "path": "artifacts/four_modal_0728/full_chain_run_v2.log",
+      "sha256": "af498b46b3b678af84a5ae41ca7f07b6f2fb4f4c55237819dd58383d20e075e1",
+      "bytes": 1023836
+    }
+  },
+  "four_modal_dataset": {
+    "modalities": [
+      "voice",
+      "RGB",
+      "LiDAR",
+      "ego_state"
+    ],
+    "manifest": {
+      "path": "artifacts/four_modal_0728/stress_set/cases_v2.jsonl",
+      "sha256": "a082b9a10e796151a427710c2c278d9bf5ab97324601ff75740adaa565100610",
+      "bytes": 1247192
+    },
+    "audio_report": {
+      "path": "artifacts/four_modal_0728/stress_set/cases_v2.audio_report.json",
+      "sha256": "0a972a07fb06f1582859417e460fb6c2085ab3bcc0f09c07c9a66f36649517fa",
+      "bytes": 192
+    },
+    "collection_report": {
+      "path": "artifacts/four_modal_0728/collection/collection_report.json",
+      "sha256": "68416087afdaa70852c03ec89f0e00378a4b7855eab33c46fe68a4a53236c0eb",
+      "bytes": 736
+    },
+    "stress_report": {
+      "path": "artifacts/four_modal_0728/stress_set/dataset_report.json",
+      "sha256": "6d0041ad153fa609fc5bd98766e4cdf02cfc4e0c06eea9b7d383f3c02c21153c",
+      "bytes": 970
+    },
+    "validation_report": {
+      "path": "artifacts/four_modal_0728/dataset_validation_v2.json",
+      "sha256": "22a8ff3ec4dc105fd8f0a4eba8f3755f1d387b950789c322af2b30b9bedbfb60",
+      "bytes": 680
+    },
+    "limitations": [
+      "Audio is synthetic TTS passed through the real ASR model; it is not official human dialect or 50 dBA evidence.",
+      "Visual stress transforms are labelled augmentations of real CARLA frames.",
+      "Every case reaches final-control arbitration, while physical CARLA vehicle execution is evidenced separately by formal scenarios."
+    ]
+  },
+  "representative_scenarios": {
+    "matrix": {
+      "path": "artifacts/scenario_matrix_0727_final/scenario_matrix_report.json",
+      "sha256": "ca3ef270f110b20716b7ef0fc6af2d60af2016ad7ecd8a56f006b60e0aceaa87",
+      "bytes": 32925
+    },
+    "runs": [
+      {
+        "scenario_id": "S01_set_speed_20",
+        "map": "Town03_Opt",
+        "result": "PASS",
+        "matrix_metrics": {
+          "runs": 20,
+          "seeds": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "succeeded": 20,
+          "success_rate": 1.0,
+          "collisions": 0,
+          "red_light_violations": 0,
+          "minimum_gap_m": 36.46712112426758,
+          "mean_run_sensor_to_control_avg_ms": 1.1695333923333335,
+          "max_sensor_to_control_ms": 5.966092
+        },
+        "summary": {
+          "path": "artifacts/qwen_carla_closed_loop_0727/formal/S01/S01_set_speed_20_20260727_224749_380324.summary.json",
+          "sha256": "e093552479408b6fe5dc34c8bb544bb9480952815958ec0f1d2bf11a9fe076f7",
+          "bytes": 3252
+        },
+        "records": {
+          "path": "artifacts/qwen_carla_closed_loop_0727/formal/S01/S01_set_speed_20_20260727_224749_380324.jsonl",
+          "sha256": "8bccad5d848cec7886a903836883eaa34c4349d5e386d77144a433261dc2e89c",
+          "bytes": 1936110
+        }
+      },
+      {
+        "scenario_id": "D03_front_vehicle_brake",
+        "map": "Town03_Opt",
+        "result": "PASS",
+        "matrix_metrics": {
+          "runs": 20,
+          "seeds": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "succeeded": 20,
+          "success_rate": 1.0,
+          "collisions": 0,
+          "red_light_violations": 0,
+          "minimum_gap_m": 4.8519511222839355,
+          "mean_run_sensor_to_control_avg_ms": 1.127845265142857,
+          "max_sensor_to_control_ms": 4.408298
+        },
+        "summary": {
+          "path": "artifacts/qwen_carla_closed_loop_0727/formal/D03_final/D03_front_vehicle_brake_20260727_225431_352952.summary.json",
+          "sha256": "2950cfea109003b9ac03061ab2b1e8ef1b031a61d240db5956ed06a4dbe1f057",
+          "bytes": 2925
+        },
+        "records": {
+          "path": "artifacts/qwen_carla_closed_loop_0727/formal/D03_final/D03_front_vehicle_brake_20260727_225431_352952.jsonl",
+          "sha256": "93daed7921e95fe2c3b1660204659f087bb72287a8035d39bda7e8d53bd0aa17",
+          "bytes": 2417694
+        }
+      },
+      {
+        "scenario_id": "D08_command_conflict_red_light_continue",
+        "map": "Town03_Opt",
+        "result": "PASS",
+        "matrix_metrics": {
+          "runs": 20,
+          "seeds": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "succeeded": 20,
+          "success_rate": 1.0,
+          "collisions": 0,
+          "red_light_violations": 0,
+          "minimum_gap_m": null,
+          "mean_run_sensor_to_control_avg_ms": 0.7869326328,
+          "max_sensor_to_control_ms": 6.772503
+        },
+        "summary": {
+          "path": "artifacts/qwen_carla_closed_loop_0727/formal/D08/D08_command_conflict_red_light_continue_20260727_225524_159228.summary.json",
+          "sha256": "08f57fc52eb340a88ae0d7788bf059cf12e273b69fce7834d06a11d5c7f1cf9d",
+          "bytes": 2964
+        },
+        "records": {
+          "path": "artifacts/qwen_carla_closed_loop_0727/formal/D08/D08_command_conflict_red_light_continue_20260727_225524_159228.jsonl",
+          "sha256": "06ca547a94d8b357183696353e29db61b8ece9128573470c19eef464b35753e6",
+          "bytes": 1628769
+        }
+      }
+    ]
+  },
+  "stability": {
+    "success": true,
+    "observed_wall_duration_s": 1807.8289045629936,
+    "aligned_fps": 31.708303301816603,
+    "dropped_aligned_frames": 0,
+    "qwen": {
+      "request_count": 6,
+      "ready": 6,
+      "errors": 0,
+      "latency_ms_mean": 2221.5458168308637,
+      "latency_ms_p95": 3361.410510755377,
+      "latency_ms_p99": 3700.523035757942,
+      "latency_ms_max": 3785.3011670085834
+    },
+    "report": {
+      "path": "artifacts/long_stability_0728/report_30min.json",
+      "sha256": "9224fd792bd0bc726dbd003262a754d93438f6cc301eafc9b6c0c99ad3dcf8f8",
+      "bytes": 126750
+    }
+  },
+  "validation": {
+    "focused_pytest": {
+      "path": "artifacts/four_modal_0728/pytest.xml",
+      "sha256": "08b4c31d28161311bd58a7c83e1a3b6a60334e0525090902bbbb7a4735852831",
+      "bytes": 6935
+    },
+    "full_pytest": {
+      "path": "artifacts/four_modal_0728/pytest_full.xml",
+      "sha256": "9e1d5a4bdaa26dd8e392f6a056c260b41a1e8a91e25c192df545a4754a7c0c82",
+      "bytes": 57908
+    },
+    "source_manifest": {
+      "path": "artifacts/four_modal_0728/source_manifest.json",
+      "sha256": "6e3c49420d3d6e83c1766bee5cb2a4c34cee08cebaa228e2cc8d8e1885af4385",
+      "bytes": 48603
+    }
+  },
+  "known_submission_gaps": [
+    {
+      "artifact": "official_human_50_dBA_voice_evidence",
+      "status": "MISSING",
+      "reason": "The new full-chain audio is synthetic TTS and is not claimed as calibrated 50 dBA evidence."
+    },
+    {
+      "artifact": "final_demo_video",
+      "status": "MISSING",
+      "reason": "No final video file is registered in this index."
+    },
+    {
+      "artifact": "frozen_commit",
+      "status": "READY",
+      "reason": "base_commit contains the complete source, dataset, reports, and task document. Any remaining tracked changes are evidence-packaging outputs committed immediately after this snapshot."
+    }
+  ]
+}

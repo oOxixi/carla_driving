@@ -34,6 +34,7 @@ class ParserConfig:
     min_speed_kmh: int = 0
     max_speed_kmh: int = 80
     low_confidence_threshold: float = 0.60
+    low_asr_confidence_threshold: float = 0.60
     default_pull_over_side: str = "RIGHT"
 
 
@@ -88,6 +89,16 @@ class CommandParser:
         blocking_error = self._blocking_b1_error(ctx)
         if blocking_error:
             ctx.error(*blocking_error)
+        elif (
+            ctx.asr_confidence is not None
+            and ctx.asr_confidence < self.config.low_asr_confidence_threshold
+        ):
+            ctx.error(
+                "LOW_ASR_CONFIDENCE",
+                "ASR 置信度 "
+                f"{ctx.asr_confidence:.2f} 低于阈值 "
+                f"{self.config.low_asr_confidence_threshold:.2f}，禁止直接执行",
+            )
         elif ctx.intent not in SUPPORTED_INTENTS:
             ctx.error("UNKNOWN_INTENT", f"不支持的意图: {ctx.intent or '<empty>'}")
         else:
@@ -257,6 +268,7 @@ class CommandParser:
             ("NEEDS_SLOW_PATH", "needs_slow_path"),
             ("B1_UNKNOWN", "unknown"),
             ("UNKNOWN_INTENT", "unknown_intent"),
+            ("LOW_ASR_CONFIDENCE", "low_confidence"),
             ("CONFLICT_SLOT", "conflict"),
             ("MISSING_SLOT", "missing_slot"),
             ("UNSAFE_SLOT", "unsafe"),
@@ -317,10 +329,14 @@ def _extract_speed(text: str) -> int | None:
 def _extract_obstacle_target(text: str) -> str:
     if "行人" in text:
         return "PEDESTRIAN"
+    if "路障" in text:
+        return "ROADBLOCK"
     if "车辆" in text or "车" in text:
         return "VEHICLE"
     if "障碍" in text or "障碍物" in text:
         return "OBSTACLE"
+    if "东西" in text or "那个" in text:
+        return "UNKNOWN_TARGET"
     return "FRONT_OBSTACLE"
 
 

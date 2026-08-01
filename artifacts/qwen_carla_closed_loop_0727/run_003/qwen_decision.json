@@ -1,0 +1,15 @@
+{
+  "decision": {
+    "action": "SET_SPEED",
+    "confidence": 1.0,
+    "decision_source": "QWEN_VL",
+    "reason_zh": "根据语音指令设定速度",
+    "requires_confirmation": false,
+    "target_speed_mps": 4.0
+  },
+  "image_path": "/home/tiaozhansai/carla_driving/artifacts/qwen_carla_closed_loop_0727/run_003/media/rgb_00140499.png",
+  "image_sha256": "8b8ce0255324e45a715bc73e04fbb6cc6add21ef4d617bb311f6ad00a75cf149",
+  "latency_ms": 3744.760668,
+  "raw_output": "```json\n{\n  \"action\": \"SET_SPEED\",\n  \"confidence\": 1.0,\n  \"requires_confirmation\": false,\n  \"target_speed_mps\": 4.0,\n  \"reason_zh\": \"根据语音指令设定速度\",\n  \"decision_source\": \"QWEN_VL\"\n}\n```",
+  "request_id": "qwen-carla-140499"
+}

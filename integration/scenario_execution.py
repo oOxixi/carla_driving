@@ -106,10 +106,32 @@ class ScenarioSpec:
         raw_commands = data.get("commands")
         if type(raw_commands) is not list:
             raise TypeError("commands must be a list")
-        commands = tuple(sorted(
+        duration_s = _finite_number(
+            runtime.get("duration_s"),
+            "duration_s",
+            minimum=0.001,
+        )
+        parsed_commands = tuple(sorted(
             (_parse_command(item, index) for index, item in enumerate(raw_commands)),
             key=lambda command: command.time_s,
         ))
+        commands = tuple(
+            ScheduledCommand(
+                command.time_s,
+                {
+                    **command.envelope,
+                    # Scenario commands are trusted, frozen test inputs.  Their
+                    # authority must cover the remaining scenario window so a
+                    # 35 s contract cannot fail merely because the generic
+                    # 30 s voice TTL expires before its final frame.
+                    "valid_duration_s": max(
+                        float(command.envelope["valid_duration_s"]),
+                        duration_s - command.time_s + 1.0,
+                    ),
+                },
+            )
+            for command in parsed_commands
+        )
         actors = data.get("actors", [])
         sensors = data.get("sensors", {})
         expected = data.get("expected", {})
@@ -127,7 +149,7 @@ class ScenarioSpec:
             weather=_nonempty_text(data.get("weather"), "weather"),
             seed=seed,
             fixed_delta_s=_finite_number(runtime.get("fixed_delta_seconds"), "fixed_delta_seconds", minimum=0.001),
-            duration_s=_finite_number(runtime.get("duration_s"), "duration_s", minimum=0.001),
+            duration_s=duration_s,
             ego_spawn_xyzyaw=(
                 _finite_number(ego_spawn.get("x", 0.0), "ego_spawn.x"),
                 _finite_number(ego_spawn.get("y", 0.0), "ego_spawn.y"),

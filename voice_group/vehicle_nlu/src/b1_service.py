@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.intent_classifier import classify_intent
+from .intent_classifier import classify_intent
 
 
 def process_asr_text(

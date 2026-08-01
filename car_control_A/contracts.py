@@ -9,9 +9,10 @@ named ``closing_speed_mps`` or ``target_accel_mps2``.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import StrEnum
 import math
 from typing import Any
+
+from compat import StrEnum
 
 
 CONTRACT_VERSION = "1.0"

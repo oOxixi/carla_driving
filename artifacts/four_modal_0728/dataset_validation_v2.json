@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-07-28T14:33:57.872410+00:00",
+  "manifest": "cases_v2.jsonl",
+  "case_count": 320,
+  "category_counts": {
+    "baseline": 40,
+    "exposure_low": 40,
+    "exposure_high": 40,
+    "motion_blur": 40,
+    "partial_occlusion": 40,
+    "detector_false_positive": 40,
+    "detector_miss": 40,
+    "detector_bbox_shift": 40
+  },
+  "split_counts": {
+    "train": 208,
+    "val": 80,
+    "test": 32
+  },
+  "unique_audio_files": 10,
+  "unique_rgb_files": 320,
+  "unique_lidar_files": 20,
+  "hashed_unique_file_count": 350,
+  "scene_split_leakage": {},
+  "error_count": 0,
+  "errors": [],
+  "valid": true
+}

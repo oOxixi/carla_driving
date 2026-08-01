@@ -1,0 +1,13 @@
+# Install matching CUDA-enabled torch AND torchaudio builds separately:
+# https://pytorch.org/get-started/locally/
+numpy>=1.26,<3
+soundfile>=0.12,<1
+funasr>=1.1,<2
+modelscope>=1.16,<2
+peft==0.19.1
+safetensors>=0.4,<1
+faster-whisper>=1.1,<2
+opencc-python-reimplemented>=0.1.7,<1
+
+# Test and evidence generation
+pytest>=8,<10

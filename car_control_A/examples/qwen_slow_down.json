@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "command_id": "qwen-demo-slow-down",
+  "action": "SLOW_DOWN",
+  "target_speed_mps": 2.0,
+  "confidence": 0.94,
+  "reason": "front object distance is shrinking",
+  "visual_valid": true,
+  "timestamp_ns": 0,
+  "valid_duration_s": 3.0
+}

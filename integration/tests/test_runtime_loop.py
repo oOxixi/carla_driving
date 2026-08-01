@@ -42,6 +42,27 @@ def test_runtime_preserves_d_emergency_stop_authority():
     assert result.final_control.brake == 1.0
 
 
+def test_runtime_executes_slow_down_and_keep_lane_with_terminal_feedback():
+    slow = ControlRuntime(PurePursuitController(), default_speed_mps=5.0)
+    slow_command = _voice("SLOW_DOWN", {"speed": 2.0, "unit": "m/s"})
+    slow.submit_voice(slow_command, now_s=0.05)
+    assert slow.requested_speed_mps == 2.0
+
+    keep = ControlRuntime(PurePursuitController(), default_speed_mps=5.0)
+    keep.submit_voice(_voice("KEEP_LANE", {}), now_s=0.05)
+    result = None
+    for frame in range(1, 4):
+        result = keep.step(
+            _vehicle(frame=frame, time=frame * 0.05, speed=5.0),
+            PerceptionFrame(frame=frame, sim_time_s=frame * 0.05),
+            _route(),
+            dt_s=0.05,
+        )
+    assert result is not None
+    assert any(item.command_id == "voice-1" and item.status.value == "SUCCEEDED" for item in result.feedback)
+    assert keep.active_command_id is None
+
+
 def test_runtime_fault_override_is_checked_by_d_before_apply_control():
     runtime = ControlRuntime(PurePursuitController())
     result = runtime.step(

@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "method": "platt_logit",
+  "model": "small",
+  "device_independent": true,
+  "intercept": -2.311031985,
+  "slope": 1.595049563,
+  "generated_at_utc": "2026-07-26T14:45:20.988362+00:00",
+  "dataset": {
+    "manifest": "voice_group/test_samples/manifest.json",
+    "samples": 100,
+    "languages": [
+      "台湾国语",
+      "普通话"
+    ],
+    "conditions": [
+      "clean",
+      "synthetic_noise"
+    ],
+    "synthetic_snr_db": 10.0,
+    "human_recordings": false,
+    "official_competition_calibration": false,
+    "split": "sample_index modulo 5; variants kept together"
+  },
+  "train": {
+    "count": 160,
+    "correct": 117,
+    "incorrect": 43,
+    "brier": 0.141112,
+    "mean_probability": 0.731394,
+    "mean_probability_correct": 0.804089,
+    "mean_probability_incorrect": 0.533599
+  },
+  "validation": {
+    "count": 40,
+    "correct": 29,
+    "incorrect": 11,
+    "brier": 0.166066,
+    "mean_probability": 0.667242,
+    "mean_probability_correct": 0.726557,
+    "mean_probability_incorrect": 0.510864
+  }
+}

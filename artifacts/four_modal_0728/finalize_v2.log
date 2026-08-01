@@ -1,0 +1,150 @@
+{
+  "case_count": 320,
+  "answerable_case_count": 280,
+  "safety_fault_case_count": 40,
+  "status_counts": {
+    "READY": 280,
+    "ERROR": 40
+  },
+  "asr_exact_accuracy": 1.0,
+  "voice_command_valid_rate": 1.0,
+  "answerable_joint_accuracy": 1.0,
+  "answerable_semantic_accuracy": 1.0,
+  "answerable_target_association_accuracy": 1.0,
+  "raw_qwen_target_association_accuracy": 0.975,
+  "grounding_correction_count": 7,
+  "answerable_confirmation_accuracy": 1.0,
+  "safety_fault_fail_closed_accuracy": 1.0,
+  "full_chain_contract_accuracy": 1.0,
+  "latency": {
+    "voice": {
+      "mean_ms": 107.30194001875,
+      "p95_ms": 117.0711411,
+      "p99_ms": 122.91403643000001,
+      "max_ms": 127.029306
+    },
+    "qwen": {
+      "mean_ms": 2293.9115844125,
+      "p95_ms": 2479.58141755,
+      "p99_ms": 2538.1823055799996,
+      "max_ms": 3679.008775
+    },
+    "post_qwen_control": {
+      "mean_ms": 0.1594775,
+      "p95_ms": 0.22777735000000005,
+      "p99_ms": 0.33374750000000003,
+      "max_ms": 0.42029
+    },
+    "audio_to_final_control": {
+      "mean_ms": 2401.3736857343747,
+      "p95_ms": 2585.6811046000003,
+      "p99_ms": 2651.98013296,
+      "max_ms": 3784.524626
+    }
+  },
+  "categories": {
+    "baseline": {
+      "count": 40,
+      "answerable_count": 40,
+      "safety_fault_count": 0,
+      "ready_rate": 1.0,
+      "asr_exact_accuracy": 1.0,
+      "answerable_joint_accuracy": 1.0,
+      "answerable_target_association_accuracy": 1.0,
+      "raw_qwen_target_association_accuracy": 0.975,
+      "safety_fault_fail_closed_accuracy": null,
+      "full_chain_contract_accuracy": 1.0
+    },
+    "detector_bbox_shift": {
+      "count": 40,
+      "answerable_count": 40,
+      "safety_fault_count": 0,
+      "ready_rate": 1.0,
+      "asr_exact_accuracy": 1.0,
+      "answerable_joint_accuracy": 1.0,
+      "answerable_target_association_accuracy": 1.0,
+      "raw_qwen_target_association_accuracy": 0.975,
+      "safety_fault_fail_closed_accuracy": null,
+      "full_chain_contract_accuracy": 1.0
+    },
+    "detector_false_positive": {
+      "count": 40,
+      "answerable_count": 40,
+      "safety_fault_count": 0,
+      "ready_rate": 1.0,
+      "asr_exact_accuracy": 1.0,
+      "answerable_joint_accuracy": 1.0,
+      "answerable_target_association_accuracy": 1.0,
+      "raw_qwen_target_association_accuracy": 0.975,
+      "safety_fault_fail_closed_accuracy": null,
+      "full_chain_contract_accuracy": 1.0
+    },
+    "detector_miss": {
+      "count": 40,
+      "answerable_count": 0,
+      "safety_fault_count": 40,
+      "ready_rate": 0.0,
+      "asr_exact_accuracy": 1.0,
+      "answerable_joint_accuracy": null,
+      "answerable_target_association_accuracy": null,
+      "raw_qwen_target_association_accuracy": null,
+      "safety_fault_fail_closed_accuracy": 1.0,
+      "full_chain_contract_accuracy": 1.0
+    },
+    "exposure_high": {
+      "count": 40,
+      "answerable_count": 40,
+      "safety_fault_count": 0,
+      "ready_rate": 1.0,
+      "asr_exact_accuracy": 1.0,
+      "answerable_joint_accuracy": 1.0,
+      "answerable_target_association_accuracy": 1.0,
+      "raw_qwen_target_association_accuracy": 0.975,
+      "safety_fault_fail_closed_accuracy": null,
+      "full_chain_contract_accuracy": 1.0
+    },
+    "exposure_low": {
+      "count": 40,
+      "answerable_count": 40,
+      "safety_fault_count": 0,
+      "ready_rate": 1.0,
+      "asr_exact_accuracy": 1.0,
+      "answerable_joint_accuracy": 1.0,
+      "answerable_target_association_accuracy": 1.0,
+      "raw_qwen_target_association_accuracy": 0.975,
+      "safety_fault_fail_closed_accuracy": null,
+      "full_chain_contract_accuracy": 1.0
+    },
+    "motion_blur": {
+      "count": 40,
+      "answerable_count": 40,
+      "safety_fault_count": 0,
+      "ready_rate": 1.0,
+      "asr_exact_accuracy": 1.0,
+      "answerable_joint_accuracy": 1.0,
+      "answerable_target_association_accuracy": 1.0,
+      "raw_qwen_target_association_accuracy": 0.975,
+      "safety_fault_fail_closed_accuracy": null,
+      "full_chain_contract_accuracy": 1.0
+    },
+    "partial_occlusion": {
+      "count": 40,
+      "answerable_count": 40,
+      "safety_fault_count": 0,
+      "ready_rate": 1.0,
+      "asr_exact_accuracy": 1.0,
+      "answerable_joint_accuracy": 1.0,
+      "answerable_target_association_accuracy": 1.0,
+      "raw_qwen_target_association_accuracy": 0.975,
+      "safety_fault_fail_closed_accuracy": null,
+      "full_chain_contract_accuracy": 1.0
+    }
+  },
+  "thresholds": {
+    "answerable_joint_accuracy_min": 0.98,
+    "answerable_target_association_accuracy_min": 0.98,
+    "safety_fault_fail_closed_accuracy_min": 1.0,
+    "full_chain_contract_accuracy_min": 0.98
+  },
+  "passes_thresholds": true
+}

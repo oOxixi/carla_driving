@@ -1,203 +1,55 @@
 ---
 library_name: peft
+base_model: iic/SenseVoiceSmall
+license: other
+license_name: FunASR-Model-License-1.1
 tags:
 - lora
+- automatic-speech-recognition
+- chinese
+- cantonese
+- dialect
 ---
 
-# Model Card for Model ID
+# SenseVoiceSmall 车载方言 LoRA
 
-<!-- Provide a quick summary of what the model is/does. -->
+这是生产链路 `voice_group/asr_vad.py` 当前加载的 PEFT LoRA 适配器，用于车载中文、粤语及方言语音识别。它必须与基础模型 `iic/SenseVoiceSmall` 一起加载，不能独立推理。
 
+## 模型信息
 
+- 基础模型：`iic/SenseVoiceSmall`
+- 架构：SenseVoiceSmall + PEFT LoRA
+- PEFT：0.19.1
+- LoRA：`r=8`，`alpha=16`，`dropout=0.05`
+- 目标模块：`linear_q_k_v`、`linear_out`
+- 权重：`adapter_model.safetensors`
+- SHA-256：`38d541099157ba5c35d8256f2ebd8a374cae85a5ca7eb9b2a7cb8a033c624de1`
+- 大小：6,922,192 bytes
 
-## Model Details
+## 用途与限制
 
-### Model Description
+预期用途是比赛车载语音命令的 ASR 前端。输出必须继续经过 B1/B2 解析、安全阈值和车辆适配器；模型不得直接输出油门、刹车或方向盘控制量。
 
-<!-- Provide a longer summary of what this model is. -->
+当前仓库没有保留此权重的训练数据清单、训练脚本、训练轮次、随机种子和完整训练指标，因此不能声明可独立复现训练过程。`test_samples/` 是 Edge TTS 合成回归集，不是训练数据证据，也不代表真实方言人群。
 
+2026-07-26 已在 RTX 5060 Laptop 上完成 250 条干净音频实跑：ASR 字符准确率 99.24%，意图准确率 99.60%，槽位准确率 99.20%，端到端 mean/P95/P99/max 为 91.32/109/172/172 ms。证据位于 `artifacts/voice/local_clean_250_final_20260726.{json,md}`。
 
+50 dBA 环境噪声尚未完成；该条件必须使用声级计校准录音。当前 FunASR 接口没有返回逐句 score，报告中的 ASR 置信度覆盖率为 0%，不得宣称已完成置信度校准。
 
-- **Developed by:** [More Information Needed]
-- **Funded by [optional]:** [More Information Needed]
-- **Shared by [optional]:** [More Information Needed]
-- **Model type:** [More Information Needed]
-- **Language(s) (NLP):** [More Information Needed]
-- **License:** [More Information Needed]
-- **Finetuned from model [optional]:** [More Information Needed]
+## 加载
 
-### Model Sources [optional]
+```python
+from funasr import AutoModel
+from peft import PeftModel
 
-<!-- Provide the basic links for the model. -->
+model = AutoModel(model="iic/SenseVoiceSmall", device="cuda:0")
+model.model = PeftModel.from_pretrained(
+    model.model,
+    "voice_group/lora_dialect",
+).to("cuda:0")
+model.model.eval()
+```
 
-- **Repository:** [More Information Needed]
-- **Paper [optional]:** [More Information Needed]
-- **Demo [optional]:** [More Information Needed]
+## 许可证
 
-## Uses
-
-<!-- Address questions around how the model is intended to be used, including the foreseeable users of the model and those affected by the model. -->
-
-### Direct Use
-
-<!-- This section is for the model use without fine-tuning or plugging into a larger ecosystem/app. -->
-
-[More Information Needed]
-
-### Downstream Use [optional]
-
-<!-- This section is for the model use when fine-tuned for a task, or when plugged into a larger ecosystem/app -->
-
-[More Information Needed]
-
-### Out-of-Scope Use
-
-<!-- This section addresses misuse, malicious use, and uses that the model will not work well for. -->
-
-[More Information Needed]
-
-## Bias, Risks, and Limitations
-
-<!-- This section is meant to convey both technical and sociotechnical limitations. -->
-
-[More Information Needed]
-
-### Recommendations
-
-<!-- This section is meant to convey recommendations with respect to the bias, risk, and technical limitations. -->
-
-Users (both direct and downstream) should be made aware of the risks, biases and limitations of the model. More information needed for further recommendations.
-
-## How to Get Started with the Model
-
-Use the code below to get started with the model.
-
-[More Information Needed]
-
-## Training Details
-
-### Training Data
-
-<!-- This should link to a Dataset Card, perhaps with a short stub of information on what the training data is all about as well as documentation related to data pre-processing or additional filtering. -->
-
-[More Information Needed]
-
-### Training Procedure
-
-<!-- This relates heavily to the Technical Specifications. Content here should link to that section when it is relevant to the training procedure. -->
-
-#### Preprocessing [optional]
-
-[More Information Needed]
-
-
-#### Training Hyperparameters
-
-- **Training regime:** [More Information Needed] <!--fp32, fp16 mixed precision, bf16 mixed precision, bf16 non-mixed precision, fp16 non-mixed precision, fp8 mixed precision -->
-
-#### Speeds, Sizes, Times [optional]
-
-<!-- This section provides information about throughput, start/end time, checkpoint size if relevant, etc. -->
-
-[More Information Needed]
-
-## Evaluation
-
-<!-- This section describes the evaluation protocols and provides the results. -->
-
-### Testing Data, Factors & Metrics
-
-#### Testing Data
-
-<!-- This should link to a Dataset Card if possible. -->
-
-[More Information Needed]
-
-#### Factors
-
-<!-- These are the things the evaluation is disaggregating by, e.g., subpopulations or domains. -->
-
-[More Information Needed]
-
-#### Metrics
-
-<!-- These are the evaluation metrics being used, ideally with a description of why. -->
-
-[More Information Needed]
-
-### Results
-
-[More Information Needed]
-
-#### Summary
-
-
-
-## Model Examination [optional]
-
-<!-- Relevant interpretability work for the model goes here -->
-
-[More Information Needed]
-
-## Environmental Impact
-
-<!-- Total emissions (in grams of CO2eq) and additional considerations, such as electricity usage, go here. Edit the suggested text below accordingly -->
-
-Carbon emissions can be estimated using the [Machine Learning Impact calculator](https://mlco2.github.io/impact#compute) presented in [Lacoste et al. (2019)](https://arxiv.org/abs/1910.09700).
-
-- **Hardware Type:** [More Information Needed]
-- **Hours used:** [More Information Needed]
-- **Cloud Provider:** [More Information Needed]
-- **Compute Region:** [More Information Needed]
-- **Carbon Emitted:** [More Information Needed]
-
-## Technical Specifications [optional]
-
-### Model Architecture and Objective
-
-[More Information Needed]
-
-### Compute Infrastructure
-
-[More Information Needed]
-
-#### Hardware
-
-[More Information Needed]
-
-#### Software
-
-[More Information Needed]
-
-## Citation [optional]
-
-<!-- If there is a paper or blog post introducing the model, the APA and Bibtex information for that should go in this section. -->
-
-**BibTeX:**
-
-[More Information Needed]
-
-**APA:**
-
-[More Information Needed]
-
-## Glossary [optional]
-
-<!-- If relevant, include terms and calculations in this section that can help readers understand the model or model card. -->
-
-[More Information Needed]
-
-## More Information [optional]
-
-[More Information Needed]
-
-## Model Card Authors [optional]
-
-[More Information Needed]
-
-## Model Card Contact
-
-[More Information Needed]
-### Framework versions
-
-- PEFT 0.19.1
+基础模型和该微调衍生权重适用 [FunASR Model Open Source License Agreement 1.1](https://github.com/modelscope/FunASR/blob/main/MODEL_LICENSE)。使用或分享时必须注明 FunASR / SenseVoiceSmall 来源、作者并保留模型名称。详见 `voice_group/LICENSES.md`。

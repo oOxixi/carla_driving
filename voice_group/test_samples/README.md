@@ -9,25 +9,16 @@
 
 音频均为 edge-tts 合成，16kHz 单声道 mp3，可自由使用。
 
-## 用法：批量测试 + 对答案
+## 用法：标准文本自动化回归
 
-```python
-import json
-from pipeline import audio_to_command
-
-manifest = json.load(open("test_samples/manifest.json", encoding="utf-8"))
-correct = 0
-for item in manifest:
-    cmd = audio_to_command("test_samples/" + item["audio"])
-    ok = (cmd["intent"] == item["intent"])          # 意图是否判对
-    correct += ok
-    print(f"[{item['lang']}] 期望:{item['intent']:15s} 实际:{cmd['intent']:15s} "
-          f"{'✅' if ok else '❌'}  识别文本:{cmd['source_text']}")
-
-print(f"\n意图正确率: {correct}/{len(manifest)} = {correct/len(manifest)*100:.1f}%")
+```bash
+python -m pytest -q voice_group/tests/test_manifest_regression.py
 ```
+
+该测试读取全部 250 条，而不是抽取 README 示例；总体及每种语言的意图、期望槽位子集均要求至少 95%。
 
 ## 说明
 - `intent` 判对即算成功（识别文本可能有语气词/同音字差异，不影响意图）。
 - `UNKNOWN` 类是故意放的"不可执行指令"（如"帮我订外卖"），应触发安全兜底（confirm_required=true）。
 - 音频数组输入：也可用 soundfile 读成 16kHz 数组后传入 `audio_to_command(数组)`，更接近实时场景。
+- 真实 ASR 与延迟证据使用 `tools/evaluate_voice_audio.py`；标准文本回归不能替代真实音频成绩。

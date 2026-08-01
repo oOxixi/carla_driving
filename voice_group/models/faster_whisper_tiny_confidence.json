@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "method": "platt_logit",
+  "model": "tiny",
+  "device_independent": true,
+  "intercept": -2.862828235,
+  "slope": 2.142191463,
+  "generated_at_utc": "2026-07-26T14:37:29.901676+00:00",
+  "dataset": {
+    "manifest": "D:\\AppStoreDownload\\CARLA_Latest\\my_project_merged\\voice_group\\test_samples\\manifest.json",
+    "samples": 250,
+    "conditions": [
+      "clean",
+      "synthetic_noise"
+    ],
+    "synthetic_snr_db": 10.0,
+    "human_recordings": false,
+    "official_competition_calibration": false,
+    "split": "sample_index modulo 5; variants kept together"
+  },
+  "train": {
+    "count": 400,
+    "correct": 109,
+    "incorrect": 291,
+    "brier": 0.12781,
+    "mean_probability": 0.272572,
+    "mean_probability_correct": 0.521689,
+    "mean_probability_incorrect": 0.17926
+  },
+  "validation": {
+    "count": 100,
+    "correct": 26,
+    "incorrect": 74,
+    "brier": 0.148109,
+    "mean_probability": 0.315964,
+    "mean_probability_correct": 0.552047,
+    "mean_probability_incorrect": 0.233016
+  }
+}

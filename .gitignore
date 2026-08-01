@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 .venv/
+.venv-voice/
 venv/
 logs/
 data/
@@ -16,6 +17,7 @@ AdditionalMaps_0.9.16/
 artifacts/logs/
 artifacts/models/*.onnx
 artifacts/.runtime/
+artifacts/voice/cuda12_wheel_check/
 artifacts/.pytest*/
 artifacts/pytest_*/
 artifacts/sensor_remaining_v1/

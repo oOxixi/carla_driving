@@ -6,15 +6,19 @@ The default path consumes frame-aligned RGB/LiDAR and event sensors. Explicit
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import math
+import sys
 import time
+import zipfile
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
 
 from car_control_A import CarlaSession, ControlOutput, RuntimeVehicleState
+from car_control_A.high_level_command import HighLevelCommandAdapter, is_high_level_command
 from car_control_A.routing import RouteReference
 from car_control_A.watchdog import RuntimeWatchdog
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
@@ -28,6 +32,7 @@ from .carla_perception import (
     attach_default_sensors,
     attach_event_sensors,
     lane_metrics,
+    sensor_specs_for_profile,
     traffic_light_and_stop_distance,
 )
 from .contracts import PerceptionFrame
@@ -209,6 +214,276 @@ def _spawn_static_lead(session: CarlaSession, world: Any, world_map: Any, ego: A
     raise RuntimeError("cannot place lead vehicle: all forward candidate positions are occupied")
 
 
+def _scenario_actor(spec: ScenarioSpec | None, actor_type: str) -> dict[str, object] | None:
+    """Return the unique configured actor of ``actor_type``.
+
+    Submission scenarios deliberately support one owned lead vehicle and one
+    owned traffic light.  Failing on duplicates is safer than silently binding
+    perception evidence to an arbitrary actor.
+    """
+    if spec is None:
+        return None
+    expected = actor_type.strip().lower()
+    matches = [
+        actor for actor in spec.actors
+        if str(actor.get("type", "")).strip().lower() == expected
+    ]
+    if len(matches) > 1:
+        raise ValueError(
+            f"scenario {spec.scenario_id!r} declares multiple {actor_type!r} actors"
+        )
+    return matches[0] if matches else None
+
+
+def _scenario_local_transform(
+    carla_api: Any,
+    anchor_transform: Any,
+    spawn: Mapping[str, object],
+    *,
+    forward_offset_m: float = 0.0,
+) -> Any:
+    """Convert a scenario-local actor pose to a CARLA world transform."""
+    local_x = float(spawn.get("x", 0.0)) + float(forward_offset_m)
+    local_y = float(spawn.get("y", 0.0))
+    local_z = float(spawn.get("z", 0.5))
+    local_yaw = float(spawn.get("yaw_deg", 0.0))
+    yaw_rad = math.radians(float(anchor_transform.rotation.yaw))
+    cos_yaw, sin_yaw = math.cos(yaw_rad), math.sin(yaw_rad)
+    origin = anchor_transform.location
+    return carla_api.Transform(
+        carla_api.Location(
+            x=float(origin.x) + local_x * cos_yaw - local_y * sin_yaw,
+            y=float(origin.y) + local_x * sin_yaw + local_y * cos_yaw,
+            z=float(origin.z) + max(0.0, local_z - 0.5),
+        ),
+        carla_api.Rotation(
+            pitch=float(getattr(anchor_transform.rotation, "pitch", 0.0)),
+            yaw=float(anchor_transform.rotation.yaw) + local_yaw,
+            roll=float(getattr(anchor_transform.rotation, "roll", 0.0)),
+        ),
+    )
+
+
+def _scenario_vehicle_speed_mps(
+    actor_spec: Mapping[str, object],
+    elapsed_s: float,
+) -> float:
+    behavior = actor_spec.get("behavior", {})
+    if not isinstance(behavior, Mapping):
+        raise TypeError("scenario vehicle behavior must be an object")
+    initial = max(0.0, float(behavior.get("initial_speed_mps", 0.0)))
+    brake_at = float(behavior.get("brake_at_s", math.inf))
+    target = max(0.0, float(behavior.get("target_speed_mps", initial)))
+    return initial if float(elapsed_s) < brake_at else target
+
+
+def _signed_forward_speed_mps(actor: Any) -> float:
+    """Return actor velocity projected onto its current forward direction."""
+    velocity = actor.get_velocity()
+    forward = actor.get_transform().get_forward_vector()
+    return (
+        float(velocity.x) * float(forward.x)
+        + float(velocity.y) * float(forward.y)
+        + float(velocity.z) * float(forward.z)
+    )
+
+
+def _spawn_scenario_vehicle(
+    session: CarlaSession,
+    world: Any,
+    carla_api: Any,
+    ego: Any,
+    fallback_blueprint: Any,
+    actor_spec: Mapping[str, object],
+) -> Any:
+    """Spawn a real CARLA lead vehicle from a scenario actor declaration."""
+    spawn = actor_spec.get("spawn", {})
+    if not isinstance(spawn, Mapping):
+        raise TypeError("scenario vehicle spawn must be an object")
+    library = world.get_blueprint_library()
+    blueprint_id = actor_spec.get("blueprint_id")
+    if isinstance(blueprint_id, str) and blueprint_id:
+        blueprint = library.find(blueprint_id)
+    else:
+        fallback_id = getattr(fallback_blueprint, "id", None)
+        blueprint = library.find(fallback_id) if fallback_id and callable(getattr(library, "find", None)) else fallback_blueprint
+    if blueprint is None:
+        raise LookupError(f"scenario vehicle blueprint not found: {blueprint_id!r}")
+    if callable(getattr(blueprint, "has_attribute", None)) and blueprint.has_attribute("role_name"):
+        blueprint.set_attribute(
+            "role_name",
+            str(actor_spec.get("actor_id", "scenario_lead")),
+        )
+
+    ego_transform = ego.get_transform()
+    lead = None
+    for offset_m in (0.0, 2.0, 4.0, 6.0):
+        transform = _scenario_local_transform(
+            carla_api, ego_transform, spawn, forward_offset_m=offset_m,
+        )
+        lead = world.try_spawn_actor(blueprint, transform)
+        if lead is not None:
+            break
+    if lead is None:
+        raise RuntimeError("cannot spawn configured scenario lead vehicle")
+
+    lead = session.track_actor(lead)
+    set_physics = getattr(lead, "set_simulate_physics", None)
+    if callable(set_physics):
+        set_physics(True)
+    set_autopilot = getattr(lead, "set_autopilot", None)
+    if callable(set_autopilot):
+        set_autopilot(False)
+    desired_speed = _scenario_vehicle_speed_mps(actor_spec, 0.0)
+    set_velocity = getattr(lead, "set_target_velocity", None)
+    if callable(set_velocity):
+        # A newly spawned CARLA actor can report its default transform until
+        # the next world tick.  The transform used for spawning is already
+        # authoritative and prevents an initial velocity in the wrong world
+        # direction during sensor warm-up.
+        forward = transform.get_forward_vector()
+        set_velocity(carla_api.Vector3D(
+            x=float(forward.x) * desired_speed,
+            y=float(forward.y) * desired_speed,
+            z=0.0,
+        ))
+    intended_distance = transform.location.distance(ego.get_location())
+    print(
+        "scenario actor: spawned real lead "
+        f"id={actor_spec.get('actor_id', 'scenario_lead')} "
+        f"distance_m={intended_distance:.2f}",
+        flush=True,
+    )
+    return lead
+
+
+def _update_scenario_vehicle(
+    lead: Any,
+    actor_spec: Mapping[str, object],
+    elapsed_s: float,
+    carla_api: Any,
+) -> None:
+    """Apply a small deterministic speed controller to a scenario vehicle."""
+    if lead is None or not getattr(lead, "is_alive", True):
+        raise RuntimeError("configured scenario lead vehicle is not alive")
+    desired = _scenario_vehicle_speed_mps(actor_spec, elapsed_s)
+    current = _signed_forward_speed_mps(lead)
+    error = desired - current
+    if error < -0.15:
+        throttle, brake = 0.0, min(1.0, 0.25 + (-error / 3.0))
+    elif error > 0.15:
+        throttle, brake = min(0.45, 0.12 + error / 6.0), 0.0
+    else:
+        throttle, brake = (0.08 if desired > 0.1 else 0.0), 0.0
+    lead.apply_control(carla_api.VehicleControl(
+        throttle=throttle,
+        brake=brake,
+        steer=0.0,
+        hand_brake=False,
+        reverse=False,
+        manual_gear_shift=False,
+    ))
+
+
+def _scenario_traffic_light_distance(spec: ScenarioSpec | None) -> float | None:
+    actor = _scenario_actor(spec, "traffic_light")
+    if actor is None:
+        return None
+    distance = float(actor.get("distance_to_stop_line_m", 0.0))
+    if not math.isfinite(distance) or distance <= 0.0:
+        raise ValueError("scenario traffic-light distance_to_stop_line_m must be positive")
+    return distance
+
+
+def _traffic_light_scenario_anchor(
+    world: Any,
+    world_map: Any,
+    carla_api: Any,
+    distance_to_stop_line_m: float,
+    *,
+    candidate_index: int = 0,
+) -> tuple[Any, Any]:
+    """Return a real signal and a driving-lane transform behind its stop line."""
+    actors = world.get_actors()
+    lights = list(
+        actors.filter("traffic.traffic_light*")
+        if callable(getattr(actors, "filter", None))
+        else ()
+    )
+    lights.sort(key=lambda actor: int(getattr(actor, "id", 0)))
+    candidates: list[tuple[int, Any, Any]] = []
+    for light in lights:
+        getter = getattr(light, "get_stop_waypoints", None)
+        if not callable(getter):
+            continue
+        for waypoint in getter() or ():
+            transform = waypoint.transform
+            forward = transform.get_forward_vector()
+            stop_location = transform.location
+            behind = carla_api.Location(
+                x=float(stop_location.x) - float(forward.x) * distance_to_stop_line_m,
+                y=float(stop_location.y) - float(forward.y) * distance_to_stop_line_m,
+                z=float(stop_location.z),
+            )
+            driving = world_map.get_waypoint(behind, project_to_road=True)
+            if driving is None:
+                continue
+            driving_transform = driving.transform
+            spawn_transform = carla_api.Transform(
+                carla_api.Location(
+                    x=float(driving_transform.location.x),
+                    y=float(driving_transform.location.y),
+                    z=float(driving_transform.location.z) + 0.5,
+                ),
+                carla_api.Rotation(
+                    pitch=float(getattr(driving_transform.rotation, "pitch", 0.0)),
+                    yaw=float(driving_transform.rotation.yaw),
+                    roll=float(getattr(driving_transform.rotation, "roll", 0.0)),
+                ),
+            )
+            candidates.append((int(getattr(light, "id", 0)), light, spawn_transform))
+    if not candidates:
+        raise RuntimeError("current map has no usable traffic-light stop waypoint")
+    candidates.sort(key=lambda item: item[0])
+    _, light, transform = candidates[candidate_index % len(candidates)]
+    return light, transform
+
+
+def _scenario_traffic_light_observation(
+    scene: PerceptionFrame,
+    ego: Any,
+    light: Any,
+) -> tuple[PerceptionFrame, dict[str, str]]:
+    """Bind D08 to the selected real CARLA signal and map stop waypoint."""
+    state = str(light.get_state()).split(".")[-1].upper()
+    if state not in {"RED", "YELLOW", "GREEN"}:
+        raise RuntimeError(f"selected CARLA traffic light has unsupported state {state!r}")
+    ego_location = ego.get_location()
+    forward = ego.get_transform().get_forward_vector()
+    distances: list[float] = []
+    getter = getattr(light, "get_stop_waypoints", None)
+    if callable(getter):
+        for waypoint in getter() or ():
+            location = waypoint.transform.location
+            along = (
+                (float(location.x) - float(ego_location.x)) * float(forward.x)
+                + (float(location.y) - float(ego_location.y)) * float(forward.y)
+            )
+            if along >= -0.5:
+                distances.append(max(0.0, along))
+    if not distances:
+        raise RuntimeError("selected CARLA traffic light has no forward stop waypoint")
+    source = "CARLA_SCENARIO_TRAFFIC_LIGHT_ACTOR_STOP_WAYPOINT"
+    return replace(
+        scene,
+        traffic_light=state,
+        distance_to_stop_line_m=min(distances),
+    ), {
+        "traffic_light": source,
+        "distance_to_stop_line_m": source,
+    }
+
+
 def _apply_virtual_scenario(scene: PerceptionFrame, ego: Any, origin: tuple[float, float, float], args: argparse.Namespace) -> PerceptionFrame:
     location = ego.get_location()
     travelled_m = math.sqrt((location.x - origin[0]) ** 2 + (location.y - origin[1]) ** 2 + (location.z - origin[2]) ** 2)
@@ -336,6 +611,8 @@ def _load_command(args: argparse.Namespace) -> dict[str, object] | None:
         if not isinstance(command, Mapping):
             raise TypeError("voice command JSON root must be an object")
         command = dict(command)
+        if is_high_level_command(command):
+            command = HighLevelCommandAdapter().adapt(command)
         if args.test_command_ttl_s is not None:
             command["valid_duration_s"] = args.test_command_ttl_s
         return command
@@ -345,7 +622,10 @@ def _load_command(args: argparse.Namespace) -> dict[str, object] | None:
             raise FileNotFoundError(
                 f"audio file not found: {audio_path}. Pass an existing 16 kHz mono WAV path via --audio."
             )
-        from voice_group.pipeline import audio_to_command
+        from voice_group.pipeline import audio_to_command, preload_voice_models
+
+        preload = preload_voice_models()
+        print(f"voice model preload: {preload}", flush=True)
         command = audio_to_command(str(audio_path))
         if not isinstance(command, Mapping):
             raise TypeError("voice pipeline result must be an object")
@@ -395,20 +675,27 @@ def _rejected_load_envelope(error: BaseException) -> dict[str, object]:
 
 def _warm_up_sensor_bridge(session: Any, world: Any, bridge: CarlaPerceptionBridge, *, attempts: int,
                            tick_timeout_s: float, sensor_timeout_s: float) -> None:
-    """Wait for the first aligned RGB/LiDAR frame before command execution."""
+    """Wait for a stable aligned RGB/LiDAR stream before command execution."""
     last_error: PerceptionAcquisitionError | None = None
+    required_streak = min(2, attempts)
+    aligned_streak = 0
     for _ in range(attempts):
         frame = session.tick(tick_timeout_s)
         snapshot = world.get_snapshot()
         sim_time_s = snapshot.timestamp.elapsed_seconds
         try:
             bridge.acquire(frame, sim_time_s, timeout_s=sensor_timeout_s)
-            return
+            aligned_streak += 1
+            if aligned_streak >= required_streak:
+                return
         except PerceptionAcquisitionError as error:
             last_error = error
+            aligned_streak = 0
     if last_error is not None:
         raise last_error
-    raise RuntimeError("sensor warm-up requires at least one attempt")
+    raise RuntimeError(
+        f"sensor warm-up did not produce {required_streak} consecutive aligned frames"
+    )
 
 
 def _scenario_completed(args: argparse.Namespace, *, frames: int, final_speed_mps: float | None,
@@ -451,14 +738,17 @@ def _expected_safety_completed(
     """Evaluate scenario contracts whose success is an intentional D intervention."""
     expected = spec.expected
     requires_override = expected.get("expected_safety_override") is True
+    allows_override = expected.get("expected_safety_override_allowed") is True
     requires_route_event = expected.get("expected_route_deviation_event") is True
     requires_emergency = expected.get("must_emergency_brake") is True
-    if not (requires_override or requires_route_event or requires_emergency):
+    if not (requires_override or allows_override or requires_route_event or requires_emergency):
         return None
     if frames != spec.frame_count or final_speed_mps is None or collision_seen:
         return False
     meaningful = {reason for reason in safety_reasons if reason not in {"NONE", "PERCEPTION_STARTUP_GRACE"}}
     if requires_override and not meaningful:
+        return False
+    if allows_override and not _runtime_health_completed(safety_reasons):
         return False
     if requires_route_event and not any("ROUTE_DEVIATION" in reason for reason in meaningful):
         return False
@@ -509,6 +799,58 @@ def _route_stop_trigger_m(speed_mps: float, finish_radius_m: float, decel_mps2: 
     return max(finish_radius_m, speed_mps * speed_mps / (2.0 * decel_mps2) + 1.0)
 
 
+def _map_short_name(map_name: str) -> str:
+    return map_name.rsplit("/", maxsplit=1)[-1]
+
+
+def _map_contract_name(map_name: str) -> str:
+    short_name = _map_short_name(map_name)
+    return short_name[:-4] if short_name.lower().endswith("_opt") else short_name
+
+
+def _select_load_map(requested_map: str, available_maps: tuple[str, ...]) -> str:
+    requested_short = _map_short_name(requested_map)
+    if requested_short.lower().endswith("_opt"):
+        return requested_map
+    optimized_short = f"{requested_short}_Opt"
+    for available in available_maps:
+        if _map_short_name(available).lower() == optimized_short.lower():
+            return optimized_short
+    return requested_map
+
+
+def _import_carla_api() -> Any:
+    try:
+        return importlib.import_module("carla")
+    except ModuleNotFoundError as error:
+        if error.name != "carla":
+            raise
+
+    py_tag = f"cp{sys.version_info.major}{sys.version_info.minor}"
+    project_root = Path(__file__).resolve().parents[1]
+    candidate_roots = (
+        project_root / "simulator" / "carla0916" / "PythonAPI" / "carla" / "dist",
+        project_root.parent / "simulator" / "carla0916" / "PythonAPI" / "carla" / "dist",
+    )
+    for root in candidate_roots:
+        wheels = sorted(root.glob(f"carla-0.9.16-{py_tag}-{py_tag}-*.whl"))
+        if not wheels:
+            continue
+        wheel = wheels[0]
+        extract_root = Path("/tmp") / "carla_python_api" / wheel.stem
+        if not extract_root.exists():
+            extract_root.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(wheel) as archive:
+                archive.extractall(extract_root)
+        sys.path.insert(0, str(extract_root))
+        return importlib.import_module("carla")
+    searched = ", ".join(str(root) for root in candidate_roots)
+    raise ModuleNotFoundError(
+        f"No CARLA Python API for {py_tag}; searched {searched}. "
+        "Use Python 3.10/3.11/3.12 with the bundled CARLA 0.9.16 wheel."
+    )
+
+
 def run(args: argparse.Namespace) -> None:
     spec = ScenarioSpec.load(args.scenario_file) if args.scenario_file else None
     if args.validate_scenario_only:
@@ -529,7 +871,7 @@ def run(args: argparse.Namespace) -> None:
         }, ensure_ascii=False, indent=2))
         return
 
-    import carla
+    carla = _import_carla_api()
 
     detector = None
     detector_model = getattr(args, "rgb_detector_model", None)
@@ -551,6 +893,20 @@ def run(args: argparse.Namespace) -> None:
             args.frames = min(args.frames, args.max_frames)
         args.scenario = spec.scenario_id
         args.scenario_difficulty = spec.official_level
+        args.evidence_seed = spec.seed if args.seed is None else args.seed
+        if args.seed is not None:
+            args.spawn_index = args.seed
+        owns_real_scene_actor = (
+            _scenario_actor(spec, "vehicle") is not None
+            or _scenario_actor(spec, "traffic_light") is not None
+        )
+        if owns_real_scene_actor and args.scenario_facts_mode != "perception":
+            print(
+                "scenario facts: forcing perception mode because the scenario "
+                "owns real CARLA actors",
+                flush=True,
+            )
+            args.scenario_facts_mode = "perception"
 
     recorder = _evidence_recorder(args, spec)
     ego: Any | None = None
@@ -565,15 +921,19 @@ def run(args: argparse.Namespace) -> None:
     max_speed_mps = 0.0
     runtime: ControlRuntime | None = None
     last_sim_time_s = 0.0
+    scenario_traffic_light: Any | None = None
+    traffic_light_original_state: Any | None = None
+    traffic_light_original_frozen: bool | None = None
     try:
         client = carla.Client(args.host, args.port)
         client.set_timeout(args.timeout_s)
         world = client.get_world()
         if args.map:
-            current_map = world.get_map().name.rsplit("/", maxsplit=1)[-1]
-            requested_map = args.map.rsplit("/", maxsplit=1)[-1]
-            if current_map.lower() != requested_map.lower():
-                world = client.load_world(args.map)
+            current_map = world.get_map().name
+            requested_map = args.map
+            if _map_contract_name(current_map).lower() != _map_contract_name(requested_map).lower():
+                load_map = _select_load_map(requested_map, tuple(client.get_available_maps()))
+                world = client.load_world(load_map)
         if spec is not None:
             weather = getattr(carla.WeatherParameters, spec.weather, None)
             if weather is None:
@@ -608,7 +968,12 @@ def run(args: argparse.Namespace) -> None:
             spec is not None
             and (spec.category == "lateral_B" or spec.expected.get("must_finish_route") is True)
         )
-        if road_fit_required:
+        seeded_route_anchor = (
+            spec is not None
+            and args.seed is not None
+            and _scenario_traffic_light_distance(spec) is None
+        )
+        if road_fit_required or seeded_route_anchor:
             maneuver = _scenario_maneuver(spec)
             anchor_index, topology_route, anchor_score = select_topology_route_anchor(
                 world_map,
@@ -619,9 +984,52 @@ def run(args: argparse.Namespace) -> None:
                 forbidden_points_xy=_traffic_light_stop_points(world),
             )
             route_anchor = spawn_points[anchor_index]
+            seed_offset_m = float(getattr(args, "evidence_seed", 0) % 5) * 2.0
+            if seeded_route_anchor and seed_offset_m > 0.0:
+                anchor_waypoint = world_map.get_waypoint(
+                    route_anchor.location, project_to_road=True,
+                )
+                advanced = tuple(anchor_waypoint.next(seed_offset_m)) if anchor_waypoint else ()
+                if advanced:
+                    advanced_transform = advanced[0].transform
+                    advanced_transform.location.z = route_anchor.location.z
+                    route_anchor = advanced_transform
             print(
                 f"route anchor: spawn_index={anchor_index} maneuver={maneuver} "
-                f"topology_score={anchor_score:.3f}"
+                f"topology_score={anchor_score:.3f} seed_offset_m={seed_offset_m:.1f}"
+            )
+        traffic_light_distance = _scenario_traffic_light_distance(spec)
+        if traffic_light_distance is not None:
+            seeded_stop_distance_m = traffic_light_distance + (
+                (getattr(args, "evidence_seed", 0) % 5) - 2
+            ) * 0.5
+            scenario_traffic_light, route_anchor = _traffic_light_scenario_anchor(
+                world,
+                world_map,
+                carla,
+                seeded_stop_distance_m,
+            )
+            traffic_light_original_state = scenario_traffic_light.get_state()
+            frozen_getter = getattr(scenario_traffic_light, "is_frozen", None)
+            traffic_light_original_frozen = (
+                bool(frozen_getter()) if callable(frozen_getter) else False
+            )
+            configured_light = _scenario_actor(spec, "traffic_light")
+            assert configured_light is not None
+            configured_state = str(configured_light.get("state", "RED")).strip().title()
+            desired_state = getattr(carla.TrafficLightState, configured_state, None)
+            if desired_state is None:
+                raise ValueError(
+                    f"CARLA has no TrafficLightState {configured_state!r}"
+                )
+            scenario_traffic_light.set_state(desired_state)
+            scenario_traffic_light.freeze(True)
+            print(
+                "scenario actor: bound real traffic light "
+                f"id={getattr(scenario_traffic_light, 'id', 'unknown')} "
+                f"state={configured_state.upper()} "
+                f"stop_distance_m={seeded_stop_distance_m:.2f}",
+                flush=True,
             )
         spawn_transform = route_anchor
         if spec is not None:
@@ -661,6 +1069,11 @@ def run(args: argparse.Namespace) -> None:
             origin = (start_location.x, start_location.y, start_location.z)
 
             scenario_lead = None
+            scenario_lead_spec = _scenario_actor(spec, "vehicle")
+            if scenario_lead_spec is not None:
+                scenario_lead = _spawn_scenario_vehicle(
+                    session, world, carla, ego, bp, scenario_lead_spec,
+                )
             if args.perception_mode in {"sensors", "world"} and args.scenario in {"follow", "emergency"}:
                 lead_distance = args.lead_distance_m if args.scenario == "follow" else args.emergency_distance_m
                 scenario_lead = _spawn_static_lead(session, world, world_map, ego, bp, lead_distance)
@@ -668,18 +1081,27 @@ def run(args: argparse.Namespace) -> None:
             perception_bridge = None
             world_events: EventLedger | None = None
             if args.perception_mode == "sensors":
+                sensor_profile = getattr(args, "sensor_profile", "default")
+                print(
+                    f"sensor stage: attaching profile={sensor_profile}",
+                    flush=True,
+                )
                 sensors = attach_default_sensors(
-                    session, world, ego, carla, sensor_tick_s=args.fixed_delta_s,
+                    session, world, ego, carla,
+                    specs=sensor_specs_for_profile(sensor_profile),
+                    sensor_tick_s=args.fixed_delta_s,
                 )
                 perception_bridge = CarlaPerceptionBridge(
                     world, world_map, ego, session, sensors, detector=detector,
                 )
+                print("sensor stage: warming up RGB/LiDAR", flush=True)
                 _warm_up_sensor_bridge(
                     session, world, perception_bridge,
                     attempts=args.sensor_warmup_frames,
                     tick_timeout_s=args.timeout_s,
                     sensor_timeout_s=args.sensor_timeout_s,
                 )
+                print("sensor stage: RGB/LiDAR ready", flush=True)
             elif args.perception_mode == "world":
                 world_events = attach_event_sensors(
                     session, world, ego, carla,
@@ -750,6 +1172,10 @@ def run(args: argparse.Namespace) -> None:
                 max_speed_mps = max(max_speed_mps, state.speed_mps)
                 last_sim_time_s = state.sim_time_s
                 elapsed_s = state.sim_time_s - episode_start_s
+                if scenario_lead is not None and scenario_lead_spec is not None:
+                    _update_scenario_vehicle(
+                        scenario_lead, scenario_lead_spec, elapsed_s, carla,
+                    )
                 if timeline is not None:
                     for scheduled in timeline.due(elapsed_s):
                         scenario_command = resolve_scenario_command(
@@ -850,6 +1276,11 @@ def run(args: argparse.Namespace) -> None:
                                 perception_sources["lead_speed_mps"] = "VIRTUAL_ACCEPTANCE_TRUTH"
                         else:
                             perception_sources["scenario"] = "CARLA_WORLD_TRUTH"
+                    if scenario_traffic_light is not None:
+                        scene, traffic_sources = _scenario_traffic_light_observation(
+                            scene, ego, scenario_traffic_light,
+                        )
+                        perception_sources.update(traffic_sources)
                     if spec is not None:
                         configured_scene = _scenario_facts(
                             ego,
@@ -946,14 +1377,6 @@ def run(args: argparse.Namespace) -> None:
                 if args.realtime:
                     time.sleep(args.fixed_delta_s)
 
-        command_finished = runtime is None or runtime.active_command_id is None
-        if not command_finished and runtime is not None:
-            feedback = runtime.fail_active(
-                now_s=last_sim_time_s,
-                detail="scenario frame budget ended before command completion",
-            )
-            if feedback is not None and recorder is not None:
-                recorder.record_feedback(feedback)
         final_speed = None if final_state is None else final_state.speed_mps
         expected_completion = None if spec is None else _expected_safety_completed(
             spec,
@@ -962,6 +1385,14 @@ def run(args: argparse.Namespace) -> None:
             collision_seen=collision_seen,
             safety_reasons=safety_reasons,
         )
+        command_finished = runtime is None or runtime.active_command_id is None
+        if not command_finished and expected_completion is not True and runtime is not None:
+            feedback = runtime.fail_active(
+                now_s=last_sim_time_s,
+                detail="scenario frame budget ended before command completion",
+            )
+            if feedback is not None and recorder is not None:
+                recorder.record_feedback(feedback)
         completion = expected_completion if expected_completion is not None else (
             command_finished and _runtime_health_completed(safety_reasons) and _scenario_completed(
                 args, frames=frames_completed,
@@ -1032,6 +1463,19 @@ def run(args: argparse.Namespace) -> None:
     finally:
         if recorder is not None:
             recorder.close()
+        if scenario_traffic_light is not None:
+            try:
+                if traffic_light_original_state is not None:
+                    scenario_traffic_light.set_state(traffic_light_original_state)
+                scenario_traffic_light.freeze(
+                    False if traffic_light_original_frozen is None
+                    else traffic_light_original_frozen
+                )
+            except Exception as error:
+                print(
+                    f"warning: failed to restore scenario traffic light: {error}",
+                    flush=True,
+                )
 
 
 def main() -> None:
@@ -1051,6 +1495,11 @@ def main() -> None:
                         help="directory for automatic per-run JSONL evidence logs")
     parser.add_argument("--no-log", action="store_true", help="disable automatic JSONL evidence logging")
     parser.add_argument("--spawn-index", type=int, default=0)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help="evidence seed override; selects deterministic spawn/signal candidates",
+    )
     parser.add_argument("--warmup-frames", type=int, default=40,
                         help="synchronous ticks used to stream a tiled map before spawning ego")
     parser.add_argument("--map", help="optional CARLA map name, e.g. Town05; omit to use current world")
@@ -1063,6 +1512,9 @@ def main() -> None:
                         help="maximum ticks used to obtain the first aligned RGB/LiDAR frame")
     parser.add_argument("--sensor-startup-grace-frames", type=int, default=2,
                         help="initial perception misses that brake without permanently latching watchdog")
+    parser.add_argument("--sensor-profile", choices=("default", "low"), default="default",
+                        help="default uses full validation density; low reduces RGB/LiDAR load "
+                             "for unstable Windows/UE4 hosts")
     parser.add_argument("--rgb-detector-model",
                         help="optional Ultralytics-style ONNX model for RGB vehicle/person detection")
     parser.add_argument("--rgb-detector-confidence", type=float, default=0.35,

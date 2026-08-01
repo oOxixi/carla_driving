@@ -3,7 +3,7 @@ import time
 from dataclasses import asdict, dataclass
 from typing import Optional
 
-from src.normalizer import normalize_text
+from .normalizer import normalize_text
 
 
 @dataclass
@@ -184,6 +184,8 @@ def classify_intent(text: str) -> dict:
             r"(不要|别|禁止)"
             r".*(变道|换车道|换道|并线|并到|切到|挪到)",
 
+            r"(不要|别|禁止).*(换线|变线)",
+
             r"(不要|别|禁止)"
             r".*(偏离|离开).*(当前|本|这条)?.*车道",
 
@@ -197,6 +199,10 @@ def classify_intent(text: str) -> dict:
             r".*(当前|本|这条).*车道.*(开|行驶)?",
 
             r"在本车道.*行驶",
+
+            r"(稳住|保持住).*(不要|别)?.*(变|换)",
+
+            r"(坚持|继续).*(本|这条|当前).*车道",
         ],
 
     ):
@@ -212,6 +218,18 @@ def classify_intent(text: str) -> dict:
 
             r"(停车|刹车|制动|刹停)"
             r".*(紧急|立即|马上|立刻|赶快|赶紧)",
+
+            r"(马上|立刻|立即|赶快|赶紧).*(停|刹)$",
+
+            r"(停车|刹车).*\1",
+
+            r"(踩死|踩紧|猛踩).*(刹车|制动)",
+
+            r"刹.*刹车",
+
+            r"^踩死车$",
+
+            r"^刹$",
         ],
     ):
         intent = "EMERGENCY_STOP"
@@ -236,6 +254,10 @@ def classify_intent(text: str) -> dict:
             r"(靠到|靠向|往)"
             r".*(左侧|右侧|路边|路肩|路旁)"
             r".*(停|停车|停下|停好)",
+
+            r"(停|停车|停到).*(左侧|右侧)(吧+|吗+)?$",
+
+            r"(把车)?靠到.*(路边|路旁|路肩|安全位置)",
         ],
     ):
         intent = "PULL_OVER"
@@ -247,8 +269,8 @@ def classify_intent(text: str) -> dict:
         normalized_text,
         [
             # 原有表达
-            rf"(减速到|加速到|降到|提高到|设置为|设为|调整到|"
-            rf"控制在|保持|开到).{{0,10}}{NUMBER_PATTERN}",
+            rf"(减速到|降速到|加速到|降到|降至|提高到|提到|升到|"
+            rf"设置为|设为|调整到|控制在|保持|开到).{{0,10}}{NUMBER_PATTERN}",
 
             rf"(速度|车速).{{0,10}}"
             rf"(到|为|降到|提高到|调整到|控制在)"
@@ -266,6 +288,9 @@ def classify_intent(text: str) -> dict:
             # 新表达：维持每小时50公里
             rf"(维持|保持).{{0,10}}{NUMBER_PATTERN}"
             rf".{{0,10}}(公里|千米|km)",
+
+            rf"(控制|设置|调整).{{0,6}}(速度|车速).{{0,6}}"
+            rf"(在|到|为).{{0,6}}{NUMBER_PATTERN}",
         ],
     ):
         intent = "SET_SPEED"
@@ -278,6 +303,8 @@ def classify_intent(text: str) -> dict:
         [
             r"(绕开|绕过|避开|避让|躲开|避过|绕行)",
             r"从(左侧|右侧).*(障碍|前车|车辆|行人|路障)",
+            r"(绕一下|绕一绕)",
+            r"(不要|别).*(撞|碰).*(车|车辆|行人|障碍)",
         ],
     ):
         intent = "AVOID_OBSTACLE"
@@ -292,6 +319,10 @@ def classify_intent(text: str) -> dict:
             r"换到.*车道",
             r"进入.*车道",
             r"并入.*车道",
+
+            r"(换|并|切|变)(到|入|向|往)?(左|右|左侧|右侧)(车道|道)?(吧+)?$",
+
+            r"往(左|右|左侧|右侧).*(变|换|并)",
 
             # 新表达：切换到、切到、挪到、变到
             r"(切换到|切到|挪到|变到)"
@@ -324,6 +355,10 @@ def classify_intent(text: str) -> dict:
             r"速度.*(往上|提高|提升|提)",
             r"车.*(再快些|快些)",
             r"加快一些",
+
+            r"^(给我)?(快走|快点走|快点开|快点|冲)(吧+)?$",
+
+            r"加一点速",
         ],
     ):
         intent = "SPEED_UP"
@@ -351,6 +386,12 @@ def classify_intent(text: str) -> dict:
             r"(压低|降低).*车速",
             r"(别那么急|别这么急)",
             r"开得.*(缓|慢|别那么急)",
+
+            r"(再)?慢点",
+
+            r"慢速行驶",
+
+            r"别(冲|充).*快",
         ],
     ):
         intent = "SLOW_DOWN"
@@ -373,6 +414,10 @@ def classify_intent(text: str) -> dict:
 
             r"停一会儿",
             r"完全停下",
+
+            r"^(就)?(停|停了|在这停|在这儿停|停这里|停这儿|到位了停)(吧+)?$",
+
+            r"(刹|撒)一脚",
         ],
     ):
         intent = "STOP"

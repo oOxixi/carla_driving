@@ -1,0 +1,8 @@
+# Optional local Qwen2.5-VL environment. Freeze the versions actually used in
+# the final model manifest; these packages are intentionally not installed in
+# the lightweight CARLA controller environment.
+torch
+transformers
+accelerate
+qwen-vl-utils
+Pillow

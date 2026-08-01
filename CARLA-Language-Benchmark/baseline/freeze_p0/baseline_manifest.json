@@ -1,0 +1,35 @@
+{
+  "freeze_name": "CARLA_four_modal_baseline_P0",
+  "status": "FROZEN",
+  "created_at": "2026-07-30T11:00:48.449100+00:00",
+  "git_commit": "b9150fcbda6959fcd6c50269b09b431b750632ba",
+  "git_branch": "main",
+  "modalities": [
+    "rgb",
+    "lidar",
+    "audio",
+    "language"
+  ],
+  "language_dataset": {
+    "path": "datasets/language_v10/carla_language_instructions_5000_final_v10.json",
+    "records": 5000,
+    "schema": "multimodal_v1_language_compatible"
+  },
+  "frozen_files": [
+    {
+      "path": "datasets/language_v10/carla_language_instructions_5000_final_v10.json",
+      "sha256": "19f90045d4a0af006a82c9d26a9963afdfbe3f4ba8a48b10417d0b435277bfda",
+      "bytes": 4341951
+    },
+    {
+      "path": "artifacts/four_modal_0728/source_manifest.json",
+      "sha256": "d640f9319a99dbd37e24ca3d5eda39aec9562699729363da51094526eaa5c940",
+      "bytes": 47249
+    },
+    {
+      "path": "submission/evidence_index.json",
+      "sha256": "bf6efea6dde5756236acd5f2237bcc1d0d91cf1a3e05773c9a6561a84c2f7958",
+      "bytes": 9701
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+probe stage=connect host=127.0.0.1 port=2000
+probe stage=world current_map=Carla/Maps/Town03_Opt
+probe stage=spawn_ego
+probe stage=attach sensor=rgb_front blueprint=sensor.camera.rgb
+probe stage=stream mode=rgb profile=low requested_frames=100
+probe stage=startup_wait attempt=1/10 frame=190205 aligned=True streak=1/2 counts={'rgb_front': 1}
+probe stage=startup_wait attempt=2/10 frame=190206 aligned=False streak=0/2 counts={'rgb_front': 1}
+probe stage=startup_wait attempt=3/10 frame=190207 aligned=True streak=1/2 counts={'rgb_front': 2}
+probe stage=startup_wait attempt=4/10 frame=190208 aligned=True streak=2/2 counts={'rgb_front': 3}
+probe progress=1/100 frame=190209 counts={'rgb_front': 4}
+probe progress=25/100 frame=190233 counts={'rgb_front': 28}
+probe progress=50/100 frame=190258 counts={'rgb_front': 53}
+probe progress=75/100 frame=190283 counts={'rgb_front': 78}
+probe progress=100/100 frame=190308 counts={'rgb_front': 103}
+probe result={"aligned_frames": 100, "callback_counts": {"rgb_front": 103}, "duration_s": 12.747, "frame_bounds": {"rgb_front": [190205, 190308]}, "invalid_callbacks": {"rgb_front": 0}, "map_name": "Carla/Maps/Town03_Opt", "mode": "rgb", "profile": "low", "reason": "requested aligned frames received", "requested_frames": 100, "success": true}

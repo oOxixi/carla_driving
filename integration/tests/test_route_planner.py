@@ -134,3 +134,30 @@ def test_topology_anchor_selection_avoids_signal_stop_points():
     assert index == 1
     assert route.points_xy_m[0][1] == pytest.approx(20.0)
     assert score < 500.0
+
+
+def test_topology_anchor_selection_supports_seeded_candidate_rank():
+    first, _, _ = _parallel_lanes()
+    second, _, _ = _parallel_lanes()
+    for waypoint in second:
+        waypoint.transform.location.y += 20.0
+
+    class MultiMap:
+        def get_waypoint(self, location, project_to_road=True):
+            return first[0] if location.y < 10.0 else second[0]
+
+    spawns = (
+        SimpleNamespace(location=SimpleNamespace(x=0.0, y=0.0)),
+        SimpleNamespace(location=SimpleNamespace(x=0.0, y=20.0)),
+    )
+    index, route, _ = select_topology_route_anchor(
+        MultiMap(),
+        spawns,
+        maneuver="FOLLOW",
+        target_speed_mps=4.0,
+        distance_m=60.0,
+        candidate_index=1,
+    )
+
+    assert index == 1
+    assert route.points_xy_m[0][1] == pytest.approx(20.0)

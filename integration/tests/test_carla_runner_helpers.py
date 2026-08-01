@@ -11,17 +11,24 @@ from integration.carla_runner import (
     _acceptance_lateral_controller,
     _load_command,
     _lead_vehicle_travel_m,
+    _map_contract_name,
     _minimum_gap_contract_completed,
+    _select_load_map,
     _expected_safety_completed,
     _rejected_load_envelope,
     _route_contract_completed,
     _route_stop_trigger_m,
     _runtime_health_completed,
     _scene_from_world,
+    _scenario_actor,
     _scenario_raw_control_fault,
     _scenario_maneuver,
+    _scenario_local_transform,
+    _scenario_traffic_light_observation,
+    _scenario_vehicle_speed_mps,
     _select_scene_facts,
     _scenario_completed,
+    _signed_forward_speed_mps,
     _speed_mps,
     _warm_up_sensor_bridge,
 )
@@ -62,6 +69,14 @@ def test_scenario_facts_can_override_or_only_fill_missing_perception() -> None:
     assert truth.lead_distance_m == 15.0
     assert truth.traffic_light == "RED"
     assert truth_sources["lead_distance_m"] == "SCENARIO_CONFIG_TRUTH"
+
+
+def test_requested_town_prefers_optimized_map_when_available() -> None:
+    available = ("/Game/Carla/Maps/Town01", "/Game/Carla/Maps/Town03_Opt")
+
+    assert _map_contract_name("Carla/Maps/Town03_Opt") == "Town03"
+    assert _select_load_map("Town03", available) == "Town03_Opt"
+    assert _select_load_map("Town02", available) == "Town02"
 
 
 def test_scenario_facts_clear_unconfigured_map_hazards() -> None:
@@ -176,6 +191,47 @@ def test_invalid_scenario_facts_mode_is_rejected() -> None:
         _select_scene_facts(PerceptionFrame(1, 0.05), None, "invalid")
 
 
+def test_traffic_light_anchor_uses_seeded_candidate_index() -> None:
+    from integration.carla_runner import _traffic_light_scenario_anchor
+
+    class Location:
+        def __init__(self, x=0.0, y=0.0, z=0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Rotation:
+        def __init__(self, pitch=0.0, yaw=0.0, roll=0.0):
+            self.pitch, self.yaw, self.roll = pitch, yaw, roll
+
+    class Transform:
+        def __init__(self, location, rotation=None):
+            self.location = location
+            self.rotation = rotation or Rotation()
+
+        def get_forward_vector(self):
+            return Namespace(x=1.0, y=0.0)
+
+    def light(actor_id: int, x: float):
+        waypoint = Namespace(transform=Transform(Location(x=x)))
+        return Namespace(id=actor_id, get_stop_waypoints=lambda: [waypoint])
+
+    lights = [light(20, 20.0), light(10, 10.0)]
+    world = Namespace(
+        get_actors=lambda: Namespace(filter=lambda pattern: lights),
+    )
+    world_map = Namespace(
+        get_waypoint=lambda location, project_to_road=True: Namespace(
+            transform=Transform(location),
+        ),
+    )
+    carla_api = Namespace(Location=Location, Rotation=Rotation, Transform=Transform)
+
+    selected, _ = _traffic_light_scenario_anchor(
+        world, world_map, carla_api, 12.0, candidate_index=1,
+    )
+
+    assert selected.id == 20
+
+
 def test_expected_route_deviation_intervention_counts_as_scenario_success() -> None:
     from integration.scenario_execution import ScenarioSpec
 
@@ -188,6 +244,34 @@ def test_expected_route_deviation_intervention_counts_as_scenario_success() -> N
         collision_seen=False,
         safety_reasons={"SEVERE_ROUTE_DEVIATION"},
     ) is True
+
+
+def test_allowed_safety_override_continuous_contract_counts_as_scenario_success() -> None:
+    from integration.scenario_execution import ScenarioSpec
+
+    path = Path(__file__).resolve().parents[2] / "scenarios" / "safety_D" / "D03_front_vehicle_brake.json"
+    spec = ScenarioSpec.load(path)
+    assert _expected_safety_completed(
+        spec,
+        frames=spec.frame_count,
+        final_speed_mps=3.0,
+        collision_seen=False,
+        safety_reasons={"EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE"},
+    ) is True
+
+
+def test_allowed_safety_override_does_not_hide_runtime_failure() -> None:
+    from integration.scenario_execution import ScenarioSpec
+
+    path = Path(__file__).resolve().parents[2] / "scenarios" / "safety_D" / "D03_front_vehicle_brake.json"
+    spec = ScenarioSpec.load(path)
+    assert _expected_safety_completed(
+        spec,
+        frames=spec.frame_count,
+        final_speed_mps=0.0,
+        collision_seen=False,
+        safety_reasons={"WATCHDOG_ALERT", "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE"},
+    ) is False
 
 
 def test_d_fault_contracts_create_one_shot_raw_control_payloads() -> None:
@@ -225,6 +309,120 @@ def test_lead_vehicle_position_is_continuous_when_it_brakes() -> None:
     assert _lead_vehicle_travel_m(8.1, 4.0, 8.0, 0.0) == pytest.approx(32.0)
 
 
+def test_scenario_actor_lookup_is_unique_and_explicit() -> None:
+    spec = Namespace(
+        scenario_id="D03",
+        actors=(
+            {"type": "vehicle", "actor_id": "lead"},
+            {"type": "traffic_light", "state": "red"},
+        ),
+    )
+    assert _scenario_actor(spec, "vehicle")["actor_id"] == "lead"
+    assert _scenario_actor(spec, "walker.pedestrian") is None
+
+    duplicate = Namespace(
+        scenario_id="bad",
+        actors=({"type": "vehicle"}, {"type": "vehicle"}),
+    )
+    with pytest.raises(ValueError, match="multiple"):
+        _scenario_actor(duplicate, "vehicle")
+
+
+def test_submission_scenarios_declare_expected_real_actor_types() -> None:
+    from integration.scenario_execution import ScenarioSpec
+
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    s01 = ScenarioSpec.load(root / "smoke" / "S01_set_speed_20.json")
+    d03 = ScenarioSpec.load(root / "safety_D" / "D03_front_vehicle_brake.json")
+    d08 = ScenarioSpec.load(
+        root / "safety_D" / "D08_command_conflict_red_light_continue.json"
+    )
+    assert _scenario_actor(s01, "vehicle") is None
+    assert _scenario_actor(s01, "traffic_light") is None
+    assert _scenario_actor(d03, "vehicle")["actor_id"] == "lead_001"
+    assert _scenario_actor(d08, "traffic_light")["state"].lower() == "red"
+
+
+def test_scenario_vehicle_changes_to_braking_target_at_declared_time() -> None:
+    actor = {
+        "behavior": {
+            "initial_speed_mps": 5.0,
+            "brake_at_s": 6.0,
+            "target_speed_mps": 0.5,
+        }
+    }
+    assert _scenario_vehicle_speed_mps(actor, 5.99) == pytest.approx(5.0)
+    assert _scenario_vehicle_speed_mps(actor, 6.0) == pytest.approx(0.5)
+
+
+def test_scenario_vehicle_speed_is_signed_along_actor_heading() -> None:
+    actor = Namespace(
+        get_velocity=lambda: Namespace(x=3.0, y=4.0, z=0.0),
+        get_transform=lambda: Namespace(
+            get_forward_vector=lambda: Namespace(x=-0.6, y=-0.8, z=0.0),
+        ),
+    )
+    assert _signed_forward_speed_mps(actor) == pytest.approx(-5.0)
+
+
+def test_scenario_local_actor_transform_rotates_with_ego_heading() -> None:
+    class Location:
+        def __init__(self, x=0.0, y=0.0, z=0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Rotation:
+        def __init__(self, pitch=0.0, yaw=0.0, roll=0.0):
+            self.pitch, self.yaw, self.roll = pitch, yaw, roll
+
+    class Transform:
+        def __init__(self, location, rotation):
+            self.location, self.rotation = location, rotation
+
+    carla_api = Namespace(Location=Location, Rotation=Rotation, Transform=Transform)
+    anchor = Transform(Location(10.0, 20.0, 1.0), Rotation(yaw=90.0))
+    result = _scenario_local_transform(
+        carla_api,
+        anchor,
+        {"x": 18.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+    )
+    assert result.location.x == pytest.approx(10.0)
+    assert result.location.y == pytest.approx(38.0)
+    assert result.rotation.yaw == pytest.approx(90.0)
+
+
+def test_real_traffic_light_observation_replaces_config_fallback_provenance() -> None:
+    class Location:
+        def __init__(self, x, y, z=0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Transform:
+        def __init__(self, location):
+            self.location = location
+
+        def get_forward_vector(self):
+            return Namespace(x=1.0, y=0.0, z=0.0)
+
+    ego = Namespace(
+        get_location=lambda: Location(0.0, 0.0),
+        get_transform=lambda: Transform(Location(0.0, 0.0)),
+    )
+    light = Namespace(
+        get_state=lambda: "TrafficLightState.Red",
+        get_stop_waypoints=lambda: (
+            Namespace(transform=Transform(Location(12.0, 0.0))),
+        ),
+    )
+    observed, sources = _scenario_traffic_light_observation(
+        PerceptionFrame(10, 0.5),
+        ego,
+        light,
+    )
+    assert observed.traffic_light == "RED"
+    assert observed.distance_to_stop_line_m == pytest.approx(12.0)
+    assert sources["traffic_light"] == "CARLA_SCENARIO_TRAFFIC_LIGHT_ACTOR_STOP_WAYPOINT"
+    assert "FALLBACK" not in sources["traffic_light"]
+
+
 def test_front_gap_expected_value_is_a_hard_completion_contract() -> None:
     from integration.scenario_execution import ScenarioSpec
 
@@ -243,7 +441,28 @@ def test_load_command_rejects_non_object_json_before_runtime_logging(tmp_path) -
         _load_command(args)
 
 
-def test_sensor_warmup_retries_until_an_aligned_frame_arrives() -> None:
+def test_load_command_accepts_qwen_high_level_json(tmp_path) -> None:
+    path = tmp_path / "qwen_command.json"
+    path.write_text(
+        """{
+          "schema_version": "1.0",
+          "command_id": "qwen-keep-lane",
+          "action": "KEEP_LANE",
+          "confidence": 0.92,
+          "reason": "clear lane",
+          "visual_valid": true,
+          "valid_duration_s": 3.0
+        }""",
+        encoding="utf-8",
+    )
+    args = Namespace(command_json=str(path), audio=None, test_command_ttl_s=None)
+    command = _load_command(args)
+
+    assert command["intent"] == "KEEP_LANE"
+    assert command["source_text"] == "KEEP_LANE: clear lane"
+
+
+def test_sensor_warmup_retries_until_two_consecutive_aligned_frames_arrive() -> None:
     class Session:
         def __init__(self):
             self.frame = 10
@@ -273,7 +492,40 @@ def test_sensor_warmup_retries_until_an_aligned_frame_arrives() -> None:
     bridge = Bridge()
     _warm_up_sensor_bridge(session, World(session), bridge, attempts=3,
                            tick_timeout_s=60.0, sensor_timeout_s=0.5)
-    assert bridge.calls == 2
+    assert bridge.calls == 3
+
+
+def test_sensor_warmup_resets_streak_after_pipeline_bubble() -> None:
+    class Session:
+        def __init__(self):
+            self.frame = 10
+
+        def tick(self, timeout):
+            self.frame += 1
+            return self.frame
+
+    class World:
+        def __init__(self, session):
+            self.session = session
+
+        def get_snapshot(self):
+            return Namespace(timestamp=Namespace(elapsed_seconds=self.session.frame * 0.05))
+
+    class Bridge:
+        def __init__(self):
+            self.calls = 0
+
+        def acquire(self, frame, sim_time_s, timeout_s):
+            self.calls += 1
+            if self.calls == 2:
+                raise PerceptionTimeoutError("pipeline bubble")
+            return object()
+
+    session = Session()
+    bridge = Bridge()
+    _warm_up_sensor_bridge(session, World(session), bridge, attempts=4,
+                           tick_timeout_s=60.0, sensor_timeout_s=0.5)
+    assert bridge.calls == 4
 
 
 def test_vehicle_speed_ignores_vertical_spawn_settling() -> None:
