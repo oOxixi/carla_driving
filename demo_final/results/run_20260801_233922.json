@@ -1,0 +1,147 @@
+[
+  {
+    "idx": 1,
+    "timestamp": "2026-08-01T23:39:34.955343",
+    "audio_len_s": 1.2,
+    "asr_text": "加速。",
+    "voice_intent": "SPEED_UP",
+    "voice_confidence": 0.95,
+    "voice_latency": {
+      "voice_total": 4984.0,
+      "voice_asr": 110.0,
+      "voice_nlu": 15.0,
+      "carla_tick": 453.0,
+      "qwen": 0
+    },
+    "perception": {
+      "front_distance_m": null,
+      "ttc_s": null,
+      "ego_speed_mps": 5.4,
+      "collision": false
+    },
+    "d_safety_action": null,
+    "d_safety_reason": null,
+    "qwen_action": null,
+    "qwen_confidence": null,
+    "final_action": "SPEED_UP",
+    "final_source": "VOICE",
+    "final_reason": "",
+    "snap_path": "D:\\nana\\carla_driving-new\\carla_driving-new\\demo_final\\results\\snapshots\\snap_20260801_233934_942303.jpg"
+  },
+  {
+    "idx": 2,
+    "timestamp": "2026-08-01T23:39:56.618801",
+    "audio_len_s": 3.2,
+    "asr_text": "快速穿过当前十字路口。",
+    "voice_intent": "UNKNOWN",
+    "voice_confidence": 0.0,
+    "voice_latency": {
+      "voice_total": 250.0,
+      "voice_asr": 250.0,
+      "voice_nlu": 0.0,
+      "carla_tick": 375.0,
+      "qwen": 3671.0
+    },
+    "perception": {
+      "front_distance_m": null,
+      "ttc_s": null,
+      "ego_speed_mps": 5.6,
+      "collision": false
+    },
+    "d_safety_action": null,
+    "d_safety_reason": null,
+    "qwen_action": "SPEED_UP",
+    "qwen_confidence": 0.95,
+    "final_action": "SPEED_UP",
+    "final_source": "QWEN-VL",
+    "final_reason": "前方无障碍物，道路清晰，可安全加速通过十字路口",
+    "snap_path": "D:\\nana\\carla_driving-new\\carla_driving-new\\demo_final\\results\\snapshots\\snap_20260801_233952_940544.jpg"
+  },
+  {
+    "idx": 3,
+    "timestamp": "2026-08-01T23:40:10.869955",
+    "audio_len_s": 3.8,
+    "asr_text": "慢慢减速靠边停车。",
+    "voice_intent": "PULL_OVER",
+    "voice_confidence": 0.98,
+    "voice_latency": {
+      "voice_total": 219.0,
+      "voice_asr": 219.0,
+      "voice_nlu": 0.0,
+      "carla_tick": 438.0,
+      "qwen": 1843.0
+    },
+    "perception": {
+      "front_distance_m": null,
+      "ttc_s": null,
+      "ego_speed_mps": 5.5,
+      "collision": false
+    },
+    "d_safety_action": null,
+    "d_safety_reason": null,
+    "qwen_action": "SLOW_DOWN",
+    "qwen_confidence": 0.95,
+    "final_action": "SLOW_DOWN",
+    "final_source": "QWEN-VL",
+    "final_reason": "前方无障碍物，道路清晰，但语音指令要求减速靠边停车，视觉安全允许执行减速操作。",
+    "snap_path": "D:\\nana\\carla_driving-new\\carla_driving-new\\demo_final\\results\\snapshots\\snap_20260801_234009_025947.jpg"
+  },
+  {
+    "idx": 4,
+    "timestamp": "2026-08-01T23:40:28.492552",
+    "audio_len_s": 1.3,
+    "asr_text": "。",
+    "voice_intent": "UNKNOWN",
+    "voice_confidence": 0.0,
+    "voice_latency": {
+      "voice_total": 203.0,
+      "voice_asr": 203.0,
+      "voice_nlu": 0.0,
+      "carla_tick": 422.0,
+      "qwen": 2578.0
+    },
+    "perception": {
+      "front_distance_m": null,
+      "ttc_s": null,
+      "ego_speed_mps": 5.5,
+      "collision": false
+    },
+    "d_safety_action": null,
+    "d_safety_reason": null,
+    "qwen_action": "SET_SPEED",
+    "qwen_confidence": 0.95,
+    "final_action": "SET_SPEED",
+    "final_source": "QWEN-VL",
+    "final_reason": "前方无障碍物，道路清晰，可安全保持当前速度行驶",
+    "snap_path": "D:\\nana\\carla_driving-new\\carla_driving-new\\demo_final\\results\\snapshots\\snap_20260801_234025_899171.jpg"
+  },
+  {
+    "idx": 5,
+    "timestamp": "2026-08-01T23:40:38.223648",
+    "audio_len_s": 2.0,
+    "asr_text": "改为右侧车道。",
+    "voice_intent": "UNKNOWN",
+    "voice_confidence": 0.0,
+    "voice_latency": {
+      "voice_total": 188.0,
+      "voice_asr": 188.0,
+      "voice_nlu": 0.0,
+      "carla_tick": 422.0,
+      "qwen": 2015.0
+    },
+    "perception": {
+      "front_distance_m": null,
+      "ttc_s": null,
+      "ego_speed_mps": 5.5,
+      "collision": false
+    },
+    "d_safety_action": null,
+    "d_safety_reason": null,
+    "qwen_action": "CHANGE_LANE",
+    "qwen_confidence": 0.95,
+    "final_action": "CHANGE_LANE",
+    "final_source": "QWEN-VL",
+    "final_reason": "前方道路无障碍，视野清晰，可安全执行变道指令",
+    "snap_path": "D:\\nana\\carla_driving-new\\carla_driving-new\\demo_final\\results\\snapshots\\snap_20260801_234036_200581.jpg"
+  }
+]

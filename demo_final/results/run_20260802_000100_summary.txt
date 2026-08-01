@@ -1,0 +1,6 @@
+Session: 20260802_000100
+Rounds: 4
+  #1 voice=SPEED_UP final=SPEED_UP(VOICE)\
+  #2 voice=SPEED_UP final=SPEED_UP(VOICE)\
+  #3 voice=UNKNOWN final=STOP(QWEN-VL)\
+  #4 voice=SLOW_DOWN final=SLOW_DOWN(VOICE)\
