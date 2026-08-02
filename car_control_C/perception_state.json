@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "frame_id": 516345,
+  "timestamps": {
+    "sim_time_s": 9326.114228565246,
+    "rgb_timestamp_s": 9326.114228565246,
+    "lidar_timestamp_s": 9326.114228565246,
+    "radar_timestamp_s": null
+  },
+  "modality_valid": {
+    "rgb": true,
+    "lidar": true,
+    "radar": false
+  },
+  "stale": {
+    "rgb": false,
+    "lidar": false,
+    "radar": true
+  },
+  "objects": [
+    {
+      "target_id": "C-001",
+      "class_name": "PERSON",
+      "confidence": 0.6433832049369812,
+      "source": "RGB_ONNX_OBJECT_DETECTOR",
+      "position_m": {
+        "x": null,
+        "y": null
+      },
+      "velocity_mps": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "distance_m": null,
+      "ttc_s": null,
+      "risk_level": "EMERGENCY",
+      "validity_note": "RGB-only hazard without reliable range requests fail-closed braking."
+    }
+  ],
+  "traffic_light": "UNKNOWN",
+  "risk": {
+    "min_distance_m": 14.187990951538087,
+    "min_ttc_s": 2.75156075173848,
+    "recommended_action": "FULL_BRAKE",
+    "reason": "C_FRONT_PEDESTRIAN_VISUAL_HAZARD_WITHOUT_RANGE"
+  },
+  "sources": {
+    "rgb": "integration.rgb_detector.OnnxYoloDetector",
+    "lidar": "integration.carla_perception.front_lidar_distance_m",
+    "fusion": "car_control_C.safety_state.ConservativeSensorFusion",
+    "validation": "artifacts/logs/D02_pedestrian_crossing_20260731_132147_683059.summary.json"
+  },
+  "consumer_note": "B/D can consume this state without reading raw sensors."
+}

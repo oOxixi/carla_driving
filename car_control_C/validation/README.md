@@ -32,3 +32,15 @@ Important boundary:
 - D03/D07 mainly validate LiDAR/front-distance/TTC risk handling.
 - D02 validates RGB pedestrian evidence plus C fail-closed behavior.
 - World/scenario truth should not be treated as final sensor perception evidence.
+
+## Named C Deliverables
+
+The team handoff names five C-role deliverables. This repository keeps them
+under `car_control_C/` as lightweight, auditable wrappers around the validated
+runtime path:
+
+- `sensor_adapter.py`: frame/timestamp/extrinsics audit records for RGB/LiDAR/Radar inputs.
+- `rgb_pipeline.py`: ROI, Top-K detection, tracking-jump guard, and P95 latency summaries.
+- `fusion_tracker.py`: stable C target IDs plus distance, speed, TTC, and risk-level export.
+- `perception_state.json`: sample B/D-readable PerceptionState without raw sensor access.
+- `fault_injection.sh`: repeatable fault-injection evidence commands for camera blackout, radar dropout, LiDAR missing frame, false positive, false negative, and latency noise.
