@@ -131,6 +131,7 @@ def classify_intent(text: str) -> dict:
     start_time = time.perf_counter()
     original_text = text
     normalized_text = normalize_text(text)
+    emergency_punctuation = "!" in original_text or "！" in original_text
 
     # 1. 空文本
     if not normalized_text:
@@ -186,6 +187,8 @@ def classify_intent(text: str) -> dict:
 
             r"(不要|别|禁止).*(换线|变线)",
 
+            r"不.*(变道|并道|切道|切车道|走别的道)",
+
             r"(不要|别|禁止)"
             r".*(偏离|离开).*(当前|本|这条)?.*车道",
 
@@ -203,6 +206,18 @@ def classify_intent(text: str) -> dict:
             r"(稳住|保持住).*(不要|别)?.*(变|换)",
 
             r"(坚持|继续).*(本|这条|当前).*车道",
+
+            r"(就在|走|停在).*(这条|当前|本).*道",
+            r"稳住车道",
+            r"不走别的道",
+            r"不变道",
+            r"别切车道",
+            r"不要切道",
+            r"当前车道继续",
+            r"(这条|这个|当前|本).*道.*(继续|不变|走)",
+            r"就这个车道",
+            r"继续走这条",
+            r"不要偏",
         ],
 
     ):
@@ -221,16 +236,26 @@ def classify_intent(text: str) -> dict:
 
             r"(马上|立刻|立即|赶快|赶紧).*(停|刹)$",
 
-            r"(停车|刹车).*\1",
-
             r"(踩死|踩紧|猛踩).*(刹车|制动)",
 
             r"刹.*刹车",
+
+            r"(急停|紧急制动|立即制动|马上制动)",
+            r"(紧急|快).*(刹|停)",
+            r"(急刹|刹车踩到底)$",
 
             r"^踩死车$",
 
             r"^刹$",
         ],
+    ) or (
+        emergency_punctuation
+        and _matches(
+            normalized_text,
+            [
+                r"^(停|停车|停住|刹停|刹住|刹住车|刹车|制动)$",
+            ],
+        )
     ):
         intent = "EMERGENCY_STOP"
         confidence = 0.99
@@ -242,8 +267,9 @@ def classify_intent(text: str) -> dict:
             # 先出现停车位置，再出现停车动作
             r"(靠边|靠左侧|靠右侧|路边|路肩|路旁|道路边缘|"
             r"道路左侧|道路右侧|左侧安全位置|右侧安全位置|"
+            r"靠左|靠右|边上|往路边|"
             r"左侧安全区域|右侧安全区域)"
-            r".*(停|停车|停下|停好)",
+            r".*(停|停车|停下|停好|停住|靠)",
 
             # 先出现停车动作，再出现停车位置
             r"(停|停车|停下|停到)"
@@ -256,8 +282,16 @@ def classify_intent(text: str) -> dict:
             r".*(停|停车|停下|停好)",
 
             r"(停|停车|停到).*(左侧|右侧)(吧+|吗+)?$",
+            r"(左侧|右侧).*(停|停车|停下|停好)",
+            r"(在)?(左侧|右侧)(停|停车|停下|停好)",
+            r"靠(左|右|左侧|右侧).*(停|停车|停下|停好|停吧)",
+            r"边上停车",
 
             r"(把车)?靠到.*(路边|路旁|路肩|安全位置)",
+
+            r"(左转|右转)?靠边",
+            r"靠(左|右)停",
+            r"边上停车",
         ],
     ):
         intent = "PULL_OVER"
@@ -291,6 +325,13 @@ def classify_intent(text: str) -> dict:
 
             rf"(控制|设置|调整).{{0,6}}(速度|车速).{{0,6}}"
             rf"(在|到|为).{{0,6}}{NUMBER_PATTERN}",
+
+            rf"(定速|把速度定在|速度定在|维持).{{0,8}}{NUMBER_PATTERN}",
+
+            rf"(速度|车速).{{0,6}}(设置成|设成|保持在).{{0,6}}{NUMBER_PATTERN}",
+
+            rf"以.{{0,3}}{NUMBER_PATTERN}.{{0,6}}速度行驶",
+            rf"提速到.{{0,6}}{NUMBER_PATTERN}",
         ],
     ):
         intent = "SET_SPEED"
@@ -305,13 +346,32 @@ def classify_intent(text: str) -> dict:
             r"从(左侧|右侧).*(障碍|前车|车辆|行人|路障)",
             r"(绕一下|绕一绕)",
             r"(不要|别).*(撞|碰).*(车|车辆|行人|障碍)",
+            r"(不要|别).*撞.*东西",
+            r"让开.*东西",
+            r"从(左|右|左侧|右侧)绕",
         ],
     ):
         intent = "AVOID_OBSTACLE"
         confidence = 0.97
 
 
-        # 9. 变道
+        # 9. 转向
+    elif (
+        _matches(
+        normalized_text,
+        [
+            r"(左转|右转|直行)",
+            r"(向左|向右).*(转|拐)",
+            r"(左|右).*(拐|转弯)",
+        ],
+        )
+        and not _matches(normalized_text, [r"(变道|并道|换道)"])
+    ):
+        intent = "TURN"
+        confidence = 0.97
+
+
+        # 10. 变道
     elif _matches(
         normalized_text,
         [
@@ -319,6 +379,7 @@ def classify_intent(text: str) -> dict:
             r"换到.*车道",
             r"进入.*车道",
             r"并入.*车道",
+            r"并道",
 
             r"(换|并|切|变)(到|入|向|往)?(左|右|左侧|右侧)(车道|道)?(吧+)?$",
 
@@ -335,7 +396,7 @@ def classify_intent(text: str) -> dict:
         intent = "CHANGE_LANE"
         confidence = 0.97
 
-        # 10. 相对加速
+        # 11. 相对加速
     elif _matches(
         normalized_text,
         [
@@ -359,13 +420,27 @@ def classify_intent(text: str) -> dict:
             r"^(给我)?(快走|快点走|快点开|快点|冲)(吧+)?$",
 
             r"加一点速",
+            r"(再)?给点油",
+            r"油门.*(深|大|重)",
+            r"(快起来|快着点)",
+            r"(快开|快点儿|快点开)",
+            r"(再)?快点",
+            r"(快点跑|跑快点)",
+            r"开猛一点",
+            r"速度.*(快点|高点)",
+            r"(加快|加点油|加油)(吧+)?$",
+            r"提高速度",
+            r"(速度|车速).*(拉起来|加上去)",
+            r"提一下速",
+            r"别磨蹭",
+            r"快马加鞭",
         ],
     ):
         intent = "SPEED_UP"
         confidence = 0.95
 
 
-        # 11. 相对减速
+        # 12. 相对减速
     elif _matches(
         normalized_text,
         [
@@ -392,13 +467,22 @@ def classify_intent(text: str) -> dict:
             r"慢速行驶",
 
             r"别(冲|充).*快",
+            r"(收油|放慢)$",
+            r"(收点油|降点速|减一下速)",
+            r"(缓一缓|悠着点|稳一点|慢下来)",
+            r"别(那么|太)快",
+            r"(慢行|慢慢开|慢一些|慢着点)",
+            r"不要太快",
+            r"速度.*(收一收|再低点|放低)",
+            r"松油门",
+            r"稍微减点",
         ],
     ):
         intent = "SLOW_DOWN"
         confidence = 0.95
 
 
-       # 12. 普通停车放在最后
+       # 13. 普通停车放在最后
     elif _matches(
         normalized_text,
         [
@@ -414,6 +498,21 @@ def classify_intent(text: str) -> dict:
 
             r"停一会儿",
             r"完全停下",
+            r"刹停",
+            r"停稳",
+            r"暂停",
+            r"停好",
+            r"差不多停了",
+            r"给我停",
+            r"原地停",
+            r"就这儿停",
+            r"把车停了",
+            r"慢慢停",
+            r"靠这儿停",
+            r"歇一下",
+            r"可以停了",
+            r"到了停吧",
+            r"停吧",
 
             r"^(就)?(停|停了|在这停|在这儿停|停这里|停这儿|到位了停)(吧+)?$",
 
@@ -424,7 +523,7 @@ def classify_intent(text: str) -> dict:
         confidence = 0.96
 
 
-    # 13. 无法识别
+    # 14. 无法识别
     else:
         return _build_result(
             original_text=original_text,

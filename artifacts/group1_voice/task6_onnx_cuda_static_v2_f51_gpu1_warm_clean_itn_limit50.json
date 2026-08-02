@@ -1,0 +1,1302 @@
+{
+  "schema_version": "1.0",
+  "generated_at_utc": "2026-08-02T06:15:59.694948+00:00",
+  "manifest": "/home/student/yingzhaohou/carla_driving_upload_merged/artifacts/group1_voice/manifests/data_short_clean_manifest.json",
+  "audio_root": "/home/student/yingzhaohou/carla_driving_upload_merged/data/group1_voice/data_short",
+  "onnx_model": "/home/student/yingzhaohou/carla_driving_upload_merged/artifacts/group1_voice/onnx_export/sensevoice_static_v2/model_b1_f51.onnx",
+  "provider": "CUDAExecutionProvider",
+  "language": "zh",
+  "use_itn": true,
+  "sample_limit": 50,
+  "warmup": 5,
+  "git": {
+    "commit": "72aaa0e742dd9b1ae68563ab9a62b2a55a1b920a",
+    "dirty": true,
+    "status": [
+      " M voice_group/asr_vad.py",
+      " M voice_group/nlu_b2/parser.py",
+      " M voice_group/pipeline.py",
+      " M voice_group/vehicle_nlu/src/intent_classifier.py",
+      "?? artifacts/group1_voice/",
+      "?? demo_final/",
+      "?? outputs/",
+      "?? tools/export_group1_sensevoice_onnx.py",
+      "?? tools/export_group1_sensevoice_onnx_legacy.py",
+      "?? tools/export_group1_sensevoice_onnx_static.py",
+      "?? tools/prepare_group1_voice_dataset.py",
+      "?? tools/run_group1_voice_fastpath_benchmark.py",
+      "?? tools/run_group1_voice_onnx_benchmark.py",
+      "?? tools/run_group1_voice_text_regression.py",
+      "?? tools/run_group1_voice_trt_benchmark.py"
+    ]
+  },
+  "overall": {
+    "total": 50,
+    "asr_exact_accuracy": 0.04,
+    "asr_character_accuracy": 0.783019,
+    "intent_accuracy": 0.76,
+    "slot_accuracy": 0.36,
+    "latency": {
+      "frontend_ms": {
+        "count": 50,
+        "mean_ms": 7.45,
+        "p95_ms": 8.25,
+        "p99_ms": 14.651,
+        "max_ms": 20.553
+      },
+      "onnx_ms": {
+        "count": 50,
+        "mean_ms": 53.761,
+        "p95_ms": 53.995,
+        "p99_ms": 54.46,
+        "max_ms": 54.8
+      },
+      "nlu_ms": {
+        "count": 50,
+        "mean_ms": 2.17,
+        "p95_ms": 1.288,
+        "p99_ms": 34.195,
+        "max_ms": 64.959
+      },
+      "model_nlu_ms": {
+        "count": 50,
+        "mean_ms": 55.931,
+        "p95_ms": 55.399,
+        "p99_ms": 87.96,
+        "max_ms": 118.74
+      },
+      "total_ms": {
+        "count": 50,
+        "mean_ms": 70.889,
+        "p95_ms": 74.043,
+        "p99_ms": 108.609,
+        "max_ms": 131.699
+      }
+    }
+  },
+  "records": [
+    {
+      "id": "0001__clean__1",
+      "source_id": "0001",
+      "language": "普通话",
+      "audio": "audio/mandarin/0001.mp3",
+      "reference_text": "带我去吃饭。",
+      "asr_text": "带我去吃饭，我了。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": true,
+      "reference_chars": 5,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 6.733,
+        "onnx_ms": 53.781,
+        "nlu_ms": 64.959,
+        "model_nlu_ms": 118.74,
+        "total_ms": 131.699
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0001__clean__2",
+      "source_id": "0001",
+      "language": "东北话",
+      "audio": "audio/dialect/dongbei/0001.mp3",
+      "reference_text": "带我去吃饭。",
+      "asr_text": "带我去吃饭，我。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": true,
+      "reference_chars": 5,
+      "edit_distance": 1,
+      "latency": {
+        "frontend_ms": 6.941,
+        "onnx_ms": 53.838,
+        "nlu_ms": 1.054,
+        "model_nlu_ms": 54.892,
+        "total_ms": 68.409
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0001__clean__3",
+      "source_id": "0001",
+      "language": "陕西话",
+      "audio": "audio/dialect/shaanxi/0001.mp3",
+      "reference_text": "带我去吃饭。",
+      "asr_text": "耽我去吃饭，我。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": true,
+      "reference_chars": 5,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 6.825,
+        "onnx_ms": 53.926,
+        "nlu_ms": 1.045,
+        "model_nlu_ms": 54.971,
+        "total_ms": 68.519
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0002__clean__1",
+      "source_id": "0002",
+      "language": "普通话",
+      "audio": "audio/mandarin/0002.mp3",
+      "reference_text": "保持在这条车道。",
+      "asr_text": "保持在这条车道，我了。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 7,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 6.793,
+        "onnx_ms": 53.669,
+        "nlu_ms": 0.571,
+        "model_nlu_ms": 54.24,
+        "total_ms": 68.063
+      },
+      "predicted_intent": "KEEP_LANE",
+      "predicted_slots": {
+        "mode": "KEEP_CURRENT_LANE"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0002__clean__2",
+      "source_id": "0002",
+      "language": "陕西话",
+      "audio": "audio/dialect/shaanxi/0002.mp3",
+      "reference_text": "保持在这条车道。",
+      "asr_text": "保持在这条扯道，我了。",
+      "asr_exact": false,
+      "intent_ok": false,
+      "slots_ok": true,
+      "reference_chars": 7,
+      "edit_distance": 3,
+      "latency": {
+        "frontend_ms": 7.068,
+        "onnx_ms": 53.925,
+        "nlu_ms": 1.084,
+        "model_nlu_ms": 55.009,
+        "total_ms": 69.677
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0002__clean__3",
+      "source_id": "0002",
+      "language": "粤语",
+      "audio": "audio/dialect/yueyu/0002.mp3",
+      "reference_text": "保持在这条车道。",
+      "asr_text": "保持在这条车道。",
+      "asr_exact": true,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 7,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 7.601,
+        "onnx_ms": 53.725,
+        "nlu_ms": 0.551,
+        "model_nlu_ms": 54.276,
+        "total_ms": 70.365
+      },
+      "predicted_intent": "KEEP_LANE",
+      "predicted_slots": {
+        "mode": "KEEP_CURRENT_LANE"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0003__clean__1",
+      "source_id": "0003",
+      "language": "普通话",
+      "audio": "audio/mandarin/0003.mp3",
+      "reference_text": "速度设为30公里。",
+      "asr_text": "速度设为30公里，时。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 8,
+      "edit_distance": 1,
+      "latency": {
+        "frontend_ms": 7.179,
+        "onnx_ms": 53.697,
+        "nlu_ms": 1.455,
+        "model_nlu_ms": 55.152,
+        "total_ms": 70.432
+      },
+      "predicted_intent": "SET_SPEED",
+      "predicted_slots": {
+        "speed": 30,
+        "unit": "km/h"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0003__clean__2",
+      "source_id": "0003",
+      "language": "东北话",
+      "audio": "audio/dialect/dongbei/0003.mp3",
+      "reference_text": "速度设为30公里。",
+      "asr_text": "速度设为30公里对。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 8,
+      "edit_distance": 1,
+      "latency": {
+        "frontend_ms": 8.339,
+        "onnx_ms": 53.769,
+        "nlu_ms": 0.755,
+        "model_nlu_ms": 54.524,
+        "total_ms": 72.572
+      },
+      "predicted_intent": "SET_SPEED",
+      "predicted_slots": {
+        "speed": 30,
+        "unit": "km/h"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0003__clean__3",
+      "source_id": "0003",
+      "language": "粤语",
+      "audio": "audio/dialect/yueyu/0003.mp3",
+      "reference_text": "速度设为30公里。",
+      "asr_text": "速度设为三十公里。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 8,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 7.927,
+        "onnx_ms": 53.749,
+        "nlu_ms": 2.175,
+        "model_nlu_ms": 55.924,
+        "total_ms": 72.953
+      },
+      "predicted_intent": "SET_SPEED",
+      "predicted_slots": {
+        "speed": 30,
+        "unit": "km/h"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0003__clean__4",
+      "source_id": "0003",
+      "language": "台湾国语",
+      "audio": "audio/dialect/taiwan/0003.mp3",
+      "reference_text": "速度设为30公里。",
+      "asr_text": "速度设为30公里，米。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 8,
+      "edit_distance": 1,
+      "latency": {
+        "frontend_ms": 7.567,
+        "onnx_ms": 53.803,
+        "nlu_ms": 0.735,
+        "model_nlu_ms": 54.538,
+        "total_ms": 70.433
+      },
+      "predicted_intent": "SET_SPEED",
+      "predicted_slots": {
+        "speed": 30,
+        "unit": "km/h"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0004__clean__1",
+      "source_id": "0004",
+      "language": "普通话",
+      "audio": "audio/mandarin/0004.mp3",
+      "reference_text": "麻烦立即停车！",
+      "asr_text": "麻烦立即停车，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 6,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 7.006,
+        "onnx_ms": 54.106,
+        "nlu_ms": 0.594,
+        "model_nlu_ms": 54.7,
+        "total_ms": 68.982
+      },
+      "predicted_intent": "EMERGENCY_STOP",
+      "predicted_slots": {
+        "brake": "FULL"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0004__clean__2",
+      "source_id": "0004",
+      "language": "东北话",
+      "audio": "audio/dialect/dongbei/0004.mp3",
+      "reference_text": "麻烦立即停车！",
+      "asr_text": "麻烦立即停车，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 6,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 7.305,
+        "onnx_ms": 54.042,
+        "nlu_ms": 0.583,
+        "model_nlu_ms": 54.625,
+        "total_ms": 69.201
+      },
+      "predicted_intent": "EMERGENCY_STOP",
+      "predicted_slots": {
+        "brake": "FULL"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0004__clean__3",
+      "source_id": "0004",
+      "language": "陕西话",
+      "audio": "audio/dialect/shaanxi/0004.mp3",
+      "reference_text": "麻烦立即停车！",
+      "asr_text": "麻烦立即停车，我了。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 6,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 7.105,
+        "onnx_ms": 53.769,
+        "nlu_ms": 0.601,
+        "model_nlu_ms": 54.37,
+        "total_ms": 68.947
+      },
+      "predicted_intent": "EMERGENCY_STOP",
+      "predicted_slots": {
+        "brake": "FULL"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0005__clean__1",
+      "source_id": "0005",
+      "language": "普通话",
+      "audio": "audio/mandarin/0005.mp3",
+      "reference_text": "麻烦换左边。",
+      "asr_text": "麻烦换左边，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": true,
+      "reference_chars": 5,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 6.818,
+        "onnx_ms": 53.698,
+        "nlu_ms": 0.792,
+        "model_nlu_ms": 54.49,
+        "total_ms": 68.146
+      },
+      "predicted_intent": "CHANGE_LANE",
+      "predicted_slots": {
+        "direction": "LEFT"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0006__clean__1",
+      "source_id": "0006",
+      "language": "普通话",
+      "audio": "audio/mandarin/0006.mp3",
+      "reference_text": "躲开前面的行人。",
+      "asr_text": "躲开前面的行人，他来。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 7,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 7.005,
+        "onnx_ms": 53.565,
+        "nlu_ms": 0.758,
+        "model_nlu_ms": 54.323,
+        "total_ms": 68.743
+      },
+      "predicted_intent": "AVOID_OBSTACLE",
+      "predicted_slots": {
+        "direction": "AUTO",
+        "target": "PEDESTRIAN"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0006__clean__2",
+      "source_id": "0006",
+      "language": "陕西话",
+      "audio": "audio/dialect/shaanxi/0006.mp3",
+      "reference_text": "躲开前面的行人。",
+      "asr_text": "剁开前面的行人人。",
+      "asr_exact": false,
+      "intent_ok": false,
+      "slots_ok": false,
+      "reference_chars": 7,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 7.35,
+        "onnx_ms": 53.659,
+        "nlu_ms": 1.047,
+        "model_nlu_ms": 54.706,
+        "total_ms": 69.816
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0007__clean__1",
+      "source_id": "0007",
+      "language": "普通话",
+      "audio": "audio/mandarin/0007.mp3",
+      "reference_text": "帮我记个东西吧吧。",
+      "asr_text": "帮我寄个东西吧爸，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": true,
+      "reference_chars": 8,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 7.045,
+        "onnx_ms": 53.627,
+        "nlu_ms": 1.016,
+        "model_nlu_ms": 54.643,
+        "total_ms": 69.219
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0007__clean__2",
+      "source_id": "0007",
+      "language": "东北话",
+      "audio": "audio/dialect/dongbei/0007.mp3",
+      "reference_text": "帮我记个东西吧吧。",
+      "asr_text": "帮我寄个东西吧爸，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": true,
+      "reference_chars": 8,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 7.238,
+        "onnx_ms": 53.746,
+        "nlu_ms": 1.04,
+        "model_nlu_ms": 54.786,
+        "total_ms": 69.343
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0007__clean__3",
+      "source_id": "0007",
+      "language": "陕西话",
+      "audio": "audio/dialect/shaanxi/0007.mp3",
+      "reference_text": "帮我记个东西吧吧。",
+      "asr_text": "帮了这个东西，爸爸。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": true,
+      "reference_chars": 8,
+      "edit_distance": 4,
+      "latency": {
+        "frontend_ms": 6.919,
+        "onnx_ms": 53.8,
+        "nlu_ms": 1.022,
+        "model_nlu_ms": 54.822,
+        "total_ms": 69.304
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0008__clean__1",
+      "source_id": "0008",
+      "language": "普通话",
+      "audio": "audio/mandarin/0008.mp3",
+      "reference_text": "在这停。",
+      "asr_text": "在这庭，我。",
+      "asr_exact": false,
+      "intent_ok": false,
+      "slots_ok": true,
+      "reference_chars": 3,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 6.87,
+        "onnx_ms": 53.719,
+        "nlu_ms": 1.017,
+        "model_nlu_ms": 54.736,
+        "total_ms": 67.235
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0008__clean__2",
+      "source_id": "0008",
+      "language": "东北话",
+      "audio": "audio/dialect/dongbei/0008.mp3",
+      "reference_text": "在这停。",
+      "asr_text": "在这庭，你。",
+      "asr_exact": false,
+      "intent_ok": false,
+      "slots_ok": true,
+      "reference_chars": 3,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 6.925,
+        "onnx_ms": 53.619,
+        "nlu_ms": 1.005,
+        "model_nlu_ms": 54.624,
+        "total_ms": 67.634
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0009__clean__1",
+      "source_id": "0009",
+      "language": "普通话",
+      "audio": "audio/mandarin/0009.mp3",
+      "reference_text": "麻烦别撞到车。",
+      "asr_text": "麻烦别撞到车，我了。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 6,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 6.871,
+        "onnx_ms": 53.773,
+        "nlu_ms": 0.786,
+        "model_nlu_ms": 54.559,
+        "total_ms": 68.234
+      },
+      "predicted_intent": "AVOID_OBSTACLE",
+      "predicted_slots": {
+        "direction": "AUTO",
+        "target": "VEHICLE"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0009__clean__2",
+      "source_id": "0009",
+      "language": "陕西话",
+      "audio": "audio/dialect/shaanxi/0009.mp3",
+      "reference_text": "麻烦别撞到车。",
+      "asr_text": "麻烦保撞到扯，我了。",
+      "asr_exact": false,
+      "intent_ok": false,
+      "slots_ok": false,
+      "reference_chars": 6,
+      "edit_distance": 4,
+      "latency": {
+        "frontend_ms": 7.078,
+        "onnx_ms": 53.787,
+        "nlu_ms": 1.054,
+        "model_nlu_ms": 54.841,
+        "total_ms": 69.352
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0009__clean__3",
+      "source_id": "0009",
+      "language": "台湾国语",
+      "audio": "audio/dialect/taiwan/0009.mp3",
+      "reference_text": "麻烦别撞到车。",
+      "asr_text": "麻烦别撞到车，我了。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 6,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 7.296,
+        "onnx_ms": 53.92,
+        "nlu_ms": 0.787,
+        "model_nlu_ms": 54.707,
+        "total_ms": 69.3
+      },
+      "predicted_intent": "AVOID_OBSTACLE",
+      "predicted_slots": {
+        "direction": "AUTO",
+        "target": "VEHICLE"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0010__clean__1",
+      "source_id": "0010",
+      "language": "普通话",
+      "audio": "audio/mandarin/0010.mp3",
+      "reference_text": "麻烦换左边车道。",
+      "asr_text": "麻烦换左边车道，我了。",
+      "asr_exact": false,
+      "intent_ok": false,
+      "slots_ok": false,
+      "reference_chars": 7,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 7.101,
+        "onnx_ms": 53.718,
+        "nlu_ms": 1.085,
+        "model_nlu_ms": 54.803,
+        "total_ms": 69.611
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0010__clean__2",
+      "source_id": "0010",
+      "language": "东北话",
+      "audio": "audio/dialect/dongbei/0010.mp3",
+      "reference_text": "麻烦换左边车道。",
+      "asr_text": "麻烦换左边车道。",
+      "asr_exact": true,
+      "intent_ok": true,
+      "slots_ok": true,
+      "reference_chars": 7,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 20.553,
+        "onnx_ms": 54.8,
+        "nlu_ms": 0.801,
+        "model_nlu_ms": 55.601,
+        "total_ms": 84.577
+      },
+      "predicted_intent": "CHANGE_LANE",
+      "predicted_slots": {
+        "direction": "LEFT"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0010__clean__3",
+      "source_id": "0010",
+      "language": "陕西话",
+      "audio": "audio/dialect/shaanxi/0010.mp3",
+      "reference_text": "麻烦换左边车道。",
+      "asr_text": "麻烦欢坐便扯刀，我了。",
+      "asr_exact": false,
+      "intent_ok": false,
+      "slots_ok": false,
+      "reference_chars": 7,
+      "edit_distance": 7,
+      "latency": {
+        "frontend_ms": 7.471,
+        "onnx_ms": 53.728,
+        "nlu_ms": 1.035,
+        "model_nlu_ms": 54.763,
+        "total_ms": 70.405
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0010__clean__4",
+      "source_id": "0010",
+      "language": "台湾国语",
+      "audio": "audio/dialect/taiwan/0010.mp3",
+      "reference_text": "麻烦换左边车道。",
+      "asr_text": "麻烦换左边车道，我。",
+      "asr_exact": false,
+      "intent_ok": false,
+      "slots_ok": false,
+      "reference_chars": 7,
+      "edit_distance": 1,
+      "latency": {
+        "frontend_ms": 7.49,
+        "onnx_ms": 53.692,
+        "nlu_ms": 1.068,
+        "model_nlu_ms": 54.76,
+        "total_ms": 70.326
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0011__clean__1",
+      "source_id": "0011",
+      "language": "普通话",
+      "audio": "audio/mandarin/0011.mp3",
+      "reference_text": "马上刹！",
+      "asr_text": "马上杀我了。",
+      "asr_exact": false,
+      "intent_ok": false,
+      "slots_ok": true,
+      "reference_chars": 3,
+      "edit_distance": 3,
+      "latency": {
+        "frontend_ms": 6.769,
+        "onnx_ms": 53.648,
+        "nlu_ms": 1.012,
+        "model_nlu_ms": 54.66,
+        "total_ms": 67.483
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0011__clean__2",
+      "source_id": "0011",
+      "language": "粤语",
+      "audio": "audio/dialect/yueyu/0011.mp3",
+      "reference_text": "马上刹！",
+      "asr_text": "马上。",
+      "asr_exact": false,
+      "intent_ok": false,
+      "slots_ok": true,
+      "reference_chars": 3,
+      "edit_distance": 1,
+      "latency": {
+        "frontend_ms": 6.652,
+        "onnx_ms": 53.883,
+        "nlu_ms": 0.961,
+        "model_nlu_ms": 54.844,
+        "total_ms": 67.611
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0012__clean__1",
+      "source_id": "0012",
+      "language": "普通话",
+      "audio": "audio/mandarin/0012.mp3",
+      "reference_text": "稍微快些。",
+      "asr_text": "稍微快些，我了。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 4,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 6.708,
+        "onnx_ms": 53.796,
+        "nlu_ms": 0.839,
+        "model_nlu_ms": 54.635,
+        "total_ms": 67.54
+      },
+      "predicted_intent": "SPEED_UP",
+      "predicted_slots": {
+        "mode": "RELATIVE",
+        "action": "ACCELERATE"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0012__clean__2",
+      "source_id": "0012",
+      "language": "东北话",
+      "audio": "audio/dialect/dongbei/0012.mp3",
+      "reference_text": "稍微快些。",
+      "asr_text": "稍微快些，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 4,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 6.804,
+        "onnx_ms": 53.643,
+        "nlu_ms": 0.82,
+        "model_nlu_ms": 54.463,
+        "total_ms": 67.885
+      },
+      "predicted_intent": "SPEED_UP",
+      "predicted_slots": {
+        "mode": "RELATIVE",
+        "action": "ACCELERATE"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0013__clean__1",
+      "source_id": "0013",
+      "language": "普通话",
+      "audio": "audio/mandarin/0013.mp3",
+      "reference_text": "停下吧。",
+      "asr_text": "停下吧，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 3,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 6.552,
+        "onnx_ms": 53.762,
+        "nlu_ms": 0.923,
+        "model_nlu_ms": 54.685,
+        "total_ms": 67.102
+      },
+      "predicted_intent": "STOP",
+      "predicted_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0013__clean__2",
+      "source_id": "0013",
+      "language": "粤语",
+      "audio": "audio/dialect/yueyu/0013.mp3",
+      "reference_text": "停下吧。",
+      "asr_text": "停下吧，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 3,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 6.922,
+        "onnx_ms": 53.681,
+        "nlu_ms": 0.923,
+        "model_nlu_ms": 54.604,
+        "total_ms": 68.311
+      },
+      "predicted_intent": "STOP",
+      "predicted_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0014__clean__1",
+      "source_id": "0014",
+      "language": "普通话",
+      "audio": "audio/mandarin/0014.mp3",
+      "reference_text": "把速度降下来。",
+      "asr_text": "把速度降下来，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 6,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 6.797,
+        "onnx_ms": 53.544,
+        "nlu_ms": 0.94,
+        "model_nlu_ms": 54.484,
+        "total_ms": 67.866
+      },
+      "predicted_intent": "SLOW_DOWN",
+      "predicted_slots": {
+        "mode": "RELATIVE",
+        "action": "DECELERATE"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0015__clean__1",
+      "source_id": "0015",
+      "language": "普通话",
+      "audio": "audio/mandarin/0015.mp3",
+      "reference_text": "麻烦向右绕开那个东西吧吧。",
+      "asr_text": "麻烦向右绕开那个东西吧爸，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": true,
+      "reference_chars": 12,
+      "edit_distance": 1,
+      "latency": {
+        "frontend_ms": 8.078,
+        "onnx_ms": 53.599,
+        "nlu_ms": 0.774,
+        "model_nlu_ms": 54.373,
+        "total_ms": 72.056
+      },
+      "predicted_intent": "AVOID_OBSTACLE",
+      "predicted_slots": {
+        "direction": "RIGHT",
+        "target": "UNKNOWN_TARGET"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0015__clean__2",
+      "source_id": "0015",
+      "language": "粤语",
+      "audio": "audio/dialect/yueyu/0015.mp3",
+      "reference_text": "麻烦向右绕开那个东西吧吧。",
+      "asr_text": "麻烦香又要开哪个东西吧吧。",
+      "asr_exact": false,
+      "intent_ok": false,
+      "slots_ok": false,
+      "reference_chars": 12,
+      "edit_distance": 4,
+      "latency": {
+        "frontend_ms": 8.508,
+        "onnx_ms": 53.759,
+        "nlu_ms": 1.042,
+        "model_nlu_ms": 54.801,
+        "total_ms": 74.935
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0015__clean__3",
+      "source_id": "0015",
+      "language": "台湾国语",
+      "audio": "audio/dialect/taiwan/0015.mp3",
+      "reference_text": "麻烦向右绕开那个东西吧吧。",
+      "asr_text": "麻烦向又绕开那个东西，爸爸。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 12,
+      "edit_distance": 3,
+      "latency": {
+        "frontend_ms": 8.141,
+        "onnx_ms": 53.622,
+        "nlu_ms": 0.765,
+        "model_nlu_ms": 54.387,
+        "total_ms": 72.68
+      },
+      "predicted_intent": "AVOID_OBSTACLE",
+      "predicted_slots": {
+        "direction": "AUTO",
+        "target": "UNKNOWN_TARGET"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0016__clean__1",
+      "source_id": "0016",
+      "language": "普通话",
+      "audio": "audio/mandarin/0016.mp3",
+      "reference_text": "麻烦紧急制动现在！",
+      "asr_text": "麻烦紧急制动现在。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 8,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 7.675,
+        "onnx_ms": 53.5,
+        "nlu_ms": 0.588,
+        "model_nlu_ms": 54.088,
+        "total_ms": 70.403
+      },
+      "predicted_intent": "EMERGENCY_STOP",
+      "predicted_slots": {
+        "brake": "FULL"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0016__clean__2",
+      "source_id": "0016",
+      "language": "东北话",
+      "audio": "audio/dialect/dongbei/0016.mp3",
+      "reference_text": "麻烦紧急制动现在！",
+      "asr_text": "麻烦紧急制动。现在。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 8,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 7.848,
+        "onnx_ms": 53.938,
+        "nlu_ms": 0.587,
+        "model_nlu_ms": 54.525,
+        "total_ms": 71.148
+      },
+      "predicted_intent": "EMERGENCY_STOP",
+      "predicted_slots": {
+        "brake": "FULL"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0016__clean__3",
+      "source_id": "0016",
+      "language": "台湾国语",
+      "audio": "audio/dialect/taiwan/0016.mp3",
+      "reference_text": "麻烦紧急制动现在！",
+      "asr_text": "麻烦紧急制动，现在。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 8,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 7.722,
+        "onnx_ms": 53.662,
+        "nlu_ms": 0.587,
+        "model_nlu_ms": 54.249,
+        "total_ms": 70.406
+      },
+      "predicted_intent": "EMERGENCY_STOP",
+      "predicted_slots": {
+        "brake": "FULL"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0017__clean__1",
+      "source_id": "0017",
+      "language": "普通话",
+      "audio": "audio/mandarin/0017.mp3",
+      "reference_text": "麻烦左靠边停车。",
+      "asr_text": "麻烦左靠边停车，我了。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 7,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 7.097,
+        "onnx_ms": 53.804,
+        "nlu_ms": 0.663,
+        "model_nlu_ms": 54.467,
+        "total_ms": 69.205
+      },
+      "predicted_intent": "PULL_OVER",
+      "predicted_slots": {
+        "side": "LEFT",
+        "stop": true
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0017__clean__2",
+      "source_id": "0017",
+      "language": "台湾国语",
+      "audio": "audio/dialect/taiwan/0017.mp3",
+      "reference_text": "麻烦左靠边停车。",
+      "asr_text": "麻烦左靠边停车，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 7,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 7.332,
+        "onnx_ms": 53.764,
+        "nlu_ms": 0.659,
+        "model_nlu_ms": 54.423,
+        "total_ms": 69.689
+      },
+      "predicted_intent": "PULL_OVER",
+      "predicted_slots": {
+        "side": "LEFT",
+        "stop": true
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0018__clean__1",
+      "source_id": "0018",
+      "language": "普通话",
+      "audio": "audio/mandarin/0018.mp3",
+      "reference_text": "刹车刹车！",
+      "asr_text": "刹车刹车。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 4,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 6.618,
+        "onnx_ms": 53.601,
+        "nlu_ms": 0.596,
+        "model_nlu_ms": 54.197,
+        "total_ms": 67.447
+      },
+      "predicted_intent": "EMERGENCY_STOP",
+      "predicted_slots": {
+        "brake": "FULL"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0018__clean__2",
+      "source_id": "0018",
+      "language": "粤语",
+      "audio": "audio/dialect/yueyu/0018.mp3",
+      "reference_text": "刹车刹车！",
+      "asr_text": "车车。",
+      "asr_exact": false,
+      "intent_ok": false,
+      "slots_ok": true,
+      "reference_chars": 4,
+      "edit_distance": 2,
+      "latency": {
+        "frontend_ms": 6.635,
+        "onnx_ms": 53.704,
+        "nlu_ms": 0.989,
+        "model_nlu_ms": 54.693,
+        "total_ms": 67.441
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0019__clean__1",
+      "source_id": "0019",
+      "language": "普通话",
+      "audio": "audio/mandarin/0019.mp3",
+      "reference_text": "提到40吧。",
+      "asr_text": "提到40吧，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 5,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 6.745,
+        "onnx_ms": 53.698,
+        "nlu_ms": 0.712,
+        "model_nlu_ms": 54.41,
+        "total_ms": 67.386
+      },
+      "predicted_intent": "SET_SPEED",
+      "predicted_slots": {
+        "speed": 40,
+        "unit": "km/h"
+      },
+      "status": "valid"
+    },
+    {
+      "id": "0020__clean__1",
+      "source_id": "0020",
+      "language": "普通话",
+      "audio": "audio/mandarin/0020.mp3",
+      "reference_text": "调一下后视镜。",
+      "asr_text": "调一下后视镜，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": true,
+      "reference_chars": 6,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 7.289,
+        "onnx_ms": 53.698,
+        "nlu_ms": 1.021,
+        "model_nlu_ms": 54.719,
+        "total_ms": 69.274
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0020__clean__2",
+      "source_id": "0020",
+      "language": "东北话",
+      "audio": "audio/dialect/dongbei/0020.mp3",
+      "reference_text": "调一下后视镜。",
+      "asr_text": "调一下后视镜，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": true,
+      "reference_chars": 6,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 7.091,
+        "onnx_ms": 53.766,
+        "nlu_ms": 1.008,
+        "model_nlu_ms": 54.774,
+        "total_ms": 69.281
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0020__clean__3",
+      "source_id": "0020",
+      "language": "陕西话",
+      "audio": "audio/dialect/shaanxi/0020.mp3",
+      "reference_text": "调一下后视镜。",
+      "asr_text": "调一下后视镜，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": true,
+      "reference_chars": 6,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 7.073,
+        "onnx_ms": 53.763,
+        "nlu_ms": 1.026,
+        "model_nlu_ms": 54.789,
+        "total_ms": 69.421
+      },
+      "predicted_intent": "UNKNOWN",
+      "predicted_slots": {},
+      "status": "unknown"
+    },
+    {
+      "id": "0021__clean__1",
+      "source_id": "0021",
+      "language": "普通话",
+      "audio": "audio/mandarin/0021.mp3",
+      "reference_text": "稳住不要变吧。",
+      "asr_text": "稳住不要变吧，。",
+      "asr_exact": false,
+      "intent_ok": true,
+      "slots_ok": false,
+      "reference_chars": 6,
+      "edit_distance": 0,
+      "latency": {
+        "frontend_ms": 7.027,
+        "onnx_ms": 53.572,
+        "nlu_ms": 0.568,
+        "model_nlu_ms": 54.14,
+        "total_ms": 68.367
+      },
+      "predicted_intent": "KEEP_LANE",
+      "predicted_slots": {
+        "mode": "KEEP_CURRENT_LANE"
+      },
+      "status": "valid"
+    }
+  ]
+}

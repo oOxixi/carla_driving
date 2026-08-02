@@ -1,0 +1,1408 @@
+{
+  "schema_version": "1.0",
+  "generated_at_utc": "2026-08-02T04:07:18.704304+00:00",
+  "manifest": "/home/student/yingzhaohou/carla_driving_upload_merged/artifacts/group1_voice/manifests/data_short_noisy_50dba_manifest.json",
+  "git": {
+    "commit": "72aaa0e742dd9b1ae68563ab9a62b2a55a1b920a",
+    "dirty": true,
+    "status": [
+      " M voice_group/nlu_b2/parser.py",
+      " M voice_group/vehicle_nlu/src/intent_classifier.py",
+      "?? artifacts/group1_voice/",
+      "?? tools/prepare_group1_voice_dataset.py",
+      "?? tools/run_group1_voice_fastpath_benchmark.py",
+      "?? tools/run_group1_voice_text_regression.py"
+    ]
+  },
+  "overall": {
+    "total": 2598,
+    "fast_path_count": 821,
+    "verification_triggered": 1777,
+    "verification_trigger_rate": 0.683988,
+    "by_status": {
+      "unknown": 231,
+      "valid": 2148,
+      "unsafe": 219
+    },
+    "by_reason": {
+      "fast_path": 821,
+      "risky_intent": 1777
+    },
+    "latency": {
+      "b1_ms": {
+        "count": 0,
+        "mean_ms": null,
+        "p95_ms": null,
+        "p99_ms": null,
+        "max_ms": null
+      },
+      "b2_ms": {
+        "count": 2598,
+        "mean_ms": 0.064,
+        "p95_ms": 0.076,
+        "p99_ms": 0.33,
+        "max_ms": 2.14
+      },
+      "total_text_nlu_ms": {
+        "count": 2598,
+        "mean_ms": 0.472,
+        "p95_ms": 0.651,
+        "p99_ms": 0.855,
+        "max_ms": 79.861
+      }
+    }
+  },
+  "by_language": {
+    "东北话": {
+      "total": 400,
+      "fast_path_count": 131,
+      "verification_triggered": 269,
+      "verification_trigger_rate": 0.6725,
+      "by_status": {
+        "unknown": 43,
+        "valid": 323,
+        "unsafe": 34
+      },
+      "by_reason": {
+        "fast_path": 131,
+        "risky_intent": 269
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 400,
+          "mean_ms": 0.062,
+          "p95_ms": 0.075,
+          "p99_ms": 0.322,
+          "max_ms": 0.358
+        },
+        "total_text_nlu_ms": {
+          "count": 400,
+          "mean_ms": 0.445,
+          "p95_ms": 0.646,
+          "p99_ms": 0.853,
+          "max_ms": 1.05
+        }
+      }
+    },
+    "台湾国语": {
+      "total": 399,
+      "fast_path_count": 114,
+      "verification_triggered": 285,
+      "verification_trigger_rate": 0.714286,
+      "by_status": {
+        "valid": 331,
+        "unsafe": 37,
+        "unknown": 31
+      },
+      "by_reason": {
+        "risky_intent": 285,
+        "fast_path": 114
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 399,
+          "mean_ms": 0.059,
+          "p95_ms": 0.071,
+          "p99_ms": 0.084,
+          "max_ms": 0.548
+        },
+        "total_text_nlu_ms": {
+          "count": 399,
+          "mean_ms": 0.427,
+          "p95_ms": 0.63,
+          "p99_ms": 0.808,
+          "max_ms": 1.094
+        }
+      }
+    },
+    "普通话": {
+      "total": 1000,
+      "fast_path_count": 319,
+      "verification_triggered": 681,
+      "verification_trigger_rate": 0.681,
+      "by_status": {
+        "unknown": 85,
+        "valid": 839,
+        "unsafe": 76
+      },
+      "by_reason": {
+        "fast_path": 319,
+        "risky_intent": 681
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 1000,
+          "mean_ms": 0.067,
+          "p95_ms": 0.077,
+          "p99_ms": 0.329,
+          "max_ms": 1.382
+        },
+        "total_text_nlu_ms": {
+          "count": 1000,
+          "mean_ms": 0.527,
+          "p95_ms": 0.657,
+          "p99_ms": 0.881,
+          "max_ms": 79.861
+        }
+      }
+    },
+    "粤语": {
+      "total": 399,
+      "fast_path_count": 131,
+      "verification_triggered": 268,
+      "verification_trigger_rate": 0.671679,
+      "by_status": {
+        "valid": 318,
+        "unsafe": 41,
+        "unknown": 40
+      },
+      "by_reason": {
+        "fast_path": 131,
+        "risky_intent": 268
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 399,
+          "mean_ms": 0.069,
+          "p95_ms": 0.074,
+          "p99_ms": 0.341,
+          "max_ms": 2.14
+        },
+        "total_text_nlu_ms": {
+          "count": 399,
+          "mean_ms": 0.438,
+          "p95_ms": 0.645,
+          "p99_ms": 0.841,
+          "max_ms": 2.503
+        }
+      }
+    },
+    "陕西话": {
+      "total": 400,
+      "fast_path_count": 126,
+      "verification_triggered": 274,
+      "verification_trigger_rate": 0.685,
+      "by_status": {
+        "unknown": 32,
+        "valid": 337,
+        "unsafe": 31
+      },
+      "by_reason": {
+        "fast_path": 126,
+        "risky_intent": 274
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 400,
+          "mean_ms": 0.062,
+          "p95_ms": 0.073,
+          "p99_ms": 0.328,
+          "max_ms": 0.598
+        },
+        "total_text_nlu_ms": {
+          "count": 400,
+          "mean_ms": 0.438,
+          "p95_ms": 0.66,
+          "p99_ms": 0.856,
+          "max_ms": 0.99
+        }
+      }
+    }
+  },
+  "by_intent": {
+    "AVOID_OBSTACLE": {
+      "total": 334,
+      "fast_path_count": 0,
+      "verification_triggered": 334,
+      "verification_trigger_rate": 1.0,
+      "by_status": {
+        "valid": 334
+      },
+      "by_reason": {
+        "risky_intent": 334
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 334,
+          "mean_ms": 0.071,
+          "p95_ms": 0.077,
+          "p99_ms": 0.339,
+          "max_ms": 0.398
+        },
+        "total_text_nlu_ms": {
+          "count": 334,
+          "mean_ms": 0.418,
+          "p95_ms": 0.514,
+          "p99_ms": 0.677,
+          "max_ms": 0.841
+        }
+      }
+    },
+    "CHANGE_LANE": {
+      "total": 238,
+      "fast_path_count": 0,
+      "verification_triggered": 238,
+      "verification_trigger_rate": 1.0,
+      "by_status": {
+        "valid": 238
+      },
+      "by_reason": {
+        "risky_intent": 238
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 238,
+          "mean_ms": 0.07,
+          "p95_ms": 0.068,
+          "p99_ms": 0.261,
+          "max_ms": 2.14
+        },
+        "total_text_nlu_ms": {
+          "count": 238,
+          "mean_ms": 0.453,
+          "p95_ms": 0.552,
+          "p99_ms": 0.723,
+          "max_ms": 2.503
+        }
+      }
+    },
+    "EMERGENCY_STOP": {
+      "total": 230,
+      "fast_path_count": 230,
+      "verification_triggered": 0,
+      "verification_trigger_rate": 0.0,
+      "by_status": {
+        "valid": 230
+      },
+      "by_reason": {
+        "fast_path": 230
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 230,
+          "mean_ms": 0.047,
+          "p95_ms": 0.054,
+          "p99_ms": 0.08,
+          "max_ms": 0.309
+        },
+        "total_text_nlu_ms": {
+          "count": 230,
+          "mean_ms": 0.298,
+          "p95_ms": 0.566,
+          "p99_ms": 0.607,
+          "max_ms": 1.215
+        }
+      }
+    },
+    "KEEP_LANE": {
+      "total": 160,
+      "fast_path_count": 160,
+      "verification_triggered": 0,
+      "verification_trigger_rate": 0.0,
+      "by_status": {
+        "valid": 160
+      },
+      "by_reason": {
+        "fast_path": 160
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 160,
+          "mean_ms": 0.049,
+          "p95_ms": 0.055,
+          "p99_ms": 0.202,
+          "max_ms": 0.322
+        },
+        "total_text_nlu_ms": {
+          "count": 160,
+          "mean_ms": 0.249,
+          "p95_ms": 0.327,
+          "p99_ms": 0.538,
+          "max_ms": 0.59
+        }
+      }
+    },
+    "PULL_OVER": {
+      "total": 293,
+      "fast_path_count": 0,
+      "verification_triggered": 293,
+      "verification_trigger_rate": 1.0,
+      "by_status": {
+        "valid": 293
+      },
+      "by_reason": {
+        "risky_intent": 293
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 293,
+          "mean_ms": 0.071,
+          "p95_ms": 0.075,
+          "p99_ms": 0.352,
+          "max_ms": 0.697
+        },
+        "total_text_nlu_ms": {
+          "count": 293,
+          "mean_ms": 0.347,
+          "p95_ms": 0.417,
+          "p99_ms": 0.641,
+          "max_ms": 1.091
+        }
+      }
+    },
+    "SET_SPEED": {
+      "total": 450,
+      "fast_path_count": 0,
+      "verification_triggered": 450,
+      "verification_trigger_rate": 1.0,
+      "by_status": {
+        "valid": 231,
+        "unsafe": 219
+      },
+      "by_reason": {
+        "risky_intent": 450
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 450,
+          "mean_ms": 0.071,
+          "p95_ms": 0.082,
+          "p99_ms": 0.333,
+          "max_ms": 0.741
+        },
+        "total_text_nlu_ms": {
+          "count": 450,
+          "mean_ms": 0.388,
+          "p95_ms": 0.449,
+          "p99_ms": 0.663,
+          "max_ms": 1.179
+        }
+      }
+    },
+    "SLOW_DOWN": {
+      "total": 216,
+      "fast_path_count": 0,
+      "verification_triggered": 216,
+      "verification_trigger_rate": 1.0,
+      "by_status": {
+        "valid": 216
+      },
+      "by_reason": {
+        "risky_intent": 216
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 216,
+          "mean_ms": 0.066,
+          "p95_ms": 0.078,
+          "p99_ms": 0.097,
+          "max_ms": 0.321
+        },
+        "total_text_nlu_ms": {
+          "count": 216,
+          "mean_ms": 0.555,
+          "p95_ms": 0.702,
+          "p99_ms": 0.84,
+          "max_ms": 0.881
+        }
+      }
+    },
+    "SPEED_UP": {
+      "total": 246,
+      "fast_path_count": 0,
+      "verification_triggered": 246,
+      "verification_trigger_rate": 1.0,
+      "by_status": {
+        "valid": 246
+      },
+      "by_reason": {
+        "risky_intent": 246
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 246,
+          "mean_ms": 0.075,
+          "p95_ms": 0.081,
+          "p99_ms": 0.337,
+          "max_ms": 1.382
+        },
+        "total_text_nlu_ms": {
+          "count": 246,
+          "mean_ms": 0.486,
+          "p95_ms": 0.609,
+          "p99_ms": 0.77,
+          "max_ms": 1.805
+        }
+      }
+    },
+    "STOP": {
+      "total": 200,
+      "fast_path_count": 200,
+      "verification_triggered": 0,
+      "verification_trigger_rate": 0.0,
+      "by_status": {
+        "valid": 200
+      },
+      "by_reason": {
+        "fast_path": 200
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 200,
+          "mean_ms": 0.052,
+          "p95_ms": 0.055,
+          "p99_ms": 0.313,
+          "max_ms": 0.548
+        },
+        "total_text_nlu_ms": {
+          "count": 200,
+          "mean_ms": 0.608,
+          "p95_ms": 0.819,
+          "p99_ms": 0.903,
+          "max_ms": 1.115
+        }
+      }
+    },
+    "UNKNOWN": {
+      "total": 231,
+      "fast_path_count": 231,
+      "verification_triggered": 0,
+      "verification_trigger_rate": 0.0,
+      "by_status": {
+        "unknown": 231
+      },
+      "by_reason": {
+        "fast_path": 231
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 231,
+          "mean_ms": 0.056,
+          "p95_ms": 0.066,
+          "p99_ms": 0.086,
+          "max_ms": 0.38
+        },
+        "total_text_nlu_ms": {
+          "count": 231,
+          "mean_ms": 1.004,
+          "p95_ms": 0.849,
+          "p99_ms": 0.969,
+          "max_ms": 79.861
+        }
+      }
+    }
+  },
+  "gates": {
+    "text_nlu_p95_target_ms": 60.0,
+    "text_nlu_p95_pass": true,
+    "cascade_policy_present": true,
+    "overall_pass": true
+  },
+  "sample_records": [
+    {
+      "id": "0001__noise_50dba__1",
+      "source_id": "0001",
+      "language": "普通话",
+      "expected_intent": "UNKNOWN",
+      "actual_intent": "UNKNOWN",
+      "status": "unknown",
+      "text": "带我去吃饭。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.38,
+        "total_text_nlu_ms": 79.861
+      }
+    },
+    {
+      "id": "0001__noise_50dba__2",
+      "source_id": "0001",
+      "language": "东北话",
+      "expected_intent": "UNKNOWN",
+      "actual_intent": "UNKNOWN",
+      "status": "unknown",
+      "text": "带我去吃饭。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.088,
+        "total_text_nlu_ms": 1.05
+      }
+    },
+    {
+      "id": "0001__noise_50dba__3",
+      "source_id": "0001",
+      "language": "陕西话",
+      "expected_intent": "UNKNOWN",
+      "actual_intent": "UNKNOWN",
+      "status": "unknown",
+      "text": "带我去吃饭。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.066,
+        "total_text_nlu_ms": 0.99
+      }
+    },
+    {
+      "id": "0002__noise_50dba__1",
+      "source_id": "0002",
+      "language": "普通话",
+      "expected_intent": "KEEP_LANE",
+      "actual_intent": "KEEP_LANE",
+      "status": "valid",
+      "text": "保持在这条车道。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.122,
+        "total_text_nlu_ms": 0.411
+      }
+    },
+    {
+      "id": "0002__noise_50dba__2",
+      "source_id": "0002",
+      "language": "陕西话",
+      "expected_intent": "KEEP_LANE",
+      "actual_intent": "KEEP_LANE",
+      "status": "valid",
+      "text": "保持在这条车道。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.055,
+        "total_text_nlu_ms": 0.308
+      }
+    },
+    {
+      "id": "0002__noise_50dba__3",
+      "source_id": "0002",
+      "language": "粤语",
+      "expected_intent": "KEEP_LANE",
+      "actual_intent": "KEEP_LANE",
+      "status": "valid",
+      "text": "保持在这条车道。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.051,
+        "total_text_nlu_ms": 0.296
+      }
+    },
+    {
+      "id": "0003__noise_50dba__1",
+      "source_id": "0003",
+      "language": "普通话",
+      "expected_intent": "SET_SPEED",
+      "actual_intent": "SET_SPEED",
+      "status": "valid",
+      "text": "速度设为30公里。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.741,
+        "total_text_nlu_ms": 1.179
+      }
+    },
+    {
+      "id": "0003__noise_50dba__2",
+      "source_id": "0003",
+      "language": "东北话",
+      "expected_intent": "SET_SPEED",
+      "actual_intent": "SET_SPEED",
+      "status": "valid",
+      "text": "速度设为30公里。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.088,
+        "total_text_nlu_ms": 0.561
+      }
+    },
+    {
+      "id": "0003__noise_50dba__3",
+      "source_id": "0003",
+      "language": "粤语",
+      "expected_intent": "SET_SPEED",
+      "actual_intent": "SET_SPEED",
+      "status": "valid",
+      "text": "速度设为30公里。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.111,
+        "total_text_nlu_ms": 0.545
+      }
+    },
+    {
+      "id": "0003__noise_50dba__4",
+      "source_id": "0003",
+      "language": "台湾国语",
+      "expected_intent": "SET_SPEED",
+      "actual_intent": "SET_SPEED",
+      "status": "valid",
+      "text": "速度设为30公里。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.072,
+        "total_text_nlu_ms": 0.501
+      }
+    },
+    {
+      "id": "0004__noise_50dba__1",
+      "source_id": "0004",
+      "language": "普通话",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "EMERGENCY_STOP",
+      "status": "valid",
+      "text": "麻烦立即停车！",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.054,
+        "total_text_nlu_ms": 0.378
+      }
+    },
+    {
+      "id": "0004__noise_50dba__2",
+      "source_id": "0004",
+      "language": "东北话",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "EMERGENCY_STOP",
+      "status": "valid",
+      "text": "麻烦立即停车！",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.049,
+        "total_text_nlu_ms": 0.37
+      }
+    },
+    {
+      "id": "0004__noise_50dba__3",
+      "source_id": "0004",
+      "language": "陕西话",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "EMERGENCY_STOP",
+      "status": "valid",
+      "text": "麻烦立即停车！",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.049,
+        "total_text_nlu_ms": 0.376
+      }
+    },
+    {
+      "id": "0005__noise_50dba__1",
+      "source_id": "0005",
+      "language": "普通话",
+      "expected_intent": "CHANGE_LANE",
+      "actual_intent": "CHANGE_LANE",
+      "status": "valid",
+      "text": "麻烦换左边。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.076,
+        "total_text_nlu_ms": 0.594
+      }
+    },
+    {
+      "id": "0006__noise_50dba__1",
+      "source_id": "0006",
+      "language": "普通话",
+      "expected_intent": "AVOID_OBSTACLE",
+      "actual_intent": "AVOID_OBSTACLE",
+      "status": "valid",
+      "text": "躲开前面的行人。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.088,
+        "total_text_nlu_ms": 0.565
+      }
+    },
+    {
+      "id": "0006__noise_50dba__2",
+      "source_id": "0006",
+      "language": "陕西话",
+      "expected_intent": "AVOID_OBSTACLE",
+      "actual_intent": "AVOID_OBSTACLE",
+      "status": "valid",
+      "text": "躲开前面的行人。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.083,
+        "total_text_nlu_ms": 0.539
+      }
+    },
+    {
+      "id": "0007__noise_50dba__1",
+      "source_id": "0007",
+      "language": "普通话",
+      "expected_intent": "UNKNOWN",
+      "actual_intent": "UNKNOWN",
+      "status": "unknown",
+      "text": "帮我记个东西吧吧。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.077,
+        "total_text_nlu_ms": 0.897
+      }
+    },
+    {
+      "id": "0007__noise_50dba__2",
+      "source_id": "0007",
+      "language": "东北话",
+      "expected_intent": "UNKNOWN",
+      "actual_intent": "UNKNOWN",
+      "status": "unknown",
+      "text": "帮我记个东西吧吧。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.047,
+        "total_text_nlu_ms": 0.641
+      }
+    },
+    {
+      "id": "0007__noise_50dba__3",
+      "source_id": "0007",
+      "language": "陕西话",
+      "expected_intent": "UNKNOWN",
+      "actual_intent": "UNKNOWN",
+      "status": "unknown",
+      "text": "帮我记个东西吧吧。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.048,
+        "total_text_nlu_ms": 0.633
+      }
+    },
+    {
+      "id": "0008__noise_50dba__1",
+      "source_id": "0008",
+      "language": "普通话",
+      "expected_intent": "STOP",
+      "actual_intent": "STOP",
+      "status": "valid",
+      "text": "在这停。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.055,
+        "total_text_nlu_ms": 0.794
+      }
+    },
+    {
+      "id": "0008__noise_50dba__2",
+      "source_id": "0008",
+      "language": "东北话",
+      "expected_intent": "STOP",
+      "actual_intent": "STOP",
+      "status": "valid",
+      "text": "在这停。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.055,
+        "total_text_nlu_ms": 0.651
+      }
+    },
+    {
+      "id": "0009__noise_50dba__1",
+      "source_id": "0009",
+      "language": "普通话",
+      "expected_intent": "AVOID_OBSTACLE",
+      "actual_intent": "AVOID_OBSTACLE",
+      "status": "valid",
+      "text": "麻烦别撞到车。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.067,
+        "total_text_nlu_ms": 0.43
+      }
+    },
+    {
+      "id": "0009__noise_50dba__2",
+      "source_id": "0009",
+      "language": "陕西话",
+      "expected_intent": "AVOID_OBSTACLE",
+      "actual_intent": "AVOID_OBSTACLE",
+      "status": "valid",
+      "text": "麻烦别撞到车。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.061,
+        "total_text_nlu_ms": 0.427
+      }
+    },
+    {
+      "id": "0009__noise_50dba__3",
+      "source_id": "0009",
+      "language": "台湾国语",
+      "expected_intent": "AVOID_OBSTACLE",
+      "actual_intent": "AVOID_OBSTACLE",
+      "status": "valid",
+      "text": "麻烦别撞到车。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.058,
+        "total_text_nlu_ms": 0.401
+      }
+    },
+    {
+      "id": "0010__noise_50dba__1",
+      "source_id": "0010",
+      "language": "普通话",
+      "expected_intent": "CHANGE_LANE",
+      "actual_intent": "CHANGE_LANE",
+      "status": "valid",
+      "text": "麻烦换左边车道。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.065,
+        "total_text_nlu_ms": 0.47
+      }
+    },
+    {
+      "id": "0010__noise_50dba__2",
+      "source_id": "0010",
+      "language": "东北话",
+      "expected_intent": "CHANGE_LANE",
+      "actual_intent": "CHANGE_LANE",
+      "status": "valid",
+      "text": "麻烦换左边车道。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.062,
+        "total_text_nlu_ms": 0.459
+      }
+    },
+    {
+      "id": "0010__noise_50dba__3",
+      "source_id": "0010",
+      "language": "陕西话",
+      "expected_intent": "CHANGE_LANE",
+      "actual_intent": "CHANGE_LANE",
+      "status": "valid",
+      "text": "麻烦换左边车道。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.055,
+        "total_text_nlu_ms": 0.457
+      }
+    },
+    {
+      "id": "0010__noise_50dba__4",
+      "source_id": "0010",
+      "language": "台湾国语",
+      "expected_intent": "CHANGE_LANE",
+      "actual_intent": "CHANGE_LANE",
+      "status": "valid",
+      "text": "麻烦换左边车道。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.057,
+        "total_text_nlu_ms": 0.455
+      }
+    },
+    {
+      "id": "0011__noise_50dba__1",
+      "source_id": "0011",
+      "language": "普通话",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "EMERGENCY_STOP",
+      "status": "valid",
+      "text": "马上刹！",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.047,
+        "total_text_nlu_ms": 0.3
+      }
+    },
+    {
+      "id": "0011__noise_50dba__2",
+      "source_id": "0011",
+      "language": "粤语",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "EMERGENCY_STOP",
+      "status": "valid",
+      "text": "马上刹！",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.043,
+        "total_text_nlu_ms": 0.28
+      }
+    },
+    {
+      "id": "0012__noise_50dba__1",
+      "source_id": "0012",
+      "language": "普通话",
+      "expected_intent": "SPEED_UP",
+      "actual_intent": "SPEED_UP",
+      "status": "valid",
+      "text": "稍微快些。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 1.382,
+        "total_text_nlu_ms": 1.805
+      }
+    },
+    {
+      "id": "0012__noise_50dba__2",
+      "source_id": "0012",
+      "language": "东北话",
+      "expected_intent": "SPEED_UP",
+      "actual_intent": "SPEED_UP",
+      "status": "valid",
+      "text": "稍微快些。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.076,
+        "total_text_nlu_ms": 0.538
+      }
+    },
+    {
+      "id": "0013__noise_50dba__1",
+      "source_id": "0013",
+      "language": "普通话",
+      "expected_intent": "STOP",
+      "actual_intent": "STOP",
+      "status": "valid",
+      "text": "停下吧。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.049,
+        "total_text_nlu_ms": 0.584
+      }
+    },
+    {
+      "id": "0013__noise_50dba__2",
+      "source_id": "0013",
+      "language": "粤语",
+      "expected_intent": "STOP",
+      "actual_intent": "STOP",
+      "status": "valid",
+      "text": "停下吧。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.044,
+        "total_text_nlu_ms": 0.572
+      }
+    },
+    {
+      "id": "0014__noise_50dba__1",
+      "source_id": "0014",
+      "language": "普通话",
+      "expected_intent": "SLOW_DOWN",
+      "actual_intent": "SLOW_DOWN",
+      "status": "valid",
+      "text": "把速度降下来。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.078,
+        "total_text_nlu_ms": 0.595
+      }
+    },
+    {
+      "id": "0015__noise_50dba__1",
+      "source_id": "0015",
+      "language": "普通话",
+      "expected_intent": "AVOID_OBSTACLE",
+      "actual_intent": "AVOID_OBSTACLE",
+      "status": "valid",
+      "text": "麻烦向右绕开那个东西吧吧。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.073,
+        "total_text_nlu_ms": 0.433
+      }
+    },
+    {
+      "id": "0015__noise_50dba__2",
+      "source_id": "0015",
+      "language": "粤语",
+      "expected_intent": "AVOID_OBSTACLE",
+      "actual_intent": "AVOID_OBSTACLE",
+      "status": "valid",
+      "text": "麻烦向右绕开那个东西吧吧。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.067,
+        "total_text_nlu_ms": 0.44
+      }
+    },
+    {
+      "id": "0015__noise_50dba__3",
+      "source_id": "0015",
+      "language": "台湾国语",
+      "expected_intent": "AVOID_OBSTACLE",
+      "actual_intent": "AVOID_OBSTACLE",
+      "status": "valid",
+      "text": "麻烦向右绕开那个东西吧吧。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.06,
+        "total_text_nlu_ms": 0.41
+      }
+    },
+    {
+      "id": "0016__noise_50dba__1",
+      "source_id": "0016",
+      "language": "普通话",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "EMERGENCY_STOP",
+      "status": "valid",
+      "text": "麻烦紧急制动现在！",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.05,
+        "total_text_nlu_ms": 0.29
+      }
+    },
+    {
+      "id": "0016__noise_50dba__2",
+      "source_id": "0016",
+      "language": "东北话",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "EMERGENCY_STOP",
+      "status": "valid",
+      "text": "麻烦紧急制动现在！",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.048,
+        "total_text_nlu_ms": 0.291
+      }
+    },
+    {
+      "id": "0016__noise_50dba__3",
+      "source_id": "0016",
+      "language": "台湾国语",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "EMERGENCY_STOP",
+      "status": "valid",
+      "text": "麻烦紧急制动现在！",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.043,
+        "total_text_nlu_ms": 0.278
+      }
+    },
+    {
+      "id": "0017__noise_50dba__1",
+      "source_id": "0017",
+      "language": "普通话",
+      "expected_intent": "PULL_OVER",
+      "actual_intent": "PULL_OVER",
+      "status": "valid",
+      "text": "麻烦左靠边停车。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.062,
+        "total_text_nlu_ms": 0.334
+      }
+    },
+    {
+      "id": "0017__noise_50dba__2",
+      "source_id": "0017",
+      "language": "台湾国语",
+      "expected_intent": "PULL_OVER",
+      "actual_intent": "PULL_OVER",
+      "status": "valid",
+      "text": "麻烦左靠边停车。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.062,
+        "total_text_nlu_ms": 0.336
+      }
+    },
+    {
+      "id": "0018__noise_50dba__1",
+      "source_id": "0018",
+      "language": "普通话",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "EMERGENCY_STOP",
+      "status": "valid",
+      "text": "刹车刹车！",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.043,
+        "total_text_nlu_ms": 0.293
+      }
+    },
+    {
+      "id": "0018__noise_50dba__2",
+      "source_id": "0018",
+      "language": "粤语",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "EMERGENCY_STOP",
+      "status": "valid",
+      "text": "刹车刹车！",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.042,
+        "total_text_nlu_ms": 0.287
+      }
+    },
+    {
+      "id": "0019__noise_50dba__1",
+      "source_id": "0019",
+      "language": "普通话",
+      "expected_intent": "SET_SPEED",
+      "actual_intent": "SET_SPEED",
+      "status": "valid",
+      "text": "提到40吧。",
+      "verification_triggered": true,
+      "verification_reason": "risky_intent",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.072,
+        "total_text_nlu_ms": 0.384
+      }
+    },
+    {
+      "id": "0020__noise_50dba__1",
+      "source_id": "0020",
+      "language": "普通话",
+      "expected_intent": "UNKNOWN",
+      "actual_intent": "UNKNOWN",
+      "status": "unknown",
+      "text": "调一下后视镜。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.064,
+        "total_text_nlu_ms": 0.656
+      }
+    },
+    {
+      "id": "0020__noise_50dba__2",
+      "source_id": "0020",
+      "language": "东北话",
+      "expected_intent": "UNKNOWN",
+      "actual_intent": "UNKNOWN",
+      "status": "unknown",
+      "text": "调一下后视镜。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.05,
+        "total_text_nlu_ms": 0.659
+      }
+    },
+    {
+      "id": "0020__noise_50dba__3",
+      "source_id": "0020",
+      "language": "陕西话",
+      "expected_intent": "UNKNOWN",
+      "actual_intent": "UNKNOWN",
+      "status": "unknown",
+      "text": "调一下后视镜。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.046,
+        "total_text_nlu_ms": 0.64
+      }
+    },
+    {
+      "id": "0021__noise_50dba__1",
+      "source_id": "0021",
+      "language": "普通话",
+      "expected_intent": "KEEP_LANE",
+      "actual_intent": "KEEP_LANE",
+      "status": "valid",
+      "text": "稳住不要变吧。",
+      "verification_triggered": false,
+      "verification_reason": "fast_path",
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.047,
+        "total_text_nlu_ms": 0.27
+      }
+    }
+  ]
+}

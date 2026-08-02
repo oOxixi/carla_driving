@@ -1,0 +1,934 @@
+{
+  "schema_version": "1.0",
+  "generated_at_utc": "2026-08-02T04:07:52.831153+00:00",
+  "manifest": "/home/student/yingzhaohou/carla_driving_upload_merged/artifacts/group1_voice/manifests/data_short_noisy_50dba_manifest.json",
+  "git": {
+    "commit": "72aaa0e742dd9b1ae68563ab9a62b2a55a1b920a",
+    "dirty": true,
+    "status": [
+      " M voice_group/nlu_b2/parser.py",
+      " M voice_group/vehicle_nlu/src/intent_classifier.py",
+      "?? artifacts/group1_voice/",
+      "?? tools/prepare_group1_voice_dataset.py",
+      "?? tools/run_group1_voice_fastpath_benchmark.py",
+      "?? tools/run_group1_voice_text_regression.py"
+    ]
+  },
+  "overall": {
+    "total": 2598,
+    "intent_accuracy": 0.995381,
+    "slot_accuracy": 1.0,
+    "safety_contract_accuracy": 1.0,
+    "status_distribution": {
+      "unknown": 231,
+      "valid": 2148,
+      "unsafe": 219
+    },
+    "latency": {
+      "b1_ms": {
+        "count": 0,
+        "mean_ms": null,
+        "p95_ms": null,
+        "p99_ms": null,
+        "max_ms": null
+      },
+      "b2_ms": {
+        "count": 2598,
+        "mean_ms": 0.063,
+        "p95_ms": 0.078,
+        "p99_ms": 0.287,
+        "max_ms": 1.585
+      },
+      "total_text_nlu_ms": {
+        "count": 2598,
+        "mean_ms": 0.468,
+        "p95_ms": 0.642,
+        "p99_ms": 0.811,
+        "max_ms": 82.163
+      }
+    }
+  },
+  "by_language": {
+    "东北话": {
+      "total": 400,
+      "intent_accuracy": 0.995,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "unknown": 43,
+        "valid": 323,
+        "unsafe": 34
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 400,
+          "mean_ms": 0.06,
+          "p95_ms": 0.075,
+          "p99_ms": 0.112,
+          "max_ms": 0.306
+        },
+        "total_text_nlu_ms": {
+          "count": 400,
+          "mean_ms": 0.438,
+          "p95_ms": 0.634,
+          "p99_ms": 0.742,
+          "max_ms": 1.313
+        }
+      }
+    },
+    "台湾国语": {
+      "total": 399,
+      "intent_accuracy": 0.997494,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "valid": 331,
+        "unsafe": 37,
+        "unknown": 31
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 399,
+          "mean_ms": 0.06,
+          "p95_ms": 0.073,
+          "p99_ms": 0.272,
+          "max_ms": 0.302
+        },
+        "total_text_nlu_ms": {
+          "count": 399,
+          "mean_ms": 0.428,
+          "p95_ms": 0.621,
+          "p99_ms": 0.727,
+          "max_ms": 1.21
+        }
+      }
+    },
+    "普通话": {
+      "total": 1000,
+      "intent_accuracy": 0.995,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "unknown": 85,
+        "valid": 839,
+        "unsafe": 76
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 1000,
+          "mean_ms": 0.068,
+          "p95_ms": 0.08,
+          "p99_ms": 0.306,
+          "max_ms": 1.585
+        },
+        "total_text_nlu_ms": {
+          "count": 1000,
+          "mean_ms": 0.528,
+          "p95_ms": 0.655,
+          "p99_ms": 0.851,
+          "max_ms": 82.163
+        }
+      }
+    },
+    "粤语": {
+      "total": 399,
+      "intent_accuracy": 0.997494,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "valid": 318,
+        "unsafe": 41,
+        "unknown": 40
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 399,
+          "mean_ms": 0.058,
+          "p95_ms": 0.073,
+          "p99_ms": 0.087,
+          "max_ms": 0.291
+        },
+        "total_text_nlu_ms": {
+          "count": 399,
+          "mean_ms": 0.425,
+          "p95_ms": 0.633,
+          "p99_ms": 0.791,
+          "max_ms": 0.846
+        }
+      }
+    },
+    "陕西话": {
+      "total": 400,
+      "intent_accuracy": 0.9925,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "unknown": 32,
+        "valid": 337,
+        "unsafe": 31
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 400,
+          "mean_ms": 0.064,
+          "p95_ms": 0.076,
+          "p99_ms": 0.293,
+          "max_ms": 0.306
+        },
+        "total_text_nlu_ms": {
+          "count": 400,
+          "mean_ms": 0.431,
+          "p95_ms": 0.633,
+          "p99_ms": 0.74,
+          "max_ms": 0.857
+        }
+      }
+    }
+  },
+  "by_intent": {
+    "AVOID_OBSTACLE": {
+      "total": 334,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "valid": 334
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 334,
+          "mean_ms": 0.073,
+          "p95_ms": 0.081,
+          "p99_ms": 0.287,
+          "max_ms": 1.585
+        },
+        "total_text_nlu_ms": {
+          "count": 334,
+          "mean_ms": 0.421,
+          "p95_ms": 0.503,
+          "p99_ms": 0.643,
+          "max_ms": 1.937
+        }
+      }
+    },
+    "CHANGE_LANE": {
+      "total": 238,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "valid": 238
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 238,
+          "mean_ms": 0.064,
+          "p95_ms": 0.078,
+          "p99_ms": 0.288,
+          "max_ms": 0.294
+        },
+        "total_text_nlu_ms": {
+          "count": 238,
+          "mean_ms": 0.444,
+          "p95_ms": 0.532,
+          "p99_ms": 0.671,
+          "max_ms": 1.459
+        }
+      }
+    },
+    "EMERGENCY_STOP": {
+      "total": 230,
+      "intent_accuracy": 0.947826,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "valid": 230
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 230,
+          "mean_ms": 0.047,
+          "p95_ms": 0.054,
+          "p99_ms": 0.061,
+          "max_ms": 0.284
+        },
+        "total_text_nlu_ms": {
+          "count": 230,
+          "mean_ms": 0.297,
+          "p95_ms": 0.538,
+          "p99_ms": 0.6,
+          "max_ms": 1.22
+        }
+      }
+    },
+    "KEEP_LANE": {
+      "total": 160,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "valid": 160
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 160,
+          "mean_ms": 0.046,
+          "p95_ms": 0.053,
+          "p99_ms": 0.065,
+          "max_ms": 0.097
+        },
+        "total_text_nlu_ms": {
+          "count": 160,
+          "mean_ms": 0.243,
+          "p95_ms": 0.284,
+          "p99_ms": 0.324,
+          "max_ms": 0.469
+        }
+      }
+    },
+    "PULL_OVER": {
+      "total": 293,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "valid": 293
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 293,
+          "mean_ms": 0.069,
+          "p95_ms": 0.079,
+          "p99_ms": 0.312,
+          "max_ms": 0.332
+        },
+        "total_text_nlu_ms": {
+          "count": 293,
+          "mean_ms": 0.342,
+          "p95_ms": 0.423,
+          "p99_ms": 0.59,
+          "max_ms": 0.664
+        }
+      }
+    },
+    "SET_SPEED": {
+      "total": 450,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "valid": 231,
+        "unsafe": 219
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 450,
+          "mean_ms": 0.071,
+          "p95_ms": 0.081,
+          "p99_ms": 0.29,
+          "max_ms": 0.66
+        },
+        "total_text_nlu_ms": {
+          "count": 450,
+          "mean_ms": 0.39,
+          "p95_ms": 0.461,
+          "p99_ms": 0.617,
+          "max_ms": 1.061
+        }
+      }
+    },
+    "SLOW_DOWN": {
+      "total": 216,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "valid": 216
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 216,
+          "mean_ms": 0.066,
+          "p95_ms": 0.079,
+          "p99_ms": 0.112,
+          "max_ms": 0.319
+        },
+        "total_text_nlu_ms": {
+          "count": 216,
+          "mean_ms": 0.548,
+          "p95_ms": 0.624,
+          "p99_ms": 0.767,
+          "max_ms": 1.21
+        }
+      }
+    },
+    "SPEED_UP": {
+      "total": 246,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "valid": 246
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 246,
+          "mean_ms": 0.07,
+          "p95_ms": 0.079,
+          "p99_ms": 0.099,
+          "max_ms": 1.286
+        },
+        "total_text_nlu_ms": {
+          "count": 246,
+          "mean_ms": 0.476,
+          "p95_ms": 0.527,
+          "p99_ms": 0.677,
+          "max_ms": 1.715
+        }
+      }
+    },
+    "STOP": {
+      "total": 200,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "valid": 200
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 200,
+          "mean_ms": 0.052,
+          "p95_ms": 0.057,
+          "p99_ms": 0.269,
+          "max_ms": 0.293
+        },
+        "total_text_nlu_ms": {
+          "count": 200,
+          "mean_ms": 0.601,
+          "p95_ms": 0.798,
+          "p99_ms": 0.833,
+          "max_ms": 0.852
+        }
+      }
+    },
+    "UNKNOWN": {
+      "total": 231,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "safety_contract_accuracy": 1.0,
+      "status_distribution": {
+        "unknown": 231
+      },
+      "latency": {
+        "b1_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "b2_ms": {
+          "count": 231,
+          "mean_ms": 0.055,
+          "p95_ms": 0.065,
+          "p99_ms": 0.083,
+          "max_ms": 0.327
+        },
+        "total_text_nlu_ms": {
+          "count": 231,
+          "mean_ms": 0.997,
+          "p95_ms": 0.807,
+          "p99_ms": 0.873,
+          "max_ms": 82.163
+        }
+      }
+    }
+  },
+  "low_confidence": {
+    "tested": 2367,
+    "asr_confidence": 0.2,
+    "blocked": 2367,
+    "block_rate": 1.0,
+    "failures": []
+  },
+  "safety_probes": {
+    "tested": 5,
+    "passed": 5,
+    "pass_rate": 1.0,
+    "records": [
+      {
+        "id": "unsafe_speed_120",
+        "text": "速度设为120公里。",
+        "expected_status": "unsafe",
+        "expected_error": "UNSAFE_SLOT",
+        "actual_intent": "SET_SPEED",
+        "actual_status": "unsafe",
+        "actual_errors": [
+          {
+            "code": "UNSAFE_SLOT",
+            "message": "speed 120 km/h 超过安全上限 80 km/h"
+          }
+        ],
+        "passed": true
+      },
+      {
+        "id": "conflict_lane_change",
+        "text": "同时向左向右变道。",
+        "expected_status": "conflict",
+        "expected_error": "CONFLICT_SLOT",
+        "actual_intent": "CHANGE_LANE",
+        "actual_status": "conflict",
+        "actual_errors": [
+          {
+            "code": "CONFLICT_SLOT",
+            "message": "同时出现左/右方向，无法安全变道"
+          }
+        ],
+        "passed": true
+      },
+      {
+        "id": "conflict_turn",
+        "text": "到路口左转右转都行。",
+        "expected_status": "conflict",
+        "expected_error": "CONFLICT_SLOT",
+        "actual_intent": "TURN",
+        "actual_status": "conflict",
+        "actual_errors": [
+          {
+            "code": "CONFLICT_SLOT",
+            "message": "转向方向冲突"
+          }
+        ],
+        "passed": true
+      },
+      {
+        "id": "unknown_food_target",
+        "text": "带我去吃饭。",
+        "expected_status": "unknown",
+        "expected_error": "B1_UNKNOWN",
+        "actual_intent": "UNKNOWN",
+        "actual_status": "unknown",
+        "actual_errors": [
+          {
+            "code": "B1_UNKNOWN",
+            "message": "B1 未能识别为可执行车控指令"
+          }
+        ],
+        "passed": true
+      },
+      {
+        "id": "negated_stop",
+        "text": "不要停车。",
+        "expected_status": "unknown",
+        "expected_error": "B1_UNKNOWN",
+        "actual_intent": "UNKNOWN",
+        "actual_status": "unknown",
+        "actual_errors": [
+          {
+            "code": "B1_UNKNOWN",
+            "message": "B1 未能识别为可执行车控指令"
+          }
+        ],
+        "passed": true
+      }
+    ]
+  },
+  "gates": {
+    "min_intent_accuracy": 0.98,
+    "min_slot_accuracy": 0.98,
+    "intent_pass": true,
+    "slot_pass": true,
+    "low_confidence_pass": true,
+    "safety_rejection_pass": true,
+    "overall_pass": true
+  },
+  "failures": [
+    {
+      "id": "0043__noise_50dba__1",
+      "source_id": "0043",
+      "language": "普通话",
+      "text": "麻烦停车停车！",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "STOP",
+      "expected_slots": {},
+      "actual_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid",
+      "reason": null,
+      "errors": [],
+      "warnings": [],
+      "intent_ok": false,
+      "slots_ok": true,
+      "safety_ok": true,
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.059,
+        "total_text_nlu_ms": 1.22
+      }
+    },
+    {
+      "id": "0043__noise_50dba__2",
+      "source_id": "0043",
+      "language": "陕西话",
+      "text": "麻烦停车停车！",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "STOP",
+      "expected_slots": {},
+      "actual_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid",
+      "reason": null,
+      "errors": [],
+      "warnings": [],
+      "intent_ok": false,
+      "slots_ok": true,
+      "safety_ok": true,
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.051,
+        "total_text_nlu_ms": 0.611
+      }
+    },
+    {
+      "id": "0043__noise_50dba__3",
+      "source_id": "0043",
+      "language": "粤语",
+      "text": "麻烦停车停车！",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "STOP",
+      "expected_slots": {},
+      "actual_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid",
+      "reason": null,
+      "errors": [],
+      "warnings": [],
+      "intent_ok": false,
+      "slots_ok": true,
+      "safety_ok": true,
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.046,
+        "total_text_nlu_ms": 0.579
+      }
+    },
+    {
+      "id": "0308__noise_50dba__1",
+      "source_id": "0308",
+      "language": "普通话",
+      "text": "停下来！快！",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "STOP",
+      "expected_slots": {},
+      "actual_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid",
+      "reason": null,
+      "errors": [],
+      "warnings": [],
+      "intent_ok": false,
+      "slots_ok": true,
+      "safety_ok": true,
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.056,
+        "total_text_nlu_ms": 0.586
+      }
+    },
+    {
+      "id": "0308__noise_50dba__2",
+      "source_id": "0308",
+      "language": "东北话",
+      "text": "停下来！快！",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "STOP",
+      "expected_slots": {},
+      "actual_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid",
+      "reason": null,
+      "errors": [],
+      "warnings": [],
+      "intent_ok": false,
+      "slots_ok": true,
+      "safety_ok": true,
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.047,
+        "total_text_nlu_ms": 0.576
+      }
+    },
+    {
+      "id": "0308__noise_50dba__3",
+      "source_id": "0308",
+      "language": "陕西话",
+      "text": "停下来！快！",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "STOP",
+      "expected_slots": {},
+      "actual_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid",
+      "reason": null,
+      "errors": [],
+      "warnings": [],
+      "intent_ok": false,
+      "slots_ok": true,
+      "safety_ok": true,
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.045,
+        "total_text_nlu_ms": 0.588
+      }
+    },
+    {
+      "id": "0492__noise_50dba__1",
+      "source_id": "0492",
+      "language": "普通话",
+      "text": "停车停车！",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "STOP",
+      "expected_slots": {},
+      "actual_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid",
+      "reason": null,
+      "errors": [],
+      "warnings": [],
+      "intent_ok": false,
+      "slots_ok": true,
+      "safety_ok": true,
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.046,
+        "total_text_nlu_ms": 0.605
+      }
+    },
+    {
+      "id": "0574__noise_50dba__1",
+      "source_id": "0574",
+      "language": "普通话",
+      "text": "刹住车！",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "STOP",
+      "expected_slots": {},
+      "actual_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid",
+      "reason": null,
+      "errors": [],
+      "warnings": [],
+      "intent_ok": false,
+      "slots_ok": true,
+      "safety_ok": true,
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.047,
+        "total_text_nlu_ms": 0.567
+      }
+    },
+    {
+      "id": "0574__noise_50dba__2",
+      "source_id": "0574",
+      "language": "陕西话",
+      "text": "刹住车！",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "STOP",
+      "expected_slots": {},
+      "actual_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid",
+      "reason": null,
+      "errors": [],
+      "warnings": [],
+      "intent_ok": false,
+      "slots_ok": true,
+      "safety_ok": true,
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.045,
+        "total_text_nlu_ms": 0.555
+      }
+    },
+    {
+      "id": "0655__noise_50dba__1",
+      "source_id": "0655",
+      "language": "普通话",
+      "text": "刹住车！",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "STOP",
+      "expected_slots": {},
+      "actual_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid",
+      "reason": null,
+      "errors": [],
+      "warnings": [],
+      "intent_ok": false,
+      "slots_ok": true,
+      "safety_ok": true,
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.047,
+        "total_text_nlu_ms": 0.577
+      }
+    },
+    {
+      "id": "0655__noise_50dba__2",
+      "source_id": "0655",
+      "language": "东北话",
+      "text": "刹住车！",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "STOP",
+      "expected_slots": {},
+      "actual_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid",
+      "reason": null,
+      "errors": [],
+      "warnings": [],
+      "intent_ok": false,
+      "slots_ok": true,
+      "safety_ok": true,
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.045,
+        "total_text_nlu_ms": 0.554
+      }
+    },
+    {
+      "id": "0655__noise_50dba__3",
+      "source_id": "0655",
+      "language": "台湾国语",
+      "text": "刹住车！",
+      "expected_intent": "EMERGENCY_STOP",
+      "actual_intent": "STOP",
+      "expected_slots": {},
+      "actual_slots": {
+        "brake": "NORMAL"
+      },
+      "status": "valid",
+      "reason": null,
+      "errors": [],
+      "warnings": [],
+      "intent_ok": false,
+      "slots_ok": true,
+      "safety_ok": true,
+      "latency": {
+        "b1_ms": null,
+        "b2_ms": 0.045,
+        "total_text_nlu_ms": 0.56
+      }
+    }
+  ]
+}
