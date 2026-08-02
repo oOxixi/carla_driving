@@ -1,0 +1,6 @@
+# Linux/A800 official reproduction profile. Install with uv so vLLM selects
+# the compatible CUDA-enabled torch wheel; do not install this in CARLA's
+# lightweight controller environment.
+vllm==0.26.0
+openai>=1.54,<3
+Pillow>=10,<13

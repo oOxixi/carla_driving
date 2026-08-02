@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-01T18:33:15Z",
+  "status": "BLOCKED",
+  "stage": "MODEL_LOAD",
+  "model": "Qwen/Qwen2.5-VL-3B-Instruct-AWQ",
+  "revision": "e7b623934290c5a4da0ee3c6e1e57bfb6b5abbf2",
+  "weights_sha256": "72014d68fe47d4974e21fcab0cabef2e90de711f9fb1a179c5fa1400e71672d7",
+  "environment": {
+    "os": "Windows",
+    "gpu": "NVIDIA GeForce RTX 5070 Laptop GPU",
+    "vram_mib": 8151,
+    "torch": "2.11.0+cu128",
+    "torchvision": "0.26.0+cu128",
+    "cuda_available": true,
+    "transformers": "5.14.1",
+    "qwen_vl_utils": "0.0.14"
+  },
+  "command": "conda run -n carla python -m tools.run_qwen_vl_decision artifacts/.runtime/qwen_3b_awq_context.json --model-path models/Qwen2.5-VL-3B-Instruct-AWQ --image-root artifacts/qwen_target_assoc_0728/collection/images --max-new-tokens 48 --output artifacts/.runtime/qwen_3b_awq_smoke.json",
+  "error_type": "ImportError",
+  "error": "Loading an AWQ quantized model requires gptqmodel",
+  "root_cause": "GPTQModel 7.3.2 is source-only on PyPI for this platform and expands into a non-trivial quantization build/runtime stack; it was not accepted as a reproducible Windows dependency.",
+  "environment_recovery": "CUDA torch/torchvision pair restored and verified after dependency probing.",
+  "resolution_status": "BYPASSED_WITH_WSL2_LINUX",
+  "resolution_evidence": "artifacts/B_role_validation/local_3b_awq_wsl_smoke.json",
+  "next_action": "Use the WSL2/Linux profile and run the frozen benchmark before accepting this candidate."
+}

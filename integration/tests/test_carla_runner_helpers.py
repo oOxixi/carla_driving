@@ -17,6 +17,7 @@ from integration.carla_runner import (
     _minimum_gap_contract_completed,
     _build_qwen_context,
     _qwen_desired_speed_mps,
+    _qwen_enabled,
     _qwen_voice_command,
     _save_qwen_rgb_image,
     _select_load_map,
@@ -103,6 +104,13 @@ def test_qwen_helpers_use_scenario_command_and_target_speed() -> None:
     assert _qwen_voice_command(args, spec) == "显式指令"
 
 
+def test_repository_qwen_service_url_enables_slow_path() -> None:
+    assert _qwen_enabled(
+        Namespace(qwen_remote=False, qwen_service_url="http://127.0.0.1:18000")
+    )
+    assert not _qwen_enabled(Namespace(qwen_remote=False, qwen_service_url=None))
+
+
 def test_qwen_rgb_image_and_context_are_replayable(tmp_path: Path) -> None:
     measurement = Namespace(
         rgb_array=np.full((8, 12, 3), [10, 20, 30], dtype=np.uint8)
@@ -140,8 +148,48 @@ def test_qwen_rgb_image_and_context_are_replayable(tmp_path: Path) -> None:
     payload = context.to_payload()
     assert payload["rgb_ref"] == "request-1.jpg"
     assert payload["scene_state"]["desired_speed_mps"] == 5.0
-    assert payload["perception"]["detected_objects"][0]["class_name"] == "car"
+    assert payload["perception"]["detected_objects"][0]["class"] == "vehicle"
     assert payload["safety_state"]["minimum_ttc_s"] == 6.0
+
+
+def test_qwen_context_keeps_only_eight_nearest_detections() -> None:
+    state = RuntimeVehicleState(7, 1.25, 2.5, 1.0, 2.0, 0.0, 5.0, "1")
+    detections = tuple(
+        DetectedObject(
+            2,
+            "car",
+            0.9,
+            (0.1, 0.2, 0.4, 0.8),
+            float(distance_m),
+        )
+        for distance_m in range(10, 0, -1)
+    )
+    scene = PerceptionFrame(7, 1.25, detected_objects=detections)
+
+    payload = _build_qwen_context(
+        request_id="request-top-k",
+        voice_command="follow the nearest vehicle",
+        rgb_ref="request-top-k.jpg",
+        state=state,
+        scene=scene,
+        behavior_state="CRUISE",
+        desired_speed_mps=5.0,
+        route_end_distance_m=50.0,
+        c_safety_state=None,
+    ).to_payload()
+
+    objects = payload["perception"]["detected_objects"]
+    assert len(objects) == 8
+    assert [item["distance_m"] for item in objects] == [
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+    ]
 
 
 def test_scenario_facts_clear_unconfigured_map_hazards() -> None:

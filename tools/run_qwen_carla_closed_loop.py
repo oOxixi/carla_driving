@@ -42,7 +42,12 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--target-speed-mps", type=float, default=4.0)
     parser.add_argument("--media-stride", type=int, default=10)
     parser.add_argument("--sensor-profile", choices=("low", "default"), default="low")
-    parser.add_argument("--max-new-tokens", type=int, default=64)
+    parser.add_argument("--max-new-tokens", type=int, default=48)
+    parser.add_argument(
+        "--awq-backend",
+        choices=("auto", "torch_awq", "gemm", "gemm_triton"),
+        default="auto",
+    )
     return parser
 
 
@@ -253,6 +258,7 @@ def run(args: argparse.Namespace) -> dict[str, object]:
             model_path,
             image_root=media_dir,
             max_new_tokens=args.max_new_tokens,
+            awq_backend=args.awq_backend,
         )
         decision = adapter(context)
         trace = adapter.last_trace

@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-01T18:33:15Z",
+  "target_p95_ms": 300.0,
+  "model": "Qwen2.5-VL-7B-Instruct",
+  "runs": [
+    {
+      "name": "frozen_proxy_round3",
+      "requests": 20,
+      "mean_ms": 2384.975401,
+      "p95_ms": 2889.690651,
+      "p99_ms": 3938.785875,
+      "max_ms": 4201.059681,
+      "evidence": "artifacts/qwen_batch_0727/report_round3.json"
+    },
+    {
+      "name": "target_association_round3",
+      "requests": 10,
+      "mean_ms": 2466.341552,
+      "p95_ms": 3387.056356,
+      "p99_ms": 4081.776554,
+      "max_ms": 4255.456604,
+      "evidence": "artifacts/qwen_target_assoc_0728/qwen_report_round3.json"
+    },
+    {
+      "name": "robustness_round3",
+      "requests": 20,
+      "mean_ms": 2337.969032,
+      "p95_ms": 2478.136454,
+      "p99_ms": 3865.326535,
+      "max_ms": 4212.124055,
+      "evidence": "artifacts/qwen_robustness_0728/qwen_report_round3.json"
+    },
+    {
+      "name": "four_modal_full_chain_v2",
+      "requests": 320,
+      "mean_ms": 2293.911584,
+      "p95_ms": 2479.581418,
+      "p99_ms": 2538.182306,
+      "max_ms": 3679.008775,
+      "evidence": "artifacts/four_modal_0728/full_chain_report_v2.json"
+    },
+    {
+      "name": "30_minute_periodic_qwen",
+      "requests": 6,
+      "mean_ms": 2221.545817,
+      "p95_ms": 3361.410511,
+      "p99_ms": 3700.523036,
+      "max_ms": 3785.301167,
+      "peak_gpu_memory_mib": 20018.0,
+      "evidence": "artifacts/long_stability_0728/report_30min.json"
+    }
+  ],
+  "candidate_smoke": {
+    "model": "Qwen2.5-VL-3B-Instruct-AWQ",
+    "environment": "RTX 5070 Laptop 8GB / WSL2 / AwqGEMMTritonLinear",
+    "requests": 2,
+    "warmup_ms": 2391.431129,
+    "post_warmup_ms": 1260.041915,
+    "mean_ms": 1825.736522,
+    "p95_ms": 2334.861668,
+    "p99_ms": 2380.117237,
+    "max_ms": 2391.431129,
+    "peak_memory_allocated_mb": 3426.932,
+    "target_pass": false,
+    "evidence": "artifacts/B_role_validation/local_3b_awq_wsl_smoke.json",
+    "note": "Smoke only; two requests are not an acceptance percentile"
+  },
+  "acceptance": {
+    "status": "FAIL",
+    "reason": "Every available real-model P95 is above 300 ms",
+    "service_runtime_metrics_endpoint": "GET /metrics"
+  }
+}

@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 import json
+import math
 from pathlib import Path
 import re
 from threading import Lock
@@ -24,6 +25,53 @@ class QwenVLGenerationBackend(Protocol):
 
     def generate(self, *, prompt: str, image_path: Path | None) -> str:
         ...
+
+
+_ACTION_BY_CODE = {
+    "A": "START",
+    "B": "STOP",
+    "C": "SLOW_DOWN",
+    "D": "SET_SPEED",
+    "E": "EMERGENCY_STOP",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class QwenVLActionChoice:
+    """One constrained model choice before deterministic Schema assembly."""
+
+    code: str
+    action: str
+    confidence: float
+
+    @classmethod
+    def from_code(cls, code: str, confidence: float) -> "QwenVLActionChoice":
+        normalized = str(code).strip().upper()
+        try:
+            action = _ACTION_BY_CODE[normalized]
+        except KeyError as error:
+            raise ValueError(f"unsupported Qwen action code: {normalized!r}") from error
+        return cls(code=normalized, action=action, confidence=confidence)
+
+    def __post_init__(self) -> None:
+        code = str(self.code).strip().upper()
+        action = str(self.action).strip().upper()
+        if code not in _ACTION_BY_CODE:
+            raise ValueError(f"unsupported Qwen action code: {code!r}")
+        if action != _ACTION_BY_CODE[code]:
+            raise ValueError(
+                f"Qwen action code {code} must map to {_ACTION_BY_CODE[code]}"
+            )
+        if (
+            type(self.confidence) not in (int, float)
+            or isinstance(self.confidence, bool)
+            or not math.isfinite(float(self.confidence))
+            or not 0.0 <= float(self.confidence) <= 1.0
+        ):
+            raise ValueError("Qwen action confidence must be finite and in [0, 1]")
+        object.__setattr__(self, "code", code)
+        object.__setattr__(self, "action", action)
+        object.__setattr__(self, "confidence", float(self.confidence))
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,8 +122,12 @@ class StrictQwenVLAdapter:
         *,
         image_root: str | Path | None = None,
     ) -> None:
-        if not callable(getattr(backend, "generate", None)):
-            raise TypeError("backend must provide generate(prompt=..., image_path=...)")
+        if not callable(getattr(backend, "generate", None)) and not callable(
+            getattr(backend, "generate_action", None)
+        ):
+            raise TypeError(
+                "backend must provide generate(...) or generate_action(...)"
+            )
         self._backend = backend
         self._image_root = (
             Path(image_root).expanduser().resolve() if image_root is not None else None
@@ -89,11 +141,12 @@ class StrictQwenVLAdapter:
         model_path: str | Path,
         *,
         image_root: str | Path | None = None,
-        max_new_tokens: int = 64,
+        max_new_tokens: int = 48,
         device_map: str = "auto",
         torch_dtype: str = "auto",
+        awq_backend: str = "auto",
         min_pixels: int = 64 * 28 * 28,
-        max_pixels: int = 256 * 28 * 28,
+        max_pixels: int = 64 * 28 * 28,
         crop_top_ratio: float = 0.04,
         crop_bottom_ratio: float = 0.08,
     ) -> "StrictQwenVLAdapter":
@@ -103,6 +156,7 @@ class StrictQwenVLAdapter:
             max_new_tokens=max_new_tokens,
             device_map=device_map,
             torch_dtype=torch_dtype,
+            awq_backend=awq_backend,
             min_pixels=min_pixels,
             max_pixels=max_pixels,
             crop_top_ratio=crop_top_ratio,
@@ -119,17 +173,37 @@ class StrictQwenVLAdapter:
         if not isinstance(context, QwenInputContext):
             raise TypeError("context must be QwenInputContext")
         image_path = self._resolve_image(context.rgb_ref)
-        prompt = build_strict_qwen_prompt(context)
+        generate_action = getattr(self._backend, "generate_action", None)
+        prompt = (
+            build_action_choice_prompt(context)
+            if callable(generate_action)
+            else build_strict_qwen_prompt(context)
+        )
         started_ns = time.monotonic_ns()
         raw = ""
         decision: dict[str, Any] | None = None
         target_grounding: Mapping[str, Any] | None = None
         trace_error: str | None = None
         try:
-            raw = self._backend.generate(prompt=prompt, image_path=image_path)
-            if type(raw) is not str or not raw.strip():
-                raise ValueError("Qwen backend returned an empty non-text response")
-            decision = validate_qwen_response(raw)
+            if callable(generate_action):
+                choice = generate_action(
+                    prompt=prompt,
+                    image_path=image_path,
+                    context=context,
+                )
+                if not isinstance(choice, QwenVLActionChoice):
+                    raise TypeError(
+                        "Qwen action backend must return QwenVLActionChoice"
+                    )
+                raw = choice.code
+                decision = validate_qwen_response(
+                    assemble_action_choice(choice, context)
+                )
+            else:
+                raw = self._backend.generate(prompt=prompt, image_path=image_path)
+                if type(raw) is not str or not raw.strip():
+                    raise ValueError("Qwen backend returned an empty non-text response")
+                decision = validate_qwen_response(raw)
             _validate_target_reference(decision, context)
             decision, target_grounding = _ground_explicit_target(
                 decision, context
@@ -181,46 +255,230 @@ def build_strict_qwen_prompt(context: QwenInputContext) -> str:
     """Build a deterministic prompt whose output matches the frozen boundary."""
     input_payload = context.to_payload()
     return (
-        "你是自动驾驶系统的高层多模态决策模块。"
-        "你不能输出油门、刹车、方向盘或任何底层控制量。"
-        "安全状态和交通规则的优先级高于用户命令。"
-        "目标不存在、目标不唯一、输入置信度不足时必须要求确认或安全停车。"
-        "\n\n只输出一个JSON对象，不要Markdown、解释或额外文字。"
-        "\n必填字段：action, confidence, requires_confirmation。"
-        "\n可选字段：target_speed_mps, reason_zh, decision_source, visual_valid。"
-        "\n目标关联可选字段：target_track_id。它只能精确复制"
-        "perception.detected_objects中真实存在的track_id，禁止编造。"
-        "\n如果用户命令包含“正前方、左侧、右侧、相邻车道、较近、较远、跟随”等"
-        "目标描述，并且detected_objects中存在唯一匹配项，target_track_id不是可选项，"
-        "必须输出；不得用target_speed_mps、reason_zh或decision_source代替它。"
-        "\n示例：命令要求跟随右侧相邻车道车辆，匹配对象track_id为vehicle_right_01，"
-        "则输出必须包含\"target_track_id\":\"vehicle_right_01\"。"
-        "\n该规则同样适用于行人、骑行者、被遮挡目标、较近/较远目标以及“避让”动作。"
-        "只要命令描述与detected_objects中的一个对象唯一匹配，就必须先复制其track_id，"
-        "再决定action；无论action是SLOW_DOWN还是STOP都不得漏掉。"
-        "\n唯一目标响应模板："
-        "{\"action\":\"SLOW_DOWN\",\"confidence\":1.0,"
-        "\"requires_confirmation\":false,\"target_track_id\":\"从输入精确复制的ID\"}。"
-        "\naction只能是START、STOP、SLOW_DOWN、SET_SPEED、EMERGENCY_STOP。"
-        "\nSET_SPEED必须包含target_speed_mps；其他无关字段禁止出现。"
-        "\nconfidence范围0到1；requires_confirmation和visual_valid必须是JSON布尔值。"
-        "\n禁止字段：throttle, brake, steer, steering_angle, wheel_angle。"
-        "\n推荐设置decision_source为QWEN_VL。"
-        "\n\n确定性决策规则："
-        "\n1. 公里每小时必须除以3.6转换为米每秒，例如18km/h=5m/s，"
-        "20km/h=5.56m/s，30km/h=8.33m/s。"
-        "\n2. 明确的停车、紧急停车及因红灯/TTC危险产生的安全停车不需要确认，"
-        "requires_confirmation=false。"
-        "\n3. 只有目标不明确、多个目标、视觉无效或输入置信度不足时才要求确认。"
-        "\n4. 红灯或safety_state推荐STOP时输出STOP；TTC不大于2秒或推荐"
-        "EMERGENCY_STOP时输出EMERGENCY_STOP。安全规则覆盖用户继续行驶指令。"
-        "\n5. STOP、START、EMERGENCY_STOP绝不能包含target_speed_mps；"
-        "SET_SPEED必须包含该字段。"
-        "\n6. 用户指令明确指向某个检测目标时必须输出对应target_track_id；"
-        "目标不唯一时不得猜测，应要求确认且省略target_track_id。"
-        "\n\n输入：\n"
+        "你是自动驾驶高层决策模块；安全规则覆盖用户命令。"
+        "只输出一个JSON对象；禁止```、Markdown、解释或底层控制。"
+        "严格仿此单行格式: "
+        '{"action":"SLOW_DOWN","confidence":0.9,"requires_confirmation":false}。'
+        "非规则必需时省略所有可选字段。"
+        "\n必填: action,confidence,requires_confirmation；可选: "
+        "target_speed_mps,target_track_id,reason_zh,decision_source,visual_valid。"
+        "\naction只能是START、STOP、SLOW_DOWN、SET_SPEED、EMERGENCY_STOP；"
+        "confidence为0到1，布尔值必须是JSON布尔值。"
+        "\n禁止字段: throttle, brake, steer, steering_angle, wheel_angle。"
+        "\n规则: 速度从km/h除以3.6，如20km/h=5.56m/s。"
+        "明确的停车、紧急停车、红灯或安全停车无需确认。"
+        "TTC不大于2秒或建议EMERGENCY_STOP时紧急停车；安全规则覆盖用户继续行驶。"
+        "STOP、START、EMERGENCY_STOP绝不能包含target_speed_mps；"
+        "SET_SPEED必须包含target_speed_mps。"
+        "target_track_id只能复制detected_objects中真实ID，禁止编造。"
+        "明确唯一目标时必须输出；行人、骑行者、被遮挡目标同样适用，"
+        "无论action是SLOW_DOWN还是STOP都不得漏掉。"
+        "目标缺失、不唯一、视觉无效或置信度不足时省略ID并要求确认或安全停车。"
+        "\n输入:\n"
         + json.dumps(input_payload, ensure_ascii=False, allow_nan=False, sort_keys=True)
     )
+
+
+def build_action_choice_prompt(context: QwenInputContext) -> str:
+    """Build the compact five-way classification prompt used by Qwen3.5."""
+    payload = {
+        "voice": context.voice_command,
+        "vehicle": dict(context.scene_state),
+        "perception": dict(context.perception),
+        "safety": dict(context.safety_state),
+    }
+    return (
+        "融合图像与四模态状态，只输出一个代码，禁止解释或底层控制。"
+        "A=START；B=STOP；C=SLOW_DOWN；D=SET_SPEED；E=EMERGENCY_STOP。"
+        "红灯或安全模块要求停车选B；TTC不大于2秒或紧急危险选E；"
+        "跟随或避让选C；明确设置速度选D；只有确认安全的启动或继续才选A。"
+        "输入:"
+        + json.dumps(payload, ensure_ascii=False, allow_nan=False, sort_keys=True)
+    )
+
+
+def assemble_action_choice(
+    choice: QwenVLActionChoice,
+    context: QwenInputContext,
+    *,
+    confidence_threshold: float = 0.60,
+) -> dict[str, Any]:
+    """Turn one model class into the existing strict high-level decision."""
+    if not isinstance(choice, QwenVLActionChoice):
+        raise TypeError("choice must be QwenVLActionChoice")
+    if not isinstance(context, QwenInputContext):
+        raise TypeError("context must be QwenInputContext")
+    if not 0.0 <= float(confidence_threshold) <= 1.0:
+        raise ValueError("confidence_threshold must be in [0, 1]")
+
+    visual_valid = context.perception.get("visual_valid")
+    override = _deterministic_safety_action(context)
+    if override is not None:
+        action, confidence = override
+        decision = _base_choice_decision(
+            action,
+            confidence=confidence,
+            requires_confirmation=False,
+            source="SAFETY_RULE",
+            visual_valid=visual_valid,
+        )
+        return decision
+
+    if choice.confidence < confidence_threshold:
+        return _base_choice_decision(
+            "STOP",
+            confidence=choice.confidence,
+            requires_confirmation=True,
+            source="QWEN35_LOW_CONFIDENCE",
+            visual_valid=visual_valid,
+        )
+
+    if visual_valid is False:
+        return _base_choice_decision(
+            "STOP",
+            confidence=choice.confidence,
+            requires_confirmation=True,
+            source="QWEN35_VISUAL_INVALID",
+            visual_valid=False,
+        )
+
+    candidates = _explicit_target_candidates(context)
+    if candidates is not None:
+        candidate_ids = {
+            str(item["track_id"])
+            for item in candidates
+            if item.get("track_id") is not None
+        }
+        if len(candidate_ids) != 1:
+            return _base_choice_decision(
+                "STOP",
+                confidence=choice.confidence,
+                requires_confirmation=True,
+                source="TARGET_GROUNDING",
+                visual_valid=visual_valid,
+            )
+
+    decision = _base_choice_decision(
+        choice.action,
+        confidence=choice.confidence,
+        requires_confirmation=False,
+        source="QWEN35_CHOICE",
+        visual_valid=visual_valid,
+    )
+    if choice.action == "SET_SPEED":
+        target_speed_mps = _voice_target_speed_mps(context.voice_command)
+        if target_speed_mps is None or target_speed_mps > 50.0:
+            return _base_choice_decision(
+                "STOP",
+                confidence=choice.confidence,
+                requires_confirmation=True,
+                source="QWEN35_SPEED_UNRESOLVED",
+                visual_valid=visual_valid,
+            )
+        decision["target_speed_mps"] = target_speed_mps
+    return decision
+
+
+def _base_choice_decision(
+    action: str,
+    *,
+    confidence: float,
+    requires_confirmation: bool,
+    source: str,
+    visual_valid: object,
+) -> dict[str, Any]:
+    decision: dict[str, Any] = {
+        "action": action,
+        "confidence": float(confidence),
+        "requires_confirmation": requires_confirmation,
+        "decision_source": source,
+    }
+    if type(visual_valid) is bool:
+        decision["visual_valid"] = visual_valid
+    return decision
+
+
+def _deterministic_safety_action(
+    context: QwenInputContext,
+) -> tuple[str, float] | None:
+    safety = context.safety_state
+    perception = context.perception
+    recommended = str(safety.get("recommended_action") or "").strip().upper()
+    ttc = safety.get("minimum_ttc_s", safety.get("ttc_s"))
+    collision = safety.get("collision") is True or perception.get("collision") is True
+    if collision or recommended in {"EMERGENCY_STOP", "EMERGENCY_BRAKE"} or (
+        type(ttc) in (int, float)
+        and not isinstance(ttc, bool)
+        and math.isfinite(float(ttc))
+        and float(ttc) <= 2.0
+    ):
+        return "EMERGENCY_STOP", 0.99
+
+    traffic_light = str(
+        perception.get("traffic_light", context.scene_state.get("traffic_light", ""))
+    ).strip().upper()
+    if (
+        traffic_light == "RED"
+        or safety.get("red_light_violation") is True
+        or recommended in {"STOP", "FULL_BRAKE"}
+    ):
+        return "STOP", 0.99
+    if recommended == "SLOW_DOWN":
+        return "SLOW_DOWN", 0.95
+    return None
+
+
+_VOICE_SPEED_RE = re.compile(
+    r"(?P<value>\d+(?:\.\d+)?)\s*"
+    r"(?P<unit>公里每小时|千米每小时|km/?h|kph|米每秒|m/s|mps)",
+    flags=re.IGNORECASE,
+)
+_CHINESE_SPEED_PREFIX_RE = re.compile(
+    r"每秒(?P<value>[零〇一二两三四五六七八九十]+)米"
+)
+_CHINESE_SPEED_SUFFIX_RE = re.compile(
+    r"(?P<value>[零〇一二两三四五六七八九十]+)"
+    r"(?P<unit>公里每小时|千米每小时|米每秒)"
+)
+
+
+def _voice_target_speed_mps(command: str) -> float | None:
+    normalized = re.sub(r"\s+", "", command)
+    match = _VOICE_SPEED_RE.search(normalized)
+    if match is not None:
+        value = float(match.group("value"))
+        unit = match.group("unit").lower()
+        return value / 3.6 if unit in {
+            "公里每小时", "千米每小时", "km/h", "kmh", "kph",
+        } else value
+
+    prefix = _CHINESE_SPEED_PREFIX_RE.search(normalized)
+    if prefix is not None:
+        return _chinese_number_below_100(prefix.group("value"))
+    suffix = _CHINESE_SPEED_SUFFIX_RE.search(normalized)
+    if suffix is None:
+        return None
+    value = _chinese_number_below_100(suffix.group("value"))
+    return value / 3.6 if suffix.group("unit") in {
+        "公里每小时", "千米每小时",
+    } else value
+
+
+def _chinese_number_below_100(text: str) -> float:
+    digits = {
+        "零": 0, "〇": 0, "一": 1, "二": 2, "两": 2, "三": 3,
+        "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9,
+    }
+    if "十" not in text:
+        if len(text) != 1 or text not in digits:
+            raise ValueError(f"unsupported Chinese speed number: {text!r}")
+        return float(digits[text])
+    tens, ones = text.split("十", 1)
+    if len(tens) > 1 or len(ones) > 1:
+        raise ValueError(f"unsupported Chinese speed number: {text!r}")
+    tens_value = 1 if not tens else digits[tens]
+    ones_value = 0 if not ones else digits[ones]
+    return float(tens_value * 10 + ones_value)
 
 
 def _validate_target_reference(
@@ -258,6 +516,7 @@ def _explicit_target_candidates(
         return None
 
     relation_check: Any = None
+    nearest_requested = False
     distance_match = re.search(
         r"距离约(?P<distance>\d+(?:\.\d+)?)米",
         command,
@@ -265,6 +524,9 @@ def _explicit_target_candidates(
     if distance_match is not None:
         requested_distance = float(distance_match.group("distance"))
         relation_check = lambda relation, item=None: True
+    elif "最近" in command or "较近" in command:
+        nearest_requested = True
+        relation_check = lambda relation: True
     elif "左侧相邻车道" in command:
         relation_check = lambda relation: "left_adjacent" in relation
     elif "右侧相邻车道" in command:
@@ -301,6 +563,24 @@ def _explicit_target_candidates(
                 type(item.get("distance_m")) in (int, float)
                 and abs(float(item["distance_m"]) - requested_distance) <= 2.0
             )
+        ]
+    if nearest_requested:
+        with_distance = [
+            item
+            for item in candidates
+            if (
+                type(item.get("distance_m")) in (int, float)
+                and not isinstance(item.get("distance_m"), bool)
+                and math.isfinite(float(item["distance_m"]))
+            )
+        ]
+        if not with_distance:
+            return candidates if len(candidates) == 1 else []
+        nearest_distance = min(float(item["distance_m"]) for item in with_distance)
+        return [
+            item
+            for item in with_distance
+            if abs(float(item["distance_m"]) - nearest_distance) <= 0.25
         ]
     return [
         item for item in candidates
@@ -368,11 +648,12 @@ class TransformersQwen25VLBackend:
         self,
         model_path: str | Path,
         *,
-        max_new_tokens: int = 64,
+        max_new_tokens: int = 48,
         device_map: str = "auto",
         torch_dtype: str = "auto",
+        awq_backend: str = "auto",
         min_pixels: int = 64 * 28 * 28,
-        max_pixels: int = 256 * 28 * 28,
+        max_pixels: int = 64 * 28 * 28,
         crop_top_ratio: float = 0.04,
         crop_bottom_ratio: float = 0.08,
     ) -> None:
@@ -385,6 +666,10 @@ class TransformersQwen25VLBackend:
             raise ValueError("min_pixels must be an integer of at least 784")
         if type(max_pixels) is not int or max_pixels < min_pixels:
             raise ValueError("max_pixels must be an integer >= min_pixels")
+        if awq_backend not in {"auto", "torch_awq", "gemm", "gemm_triton"}:
+            raise ValueError(
+                "awq_backend must be auto/torch_awq/gemm/gemm_triton"
+            )
         for name, value in (
             ("crop_top_ratio", crop_top_ratio),
             ("crop_bottom_ratio", crop_bottom_ratio),
@@ -400,7 +685,11 @@ class TransformersQwen25VLBackend:
         try:
             import torch
             from qwen_vl_utils import process_vision_info
-            from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
+            from transformers import (
+                AutoConfig,
+                AutoProcessor,
+                Qwen2_5_VLForConditionalGeneration,
+            )
         except ImportError as error:
             raise RuntimeError(
                 "Qwen runtime requires torch, transformers, pillow and qwen-vl-utils"
@@ -419,12 +708,39 @@ class TransformersQwen25VLBackend:
             min_pixels=min_pixels,
             max_pixels=max_pixels,
         )
+        model_load_args: dict[str, Any] = {}
+        model_config = AutoConfig.from_pretrained(
+            str(checkpoint),
+            trust_remote_code=True,
+            local_files_only=True,
+        )
+        quantization = getattr(model_config, "quantization_config", None)
+        if isinstance(quantization, Mapping) and quantization.get(
+            "quant_method"
+        ) == "awq":
+            awq_config = dict(quantization)
+            skipped_modules = list(
+                awq_config.get("modules_to_not_convert") or []
+            )
+            # Qwen's older checkpoint names the visual tower ``visual`` while
+            # Transformers 5.x exposes it as ``model.visual``.  Keep both so
+            # full-precision vision weights are never treated as packed AWQ.
+            if "visual" in skipped_modules and "model.visual" not in skipped_modules:
+                skipped_modules.append("model.visual")
+            awq_config["modules_to_not_convert"] = skipped_modules
+            if awq_backend != "auto":
+                awq_config["backend"] = awq_backend
+            model_config.quantization_config = awq_config
+        elif awq_backend != "auto":
+            raise ValueError("awq_backend override requires an AWQ checkpoint")
+        model_load_args["config"] = model_config
         self._model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             str(checkpoint),
             torch_dtype=torch_dtype,
             device_map=device_map,
             trust_remote_code=True,
             local_files_only=True,
+            **model_load_args,
         ).eval()
 
     def generate(self, *, prompt: str, image_path: Path | None) -> str:
@@ -533,10 +849,13 @@ def crop_road_roi(
 
 
 __all__ = [
+    "QwenVLActionChoice",
     "QwenVLGenerationBackend",
     "QwenVLInferenceTrace",
     "StrictQwenVLAdapter",
     "TransformersQwen25VLBackend",
+    "assemble_action_choice",
+    "build_action_choice_prompt",
     "build_strict_qwen_prompt",
     "crop_road_roi",
 ]

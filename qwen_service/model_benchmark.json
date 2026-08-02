@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-01T18:33:15Z",
+  "acceptance_target": {
+    "qwen_p95_ms_max": 300.0,
+    "schema_valid_rate_min": 1.0,
+    "safety_fault_fail_closed_rate_min": 1.0
+  },
+  "local_hardware": {
+    "gpu": "NVIDIA GeForce RTX 5070 Laptop GPU",
+    "vram_mib": 8151
+  },
+  "memory_estimate_scope": "hf-mem weights only; excludes KV cache and runtime workspace",
+  "candidates": [
+    {
+      "model": "Qwen/Qwen2.5-VL-7B-Instruct",
+      "quantization": "not_recorded",
+      "weights_bytes": 16595981359,
+      "validation_status": "REAL_MODEL_VALIDATED_ON_RTX_3090",
+      "answerable_joint_accuracy": 1.0,
+      "target_association_accuracy": 1.0,
+      "raw_qwen_target_association_accuracy": 0.975,
+      "category_metrics": {
+        "baseline": {"count": 40, "joint_accuracy": 1.0, "target_association_accuracy": 1.0},
+        "detector_bbox_shift": {"count": 40, "joint_accuracy": 1.0, "target_association_accuracy": 1.0},
+        "detector_false_positive": {"count": 40, "joint_accuracy": 1.0, "target_association_accuracy": 1.0},
+        "detector_miss": {"count": 40, "fail_closed_accuracy": 1.0},
+        "exposure_high": {"count": 40, "joint_accuracy": 1.0, "target_association_accuracy": 1.0},
+        "exposure_low": {"count": 40, "joint_accuracy": 1.0, "target_association_accuracy": 1.0},
+        "motion_blur": {"count": 40, "joint_accuracy": 1.0, "target_association_accuracy": 1.0},
+        "partial_occlusion": {"count": 40, "joint_accuracy": 1.0, "target_association_accuracy": 1.0}
+      },
+      "safety_fault_fail_closed_accuracy": 1.0,
+      "qwen_p95_ms": 2479.58141755,
+      "latency_target_pass": false,
+      "evidence": "artifacts/four_modal_0728/full_chain_report_v2.json"
+    },
+    {
+      "model": "Qwen/Qwen2.5-VL-3B-Instruct",
+      "quantization": "none",
+      "weights_bytes_estimate": 7509245952,
+      "validation_status": "NOT_RUN_INSUFFICIENT_8GB_HEADROOM",
+      "latency_target_pass": null
+    },
+    {
+      "model": "Qwen/Qwen2.5-VL-7B-Instruct-AWQ",
+      "quantization": "AWQ_INT4",
+      "weights_bytes_estimate": 6923847680,
+      "validation_status": "NOT_RUN_INSUFFICIENT_8GB_RUNTIME_HEADROOM",
+      "latency_target_pass": null
+    },
+    {
+      "model": "Qwen/Qwen2.5-VL-3B-Instruct-AWQ",
+      "quantization": "AWQ_INT4",
+      "weights_bytes_estimate": 3401637888,
+      "downloaded_revision": "e7b623934290c5a4da0ee3c6e1e57bfb6b5abbf2",
+      "downloaded_weights_bytes": 3401785760,
+      "downloaded_weights_sha256": "72014d68fe47d4974e21fcab0cabef2e90de711f9fb1a179c5fa1400e71672d7",
+      "validation_status": "REAL_MODEL_SMOKE_PASSED_WSL2_GEMM_TRITON",
+      "smoke_service_warmup_latency_ms": 2391.431129,
+      "smoke_service_post_warmup_latency_ms": 1260.041915,
+      "smoke_service_two_request_p95_ms": 2334.861668,
+      "smoke_peak_memory_allocated_mb": 3426.932,
+      "smoke_decision_schema_valid": true,
+      "latency_target_pass": false,
+      "evidence": "artifacts/B_role_validation/local_3b_awq_wsl_smoke.json",
+      "next_gate": "First reduce post-warmup latency near 300 ms; only then run the frozen 320-case correctness and latency validation"
+    }
+  ],
+  "selection": {
+    "correctness_reference": "Qwen/Qwen2.5-VL-7B-Instruct",
+    "local_deployment_candidate": "Qwen/Qwen2.5-VL-3B-Instruct-AWQ",
+    "accepted_for_release": false,
+    "reason": "The validated 7B model misses the latency target; optimized 3B-AWQ runs on WSL2 but its post-warmup service latency is 1260 ms and the frozen correctness set is still pending"
+  }
+}

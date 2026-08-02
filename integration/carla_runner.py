@@ -41,6 +41,7 @@ from .contracts import PerceptionFrame
 from .qwen_async import AsyncQwenDecisionBridge
 from .qwen_boundary import QwenInputContext
 from .qwen_remote_backend import OpenAICompatibleQwenVLBackend
+from .qwen_service_client import QwenServiceClient
 from .qwen_vl_adapter import StrictQwenVLAdapter
 from .route_planner import (
     build_route_reference,
@@ -647,7 +648,7 @@ def _qwen_voice_command(args: argparse.Namespace, spec: ScenarioSpec | None) -> 
     if explicit:
         return explicit
     if spec is None:
-        raise ValueError("--qwen-remote requires --qwen-voice-command or a scenario file")
+        raise ValueError("Qwen slow path requires --qwen-voice-command or a scenario file")
     if len(spec.commands) != 1 or spec.commands[0].time_s > 1e-9:
         raise ValueError(
             "remote Qwen scenario mode currently requires exactly one command at time_s=0"
@@ -656,6 +657,13 @@ def _qwen_voice_command(args: argparse.Namespace, spec: ScenarioSpec | None) -> 
     if not source_text:
         raise ValueError("scenario command must provide source_text for remote Qwen")
     return source_text
+
+
+def _qwen_enabled(args: argparse.Namespace) -> bool:
+    return bool(
+        getattr(args, "qwen_remote", False)
+        or str(getattr(args, "qwen_service_url", "") or "").strip()
+    )
 
 
 def _qwen_desired_speed_mps(args: argparse.Namespace, spec: ScenarioSpec | None) -> float:
@@ -719,14 +727,32 @@ def _build_qwen_context(
     route_end_distance_m: float | None,
     c_safety_state: Mapping[str, object] | None,
 ) -> QwenInputContext:
+    semantic_class = {
+        "person": "pedestrian",
+        "pedestrian": "pedestrian",
+        "bicycle": "vehicle",
+        "car": "vehicle",
+        "motorcycle": "vehicle",
+        "bus": "vehicle",
+        "truck": "vehicle",
+        "vehicle": "vehicle",
+    }
+    ranked_objects = sorted(
+        scene.detected_objects,
+        key=lambda item: (
+            item.distance_m is None,
+            item.distance_m if item.distance_m is not None else float("inf"),
+            -item.confidence,
+        ),
+    )[:8]
     detected_objects = [
         {
-            "class_name": item.class_name,
+            "class": semantic_class.get(item.class_name.lower(), item.class_name.lower()),
             "confidence": item.confidence,
             "distance_m": item.distance_m,
             "bbox_xyxy_norm": list(item.bbox_xyxy_norm),
         }
-        for item in scene.detected_objects
+        for item in ranked_objects
     ]
     safety = dict(c_safety_state or {})
     return QwenInputContext(
@@ -1014,7 +1040,7 @@ def run(args: argparse.Namespace) -> None:
         }, ensure_ascii=False, indent=2))
         return
 
-    qwen_enabled = bool(getattr(args, "qwen_remote", False))
+    qwen_enabled = _qwen_enabled(args)
     qwen_voice_text = _qwen_voice_command(args, spec) if qwen_enabled else ""
     qwen_desired_speed_mps = (
         _qwen_desired_speed_mps(args, spec) if qwen_enabled else float(args.default_speed_mps)
@@ -1077,6 +1103,7 @@ def run(args: argparse.Namespace) -> None:
     traffic_light_original_state: Any | None = None
     traffic_light_original_frozen: bool | None = None
     qwen_backend: OpenAICompatibleQwenVLBackend | None = None
+    qwen_service_client: QwenServiceClient | None = None
     qwen_adapter: StrictQwenVLAdapter | None = None
     qwen_bridge: AsyncQwenDecisionBridge | None = None
     qwen_submitted = False
@@ -1086,28 +1113,39 @@ def run(args: argparse.Namespace) -> None:
     qwen_status = "DISABLED" if not qwen_enabled else "NOT_SUBMITTED"
     try:
         if qwen_enabled:
-            qwen_backend = OpenAICompatibleQwenVLBackend(
-                base_url=args.qwen_base_url,
-                api_key=os.environ.get("QWEN_API_KEY", "unused"),
-                model=args.qwen_model,
-                timeout_s=args.qwen_request_timeout_s,
-                max_tokens=args.qwen_max_tokens,
-                image_max_side=args.qwen_image_max_side,
-                jpeg_quality=args.qwen_jpeg_quality,
-            )
-            qwen_adapter = StrictQwenVLAdapter(
-                qwen_backend,
-                image_root=qwen_image_root,
-            )
+            if args.qwen_service_url:
+                qwen_service_client = QwenServiceClient(
+                    args.qwen_service_url,
+                    timeout_s=args.qwen_request_timeout_s,
+                )
+                qwen_infer = qwen_service_client.infer
+                qwen_stage = f"service={args.qwen_service_url}"
+            else:
+                qwen_backend = OpenAICompatibleQwenVLBackend(
+                    base_url=args.qwen_base_url,
+                    api_key=os.environ.get("QWEN_API_KEY", "unused"),
+                    model=args.qwen_model,
+                    timeout_s=args.qwen_request_timeout_s,
+                    max_tokens=args.qwen_max_tokens,
+                    image_max_side=args.qwen_image_max_side,
+                    jpeg_quality=args.qwen_jpeg_quality,
+                )
+                qwen_adapter = StrictQwenVLAdapter(
+                    qwen_backend,
+                    image_root=qwen_image_root,
+                )
+                qwen_infer = qwen_adapter.infer
+                qwen_stage = (
+                    f"openai_compatible={args.qwen_base_url} model={args.qwen_model}"
+                )
             qwen_bridge = AsyncQwenDecisionBridge(
-                qwen_adapter.infer,
+                qwen_infer,
                 ttl_s=args.qwen_decision_ttl_s,
                 max_inference_s=args.qwen_max_inference_s,
                 command_ttl_s=args.qwen_command_ttl_s,
             )
             print(
-                "qwen stage: remote backend ready "
-                f"base_url={args.qwen_base_url} model={args.qwen_model}",
+                f"qwen stage: slow-path backend ready {qwen_stage}",
                 flush=True,
             )
         client = carla.Client(args.host, args.port)
@@ -1587,9 +1625,9 @@ def run(args: argparse.Namespace) -> None:
                                 recorder.record_command(
                                     runtime_command,
                                     disposition=(
-                                        "ACCEPTED_QWEN_REMOTE"
+                                        "ACCEPTED_QWEN_SLOW_PATH"
                                         if qwen_adapted.control_authorized
-                                        else "REJECTED_QWEN_REMOTE_NO_OP"
+                                        else "REJECTED_QWEN_SLOW_PATH_NO_OP"
                                     ),
                                     adapted_command=qwen_adapted.command,
                                     received_ns=received_ns,
@@ -1864,14 +1902,16 @@ def main() -> None:
     parser.add_argument("--c-visual-confidence-threshold", type=float, default=0.60,
                         help="C-side minimum visual confidence accepted by safety fusion")
     parser.add_argument("--qwen-remote", action="store_true",
-                        help="use an OpenAI-compatible remote Qwen2.5-VL backend for the high-level command")
+                        help="use the one-token OpenAI-compatible Qwen3.5 decision backend")
+    parser.add_argument("--qwen-service-url",
+                        help="repository-owned Qwen service base URL, for example http://127.0.0.1:18000")
     parser.add_argument("--qwen-voice-command",
                         help="Chinese command sent to Qwen; a one-command scenario can supply source_text")
     parser.add_argument("--qwen-base-url",
-                        default=os.environ.get("QWEN_BASE_URL", "http://127.0.0.1:18000/v1"),
+                        default=os.environ.get("QWEN_BASE_URL", "http://127.0.0.1:8000/v1"),
                         help="OpenAI-compatible /v1 endpoint; QWEN_API_KEY is read only from the environment")
     parser.add_argument("--qwen-model",
-                        default=os.environ.get("QWEN_MODEL", "qwen2.5-vl"),
+                        default=os.environ.get("QWEN_MODEL", "Qwen/Qwen3.5-2B"),
                         help="remote served model name")
     parser.add_argument("--qwen-request-timeout-s", type=float, default=15.0,
                         help="OpenAI client wall-clock timeout")
@@ -1881,8 +1921,10 @@ def main() -> None:
                         help="maximum simulation-time age of a usable Qwen result")
     parser.add_argument("--qwen-command-ttl-s", type=float, default=30.0,
                         help="maximum simulation-time duration for the accepted runtime command")
-    parser.add_argument("--qwen-max-tokens", type=int, default=192)
-    parser.add_argument("--qwen-image-max-side", type=int, default=768)
+    parser.add_argument("--qwen-max-tokens", type=int, default=1,
+                        help="must remain 1 for the constrained A-E action choice")
+    parser.add_argument("--qwen-image-max-side", type=int, default=256,
+                        help="fixed Qwen3.5 montage side; 256x256 equals 64 visual tokens")
     parser.add_argument("--qwen-jpeg-quality", type=int, default=75)
     parser.add_argument("--qwen-image-dir", default="artifacts/runtime/qwen_live",
                         help="local replay images; this directory is gitignored")
@@ -1939,16 +1981,20 @@ def main() -> None:
         parser.error("--rgb-detector-input-size must be >= 32")
     if not 0.0 <= args.c_visual_confidence_threshold <= 1.0:
         parser.error("--c-visual-confidence-threshold must be in [0, 1]")
-    if args.qwen_remote and not args.validate_scenario_only:
+    if args.qwen_remote and args.qwen_service_url:
+        parser.error("--qwen-remote and --qwen-service-url are mutually exclusive")
+    if _qwen_enabled(args) and not args.validate_scenario_only:
         if args.perception_mode != "sensors":
-            parser.error("--qwen-remote requires --perception-mode sensors")
+            parser.error("Qwen slow path requires --perception-mode sensors")
         if not args.realtime:
-            parser.error("--qwen-remote requires --realtime so remote latency tracks simulation time")
+            parser.error("Qwen slow path requires --realtime so latency tracks simulation time")
         if args.command_json or args.audio:
-            parser.error("--qwen-remote cannot be combined with --command-json or --audio")
+            parser.error("Qwen slow path cannot be combined with --command-json or --audio")
         if not args.qwen_voice_command and not args.scenario_file:
-            parser.error("--qwen-remote requires --qwen-voice-command or --scenario-file")
-        if not str(args.qwen_base_url).strip() or not str(args.qwen_model).strip():
+            parser.error("Qwen slow path requires --qwen-voice-command or --scenario-file")
+        if args.qwen_remote and (
+            not str(args.qwen_base_url).strip() or not str(args.qwen_model).strip()
+        ):
             parser.error("--qwen-base-url and --qwen-model must be non-empty")
         if not str(args.qwen_image_dir).strip():
             parser.error("--qwen-image-dir must be non-empty")
@@ -1960,8 +2006,10 @@ def main() -> None:
     ):
         if getattr(args, name) <= 0.0:
             parser.error(f"--{name.replace('_', '-')} must be positive")
-    if args.qwen_max_tokens < 1 or args.qwen_image_max_side < 1:
-        parser.error("--qwen-max-tokens and --qwen-image-max-side must be positive")
+    if args.qwen_max_tokens != 1:
+        parser.error("--qwen-max-tokens must be 1 for constrained action choice")
+    if args.qwen_image_max_side < 1:
+        parser.error("--qwen-image-max-side must be positive")
     if not 1 <= args.qwen_jpeg_quality <= 95:
         parser.error("--qwen-jpeg-quality must be in [1, 95]")
     run(args)
