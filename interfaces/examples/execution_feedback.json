@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "command_id": "voice-0001",
+  "status": "SUCCEEDED",
+  "action_summary": "target speed reached and settled",
+  "emitted_at_ns": 1800000000,
+  "t_action_apply_ns": 1100000000,
+  "latency_ms": 100.0,
+  "safety_event": null,
+  "terminal_reason": "TARGET_REACHED"
+}

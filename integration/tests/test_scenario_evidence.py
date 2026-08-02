@@ -21,7 +21,15 @@ def _longitudinal(ttc_s: float | None = None) -> LongitudinalOutput:
 
 
 def _timing(base: int) -> FrameTiming:
-    return FrameTiming(base + 10, base + 20, base + 30, sensor_ready_ns=base)
+    return FrameTiming(
+        base + 10,
+        base + 20,
+        base + 30,
+        sensor_ready_ns=base,
+        simulator_tick_start_ns=base - 20,
+        simulator_tick_end_ns=base - 10,
+        perception_start_ns=base - 5,
+    )
 
 
 def test_unified_evidence_is_auditable_and_scored(tmp_path):
@@ -56,6 +64,9 @@ def test_unified_evidence_is_auditable_and_scored(tmp_path):
     assert frame["safety"] == {"override": True, "reason": "STOP_LINE_GUARD"}
     assert frame["c_safety_state"]["fusion_mode"] == "RGB_LIDAR"
     assert frame["latency"]["decision_ms"] == pytest.approx(0.00001)
+    assert frame["latency"]["simulator_tick_ms"] == pytest.approx(0.00001)
+    assert frame["latency"]["perception_acquire_ms"] == pytest.approx(0.000005)
+    assert frame["latency"]["pipeline_active_ms"] == pytest.approx(0.00004)
     assert records[1]["latency"] == {
         "asr_ms": 0.0002, "intent_ms": 0.0002, "intent_to_submit_ms": 0.0005,
     }

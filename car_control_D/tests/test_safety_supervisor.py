@@ -139,7 +139,7 @@ def test_collision_and_red_light_violation_are_hard_stops() -> None:
     assert violation.final_control.brake == 1.0
 
 
-def test_route_deviation_uses_limited_low_speed_recovery_instead_of_deadlock() -> None:
+def test_route_deviation_never_applies_low_speed_recovery_throttle() -> None:
     supervisor = SafetySupervisor()
     decision = supervisor.arbitrate(
         raw_control={"steer": -0.8, "throttle": 0.4, "brake": 0.0},
@@ -148,9 +148,9 @@ def test_route_deviation_uses_limited_low_speed_recovery_instead_of_deadlock() -
         risk={},
     )
     assert decision.safety_override
-    assert decision.reason == "ROUTE_DEVIATION_RECOVERY"
-    assert decision.final_control.throttle == supervisor.config.route_recovery_throttle
-    assert decision.final_control.brake == 0.0
+    assert decision.reason == "ROUTE_DEVIATION_RECOVERY_STOP"
+    assert decision.final_control.throttle == 0.0
+    assert decision.final_control.brake >= supervisor.config.route_deviation_brake
     assert decision.final_control.steer == -supervisor.config.route_recovery_steer_limit
 
 
@@ -162,7 +162,7 @@ def test_route_recovery_brakes_above_recovery_speed() -> None:
         command=None,
         risk={},
     )
-    assert decision.reason == "ROUTE_DEVIATION_RECOVERY"
+    assert decision.reason == "ROUTE_DEVIATION_RECOVERY_STOP"
     assert decision.final_control.throttle == 0.0
     assert decision.final_control.brake >= supervisor.config.caution_brake
     assert decision.final_control.steer == 0.2

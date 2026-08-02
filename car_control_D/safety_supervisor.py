@@ -23,8 +23,11 @@ class SafetyConfig:
     max_lane_offset_m: float = 1.8
     severe_route_deviation_m: float = 3.0
     route_recovery_max_speed_mps: float = 1.5
-    route_recovery_throttle: float = 0.15
+    # Severe route deviation is not a condition in which D may authorize
+    # propulsion. Recovery requires a newly validated route/steering reference.
+    route_recovery_throttle: float = 0.0
     route_recovery_steer_limit: float = 0.35
+    route_deviation_brake: float = 0.65
     low_confidence_threshold: float = 0.80
     hold_brake: float = 0.55
     emergency_brake: float = 1.0
@@ -139,24 +142,15 @@ class SafetySupervisor:
 
         def recover_route() -> SafetyDecision:
             steer = max(min(raw.steer, cfg.route_recovery_steer_limit), -cfg.route_recovery_steer_limit)
-            if vs.speed_mps >= cfg.route_recovery_max_speed_mps:
-                control = ControlOutput(
-                    throttle=0.0,
-                    brake=max(raw.brake, cfg.caution_brake),
-                    steer=steer,
-                )
-            elif raw.brake > 0.0:
-                control = ControlOutput(throttle=0.0, brake=raw.brake, steer=steer)
-            else:
-                control = ControlOutput(
-                    throttle=min(raw.throttle, cfg.route_recovery_throttle),
-                    brake=0.0,
-                    steer=steer,
-                )
+            control = ControlOutput(
+                throttle=0.0,
+                brake=max(raw.brake, cfg.route_deviation_brake),
+                steer=steer,
+            )
             return SafetyDecision(
                 final_control=control,
                 safety_override=True,
-                reason="ROUTE_DEVIATION_RECOVERY",
+                reason="ROUTE_DEVIATION_RECOVERY_STOP",
                 risk_metrics=metrics,
                 raw_control=raw,
             )

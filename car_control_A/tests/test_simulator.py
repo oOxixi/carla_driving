@@ -247,6 +247,29 @@ def test_sensor_buffer_only_returns_a_complete_matching_frame() -> None:
     assert buffer.pending_frames == ()
 
 
+def test_sensor_buffer_degrades_when_optional_sensor_is_missing() -> None:
+    buffer = SensorFrameBuffer()
+    buffer.push("rgb", 20, "rgb-20")
+    buffer.push("lidar", 20, "lidar-20")
+    assert buffer.pop_aligned_optional(
+        ("rgb", "lidar"), ("radar",), 20,
+        timeout_s=0.1, optional_grace_s=0.0,
+    ) == {"rgb": "rgb-20", "lidar": "lidar-20"}
+
+
+def test_sensor_buffer_includes_same_frame_optional_sensor() -> None:
+    buffer = SensorFrameBuffer()
+    buffer.push("radar", 21, "radar-21")
+    buffer.push("rgb", 21, "rgb-21")
+    buffer.push("lidar", 21, "lidar-21")
+    assert buffer.pop_aligned_optional(
+        ("rgb", "lidar"), ("radar",), 21,
+        timeout_s=0.1, optional_grace_s=0.01,
+    ) == {
+        "rgb": "rgb-21", "lidar": "lidar-21", "radar": "radar-21",
+    }
+
+
 def test_sensor_buffer_discards_evicted_frames_and_times_out_for_incomplete_frame() -> None:
     buffer = SensorFrameBuffer(max_frames=2)
     buffer.push("rgb", 1, "one")

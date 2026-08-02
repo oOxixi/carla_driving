@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://carla-driving.local/interfaces/control_command.schema.json",
+  "title": "Validated ControlCommand V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "command_id", "path_type", "behavior", "target",
+    "limits", "issued_at_ns", "deadline_ns", "source"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "command_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "path_type": {"enum": ["FAST", "SLOW"]},
+    "behavior": {"enum": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "EMERGENCY_STOP", "YIELD", "FOLLOW", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT", "TURN_LEFT", "TURN_RIGHT", "PULL_OVER", "HOLD"]},
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target_id": {"type": ["string", "null"], "maxLength": 128},
+        "target_speed_mps": {"type": ["number", "null"], "minimum": 0, "maximum": 50},
+        "time_gap_s": {"type": ["number", "null"], "minimum": 0.5, "maximum": 10}
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_speed_mps", "max_accel_mps2", "max_decel_mps2"],
+      "properties": {
+        "max_speed_mps": {"type": "number", "minimum": 0, "maximum": 50},
+        "max_accel_mps2": {"type": "number", "minimum": 0, "maximum": 10},
+        "max_decel_mps2": {"type": "number", "minimum": 0, "maximum": 15}
+      }
+    },
+    "issued_at_ns": {"type": "integer", "minimum": 0},
+    "deadline_ns": {"type": "integer", "minimum": 1},
+    "source": {"enum": ["DETERMINISTIC_FAST_PATH", "QWEN_DECISION_PLAN", "SAFETY_SYSTEM"]},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "reason_code": {"type": "string", "minLength": 1, "maxLength": 128}
+  },
+  "examples": [
+    {
+      "schema_version": "1.0",
+      "command_id": "voice-0001",
+      "path_type": "FAST",
+      "behavior": "SET_SPEED",
+      "target": {"target_id": null, "target_speed_mps": 5.5555555556, "time_gap_s": null},
+      "limits": {"max_speed_mps": 8.3333333333, "max_accel_mps2": 2.5, "max_decel_mps2": 5.0},
+      "issued_at_ns": 1050000000,
+      "deadline_ns": 4000000000,
+      "source": "DETERMINISTIC_FAST_PATH",
+      "confidence": 0.98,
+      "reason_code": "FAST_SET_SPEED"
+    }
+  ]
+}

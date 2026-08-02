@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "request_id": "qwen-0001",
+  "command_id": "voice-0002",
+  "created_at_ns": 2000000000,
+  "deadline_ns": 2300000000,
+  "source_text": "跟随右侧较近的车辆",
+  "rgb_ref": "frames/rgb_000120.png",
+  "scene_summary": {"frame_id": 120, "sim_time_s": 6.0, "traffic_light": "GREEN", "risk_level": "LOW", "min_gap_m": 12.0, "ttc_s": null},
+  "targets": [{"target_id": "vehicle-right-01", "class": "vehicle", "distance_m": 12.0, "relative_speed_mps": -1.0, "confidence": 0.94, "relation": "right_adjacent_near"}],
+  "constraints": {"speed_limit_mps": 8.3333333333, "allowed_behaviors": ["KEEP_LANE", "SLOW_DOWN", "STOP", "FOLLOW"], "must_stop": false, "max_target_speed_mps": 8.3333333333}
+}

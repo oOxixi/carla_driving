@@ -291,6 +291,24 @@ def test_transient_route_recovery_does_not_discard_high_level_command():
     runtime.submit_voice(_voice(), now_s=0.05)
     scene = PerceptionFrame(frame=1, sim_time_s=0.05, route_deviation_m=3.5)
     result = runtime.step(_vehicle(speed=1.0), scene, _route(), dt_s=0.05)
-    assert result.safety_reason == "ROUTE_DEVIATION_RECOVERY"
+    assert result.safety_reason == "ROUTE_DEVIATION_RECOVERY_STOP"
     assert runtime.active_command_id == "voice-1"
     assert not any(item.status.value == "SAFETY_OVERRIDE" for item in result.feedback)
+
+
+def test_invalid_lateral_reference_is_latched_and_full_braked():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.submit_voice(_voice(), now_s=0.05)
+    behind_route = RouteReference(((-20.0, 0.0), (-10.0, 0.0), (-1.0, 0.0)), 0.0, 5.0)
+    result = runtime.step(
+        _vehicle(speed=5.0),
+        PerceptionFrame(frame=1, sim_time_s=0.05),
+        behind_route,
+        dt_s=0.05,
+    )
+    assert result.lateral is not None and result.lateral.status == "INVALID"
+    assert result.safety_reason == "WATCHDOG_ALERT"
+    assert result.final_control.throttle == 0.0
+    assert result.final_control.brake == 1.0
+    assert runtime.safety_latched
+    assert any(item.status.value == "FAILED" for item in result.feedback)

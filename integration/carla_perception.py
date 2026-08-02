@@ -2,7 +2,8 @@
 
 The module deliberately avoids a module-level :mod:`carla` import so its
 geometry and failure behaviour can be tested without starting Unreal.  RGB and
-LiDAR are continuous sensors and must match the requested simulation frame.
+LiDAR are required continuous sensors; radar is exact-frame but optional so a
+single radar dropout degrades explicitly without stalling the control loop.
 Collision and lane-invasion sensors are event streams and are recorded in a
 separate frame-keyed ledger.
 
@@ -30,9 +31,12 @@ from .rgb_detector import driving_corridor_detections
 
 RGB_SENSOR_ID = "rgb_front"
 LIDAR_SENSOR_ID = "lidar_roof"
+RADAR_SENSOR_ID = "radar_front"
 COLLISION_SENSOR_ID = "collision"
 LANE_INVASION_SENSOR_ID = "lane_invasion"
-CONTINUOUS_SENSOR_IDS = (RGB_SENSOR_ID, LIDAR_SENSOR_ID)
+REQUIRED_CONTINUOUS_SENSOR_IDS = (RGB_SENSOR_ID, LIDAR_SENSOR_ID)
+OPTIONAL_CONTINUOUS_SENSOR_IDS = (RADAR_SENSOR_ID,)
+CONTINUOUS_SENSOR_IDS = REQUIRED_CONTINUOUS_SENSOR_IDS + OPTIONAL_CONTINUOUS_SENSOR_IDS
 
 
 class PerceptionAcquisitionError(RuntimeError):
@@ -101,6 +105,15 @@ DEFAULT_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
         }),
     ),
     CarlaSensorSpec(
+        RADAR_SENSOR_ID,
+        "sensor.other.radar",
+        SensorMount(1.5, 0.0, 1.0),
+        MappingProxyType({
+            "horizontal_fov": "40", "vertical_fov": "10", "range": "80",
+            "points_per_second": "3000", "sensor_tick": "0.05",
+        }),
+    ),
+    CarlaSensorSpec(
         COLLISION_SENSOR_ID, "sensor.other.collision", SensorMount(0.0, 0.0, 0.0),
         MappingProxyType({}), continuous=False,
     ),
@@ -130,8 +143,17 @@ LOW_RESOURCE_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
             "lower_fov": "-30", "sensor_tick": "0.05",
         }),
     ),
-    DEFAULT_SENSOR_SPECS[2],
+    CarlaSensorSpec(
+        RADAR_SENSOR_ID,
+        "sensor.other.radar",
+        SensorMount(1.5, 0.0, 1.0),
+        MappingProxyType({
+            "horizontal_fov": "40", "vertical_fov": "10", "range": "60",
+            "points_per_second": "1500", "sensor_tick": "0.05",
+        }),
+    ),
     DEFAULT_SENSOR_SPECS[3],
+    DEFAULT_SENSOR_SPECS[4],
 )
 
 SENSOR_PROFILES: Mapping[str, tuple[CarlaSensorSpec, ...]] = MappingProxyType({
@@ -214,6 +236,7 @@ class PerceptionSample:
     source_by_field: Mapping[str, str]
     rgb: Any
     lidar: Any
+    radar: Any | None
     safety_summary: SafetyStateSummary
 
 
@@ -353,6 +376,49 @@ def front_lidar_distance_m(
     # Requiring a small cluster and using the 10th percentile rejects most
     # isolated rays while remaining conservative for an obstacle face.
     return float(np.percentile(forward, 10.0))
+
+
+@dataclass(frozen=True, slots=True)
+class FrontRadarTarget:
+    distance_m: float
+    closing_speed_mps: float
+
+
+def front_radar_target(
+    measurement: Any,
+    *,
+    sensor_x_offset_m: float = 1.5,
+    min_range_m: float = 1.0,
+    max_range_m: float = 80.0,
+    half_width_m: float = 1.75,
+) -> FrontRadarTarget | None:
+    """Select the nearest finite radar return inside the ego corridor.
+
+    CARLA reports ``depth`` along the ray and radial ``velocity`` toward the
+    sensor.  The mount offset converts the range to the ego coordinate origin;
+    absolute lead speed is derived later from ego speed minus closing speed.
+    """
+    detections = getattr(measurement, "detections", measurement)
+    try:
+        iterator = iter(detections)
+    except TypeError as error:
+        raise ValueError("radar measurement is not iterable") from error
+    candidates: list[FrontRadarTarget] = []
+    for detection in iterator:
+        values = tuple(
+            float(getattr(detection, name))
+            for name in ("depth", "azimuth", "altitude", "velocity")
+        )
+        if not all(math.isfinite(value) for value in values):
+            continue
+        depth, azimuth, altitude, velocity = values
+        forward = depth * math.cos(altitude) * math.cos(azimuth) + sensor_x_offset_m
+        lateral = depth * math.cos(altitude) * math.sin(azimuth)
+        if min_range_m <= forward <= max_range_m and abs(lateral) <= half_width_m:
+            candidates.append(FrontRadarTarget(forward, velocity))
+    if not candidates:
+        return None
+    return min(candidates, key=lambda item: item.distance_m)
 
 
 def _iter_vehicle_actors(world: Any) -> Iterable[Any]:
@@ -519,8 +585,12 @@ class CarlaPerceptionBridge:
     ) -> PerceptionSample:
         """Acquire a frame or raise a fail-closed ``PerceptionAcquisitionError``."""
         try:
-            aligned = self._session.frame_buffer.pop_aligned(
-                CONTINUOUS_SENSOR_IDS, frame, timeout_s=timeout_s,
+            aligned = self._session.frame_buffer.pop_aligned_optional(
+                REQUIRED_CONTINUOUS_SENSOR_IDS,
+                OPTIONAL_CONTINUOUS_SENSOR_IDS,
+                frame,
+                timeout_s=timeout_s,
+                optional_grace_s=min(0.005, timeout_s),
             )
         except TimeoutError as error:
             pending = self._session.frame_buffer.pending_frames
@@ -529,6 +599,7 @@ class CarlaPerceptionBridge:
                 "normal control must be suppressed"
             ) from error
         rgb, lidar = aligned[RGB_SENSOR_ID], aligned[LIDAR_SENSOR_ID]
+        radar = aligned.get(RADAR_SENSOR_ID)
         for sensor_id, payload in aligned.items():
             payload_frame = getattr(payload, "frame", None)
             if payload_frame != frame:
@@ -608,6 +679,34 @@ class CarlaPerceptionBridge:
                     sources["lead_speed_mps"] = "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
                 else:
                     sources["lead_speed_mps"] = "CARLA_TRUTH_LIDAR_ASSOCIATED_ACTOR"
+        radar_target: FrontRadarTarget | None = None
+        if radar is None:
+            sources["radar_modality"] = "RADAR_FRAME_MISSING_DEGRADED"
+        else:
+            try:
+                radar_target = front_radar_target(radar)
+                sources["radar_modality"] = "CARLA_RADAR_FRAME_ALIGNED"
+            except (TypeError, ValueError, AttributeError) as error:
+                sources["radar_modality"] = f"RADAR_FRAME_INVALID_{type(error).__name__.upper()}"
+            if radar_target is None and sources["radar_modality"] == "CARLA_RADAR_FRAME_ALIGNED":
+                sources["radar_observation"] = "CARLA_RADAR_NO_FRONT_CORRIDOR_TARGET"
+        if radar_target is not None and (
+            lead_distance is None or abs(radar_target.distance_m - lead_distance) <= 4.0
+        ):
+            if lead_distance is None:
+                lead_distance = radar_target.distance_m
+                sources["lead_distance_m"] = "RADAR_FRONT_CORRIDOR_DEGRADED_RANGE"
+            lead_speed = max(0.0, _speed_mps(self._ego) - radar_target.closing_speed_mps)
+            sources["lead_speed_mps"] = "RADAR_LIDAR_ASSOCIATED_RADIAL_VELOCITY"
+            sources["radar_observation"] = "RADAR_FRONT_CORRIDOR_ASSOCIATED"
+        elif radar_target is not None:
+            sources["radar_observation"] = "RADAR_LIDAR_RANGE_GATE_REJECTED"
+        if self._detector is not None and corridor_objects and lead_distance is not None:
+            selected = max(corridor_objects, key=lambda item: item.confidence)
+            detected_objects = tuple(
+                replace(item, distance_m=lead_distance) if item is selected else item
+                for item in detected_objects
+            )
         safety_summary = self._fusion.update(
             frame=frame,
             sim_time_s=sim_time_s,
@@ -659,4 +758,6 @@ class CarlaPerceptionBridge:
             lane_invasion=lane_invasion,
             detected_objects=detected_objects,
         )
-        return PerceptionSample(perception, MappingProxyType(sources), rgb, lidar, safety_summary)
+        return PerceptionSample(
+            perception, MappingProxyType(sources), rgb, lidar, radar, safety_summary,
+        )
