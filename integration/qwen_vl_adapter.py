@@ -279,12 +279,45 @@ def build_strict_qwen_prompt(context: QwenInputContext) -> str:
     )
 
 
+def _compact_choice_mapping(
+    value: Mapping[str, Any],
+    keys: tuple[str, ...],
+) -> dict[str, Any]:
+    return {key: value[key] for key in keys if key in value}
+
+
 def build_action_choice_prompt(context: QwenInputContext) -> str:
-    """Build the five-way classification prompt used by the VLM backend."""
+    """Build the five-way prompt without dataset/provenance-only fields."""
+    objects = context.perception.get("detected_objects", [])
+    compact_objects = [
+        _compact_choice_mapping(
+            item,
+            (
+                "track_id", "class", "relation", "distance_m", "confidence",
+                "bbox_xyxy_norm",
+            ),
+        )
+        for item in objects
+        if isinstance(item, Mapping)
+    ] if isinstance(objects, list) else []
+    lidar = context.perception.get("lidar_summary", {})
     payload = {
         "voice": context.voice_command,
-        "vehicle": dict(context.scene_state),
-        "perception": dict(context.perception),
+        "vehicle": _compact_choice_mapping(
+            context.scene_state,
+            ("ego_speed_mps", "speed_mps", "behavior_state"),
+        ),
+        "perception": {
+            **_compact_choice_mapping(
+                context.perception,
+                ("traffic_light", "collision", "visual_valid", "lead_distance_m"),
+            ),
+            "detected_objects": compact_objects,
+            "lidar_summary": _compact_choice_mapping(
+                lidar if isinstance(lidar, Mapping) else {},
+                ("valid", "front_corridor_min_m", "point_count"),
+            ),
+        },
         "safety": dict(context.safety_state),
     }
     return (

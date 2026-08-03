@@ -348,6 +348,8 @@ def test_action_choice_prompt_contains_all_four_modalities_and_five_codes() -> N
     assert "普通车辆本身不是停车风险" in prompt
     for field in ("voice", "vehicle", "perception", "safety"):
         assert f'"{field}"' in prompt
+    assert "blueprint" not in prompt
+    assert "augmentation" not in prompt
     assert "JSON" not in prompt
 
 
