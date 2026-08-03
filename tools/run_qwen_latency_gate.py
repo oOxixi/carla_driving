@@ -1,4 +1,4 @@
-"""Run only the Qwen3.5 latency gate; never starts a correctness suite."""
+"""Run only the Qwen3-VL latency gate; never starts a correctness suite."""
 
 from __future__ import annotations
 
@@ -19,8 +19,8 @@ from integration.qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from integration.qwen_vl_adapter import StrictQwenVLAdapter
 
 
-QWEN35_MODEL = "Qwen/Qwen3.5-2B"
-QWEN35_REVISION = "15852e8c16360a2fea060d615a32b45270f8a8fc"
+DEFAULT_QWEN_MODEL = "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
+DEFAULT_QWEN_REVISION = "f91db2369bd00e7ec20bf09b6a0080cdb26aefa5"
 
 
 def _percentile(values: list[float], quantile: float) -> float:
@@ -78,7 +78,7 @@ def latency_gate_exit_code(report: Mapping[str, object]) -> int:
 
 def _context(image_name: str, index: int) -> QwenInputContext:
     return QwenInputContext(
-        request_id=f"qwen35-latency-{index:03d}",
+        request_id=f"qwen3vl-latency-{index:03d}",
         frame=index,
         sim_time_s=index * 0.05,
         voice_command="前方道路安全时设置速度为每秒五米",
@@ -134,10 +134,12 @@ def _write_report(path: Path, report: Mapping[str, Any]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default=os.environ.get(
-        "QWEN_BASE_URL", "http://127.0.0.1:8000/v1"
+        "QWEN_BASE_URL", "http://127.0.0.1:8001/v1"
     ))
-    parser.add_argument("--model", default=os.environ.get("QWEN_MODEL", QWEN35_MODEL))
-    parser.add_argument("--model-revision", default=QWEN35_REVISION)
+    parser.add_argument(
+        "--model", default=os.environ.get("QWEN_MODEL", DEFAULT_QWEN_MODEL)
+    )
+    parser.add_argument("--model-revision", default=DEFAULT_QWEN_REVISION)
     parser.add_argument("--image", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--warmups", type=int, default=5)

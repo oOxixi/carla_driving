@@ -1,0 +1,13 @@
+{
+  "decision": {
+    "action": "SLOW_DOWN",
+    "confidence": 0.9,
+    "requires_confirmation": false
+  },
+  "image_path": "/mnt/f/carla_driving_rstar/artifacts/qwen_target_assoc_0728/collection/images/town03opt_target_seed_00.png",
+  "latency_ms": 2616.591708,
+  "raw_model_output": "{\"action\":\"SLOW_DOWN\",\"confidence\":0.9,\"requires_confirmation\":false}",
+  "request_id": "local-3b-awq-smoke-001",
+  "schema_version": "1.0",
+  "status": "READY"
+}

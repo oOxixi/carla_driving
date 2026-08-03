@@ -24,10 +24,13 @@ def main() -> None:
     backend = OpenAICompatibleQwenVLBackend(
         base_url=os.environ.get(
             "QWEN_BASE_URL",
-            "http://127.0.0.1:8000/v1",
+            "http://127.0.0.1:8001/v1",
         ),
         api_key=os.environ.get("QWEN_API_KEY", "unused"),
-        model=os.environ.get("QWEN_MODEL", "Qwen/Qwen3.5-2B"),
+        model=os.environ.get(
+            "QWEN_MODEL",
+            "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
+        ),
         timeout_s=10.0,
     )
 

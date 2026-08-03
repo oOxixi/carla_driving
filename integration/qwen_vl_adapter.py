@@ -280,7 +280,7 @@ def build_strict_qwen_prompt(context: QwenInputContext) -> str:
 
 
 def build_action_choice_prompt(context: QwenInputContext) -> str:
-    """Build the compact five-way classification prompt used by Qwen3.5."""
+    """Build the compact five-way classification prompt used by Qwen3-VL."""
     payload = {
         "voice": context.voice_command,
         "vehicle": dict(context.scene_state),
@@ -290,8 +290,10 @@ def build_action_choice_prompt(context: QwenInputContext) -> str:
     return (
         "融合图像与四模态状态，只输出一个代码，禁止解释或底层控制。"
         "A=START；B=STOP；C=SLOW_DOWN；D=SET_SPEED；E=EMERGENCY_STOP。"
+        "优先级:安全规则>明确语音动作>普通视觉线索；普通车辆本身不是停车风险。"
         "红灯或安全模块要求停车选B；TTC不大于2秒或紧急危险选E；"
-        "跟随或避让选C；明确设置速度选D；只有确认安全的启动或继续才选A。"
+        "明确跟随或避让且无停车风险必须选C；明确设置速度选D；"
+        "只有确认安全的启动或继续才选A。"
         "输入:"
         + json.dumps(payload, ensure_ascii=False, allow_nan=False, sort_keys=True)
     )

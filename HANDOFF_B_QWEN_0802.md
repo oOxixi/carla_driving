@@ -1,93 +1,53 @@
-# 第二组成员 B 交接文档（Qwen 模型与 GPU 部署，2026-08-02）
+# 第二组成员 B 交接（Qwen 模型与 GPU 部署，2026-08-03）
 
-## 1. 范围与结论
+## 结论
 
-| 项目 | 内容 |
-|---|---|
-| 角色依据 | 7 月 30 日四人方案中的 B：Qwen 模型与 GPU 部署 |
-| 上游基线 | `team/new` / `c95fac6` |
-| 正式复现设备 | NVIDIA A800 80GB，主办方答疑为 CUDA 13.2 |
-| 正式候选 | `Qwen/Qwen3.5-2B` BF16 + vLLM 0.26.0 |
-| 模型 revision | `15852e8c16360a2fea060d615a32b45270f8a8fc` |
-| 当前状态 | 实现与复现脚本完成；尚未在 A800 实测，不能标记性能验收通过 |
+按 7 月 30 日四人方案，本成员负责 B：Qwen 模型与 GPU 部署。当前已从 3B/Qwen3.5 路线转到 Qwen3-VL-2B + vLLM，并按要求先测官方 FP8、再测 GPTQ INT4。
 
-7 月 24 日旧清单中的 B 是横向控制，当时本成员对应 C；本交接只按 7 月 30 日的新 B 角色说明。
+本机 RTX 5070 8GB 的默认路线选 `h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4` + Marlin：热请求 P95 83.85 ms，10 条冻结目标关联代理集 10/10。官方 `Qwen/Qwen3-VL-2B-Instruct-FP8` 保留为基线：热请求 P95 76.97 ms，代理集 8/10。
 
-## 2. 本次关键调整
+这不是正式 A800 成绩，也不是官方隐藏集准确率。正式复现设备为 A800 80GB / CUDA 13.2，仍需在该设备复跑门禁和闭环计时。
 
-旧路线把重点放在 3B INT4、Marlin 和 Qwen3-VL-2B-FP8。重新按 A800 复现设备检查后，主线改为 BF16：A800 显存足够，FP8 在 Ampere 上不是原生 W8A8 默认路径，量化不应先于真实瓶颈优化。
+## 已完成
 
-最大的延迟浪费已经移除：
+- 建成严格 CUDA 13.2 环境：torch `2.12.1+cu132`、nvcc `13.2.78`、vLLM `0.26.1.dev0+g568afb3a1.d20260802` 源码构建。
+- 官方 FP8 revision 固定为 `46485250d8854c0a9be4f1adbc67ca47e5bb6fa5`。
+- GPTQ INT4 revision 固定为 `f91db2369bd00e7ec20bf09b6a0080cdb26aefa5`；日志确认 `auto_gptq` 和 `MarlinLinearKernel`。
+- 视觉输入保持 256×256 / 64 预算；输出保持 A-E 单 Token、严格 Schema 与代码侧安全闭锁。
+- 提示词只修复已复现的问题：普通车辆不等同停车风险；安全规则 > 明确语音动作 > 普通视觉线索。0.60 低置信度阈值未降低。
+- 新增 `tools/run_qwen3vl_2b_vllm_cu132.sh`，默认 INT4，`QWEN_MODEL_VARIANT=fp8` 切官方 FP8；运行时、烟测和门禁默认 served model 也已切到 INT4。
 
-- 模型不再生成 20～48 Token 的完整 JSON，只在 `A/B/C/D/E` 中输出一个代码。
-- vLLM 请求固定 `structured_outputs.choice`、`max_tokens=1`、`temperature=0`、`logprobs=true`、non-thinking。
-- logprob 转为模型置信度；低于 0.60 时闭锁为 `STOP + requires_confirmation=true`。
-- `target_speed_mps` 从中英文语音数字确定性换算；`target_track_id` 继续只从真实感知目标绑定。
-- 红灯、TTC≤2 秒、碰撞和安全模块停车建议会在代码侧覆盖模型。
-- 最终输出继续走已有严格 Schema，模型仍不能产生 throttle/brake/steer。
+## 证据
 
-## 3. 视觉与运行配置
+| 路线 | 热门禁（5 次预热 + 10 次测量） | 冻结代理集 |
+|---|---|---|
+| FP8 | mean 70.29，P95 76.97，max 80.98 ms | strict/target 100%，完整契约 80% |
+| INT4/Marlin | mean 74.28，P95 83.85，max 84.19 ms | strict/target/完整契约均 100% |
 
-远端后端生成固定 256×256 拼图：上半部分保留完整场景，下半部分放最多两个按距离/置信度排序的目标裁剪；没有有效目标框时放道路关注区域。Qwen3.5 的合并视觉单元为 32×32，因此该尺寸对应 64 个视觉 Token。
+证据文件：
 
-A800 脚本固定：BF16、单卡、`max_model_len=2048`、`max_num_seqs=1`、prefix cache、最多一张图。脚本会拒绝非 A800、错误 revision、错误 vLLM 版本和无 BF16 支持的环境。
+- `artifacts/B_role_validation/qwen3vl_2b_fp8_vllm_cu132_latency_gate.json`
+- `artifacts/B_role_validation/qwen3vl_2b_fp8_vllm_cu132_target10_prompt_v3.json`
+- `artifacts/B_role_validation/qwen3vl_2b_gptq_int4_marlin_vllm_cu132_latency_gate_prompt_v3.json`
+- `artifacts/B_role_validation/qwen3vl_2b_gptq_int4_marlin_vllm_cu132_target10_prompt_v3.json`
+- `artifacts/B_role_validation/qwen3vl_2b_gptq_int4_marlin_cu132_kernel_evidence.txt`
 
-## 4. 核心文件
+正确率集合含不同图片，INT4 第一个请求为 780.64 ms、该组 P95 481.41 ms；因此不能用重复热图门禁替代端到端成绩。这里只做了用户指定的早停门禁和 10 条代理集，没有补跑无关大测试。
 
-| 文件 | 作用 |
-|---|---|
-| `integration/qwen_remote_backend.py` | vLLM 单代码请求、logprob、256×256 场景/目标拼图 |
-| `integration/qwen_vl_adapter.py` | typed choice、速度解析、目标绑定、安全覆盖、严格 Schema |
-| `integration/carla_runner.py` | Qwen3.5/vLLM 默认模型、端点、1 Token 和 256 尺寸 |
-| `tools/run_qwen35_vllm_a800.sh` | A800/vLLM/BF16/revision 预检和服务启动 |
-| `tools/run_qwen_latency_gate.py` | 5 次预热、10 次测量、P95 300ms 早停 |
-| `requirements-qwen-vllm.txt` | 正式 vLLM 依赖版本 |
-| `docs/QWEN_REMOTE_OPENAI_COMPATIBLE.md` | 最短复现步骤 |
-| `qwen_service/` | 旧 Transformers/AWQ 兼容服务，不是正式主线 |
+## 复现与接入
 
-## 5. 最短复现步骤
+最短启动命令、CUDA 13.2 环境和兼容内核原因见 `docs/QWEN_REMOTE_OPENAI_COMPATIBLE.md`。当前 INT4 服务在 WSL `127.0.0.1:8001` 健康；Windows 侧直接访问 WSL IP 受本机网络/代理路径影响，测试命令放在 WSL 内执行。
 
-```bash
-uv pip install -r requirements-qwen-vllm.txt --torch-backend=auto
-hf download Qwen/Qwen3.5-2B \
-  --revision 15852e8c16360a2fea060d615a32b45270f8a8fc \
-  --local-dir models/Qwen3.5-2B
-printf '%s\n' 15852e8c16360a2fea060d615a32b45270f8a8fc \
-  > models/Qwen3.5-2B/.model_revision
-QWEN_MODEL_PATH=models/Qwen3.5-2B bash tools/run_qwen35_vllm_a800.sh
-```
+正式 A800 顺序固定：
 
-服务 READY 后另一个终端只运行延迟门禁：
+1. 使用相同 revision 启动；先尝试 vLLM 默认内核，失败才回退 Triton/SDPA 兼容配置。
+2. 只跑 5 次预热 + 10 次门禁；P95 > 300 ms 立即停。
+3. 门禁通过后跑冻结正确率集合，再跑真实 CARLA 闭环端到端延迟。
+4. 只有正确率与闭环延迟接近评分门槛，才运行 30 分钟稳定性测试。
 
-```bash
-python -m tools.run_qwen_latency_gate \
-  --image artifacts/runtime/qwen_test.jpg \
-  --output artifacts/B_role_validation/qwen35_a800_latency_gate.json
-```
+## 未完成且不能代替的验收
 
-退出码 2 / `EARLY_STOP` 表示 P95 大于 300ms，此时停止，不跑正确率集合。退出码 0 才运行已有冻结正确率集合。
-
-## 6. 本次最小验证
-
-本机只验证代码边界，没有启动 Qwen3.5 真实模型，也没有把 RTX 5070 数据写成 A800 结论：
-
-```text
-Qwen3.5 定向套件（adapter/boundary/remote/CARLA helpers/service/gate）：94 passed in 1.44s
-WSL bash -n tools/run_qwen35_vllm_a800.sh：passed
-python -m tools.run_qwen_latency_gate --help：passed
-git diff --check：passed
-```
-
-## 7. 历史证据如何处理
-
-- 7B/RTX 3090 的 320 条集合正确率证据仍可作为能力参考，但 P95 2479.581ms，延迟失败。
-- 3B-AWQ/RTX 5070 热请求约 1260.042ms，已经早停，不补跑其正确率集合。
-- 已下载的 Qwen3-VL-2B-FP8 可保留为兼容回退，不作为 A800 默认模型。
-- `qwen_service/model_benchmark.json` 和 `latency_report.json` 是旧模型证据，不代表 Qwen3.5 A800 已验收。
-
-## 8. 剩余唯一性能门槛
-
-1. 在真实 A800 上完成 5 次预热和 10 次测量，保存门禁 JSON。
-2. 只有 P95≤300ms 才跑冻结正确率集合；基础要求目标仍为至少 98%。
-3. 正确率通过后做一次 30 分钟稳定性测试。
-4. 将 A800 的驱动、torch CUDA runtime、vLLM、模型 revision、P50/P95/max 和峰值显存写入最终 metrics，不使用本地 RTX 5070 替代。
+- A800 80GB / CUDA 13.2 实机结果。
+- 官方隐藏集 ≥98% 指标。
+- 传感器输入至车辆动作的完整闭环 ≤150 ms 指标。
+- 30 分钟稳定运行。

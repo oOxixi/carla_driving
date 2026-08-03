@@ -305,6 +305,9 @@ def test_action_choice_prompt_contains_all_four_modalities_and_five_codes() -> N
     assert "只输出一个代码" in prompt
     assert "A=START" in prompt
     assert "E=EMERGENCY_STOP" in prompt
+    assert "明确跟随或避让且无停车风险必须选C" in prompt
+    assert "安全规则>明确语音动作>普通视觉线索" in prompt
+    assert "普通车辆本身不是停车风险" in prompt
     for field in ("voice", "vehicle", "perception", "safety"):
         assert f'"{field}"' in prompt
     assert "JSON" not in prompt

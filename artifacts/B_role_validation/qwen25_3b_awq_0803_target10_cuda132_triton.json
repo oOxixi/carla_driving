@@ -1,0 +1,307 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-02T19:38:54.180779+00:00",
+  "dataset_kind": "frozen_local_proxy_not_official",
+  "rgb_source": "/mnt/f/carla_driving_rstar/artifacts/qwen_target_assoc_0728/collection",
+  "distinct_rgb_refs": 5,
+  "model_path": "/mnt/f/carla_driving_rstar/models/Qwen2.5-VL-3B-Instruct-AWQ",
+  "total": 10,
+  "ready": 10,
+  "metrics": {
+    "strict_parse_rate": 1.0,
+    "action_accuracy": 1.0,
+    "confirmation_accuracy": 1.0,
+    "target_speed_accuracy": 1.0,
+    "all_contract_accuracy": 1.0,
+    "target_association_accuracy": 1.0,
+    "target_association_cases": 10
+  },
+  "latency_ms": {
+    "mean": 1411.51971,
+    "p95": 2389.494213249998,
+    "p99": 3042.40833385,
+    "max": 3205.636864
+  },
+  "records": [
+    {
+      "case_id": "town03opt_multi_target_seed_00_center",
+      "category": "target_association",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_00"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9,
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_00"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 3205.636864,
+      "raw_output": "{\"action\":\"SLOW_DOWN\",\"confidence\":0.9,\"requires_confirmation\":false}"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_00_second",
+      "category": "target_association",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_right_adjacent_seed_00"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9,
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_right_adjacent_seed_00"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 1225.743972,
+      "raw_output": "{\"action\":\"SLOW_DOWN\",\"confidence\":0.9,\"requires_confirmation\":false}"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_01_center",
+      "category": "target_association",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_01"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9,
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_01"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 1391.986529,
+      "raw_output": "{\"action\":\"SLOW_DOWN\",\"confidence\":0.9,\"requires_confirmation\":false}"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_01_second",
+      "category": "target_association",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_left_adjacent_seed_01"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9,
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_left_adjacent_seed_01"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 1200.998216,
+      "raw_output": "{\"action\":\"SLOW_DOWN\",\"confidence\":0.9,\"requires_confirmation\":false}"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_02_center",
+      "category": "target_association",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_02"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9,
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_02"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 1219.616759,
+      "raw_output": "{\"action\":\"SLOW_DOWN\",\"confidence\":0.9,\"requires_confirmation\":false}"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_02_second",
+      "category": "target_association",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_left_adjacent_seed_02"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9,
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_left_adjacent_seed_02"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 1154.725125,
+      "raw_output": "{\"action\":\"SLOW_DOWN\",\"confidence\":0.9,\"requires_confirmation\":false}"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_03_center",
+      "category": "target_association",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_03"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9,
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_03"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 1076.097404,
+      "raw_output": "{\"action\":\"SLOW_DOWN\",\"confidence\":0.9,\"requires_confirmation\":false}"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_03_second",
+      "category": "target_association",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_right_adjacent_seed_03"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9,
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_right_adjacent_seed_03"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 1228.377722,
+      "raw_output": "{\"action\":\"SLOW_DOWN\",\"confidence\":0.9,\"requires_confirmation\":false}"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_04_center",
+      "category": "target_association",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_04"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9,
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_04"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 1236.861834,
+      "raw_output": "{\"action\":\"SLOW_DOWN\",\"confidence\":0.9,\"requires_confirmation\":false}"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_04_second",
+      "category": "target_association",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_left_adjacent_seed_04"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9,
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_left_adjacent_seed_04"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 1175.152675,
+      "raw_output": "{\"action\":\"SLOW_DOWN\",\"confidence\":0.9,\"requires_confirmation\":false}"
+    }
+  ]
+}
