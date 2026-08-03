@@ -37,6 +37,10 @@ artifacts/pytest-c-role-*/
 # Local large models
 models/*
 !models/README.md
+.venv-qwen3b-cu130/
+.hf-cache/
+artifacts/B_role_validation/conda_clone_3b.log
+artifacts/B_role_validation/model_download_3b.log
 
 # Backup files
 *.bak
