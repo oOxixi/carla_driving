@@ -279,23 +279,60 @@ def build_strict_qwen_prompt(context: QwenInputContext) -> str:
     )
 
 
+def _compact_choice_mapping(
+    value: Mapping[str, Any],
+    keys: tuple[str, ...],
+) -> dict[str, Any]:
+    return {key: value[key] for key in keys if key in value}
+
+
 def build_action_choice_prompt(context: QwenInputContext) -> str:
-    """Build the compact five-way classification prompt used by Qwen3-VL."""
+    """Build a short model-agnostic five-way classification prompt.
+
+    Target IDs, boxes, provenance and augmentation metadata are consumed by
+    deterministic grounding or visual preprocessing. Repeating them in the
+    language prompt dilutes the action rules and adds avoidable prefill work.
+    """
+    objects = context.perception.get("detected_objects", [])
+    compact_objects = [
+        _compact_choice_mapping(
+            item,
+            ("track_id", "class", "relation", "distance_m", "confidence"),
+        )
+        for item in objects
+        if isinstance(item, Mapping)
+    ] if isinstance(objects, list) else []
     payload = {
         "voice": context.voice_command,
-        "vehicle": dict(context.scene_state),
-        "perception": dict(context.perception),
-        "safety": dict(context.safety_state),
+        "vehicle": _compact_choice_mapping(
+            context.scene_state,
+            ("ego_speed_mps", "speed_mps", "behavior_state"),
+        ),
+        "perception": {
+            **_compact_choice_mapping(
+                context.perception,
+                ("traffic_light", "collision", "visual_valid", "lead_distance_m"),
+            ),
+            "detected_objects": compact_objects,
+        },
+        "safety": _compact_choice_mapping(
+            context.safety_state,
+            (
+                "recommended_action", "reason", "minimum_ttc_s", "ttc_s",
+                "collision", "red_light_violation", "visual_valid", "lidar_valid",
+            ),
+        ),
     }
     return (
-        "融合图像与四模态状态，只输出一个代码，禁止解释或底层控制。"
-        "A=START；B=STOP；C=SLOW_DOWN；D=SET_SPEED；E=EMERGENCY_STOP。"
-        "优先级:安全规则>明确语音动作>普通视觉线索；普通车辆本身不是停车风险。"
-        "红灯或安全模块要求停车选B；TTC不大于2秒或紧急危险选E；"
-        "明确跟随或避让且无停车风险必须选C；明确设置速度选D；"
-        "只有确认安全的启动或继续才选A。"
         "输入:"
         + json.dumps(payload, ensure_ascii=False, allow_nan=False, sort_keys=True)
+        + "\n融合图像与四模态状态，只输出一个代码，禁止解释或底层控制。"
+        "A=START；B=STOP；C=SLOW_DOWN；D=SET_SPEED；E=EMERGENCY_STOP。"
+        "优先级:安全规则>明确语音动作>普通视觉线索；普通车辆本身不是停车风险。"
+        "安全模块要求STOP、目标缺失或红灯选B；TTC不大于2秒或紧急危险选E。"
+        "否则语音明确要求减速、跟随或避让必须选C；曝光、模糊、遮挡或普通车辆"
+        "本身不能把C改成B。明确设置速度选D；只有确认安全的启动或继续才选A。"
+        "最终答案只能是A、B、C、D、E之一。"
     )
 
 
@@ -317,11 +354,15 @@ def assemble_action_choice(
     override = _deterministic_safety_action(context)
     if override is not None:
         action, confidence = override
+        reason = str(context.safety_state.get("reason") or "").strip().lower()
+        target_missing = action == "STOP" and (
+            "target_missing" in reason or "target_absent" in reason
+        )
         decision = _base_choice_decision(
             action,
             confidence=confidence,
-            requires_confirmation=False,
-            source="SAFETY_RULE",
+            requires_confirmation=target_missing,
+            source="TARGET_GROUNDING" if target_missing else "SAFETY_RULE",
             visual_valid=visual_valid,
         )
         return decision

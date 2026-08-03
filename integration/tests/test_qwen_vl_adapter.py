@@ -240,6 +240,43 @@ def test_action_choice_is_overridden_by_deterministic_red_light_rule() -> None:
     assert decision["decision_source"] == "SAFETY_RULE"
 
 
+def test_target_missing_safety_stop_requires_confirmation() -> None:
+    context = QwenInputContext(
+        request_id="missing-target-choice",
+        frame=12,
+        sim_time_s=0.6,
+        voice_command="减速并跟随正前方的车辆",
+        rgb_ref=None,
+        scene_state={"speed_mps": 3.0},
+        perception={
+            "visual_valid": True,
+            "traffic_light": "GREEN",
+            "detected_objects": [{
+                "track_id": "vehicle_left",
+                "class": "vehicle",
+                "relation": "left_adjacent",
+                "distance_m": 15.0,
+            }],
+        },
+        safety_state={
+            "recommended_action": "STOP",
+            "reason": "detector_target_missing",
+        },
+    )
+    choice = qwen_adapter_module.QwenVLActionChoice(
+        code="C",
+        action="SLOW_DOWN",
+        confidence=0.95,
+    )
+    adapter = StrictQwenVLAdapter(FakeActionBackend(choice))
+
+    decision = adapter(context)
+
+    assert decision["action"] == "STOP"
+    assert decision["requires_confirmation"] is True
+    assert decision["decision_source"] == "TARGET_GROUNDING"
+
+
 def test_low_confidence_action_choice_fails_closed() -> None:
     choice = qwen_adapter_module.QwenVLActionChoice(
         code="A",
@@ -305,7 +342,7 @@ def test_action_choice_prompt_contains_all_four_modalities_and_five_codes() -> N
     assert "只输出一个代码" in prompt
     assert "A=START" in prompt
     assert "E=EMERGENCY_STOP" in prompt
-    assert "明确跟随或避让且无停车风险必须选C" in prompt
+    assert "语音明确要求减速、跟随或避让必须选C" in prompt
     assert "安全规则>明确语音动作>普通视觉线索" in prompt
     assert "普通车辆本身不是停车风险" in prompt
     for field in ("voice", "vehicle", "perception", "safety"):
