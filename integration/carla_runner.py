@@ -1902,18 +1902,18 @@ def main() -> None:
     parser.add_argument("--c-visual-confidence-threshold", type=float, default=0.60,
                         help="C-side minimum visual confidence accepted by safety fusion")
     parser.add_argument("--qwen-remote", action="store_true",
-                        help="use the one-token OpenAI-compatible Qwen3-VL decision backend")
+                        help="use the one-token OpenAI-compatible Qwen-VL decision backend")
     parser.add_argument("--qwen-service-url",
                         help="repository-owned Qwen service base URL, for example http://127.0.0.1:18000")
     parser.add_argument("--qwen-voice-command",
                         help="Chinese command sent to Qwen; a one-command scenario can supply source_text")
     parser.add_argument("--qwen-base-url",
-                        default=os.environ.get("QWEN_BASE_URL", "http://127.0.0.1:8001/v1"),
+                        default=os.environ.get("QWEN_BASE_URL", "http://127.0.0.1:8002/v1"),
                         help="OpenAI-compatible /v1 endpoint; QWEN_API_KEY is read only from the environment")
     parser.add_argument("--qwen-model",
                         default=os.environ.get(
                             "QWEN_MODEL",
-                            "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
+                            "Qwen/Qwen2.5-VL-3B-Instruct",
                         ),
                         help="remote served model name")
     parser.add_argument("--qwen-request-timeout-s", type=float, default=15.0,
@@ -1927,7 +1927,7 @@ def main() -> None:
     parser.add_argument("--qwen-max-tokens", type=int, default=1,
                         help="must remain 1 for the constrained A-E action choice")
     parser.add_argument("--qwen-image-max-side", type=int, default=256,
-                        help="fixed Qwen3-VL montage side; keep 256x256 for the 64-token budget")
+                        help="fixed Qwen-VL montage side; keep 256x256 for the visual budget")
     parser.add_argument("--qwen-jpeg-quality", type=int, default=75)
     parser.add_argument("--qwen-image-dir", default="artifacts/runtime/qwen_live",
                         help="local replay images; this directory is gitignored")

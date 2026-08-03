@@ -131,7 +131,7 @@ def test_backend_requests_one_constrained_action_from_vllm(
     assert client.closed
 
 
-def test_backend_defaults_to_qwen3vl_2b_int4_profile(
+def test_backend_defaults_to_qwen25vl_3b_profile(
     tmp_path: Path,
 ) -> None:
     image_path = tmp_path / "large.png"
@@ -150,7 +150,7 @@ def test_backend_defaults_to_qwen3vl_2b_int4_profile(
     )
 
     call = client.completions.calls[0]
-    assert call["model"] == "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
+    assert call["model"] == "Qwen/Qwen2.5-VL-3B-Instruct"
     assert call["max_tokens"] == 1
     assert result.action == "STOP"
     content = call["messages"][0]["content"]  # type: ignore[index]

@@ -11,7 +11,7 @@ from .qwen_vl_adapter import QwenVLActionChoice
 
 
 class OpenAICompatibleQwenVLBackend:
-    """Ask a vLLM-compatible Qwen3-VL endpoint for one action code.
+    """Ask a vLLM-compatible Qwen-VL endpoint for one action code.
 
     Final Schema assembly, target grounding and safety overrides stay in the
     repository-owned strict adapter rather than autoregressive model output.
@@ -22,7 +22,7 @@ class OpenAICompatibleQwenVLBackend:
         *,
         base_url: str,
         api_key: str,
-        model: str = "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
+        model: str = "Qwen/Qwen2.5-VL-3B-Instruct",
         timeout_s: float = 8.0,
         max_tokens: int = 1,
         image_max_side: int = 256,

@@ -1,4 +1,4 @@
-"""Run only the Qwen3-VL latency gate; never starts a correctness suite."""
+"""Run only the Qwen-VL latency gate; never starts a correctness suite."""
 
 from __future__ import annotations
 
@@ -19,8 +19,8 @@ from integration.qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from integration.qwen_vl_adapter import StrictQwenVLAdapter
 
 
-DEFAULT_QWEN_MODEL = "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
-DEFAULT_QWEN_REVISION = "f91db2369bd00e7ec20bf09b6a0080cdb26aefa5"
+DEFAULT_QWEN_MODEL = "Qwen/Qwen2.5-VL-3B-Instruct"
+DEFAULT_QWEN_REVISION = "66285546d2b821cf421d4f5eb2576359d3770cd3"
 
 
 def _percentile(values: list[float], quantile: float) -> float:
@@ -134,7 +134,7 @@ def _write_report(path: Path, report: Mapping[str, Any]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default=os.environ.get(
-        "QWEN_BASE_URL", "http://127.0.0.1:8001/v1"
+        "QWEN_BASE_URL", "http://127.0.0.1:8002/v1"
     ))
     parser.add_argument(
         "--model", default=os.environ.get("QWEN_MODEL", DEFAULT_QWEN_MODEL)
