@@ -27,12 +27,14 @@ from integration.carla_runner import (
     _runtime_health_completed,
     _scene_from_world,
     _scenario_actor,
+    _scenario_actors,
     _scenario_raw_control_fault,
     _scenario_maneuver,
     _scenario_local_transform,
     _scenario_traffic_light_observation,
     _scenario_vehicle_speed_mps,
     _select_scene_facts,
+    _select_scenario_lead,
     _scenario_completed,
     _signed_forward_speed_mps,
     _speed_mps,
@@ -414,6 +416,37 @@ def test_scenario_actor_lookup_is_unique_and_explicit() -> None:
     )
     with pytest.raises(ValueError, match="multiple"):
         _scenario_actor(duplicate, "vehicle")
+
+
+def test_plural_scenario_vehicle_collection_and_owned_lead_selection() -> None:
+    spec = Namespace(
+        actors=(
+            {"type": "vehicle", "actor_id": "far"},
+            {"type": "vehicle", "actor_id": "near"},
+            {"type": "walker.pedestrian", "actor_id": "ped"},
+        ),
+    )
+    assert [actor["actor_id"] for actor in _scenario_actors(spec, "vehicle")] == [
+        "far", "near",
+    ]
+
+    class Actor:
+        is_alive = True
+
+        def __init__(self, x: float, y: float) -> None:
+            self._location = Namespace(x=x, y=y)
+
+        def get_location(self):
+            return self._location
+
+    ego = Namespace(
+        get_location=lambda: Namespace(x=0.0, y=0.0),
+        get_transform=lambda: Namespace(
+            get_forward_vector=lambda: Namespace(x=1.0, y=0.0),
+        ),
+    )
+    assert _select_scenario_lead(ego, [Actor(20.0, 0.0), Actor(8.0, 0.5)]) is not None
+    assert _select_scenario_lead(ego, [Actor(-2.0, 0.0)]) is None
 
 
 def test_submission_scenarios_declare_expected_real_actor_types() -> None:

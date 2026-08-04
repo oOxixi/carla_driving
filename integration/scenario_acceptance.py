@@ -118,6 +118,26 @@ def evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, obje
         add("expected_safety_override", expected["expected_safety_override"] is not True or actual > 0,
             actual, "> 0 frames", "a safety takeover must be observed")
 
+    if "required_real_actor_types" in expected:
+        supported.add("required_real_actor_types")
+        required_raw = expected["required_real_actor_types"]
+        actual_raw = metrics.get("spawned_scenario_actor_types", [])
+        required = (
+            {str(item).strip().lower() for item in required_raw}
+            if isinstance(required_raw, (list, tuple)) else set()
+        )
+        actual = (
+            {str(item).strip().lower() for item in actual_raw}
+            if isinstance(actual_raw, (list, tuple, set)) else set()
+        )
+        add(
+            "required_real_actor_types",
+            bool(required) and required.issubset(actual),
+            sorted(actual),
+            sorted(required),
+            "all declared safety-critical actor types must be physically spawned",
+        )
+
     if "expected_safety_override_allowed" in expected:
         supported.add("expected_safety_override_allowed")
         actual = int(metrics.get("safety_override_frames", 0) or 0)

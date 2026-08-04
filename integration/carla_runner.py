@@ -16,7 +16,7 @@ import zipfile
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from car_control_A import CarlaSession, ControlOutput, RuntimeVehicleState
 from car_control_A.high_level_command import HighLevelCommandAdapter, is_high_level_command
@@ -256,18 +256,54 @@ def _scenario_actor(spec: ScenarioSpec | None, actor_type: str) -> dict[str, obj
     owned traffic light.  Failing on duplicates is safer than silently binding
     perception evidence to an arbitrary actor.
     """
-    if spec is None:
-        return None
-    expected = actor_type.strip().lower()
-    matches = [
-        actor for actor in spec.actors
-        if str(actor.get("type", "")).strip().lower() == expected
-    ]
+    matches = _scenario_actors(spec, actor_type)
     if len(matches) > 1:
         raise ValueError(
             f"scenario {spec.scenario_id!r} declares multiple {actor_type!r} actors"
         )
     return matches[0] if matches else None
+
+
+def _scenario_actors(
+    spec: ScenarioSpec | None,
+    actor_type: str,
+) -> tuple[dict[str, object], ...]:
+    """Return all declared actors of one exact type.
+
+    ``_scenario_actor`` remains deliberately strict for singleton resources
+    such as the traffic light selected for a stop-line contract.  Dynamic
+    traffic, however, is naturally plural; callers that own it must use this
+    collection rather than silently binding to an arbitrary vehicle.
+    """
+    if spec is None:
+        return ()
+    expected = actor_type.strip().lower()
+    return tuple(
+        actor for actor in spec.actors
+        if str(actor.get("type", "")).strip().lower() == expected
+    )
+
+
+def _scenario_walkers(spec: ScenarioSpec | None) -> tuple[dict[str, object], ...]:
+    """Return all walker/pedestrian declarations, preserving scenario order."""
+    if spec is None:
+        return ()
+    return tuple(
+        actor for actor in spec.actors
+        if str(actor.get("type", "")).strip().lower().startswith("walker")
+    )
+
+
+def _scenario_static_props(spec: ScenarioSpec | None) -> tuple[dict[str, object], ...]:
+    """Return declarative static obstacles used for construction/occlusion tests."""
+    if spec is None:
+        return ()
+    return tuple(
+        actor for actor in spec.actors
+        if str(actor.get("type", "")).strip().lower() in {
+            "static.prop", "obstacle", "construction",
+        }
+    )
 
 
 def _scenario_local_transform(
@@ -420,6 +456,149 @@ def _update_scenario_vehicle(
     ))
 
 
+def _spawn_scenario_walker(
+    session: CarlaSession,
+    world: Any,
+    carla_api: Any,
+    ego: Any,
+    actor_spec: Mapping[str, object],
+) -> tuple[Any, Any]:
+    """Spawn a real pedestrian and return it with its world-space target.
+
+    The target is anchored to the ego's actual map pose, just as vehicles are.
+    This avoids a Town-specific world coordinate and makes crossing scenarios
+    portable across the maps used by the evaluation harness.
+    """
+    spawn = actor_spec.get("spawn", {})
+    behavior = actor_spec.get("behavior", {})
+    if not isinstance(spawn, Mapping) or not isinstance(behavior, Mapping):
+        raise TypeError("scenario walker requires spawn and behavior objects")
+    library = world.get_blueprint_library()
+    blueprint_id = actor_spec.get("blueprint_id")
+    if isinstance(blueprint_id, str) and blueprint_id:
+        blueprint = library.find(blueprint_id)
+    else:
+        candidates = list(library.filter("walker.pedestrian.*"))
+        blueprint = candidates[0] if candidates else None
+    if blueprint is None:
+        raise LookupError(f"scenario walker blueprint not found: {blueprint_id!r}")
+    has_attribute = getattr(blueprint, "has_attribute", None)
+    if callable(has_attribute):
+        if has_attribute("is_invincible"):
+            blueprint.set_attribute("is_invincible", "false")
+
+    anchor = ego.get_transform()
+    transform = _scenario_local_transform(carla_api, anchor, spawn)
+    walker = world.try_spawn_actor(blueprint, transform)
+    if walker is None:
+        raise RuntimeError("cannot spawn configured scenario walker")
+    walker = session.track_actor(walker)
+    set_physics = getattr(walker, "set_simulate_physics", None)
+    if callable(set_physics):
+        set_physics(True)
+    target_xy = behavior.get("target_xy_m", [spawn.get("x", 0.0), spawn.get("y", 0.0)])
+    if not isinstance(target_xy, (list, tuple)) or len(target_xy) != 2:
+        raise TypeError("scenario walker target_xy_m must be [x, y]")
+    target = _scenario_local_transform(
+        carla_api,
+        anchor,
+        {"x": target_xy[0], "y": target_xy[1], "z": spawn.get("z", 0.5)},
+    ).location
+    print(
+        "scenario actor: spawned real walker "
+        f"id={actor_spec.get('actor_id', 'scenario_walker')}",
+        flush=True,
+    )
+    return walker, target
+
+
+def _update_scenario_walker(
+    walker: Any,
+    actor_spec: Mapping[str, object],
+    elapsed_s: float,
+    target_location: Any,
+    carla_api: Any,
+) -> None:
+    """Move a scenario pedestrian with CARLA's public WalkerControl API."""
+    if walker is None or not getattr(walker, "is_alive", True):
+        raise RuntimeError("configured scenario walker is not alive")
+    behavior = actor_spec.get("behavior", {})
+    if not isinstance(behavior, Mapping):
+        raise TypeError("scenario walker behavior must be an object")
+    start_time_s = float(behavior.get("start_time_s", 0.0))
+    speed_mps = max(0.0, float(behavior.get("speed_mps", 0.0)))
+    location = walker.get_location()
+    dx = float(target_location.x) - float(location.x)
+    dy = float(target_location.y) - float(location.y)
+    distance = math.hypot(dx, dy)
+    speed = speed_mps if elapsed_s >= start_time_s and distance > 0.2 else 0.0
+    direction = carla_api.Vector3D(
+        x=0.0 if distance <= 1e-6 else dx / distance,
+        y=0.0 if distance <= 1e-6 else dy / distance,
+        z=0.0,
+    )
+    walker.apply_control(carla_api.WalkerControl(
+        direction=direction,
+        speed=speed,
+        jump=False,
+    ))
+
+
+def _spawn_scenario_static_prop(
+    session: CarlaSession,
+    world: Any,
+    carla_api: Any,
+    ego: Any,
+    actor_spec: Mapping[str, object],
+) -> Any:
+    """Spawn a declared static obstacle for construction/occlusion coverage."""
+    spawn = actor_spec.get("spawn", {})
+    if not isinstance(spawn, Mapping):
+        raise TypeError("scenario static prop spawn must be an object")
+    blueprint_id = actor_spec.get("blueprint_id")
+    if not isinstance(blueprint_id, str) or not blueprint_id:
+        raise ValueError("scenario static prop requires blueprint_id")
+    try:
+        blueprint = world.get_blueprint_library().find(blueprint_id)
+    except (IndexError, KeyError) as error:
+        raise LookupError(f"scenario static prop blueprint not found: {blueprint_id!r}") from error
+    if blueprint is None:
+        raise LookupError(f"scenario static prop blueprint not found: {blueprint_id!r}")
+    prop = world.try_spawn_actor(
+        blueprint, _scenario_local_transform(carla_api, ego.get_transform(), spawn),
+    )
+    if prop is None:
+        raise RuntimeError("cannot spawn configured scenario static prop")
+    prop = session.track_actor(prop)
+    set_physics = getattr(prop, "set_simulate_physics", None)
+    if callable(set_physics):
+        set_physics(False)
+    print(
+        "scenario actor: spawned static prop "
+        f"id={actor_spec.get('actor_id', blueprint_id)}",
+        flush=True,
+    )
+    return prop
+
+
+def _select_scenario_lead(ego: Any, vehicles: Sequence[Any]) -> Any | None:
+    """Choose the closest owned vehicle ahead of ego, never map background traffic."""
+    ego_location = ego.get_location()
+    forward = ego.get_transform().get_forward_vector()
+    candidates: list[tuple[float, float, Any]] = []
+    for vehicle in vehicles:
+        if vehicle is None or not getattr(vehicle, "is_alive", True):
+            continue
+        location = vehicle.get_location()
+        dx = float(location.x) - float(ego_location.x)
+        dy = float(location.y) - float(ego_location.y)
+        longitudinal = dx * float(forward.x) + dy * float(forward.y)
+        lateral = abs(dx * float(forward.y) - dy * float(forward.x))
+        if longitudinal >= -0.5 and lateral <= 4.5:
+            candidates.append((longitudinal, math.hypot(dx, dy), vehicle))
+    return min(candidates, default=(0.0, 0.0, None), key=lambda item: item[:2])[2]
+
+
 def _scenario_traffic_light_distance(spec: ScenarioSpec | None) -> float | None:
     actor = _scenario_actor(spec, "traffic_light")
     if actor is None:
@@ -570,8 +749,10 @@ def _scenario_facts(
             lead_travel_m = _lead_vehicle_travel_m(
                 elapsed_s, initial_speed, brake_at_s, target_speed,
             )
-            updates["lead_distance_m"] = max(0.1, initial_gap + lead_travel_m - travelled_m)
-            updates["lead_speed_mps"] = lead_speed
+            candidate_gap = max(0.1, initial_gap + lead_travel_m - travelled_m)
+            if candidate_gap < float(updates.get("lead_distance_m", math.inf)):
+                updates["lead_distance_m"] = candidate_gap
+                updates["lead_speed_mps"] = lead_speed
             continue
         if actor_type.startswith("walker"):
             spawn = actor.get("spawn", {})
@@ -588,8 +769,10 @@ def _scenario_facts(
             direction = 1.0 if target_y >= spawn_y else -1.0
             current_y = spawn_y + direction * speed_mps * (elapsed_s - start_s)
             if min(spawn_y, target_y) - 1e-6 <= current_y <= max(spawn_y, target_y) + 1e-6 and abs(current_y) <= 2.0:
-                updates["lead_distance_m"] = max(0.1, float(spawn.get("x", 0.0)) - travelled_m)
-                updates["lead_speed_mps"] = 0.0
+                candidate_gap = max(0.1, float(spawn.get("x", 0.0)) - travelled_m)
+                if candidate_gap < float(updates.get("lead_distance_m", math.inf)):
+                    updates["lead_distance_m"] = candidate_gap
+                    updates["lead_speed_mps"] = 0.0
     return PerceptionFrame(frame, sim_time_s, **updates)
 
 
@@ -1079,9 +1262,11 @@ def run(args: argparse.Namespace) -> None:
         args.evidence_seed = spec.seed if args.seed is None else args.seed
         if args.seed is not None:
             args.spawn_index = args.seed
-        owns_real_scene_actor = (
-            _scenario_actor(spec, "vehicle") is not None
+        owns_real_scene_actor = bool(
+            _scenario_actors(spec, "vehicle")
             or _scenario_actor(spec, "traffic_light") is not None
+            or _scenario_walkers(spec)
+            or _scenario_static_props(spec)
         )
         if owns_real_scene_actor and args.scenario_facts_mode != "perception":
             print(
@@ -1325,11 +1510,31 @@ def run(args: argparse.Namespace) -> None:
             origin = (start_location.x, start_location.y, start_location.z)
 
             scenario_lead = None
-            scenario_lead_spec = _scenario_actor(spec, "vehicle")
-            if scenario_lead_spec is not None:
-                scenario_lead = _spawn_scenario_vehicle(
-                    session, world, carla, ego, bp, scenario_lead_spec,
+            scenario_vehicles: list[tuple[Any, Mapping[str, object]]] = []
+            scenario_walkers: list[tuple[Any, Mapping[str, object], Any]] = []
+            spawned_scenario_actor_types: list[str] = []
+            for vehicle_spec in _scenario_actors(spec, "vehicle"):
+                vehicle = _spawn_scenario_vehicle(
+                    session, world, carla, ego, bp, vehicle_spec,
                 )
+                scenario_vehicles.append((vehicle, vehicle_spec))
+                spawned_scenario_actor_types.append("vehicle")
+            for walker_spec in _scenario_walkers(spec):
+                walker, target = _spawn_scenario_walker(
+                    session, world, carla, ego, walker_spec,
+                )
+                scenario_walkers.append((walker, walker_spec, target))
+                spawned_scenario_actor_types.append(
+                    str(walker_spec.get("type", "walker.pedestrian")).lower()
+                )
+            for prop_spec in _scenario_static_props(spec):
+                _spawn_scenario_static_prop(session, world, carla, ego, prop_spec)
+                spawned_scenario_actor_types.append(
+                    str(prop_spec.get("type", "static.prop")).lower()
+                )
+            scenario_lead = _select_scenario_lead(
+                ego, [vehicle for vehicle, _ in scenario_vehicles],
+            )
             if args.perception_mode in {"sensors", "world"} and args.scenario in {"follow", "emergency"}:
                 lead_distance = args.lead_distance_m if args.scenario == "follow" else args.emergency_distance_m
                 scenario_lead = _spawn_static_lead(session, world, world_map, ego, bp, lead_distance)
@@ -1468,9 +1673,15 @@ def run(args: argparse.Namespace) -> None:
                 max_speed_mps = max(max_speed_mps, state.speed_mps)
                 last_sim_time_s = state.sim_time_s
                 elapsed_s = state.sim_time_s - episode_start_s
-                if scenario_lead is not None and scenario_lead_spec is not None:
-                    _update_scenario_vehicle(
-                        scenario_lead, scenario_lead_spec, elapsed_s, carla,
+                for vehicle, vehicle_spec in scenario_vehicles:
+                    _update_scenario_vehicle(vehicle, vehicle_spec, elapsed_s, carla)
+                for walker, walker_spec, walker_target in scenario_walkers:
+                    _update_scenario_walker(
+                        walker, walker_spec, elapsed_s, walker_target, carla,
+                    )
+                if scenario_vehicles:
+                    scenario_lead = _select_scenario_lead(
+                        ego, [vehicle for vehicle, _ in scenario_vehicles],
                     )
                 if timeline is not None:
                     for scheduled in timeline.due(elapsed_s):
@@ -2133,6 +2344,7 @@ def run(args: argparse.Namespace) -> None:
                     "route_end_distance_m": final_route_end_distance_m,
                     "expected_command_count": len(spec.commands),
                     "configured_route_deviation_trigger_m": route_deviation_trigger_m,
+                    "spawned_scenario_actor_types": sorted(set(spawned_scenario_actor_types)),
                 },
             )
             acceptance = summary.get("acceptance")

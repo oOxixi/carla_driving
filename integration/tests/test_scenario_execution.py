@@ -19,7 +19,7 @@ SCENARIO_ROOT = Path(__file__).resolve().parents[2] / "scenarios"
 def test_all_repository_scenarios_load() -> None:
     paths = sorted(SCENARIO_ROOT.glob("*/*.json"))
     specs = [ScenarioSpec.load(path) for path in paths]
-    assert len(specs) == 34
+    assert len(specs) == 37
     assert {spec.official_level for spec in specs} == {"basic", "advanced", "challenge"}
     assert all(spec.frame_count > 0 for spec in specs)
 

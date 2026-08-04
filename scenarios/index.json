@@ -32,13 +32,16 @@
     "safety_D/D03_front_vehicle_brake.json",
     "safety_D/D07_low_ttc_emergency_brake.json",
     "regression/REG_001_basic_clear_seed0.json",
-    "regression/REG_012_challenge_long_run_stability.json"
+    "regression/REG_012_challenge_long_run_stability.json",
+    "regression/REG_013_multi_vehicle_brake.json",
+    "regression/REG_014_occluded_pedestrian_crossing.json",
+    "regression/REG_015_construction_bicycle_lead.json"
   ],
   "counts": {
     "smoke": 5,
     "lateral_B": 9,
     "safety_D": 8,
-    "regression": 12,
-    "total": 34
+    "regression": 15,
+    "total": 37
   }
 }

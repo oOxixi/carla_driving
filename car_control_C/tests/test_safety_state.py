@@ -27,7 +27,8 @@ def test_rgb_and_lidar_fuse_class_distance_and_tracker_ttc() -> None:
     assert summary.closing_speed_mps == 6.0
     assert summary.ttc_s == 2.0
     assert summary.fused_valid
-    assert summary.recommended_action == "SLOW_DOWN"
+    assert summary.recommended_action == "EMERGENCY_BRAKE"
+    assert summary.reason == "vru_short_front_distance"
     assert summary.to_dict()["schema_version"] == "1.0"
 
 
@@ -42,6 +43,19 @@ def test_temporal_lidar_difference_computes_low_ttc_without_actor_truth() -> Non
     assert summary.ttc_s == pytest.approx(0.9)
     assert summary.recommended_action == "EMERGENCY_BRAKE"
     assert summary.source_by_field["closing_speed_mps"] == "LIDAR_TEMPORAL_DIFFERENCE"
+
+
+def test_vru_braking_envelope_does_not_apply_to_a_non_vru_vehicle() -> None:
+    summary = ConservativeSensorFusion().update(
+        frame=11,
+        sim_time_s=1.1,
+        ego_speed_mps=5.0,
+        front_distance_m=12.0,
+        lidar_valid=True,
+        lead_speed_mps=5.0,
+        visual=VisualObservation(11, True, "vehicle", 0.95, "RGB_ONNX"),
+    )
+    assert summary.recommended_action == "KEEP_SPEED"
 
 
 def test_missing_visual_semantics_are_explicit_and_not_invented() -> None:

@@ -76,6 +76,7 @@ class SafetyStateParameters:
     visual_confidence_threshold: float = 0.60
     caution_distance_m: float = 10.0
     emergency_distance_m: float = 5.0
+    vru_emergency_distance_m: float = 20.0
     caution_ttc_s: float = 2.5
     emergency_ttc_s: float = 1.5
     max_observation_gap_s: float = 0.30
@@ -84,12 +85,14 @@ class SafetyStateParameters:
     def __post_init__(self) -> None:
         finite("visual_confidence_threshold", self.visual_confidence_threshold,
                minimum=0.0, maximum=1.0)
-        for name in ("caution_distance_m", "emergency_distance_m", "caution_ttc_s",
+        for name in ("caution_distance_m", "emergency_distance_m", "vru_emergency_distance_m", "caution_ttc_s",
                      "emergency_ttc_s", "max_observation_gap_s"):
             finite(name, getattr(self, name), positive=True)
         finite("full_brake", self.full_brake, positive=True, maximum=1.0)
         if self.emergency_distance_m > self.caution_distance_m:
             raise ValueError("emergency_distance_m must not exceed caution_distance_m")
+        if self.vru_emergency_distance_m < self.emergency_distance_m:
+            raise ValueError("vru_emergency_distance_m must be at least emergency_distance_m")
         if self.emergency_ttc_s > self.caution_ttc_s:
             raise ValueError("emergency_ttc_s must not exceed caution_ttc_s")
 
@@ -223,7 +226,9 @@ class ConservativeSensorFusion:
         elif visual_valid and front_distance_m is None and object_class in self._HAZARD_CLASSES:
             mode, action, reason = "RGB_ONLY", "FULL_BRAKE", "visual_hazard_without_range"
         elif visual_valid and front_distance_m is not None:
-            mode, action, reason = self._range_action(front_distance_m, ttc_s, "RGB_LIDAR")
+            mode, action, reason = self._range_action(
+                front_distance_m, ttc_s, "RGB_LIDAR", object_class=object_class,
+            )
         elif front_distance_m is not None:
             mode, action, reason = self._range_action(front_distance_m, ttc_s, "LIDAR_ONLY")
         elif visual_valid:
@@ -256,7 +261,24 @@ class ConservativeSensorFusion:
     def fail_closed_control(self) -> ControlOutput:
         return ControlOutput(0.0, self.parameters.full_brake)
 
-    def _range_action(self, distance_m: float, ttc_s: float | None, mode: str) -> tuple[str, str, str]:
+    def _range_action(
+        self,
+        distance_m: float,
+        ttc_s: float | None,
+        mode: str,
+        *,
+        object_class: str | None = None,
+    ) -> tuple[str, str, str]:
+        # A frame-aligned, high-confidence vulnerable-road-user observation
+        # needs a larger braking envelope than a vehicle.  It is intentionally
+        # limited to semantic RGB+LiDAR fusion: unclassified LiDAR obstacles
+        # retain the established 5 m threshold and cannot cause new false
+        # positive full brakes merely due to range noise.
+        if (
+            object_class in {"PERSON", "PEDESTRIAN", "CYCLIST", "BICYCLE", "MOTORCYCLE"}
+            and distance_m <= self.parameters.vru_emergency_distance_m
+        ):
+            return mode, "EMERGENCY_BRAKE", "vru_short_front_distance"
         if ttc_s is not None and ttc_s <= self.parameters.emergency_ttc_s:
             return mode, "EMERGENCY_BRAKE", "low_ttc"
         if distance_m <= self.parameters.emergency_distance_m:

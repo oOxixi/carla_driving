@@ -48,6 +48,9 @@ def _passing_metrics(expected: dict[str, object]) -> dict[str, object]:
         "final_control_overlap_count": 0,
         "stopped_before_stop_line": True,
         "safety_priority_observed": True,
+        "spawned_scenario_actor_types": list(
+            expected.get("required_real_actor_types", [])
+        ),
         "stop_latency_s": 0.5,
         "speed_before_decrease_marker_mps": 3.0,
         "speed_after_decrease_marker_mps": 1.0,
@@ -73,3 +76,12 @@ def test_metric_violation_and_unknown_key_fail_closed() -> None:
     assert report["passed"] is False
     assert report["failed_keys"] == ["max_cross_track_error_m", "future_rule"]
     assert report["unsupported_keys"] == ["future_rule"]
+
+
+def test_required_real_actor_types_rejects_a_false_positive_scene() -> None:
+    report = evaluate_expected(
+        {"required_real_actor_types": ["walker.pedestrian", "static.prop"]},
+        {"spawned_scenario_actor_types": ["walker.pedestrian"]},
+    )
+    assert report["passed"] is False
+    assert report["failed_keys"] == ["required_real_actor_types"]

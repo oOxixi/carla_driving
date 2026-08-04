@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "REG_015_construction_bicycle_lead",
+  "category": "regression",
+  "official_level": "challenge",
+  "description": "A physical bicycle actor slows in front of ego beside a construction barrier, exercising vulnerable-road-user and obstacle handling without map-specific coordinates.",
+  "map": "Town03",
+  "weather": "WetCloudyNoon",
+  "seed": 15,
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 28},
+  "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+  "route": {"coordinate_type": "scenario_local_xy_m", "points_xy_m": [[0, 0], [20, 0], [45, 0], [70, 0]], "resample_interval_m": 1.0, "finish_radius_m": 3.0},
+  "commands": [{"time_s": 0, "source_text": "保持车道，跟随前方慢车", "intent": "KEEP_LANE", "parameters": {"target_speed_kph": 16}, "intent_confidence": 0.95, "status": "valid", "confirm_required": false}],
+  "actors": [
+    {"actor_id": "work_zone", "type": "static.prop", "blueprint_id": "static.prop.warningconstruction", "spawn": {"x": 19.0, "y": 3.0, "z": 0.5, "yaw_deg": 0.0}},
+    {"actor_id": "bicycle_lead", "type": "vehicle", "blueprint_id": "vehicle.bh.crossbike", "spawn": {"x": 21.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0}, "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 2.2, "brake_at_s": 7.0, "target_speed_mps": 0.3}}
+  ],
+  "sensors": {"front_rgb": {"enabled": true, "width": 800, "height": 600, "fov": 90}, "collision": {"enabled": true}, "lane_invasion": {"enabled": true}},
+  "expected": {"must_no_collision": true, "required_real_actor_types": ["vehicle", "static.prop"], "min_front_gap_m": 2.5, "expected_safety_override_allowed": true}
+}
