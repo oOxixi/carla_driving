@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0",
+  "target_speed_mps": 4.0,
+  "obstacle_stop_m": 6.0,
+  "lidar_corridor_half_width_m": 1.4,
+  "route_lookahead_points": 5
+}

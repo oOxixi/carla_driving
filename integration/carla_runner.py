@@ -13,7 +13,7 @@ import os
 import sys
 import time
 import zipfile
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
@@ -52,6 +52,86 @@ from .runtime_loop import ControlRuntime
 from .rgb_detector import OnnxYoloDetector, carla_rgb_array
 from .scenario_execution import CommandTimeline, ScenarioSpec, resolve_scenario_command
 from .scenario_evidence import FrameTiming, ScenarioEvidenceRecorder
+
+
+@dataclass(frozen=True, slots=True)
+class ScenarioRuntimeProfile:
+    """Behaviour inferred from contracts; ``scenario_id`` is never consulted.
+
+    ``legacy_*`` fields only preserve the old command-line smoke modes.  A
+    scenario-file run derives actors and completion requirements from the
+    scenario payload, which lets evaluator-provided IDs remain completely
+    opaque to the runner.
+    """
+
+    label: str
+    virtual_hazard: str = "none"
+    virtual_distance_m: float | None = None
+    spawn_static_lead: bool = False
+    require_stop: bool = False
+    require_progress: bool = True
+    minimum_gap_m: float | None = None
+    stop_speed_threshold_mps: float = 0.15
+
+
+def _runtime_profile(
+    args: argparse.Namespace,
+    spec: ScenarioSpec | None,
+) -> ScenarioRuntimeProfile:
+    """Infer runtime behaviour from scenario content, not its identifier."""
+    if spec is None:
+        # Backwards-compatible CLI shorthands are translated exactly once at
+        # the boundary.  The frame loop consumes only this typed profile.
+        legacy = str(getattr(args, "scenario", "cruise"))
+        if legacy == "red_stop":
+            return ScenarioRuntimeProfile(
+                label=legacy,
+                virtual_hazard="red_light",
+                virtual_distance_m=float(args.stop_line_m),
+                require_stop=True,
+                require_progress=False,
+            )
+        if legacy in {"follow", "emergency"}:
+            emergency = legacy == "emergency"
+            distance = (
+                float(args.emergency_distance_m)
+                if emergency
+                else float(args.lead_distance_m)
+            )
+            return ScenarioRuntimeProfile(
+                label=legacy,
+                virtual_hazard="stationary_lead",
+                virtual_distance_m=distance,
+                spawn_static_lead=True,
+                require_stop=emergency,
+                require_progress=not emergency,
+                minimum_gap_m=None if emergency else 3.0,
+            )
+        return ScenarioRuntimeProfile(label=legacy)
+
+    expected = spec.expected
+    intents = {
+        str(command.envelope.get("intent", "")).strip().upper()
+        for command in spec.commands
+    }
+    require_stop = (
+        expected.get("must_stop_after_command") is True
+        or expected.get("must_emergency_brake") is True
+        or bool(intents.intersection({"STOP", "EMERGENCY_STOP"}))
+    )
+    threshold = float(expected.get("stop_speed_threshold_mps", 0.15))
+    minimum_gap = (
+        float(expected["min_front_gap_m"])
+        if "min_front_gap_m" in expected
+        else None
+    )
+    return ScenarioRuntimeProfile(
+        label=spec.scenario_id,
+        require_stop=require_stop,
+        require_progress=not require_stop,
+        minimum_gap_m=minimum_gap,
+        stop_speed_threshold_mps=threshold,
+    )
 
 
 def _speed_mps(vector: Any) -> float:
@@ -461,7 +541,7 @@ def _scenario_traffic_light_observation(
     ego: Any,
     light: Any,
 ) -> tuple[PerceptionFrame, dict[str, str]]:
-    """Bind D08 to the selected real CARLA signal and map stop waypoint."""
+    """Bind any configured signal actor to its real CARLA stop waypoint."""
     state = str(light.get_state()).split(".")[-1].upper()
     if state not in {"RED", "YELLOW", "GREEN"}:
         raise RuntimeError(f"selected CARLA traffic light has unsupported state {state!r}")
@@ -491,17 +571,31 @@ def _scenario_traffic_light_observation(
     }
 
 
-def _apply_virtual_scenario(scene: PerceptionFrame, ego: Any, origin: tuple[float, float, float], args: argparse.Namespace) -> PerceptionFrame:
+def _apply_virtual_scenario(
+    scene: PerceptionFrame,
+    ego: Any,
+    origin: tuple[float, float, float],
+    profile: ScenarioRuntimeProfile,
+) -> PerceptionFrame:
     location = ego.get_location()
     travelled_m = math.sqrt((location.x - origin[0]) ** 2 + (location.y - origin[1]) ** 2 + (location.z - origin[2]) ** 2)
-    if args.scenario == "red_stop":
-        return replace(scene, traffic_light="RED", distance_to_stop_line_m=max(0.0, args.stop_line_m - travelled_m))
-    if args.scenario in {"follow", "emergency"}:
-        initial_gap_m = args.lead_distance_m if args.scenario == "follow" else args.emergency_distance_m
+    if profile.virtual_hazard == "red_light":
+        assert profile.virtual_distance_m is not None
+        return replace(
+            scene,
+            traffic_light="RED",
+            distance_to_stop_line_m=max(0.0, profile.virtual_distance_m - travelled_m),
+        )
+    if profile.virtual_hazard == "stationary_lead":
+        assert profile.virtual_distance_m is not None
         # Deterministic simulator truth used until the RGB/LiDAR tracker is
         # available. It represents a stationary lead on the active route and
         # cannot be displaced by CARLA's map-dependent spawn relocation.
-        return replace(scene, lead_distance_m=max(0.1, initial_gap_m - travelled_m), lead_speed_mps=0.0)
+        return replace(
+            scene,
+            lead_distance_m=max(0.1, profile.virtual_distance_m - travelled_m),
+            lead_speed_mps=0.0,
+        )
     return scene
 
 
@@ -790,15 +884,19 @@ def _build_qwen_context(
     )
 
 
-def _evidence_recorder(args: argparse.Namespace, spec: ScenarioSpec | None = None) -> ScenarioEvidenceRecorder | None:
+def _evidence_recorder(
+    args: argparse.Namespace,
+    profile: ScenarioRuntimeProfile,
+    spec: ScenarioSpec | None = None,
+) -> ScenarioEvidenceRecorder | None:
     if args.no_log:
         return None
     directory = Path(args.log_dir)
     directory.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    path = directory / f"{args.scenario}_{stamp}.jsonl"
+    path = directory / f"{profile.label}_{stamp}.jsonl"
     recorder = ScenarioEvidenceRecorder(path)
-    recorder.start_run(scenario_id=args.scenario, difficulty=getattr(args, "scenario_difficulty", "basic"), config={
+    recorder.start_run(scenario_id=profile.label, difficulty=getattr(args, "scenario_difficulty", "basic"), config={
         key: value for key, value in vars(args).items()
         if type(value) in (str, int, float, bool) or value is None
     }, expected_route_deviation=(
@@ -852,19 +950,27 @@ def _warm_up_sensor_bridge(session: Any, world: Any, bridge: CarlaPerceptionBrid
     )
 
 
-def _scenario_completed(args: argparse.Namespace, *, frames: int, final_speed_mps: float | None,
+def _scenario_completed(profile: ScenarioRuntimeProfile, *, expected_frames: int,
+                        frames: int, final_speed_mps: float | None,
                         final_scene: PerceptionFrame | None, min_gap_m: float | None,
                         collision_seen: bool, max_speed_mps: float = 0.0) -> bool:
-    if frames != args.frames or final_speed_mps is None or collision_seen:
+    if frames != expected_frames or final_speed_mps is None or collision_seen:
         return False
-    if args.scenario == "red_stop":
-        return (final_scene is not None and final_scene.distance_to_stop_line_m is not None
-                and final_speed_mps <= 0.15 and final_scene.distance_to_stop_line_m <= 1.0)
-    if args.scenario == "follow":
-        return min_gap_m is not None and min_gap_m >= 3.0 and max_speed_mps >= 0.2
-    if args.scenario == "emergency":
-        return final_speed_mps <= 0.15
-    return max_speed_mps >= 0.2
+    if profile.require_stop and final_speed_mps > profile.stop_speed_threshold_mps:
+        return False
+    if profile.virtual_hazard == "red_light" and (
+        final_scene is None
+        or final_scene.distance_to_stop_line_m is None
+        or final_scene.distance_to_stop_line_m > 1.0
+    ):
+        return False
+    if profile.minimum_gap_m is not None and (
+        min_gap_m is None or min_gap_m < profile.minimum_gap_m
+    ):
+        return False
+    if profile.require_progress and max_speed_mps < 0.2:
+        return False
+    return True
 
 
 def _runtime_health_completed(safety_reasons: set[str]) -> bool:
@@ -935,7 +1041,7 @@ def _expected_safety_completed(
 
 
 def _scenario_raw_control_fault(spec: ScenarioSpec | None, elapsed_s: float) -> dict[str, object] | None:
-    """Build the one-shot pre-D fault required by D05/D06 contracts."""
+    """Build a one-shot pre-D fault from explicit expected-contract fields."""
     if spec is None or elapsed_s < 5.0:
         return None
     expected = spec.expected
@@ -1022,6 +1128,7 @@ def _import_carla_api() -> Any:
 
 def run(args: argparse.Namespace) -> None:
     spec = ScenarioSpec.load(args.scenario_file) if args.scenario_file else None
+    profile = _runtime_profile(args, spec)
     if args.validate_scenario_only:
         if spec is None:
             raise ValueError("--validate-scenario-only requires --scenario-file")
@@ -1069,7 +1176,6 @@ def run(args: argparse.Namespace) -> None:
         args.frames = spec.frame_count
         if args.max_frames is not None:
             args.frames = min(args.frames, args.max_frames)
-        args.scenario = spec.scenario_id
         args.scenario_difficulty = spec.official_level
         args.evidence_seed = spec.seed if args.seed is None else args.seed
         if args.seed is not None:
@@ -1086,7 +1192,7 @@ def run(args: argparse.Namespace) -> None:
             )
             args.scenario_facts_mode = "perception"
 
-    recorder = _evidence_recorder(args, spec)
+    recorder = _evidence_recorder(args, profile, spec)
     ego: Any | None = None
     frames_completed = 0
     final_state: RuntimeVehicleState | None = None
@@ -1301,9 +1407,20 @@ def run(args: argparse.Namespace) -> None:
                 scenario_lead = _spawn_scenario_vehicle(
                     session, world, carla, ego, bp, scenario_lead_spec,
                 )
-            if args.perception_mode in {"sensors", "world"} and args.scenario in {"follow", "emergency"}:
-                lead_distance = args.lead_distance_m if args.scenario == "follow" else args.emergency_distance_m
-                scenario_lead = _spawn_static_lead(session, world, world_map, ego, bp, lead_distance)
+            if (
+                scenario_lead_spec is None
+                and args.perception_mode in {"sensors", "world"}
+                and profile.spawn_static_lead
+            ):
+                assert profile.virtual_distance_m is not None
+                scenario_lead = _spawn_static_lead(
+                    session,
+                    world,
+                    world_map,
+                    ego,
+                    bp,
+                    profile.virtual_distance_m,
+                )
 
             perception_bridge = None
             world_events: EventLedger | None = None
@@ -1507,12 +1624,12 @@ def run(args: argparse.Namespace) -> None:
                             events=world_events,
                         )
                         if args.perception_mode == "virtual":
-                            scene = _apply_virtual_scenario(scene, ego, origin, args)
+                            scene = _apply_virtual_scenario(scene, ego, origin, profile)
                             perception_sources["scenario"] = "VIRTUAL_ACCEPTANCE_TRUTH"
-                            if args.scenario == "red_stop":
+                            if profile.virtual_hazard == "red_light":
                                 perception_sources["traffic_light"] = "VIRTUAL_ACCEPTANCE_TRUTH"
                                 perception_sources["distance_to_stop_line_m"] = "VIRTUAL_ACCEPTANCE_TRUTH"
-                            elif args.scenario in {"follow", "emergency"}:
+                            elif profile.virtual_hazard == "stationary_lead":
                                 perception_sources["lead_distance_m"] = "VIRTUAL_ACCEPTANCE_TRUTH"
                                 perception_sources["lead_speed_mps"] = "VIRTUAL_ACCEPTANCE_TRUTH"
                         else:
@@ -1728,7 +1845,7 @@ def run(args: argparse.Namespace) -> None:
                 if scene.lead_distance_m is not None:
                     min_gap_m = scene.lead_distance_m if min_gap_m is None else min(min_gap_m, scene.lead_distance_m)
                 record = {
-                    "record_type": "frame", "scenario": args.scenario,
+                    "record_type": "frame", "scenario": profile.label,
                     "perception_mode": args.perception_mode, "frame": frame,
                     "sim_time_s": state.sim_time_s, "elapsed_s": elapsed_s,
                     "speed_mps": state.speed_mps, "x_m": state.x_m, "y_m": state.y_m,
@@ -1765,7 +1882,7 @@ def run(args: argparse.Namespace) -> None:
                 recorder.record_feedback(feedback)
         completion = expected_completion if expected_completion is not None else (
             command_finished and _runtime_health_completed(safety_reasons) and _scenario_completed(
-                args, frames=frames_completed,
+                profile, expected_frames=args.frames, frames=frames_completed,
                 final_speed_mps=final_speed,
                 final_scene=final_scene, min_gap_m=min_gap_m,
                 collision_seen=collision_seen, max_speed_mps=max_speed_mps,
@@ -1803,7 +1920,7 @@ def run(args: argparse.Namespace) -> None:
             acceptance = summary.get("acceptance")
             print(json.dumps({
                 "record_type": "scenario_acceptance",
-                "scenario": args.scenario,
+                "scenario": profile.label,
                 "status": summary["status"],
                 "score": summary["score"]["final_score"],
                 "checks": None if acceptance is None else acceptance["check_count"],

@@ -25,6 +25,7 @@ from integration.carla_runner import (
     _rejected_load_envelope,
     _route_contract_completed,
     _route_stop_trigger_m,
+    _runtime_profile,
     _runtime_health_completed,
     _scene_from_world,
     _scenario_actor,
@@ -45,7 +46,13 @@ from integration.voice_adapter import VoiceCommandAdapter
 
 
 def _args(scenario):
-    return Namespace(scenario=scenario, frames=100)
+    return Namespace(
+        scenario=scenario,
+        frames=100,
+        stop_line_m=20.0,
+        lead_distance_m=18.0,
+        emergency_distance_m=6.0,
+    )
 
 
 def test_voice_load_failure_becomes_rejected_no_op() -> None:
@@ -709,19 +716,24 @@ def test_carla_left_handed_closed_loop_converges_to_straight_route() -> None:
 
 def test_scenario_completion_uses_safety_acceptance_conditions() -> None:
     red = PerceptionFrame(100, 5.0, traffic_light="RED", distance_to_stop_line_m=0.8)
-    assert _scenario_completed(_args("red_stop"), frames=100, final_speed_mps=0.1,
+    assert _scenario_completed(_runtime_profile(_args("red_stop"), None), expected_frames=100,
+                               frames=100, final_speed_mps=0.1,
                                final_scene=red, min_gap_m=None, collision_seen=False)
-    assert not _scenario_completed(_args("red_stop"), frames=100, final_speed_mps=0.1,
+    assert not _scenario_completed(_runtime_profile(_args("red_stop"), None), expected_frames=100,
+                                   frames=100, final_speed_mps=0.1,
                                    final_scene=PerceptionFrame(100, 5.0, traffic_light="RED",
                                                                distance_to_stop_line_m=2.0),
                                    min_gap_m=None, collision_seen=False)
-    assert _scenario_completed(_args("follow"), frames=100, final_speed_mps=2.0,
+    assert _scenario_completed(_runtime_profile(_args("follow"), None), expected_frames=100,
+                               frames=100, final_speed_mps=2.0,
                                final_scene=None, min_gap_m=3.1, collision_seen=False,
                                max_speed_mps=2.0)
-    assert not _scenario_completed(_args("follow"), frames=100, final_speed_mps=0.0,
+    assert not _scenario_completed(_runtime_profile(_args("follow"), None), expected_frames=100,
+                                   frames=100, final_speed_mps=0.0,
                                    final_scene=None, min_gap_m=10.0, collision_seen=False,
                                    max_speed_mps=0.0)
-    assert not _scenario_completed(_args("emergency"), frames=100, final_speed_mps=0.5,
+    assert not _scenario_completed(_runtime_profile(_args("emergency"), None), expected_frames=100,
+                                   frames=100, final_speed_mps=0.5,
                                    final_scene=None, min_gap_m=4.0, collision_seen=False)
 
 

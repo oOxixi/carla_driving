@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import time
 from typing import Any
@@ -18,6 +19,7 @@ from car_control_A.high_level_command import HighLevelCommandAdapter
 from car_control_D import SafetySupervisor
 from integration.day22.command_adapter import build_high_level_command
 from integration.qwen_boundary import QwenInputContext
+from integration.qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from integration.qwen_vl_adapter import StrictQwenVLAdapter
 from tools.four_modal_metrics import summarize_records
 from tools.run_qwen_batch_benchmark import _evaluate
@@ -107,7 +109,19 @@ def _safety(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("dataset_dir", type=Path)
-    parser.add_argument("--model-path", required=True, type=Path)
+    model_source = parser.add_mutually_exclusive_group(required=True)
+    model_source.add_argument("--model-path", type=Path)
+    model_source.add_argument(
+        "--base-url",
+        help="OpenAI-compatible Qwen endpoint, for example http://127.0.0.1:8002/v1",
+    )
+    parser.add_argument(
+        "--model",
+        default="Qwen/Qwen2.5-VL-3B-Instruct",
+        help="Served model name used by --base-url.",
+    )
+    parser.add_argument("--model-revision")
+    parser.add_argument("--timeout-s", type=float, default=8.0)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--max-new-tokens", type=int, default=48)
     parser.add_argument(
@@ -152,112 +166,132 @@ def main() -> int:
         raise ValueError("every full-chain case must have an audio_ref")
 
     voice_preload = preload_voice_models()
-    qwen = StrictQwenVLAdapter.from_local_checkpoint(
-        args.model_path,
-        image_root=dataset_dir,
-        max_new_tokens=args.max_new_tokens,
-        awq_backend=args.awq_backend,
-    )
-    records: list[dict[str, Any]] = []
-    for index, case in enumerate(rows):
-        started_ns = time.monotonic_ns()
-        audio_path = (dataset_dir / case["audio_ref"]).resolve()
-        voice = audio_to_command(str(audio_path), t_audio_start_ns=started_ns)
-        asr_completed_ns = time.monotonic_ns()
-        transcript = str(voice.get("source_text", "")).strip()
-        qwen_started_ns = time.monotonic_ns()
-        try:
-            decision = qwen(_context(case, transcript, index))
-            qwen_completed_ns = time.monotonic_ns()
-            checks = _evaluate(case, decision)
-            final = _safety(decision, transcript, case)
-            status = "READY"
-            error = None
-            trace = qwen.last_trace
-            visual_preprocess = (
-                None if trace is None else trace.visual_preprocess
-            )
-            target_grounding = (
-                None if trace is None else trace.target_grounding
-            )
-            raw_output = None if trace is None else trace.raw_output
-        except Exception as exception:
-            qwen_completed_ns = time.monotonic_ns()
-            decision = None
-            checks = {
-                "action": False,
-                "confirmation": False,
-                "target_speed": False,
-                "target_association": False,
-                "all": False,
-            }
-            final = _safety(
-                None,
-                transcript,
-                case,
-                watchdog_alerts=("QWEN_ERROR",),
-            )
-            status = "ERROR"
-            error = f"{type(exception).__name__}: {exception}"
-            visual_preprocess = None
-            target_grounding = None
-            raw_output = None
-        completed_ns = time.monotonic_ns()
-        expected_safety = case.get("expected", {}).get("safety_expectation")
-        safety_ok = (
-            final["safety_override"]
-            and final["final_control"]["throttle"] == 0.0
-            and final["final_control"]["brake"] > 0.0
-            if expected_safety
-            else True
+    remote_backend = None
+    if args.base_url:
+        remote_backend = OpenAICompatibleQwenVLBackend(
+            base_url=args.base_url,
+            api_key=os.environ.get("QWEN_API_KEY", "unused"),
+            model=args.model,
+            timeout_s=args.timeout_s,
+            max_tokens=1,
+            image_max_side=256,
         )
-        record = {
-            "case_id": case["case_id"],
-            "category": case["category"],
-            "split": case["split"],
-            "status": status,
-            "audio_ref": case["audio_ref"],
-            "expected_transcript": case["expected_transcript"],
-            "asr_transcript": transcript,
-            "voice_command": {
-                "intent": voice.get("intent"),
-                "status": voice.get("status"),
-                "confirm_required": voice.get("confirm_required"),
-            },
-            "decision": decision,
-            "expected": case["expected"],
-            "checks": {**checks, "safety": safety_ok},
-            "final_safety_control": final,
-            "latency_ms": {
-                "voice": (asr_completed_ns - started_ns) / 1e6,
-                "qwen": (qwen_completed_ns - qwen_started_ns) / 1e6,
-                "post_qwen_control": (completed_ns - qwen_completed_ns) / 1e6,
-                "audio_to_final_control": (completed_ns - started_ns) / 1e6,
-            },
-            "visual_preprocess": visual_preprocess,
-            "target_grounding": target_grounding,
-            "raw_qwen_output": raw_output,
-            "error": error,
-            "modality_evidence": {
-                "audio_sha256": case["audio_sha256"],
-                "rgb_sha256": case["provenance"]["augmentation"][
-                    "output_rgb_sha256"
-                ],
-                "lidar_sha256": case["perception"]["lidar_summary"][
-                    "raw_sha256"
-                ],
-                "ego_speed_mps": case["scene_state"]["ego_speed_mps"],
-            },
-        }
-        records.append(record)
-        print(json.dumps(record, ensure_ascii=False), flush=True)
+        qwen = StrictQwenVLAdapter(remote_backend, image_root=dataset_dir)
+        model_path = None
+    else:
+        qwen = StrictQwenVLAdapter.from_local_checkpoint(
+            args.model_path,
+            image_root=dataset_dir,
+            max_new_tokens=args.max_new_tokens,
+            awq_backend=args.awq_backend,
+        )
+        model_path = str(args.model_path.resolve())
+    records: list[dict[str, Any]] = []
+    try:
+        for index, case in enumerate(rows):
+            started_ns = time.monotonic_ns()
+            audio_path = (dataset_dir / case["audio_ref"]).resolve()
+            voice = audio_to_command(str(audio_path), t_audio_start_ns=started_ns)
+            asr_completed_ns = time.monotonic_ns()
+            transcript = str(voice.get("source_text", "")).strip()
+            qwen_started_ns = time.monotonic_ns()
+            try:
+                decision = qwen(_context(case, transcript, index))
+                qwen_completed_ns = time.monotonic_ns()
+                checks = _evaluate(case, decision)
+                final = _safety(decision, transcript, case)
+                status = "READY"
+                error = None
+                trace = qwen.last_trace
+                visual_preprocess = (
+                    None if trace is None else trace.visual_preprocess
+                )
+                target_grounding = (
+                    None if trace is None else trace.target_grounding
+                )
+                raw_output = None if trace is None else trace.raw_output
+            except Exception as exception:
+                qwen_completed_ns = time.monotonic_ns()
+                decision = None
+                checks = {
+                    "action": False,
+                    "confirmation": False,
+                    "target_speed": False,
+                    "target_association": False,
+                    "all": False,
+                }
+                final = _safety(
+                    None,
+                    transcript,
+                    case,
+                    watchdog_alerts=("QWEN_ERROR",),
+                )
+                status = "ERROR"
+                error = f"{type(exception).__name__}: {exception}"
+                visual_preprocess = None
+                target_grounding = None
+                raw_output = None
+            completed_ns = time.monotonic_ns()
+            expected_safety = case.get("expected", {}).get("safety_expectation")
+            safety_ok = (
+                final["safety_override"]
+                and final["final_control"]["throttle"] == 0.0
+                and final["final_control"]["brake"] > 0.0
+                if expected_safety
+                else True
+            )
+            record = {
+                "case_id": case["case_id"],
+                "category": case["category"],
+                "split": case["split"],
+                "status": status,
+                "audio_ref": case["audio_ref"],
+                "expected_transcript": case["expected_transcript"],
+                "asr_transcript": transcript,
+                "voice_command": {
+                    "intent": voice.get("intent"),
+                    "status": voice.get("status"),
+                    "confirm_required": voice.get("confirm_required"),
+                },
+                "decision": decision,
+                "expected": case["expected"],
+                "checks": {**checks, "safety": safety_ok},
+                "final_safety_control": final,
+                "latency_ms": {
+                    "voice": (asr_completed_ns - started_ns) / 1e6,
+                    "qwen": (qwen_completed_ns - qwen_started_ns) / 1e6,
+                    "post_qwen_control": (completed_ns - qwen_completed_ns) / 1e6,
+                    "audio_to_final_control": (completed_ns - started_ns) / 1e6,
+                },
+                "visual_preprocess": visual_preprocess,
+                "target_grounding": target_grounding,
+                "raw_qwen_output": raw_output,
+                "error": error,
+                "modality_evidence": {
+                    "audio_sha256": case["audio_sha256"],
+                    "rgb_sha256": case["provenance"]["augmentation"][
+                        "output_rgb_sha256"
+                    ],
+                    "lidar_sha256": case["perception"]["lidar_summary"][
+                        "raw_sha256"
+                    ],
+                    "ego_speed_mps": case["scene_state"]["ego_speed_mps"],
+                },
+            }
+            records.append(record)
+            print(json.dumps(record, ensure_ascii=False), flush=True)
+    finally:
+        if remote_backend is not None:
+            remote_backend.close()
 
     metrics = summarize_records(records)
     report = {
         "schema_version": "1.0",
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "model": "Qwen2.5-VL-7B-Instruct",
-        "model_path": str(args.model_path.resolve()),
+        "model": args.model if args.base_url else args.model_path.name,
+        "model_revision": args.model_revision,
+        "model_path": model_path,
+        "model_endpoint": args.base_url,
         "real_model_inference": True,
         "full_chain_scope": (
             "synthetic TTS audio -> real SenseVoice/NLU -> real RGB and "
@@ -284,17 +318,29 @@ def main() -> int:
         ],
         "records": records,
     }
-    report["passes_thresholds"] = (
-        report["answerable_joint_accuracy"]
-        >= report["thresholds"]["answerable_joint_accuracy_min"]
-        and report["answerable_target_association_accuracy"]
-        >= report["thresholds"][
-            "answerable_target_association_accuracy_min"
-        ]
-        and report["safety_fault_fail_closed_accuracy"]
-        >= report["thresholds"]["safety_fault_fail_closed_accuracy_min"]
-        and report["full_chain_contract_accuracy"]
-        >= report["thresholds"]["full_chain_contract_accuracy_min"]
+    acceptance_pairs = (
+        (
+            report["answerable_joint_accuracy"],
+            report["thresholds"]["answerable_joint_accuracy_min"],
+        ),
+        (
+            report["answerable_target_association_accuracy"],
+            report["thresholds"][
+                "answerable_target_association_accuracy_min"
+            ],
+        ),
+        (
+            report["safety_fault_fail_closed_accuracy"],
+            report["thresholds"]["safety_fault_fail_closed_accuracy_min"],
+        ),
+        (
+            report["full_chain_contract_accuracy"],
+            report["thresholds"]["full_chain_contract_accuracy_min"],
+        ),
+    )
+    report["passes_thresholds"] = all(
+        value is not None and value >= threshold
+        for value, threshold in acceptance_pairs
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(

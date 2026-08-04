@@ -21,6 +21,7 @@ def _percentile(values: list[float], quantile: float) -> float | None:
 def _latency(values: list[float]) -> dict[str, float | None]:
     return {
         "mean_ms": statistics.fmean(values) if values else None,
+        "p50_ms": _percentile(values, 0.50),
         "p95_ms": _percentile(values, 0.95),
         "p99_ms": _percentile(values, 0.99),
         "max_ms": max(values) if values else None,

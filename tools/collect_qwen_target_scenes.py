@@ -356,15 +356,21 @@ def _collect_one(
         "ego_actor_id": ego.id,
         "objects": objects,
     }
-    second_phrase = {
+    vehicle_phrases = {
         "left_adjacent": "左侧相邻车道的车辆",
         "right_adjacent": "右侧相邻车道的车辆",
         "far_ahead": "较远的前车",
         "far_ahead_occluded": "被前车部分遮挡的较远车辆",
-    }[second_relation]
-    if pedestrian_second:
-        side = "左侧" if second_relation == "left_adjacent" else "右侧"
-        second_phrase = f"{side}相邻车道的行人"
+    }
+    pedestrian_phrases = {
+        "left_adjacent": "左侧相邻车道的行人",
+        "right_adjacent": "右侧相邻车道的行人",
+        "far_ahead": "前方较远的行人",
+        "far_ahead_occluded": "被前车部分遮挡的较远行人",
+    }
+    second_phrase = (
+        pedestrian_phrases if pedestrian_second else vehicle_phrases
+    )[second_relation]
     second_command = (
         f"减速并避让{second_phrase}"
         if pedestrian_second
@@ -408,7 +414,11 @@ def _collect_one(
                 },
             },
             "expected": {
-                "actions": ["SLOW_DOWN", "FOLLOW_VEHICLE"],
+                "actions": (
+                    ["SLOW_DOWN"]
+                    if pedestrian_second
+                    else ["SLOW_DOWN", "FOLLOW_VEHICLE"]
+                ),
                 "requires_confirmation": False,
                 "target_track_id": ids["second"],
             },
