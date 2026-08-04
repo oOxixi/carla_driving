@@ -167,3 +167,20 @@ def test_fixed_image_mode_is_a_diagnostic_not_an_official_gate(
     assert report["dataset_kind"] == "fixed_image_hot_latency_diagnostic"
     assert report["status"] == "DIAGNOSTIC"
     assert report["run_correctness_next"] is False
+
+
+def test_current_operations_doc_matches_dynamic_gate_cli() -> None:
+    root = Path(__file__).resolve().parents[2]
+    operations_doc = (root / "docs" / "QWEN_REMOTE_OPENAI_COMPATIBLE.md").read_text(
+        encoding="utf-8"
+    )
+    cli_source = Path(latency_gate_module.__file__).read_text(encoding="utf-8")
+
+    assert "--dynamic-frames-dir" in operations_doc
+    assert "--fixed-image-diagnostic" in operations_doc
+    assert "--image" not in operations_doc
+    assert "15" in operations_doc and "5" in operations_doc and "10" in operations_doc
+    assert "content-unique" in operations_doc
+    assert "cannot advance correctness" in operations_doc
+    for option in ("--dynamic-frames-dir", "--fixed-image-diagnostic"):
+        assert option in cli_source

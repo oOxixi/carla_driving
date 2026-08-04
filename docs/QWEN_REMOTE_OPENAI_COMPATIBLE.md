@@ -45,8 +45,19 @@ QWEN_MODEL_VARIANT=fp8 bash tools/run_qwen3vl_2b_vllm_cu132.sh
 ```bash
 python -m tools.run_qwen_latency_gate \
   --base-url http://127.0.0.1:8001/v1 \
-  --image artifacts/qwen_target_assoc_0728/collection/images/town03opt_target_seed_00.png \
+  --dynamic-frames-dir artifacts/qwen_target_assoc_0728/collection/images \
   --output artifacts/B_role_validation/qwen3vl_2b_latency_gate.json
+```
+
+正式 gate 按文件名顺序读取目录中的帧；目录至少必须有 15 个 content-unique 帧，前 5 个为预热、后 10 个为测量。该命令才可依据 P95 结果推进正确率。
+
+固定单图只能作为显式热延迟诊断，不能作为正式或动态 gate，也 cannot advance correctness：
+
+```bash
+python -m tools.run_qwen_latency_gate \
+  --base-url http://127.0.0.1:8001/v1 \
+  --fixed-image-diagnostic artifacts/qwen_target_assoc_0728/collection/images/town03opt_target_seed_00.png \
+  --output artifacts/B_role_validation/qwen3vl_2b_fixed_image_diagnostic.json
 ```
 
 - `P95 <= 300 ms`：退出码 0，才运行正确率集合。
