@@ -42,8 +42,10 @@ def test_language_benchmark_does_not_claim_unauditable_accuracy() -> None:
     assert policy["evaluation"]["benchmark_role"] == "language_schema_regression_only"
     assert policy["evaluation"]["formal_accuracy"] == {
         "status": "not_yet_frozen",
-        "artifact_path": "datasets/formal_validation/CARLA_multimodal_validation_v1.json",
-        "required_fields": ["split_id", "record_ids", "records", "sha256"],
+        "artifacts": {
+            "multimodal_cases": "datasets/frozen_validation/multimodal/cases.jsonl",
+            "asr_manifest": "datasets/frozen_validation/asr/manifest.json",
+        },
         "accuracy_reporting_permitted": False,
     }
     assert report["evaluation_contract"] == "language_schema_regression_only"
