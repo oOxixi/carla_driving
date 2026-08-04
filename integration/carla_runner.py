@@ -13,7 +13,7 @@ import os
 import sys
 import time
 import zipfile
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
@@ -41,6 +41,7 @@ from .contracts import PerceptionFrame
 from .qwen_async import AsyncQwenDecisionBridge
 from .qwen_boundary import QwenInputContext
 from .qwen_remote_backend import OpenAICompatibleQwenVLBackend
+from .qwen_profiles import resolve_qwen_profile
 from .qwen_service_client import QwenServiceClient
 from .qwen_vl_adapter import StrictQwenVLAdapter
 from .route_planner import (
@@ -52,6 +53,174 @@ from .runtime_loop import ControlRuntime
 from .rgb_detector import OnnxYoloDetector, carla_rgb_array
 from .scenario_execution import CommandTimeline, ScenarioSpec, resolve_scenario_command
 from .scenario_evidence import FrameTiming, ScenarioEvidenceRecorder
+
+
+@dataclass(frozen=True, slots=True)
+class RuntimeScenarioProfile:
+    """Model-neutral behavior derived from an evaluator contract."""
+
+    behavior: str
+    requires_target: bool
+    emergency: bool
+    completion_key: str
+
+
+def derive_runtime_scenario_profile(
+    expected_contract: dict[str, object], scenario_text: str,
+) -> RuntimeScenarioProfile:
+    """Derive opaque-scenario behavior without consulting a scenario ID."""
+    action = str(expected_contract.get("action", "STOP")).upper()
+    text = scenario_text.lower()
+    emergency = action in {"STOP", "YIELD"} and any(
+        token in text
+        for token in ("emergency", "pedestrian", "cut-in", "应急", "行人")
+    )
+    requires_target = action in {
+        "PARK", "YIELD", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
+    }
+    return RuntimeScenarioProfile(
+        behavior=action,
+        requires_target=requires_target,
+        emergency=emergency,
+        completion_key="safe_stop" if emergency else "route_progress",
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class ScenarioRuntimeProfile:
+    """Loop-facing projection of a scenario contract.
+
+    The legacy fields support the existing command-line smoke modes. Scenario
+    files are always derived from their contract and command text, so private
+    evaluator IDs stay opaque to the runtime.
+    """
+
+    label: str
+    virtual_hazard: str = "none"
+    virtual_distance_m: float | None = None
+    spawn_static_lead: bool = False
+    require_stop: bool = False
+    require_progress: bool = True
+    minimum_gap_m: float | None = None
+    stop_speed_threshold_mps: float = 0.15
+    runtime: RuntimeScenarioProfile | None = None
+    target_bound: bool = True
+    failure_reason: str | None = None
+
+
+def _scenario_contract_text(spec: ScenarioSpec) -> str:
+    return " ".join(
+        str(command.envelope.get(field, ""))
+        for command in spec.commands
+        for field in ("source_text", "intent")
+    )
+
+
+def _scenario_target_is_bound(spec: ScenarioSpec) -> bool:
+    """Accept only explicit target bindings for target-dependent actions."""
+    for source in (spec.expected, *(command.envelope for command in spec.commands)):
+        if any(source.get(name) not in (None, "") for name in (
+            "target", "target_id", "target_track_id",
+        )):
+            return True
+        parameters = source.get("parameters")
+        if isinstance(parameters, Mapping) and any(
+            parameters.get(name) not in (None, "")
+            for name in ("target", "target_id", "target_track_id")
+        ):
+            return True
+    return False
+
+
+def _runtime_profile(
+    args: argparse.Namespace,
+    spec: ScenarioSpec | None,
+) -> ScenarioRuntimeProfile:
+    """Infer behavior from scenario content and expected contracts, never IDs."""
+    if spec is None:
+        legacy = str(getattr(args, "scenario", "cruise"))
+        if legacy == "red_stop":
+            return ScenarioRuntimeProfile(
+                label=legacy,
+                virtual_hazard="red_light",
+                virtual_distance_m=float(getattr(args, "stop_line_m", 20.0)),
+                require_stop=True,
+                require_progress=False,
+            )
+        if legacy in {"follow", "emergency"}:
+            emergency = legacy == "emergency"
+            distance = (
+                float(getattr(args, "emergency_distance_m", 6.0))
+                if emergency else float(getattr(args, "lead_distance_m", 18.0))
+            )
+            return ScenarioRuntimeProfile(
+                label=legacy,
+                virtual_hazard="stationary_lead",
+                virtual_distance_m=distance,
+                spawn_static_lead=True,
+                require_stop=emergency,
+                require_progress=not emergency,
+                minimum_gap_m=None if emergency else 3.0,
+            )
+        return ScenarioRuntimeProfile(label=legacy)
+
+    expected = spec.expected
+    runtime = derive_runtime_scenario_profile(
+        expected,
+        _scenario_contract_text(spec),
+    )
+    intents = {
+        str(command.envelope.get("intent", "")).strip().upper()
+        for command in spec.commands
+    }
+    require_stop = (
+        expected.get("must_stop_after_command") is True
+        or expected.get("must_emergency_brake") is True
+        or bool(intents.intersection({"STOP", "EMERGENCY_STOP"}))
+        or ("action" in expected and runtime.behavior in {"STOP", "YIELD"})
+    )
+    requires_target = runtime.requires_target or bool(intents.intersection({
+        "PARK", "YIELD", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
+    }))
+    target_bound = not requires_target or _scenario_target_is_bound(spec)
+    threshold = float(expected.get("stop_speed_threshold_mps", 0.15))
+    minimum_gap = (
+        float(expected["min_front_gap_m"])
+        if "min_front_gap_m" in expected else None
+    )
+    return ScenarioRuntimeProfile(
+        label=spec.scenario_id,
+        require_stop=require_stop,
+        require_progress=not require_stop,
+        minimum_gap_m=minimum_gap,
+        stop_speed_threshold_mps=threshold,
+        runtime=runtime,
+        target_bound=target_bound,
+        failure_reason=None if target_bound else "missing_required_target",
+    )
+
+
+def _missing_required_target_stop_contract() -> dict[str, object]:
+    """Use A/D's existing high-level STOP path when grounding is absent."""
+    return {
+        "schema_version": "1.0",
+        "command_id": "scenario-missing-required-target",
+        "source_text": "<scenario target unavailable>",
+        "intent": "STOP",
+        "parameters": {},
+        "intent_confidence": 1.0,
+        "confidence": 1.0,
+        "status": "valid",
+        "ambiguity_type": "NONE",
+        "confirm_required": True,
+        "errors": [],
+        "warnings": [{
+            "code": "MISSING_REQUIRED_TARGET",
+            "message": "missing_required_target",
+        }],
+        "failure_reason": "missing_required_target",
+        "valid_duration_s": 300.0,
+    }
 
 
 def _speed_mps(vector: Any) -> float:
@@ -491,17 +660,31 @@ def _scenario_traffic_light_observation(
     }
 
 
-def _apply_virtual_scenario(scene: PerceptionFrame, ego: Any, origin: tuple[float, float, float], args: argparse.Namespace) -> PerceptionFrame:
+def _apply_virtual_scenario(
+    scene: PerceptionFrame,
+    ego: Any,
+    origin: tuple[float, float, float],
+    profile: ScenarioRuntimeProfile,
+) -> PerceptionFrame:
     location = ego.get_location()
     travelled_m = math.sqrt((location.x - origin[0]) ** 2 + (location.y - origin[1]) ** 2 + (location.z - origin[2]) ** 2)
-    if args.scenario == "red_stop":
-        return replace(scene, traffic_light="RED", distance_to_stop_line_m=max(0.0, args.stop_line_m - travelled_m))
-    if args.scenario in {"follow", "emergency"}:
-        initial_gap_m = args.lead_distance_m if args.scenario == "follow" else args.emergency_distance_m
+    if profile.virtual_hazard == "red_light":
+        assert profile.virtual_distance_m is not None
+        return replace(
+            scene,
+            traffic_light="RED",
+            distance_to_stop_line_m=max(0.0, profile.virtual_distance_m - travelled_m),
+        )
+    if profile.virtual_hazard == "stationary_lead":
+        assert profile.virtual_distance_m is not None
         # Deterministic simulator truth used until the RGB/LiDAR tracker is
         # available. It represents a stationary lead on the active route and
         # cannot be displaced by CARLA's map-dependent spawn relocation.
-        return replace(scene, lead_distance_m=max(0.1, initial_gap_m - travelled_m), lead_speed_mps=0.0)
+        return replace(
+            scene,
+            lead_distance_m=max(0.1, profile.virtual_distance_m - travelled_m),
+            lead_speed_mps=0.0,
+        )
     return scene
 
 
@@ -790,15 +973,19 @@ def _build_qwen_context(
     )
 
 
-def _evidence_recorder(args: argparse.Namespace, spec: ScenarioSpec | None = None) -> ScenarioEvidenceRecorder | None:
+def _evidence_recorder(
+    args: argparse.Namespace,
+    profile: ScenarioRuntimeProfile,
+    spec: ScenarioSpec | None = None,
+) -> ScenarioEvidenceRecorder | None:
     if args.no_log:
         return None
     directory = Path(args.log_dir)
     directory.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    path = directory / f"{args.scenario}_{stamp}.jsonl"
+    path = directory / f"{profile.label}_{stamp}.jsonl"
     recorder = ScenarioEvidenceRecorder(path)
-    recorder.start_run(scenario_id=args.scenario, difficulty=getattr(args, "scenario_difficulty", "basic"), config={
+    recorder.start_run(scenario_id=profile.label, difficulty=getattr(args, "scenario_difficulty", "basic"), config={
         key: value for key, value in vars(args).items()
         if type(value) in (str, int, float, bool) or value is None
     }, expected_route_deviation=(
@@ -852,19 +1039,33 @@ def _warm_up_sensor_bridge(session: Any, world: Any, bridge: CarlaPerceptionBrid
     )
 
 
-def _scenario_completed(args: argparse.Namespace, *, frames: int, final_speed_mps: float | None,
+def _scenario_completed(profile: ScenarioRuntimeProfile | argparse.Namespace, *, expected_frames: int | None = None,
+                        frames: int, final_speed_mps: float | None,
                         final_scene: PerceptionFrame | None, min_gap_m: float | None,
                         collision_seen: bool, max_speed_mps: float = 0.0) -> bool:
-    if frames != args.frames or final_speed_mps is None or collision_seen:
+    if not isinstance(profile, ScenarioRuntimeProfile):
+        legacy_args = profile
+        profile = _runtime_profile(legacy_args, None)
+        expected_frames = int(legacy_args.frames)
+    if expected_frames is None:
+        raise ValueError("expected_frames is required for a runtime scenario profile")
+    if frames != expected_frames or final_speed_mps is None or collision_seen:
         return False
-    if args.scenario == "red_stop":
-        return (final_scene is not None and final_scene.distance_to_stop_line_m is not None
-                and final_speed_mps <= 0.15 and final_scene.distance_to_stop_line_m <= 1.0)
-    if args.scenario == "follow":
-        return min_gap_m is not None and min_gap_m >= 3.0 and max_speed_mps >= 0.2
-    if args.scenario == "emergency":
-        return final_speed_mps <= 0.15
-    return max_speed_mps >= 0.2
+    if profile.require_stop and final_speed_mps > profile.stop_speed_threshold_mps:
+        return False
+    if profile.virtual_hazard == "red_light" and (
+        final_scene is None
+        or final_scene.distance_to_stop_line_m is None
+        or final_scene.distance_to_stop_line_m > 1.0
+    ):
+        return False
+    if profile.minimum_gap_m is not None and (
+        min_gap_m is None or min_gap_m < profile.minimum_gap_m
+    ):
+        return False
+    if profile.require_progress and max_speed_mps < 0.2:
+        return False
+    return True
 
 
 def _runtime_health_completed(safety_reasons: set[str]) -> bool:
@@ -1022,6 +1223,7 @@ def _import_carla_api() -> Any:
 
 def run(args: argparse.Namespace) -> None:
     spec = ScenarioSpec.load(args.scenario_file) if args.scenario_file else None
+    profile = _runtime_profile(args, spec)
     if args.validate_scenario_only:
         if spec is None:
             raise ValueError("--validate-scenario-only requires --scenario-file")
@@ -1040,7 +1242,8 @@ def run(args: argparse.Namespace) -> None:
         }, ensure_ascii=False, indent=2))
         return
 
-    qwen_enabled = _qwen_enabled(args)
+    qwen_enabled = _qwen_enabled(args) and profile.failure_reason is None
+    qwen_profile = resolve_qwen_profile(getattr(args, "qwen_profile", None)) if qwen_enabled else None
     qwen_voice_text = _qwen_voice_command(args, spec) if qwen_enabled else ""
     qwen_desired_speed_mps = (
         _qwen_desired_speed_mps(args, spec) if qwen_enabled else float(args.default_speed_mps)
@@ -1069,7 +1272,6 @@ def run(args: argparse.Namespace) -> None:
         args.frames = spec.frame_count
         if args.max_frames is not None:
             args.frames = min(args.frames, args.max_frames)
-        args.scenario = spec.scenario_id
         args.scenario_difficulty = spec.official_level
         args.evidence_seed = spec.seed if args.seed is None else args.seed
         if args.seed is not None:
@@ -1086,7 +1288,7 @@ def run(args: argparse.Namespace) -> None:
             )
             args.scenario_facts_mode = "perception"
 
-    recorder = _evidence_recorder(args, spec)
+    recorder = _evidence_recorder(args, profile, spec)
     ego: Any | None = None
     frames_completed = 0
     final_state: RuntimeVehicleState | None = None
@@ -1123,6 +1325,7 @@ def run(args: argparse.Namespace) -> None:
             else:
                 qwen_backend = OpenAICompatibleQwenVLBackend(
                     base_url=args.qwen_base_url,
+                    profile=qwen_profile,
                     api_key=os.environ.get("QWEN_API_KEY", "unused"),
                     model=args.qwen_model,
                     timeout_s=args.qwen_request_timeout_s,
@@ -1301,9 +1504,15 @@ def run(args: argparse.Namespace) -> None:
                 scenario_lead = _spawn_scenario_vehicle(
                     session, world, carla, ego, bp, scenario_lead_spec,
                 )
-            if args.perception_mode in {"sensors", "world"} and args.scenario in {"follow", "emergency"}:
-                lead_distance = args.lead_distance_m if args.scenario == "follow" else args.emergency_distance_m
-                scenario_lead = _spawn_static_lead(session, world, world_map, ego, bp, lead_distance)
+            if (
+                scenario_lead_spec is None
+                and args.perception_mode in {"sensors", "world"}
+                and profile.spawn_static_lead
+            ):
+                assert profile.virtual_distance_m is not None
+                scenario_lead = _spawn_static_lead(
+                    session, world, world_map, ego, bp, profile.virtual_distance_m,
+                )
 
             perception_bridge = None
             world_events: EventLedger | None = None
@@ -1346,11 +1555,13 @@ def run(args: argparse.Namespace) -> None:
             episode_start_s = last_sim_time_s
             timeline = (
                 CommandTimeline(spec.commands)
-                if spec is not None and not qwen_enabled
+                if spec is not None and not qwen_enabled and profile.failure_reason is None
                 else None
             )
             command: dict[str, object] | None
-            if qwen_enabled:
+            if profile.failure_reason is not None:
+                command = _missing_required_target_stop_contract()
+            elif qwen_enabled:
                 command = None
             elif spec is None:
                 try:
@@ -1507,12 +1718,12 @@ def run(args: argparse.Namespace) -> None:
                             events=world_events,
                         )
                         if args.perception_mode == "virtual":
-                            scene = _apply_virtual_scenario(scene, ego, origin, args)
+                            scene = _apply_virtual_scenario(scene, ego, origin, profile)
                             perception_sources["scenario"] = "VIRTUAL_ACCEPTANCE_TRUTH"
-                            if args.scenario == "red_stop":
+                            if profile.virtual_hazard == "red_light":
                                 perception_sources["traffic_light"] = "VIRTUAL_ACCEPTANCE_TRUTH"
                                 perception_sources["distance_to_stop_line_m"] = "VIRTUAL_ACCEPTANCE_TRUTH"
-                            elif args.scenario in {"follow", "emergency"}:
+                            elif profile.virtual_hazard == "stationary_lead":
                                 perception_sources["lead_distance_m"] = "VIRTUAL_ACCEPTANCE_TRUTH"
                                 perception_sources["lead_speed_mps"] = "VIRTUAL_ACCEPTANCE_TRUTH"
                         else:
@@ -1728,7 +1939,7 @@ def run(args: argparse.Namespace) -> None:
                 if scene.lead_distance_m is not None:
                     min_gap_m = scene.lead_distance_m if min_gap_m is None else min(min_gap_m, scene.lead_distance_m)
                 record = {
-                    "record_type": "frame", "scenario": args.scenario,
+                    "record_type": "frame", "scenario": profile.label,
                     "perception_mode": args.perception_mode, "frame": frame,
                     "sim_time_s": state.sim_time_s, "elapsed_s": elapsed_s,
                     "speed_mps": state.speed_mps, "x_m": state.x_m, "y_m": state.y_m,
@@ -1765,7 +1976,7 @@ def run(args: argparse.Namespace) -> None:
                 recorder.record_feedback(feedback)
         completion = expected_completion if expected_completion is not None else (
             command_finished and _runtime_health_completed(safety_reasons) and _scenario_completed(
-                args, frames=frames_completed,
+                profile, expected_frames=args.frames, frames=frames_completed,
                 final_speed_mps=final_speed,
                 final_scene=final_scene, min_gap_m=min_gap_m,
                 collision_seen=collision_seen, max_speed_mps=max_speed_mps,
@@ -1779,6 +1990,8 @@ def run(args: argparse.Namespace) -> None:
             completion = completion and gap_contract_completion
         if qwen_enabled:
             completion = completion and qwen_ready and qwen_status == "READY"
+        if profile.failure_reason is not None:
+            completion = False
         if recorder is not None:
             expected_contract = None if spec is None else dict(spec.expected)
             if expected_contract is not None and road_fit_required:
@@ -1798,12 +2011,13 @@ def run(args: argparse.Namespace) -> None:
                     "route_end_distance_m": final_route_end_distance_m,
                     "expected_command_count": len(spec.commands),
                     "configured_route_deviation_trigger_m": route_deviation_trigger_m,
+                    "failure_reason": profile.failure_reason,
                 },
             )
             acceptance = summary.get("acceptance")
             print(json.dumps({
                 "record_type": "scenario_acceptance",
-                "scenario": args.scenario,
+                "scenario": profile.label,
                 "status": summary["status"],
                 "score": summary["score"]["final_score"],
                 "checks": None if acceptance is None else acceptance["check_count"],
@@ -1907,14 +2121,13 @@ def main() -> None:
                         help="repository-owned Qwen service base URL, for example http://127.0.0.1:18000")
     parser.add_argument("--qwen-voice-command",
                         help="Chinese command sent to Qwen; a one-command scenario can supply source_text")
+    parser.add_argument("--qwen-profile", default=os.environ.get("QWEN_PROFILE"),
+                        help="Task 2 Qwen profile name; defaults to qwen3vl-2b-int4")
     parser.add_argument("--qwen-base-url",
-                        default=os.environ.get("QWEN_BASE_URL", "http://127.0.0.1:8001/v1"),
+                        default=os.environ.get("QWEN_BASE_URL"),
                         help="OpenAI-compatible /v1 endpoint; QWEN_API_KEY is read only from the environment")
     parser.add_argument("--qwen-model",
-                        default=os.environ.get(
-                            "QWEN_MODEL",
-                            "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
-                        ),
+                        default=os.environ.get("QWEN_MODEL"),
                         help="remote served model name")
     parser.add_argument("--qwen-request-timeout-s", type=float, default=15.0,
                         help="OpenAI client wall-clock timeout")
@@ -1926,7 +2139,7 @@ def main() -> None:
                         help="maximum simulation-time duration for the accepted runtime command")
     parser.add_argument("--qwen-max-tokens", type=int, default=1,
                         help="must remain 1 for the constrained A-E action choice")
-    parser.add_argument("--qwen-image-max-side", type=int, default=256,
+    parser.add_argument("--qwen-image-max-side", type=int,
                         help="fixed Qwen3-VL montage side; keep 256x256 for the 64-token budget")
     parser.add_argument("--qwen-jpeg-quality", type=int, default=75)
     parser.add_argument("--qwen-image-dir", default="artifacts/runtime/qwen_live",
@@ -1959,6 +2172,14 @@ def main() -> None:
                         help="perception: measured facts only; scenario: configured actors override; "
                              "fuse: perception first, configured actors fill missing fields")
     args = parser.parse_args()
+    qwen_profile = resolve_qwen_profile(args.qwen_profile)
+    args.qwen_profile = qwen_profile.name
+    if args.qwen_base_url is None:
+        args.qwen_base_url = f"http://127.0.0.1:{qwen_profile.port}/v1"
+    if args.qwen_model is None:
+        args.qwen_model = qwen_profile.model
+    if args.qwen_image_max_side is None:
+        args.qwen_image_max_side = qwen_profile.image_max_side
     if args.print_every < 1:
         parser.error("--print-every must be >= 1")
     if args.max_frames is not None and args.max_frames < 1:

@@ -48,6 +48,13 @@ def _args(scenario):
     return Namespace(scenario=scenario, frames=100)
 
 
+def test_carla_runner_does_not_hardcode_optional_model_defaults() -> None:
+    source = (Path(__file__).parents[1] / "carla_runner.py").read_text(encoding="utf-8")
+    assert "Qwen/Qwen2.5-VL-3B-Instruct" not in source
+    assert "66285546d2b821cf421d4f5eb2576359d3770cd3" not in source
+    assert "localhost:8002" not in source
+
+
 def test_voice_load_failure_becomes_rejected_no_op() -> None:
     envelope = _rejected_load_envelope(FileNotFoundError("missing.wav"))
     adapted = VoiceCommandAdapter().adapt(envelope, now_s=1.0)

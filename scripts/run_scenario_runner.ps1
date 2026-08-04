@@ -3,22 +3,26 @@ param(
     [string]$HostName = "127.0.0.1",
     [int]$Port = 2000,
     [double]$TimeoutSeconds = 60,
-    [string]$ScenarioRoot = (Join-Path $PSScriptRoot "..\external\scenario_runner")
+    [string]$ScenarioRoot = (Join-Path $PSScriptRoot "..\external\scenario_runner"),
+    [string]$AgentConfig = (Join-Path $PSScriptRoot "..\examples\scenario_runner_agent_config.json")
 )
 
 $ErrorActionPreference = "Stop"
-$Root = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $ScenarioRoot = [System.IO.Path]::GetFullPath($ScenarioRoot)
-$env:PYTHONPATH = "$Root\CARLA_0.9.16\PythonAPI;$ScenarioRoot;$Root"
+$AgentConfig = [System.IO.Path]::GetFullPath($AgentConfig)
+$agentPath = Join-Path $repoRoot 'integration/scenario_runner_agent.py'
+$scenarioRunnerScript = Join-Path $ScenarioRoot 'scenario_runner.py'
+$pythonExe = (Get-Command python -ErrorAction Stop).Source
+$env:PYTHONPATH = "$repoRoot\CARLA_0.9.16\PythonAPI;$ScenarioRoot;$repoRoot"
 
-conda run --no-capture-output -n carla python -c @"
-from pathlib import Path
-from integration.official_scenario_runner import ScenarioRunnerInvocation, run
-run(ScenarioRunnerInvocation(
-    root=Path(r'$ScenarioRoot'),
-    scenario=r'$Scenario',
-    host=r'$HostName',
-    port=$Port,
-    timeout_s=$TimeoutSeconds,
-))
-"@
+$scenarioArgs = @(
+    '--host', $HostName,
+    '--port', $Port,
+    '--timeout', $TimeoutSeconds,
+    '--scenario', $Scenario,
+    '--sync',
+    '--output',
+    '--json'
+)
+& $pythonExe $scenarioRunnerScript --agent $agentPath --agentConfig $AgentConfig @scenarioArgs
