@@ -4,6 +4,7 @@ import json
 import hashlib
 from pathlib import Path
 
+import pytest
 from integration.qwen_vl_adapter import QwenVLActionChoice
 from tools.run_four_modal_full_chain import main
 
@@ -137,8 +138,9 @@ def test_remote_run_excludes_warmups_and_records_staged_dynamic_samples(
     assert report["official_verdict"]["status"] == "INCOMPLETE"
 
 
+@pytest.mark.parametrize(("warmup", "measured"), [(0, 1), (5, 10)])
 def test_low_latency_diagnostic_never_advances_official_gates(
-    tmp_path: Path, monkeypatch
+    warmup: int, measured: int, tmp_path: Path, monkeypatch
 ) -> None:
     asr_manifest = tmp_path / "asr.json"
     cases = tmp_path / "cases.jsonl"
@@ -195,8 +197,8 @@ def test_low_latency_diagnostic_never_advances_official_gates(
             "--asr-manifest", str(asr_manifest),
             "--multimodal-cases", str(cases),
             "--latency-manifest", str(latency_manifest),
-            "--warmup", "0",
-            "--measured", "1",
+            "--warmup", str(warmup),
+            "--measured", str(measured),
             "--diagnostic",
             "--output", str(output),
         ],

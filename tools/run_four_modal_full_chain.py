@@ -445,7 +445,9 @@ def main() -> int:
         root_raw_path.touch()
         if args.warmup < 0 or args.measured <= 0:
             raise ValueError("--warmup must be non-negative and --measured positive")
-        official_mode = args.warmup == 5 and args.measured == 10
+        official_mode = (
+            not args.diagnostic and args.warmup == 5 and args.measured == 10
+        )
         if not official_mode and not args.diagnostic:
             raise ValueError(
                 "official evidence requires --warmup 5 and --measured 10; "
