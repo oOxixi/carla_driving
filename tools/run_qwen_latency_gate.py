@@ -1,10 +1,11 @@
-"""Run only the Qwen3-VL latency gate; never starts a correctness suite."""
+"""Run the dynamic-frame Qwen3-VL latency gate or a fixed-image diagnostic."""
 
 from __future__ import annotations
 
 import argparse
 from collections.abc import Mapping
 from datetime import datetime, timezone
+import hashlib
 import json
 import math
 import os
@@ -18,6 +19,10 @@ from integration.qwen_boundary import QwenInputContext
 from integration.qwen_profiles import resolve_qwen_profile
 from integration.qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from integration.qwen_vl_adapter import StrictQwenVLAdapter
+
+
+_OFFICIAL_WARMUPS = 5
+_OFFICIAL_MEASUREMENTS = 10
 
 
 def _percentile(values: list[float], quantile: float) -> float:
@@ -128,48 +133,86 @@ def _write_report(path: Path, report: Mapping[str, Any]) -> None:
     )
 
 
+def _dynamic_frame_paths(directory: Path) -> list[Path]:
+    root = directory.expanduser().resolve()
+    if not root.is_dir():
+        raise ValueError("--dynamic-frames-dir must be a directory")
+    frames = sorted(path.resolve() for path in root.iterdir() if path.is_file())
+    required = _OFFICIAL_WARMUPS + _OFFICIAL_MEASUREMENTS
+    if len(frames) < required:
+        raise ValueError(f"official gate requires at least {required} dynamic frames")
+    selected = frames[:required]
+    if len(set(selected)) != required:
+        raise ValueError("official gate frames must use distinct files")
+    digests = [_file_sha256(path) for path in selected]
+    if len(set(digests)) != required:
+        raise ValueError("official gate frames must have distinct content")
+    return selected
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default=os.environ.get("QWEN_BASE_URL"))
     parser.add_argument("--profile", default="qwen3vl-2b-int4")
-    parser.add_argument("--image", type=Path, required=True)
+    input_mode = parser.add_mutually_exclusive_group(required=True)
+    input_mode.add_argument("--dynamic-frames-dir", type=Path)
+    input_mode.add_argument("--fixed-image-diagnostic", type=Path)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--warmups", type=int, default=5)
-    parser.add_argument("--measurements", type=int, default=10)
     parser.add_argument("--threshold-ms", type=float, default=300.0)
     parser.add_argument("--timeout-s", type=float, default=2.0)
     args = parser.parse_args()
-    if args.warmups < 1 or args.measurements < 1:
-        parser.error("--warmups and --measurements must be positive")
     try:
         profile = resolve_qwen_profile(args.profile)
     except ValueError as error:
         parser.error(str(error))
     base_url = args.base_url or f"http://127.0.0.1:{profile.port}/v1"
 
-    image = args.image.expanduser().resolve()
-    if not image.is_file():
-        parser.error(f"--image does not exist: {image}")
+    if args.dynamic_frames_dir is not None:
+        try:
+            frames = _dynamic_frame_paths(args.dynamic_frames_dir)
+        except ValueError as error:
+            parser.error(str(error))
+        image_root = args.dynamic_frames_dir.expanduser().resolve()
+        dataset_kind = "official_dynamic_frame_latency_gate"
+        diagnostic = False
+    else:
+        image = args.fixed_image_diagnostic.expanduser().resolve()
+        if not image.is_file():
+            parser.error(f"--fixed-image-diagnostic does not exist: {image}")
+        frames = [image] * (_OFFICIAL_WARMUPS + _OFFICIAL_MEASUREMENTS)
+        image_root = image.parent
+        dataset_kind = "fixed_image_hot_latency_diagnostic"
+        diagnostic = True
     backend = OpenAICompatibleQwenVLBackend(
         base_url=base_url,
         profile=profile,
         api_key=os.environ.get("QWEN_API_KEY", "unused"),
         timeout_s=args.timeout_s,
     )
-    adapter = StrictQwenVLAdapter(backend, image_root=image.parent)
+    adapter = StrictQwenVLAdapter(backend, image_root=image_root)
     latencies_ms: list[float] = []
     failure: dict[str, str] | None = None
     try:
-        for index in range(args.warmups):
-            adapter.infer(_context(image.name, index))
-            print(f"warmup {index + 1}/{args.warmups}: ready", flush=True)
-        for index in range(args.measurements):
+        for index, image in enumerate(frames[:_OFFICIAL_WARMUPS]):
+            image_ref = str(image.relative_to(image_root))
+            adapter.infer(_context(image_ref, index))
+            print(f"warmup {index + 1}/{_OFFICIAL_WARMUPS}: ready", flush=True)
+        for index, image in enumerate(frames[_OFFICIAL_WARMUPS:]):
             started_ns = time.perf_counter_ns()
-            adapter.infer(_context(image.name, args.warmups + index))
+            image_ref = str(image.relative_to(image_root))
+            adapter.infer(_context(image_ref, _OFFICIAL_WARMUPS + index))
             elapsed_ms = (time.perf_counter_ns() - started_ns) / 1e6
             latencies_ms.append(elapsed_ms)
             print(
-                f"measure {index + 1}/{args.measurements}: {elapsed_ms:.3f} ms",
+                f"measure {index + 1}/{_OFFICIAL_MEASUREMENTS}: {elapsed_ms:.3f} ms",
                 flush=True,
             )
     except Exception as error:
@@ -180,18 +223,22 @@ def main() -> int:
     report: dict[str, Any] = {
         "schema_version": "1.0",
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "dataset_kind": "latency_gate_only_no_correctness",
+        "dataset_kind": dataset_kind,
         "profile": profile.name,
         "model": profile.model,
         "model_revision": profile.revision,
         "image_max_side": profile.image_max_side,
         "visual_tokens": profile.visual_tokens,
         "base_url": base_url,
-        "image": str(image),
-        "warmups": args.warmups,
-        "measurements_requested": args.measurements,
+        "warmups": _OFFICIAL_WARMUPS,
+        "measurements_requested": _OFFICIAL_MEASUREMENTS,
         "gpu": _gpu_snapshot(),
     }
+    if diagnostic:
+        report["fixed_image"] = str(frames[0])
+    else:
+        report["dynamic_frames_dir"] = str(image_root)
+        report["dynamic_frame_count"] = len(frames)
     if failure is not None:
         report.update({
             "status": "ERROR",
@@ -204,10 +251,17 @@ def main() -> int:
         return 1
 
     gate = summarize_latency_gate(latencies_ms, threshold_ms=args.threshold_ms)
-    report.update({"latency_ms": gate, "status": gate["status"]})
+    if diagnostic:
+        report.update({
+            "latency_diagnostic": gate,
+            "status": "DIAGNOSTIC",
+            "run_correctness_next": False,
+        })
+    else:
+        report.update({"latency_ms": gate, "status": gate["status"]})
     _write_report(args.output, report)
     print(json.dumps(report, ensure_ascii=False), flush=True)
-    return latency_gate_exit_code(gate)
+    return 0 if diagnostic else latency_gate_exit_code(gate)
 
 
 if __name__ == "__main__":
