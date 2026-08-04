@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/vllm-project/vllm.git",
+  "commit": "568afb3a13806beb53bb2e6bd518269357b237c0",
+  "expected_version": "0.26.1.dev0+g568afb3a1.d20260802",
+  "torch": "2.12.1+cu132",
+  "cuda": "13.2",
+  "cuda_arch_list": "8.0;12.0+PTX"
+}

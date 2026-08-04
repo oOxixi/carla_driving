@@ -1,0 +1,17 @@
+FROM nvidia/cuda:13.2.0-devel-ubuntu24.04@sha256:f9492f2eea77fbc3d0c14fa8738f35946b42da72917bf5959d284ca39b4f209a AS build
+ENV DEBIAN_FRONTEND=noninteractive CUDA_HOME=/usr/local/cuda-13.2 \
+    TORCH_CUDA_ARCH_LIST="8.0;12.0+PTX" MAX_JOBS=4 NVCC_THREADS=2 \
+    VLLM_TARGET_DEVICE=cuda VLLM_USE_PRECOMPILED=0 \
+    SETUPTOOLS_SCM_PRETEND_VERSION_FOR_VLLM=0.26.1.dev0+g568afb3a1.d20260802
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-dev python3-pip git patch ninja-build cmake && rm -rf /var/lib/apt/lists/*
+WORKDIR /src/vllm
+ADD release_assets/source/vllm-568afb3a13806beb53bb2e6bd518269357b237c0.tar.gz /src/vllm
+COPY docker/patches/vllm-cu132-torch.patch /tmp/vllm-cu132-torch.patch
+COPY docker/requirements-cu132-build.txt /src/vllm/docker/requirements-cu132-build.txt
+COPY release_assets/wheelhouse-build/ /wheelhouse-build/
+RUN patch -p1 < /tmp/vllm-cu132-torch.patch
+RUN python3 -m pip install --break-system-packages --no-index --find-links=/wheelhouse-build -r /src/vllm/docker/requirements-cu132-build.txt
+RUN python3 -m build --wheel --no-isolation --outdir /out
+
+FROM scratch AS export
+COPY --from=build /out/ /
