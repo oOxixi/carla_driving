@@ -1,0 +1,32 @@
+{
+  "dataset_name": "CARLA-Language-Benchmark",
+  "version": "v1",
+  "release_status": "frozen_baseline",
+  "total_records": 6192,
+  "validated": true,
+  "global_audit_errors": 0,
+  "schema": [
+    "id",
+    "category",
+    "template",
+    "variables",
+    "semantic_intent",
+    "scene_generator",
+    "scene_constraints",
+    "expected_action",
+    "expected_parameters",
+    "safety_policy"
+  ],
+  "baseline": {
+    "four_modal_baseline_samples": 320,
+    "latency_protocol": [
+      "asr",
+      "perception",
+      "fusion",
+      "decision",
+      "safety",
+      "control",
+      "end_to_end"
+    ]
+  }
+}
