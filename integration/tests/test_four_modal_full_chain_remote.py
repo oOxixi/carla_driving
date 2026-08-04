@@ -79,9 +79,18 @@ def test_remote_run_excludes_warmups_and_records_staged_dynamic_samples(
             pass
 
     monkeypatch.setattr("tools.run_four_modal_full_chain.preload_voice_models", lambda: {})
+    def slow_parse_audio(*_args, t_audio_start_ns: int, **_kwargs):
+        return {
+            "source_text": "stop",
+            "intent": "STOP",
+            "status": "valid",
+            "confirm_required": False,
+            "t_asr_end_ns": t_audio_start_ns + 1_000_000,
+            "t_intent_end_ns": t_audio_start_ns + 61_000_000,
+        }
+
     monkeypatch.setattr(
-        "tools.run_four_modal_full_chain.audio_to_command",
-        lambda *_args, **_kwargs: {"source_text": "stop", "intent": "STOP", "status": "valid", "confirm_required": False},
+        "tools.run_four_modal_full_chain.audio_to_command", slow_parse_audio
     )
     monkeypatch.setattr(
         "tools.run_four_modal_full_chain.OpenAICompatibleQwenVLBackend",
@@ -100,7 +109,7 @@ def test_remote_run_excludes_warmups_and_records_staged_dynamic_samples(
         ],
     )
 
-    assert main() == 0
+    assert main() == 3
     report = json.loads(output.read_text(encoding="utf-8"))
     raw = [json.loads(line) for line in (output.parent / "raw_timings.jsonl").read_text(encoding="utf-8").splitlines()]
     assert len(raw) == 15
@@ -122,5 +131,7 @@ def test_remote_run_excludes_warmups_and_records_staged_dynamic_samples(
         "max": parse_values[9],
     }
     assert report["latency"]["end_to_end_ms"]["count"] == 10
+    assert report["instruction_parse_gate"]["passes"] is False
     assert report["accuracy"]["asr"]["case_count"] == 0
     assert report["accuracy"]["multimodal"]["case_count"] == 1
+    assert report["official_verdict"]["status"] == "INCOMPLETE"

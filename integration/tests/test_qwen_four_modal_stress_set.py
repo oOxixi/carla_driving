@@ -10,6 +10,7 @@ from PIL import Image
 from tools.build_qwen_four_modal_stress_set import VARIANTS, build
 from tools.build_four_modal_cases_v2 import _canonical_command
 from tools.four_modal_metrics import (
+    evaluate_official_verdict,
     evaluate_official_gates,
     summarize_latency,
     summarize_records,
@@ -32,6 +33,29 @@ def test_over_300ms_stops_before_accuracy() -> None:
         "reason": "end_to_end_p95_over_300ms",
         "run_accuracy": False,
         "run_stability": False,
+    }
+
+
+def test_official_verdict_reports_parse_and_accuracy_failures() -> None:
+    verdict = evaluate_official_verdict(
+        {
+            "instruction_parse_ms": {"p95": 51.0},
+            "end_to_end_ms": {"p95": 149.0},
+        },
+        {
+            "asr": {"intent_accuracy": 0.94},
+            "multimodal": {"action_target_contract_accuracy": 0.97},
+        },
+        scenario_completion=0.91,
+    )
+
+    assert verdict["status"] == "FAIL"
+    assert verdict["gates"] == {
+        "instruction_parse_p95_le_50ms": False,
+        "end_to_end_p95_le_150ms": True,
+        "asr_intent_accuracy_ge_95pct": False,
+        "multimodal_action_target_accuracy_ge_98pct": False,
+        "scenario_completion_ge_90pct": True,
     }
 
 

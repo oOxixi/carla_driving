@@ -19,8 +19,12 @@ from integration.qwen_boundary import QwenInputContext
 from integration.qwen_profiles import resolve_qwen_profile
 from integration.qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from integration.qwen_vl_adapter import StrictQwenVLAdapter
-from integration.run_manifest import begin_run, finish_run
-from tools.four_modal_metrics import evaluate_official_gates, summarize_latency
+from integration.run_manifest import begin_run, finish_run, update_run_metadata
+from tools.four_modal_metrics import (
+    evaluate_official_gates,
+    evaluate_official_verdict,
+    summarize_latency,
+)
 from tools.run_qwen_batch_benchmark import _evaluate
 
 
@@ -374,6 +378,34 @@ def _write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _append_raw(streams: tuple[Any, Any], record: dict[str, Any]) -> None:
+    line = json.dumps(record, ensure_ascii=False) + "\n"
+    for stream in streams:
+        stream.write(line)
+        stream.flush()
+
+
+def _failed_latency_record(
+    sample: dict[str, Any], index: int, phase: str, exception: Exception
+) -> dict[str, Any]:
+    return {
+        "phase": phase,
+        "sample_index": index % 10,
+        "status": "ERROR",
+        "error": f"{type(exception).__name__}: {exception}",
+        "audio_ref": sample["audio_ref"],
+        "audio_sha256": sample["audio_sha256"],
+        "frame_ref": sample["frame_ref"],
+        "frame_sha256": sample["frame_sha256"],
+        "expected_intent": sample["expected_intent"],
+        "asr_intent": None,
+        "asr_intent_match": False,
+        "decision": None,
+        "checks": {"all": False},
+        "stage_timing": {key: 0.0 for key in _STAGE_KEYS},
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     backend = parser.add_mutually_exclusive_group(required=True)
@@ -385,42 +417,72 @@ def main() -> int:
     parser.add_argument("--latency-manifest", type=Path, required=True)
     parser.add_argument("--warmup", type=int, default=5)
     parser.add_argument("--measured", type=int, default=10)
+    parser.add_argument("--diagnostic", action="store_true")
+    parser.add_argument("--scenario-completion-rate", type=float)
+    parser.add_argument("--hardware-label")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    if args.warmup < 0 or args.measured <= 0:
-        parser.error("--warmup must be non-negative and --measured positive")
-
-    latency_manifest = args.latency_manifest.resolve()
-    cases_path = args.multimodal_cases.resolve()
-    asr_manifest = args.asr_manifest.resolve()
-    samples = _load_latency_samples(latency_manifest)
-    cases = _load_jsonl(cases_path)
-    if not asr_manifest.is_file():
-        raise FileNotFoundError(asr_manifest)
-    qwen, remote_backend, model_metadata = _make_qwen(args)
     context = begin_run(args.output.parent, {
         "git_commit": _git_commit(),
-        "dataset_sha256": _sha256(latency_manifest),
-        "asr_manifest_sha256": _sha256(asr_manifest),
-        "multimodal_cases_sha256": _sha256(cases_path),
         "docker_image_digests": os.environ.get("DOCKER_IMAGE_DIGESTS", ""),
+        "hardware_label": args.hardware_label or os.environ.get("HARDWARE_LABEL"),
+        "profile": args.profile,
+        "input_paths": {
+            "asr_manifest": str(args.asr_manifest),
+            "multimodal_cases": str(args.multimodal_cases),
+            "latency_manifest": str(args.latency_manifest),
+        },
         "warmup": args.warmup,
         "measured": args.measured,
-        **model_metadata,
+        "diagnostic": args.diagnostic,
     })
     records: list[dict[str, Any]] = []
     raw_path = context.metrics_dir / "raw_timings.jsonl"
+    root_raw_path = args.output.parent / "raw_timings.jsonl"
+    remote_backend = None
     try:
+        raw_path.touch()
+        root_raw_path.touch()
+        if args.warmup < 0 or args.measured <= 0:
+            raise ValueError("--warmup must be non-negative and --measured positive")
+        official_mode = args.warmup == 5 and args.measured == 10
+        if not official_mode and not args.diagnostic:
+            raise ValueError(
+                "official evidence requires --warmup 5 and --measured 10; "
+                "pass --diagnostic for any override"
+            )
+        if args.scenario_completion_rate is not None and not 0.0 <= args.scenario_completion_rate <= 1.0:
+            raise ValueError("--scenario-completion-rate must be in [0, 1]")
+        latency_manifest = args.latency_manifest.resolve()
+        cases_path = args.multimodal_cases.resolve()
+        asr_manifest = args.asr_manifest.resolve()
+        samples = _load_latency_samples(latency_manifest)
+        cases = _load_jsonl(cases_path)
+        if not asr_manifest.is_file():
+            raise FileNotFoundError(asr_manifest)
+        qwen, remote_backend, model_metadata = _make_qwen(args)
+        update_run_metadata(context, {
+            "dataset_sha256": _sha256(latency_manifest),
+            "asr_manifest_sha256": _sha256(asr_manifest),
+            "multimodal_cases_sha256": _sha256(cases_path),
+            "official_mode": official_mode,
+            "validation_status": "PASSED",
+            **model_metadata,
+        })
         preload_voice_models()
-        for number in range(args.warmup + args.measured):
-            sample = samples[number % len(samples)]
-            case = _case_for_frame(cases, cases_path, sample["frame_path"])
-            phase = "warmup" if number < args.warmup else "measured"
-            record = _run_one(sample, case, qwen, number, phase)
-            records.append(record)
-        raw_text = "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in records)
-        raw_path.write_text(raw_text, encoding="utf-8")
-        (args.output.parent / "raw_timings.jsonl").write_text(raw_text, encoding="utf-8")
+        with raw_path.open("a", encoding="utf-8") as raw_stream, root_raw_path.open(
+            "a", encoding="utf-8"
+        ) as root_raw_stream:
+            for number in range(args.warmup + args.measured):
+                sample = samples[number % len(samples)]
+                phase = "warmup" if number < args.warmup else "measured"
+                try:
+                    case = _case_for_frame(cases, cases_path, sample["frame_path"])
+                    record = _run_one(sample, case, qwen, number, phase)
+                except Exception as exception:
+                    record = _failed_latency_record(sample, number, phase, exception)
+                records.append(record)
+                _append_raw((raw_stream, root_raw_stream), record)
         measured = [record for record in records if record["phase"] == "measured"]
         latency = {
             key: summarize_latency([float(record["stage_timing"][key]) for record in measured])
@@ -432,7 +494,7 @@ def main() -> int:
             "p95_ms": latency["instruction_parse_ms"]["p95"],
             "passes": latency["instruction_parse_ms"]["p95"] <= 50.0,
         }
-        if gates["run_accuracy"] and parsing_gate["passes"]:
+        if official_mode and gates["run_accuracy"]:
             asr_accuracy, asr_records = _asr_accuracy(asr_manifest)
             multimodal_accuracy, multimodal_records = _multimodal_accuracy(
                 cases, cases_path, qwen
@@ -445,17 +507,32 @@ def main() -> int:
                 {"summary": multimodal_accuracy, "records": multimodal_records},
             )
         else:
-            reason = (
-                gates["reason"]
-                if not gates["run_accuracy"]
-                else "instruction_parse_p95_over_50ms"
-            )
-            asr_accuracy = {"case_count": 0, "status": "NOT_RUN", "reason": reason}
-            multimodal_accuracy = {
+            reason = "diagnostic_non_official" if not official_mode else gates["reason"]
+            asr_accuracy = {
                 "case_count": 0,
+                "intent_accuracy": None,
                 "status": "NOT_RUN",
                 "reason": reason,
             }
+            multimodal_accuracy = {
+                "case_count": 0,
+                "action_target_contract_accuracy": None,
+                "status": "NOT_RUN",
+                "reason": reason,
+            }
+        official_verdict = (
+            evaluate_official_verdict(
+                latency,
+                {"asr": asr_accuracy, "multimodal": multimodal_accuracy},
+                scenario_completion=args.scenario_completion_rate,
+            )
+            if official_mode
+            else {
+                "status": "NOT_OFFICIAL",
+                "passes": False,
+                "reason": "diagnostic_non_official",
+            }
+        )
         report = {
             "schema_version": "1.0",
             "created_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -464,6 +541,8 @@ def main() -> int:
             "latency": latency,
             "official_gates": gates,
             "instruction_parse_gate": parsing_gate,
+            "official_mode": official_mode,
+            "official_verdict": official_verdict,
             "accuracy": {
                 "asr": asr_accuracy,
                 "multimodal": multimodal_accuracy,
@@ -480,7 +559,9 @@ def main() -> int:
         _write_json(context.metrics_dir / "end_to_end_latency.json", report)
         status = "EARLY_STOP" if gates["status"] == "EARLY_STOP" else "COMPLETED"
         finish_run(context, status, None)
-        return 2 if gates["status"] == "EARLY_STOP" else 0
+        if gates["status"] == "EARLY_STOP":
+            return 2
+        return 0 if not official_mode or official_verdict["passes"] else 3
     except Exception as exception:
         finish_run(context, "FAILED", f"{type(exception).__name__}: {exception}")
         raise

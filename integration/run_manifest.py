@@ -66,4 +66,11 @@ def finish_run(
     _write_atomic(context.manifest_path, payload)
 
 
-__all__ = ["RunContext", "begin_run", "finish_run"]
+def update_run_metadata(context: RunContext, metadata: dict[str, object]) -> None:
+    """Atomically supplement immutable-at-start provenance after validation."""
+    payload = json.loads(context.manifest_path.read_text(encoding="utf-8"))
+    payload.update(metadata)
+    _write_atomic(context.manifest_path, payload)
+
+
+__all__ = ["RunContext", "begin_run", "finish_run", "update_run_metadata"]
