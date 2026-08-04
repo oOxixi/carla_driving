@@ -197,6 +197,24 @@ def test_action_choice_assembles_speed_without_json_generation() -> None:
     assert "JSON" not in backend.calls[0][0]
 
 
+def test_adapter_with_declared_compact_style_keeps_strict_action_schema() -> None:
+    backend = FakeActionBackend(
+        qwen_adapter_module.QwenVLActionChoice("B", "STOP", 0.99)
+    )
+    backend.prompt_style = "compact-v2"
+
+    decision = StrictQwenVLAdapter(backend)(_action_context("停车"))
+
+    assert decision == {
+        "action": "STOP",
+        "confidence": 0.99,
+        "requires_confirmation": False,
+        "decision_source": "QWEN35_CHOICE",
+        "visual_valid": True,
+    }
+    assert not {"throttle", "brake", "steer"}.intersection(decision)
+
+
 @pytest.mark.parametrize(
     ("command", "expected_mps"),
     [
@@ -311,6 +329,30 @@ def test_action_choice_prompt_contains_all_four_modalities_and_five_codes() -> N
     for field in ("voice", "vehicle", "perception", "safety"):
         assert f'"{field}"' in prompt
     assert "JSON" not in prompt
+
+
+def test_compact_prompt_keeps_schema_and_safety_rules() -> None:
+    context = QwenInputContext(
+        request_id="prompt-1",
+        frame=1,
+        sim_time_s=0.05,
+        voice_command="鍓嶆柟杞﹁締鏃佽竟鍋滆溅",
+        scene_state={"ego_speed_mps": 8.0, "unused_debug_trace": "x" * 500},
+        perception={"visual_valid": True, "detected_objects": []},
+        safety_state={"recommended_action": "STOP", "reason": "target_missing"},
+        rgb_ref=None,
+    )
+
+    prompt = qwen_adapter_module.build_action_choice_prompt(
+        context,
+        prompt_style="compact-v2",
+    )
+
+    assert len(prompt.encode("utf-8")) < 1800
+    assert "A=START" in prompt and "E=EMERGENCY_STOP" in prompt
+    assert "只输出一个代码" in prompt
+    assert "安全规则" in prompt
+    assert "unused_debug_trace" not in prompt
 
 
 def test_adapter_accepts_only_target_ids_present_in_perception() -> None:

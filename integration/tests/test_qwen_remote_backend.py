@@ -85,7 +85,6 @@ def test_backend_requests_one_constrained_action_from_vllm(
     backend = OpenAICompatibleQwenVLBackend(
         base_url="http://example.invalid/v1",
         api_key="not-used-by-fake",
-        model="Qwen/Qwen3.5-2B-test",
         jpeg_quality=70,
         client=client,
     )
@@ -100,7 +99,7 @@ def test_backend_requests_one_constrained_action_from_vllm(
     assert result.action == "STOP"
     assert result.confidence == pytest.approx(0.9)
     call = client.completions.calls[0]
-    assert call["model"] == "Qwen/Qwen3.5-2B-test"
+    assert call["model"] == "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
     assert call["temperature"] == 0.0
     assert call["max_tokens"] == 1
     assert call["logprobs"] is True
@@ -108,6 +107,10 @@ def test_backend_requests_one_constrained_action_from_vllm(
     assert call["extra_body"] == {
         "structured_outputs": {"choice": ["A", "B", "C", "D", "E"]},
         "chat_template_kwargs": {"enable_thinking": False},
+        "mm_processor_kwargs": {
+            "min_pixels": 64 * 28 * 28,
+            "max_pixels": 64 * 28 * 28,
+        },
     }
     content = call["messages"][0]["content"]  # type: ignore[index]
     assert content[1] == {"type": "text", "text": "choice prompt"}
@@ -152,6 +155,14 @@ def test_backend_defaults_to_qwen3vl_2b_int4_profile(
     call = client.completions.calls[0]
     assert call["model"] == "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
     assert call["max_tokens"] == 1
+    assert call["extra_body"] == {
+        "structured_outputs": {"choice": ["A", "B", "C", "D", "E"]},
+        "chat_template_kwargs": {"enable_thinking": False},
+        "mm_processor_kwargs": {
+            "min_pixels": 64 * 28 * 28,
+            "max_pixels": 64 * 28 * 28,
+        },
+    }
     assert result.action == "STOP"
     content = call["messages"][0]["content"]  # type: ignore[index]
     data_url = content[0]["image_url"]["url"]

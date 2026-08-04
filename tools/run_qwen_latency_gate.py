@@ -15,12 +15,9 @@ import time
 from typing import Any
 
 from integration.qwen_boundary import QwenInputContext
+from integration.qwen_profiles import resolve_qwen_profile
 from integration.qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from integration.qwen_vl_adapter import StrictQwenVLAdapter
-
-
-DEFAULT_QWEN_MODEL = "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
-DEFAULT_QWEN_REVISION = "f91db2369bd00e7ec20bf09b6a0080cdb26aefa5"
 
 
 def _percentile(values: list[float], quantile: float) -> float:
@@ -133,13 +130,8 @@ def _write_report(path: Path, report: Mapping[str, Any]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base-url", default=os.environ.get(
-        "QWEN_BASE_URL", "http://127.0.0.1:8001/v1"
-    ))
-    parser.add_argument(
-        "--model", default=os.environ.get("QWEN_MODEL", DEFAULT_QWEN_MODEL)
-    )
-    parser.add_argument("--model-revision", default=DEFAULT_QWEN_REVISION)
+    parser.add_argument("--base-url", default=os.environ.get("QWEN_BASE_URL"))
+    parser.add_argument("--profile", default="qwen3vl-2b-int4")
     parser.add_argument("--image", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--warmups", type=int, default=5)
@@ -149,14 +141,19 @@ def main() -> int:
     args = parser.parse_args()
     if args.warmups < 1 or args.measurements < 1:
         parser.error("--warmups and --measurements must be positive")
+    try:
+        profile = resolve_qwen_profile(args.profile)
+    except ValueError as error:
+        parser.error(str(error))
+    base_url = args.base_url or f"http://127.0.0.1:{profile.port}/v1"
 
     image = args.image.expanduser().resolve()
     if not image.is_file():
         parser.error(f"--image does not exist: {image}")
     backend = OpenAICompatibleQwenVLBackend(
-        base_url=args.base_url,
+        base_url=base_url,
+        profile=profile,
         api_key=os.environ.get("QWEN_API_KEY", "unused"),
-        model=args.model,
         timeout_s=args.timeout_s,
     )
     adapter = StrictQwenVLAdapter(backend, image_root=image.parent)
@@ -184,9 +181,12 @@ def main() -> int:
         "schema_version": "1.0",
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "dataset_kind": "latency_gate_only_no_correctness",
-        "model": args.model,
-        "model_revision": args.model_revision,
-        "base_url": args.base_url,
+        "profile": profile.name,
+        "model": profile.model,
+        "model_revision": profile.revision,
+        "image_max_side": profile.image_max_side,
+        "visual_tokens": profile.visual_tokens,
+        "base_url": base_url,
         "image": str(image),
         "warmups": args.warmups,
         "measurements_requested": args.measurements,

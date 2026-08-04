@@ -175,7 +175,10 @@ class StrictQwenVLAdapter:
         image_path = self._resolve_image(context.rgb_ref)
         generate_action = getattr(self._backend, "generate_action", None)
         prompt = (
-            build_action_choice_prompt(context)
+            build_action_choice_prompt(
+                context,
+                prompt_style=getattr(self._backend, "prompt_style", "compact-v2"),
+            )
             if callable(generate_action)
             else build_strict_qwen_prompt(context)
         )
@@ -279,15 +282,17 @@ def build_strict_qwen_prompt(context: QwenInputContext) -> str:
     )
 
 
-def build_action_choice_prompt(context: QwenInputContext) -> str:
+def build_action_choice_prompt(
+    context: QwenInputContext,
+    *,
+    prompt_style: str = "compact-v2",
+) -> str:
     """Build the compact five-way classification prompt used by Qwen3-VL."""
-    payload = {
-        "voice": context.voice_command,
-        "vehicle": dict(context.scene_state),
-        "perception": dict(context.perception),
-        "safety": dict(context.safety_state),
-    }
+    if prompt_style != "compact-v2":
+        raise ValueError(f"unsupported Qwen prompt style: {prompt_style}")
+    payload = _compact_action_context(context)
     return (
+        "目标缺失、视觉无效、语义冲突或不确定时选B。"
         "融合图像与四模态状态，只输出一个代码，禁止解释或底层控制。"
         "A=START；B=STOP；C=SLOW_DOWN；D=SET_SPEED；E=EMERGENCY_STOP。"
         "优先级:安全规则>明确语音动作>普通视觉线索；普通车辆本身不是停车风险。"
@@ -295,8 +300,73 @@ def build_action_choice_prompt(context: QwenInputContext) -> str:
         "明确跟随或避让且无停车风险必须选C；明确设置速度选D；"
         "只有确认安全的启动或继续才选A。"
         "输入:"
-        + json.dumps(payload, ensure_ascii=False, allow_nan=False, sort_keys=True)
+        + json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
     )
+
+
+def _compact_action_context(context: QwenInputContext) -> dict[str, Any]:
+    """Select only model-relevant fields from the frozen request contract."""
+    scene = context.scene_state
+    perception = context.perception
+    safety = context.safety_state
+    compact_perception = _select_compact_fields(
+        perception,
+        (
+            "traffic_light",
+            "collision",
+            "visual_valid",
+            "lidar_valid",
+            "front_corridor_distance_m",
+            "front_corridor_min_m",
+            "lidar_point_count",
+        ),
+    )
+    for source in (scene, safety):
+        for name in (
+            "traffic_light",
+            "collision",
+            "lidar_valid",
+            "front_corridor_distance_m",
+            "front_corridor_min_m",
+            "lidar_point_count",
+        ):
+            if name not in compact_perception and name in source:
+                compact_perception[name] = source[name]
+    objects = perception.get("detected_objects")
+    compact_perception["detected_objects"] = [
+        _select_compact_fields(
+            item,
+            (
+                "track_id",
+                "class",
+                "relation",
+                "distance_m",
+                "confidence",
+                "bbox_xyxy_norm",
+            ),
+        )
+        for item in objects
+        if isinstance(item, Mapping)
+    ] if isinstance(objects, list) else []
+    return {
+        "voice": context.voice_command,
+        "vehicle": _select_compact_fields(
+            scene,
+            ("ego_speed_mps", "speed_mps", "behavior", "behavior_state"),
+        ),
+        "perception": compact_perception,
+        "safety": _select_compact_fields(
+            safety,
+            ("recommended_action", "minimum_ttc_s", "ttc_s", "reason", "reason_zh"),
+        ),
+    }
+
+
+def _select_compact_fields(
+    source: Mapping[str, Any],
+    names: tuple[str, ...],
+) -> dict[str, Any]:
+    return {name: source[name] for name in names if name in source}
 
 
 def assemble_action_choice(
