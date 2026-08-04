@@ -1,4 +1,5 @@
 from argparse import Namespace
+import json
 import math
 from pathlib import Path
 
@@ -35,12 +36,14 @@ from integration.carla_runner import (
     _scenario_vehicle_speed_mps,
     _select_scene_facts,
     _scenario_completed,
+    _missing_required_target_stop_contract,
     _signed_forward_speed_mps,
     _speed_mps,
     _warm_up_sensor_bridge,
 )
 from integration.contracts import DetectedObject, PerceptionFrame
 from integration.scenario_execution import ScenarioSpec
+from integration.scenario_evidence import ScenarioEvidenceRecorder
 from integration.voice_adapter import VoiceCommandAdapter
 
 
@@ -53,6 +56,29 @@ def test_carla_runner_does_not_hardcode_optional_model_defaults() -> None:
     assert "Qwen/Qwen2.5-VL-3B-Instruct" not in source
     assert "66285546d2b821cf421d4f5eb2576359d3770cd3" not in source
     assert "localhost:8002" not in source
+
+
+def test_missing_target_stop_contract_is_written_to_evidence(tmp_path: Path) -> None:
+    contract = _missing_required_target_stop_contract()
+    evidence_path = tmp_path / "missing-target.jsonl"
+    recorder = ScenarioEvidenceRecorder(evidence_path)
+    recorder.start_run(scenario_id="hidden-target")
+    recorder.record_command(contract, disposition="ACCEPTED_SCENARIO")
+    recorder.complete(
+        completion=False,
+        expected={"must_no_collision": True},
+        acceptance_context={"failure_reason": contract["failure_reason"]},
+    )
+    records = [json.loads(line) for line in evidence_path.read_text(encoding="utf-8").splitlines()]
+    command = next(record for record in records if record["record_type"] == "command")
+
+    assert contract["intent"] == "STOP"
+    assert contract["failure_reason"] == "missing_required_target"
+    assert contract["warnings"] == [{
+        "code": "MISSING_REQUIRED_TARGET",
+        "message": "missing_required_target",
+    }]
+    assert command["command"]["failure_reason"] == "missing_required_target"
 
 
 def test_voice_load_failure_becomes_rejected_no_op() -> None:

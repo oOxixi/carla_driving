@@ -6,7 +6,9 @@ import numpy as np
 import pytest
 
 from integration.carla_runner import (
+    _missing_required_target_stop_contract,
     _runtime_profile,
+    _scenario_acceptance_context,
     _scenario_actor,
     _scenario_completed,
 )
@@ -85,6 +87,30 @@ def test_unseen_stop_scenario_is_inferred_from_command_contract(tmp_path: Path) 
     )
 
 
+def test_target_dependent_unseen_scenario_stops_and_records_failure_reason(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads((ROOT / "scenarios/lateral_B/B08_lane_change_left.json").read_text(encoding="utf-8"))
+    payload["scenario_id"] = "HIDDEN_TARGET_VARIANT"
+    payload["expected"]["action"] = "CHANGE_LANE_LEFT"
+    scenario_path = tmp_path / "hidden-target.json"
+    scenario_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    profile = _runtime_profile(_runner_args(), ScenarioSpec.load(scenario_path))
+    stop_contract = _missing_required_target_stop_contract()
+
+    assert profile.failure_reason == "missing_required_target"
+    assert not profile.target_bound
+    assert stop_contract["intent"] == "STOP"
+    assert stop_contract["failure_reason"] == "missing_required_target"
+    assert _scenario_acceptance_context(
+        ScenarioSpec.load(scenario_path),
+        profile,
+        route_end_distance_m=1.0,
+        route_deviation_trigger_m=3.0,
+    )["failure_reason"] == "missing_required_target"
+
+
 def test_official_agent_exposes_scenario_runner_entry_and_sensor_contract() -> None:
     agent = CarlaDrivingScenarioAgent("")
     sensor_ids = {sensor["id"] for sensor in agent.sensors()}
@@ -152,3 +178,36 @@ def test_official_command_boundary_fails_closed(tmp_path: Path) -> None:
     assert throttle == 0.0 and brake == 1.0
     assert reason == "WATCHDOG_ALERT"
     assert core.last_command_error is not None
+
+
+def test_agent_setup_resolves_task_two_profile_for_live_qwen_requests() -> None:
+    agent = CarlaDrivingScenarioAgent("")
+
+    assert agent.qwen_profile.name == "qwen3vl-2b-int4"
+    assert agent.qwen_service_url == "http://127.0.0.1:8001"
+
+
+def test_official_agent_core_applies_live_qwen_action_through_safety() -> None:
+    core = OfficialAgentCore(OfficialAgentConfig(target_speed_mps=4.0))
+    frame = OfficialSensorFrame(
+        speed_mps=3.0,
+        compass_rad=0.0,
+        latitude=0.0,
+        longitude=0.0,
+        lidar_xyz=np.empty((0, 3), dtype=np.float32),
+    )
+
+    throttle, brake, steer, reason = core.step(
+        frame,
+        (),
+        high_level_command={
+            "action": "STOP",
+            "confidence": 1.0,
+            "requires_confirmation": False,
+        },
+    )
+
+    assert throttle == 0.0
+    assert brake > 0.0
+    assert steer == 0.0
+    assert reason in {"NONE", "WATCHDOG_ALERT"}

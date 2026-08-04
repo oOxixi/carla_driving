@@ -17,6 +17,9 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from car_control_D import SafetySupervisor
+from integration.qwen_boundary import QwenInputContext
+from integration.qwen_profiles import QwenModelProfile, resolve_qwen_profile
+from integration.qwen_service_client import QwenServiceClient
 
 try:  # Available when loaded by ScenarioRunner; intentionally optional in CI.
     import carla  # type: ignore
@@ -47,6 +50,9 @@ class OfficialAgentConfig:
     lidar_corridor_half_width_m: float = 1.4
     route_lookahead_points: int = 5
     command_file: Path | None = None
+    qwen_profile: str | None = None
+    qwen_service_url: str | None = None
+    qwen_voice_command: str = "Follow the route safely."
 
     @classmethod
     def load(cls, path: str | Path | None) -> "OfficialAgentConfig":
@@ -59,6 +65,7 @@ class OfficialAgentConfig:
         allowed = {
             "schema_version", "target_speed_mps", "obstacle_stop_m",
             "lidar_corridor_half_width_m", "route_lookahead_points", "command_file",
+            "qwen_profile", "qwen_service_url", "qwen_voice_command",
         }
         unknown = set(payload).difference(allowed)
         if unknown:
@@ -82,7 +89,29 @@ class OfficialAgentConfig:
                 raise ValueError("command_file must be a non-empty path")
             candidate = Path(command_file).expanduser()
             command_path = candidate.resolve() if candidate.is_absolute() else (source.parent / candidate).resolve()
-        return cls(target_speed, stop_m, half_width, lookahead, command_path)
+        qwen_profile = payload.get("qwen_profile")
+        if qwen_profile is not None and (type(qwen_profile) is not str or not qwen_profile.strip()):
+            raise ValueError("qwen_profile must be a non-empty string")
+        qwen_service_url = payload.get("qwen_service_url")
+        if qwen_service_url is not None and (
+            type(qwen_service_url) is not str or not qwen_service_url.strip()
+        ):
+            raise ValueError("qwen_service_url must be a non-empty URL")
+        qwen_voice_command = payload.get("qwen_voice_command", "Follow the route safely.")
+        if type(qwen_voice_command) is not str or not qwen_voice_command.strip():
+            raise ValueError("qwen_voice_command must be a non-empty string")
+        if command_path is not None and qwen_service_url is not None:
+            raise ValueError("command_file is offline/test-only and cannot be combined with qwen_service_url")
+        return cls(
+            target_speed,
+            stop_m,
+            half_width,
+            lookahead,
+            command_path,
+            qwen_profile,
+            qwen_service_url,
+            qwen_voice_command.strip(),
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,8 +135,14 @@ class OfficialAgentCore:
         self,
         frame: OfficialSensorFrame,
         global_plan: Sequence[tuple[Mapping[str, float], object]],
+        *,
+        high_level_command: Mapping[str, object] | None = None,
+        qwen_error: BaseException | None = None,
     ) -> tuple[float, float, float, str]:
-        target_speed, command_valid = self._target_speed()
+        target_speed, command_valid = self._target_speed(
+            high_level_command=high_level_command,
+            qwen_error=qwen_error,
+        )
         front_distance = _front_lidar_distance(
             frame.lidar_xyz,
             corridor_half_width_m=self.config.lidar_corridor_half_width_m,
@@ -148,7 +183,41 @@ class OfficialAgentCore:
             return 0.0, 1.0, 0.0, "OFFICIAL_LIDAR_OBSTACLE_GUARD"
         return control.throttle, control.brake, control.steer, decision.reason
 
-    def _target_speed(self) -> tuple[float, bool]:
+    def _target_speed(
+        self,
+        *,
+        high_level_command: Mapping[str, object] | None,
+        qwen_error: BaseException | None,
+    ) -> tuple[float, bool]:
+        if qwen_error is not None:
+            self.last_command_error = f"{type(qwen_error).__name__}: {qwen_error}"
+            return 0.0, False
+        if high_level_command is not None:
+            try:
+                forbidden = {"throttle", "brake", "steer"}.intersection(high_level_command)
+                if forbidden:
+                    raise ValueError(
+                        "low-level command fields are forbidden: " + ",".join(sorted(forbidden))
+                    )
+                action = str(high_level_command.get("action", "")).upper()
+                if high_level_command.get("requires_confirmation") is True:
+                    raise ValueError("Qwen command requires confirmation")
+                if action in {"STOP", "EMERGENCY_STOP", "EMERGENCY_BRAKE"}:
+                    return 0.0, True
+                if action == "SET_SPEED":
+                    return _finite(
+                        high_level_command.get("target_speed_mps"),
+                        "Qwen target speed",
+                        0.0,
+                    ), True
+                if action == "SLOW_DOWN":
+                    return min(self.config.target_speed_mps, 2.0), True
+                if action in {"KEEP_LANE", "FOLLOW_ROUTE", "START", "FORWARD"}:
+                    return self.config.target_speed_mps, True
+                raise ValueError(f"unsupported Qwen action: {action}")
+            except (TypeError, ValueError) as error:
+                self.last_command_error = f"{type(error).__name__}: {error}"
+                return 0.0, False
         source = self.config.command_file
         if source is None:
             return self.config.target_speed_mps, True
@@ -191,6 +260,15 @@ class ScenarioRunnerAgent(AutonomousAgent):
 
     def setup(self, path_to_conf_file: str) -> None:
         self.config = OfficialAgentConfig.load(path_to_conf_file)
+        self.qwen_profile: QwenModelProfile = resolve_qwen_profile(self.config.qwen_profile)
+        self.qwen_service_url: str | None = None
+        self.qwen_client: QwenServiceClient | None = None
+        if self.config.command_file is None:
+            self.qwen_service_url = (
+                self.config.qwen_service_url
+                or f"http://127.0.0.1:{self.qwen_profile.port}"
+            )
+            self.qwen_client = QwenServiceClient(self.qwen_service_url)
         self.core = OfficialAgentCore(self.config)
         self.last_interface_error: str | None = None
         self._last_nav: tuple[float, float, float] | None = None
@@ -218,9 +296,18 @@ class ScenarioRunnerAgent(AutonomousAgent):
     def run_step(self, input_data: Mapping[str, tuple[int, Any]], timestamp: float) -> Any:
         try:
             frame = self._sensor_frame(input_data, timestamp)
+            high_level_command = None
+            qwen_error = None
+            if self.qwen_client is not None:
+                try:
+                    high_level_command = self._qwen_high_level_command(frame, timestamp)
+                except (OSError, RuntimeError, TypeError, ValueError) as error:
+                    qwen_error = error
             throttle, brake, steer, _ = self.core.step(
                 frame,
                 tuple(getattr(self, "_global_plan", ()) or ()),
+                high_level_command=high_level_command,
+                qwen_error=qwen_error,
             )
         except (KeyError, TypeError, ValueError) as error:
             self.last_interface_error = f"{type(error).__name__}: {error}"
@@ -235,6 +322,36 @@ class ScenarioRunnerAgent(AutonomousAgent):
             reverse=False,
             manual_gear_shift=False,
         )
+
+    def _qwen_high_level_command(
+        self,
+        frame: OfficialSensorFrame,
+        timestamp: float,
+    ) -> Mapping[str, object]:
+        if self.qwen_client is None:
+            raise RuntimeError("Qwen client is unavailable in offline command-file mode")
+        front_distance = _front_lidar_distance(
+            frame.lidar_xyz,
+            corridor_half_width_m=self.config.lidar_corridor_half_width_m,
+        )
+        context = QwenInputContext(
+            request_id=f"official-agent-{int(timestamp * 1000)}",
+            frame=max(0, int(timestamp * 20)),
+            sim_time_s=max(0.0, float(timestamp)),
+            voice_command=self.config.qwen_voice_command,
+            rgb_ref=None,
+            scene_state={"speed_mps": frame.speed_mps},
+            perception={
+                "front_corridor_distance_m": front_distance,
+                "visual_valid": False,
+                "detected_objects": [],
+            },
+            safety_state={
+                "recommended_action": "STOP" if front_distance is not None and front_distance <= self.config.obstacle_stop_m else None,
+                "qwen_profile": self.qwen_profile.name,
+            },
+        )
+        return self.qwen_client.infer(context)
 
     def _sensor_frame(
         self,

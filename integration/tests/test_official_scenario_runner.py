@@ -1,7 +1,9 @@
 from pathlib import Path
+import subprocess
 
 import pytest
 
+import integration.official_scenario_runner as scenario_runner_module
 from integration.official_scenario_runner import ScenarioRunnerInvocation, build_command
 import integration.scenario_runner_agent as official_agent_module
 
@@ -60,3 +62,38 @@ def test_agent_class_name_matches_pinned_scenario_runner_loader() -> None:
 
 def test_carla_language_agent_keeps_the_official_agent_safety_boundary() -> None:
     assert official_agent_module.CarlaLanguageAgent is official_agent_module.ScenarioRunnerAgent
+
+
+def test_official_run_verifies_the_checkout_before_starting_process(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    verified: list[Path] = []
+    commands: list[list[str]] = []
+    invocation = ScenarioRunnerInvocation(tmp_path, "OrganizerPrivateScenario_42")
+
+    monkeypatch.setattr(
+        scenario_runner_module,
+        "verify_checkout",
+        lambda root: verified.append(Path(root).resolve()) or "pinned",
+    )
+    monkeypatch.setattr(
+        scenario_runner_module.subprocess,
+        "run",
+        lambda command, **_: commands.append(command) or subprocess.CompletedProcess(command, 0),
+    )
+
+    scenario_runner_module.run(invocation)
+
+    assert verified == [tmp_path.resolve()]
+    assert commands and commands[0][1] == str(tmp_path.resolve() / "scenario_runner.py")
+
+
+def test_launcher_uses_the_checked_scenario_runner_entrypoint() -> None:
+    script = (
+        Path(__file__).resolve().parents[2] / "scripts" / "run_scenario_runner.ps1"
+    ).read_text(encoding="utf-8")
+
+    assert "from integration.official_scenario_runner import ScenarioRunnerInvocation, run" in script
+    assert "run(ScenarioRunnerInvocation(" in script
+    assert "--agentConfig $AgentConfig" not in script

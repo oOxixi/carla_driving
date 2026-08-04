@@ -1162,6 +1162,26 @@ def _minimum_gap_contract_completed(spec: ScenarioSpec | None, min_gap_m: float 
     return min_gap_m is not None and min_gap_m >= required_m
 
 
+def _scenario_acceptance_context(
+    spec: ScenarioSpec,
+    profile: ScenarioRuntimeProfile,
+    *,
+    route_end_distance_m: float | None,
+    route_deviation_trigger_m: float,
+) -> dict[str, object]:
+    """Keep target-grounding failures in the final evidence contract."""
+    return {
+        "route_finished": (
+            route_end_distance_m is not None
+            and route_end_distance_m <= spec.finish_radius_m
+        ),
+        "route_end_distance_m": route_end_distance_m,
+        "expected_command_count": len(spec.commands),
+        "configured_route_deviation_trigger_m": route_deviation_trigger_m,
+        "failure_reason": profile.failure_reason,
+    }
+
+
 def _route_stop_trigger_m(speed_mps: float, finish_radius_m: float, decel_mps2: float = 2.0) -> float:
     """Choose an endpoint braking trigger from current speed and a conservative service deceleration."""
     if speed_mps < 0.0 or finish_radius_m < 0.0 or decel_mps2 <= 0.0:
@@ -2003,16 +2023,12 @@ def run(args: argparse.Namespace) -> None:
                 completion=completion,
                 detail="scenario acceptance criteria evaluated",
                 expected=expected_contract,
-                acceptance_context={} if spec is None else {
-                    "route_finished": (
-                        final_route_end_distance_m is not None
-                        and final_route_end_distance_m <= spec.finish_radius_m
-                    ),
-                    "route_end_distance_m": final_route_end_distance_m,
-                    "expected_command_count": len(spec.commands),
-                    "configured_route_deviation_trigger_m": route_deviation_trigger_m,
-                    "failure_reason": profile.failure_reason,
-                },
+                acceptance_context={} if spec is None else _scenario_acceptance_context(
+                    spec,
+                    profile,
+                    route_end_distance_m=final_route_end_distance_m,
+                    route_deviation_trigger_m=route_deviation_trigger_m,
+                ),
             )
             acceptance = summary.get("acceptance")
             print(json.dumps({
