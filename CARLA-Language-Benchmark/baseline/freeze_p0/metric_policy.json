@@ -1,8 +1,18 @@
 {
   "version": "competition_metric_v1",
   "evaluation": {
-    "split": "fixed_validation_set",
-    "rule": "all future experiments must use identical validation split"
+    "benchmark_role": "language_schema_regression_only",
+    "formal_accuracy": {
+      "status": "not_yet_frozen",
+      "artifact_path": "datasets/formal_validation/CARLA_multimodal_validation_v1.json",
+      "required_fields": [
+        "split_id",
+        "record_ids",
+        "records",
+        "sha256"
+      ],
+      "accuracy_reporting_permitted": false
+    }
   },
   "metrics": {
     "language_action_accuracy": {

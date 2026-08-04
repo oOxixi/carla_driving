@@ -1,62 +1,35 @@
 # CARLA-Language-Benchmark v1 Handoff
 
-## Completed Requirements
+## Scope
 
-P0-1:
-- scoring protocol frozen
-- validation protocol frozen
-- latency stages frozen
-- baseline protocol frozen
+The language benchmark is frozen at 6192 records for language/schema
+regression. This package does not provide a frozen multimodal validation split
+or a formal accuracy result. The required future validation artifact is
+declared in `baseline/freeze_p0/metric_policy.json`.
 
-P0-2:
-Language benchmark expanded to 6192 records.
-
-Covered categories:
-- ordinary instruction
-- synonym rewriting
-- negation
-- compound instruction
-- ambiguous target
-- missing target
-- safety conflict
-- unit conversion
-- dense target
-- occlusion
-- detector error
-- exposure
-- navigation error
-- weather failure
-
-## Interface
+## Record Interface
 
 Every record contains:
 
-id
-category
-template
-variables
-semantic_intent
-scene_generator
-scene_constraints
-expected_action
-expected_parameters
-safety_policy
+- `id`
+- `category`
+- `template`
+- `variables`
+- `semantic_intent`
+- `scene_generator`
+- `scene_constraints`
+- `expected_action`
+- `expected_parameters`
+- `safety_policy`
 
 ## Validation
 
 Run:
 
-python tools/audit_global_benchmark_v1.py datasets/final_benchmark/CARLA_language_benchmark_v1_normalized.json
+```bash
+python tools/audit_global_benchmark_v1.py \
+  datasets/final_benchmark/CARLA_language_benchmark_v1_normalized.json \
+  --checksum baseline/freeze_p0/dataset_checksum.json
+```
 
-Expected:
-
-records=6192
-errors=0
-
-## Consumer Workflow
-
-1. Clone repository
-2. Load benchmark JSON
-3. Read template
-4. Use scene_generator for CARLA scene generation
-5. Use expected_action for evaluation
+Expected: 6192 records and zero errors.

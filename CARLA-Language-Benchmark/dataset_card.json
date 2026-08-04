@@ -16,17 +16,5 @@
     "expected_action",
     "expected_parameters",
     "safety_policy"
-  ],
-  "baseline": {
-    "four_modal_baseline_samples": 320,
-    "latency_protocol": [
-      "asr",
-      "perception",
-      "fusion",
-      "decision",
-      "safety",
-      "control",
-      "end_to_end"
-    ]
-  }
+  ]
 }

@@ -33,6 +33,29 @@ REQUIRED_FIELDS = [
     "expected_parameters",
     "safety_policy",
 ]
+EVALUATION_CONTRACT = {
+    "benchmark_role": "language_schema_regression_only",
+    "formal_accuracy": {
+        "status": "not_yet_frozen",
+        "artifact_path": "datasets/formal_validation/CARLA_multimodal_validation_v1.json",
+        "required_fields": ["split_id", "record_ids", "records", "sha256"],
+        "accuracy_reporting_permitted": False,
+    },
+}
+
+
+def audit_evaluation_contract(benchmark_root: Path, errors: list[dict[str, object]]) -> str | None:
+    policy_path = benchmark_root / "baseline/freeze_p0/metric_policy.json"
+    if not policy_path.is_file():
+        errors.append({"error": "missing_evaluation_contract"})
+        return None
+
+    policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    if policy.get("evaluation") != EVALUATION_CONTRACT:
+        errors.append({"error": "invalid_evaluation_contract"})
+        return None
+
+    return EVALUATION_CONTRACT["benchmark_role"]
 
 
 def audit_dataset(path: Path) -> dict[str, object]:
@@ -69,6 +92,8 @@ def audit_dataset(path: Path) -> dict[str, object]:
             }
         )
 
+    evaluation_contract = audit_evaluation_contract(data_path.parents[2], errors)
+
     return {
         "input": str(data_path),
         "records": len(data),
@@ -77,6 +102,7 @@ def audit_dataset(path: Path) -> dict[str, object]:
         "category_distribution": dict(category),
         "action_distribution": dict(actions),
         "sha256": hashlib.sha256(raw_data).hexdigest(),
+        "evaluation_contract": evaluation_contract,
     }
 
 
