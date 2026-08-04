@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import replace
+import math
 
 from car_control_A import ControlOutput, DrivingCommand, ExecutionFeedback, ExecutionStatus, RuntimeVehicleState
 from car_control_A.behavior_fsm import BehaviorFSM
@@ -173,8 +174,15 @@ class ControlRuntime:
         return feedback
 
     def step(self, vehicle: RuntimeVehicleState, scene: PerceptionFrame, route: RouteReference, *, dt_s: float,
-             watchdog_alerts: tuple[str, ...] = (), raw_control_override: object | None = None) -> FrameResult:
+             watchdog_alerts: tuple[str, ...] = (), raw_control_override: object | None = None,
+             speed_cap_mps: float | None = None) -> FrameResult:
         """Compose lateral, longitudinal and final safety arbitration for one aligned frame."""
+        if speed_cap_mps is not None:
+            if type(speed_cap_mps) not in (int, float) or isinstance(speed_cap_mps, bool):
+                raise TypeError("speed_cap_mps must be a finite non-negative number or None")
+            speed_cap_mps = float(speed_cap_mps)
+            if not math.isfinite(speed_cap_mps) or speed_cap_mps < 0.0:
+                raise ValueError("speed_cap_mps must be a finite non-negative number or None")
         feedback = list(self._pending_feedback)
         self._pending_feedback.clear()
         lifecycle_feedback = self.fsm.tick(now_s=vehicle.sim_time_s)
@@ -225,7 +233,10 @@ class ControlRuntime:
                     if failed is not None:
                         feedback.append(failed)
                     self._clear_active_command()
-            request = longitudinal_request(vehicle, scene, requested_speed_mps=self.requested_speed_mps,
+            effective_requested_speed_mps = self.requested_speed_mps
+            if speed_cap_mps is not None:
+                effective_requested_speed_mps = min(effective_requested_speed_mps, speed_cap_mps)
+            request = longitudinal_request(vehicle, scene, requested_speed_mps=effective_requested_speed_mps,
                                            path_curvature_per_m=route.curvature_per_m)
             if self._active_command is not None and self._active_command.requires_confirmation:
                 fuzzy = self.fuzzy_policy.evaluate(self._active_command, request)

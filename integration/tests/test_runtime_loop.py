@@ -42,6 +42,16 @@ def test_runtime_preserves_d_emergency_stop_authority():
     assert result.final_control.brake == 1.0
 
 
+def test_runtime_temporary_speed_cap_does_not_mutate_driver_requested_speed():
+    runtime = ControlRuntime(PurePursuitController(), default_speed_mps=5.0)
+    result = runtime.step(
+        _vehicle(speed=4.0), PerceptionFrame(frame=1, sim_time_s=0.05), _route(),
+        dt_s=0.05, speed_cap_mps=2.0,
+    )
+    assert result.longitudinal.target_speed_mps < 4.0
+    assert runtime.requested_speed_mps == 5.0
+
+
 def test_runtime_executes_slow_down_and_keep_lane_with_terminal_feedback():
     slow = ControlRuntime(PurePursuitController(), default_speed_mps=5.0)
     slow_command = _voice("SLOW_DOWN", {"speed": 2.0, "unit": "m/s"})

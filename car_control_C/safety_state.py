@@ -76,7 +76,13 @@ class SafetyStateParameters:
     visual_confidence_threshold: float = 0.60
     caution_distance_m: float = 10.0
     emergency_distance_m: float = 5.0
-    vru_emergency_distance_m: float = 20.0
+    # A VRU is first approached at a low, reviewable speed.  Full braking is
+    # reserved for the tighter distance below, so a single far-away visual
+    # detection cannot unnecessarily stop normal traffic.
+    vru_caution_distance_m: float = 25.0
+    vru_emergency_distance_m: float = 8.0
+    vru_caution_speed_cap_mps: float = 2.0
+    vru_caution_hold_s: float = 4.0
     caution_ttc_s: float = 2.5
     emergency_ttc_s: float = 1.5
     max_observation_gap_s: float = 0.30
@@ -85,14 +91,17 @@ class SafetyStateParameters:
     def __post_init__(self) -> None:
         finite("visual_confidence_threshold", self.visual_confidence_threshold,
                minimum=0.0, maximum=1.0)
-        for name in ("caution_distance_m", "emergency_distance_m", "vru_emergency_distance_m", "caution_ttc_s",
-                     "emergency_ttc_s", "max_observation_gap_s"):
+        for name in ("caution_distance_m", "emergency_distance_m", "vru_caution_distance_m",
+                     "vru_emergency_distance_m", "vru_caution_speed_cap_mps", "vru_caution_hold_s",
+                     "caution_ttc_s", "emergency_ttc_s", "max_observation_gap_s"):
             finite(name, getattr(self, name), positive=True)
         finite("full_brake", self.full_brake, positive=True, maximum=1.0)
         if self.emergency_distance_m > self.caution_distance_m:
             raise ValueError("emergency_distance_m must not exceed caution_distance_m")
         if self.vru_emergency_distance_m < self.emergency_distance_m:
             raise ValueError("vru_emergency_distance_m must be at least emergency_distance_m")
+        if self.vru_caution_distance_m < self.vru_emergency_distance_m:
+            raise ValueError("vru_caution_distance_m must be at least vru_emergency_distance_m")
         if self.emergency_ttc_s > self.caution_ttc_s:
             raise ValueError("emergency_ttc_s must not exceed caution_ttc_s")
 
@@ -113,6 +122,7 @@ class SafetyStateSummary:
     fused_valid: bool
     fusion_mode: str
     recommended_action: str
+    recommended_speed_cap_mps: float | None
     reason: str
     source_by_field: Mapping[str, str]
 
@@ -135,6 +145,7 @@ class SafetyStateSummary:
             "fused_valid": self.fused_valid,
             "fusion_mode": self.fusion_mode,
             "recommended_action": self.recommended_action,
+            "recommended_speed_cap_mps": self.recommended_speed_cap_mps,
             "reason": self.reason,
             "source_by_field": dict(self.source_by_field),
         }
@@ -147,17 +158,20 @@ class ConservativeSensorFusion:
         "PEDESTRIAN", "PERSON", "VEHICLE", "CAR", "TRUCK", "BUS",
         "CYCLIST", "BICYCLE", "MOTORCYCLE", "OBSTACLE", "UNKNOWN",
     })
+    _VRU_CLASSES = frozenset({"PEDESTRIAN", "PERSON", "CYCLIST", "BICYCLE", "MOTORCYCLE"})
 
     def __init__(self, parameters: SafetyStateParameters | None = None) -> None:
         self.parameters = parameters or SafetyStateParameters()
         self._previous_frame: int | None = None
         self._previous_time_s: float | None = None
         self._previous_distance_m: float | None = None
+        self._vru_caution_until_s: float | None = None
 
     def reset(self) -> None:
         self._previous_frame = None
         self._previous_time_s = None
         self._previous_distance_m = None
+        self._vru_caution_until_s = None
 
     def update(
         self,
@@ -221,6 +235,15 @@ class ConservativeSensorFusion:
             ttc_s = front_distance_m / closing_speed
             sources["ttc_s"] = "FRONT_DISTANCE_DIVIDED_BY_CLOSING_SPEED"
 
+        vru_in_caution_zone = bool(
+            visual_valid
+            and object_class in self._VRU_CLASSES
+            and front_distance_m is not None
+            and front_distance_m <= self.parameters.vru_caution_distance_m
+        )
+        if vru_in_caution_zone:
+            self._vru_caution_until_s = sim_time_s + self.parameters.vru_caution_hold_s
+
         if not lidar_valid:
             mode, action, reason = "FAIL_CLOSED", "FULL_BRAKE", "lidar_invalid"
         elif visual_valid and front_distance_m is None and object_class in self._HAZARD_CLASSES:
@@ -236,6 +259,17 @@ class ConservativeSensorFusion:
         else:
             mode, action, reason = "NO_OBSTACLE", "KEEP_SPEED", "no_front_hazard_observed"
 
+        vru_hold_active = bool(
+            self._vru_caution_until_s is not None
+            and sim_time_s <= self._vru_caution_until_s
+        )
+        speed_cap_mps: float | None = None
+        if vru_hold_active and action == "KEEP_SPEED":
+            mode, action, reason = "VRU_CAUTION_HOLD", "SLOW_DOWN", "vru_caution_hold"
+        if vru_hold_active and action == "SLOW_DOWN":
+            speed_cap_mps = self.parameters.vru_caution_speed_cap_mps
+            sources["vru_speed_cap"] = "RGB_LIDAR_VRU_CAUTION_HOLD"
+
         fused_valid = visual_valid and lidar_valid and front_distance_m is not None
         summary = SafetyStateSummary(
             frame=frame,
@@ -250,6 +284,7 @@ class ConservativeSensorFusion:
             fused_valid=fused_valid,
             fusion_mode=mode,
             recommended_action=action,
+            recommended_speed_cap_mps=speed_cap_mps,
             reason=reason,
             source_by_field=MappingProxyType(sources),
         )
@@ -275,7 +310,7 @@ class ConservativeSensorFusion:
         # retain the established 5 m threshold and cannot cause new false
         # positive full brakes merely due to range noise.
         if (
-            object_class in {"PERSON", "PEDESTRIAN", "CYCLIST", "BICYCLE", "MOTORCYCLE"}
+            object_class in self._VRU_CLASSES
             and distance_m <= self.parameters.vru_emergency_distance_m
         ):
             return mode, "EMERGENCY_BRAKE", "vru_short_front_distance"

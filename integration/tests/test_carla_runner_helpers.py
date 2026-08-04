@@ -16,6 +16,8 @@ from integration.carla_runner import (
     _map_contract_name,
     _minimum_gap_contract_completed,
     _build_qwen_context,
+    _c_safety_speed_cap_mps,
+    _c_speed_cap_control_override,
     _qwen_desired_speed_mps,
     _qwen_voice_command,
     _save_qwen_rgb_image,
@@ -55,6 +57,22 @@ def test_voice_load_failure_becomes_rejected_no_op() -> None:
     assert not adapted.control_authorized
     assert adapted.command.action == "NO_OP"
     assert adapted.feedback is not None
+
+
+def test_c_vru_speed_cap_is_temporary_and_requires_a_valid_slow_down_summary() -> None:
+    assert _c_safety_speed_cap_mps({
+        "recommended_action": "SLOW_DOWN", "recommended_speed_cap_mps": 2.0,
+    }) == pytest.approx(2.0)
+    assert _c_safety_speed_cap_mps({
+        "recommended_action": "KEEP_SPEED", "recommended_speed_cap_mps": 2.0,
+    }) is None
+    assert _c_safety_speed_cap_mps({
+        "recommended_action": "SLOW_DOWN", "recommended_speed_cap_mps": float("nan"),
+    }) is None
+    assert _c_speed_cap_control_override(2.05, 2.0) is None
+    assert _c_speed_cap_control_override(5.0, 2.0) == {
+        "throttle": 0.0, "brake": 1.0, "steer": 0.0,
+    }
 
 
 def test_scenario_facts_can_override_or_only_fill_missing_perception() -> None:

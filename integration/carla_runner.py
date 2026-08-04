@@ -1082,6 +1082,41 @@ def _c_perception_safety_reason(c_safety_state: Mapping[str, object] | None) -> 
     return f"C_FRONT_{object_class}_{reason or 'FAIL_CLOSED'}"
 
 
+def _c_safety_speed_cap_mps(c_safety_state: Mapping[str, object] | None) -> float | None:
+    """Accept only an explicit finite C-side temporary speed cap.
+
+    A cap is intentionally transient: it is applied to the current control
+    step's route reference and never overwrites the driver's requested speed
+    or command FSM state.  D still arbitrates the resulting control.
+    """
+    if not c_safety_state:
+        return None
+    if str(c_safety_state.get("recommended_action", "")).upper() != "SLOW_DOWN":
+        return None
+    candidate = c_safety_state.get("recommended_speed_cap_mps")
+    if type(candidate) not in (int, float) or isinstance(candidate, bool):
+        return None
+    cap = float(candidate)
+    return cap if math.isfinite(cap) and cap >= 0.0 else None
+
+
+def _c_speed_cap_control_override(
+    current_speed_mps: float,
+    speed_cap_mps: float | None,
+) -> dict[str, float] | None:
+    """Return a D-arbitrated braking request when a temporary C cap is exceeded."""
+    if speed_cap_mps is None or not math.isfinite(current_speed_mps):
+        return None
+    excess = float(current_speed_mps) - speed_cap_mps
+    if excess <= 0.10:
+        return None
+    # The request is deliberately bounded and remains a raw input to D; it is
+    # not an alternate control owner.  A large excess requires prompt braking
+    # because the cap was issued from an aligned VRU observation.
+    brake = min(1.0, 0.35 + 0.25 * excess)
+    return {"throttle": 0.0, "brake": brake, "steer": 0.0}
+
+
 def _expected_safety_completed(
     spec: ScenarioSpec,
     *,
@@ -1811,6 +1846,7 @@ def run(args: argparse.Namespace) -> None:
                 c_safety_state: dict[str, object] | None = None
                 perception_control_override: dict[str, object] | None = None
                 c_perception_override_reason: str | None = None
+                c_speed_cap_mps: float | None = None
                 watchdog_alerts: list[str] = list(route_refresh_alerts)
                 sensor_startup_grace = False
                 qwen_rgb_measurement: Any | None = None
@@ -1826,6 +1862,20 @@ def run(args: argparse.Namespace) -> None:
                         current_rgb = sample.rgb
                         perception_sources = dict(sample.source_by_field)
                         c_safety_state = sample.safety_summary.to_dict()
+                        c_speed_cap_mps = _c_safety_speed_cap_mps(c_safety_state)
+                        if c_speed_cap_mps is not None:
+                            perception_sources["c_speed_cap_mps"] = (
+                                "C_FUSION_TEMPORARY_VRU_SPEED_CAP"
+                            )
+                            cap_override = _c_speed_cap_control_override(
+                                state.speed_mps, c_speed_cap_mps,
+                            )
+                            if cap_override is not None:
+                                perception_control_override = cap_override
+                                c_perception_override_reason = "C_VRU_SPEED_CAP_BRAKE"
+                                perception_sources["c_control_override"] = (
+                                    "C_FUSION_VRU_SPEED_CAP_BRAKE"
+                                )
                         if sample.safety_summary.fail_closed:
                             # C owns this perception-dependent control request;
                             # it is not a runtime-health failure.  Feed a full
@@ -2174,10 +2224,17 @@ def run(args: argparse.Namespace) -> None:
                     raw_control_fault_injected = raw_control_override is not None
                 if raw_control_override is None:
                     raw_control_override = perception_control_override
+                effective_route = route
+                if c_speed_cap_mps is not None:
+                    effective_route = replace(
+                        route,
+                        target_speed_mps=min(route.target_speed_mps, c_speed_cap_mps),
+                    )
                 result = runtime.step(
-                    state, scene, route, dt_s=args.fixed_delta_s,
+                    state, scene, effective_route, dt_s=args.fixed_delta_s,
                     watchdog_alerts=tuple(watchdog_alerts),
                     raw_control_override=raw_control_override,
+                    speed_cap_mps=c_speed_cap_mps,
                 )
                 if sensor_startup_grace:
                     result = replace(
