@@ -488,7 +488,19 @@ def main() -> int:
             key: summarize_latency([float(record["stage_timing"][key]) for record in measured])
             for key in _STAGE_KEYS
         }
-        gates = evaluate_official_gates(latency)
+        if official_mode:
+            gates = evaluate_official_gates(latency)
+            official_gates: dict[str, object] | None = gates
+            diagnostic_gate: dict[str, object] | None = None
+        else:
+            gates = {
+                "status": "DIAGNOSTIC",
+                "reason": "diagnostic_non_official",
+                "run_accuracy": False,
+                "run_stability": False,
+            }
+            official_gates = None
+            diagnostic_gate = gates
         parsing_gate = {
             "threshold_ms": 50.0,
             "p95_ms": latency["instruction_parse_ms"]["p95"],
@@ -527,11 +539,7 @@ def main() -> int:
                 scenario_completion=args.scenario_completion_rate,
             )
             if official_mode
-            else {
-                "status": "NOT_OFFICIAL",
-                "passes": False,
-                "reason": "diagnostic_non_official",
-            }
+            else None
         )
         report = {
             "schema_version": "1.0",
@@ -539,7 +547,8 @@ def main() -> int:
             "run_id": context.run_id,
             "raw_timings": str(raw_path),
             "latency": latency,
-            "official_gates": gates,
+            "official_gates": official_gates,
+            "diagnostic_gate": diagnostic_gate,
             "instruction_parse_gate": parsing_gate,
             "official_mode": official_mode,
             "official_verdict": official_verdict,

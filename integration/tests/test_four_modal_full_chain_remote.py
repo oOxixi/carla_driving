@@ -135,3 +135,82 @@ def test_remote_run_excludes_warmups_and_records_staged_dynamic_samples(
     assert report["accuracy"]["asr"]["case_count"] == 0
     assert report["accuracy"]["multimodal"]["case_count"] == 1
     assert report["official_verdict"]["status"] == "INCOMPLETE"
+
+
+def test_low_latency_diagnostic_never_advances_official_gates(
+    tmp_path: Path, monkeypatch
+) -> None:
+    asr_manifest = tmp_path / "asr.json"
+    cases = tmp_path / "cases.jsonl"
+    latency_manifest = tmp_path / "latency.json"
+    for path, text in ((asr_manifest, "[]"), (cases, "{}\n"), (latency_manifest, "{}")):
+        path.write_text(text, encoding="utf-8")
+    output = tmp_path / "diagnostic.json"
+    sample = {
+        "audio_ref": "fake.mp3",
+        "audio_sha256": "a" * 64,
+        "frame_ref": "fake.png",
+        "frame_sha256": "b" * 64,
+        "expected_intent": "STOP",
+        "frame_path": tmp_path / "fake.png",
+    }
+    sample["frame_path"].write_bytes(b"fake")
+    stage_timing = {
+        "asr_ms": 1.0,
+        "instruction_parse_ms": 1.0,
+        "asr_nlu_ms": 2.0,
+        "sensor_fusion_ready_ms": 1.0,
+        "qwen_service_ms": 1.0,
+        "post_qwen_control_ms": 1.0,
+        "end_to_end_ms": 6.0,
+    }
+    monkeypatch.setattr(
+        "tools.run_four_modal_full_chain._load_latency_samples",
+        lambda _path: [sample] * 10,
+    )
+    monkeypatch.setattr(
+        "tools.run_four_modal_full_chain._load_jsonl",
+        lambda _path: [{"rgb_ref": str(sample["frame_path"])}],
+    )
+    monkeypatch.setattr(
+        "tools.run_four_modal_full_chain._make_qwen",
+        lambda _args: (object(), None, {}),
+    )
+    monkeypatch.setattr("tools.run_four_modal_full_chain.preload_voice_models", lambda: {})
+    monkeypatch.setattr(
+        "tools.run_four_modal_full_chain._run_one",
+        lambda sample, _case, _qwen, index, phase: {
+            "phase": phase,
+                "sample_index": index,
+                "status": "READY",
+                "stage_timing": stage_timing,
+                **{key: value for key, value in sample.items() if key != "frame_path"},
+        },
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_four_modal_full_chain.py",
+            "--qwen-base-url", "http://fake.invalid/v1",
+            "--asr-manifest", str(asr_manifest),
+            "--multimodal-cases", str(cases),
+            "--latency-manifest", str(latency_manifest),
+            "--warmup", "0",
+            "--measured", "1",
+            "--diagnostic",
+            "--output", str(output),
+        ],
+    )
+
+    assert main() == 0
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["official_mode"] is False
+    assert report["official_gates"] is None
+    assert report["official_verdict"] is None
+    assert report["diagnostic_gate"] == {
+        "status": "DIAGNOSTIC",
+        "reason": "diagnostic_non_official",
+        "run_accuracy": False,
+        "run_stability": False,
+    }
