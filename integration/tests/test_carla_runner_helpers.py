@@ -71,6 +71,7 @@ def test_missing_target_stop_contract_is_written_to_evidence(tmp_path: Path) -> 
     )
     records = [json.loads(line) for line in evidence_path.read_text(encoding="utf-8").splitlines()]
     command = next(record for record in records if record["record_type"] == "command")
+    completed = next(record for record in records if record["record_type"] == "run_complete")
 
     assert contract["intent"] == "STOP"
     assert contract["failure_reason"] == "missing_required_target"
@@ -79,6 +80,7 @@ def test_missing_target_stop_contract_is_written_to_evidence(tmp_path: Path) -> 
         "message": "missing_required_target",
     }]
     assert command["command"]["failure_reason"] == "missing_required_target"
+    assert completed["summary"]["acceptance"]["metrics"]["failure_reason"] == "missing_required_target"
 
 
 def test_voice_load_failure_becomes_rejected_no_op() -> None:
