@@ -270,6 +270,14 @@ class ScenarioEvidenceRecorder:
         normalized_status = str(status).strip().upper()
         if normalized_status not in {"PENDING", "READY", "TIMEOUT", "STALE", "ERROR"}:
             raise ValueError("unsupported Qwen evidence status")
+        # A deterministic D safety decision can stop the vehicle through the
+        # high-level command boundary, without producing a second frame-level
+        # brake takeover. Preserve that provenance in acceptance evidence.
+        if normalized_status == "READY" and isinstance(high_level_command, Mapping):
+            action = str(high_level_command.get("action", "")).strip().upper()
+            source = str(high_level_command.get("decision_source", "")).strip().upper()
+            if source == "SAFETY_RULE" and action in {"STOP", "EMERGENCY_STOP"}:
+                self._safety_reasons.add("QWEN_SAFETY_RULE")
         self._write(
             "qwen_decision",
             request_id=request_id,

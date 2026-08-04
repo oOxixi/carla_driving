@@ -1730,6 +1730,18 @@ def run(args: argparse.Namespace) -> None:
                                 raise RuntimeError("ready Qwen result has no runtime command")
                             high_level = dict(qwen_result.high_level_command or {})
                             runtime_command = dict(qwen_result.runtime_command)
+                            qwen_action = str(high_level.get("action", "")).strip().upper()
+                            qwen_source = str(
+                                high_level.get("decision_source", "")
+                            ).strip().upper()
+                            if (
+                                qwen_source == "SAFETY_RULE"
+                                and qwen_action in {"STOP", "EMERGENCY_STOP"}
+                            ):
+                                # This is a D-owned high-level safety
+                                # intervention, even when no additional
+                                # frame-level brake override is required.
+                                safety_reasons.add("QWEN_SAFETY_RULE")
                             if str(high_level.get("action", "")).upper() == "START":
                                 runtime.requested_speed_mps = qwen_desired_speed_mps
                             received_ns = time.monotonic_ns()
@@ -2236,8 +2248,10 @@ def main() -> None:
                         default=os.environ.get("QWEN_BASE_URL", "http://127.0.0.1:18000/v1"),
                         help="OpenAI-compatible /v1 endpoint; QWEN_API_KEY is read only from the environment")
     parser.add_argument("--qwen-model",
-                        default=os.environ.get("QWEN_MODEL", "qwen2.5-vl"),
-                        help="remote served model name")
+                        default=os.environ.get(
+                            "QWEN_MODEL", "Qwen/Qwen2.5-VL-7B-Instruct"
+                        ),
+                        help="exact remote Qwen2.5-VL-7B model id served by this branch")
     parser.add_argument("--qwen-request-timeout-s", type=float, default=15.0,
                         help="OpenAI client wall-clock timeout")
     parser.add_argument("--qwen-max-inference-s", type=float, default=10.0,
@@ -2246,8 +2260,10 @@ def main() -> None:
                         help="maximum simulation-time age of a usable Qwen result")
     parser.add_argument("--qwen-command-ttl-s", type=float, default=30.0,
                         help="maximum simulation-time duration for the accepted runtime command")
-    parser.add_argument("--qwen-max-tokens", type=int, default=192)
-    parser.add_argument("--qwen-image-max-side", type=int, default=768)
+    parser.add_argument("--qwen-max-tokens", type=int, default=1,
+                        help="fixed one-token budget for the A-E decision choice")
+    parser.add_argument("--qwen-image-max-side", type=int, default=256,
+                        help="square montage side sent to the remote Qwen model")
     parser.add_argument("--qwen-jpeg-quality", type=int, default=75)
     parser.add_argument("--qwen-image-dir", default="artifacts/runtime/qwen_live",
                         help="local replay images; this directory is gitignored")
@@ -2352,6 +2368,8 @@ def main() -> None:
             parser.error(f"--{name.replace('_', '-')} must be positive")
     if args.qwen_max_tokens < 1 or args.qwen_image_max_side < 1:
         parser.error("--qwen-max-tokens and --qwen-image-max-side must be positive")
+    if args.qwen_remote and args.qwen_max_tokens != 1:
+        parser.error("--qwen-remote requires --qwen-max-tokens 1 for the A-E action boundary")
     if not 1 <= args.qwen_jpeg_quality <= 95:
         parser.error("--qwen-jpeg-quality must be in [1, 95]")
     run(args)

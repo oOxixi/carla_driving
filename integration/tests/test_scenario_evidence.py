@@ -226,11 +226,14 @@ def test_qwen_request_and_result_are_recorded_without_credentials(tmp_path):
     recorder.record_qwen_event(
         request_id="qwen-1",
         status="READY",
-        high_level_command={"action": "STOP"},
+        high_level_command={"action": "STOP", "decision_source": "SAFETY_RULE"},
         runtime_command={"command_id": "qwen_async_00000001", "intent": "STOP"},
         trace={"latency_ms": 1911.74, "raw_output": '{"action":"STOP"}'},
     )
-    recorder.complete(completion=True)
+    summary = recorder.complete(
+        completion=True,
+        expected={"expected_reason_contains": ["safety"]},
+    )
 
     records = [
         json.loads(line)
@@ -239,6 +242,7 @@ def test_qwen_request_and_result_are_recorded_without_credentials(tmp_path):
     qwen_records = [item for item in records if item["record_type"] == "qwen_decision"]
     assert [item["status"] for item in qwen_records] == ["PENDING", "READY"]
     assert qwen_records[1]["trace"]["latency_ms"] == 1911.74
+    assert summary["acceptance"]["passed"] is True
     assert "api_key" not in path.read_text(encoding="utf-8").lower()
 
 
