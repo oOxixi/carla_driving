@@ -2,9 +2,50 @@
 from __future__ import annotations
 
 from collections import Counter
+import math
 import re
 import statistics
 from typing import Any, Callable
+
+
+def summarize_latency(values: list[float]) -> dict[str, float]:
+    """Return the fixed, nearest-rank timing summary used by gates."""
+    ordered = sorted(values)
+    if not ordered:
+        raise ValueError("latency sample list is empty")
+
+    def percentile(quantile: float) -> float:
+        return ordered[min(len(ordered) - 1, math.ceil(quantile * len(ordered)) - 1)]
+
+    return {
+        "count": len(ordered),
+        "mean": statistics.fmean(ordered),
+        "p50": percentile(0.50),
+        "p95": percentile(0.95),
+        "p99": percentile(0.99),
+        "max": ordered[-1],
+    }
+
+
+def evaluate_official_gates(metrics: dict[str, object]) -> dict[str, object]:
+    """Apply latency gates before the accuracy and stability phases."""
+    end_to_end = metrics["end_to_end_ms"]
+    if not isinstance(end_to_end, dict):
+        raise ValueError("end_to_end_ms must be a timing summary")
+    p95 = float(end_to_end["p95"])
+    if p95 > 300.0:
+        return {
+            "status": "EARLY_STOP",
+            "reason": "end_to_end_p95_over_300ms",
+            "run_accuracy": False,
+            "run_stability": False,
+        }
+    return {
+        "status": "CONTINUE",
+        "reason": None,
+        "run_accuracy": True,
+        "run_stability": p95 <= 150.0,
+    }
 
 
 def _percentile(values: list[float], quantile: float) -> float | None:
@@ -21,6 +62,7 @@ def _percentile(values: list[float], quantile: float) -> float | None:
 def _latency(values: list[float]) -> dict[str, float | None]:
     return {
         "mean_ms": statistics.fmean(values) if values else None,
+        "p50_ms": _percentile(values, 0.50),
         "p95_ms": _percentile(values, 0.95),
         "p99_ms": _percentile(values, 0.99),
         "max_ms": max(values) if values else None,

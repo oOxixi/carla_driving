@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "purpose": "official_full_chain_latency_only",
+  "source_cases": "artifacts/four_modal_0728/stress_set/cases_v2.jsonl",
+  "samples": [
+    {
+      "audio_ref": "voice_group/test_samples/mandarin/0003.mp3",
+      "audio_sha256": "bd924ae4f07aa8a16468dfbe9a4b347e7d251b1a5275adf052d7898b2bccf5cd",
+      "frame_ref": "artifacts/four_modal_0728/stress_set/images/town03opt_multi_target_seed_20_center__baseline.png",
+      "frame_sha256": "868f6c9306e3d0b19d8ba6bd88ce1d5fb10e08d2d1337cae1cebdc44960a7616",
+      "expected_intent": "SET_SPEED"
+    },
+    {
+      "audio_ref": "voice_group/test_samples/mandarin/0004.mp3",
+      "audio_sha256": "7254cdaf9eadb713ae80c675ba5c78bfb28ea4ed8471ebc0b99ae49a4e1a0b14",
+      "frame_ref": "artifacts/four_modal_0728/stress_set/images/town03opt_multi_target_seed_21_center__detector_bbox_shift.png",
+      "frame_sha256": "494da12e5612e6a684a858e050111262f853e68f90b2617cc1276357090c2dc2",
+      "expected_intent": "EMERGENCY_STOP"
+    },
+    {
+      "audio_ref": "voice_group/test_samples/mandarin/0006.mp3",
+      "audio_sha256": "353041f2a50f942be240e2d069a593d4c9f5b98c65412ca39a7b048cb2e54bcc",
+      "frame_ref": "artifacts/four_modal_0728/stress_set/images/town03opt_multi_target_seed_22_center__detector_false_positive.png",
+      "frame_sha256": "ae1e20ab569817b887731b5e9c450717e9cbdf8e231e7f1675ce60f12532896a",
+      "expected_intent": "AVOID_OBSTACLE"
+    },
+    {
+      "audio_ref": "voice_group/test_samples/mandarin/0008.mp3",
+      "audio_sha256": "077159e722e08b05fbde1dea4cad4637c5887c1aab21ed34a43bacf37708890f",
+      "frame_ref": "artifacts/four_modal_0728/stress_set/images/town03opt_multi_target_seed_23_center__detector_miss.png",
+      "frame_sha256": "9d17ae431f1374216aa937bfdd11d5eec8b222f576b753a8fd661271c2dcad24",
+      "expected_intent": "STOP"
+    },
+    {
+      "audio_ref": "voice_group/test_samples/dialect/dongbei/0081.mp3",
+      "audio_sha256": "bf8991c380742047b1d6f854d3be94d36eea685eaf1b88f52c7e864ad07593b1",
+      "frame_ref": "artifacts/four_modal_0728/stress_set/images/town03opt_multi_target_seed_20_center__exposure_high.png",
+      "frame_sha256": "940240e81746567a14c00c5cee205d8f0a1ce69006ebb291592dbe1d9de237a5",
+      "expected_intent": "SET_SPEED"
+    },
+    {
+      "audio_ref": "voice_group/test_samples/dialect/dongbei/0075.mp3",
+      "audio_sha256": "516088acec465ebeed7abae94cbd01e5b42f46520ec765a1e3ad84ef49b48d14",
+      "frame_ref": "artifacts/four_modal_0728/stress_set/images/town03opt_multi_target_seed_20_center__exposure_low.png",
+      "frame_sha256": "2ec69e87eabfe14d40b165e2214e6511fc09da2fb17737868c5e2d700aae7a1d",
+      "expected_intent": "AVOID_OBSTACLE"
+    },
+    {
+      "audio_ref": "voice_group/test_samples/dialect/shaanxi/0006.mp3",
+      "audio_sha256": "a350d5add883cbba069ac40aa43623c7b3668fdad3bcd5fba8334382d5e5cd4b",
+      "frame_ref": "artifacts/four_modal_0728/stress_set/images/town03opt_multi_target_seed_20_center__motion_blur.png",
+      "frame_sha256": "ddb32d3a86237afa42af9f500f349687cde72193bbe26fd0820cf71618d61f1e",
+      "expected_intent": "AVOID_OBSTACLE"
+    },
+    {
+      "audio_ref": "voice_group/test_samples/dialect/yueyu/0011.mp3",
+      "audio_sha256": "43e395f519bf869d84398d1989507bb4a3068041044d600a1be821bbe8b3656e",
+      "frame_ref": "artifacts/four_modal_0728/stress_set/images/town03opt_multi_target_seed_20_center__partial_occlusion.png",
+      "frame_sha256": "4d6931b7a4513eb9d4630eebc2a3f1509d9f6fda84280da56190f8906593d98c",
+      "expected_intent": "EMERGENCY_STOP"
+    },
+    {
+      "audio_ref": "voice_group/test_samples/dialect/taiwan/0009.mp3",
+      "audio_sha256": "0ee46155b66ab5e00d36652d19601669af87c5ac6fb1b714c6ce6f3d465f8374",
+      "frame_ref": "artifacts/four_modal_0728/stress_set/images/town03opt_multi_target_seed_24_second__baseline.png",
+      "frame_sha256": "4194e2424d357993d055dfdd6e44e30b7f62082e0b58a3ec402124b5b98430c8",
+      "expected_intent": "AVOID_OBSTACLE"
+    },
+    {
+      "audio_ref": "voice_group/test_samples/dialect/taiwan/0081.mp3",
+      "audio_sha256": "fd5fab25347c25109c67b019989c1af93b5523801737a711d371c546867b5b13",
+      "frame_ref": "artifacts/four_modal_0728/stress_set/images/town03opt_multi_target_seed_25_second__detector_bbox_shift.png",
+      "frame_sha256": "562e3e7e85048c9e404f9cd63cf6acb189dd9f31f174ad352871fa6f587724b2",
+      "expected_intent": "SET_SPEED"
+    }
+  ]
+}
