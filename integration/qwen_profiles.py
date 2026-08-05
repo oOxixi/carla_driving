@@ -56,6 +56,18 @@ _PROFILES = {
         prompt_style="compact-v2",
         optional=True,
     ),
+    "qwen25vl-7b-awq": QwenModelProfile(
+        name="qwen25vl-7b-awq",
+        model="Qwen/Qwen2.5-VL-7B-Instruct-AWQ",
+        revision="536a35794df8831aa814970ee8f89eff577e7718",
+        quantization="awq_marlin",
+        required_linear_kernel="MarlinLinearKernel",
+        image_max_side=224,
+        visual_tokens=64,
+        port=8001,
+        prompt_style="compact-v2",
+        optional=True,
+    ),
 }
 
 

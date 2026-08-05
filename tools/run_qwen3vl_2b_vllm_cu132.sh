@@ -4,6 +4,8 @@ set -euo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 variant="${QWEN_MODEL_VARIANT:-int4}"
 venv="${QWEN_VLLM_VENV:-/home/restar/.venvs/carla_qwen3_vllm_cu132}"
+quant_args=()
+graph_args=(-cc.cudagraph_mode=NONE)
 
 case "${variant}" in
   int4)
@@ -18,8 +20,16 @@ case "${variant}" in
     expected_revision="46485250d8854c0a9be4f1adbc67ca47e5bb6fa5"
     expected_quant="fp8"
     ;;
+  qwen25vl-7b-awq)
+    default_model_path="${repo_root}/release_assets/weights/optional/qwen25vl-7b-awq"
+    served_model="Qwen/Qwen2.5-VL-7B-Instruct-AWQ"
+    expected_revision="536a35794df8831aa814970ee8f89eff577e7718"
+    expected_quant="awq"
+    quant_args=(--quantization awq_marlin)
+    graph_args=()
+    ;;
   *)
-    echo "QWEN_MODEL_VARIANT must be int4 or fp8; got: ${variant}" >&2
+    echo "QWEN_MODEL_VARIANT must be int4, fp8, or qwen25vl-7b-awq; got: ${variant}" >&2
     exit 2
     ;;
 esac
@@ -68,6 +78,9 @@ if actual_quant != expected_quant:
     )
 
 revision = os.environ.get("QWEN_MODEL_REVISION", "").strip()
+revision_file = model_path / "REVISION"
+if not revision and revision_file.is_file():
+    revision = revision_file.read_text(encoding="utf-8").strip()
 metadata = model_path / ".cache/huggingface/download/config.json.metadata"
 if not revision and metadata.is_file():
     revision = metadata.read_text(encoding="utf-8").splitlines()[0].strip()
@@ -78,7 +91,7 @@ if revision != expected_revision:
     )
 
 print(
-    "Qwen3-VL preflight ready: "
+    "Qwen VL preflight ready: "
     f"gpu={torch.cuda.get_device_name()} torch={torch.__version__} "
     f"cuda_runtime={torch.version.cuda} vllm={vllm.__version__} "
     f"quant={actual_quant} revision={revision}",
@@ -93,6 +106,7 @@ fi
 
 exec "${venv}/bin/vllm" serve "${model_path}" \
   --served-model-name "${served_model}" \
+  "${quant_args[@]}" \
   --host "${host}" \
   --port "${port}" \
   --dtype auto \
@@ -102,4 +116,4 @@ exec "${venv}/bin/vllm" serve "${model_path}" \
   --enable-prefix-caching \
   --attention-backend TRITON_ATTN \
   --mm-encoder-attn-backend TORCH_SDPA \
-  -cc.cudagraph_mode=NONE
+  "${graph_args[@]}"

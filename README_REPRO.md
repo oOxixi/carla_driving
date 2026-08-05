@@ -78,6 +78,7 @@ The official targets are speech parsing P95 `<= 50 ms`, end-to-end decision P95 
 - Default INT4: `h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4`, revision `f91db2369bd00e7ec20bf09b6a0080cdb26aefa5`.
 - Optional FP8: `Qwen/Qwen3-VL-2B-Instruct-FP8`, revision `46485250d8854c0a9be4f1adbc67ca47e5bb6fa5`.
 - Optional 3B: `Qwen/Qwen2.5-VL-3B-Instruct`, revision `66285546d2b821cf421d4f5eb2576359d3770cd3`.
+- A800 7B migration: `Qwen/Qwen2.5-VL-7B-Instruct-AWQ`, revision `536a35794df8831aa814970ee8f89eff577e7718`; see `docs/QWEN25_VL_7B_A800_MIGRATION.md`.
 - ASR: `iic/SenseVoiceSmall`, revision `7bf452403abd7353a300cd760f7adae7701c92c1`.
 - Frozen validation manifests are under `datasets/frozen_validation`; preflight records their SHA-256 values.
 
