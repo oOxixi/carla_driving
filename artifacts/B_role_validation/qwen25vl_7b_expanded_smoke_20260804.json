@@ -1,0 +1,880 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-04T14:07:08.081038+00:00",
+  "dataset_kind": "language_plus_structured_scene_no_rgb_no_carla_execution",
+  "scope_warning": "This isolated 11-action evaluation does not modify or prove the five-action production adapter, visual grounding, or CARLA control.",
+  "dataset": "/home/abc/projects/carla_driving_8.4-xky-3B_20260804/CARLA-Language-Benchmark/datasets/final_benchmark/CARLA_language_benchmark_v1_normalized.json",
+  "dataset_sha256": "d05feb10cf4019dc26ff98a1821f09d304f4612f44006cedb2a69e91babf5213",
+  "dataset_records": 6192,
+  "selected_records": 60,
+  "selection": {
+    "categories": [],
+    "sample_per_category": 3,
+    "limit": null
+  },
+  "input_integrity_full_dataset": {
+    "source_records": 6192,
+    "unique_model_inputs": 3802,
+    "duplicate_model_input_records": 2390,
+    "conflicting_input_groups": 0,
+    "conflicting_input_records": 0
+  },
+  "prompt_contract": {
+    "input_fields": [
+      "template",
+      "scene_constraints"
+    ],
+    "hidden_evaluation_fields": [
+      "id",
+      "category",
+      "semantic_intent",
+      "expected_action",
+      "expected_parameters",
+      "safety_policy"
+    ],
+    "action_to_code": {
+      "START": "A",
+      "STOP": "B",
+      "KEEP_LANE": "C",
+      "SET_SPEED": "D",
+      "EMERGENCY_STOP": "E",
+      "TURN_LEFT": "F",
+      "TURN_RIGHT": "G",
+      "CHANGE_LANE_LEFT": "H",
+      "CHANGE_LANE_RIGHT": "I",
+      "AVOID_OBJECT": "J",
+      "REQUEST_CONFIRMATION": "K"
+    },
+    "temperature": 0.0,
+    "max_tokens": 1,
+    "structured_choice": true
+  },
+  "model": "qwen2.5-vl",
+  "base_url": "http://127.0.0.1:18000/v1",
+  "inference_hardware": {
+    "name": "NVIDIA GeForce RTX 3090",
+    "memory_mib": 24576,
+    "source": "operator-supplied remote nvidia-smi snapshot"
+  },
+  "concurrency": 4,
+  "timeout_s": 20.0,
+  "retries": 1,
+  "wall_time_s": 2.562186341,
+  "throughput_records_per_s": 23.417500530653246,
+  "metrics": {
+    "total": 60,
+    "ready": 60,
+    "errors": 0,
+    "correct": 48,
+    "action_accuracy": 0.8,
+    "strict_parse_rate": 1.0,
+    "macro_category_accuracy": 0.8,
+    "latency_ms_under_configured_concurrency": {
+      "count": 60,
+      "mean_ms": 1365.14640805,
+      "p50_ms": 1354.4900739999998,
+      "p95_ms": 2332.9300284,
+      "p99_ms": 2384.49354005,
+      "max_ms": 2400.513872
+    },
+    "selected_token_confidence": {
+      "mean": 0.7014461174441291,
+      "p05": 0.3078518599411307,
+      "p50": 0.7233844367948556
+    },
+    "by_category": {
+      "ambiguous_target": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "compound": {
+        "count": 3,
+        "ready": 3,
+        "correct": 1,
+        "accuracy": 0.3333333333333333,
+        "strict_parse_rate": 1.0
+      },
+      "dense_target": {
+        "count": 3,
+        "ready": 3,
+        "correct": 2,
+        "accuracy": 0.6666666666666666,
+        "strict_parse_rate": 1.0
+      },
+      "detector_error": {
+        "count": 3,
+        "ready": 3,
+        "correct": 2,
+        "accuracy": 0.6666666666666666,
+        "strict_parse_rate": 1.0
+      },
+      "emergency": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "exposure": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "following": {
+        "count": 3,
+        "ready": 3,
+        "correct": 2,
+        "accuracy": 0.6666666666666666,
+        "strict_parse_rate": 1.0
+      },
+      "lane_change": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "missing_target": {
+        "count": 3,
+        "ready": 3,
+        "correct": 1,
+        "accuracy": 0.3333333333333333,
+        "strict_parse_rate": 1.0
+      },
+      "navigation_error": {
+        "count": 3,
+        "ready": 3,
+        "correct": 0,
+        "accuracy": 0.0,
+        "strict_parse_rate": 1.0
+      },
+      "negation": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "occlusion": {
+        "count": 3,
+        "ready": 3,
+        "correct": 1,
+        "accuracy": 0.3333333333333333,
+        "strict_parse_rate": 1.0
+      },
+      "ordinary_instruction": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "ordinary_synonym": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "parking": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "safety_conflict": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "speed_control": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "turning": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "unit_conversion": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "weather_failure": {
+        "count": 3,
+        "ready": 3,
+        "correct": 3,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      }
+    },
+    "by_expected_action": {
+      "AVOID_OBJECT": {
+        "count": 1,
+        "ready": 1,
+        "correct": 1,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "CHANGE_LANE_LEFT": {
+        "count": 2,
+        "ready": 2,
+        "correct": 2,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "CHANGE_LANE_RIGHT": {
+        "count": 1,
+        "ready": 1,
+        "correct": 1,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "EMERGENCY_STOP": {
+        "count": 4,
+        "ready": 4,
+        "correct": 3,
+        "accuracy": 0.75,
+        "strict_parse_rate": 1.0
+      },
+      "KEEP_LANE": {
+        "count": 23,
+        "ready": 23,
+        "correct": 17,
+        "accuracy": 0.7391304347826086,
+        "strict_parse_rate": 1.0
+      },
+      "REQUEST_CONFIRMATION": {
+        "count": 8,
+        "ready": 8,
+        "correct": 5,
+        "accuracy": 0.625,
+        "strict_parse_rate": 1.0
+      },
+      "SET_SPEED": {
+        "count": 10,
+        "ready": 10,
+        "correct": 10,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "START": {
+        "count": 2,
+        "ready": 2,
+        "correct": 2,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "STOP": {
+        "count": 6,
+        "ready": 6,
+        "correct": 4,
+        "accuracy": 0.6666666666666666,
+        "strict_parse_rate": 1.0
+      },
+      "TURN_LEFT": {
+        "count": 2,
+        "ready": 2,
+        "correct": 2,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "TURN_RIGHT": {
+        "count": 1,
+        "ready": 1,
+        "correct": 1,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      }
+    },
+    "by_safety_policy": {
+      "confirmation": {
+        "count": 9,
+        "ready": 9,
+        "correct": 5,
+        "accuracy": 0.5555555555555556,
+        "strict_parse_rate": 1.0
+      },
+      "normal": {
+        "count": 45,
+        "ready": 45,
+        "correct": 37,
+        "accuracy": 0.8222222222222222,
+        "strict_parse_rate": 1.0
+      },
+      "override": {
+        "count": 6,
+        "ready": 6,
+        "correct": 6,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      }
+    },
+    "confusion_matrix": {
+      "AVOID_OBJECT": {
+        "AVOID_OBJECT": 1
+      },
+      "CHANGE_LANE_LEFT": {
+        "CHANGE_LANE_LEFT": 2
+      },
+      "CHANGE_LANE_RIGHT": {
+        "CHANGE_LANE_RIGHT": 1
+      },
+      "EMERGENCY_STOP": {
+        "EMERGENCY_STOP": 3,
+        "STOP": 1
+      },
+      "KEEP_LANE": {
+        "EMERGENCY_STOP": 1,
+        "KEEP_LANE": 17,
+        "SET_SPEED": 2,
+        "STOP": 3
+      },
+      "REQUEST_CONFIRMATION": {
+        "KEEP_LANE": 1,
+        "REQUEST_CONFIRMATION": 5,
+        "SET_SPEED": 1,
+        "STOP": 1
+      },
+      "SET_SPEED": {
+        "SET_SPEED": 10
+      },
+      "START": {
+        "START": 2
+      },
+      "STOP": {
+        "SET_SPEED": 2,
+        "STOP": 4
+      },
+      "TURN_LEFT": {
+        "TURN_LEFT": 2
+      },
+      "TURN_RIGHT": {
+        "TURN_RIGHT": 1
+      }
+    }
+  },
+  "incorrect_examples": [
+    {
+      "index": 5,
+      "id": "carla_language_benchmark_v1_001002",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7364371232198462,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7364371232198462
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2109927621003304
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.025199494864449987
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.00927037387830686
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.004113703471944577
+        }
+      ],
+      "latency_ms": 504.287765,
+      "attempts": 1
+    },
+    {
+      "index": 27,
+      "id": "carla_language_benchmark_v1_005020",
+      "category": "compound",
+      "safety_policy": "normal",
+      "instruction": "先减速，然后在停车线前停车",
+      "expected_action": "STOP",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.5438366775681255,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.5438366775681255
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.2910947969161363
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.05731996410398107
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.030681165868954148
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.027076033847036243
+        }
+      ],
+      "latency_ms": 1245.450056,
+      "attempts": 1
+    },
+    {
+      "index": 28,
+      "id": "carla_language_benchmark_v1_005021",
+      "category": "compound",
+      "safety_policy": "normal",
+      "instruction": "看到行人后立即停车等待",
+      "expected_action": "EMERGENCY_STOP",
+      "predicted_action": "STOP",
+      "predicted_code": "B",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.9410569498356286,
+      "top_alternatives": [
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.9410569498356286
+        },
+        {
+          "code": "K",
+          "action": "REQUEST_CONFIRMATION",
+          "probability": 0.028417455948474887
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.01723606241318019
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.004357959053813863
+        },
+        {
+          "code": "I",
+          "action": "CHANGE_LANE_RIGHT",
+          "probability": 0.0017066012863006077
+        }
+      ],
+      "latency_ms": 1316.419801,
+      "attempts": 1
+    },
+    {
+      "index": 36,
+      "id": "carla_language_benchmark_v1_005578",
+      "category": "missing_target",
+      "safety_policy": "confirmation",
+      "instruction": "前方跟随黄色出租车",
+      "expected_action": "REQUEST_CONFIRMATION",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.4022000399924021,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.4022000399924021
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.2764277754160782
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.1389966145074635
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.048035944613285926
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.031014336855139896
+        }
+      ],
+      "latency_ms": 1548.322503,
+      "attempts": 1
+    },
+    {
+      "index": 37,
+      "id": "carla_language_benchmark_v1_005579",
+      "category": "missing_target",
+      "safety_policy": "confirmation",
+      "instruction": "前方保持在后方行驶黄色出租车",
+      "expected_action": "REQUEST_CONFIRMATION",
+      "predicted_action": "KEEP_LANE",
+      "predicted_code": "C",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.3898702137497517,
+      "top_alternatives": [
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.3898702137497517
+        },
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.25171912900565446
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.1960390547836557
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.05276320209320484
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.021994974989278673
+        }
+      ],
+      "latency_ms": 1588.193063,
+      "attempts": 1
+    },
+    {
+      "index": 43,
+      "id": "carla_language_benchmark_v1_005739",
+      "category": "occlusion",
+      "safety_policy": "normal",
+      "instruction": "保持当前车道，观察前方白色SUV",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "STOP",
+      "predicted_code": "B",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.281225567909871,
+      "top_alternatives": [
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.281225567909871
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.23314418457410266
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.2057490207422568
+        },
+        {
+          "code": "K",
+          "action": "REQUEST_CONFIRMATION",
+          "probability": 0.10345711709885354
+        },
+        {
+          "code": "J",
+          "action": "AVOID_OBJECT",
+          "probability": 0.04886968176050894
+        }
+      ],
+      "latency_ms": 1815.723037,
+      "attempts": 1
+    },
+    {
+      "index": 44,
+      "id": "carla_language_benchmark_v1_005740",
+      "category": "occlusion",
+      "safety_policy": "confirmation",
+      "instruction": "减速接近前方蓝色卡车",
+      "expected_action": "STOP",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.6239456425772835,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.6239456425772835
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.2025654802863622
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.0700047567782802
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.024192996578973915
+        },
+        {
+          "code": "J",
+          "action": "AVOID_OBJECT",
+          "probability": 0.021350244545184194
+        }
+      ],
+      "latency_ms": 1854.250513,
+      "attempts": 1
+    },
+    {
+      "index": 46,
+      "id": "carla_language_benchmark_v1_005811",
+      "category": "detector_error",
+      "safety_policy": "normal",
+      "instruction": "通过当前道路",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "EMERGENCY_STOP",
+      "predicted_code": "E",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.3327946979760829,
+      "top_alternatives": [
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.3327946979760829
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.24347780226987958
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.15720108425344942
+        },
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.06975755827929737
+        },
+        {
+          "code": "K",
+          "action": "REQUEST_CONFIRMATION",
+          "probability": 0.051035719874290175
+        }
+      ],
+      "latency_ms": 1892.00683,
+      "attempts": 1
+    },
+    {
+      "index": 50,
+      "id": "carla_language_benchmark_v1_005884",
+      "category": "dense_target",
+      "safety_policy": "normal",
+      "instruction": "密集车流中跟随正在减速的车辆",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.710331750369865,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.710331750369865
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.20351345990823508
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.04007417631713216
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.016705398093634607
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009518448914045703
+        }
+      ],
+      "latency_ms": 2149.409023,
+      "attempts": 1
+    },
+    {
+      "index": 54,
+      "id": "carla_language_benchmark_v1_006087",
+      "category": "navigation_error",
+      "safety_policy": "normal",
+      "instruction": "按照导航路线继续行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "STOP",
+      "predicted_code": "B",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.4249832344224082,
+      "top_alternatives": [
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.4249832344224082
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.33097729548817345
+        },
+        {
+          "code": "K",
+          "action": "REQUEST_CONFIRMATION",
+          "probability": 0.1074525956198291
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.03078568408015929
+        },
+        {
+          "code": "J",
+          "action": "AVOID_OBJECT",
+          "probability": 0.0289204737725505
+        }
+      ],
+      "latency_ms": 2249.209075,
+      "attempts": 1
+    },
+    {
+      "index": 55,
+      "id": "carla_language_benchmark_v1_006088",
+      "category": "navigation_error",
+      "safety_policy": "normal",
+      "instruction": "继续沿规划路线前进",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "STOP",
+      "predicted_code": "B",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.3086200047509559,
+      "top_alternatives": [
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.3086200047509559
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.3086200047509559
+        },
+        {
+          "code": "K",
+          "action": "REQUEST_CONFIRMATION",
+          "probability": 0.12085734477281213
+        },
+        {
+          "code": "J",
+          "action": "AVOID_OBJECT",
+          "probability": 0.05708896732376555
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.05038083683497628
+        }
+      ],
+      "latency_ms": 2333.071054,
+      "attempts": 1
+    },
+    {
+      "index": 56,
+      "id": "carla_language_benchmark_v1_006089",
+      "category": "navigation_error",
+      "safety_policy": "confirmation",
+      "instruction": "按照当前导航方向行驶",
+      "expected_action": "REQUEST_CONFIRMATION",
+      "predicted_action": "STOP",
+      "predicted_code": "B",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.34185730233434675,
+      "top_alternatives": [
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.34185730233434675
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.283409657897774
+        },
+        {
+          "code": "G",
+          "action": "TURN_RIGHT",
+          "probability": 0.0979437569604746
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.06731569408344286
+        },
+        {
+          "code": "K",
+          "action": "REQUEST_CONFIRMATION",
+          "probability": 0.06323724235434203
+        }
+      ],
+      "latency_ms": 2295.602316,
+      "attempts": 1
+    }
+  ],
+  "records_output": "/home/abc/projects/carla_driving_8.4-xky-3B_20260804/artifacts/B_role_validation/qwen25vl_7b_expanded_smoke_20260804.records.jsonl"
+}
