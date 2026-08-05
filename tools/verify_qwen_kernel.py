@@ -1,31 +1,80 @@
+"""Strict parser for one Qwen GPTQ/Marlin launch evidence block.
+
+Launchers must emit the following exact, line-oriented contract.  ``launch_id``
+is any non-empty token without whitespace and must agree at BEGIN and END.
+
+    QWEN_LAUNCH_BEGIN launch_id=<id> profile=qwen3vl-2b-int4 model=h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4
+    quantization=auto_gptq
+    Using MarlinLinearKernel for AutoGPTQLinearMethod
+    batch1_path=gemv                 # optional; only this field proves GEMV
+    QWEN_LAUNCH_END launch_id=<id>
+"""
+
+from __future__ import annotations
+
+import re
 from pathlib import Path
 
 
+DEFAULT_PROFILE = "qwen3vl-2b-int4"
+DEFAULT_MODEL = "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
+LAUNCH_BEGIN = "QWEN_LAUNCH_BEGIN"
+LAUNCH_END = "QWEN_LAUNCH_END"
+BEGIN_PATTERN = re.compile(
+    rf"^{LAUNCH_BEGIN} launch_id=(?P<launch_id>\S+) "
+    rf"profile={re.escape(DEFAULT_PROFILE)} model={re.escape(DEFAULT_MODEL)}$"
+)
+END_PATTERN = re.compile(rf"^{LAUNCH_END} launch_id=(?P<launch_id>\S+)$")
+QUANTIZATION_PATTERN = re.compile(r"^quantization=auto_gptq$")
+MARLIN_PATTERN = re.compile(r"^Using MarlinLinearKernel(?: .*)?$")
+GEMV_PATTERN = re.compile(r"^batch1_path=gemv$")
+
+
+def _complete_blocks(lines: list[str]) -> list[list[str]]:
+    blocks: list[list[str]] = []
+    active_id: str | None = None
+    active_lines: list[str] = []
+    for line in lines:
+        if line.startswith(LAUNCH_BEGIN):
+            match = BEGIN_PATTERN.fullmatch(line)
+            if match is None:
+                raise ValueError("invalid Qwen launch BEGIN evidence marker")
+            if active_id is not None:
+                raise ValueError("nested Qwen launch evidence blocks are not allowed")
+            active_id = match["launch_id"]
+            active_lines = []
+            continue
+        if line.startswith(LAUNCH_END):
+            match = END_PATTERN.fullmatch(line)
+            if match is None or active_id is None:
+                raise ValueError("invalid Qwen launch END evidence marker")
+            if match["launch_id"] != active_id:
+                raise ValueError("Qwen launch END launch_id does not match BEGIN")
+            blocks.append(active_lines)
+            active_id = None
+            active_lines = []
+            continue
+        if active_id is not None:
+            active_lines.append(line)
+    if active_id is not None:
+        raise ValueError("unterminated Qwen launch evidence block")
+    return blocks
+
+
 def verify_kernel_log(path: Path) -> dict[str, str]:
-    text = path.read_text(encoding="utf-8", errors="replace")
-    lines = text.splitlines()
-    profile_lines = [
-        index
-        for index, line in enumerate(lines)
-        if "qwen3vl-2b-int4" in line.lower()
-        or "h2oai/qwen3-vl-2b-instruct-gptq-int4" in line.lower()
+    """Return runtime evidence only for the unique complete ready launch block."""
+    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    ready = [
+        block
+        for block in _complete_blocks(lines)
+        if any(QUANTIZATION_PATTERN.fullmatch(line) for line in block)
+        and any(MARLIN_PATTERN.fullmatch(line) for line in block)
     ]
-    quantization_lines = [
-        index for index, line in enumerate(lines) if "quantization=auto_gptq" in line
-    ]
-    marlin_lines = [
-        index for index, line in enumerate(lines) if "Using MarlinLinearKernel" in line
-    ]
-    if not profile_lines:
-        raise ValueError("Qwen default 2B GPTQ profile or model identity is required")
-    if not quantization_lines:
-        raise ValueError("Qwen launch did not prove auto_gptq quantization")
-    if not marlin_lines:
-        raise ValueError("Qwen launch did not select MarlinLinearKernel")
-    evidence_lines = profile_lines + quantization_lines + marlin_lines
-    if max(evidence_lines) - min(evidence_lines) > 20:
-        raise ValueError("Qwen profile, quantization, and Marlin evidence are not one launch")
-    mode = "gemv" if any("gemv" in line.lower() for line in lines) else "marlin_batch1"
+    if not ready:
+        raise ValueError("no complete Qwen launch block proves auto_gptq and Marlin")
+    if len(ready) != 1:
+        raise ValueError("expected exactly one complete ready Qwen launch block")
+    mode = "gemv" if any(GEMV_PATTERN.fullmatch(line) for line in ready[0]) else "marlin_batch1"
     return {
         "quantization": "auto_gptq",
         "linear_kernel": "MarlinLinearKernel",

@@ -125,20 +125,25 @@ def test_torch_patch_applies_to_clean_locked_source(tmp_path: Path) -> None:
 
 
 def test_kernel_log_requires_real_marlin_selection(tmp_path: Path) -> None:
+    begin = (
+        "QWEN_LAUNCH_BEGIN launch_id=launch-1 profile=qwen3vl-2b-int4 "
+        "model=h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4\n"
+    )
+    end = "QWEN_LAUNCH_END launch_id=launch-1\n"
     invalid = tmp_path / "server.log"
     invalid.write_text(
-        "profile=qwen3vl-2b-int4\nquantization=auto_gptq\nUsing ExllamaLinearKernel\n",
+        begin + "quantization=auto_gptq\nUsing ExllamaLinearKernel\n" + end,
         encoding="utf-8",
     )
-    with pytest.raises(ValueError, match="Marlin"):
+    with pytest.raises(ValueError, match="auto_gptq and Marlin"):
         verify_kernel_log(invalid)
 
     valid = tmp_path / "marlin.log"
     valid.write_text(
-        "profile=qwen3vl-2b-int4\n"
-        "model=h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4\n"
-        "quantization=auto_gptq\n"
-        "Using MarlinLinearKernel for AutoGPTQLinearMethod\n",
+        begin
+        + "quantization=auto_gptq\n"
+        + "Using MarlinLinearKernel for AutoGPTQLinearMethod\n"
+        + end,
         encoding="utf-8",
     )
     evidence = verify_kernel_log(valid)
@@ -147,17 +152,59 @@ def test_kernel_log_requires_real_marlin_selection(tmp_path: Path) -> None:
 
     wrong_model = tmp_path / "wrong-model.log"
     wrong_model.write_text(
-        "model=other/GPTQ-Int4\nquantization=auto_gptq\nUsing MarlinLinearKernel\n",
+        "QWEN_LAUNCH_BEGIN launch_id=launch-1 profile=qwen3vl-2b-int4 "
+        "model=not-h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4\n"
+        "quantization=auto_gptq\nUsing MarlinLinearKernel\n"
+        + end,
         encoding="utf-8",
     )
-    with pytest.raises(ValueError, match="Qwen default"):
+    with pytest.raises(ValueError, match="BEGIN"):
         verify_kernel_log(wrong_model)
 
     spliced = tmp_path / "spliced.log"
     spliced.write_text(
-        "profile=qwen3vl-2b-int4\n" + "noise\n" * 21
-        + "quantization=auto_gptq\nUsing MarlinLinearKernel\n",
+        begin + "quantization=auto_gptq\n" + end
+        + "QWEN_LAUNCH_BEGIN launch_id=launch-2 profile=qwen3vl-2b-int4 "
+        "model=h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4\n"
+        "Using MarlinLinearKernel\nQWEN_LAUNCH_END launch_id=launch-2\n",
         encoding="utf-8",
     )
-    with pytest.raises(ValueError, match="one launch"):
+    with pytest.raises(ValueError, match="complete Qwen launch"):
         verify_kernel_log(spliced)
+
+    mismatched_end = tmp_path / "mismatched-end.log"
+    mismatched_end.write_text(
+        begin + "quantization=auto_gptq\nUsing MarlinLinearKernel\n"
+        "QWEN_LAUNCH_END launch_id=launch-2\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="does not match"):
+        verify_kernel_log(mismatched_end)
+
+    outside_gemv = tmp_path / "outside-gemv.log"
+    outside_gemv.write_text(
+        "batch1_path=gemv\n" + begin + "quantization=auto_gptq\n"
+        "Using MarlinLinearKernel\n" + end,
+        encoding="utf-8",
+    )
+    assert verify_kernel_log(outside_gemv)["batch1_path"] == "marlin_batch1"
+
+    inside_gemv = tmp_path / "inside-gemv.log"
+    inside_gemv.write_text(
+        begin + "quantization=auto_gptq\nUsing MarlinLinearKernel\n"
+        "batch1_path=gemv\n" + end,
+        encoding="utf-8",
+    )
+    assert verify_kernel_log(inside_gemv)["batch1_path"] == "gemv"
+
+    two_ready = tmp_path / "two-ready.log"
+    two_ready.write_text(
+        begin + "quantization=auto_gptq\nUsing MarlinLinearKernel\n" + end
+        + "QWEN_LAUNCH_BEGIN launch_id=launch-2 profile=qwen3vl-2b-int4 "
+        "model=h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4\n"
+        "quantization=auto_gptq\nUsing MarlinLinearKernel\n"
+        "QWEN_LAUNCH_END launch_id=launch-2\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="exactly one"):
+        verify_kernel_log(two_ready)
