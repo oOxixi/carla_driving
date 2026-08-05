@@ -5,7 +5,12 @@ import json
 from pathlib import Path
 
 from tools.build_submission_package import check_release
-from tools.repro_cli import EvaluationDecision, build_evaluation_steps, parse_args
+from tools.repro_cli import (
+    EvaluationDecision,
+    _scenario_command,
+    build_evaluation_steps,
+    parse_args,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -31,6 +36,16 @@ def test_host_wrappers_only_launch_python_inside_docker() -> None:
     assert "python tools.repro_cli" not in shell
     assert "'python3','-m','tools.repro_cli'" in powershell
     assert "docker @base @cli" in powershell
+
+
+def test_carla_scenario_uses_remote_vllm_contract() -> None:
+    command = _scenario_command(Path("/data"), "scenario.json", Path("/output"))
+    assert "--qwen-remote" in command
+    assert "--qwen-base-url" in command
+    assert "--qwen-model" in command
+    assert "--realtime" in command
+    assert "--qwen-service-url" not in command
+    assert "--audio" not in command
 
 
 def test_reference_values_and_raw_files_are_source_backed() -> None:
@@ -65,3 +80,35 @@ def test_docs_notebook_handoff_and_missing_artifacts_are_honest() -> None:
     assert any("image.tar missing" in item for item in missing)
     assert any("technical solution PDF missing" in item for item in missing)
     assert any("CARLA demo video missing" in item for item in missing)
+
+
+def test_empty_release_files_do_not_pass_check(tmp_path: Path) -> None:
+    for relative in (
+        "release_assets/weights/qwen3vl-2b-int4/model.bin",
+        "release_assets/weights/asr/SenseVoiceSmall/model.bin",
+        "metrics/reference_5070/run_manifest.json",
+    ):
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("ok", encoding="utf-8")
+    for relative in (
+        "dist/carla-language-control-submission/image.tar",
+        "submission/技术方案.pdf",
+        "submission/demo/carla_closed_loop.mp4",
+    ):
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.touch()
+    missing = check_release(tmp_path)
+    assert any("image.tar is empty" in item for item in missing)
+    assert any("technical solution PDF is empty" in item for item in missing)
+    assert any("CARLA demo video is empty" in item for item in missing)
+
+
+def test_weight_downloads_target_release_assets() -> None:
+    primary = (ROOT / "weights/download_fallback.sh").read_text(encoding="utf-8")
+    asr = (ROOT / "weights/download_asr_fallback.sh").read_text(encoding="utf-8")
+    optional = (ROOT / "weights/download_optional_models.sh").read_text(encoding="utf-8")
+    assert "release_assets/weights" in primary
+    assert "release_assets/weights" in asr and '}/asr' in asr
+    assert "release_assets/weights" in optional and '}/optional' in optional

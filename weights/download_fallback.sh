@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+root="${RELEASE_WEIGHTS_DIR:-$(cd "$script_dir/.." && pwd)/release_assets/weights}"
+mkdir -p "$root"
 revision="f91db2369bd00e7ec20bf09b6a0080cdb26aefa5"
 partial="$root/.partial"
 [[ ! -e "$partial" ]] || { echo "partial directory already exists: $partial" >&2; exit 2; }

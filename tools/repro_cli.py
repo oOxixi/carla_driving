@@ -120,9 +120,13 @@ def _preflight(data_root: Path, run_root: Path, qwen_log: Path | None, carla_log
 def _scenario_command(data_root: Path, scenario: str, run_root: Path) -> list[str]:
     return [
         "python3", "-m", "integration.carla_runner", "--qwen-remote",
-        "--qwen-service-url", os.environ.get("QWEN_BASE_URL", "http://qwen:8001/v1"),
+        "--qwen-base-url", os.environ.get("QWEN_BASE_URL", "http://qwen:8001/v1"),
+        "--qwen-model", os.environ.get(
+            "QWEN_MODEL", "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
+        ),
         "--scenario-file", str(data_root / scenario),
         "--sensor-profile", "low", "--perception-mode", "sensors",
+        "--realtime",
         "--log-dir", str(run_root / "raw"),
     ]
 
@@ -143,7 +147,6 @@ def _run_mode(args: argparse.Namespace, runner: CommandRunner) -> int:
             return 0
         if args.mode in {"smoke", "demo"}:
             command = _scenario_command(args.data_root, SCENARIO_SETS["smoke"][0], context.root)
-            command += ["--audio", str(args.data_root / SMOKE_AUDIO_RUNTIME)]
             _run_checked(command, runner, context.logs_dir / f"{args.mode}.log")
             finish_run(context, "COMPLETED", None)
             return 0
@@ -205,7 +208,13 @@ def _run_mode(args: argparse.Namespace, runner: CommandRunner) -> int:
             image = sorted(image_dir.glob("*"))[0]
             command = [
                 "python3", "-m", "tools.run_long_stability", "--duration-minutes", "30",
-                "--qwen-model", "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
+                "--host", os.environ.get("CARLA_HOST", "carla"),
+                "--port", os.environ.get("CARLA_PORT", "2000"),
+                "--qwen-base-url", os.environ.get("QWEN_BASE_URL", "http://qwen:8001/v1"),
+                "--qwen-profile", os.environ.get("QWEN_PROFILE", "qwen3vl-2b-int4"),
+                "--qwen-model", os.environ.get(
+                    "QWEN_MODEL", "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
+                ),
                 "--qwen-image-root", str(image_dir), "--qwen-image-ref", image.name,
                 "--output", str(context.metrics_dir / "stability.json"),
             ]

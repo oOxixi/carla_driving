@@ -214,6 +214,8 @@ def check_release(root: Path) -> list[str]:
                 missing.append(f"{label} is empty: {path}")
         elif not path.is_file():
             missing.append(f"{label} missing: {path}")
+        elif path.stat().st_size == 0:
+            missing.append(f"{label} is empty: {path}")
     return missing
 
 
