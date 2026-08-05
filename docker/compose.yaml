@@ -2,20 +2,21 @@ name: carla-driving
 
 services:
   carla:
-    image: ${CARLA_IMAGE:-carlasim/carla:0.9.16}
+    image: carla-simulator:0.9.16
     container_name: carla-server
-    # Keep the CARLA server separate so the algorithm runtime can be exported alone.
     working_dir: /home/carla
     entrypoint: ["/bin/bash", "-lc"]
     command: >-
-      ./CarlaUE4.sh -RenderOffScreen -nosound -quality-level=${CARLA_QUALITY:-Low}
+      ./CarlaUE4.sh -RenderOffScreen -nosound -quality-level=${CARLA_QUALITY_LEVEL:-Low}
       -carla-port=2000
     ports:
       - "${CARLA_PORT:-2000}:2000"
       - "${CARLA_STREAM_PORT:-2001}:2001"
       - "${CARLA_TM_PORT:-8000}:8000"
+    environment:
+      CARLA_RESOLUTION: ${CARLA_RESOLUTION:-640x360}
     gpus: all
-    shm_size: ${CARLA_SHM_SIZE:-2gb}
+    ipc: host
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/2000'"]
       interval: 10s
@@ -23,31 +24,49 @@ services:
       retries: 18
       start_period: 30s
 
+  qwen:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.qwen-cu132
+    image: qwen-vllm-cu132:${QWEN_PROFILE}
+    container_name: qwen-vllm
+    environment:
+      QWEN_PROFILE: ${QWEN_PROFILE}
+      QWEN_GPU_MEMORY_UTILIZATION: ${QWEN_GPU_MEMORY_UTILIZATION}
+      QWEN_MAX_MODEL_LEN: ${QWEN_MAX_MODEL_LEN}
+      QWEN_EXTRA_ARGS: ${QWEN_EXTRA_ARGS}
+      QWEN_OUTPUT_ROOT: /output/runs
+    volumes:
+      - ${OUTPUT_DIR:-./output}:/output
+    gpus: all
+    ipc: host
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8001/v1/models > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+
   controller:
-    profiles: ["controller"]
     build:
       context: ..
       dockerfile: docker/Dockerfile.controller
-      args:
-        WITH_VOICE: ${WITH_VOICE:-1}
-        TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu128}
-    image: ${CONTROLLER_IMAGE:-carla-driving-controller:0.1.0}
+    image: carla-controller:${RELEASE_COMMIT}
     container_name: carla-controller
     depends_on:
       carla:
         condition: service_healthy
+      qwen:
+        condition: service_healthy
     environment:
       CARLA_HOST: carla
       CARLA_PORT: "2000"
-      MODELSCOPE_CACHE: /models/modelscope
-      HF_HOME: /models/huggingface
-      # Empty selects the offline composition smoke test from the Dockerfile.
-      CONTROLLER_COMMAND: ${CONTROLLER_COMMAND:-}
+      QWEN_BASE_URL: http://qwen:8001/v1
+      SENSEVOICE_MODEL_PATH: /models/asr/SenseVoiceSmall
+      SENSEVOICE_LORA_PATH: /app/voice_group/lora_dialect
+      REPRO_OUTPUT_ROOT: /output
     volumes:
-      - model-cache:/models
-      - ../artifacts:/workspace/artifacts
+      - ${OUTPUT_DIR:-./output}:/output
     gpus: all
+    ipc: host
     restart: "no"
-
-volumes:
-  model-cache:
