@@ -4,10 +4,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 WORKDIR /srv/qwen
 COPY release_assets/wheelhouse/ /wheelhouse/
 COPY third_party/vllm.lock.json /locks/vllm.lock.json
+COPY third_party/qwen-wheelhouse.lock.json /locks/qwen-wheelhouse.lock.json
 COPY tools/verify_release_lock.py /app/tools/verify_release_lock.py
-COPY docker/requirements-qwen.txt /tmp/requirements-qwen.txt
+COPY tools/generate_wheelhouse_lock.py tools/verify_wheelhouse_lock.py /app/tools/
+COPY docker/requirements-qwen.lock.txt /tmp/requirements-qwen.lock.txt
 RUN python3 /app/tools/verify_release_lock.py --lock /locks/vllm.lock.json --root /wheelhouse --key output_wheel \
- && python3 -m pip install --break-system-packages --no-index --find-links=/wheelhouse -r /tmp/requirements-qwen.txt
+ && python3 /app/tools/verify_wheelhouse_lock.py --lock /locks/qwen-wheelhouse.lock.json --wheelhouse /wheelhouse \
+ && python3 -m pip install --break-system-packages --no-index --find-links=/wheelhouse --require-hashes -r /tmp/requirements-qwen.lock.txt
 COPY release_assets/weights/qwen3vl-2b-int4/ /models/qwen/
 COPY weights/model_manifest.json /models/model_manifest.json
 COPY tools/verify_model_manifest.py /app/tools/verify_model_manifest.py
