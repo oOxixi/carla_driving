@@ -1,0 +1,15 @@
+{
+  "status": "MEASURED_DIAGNOSTIC",
+  "scope": "latency_gate_only_no_correctness",
+  "warmups": 5,
+  "count": 10,
+  "mean_ms": 74.2831325,
+  "p50_ms": 74.0300845,
+  "p95_ms": 83.85034385,
+  "max_ms": 84.18809,
+  "official_end_to_end": {
+    "status": "NOT_RUN",
+    "reason": "no_formal_full_chain_5070_run"
+  },
+  "source": "raw/qwen3vl_2b_gptq_int4_marlin_vllm_cu132_latency_gate_prompt_v3.json"
+}

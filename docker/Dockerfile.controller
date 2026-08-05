@@ -9,6 +9,10 @@ COPY tools/generate_wheelhouse_lock.py tools/verify_wheelhouse_lock.py /app/tool
 RUN python3 /app/tools/verify_wheelhouse_lock.py --lock /locks/controller-wheelhouse.lock.json --wheelhouse /wheelhouse-controller \
  && python3 -m pip install --break-system-packages --no-index --find-links=/wheelhouse-controller --require-hashes -r /tmp/requirements-controller.lock.txt
 COPY integration/ /app/integration/
+COPY car_control_A/ /app/car_control_A/
+COPY car_control_B/ /app/car_control_B/
+COPY car_control_C/ /app/car_control_C/
+COPY car_control_D/ /app/car_control_D/
 COPY voice_group/ /app/voice_group/
 COPY tools/ /app/tools/
 COPY compat.py /app/compat.py
