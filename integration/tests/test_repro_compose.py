@@ -76,3 +76,8 @@ def test_qwen_requirement_uses_the_staged_wheel_metadata_version() -> None:
     lock = json.loads((ROOT / "third_party/vllm.lock.json").read_text(encoding="utf-8"))
     requirements = (ROOT / "docker/requirements-qwen.txt").read_text(encoding="utf-8").splitlines()
     assert f"vllm=={lock['expected_wheel_version']}" in requirements
+
+
+def test_controller_voice_uses_available_matched_cu132_torch_pair() -> None:
+    requirements = (ROOT / "docker/requirements-voice.txt").read_text(encoding="utf-8").splitlines()
+    assert requirements[:2] == ["torch==2.11.0+cu132", "torchaudio==2.11.0+cu132"]
