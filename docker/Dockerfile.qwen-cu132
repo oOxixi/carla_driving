@@ -3,11 +3,15 @@ ENV DEBIAN_FRONTEND=noninteractive HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 VLLM_
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates python3 python3-pip curl libnuma1 && rm -rf /var/lib/apt/lists/*
 WORKDIR /srv/qwen
 COPY release_assets/wheelhouse/ /wheelhouse/
+COPY third_party/vllm.lock.json /locks/vllm.lock.json
+COPY tools/verify_release_lock.py /app/tools/verify_release_lock.py
 COPY docker/requirements-qwen.txt /tmp/requirements-qwen.txt
-RUN python3 -m pip install --break-system-packages --no-index --find-links=/wheelhouse -r /tmp/requirements-qwen.txt
+RUN python3 /app/tools/verify_release_lock.py --lock /locks/vllm.lock.json --root /wheelhouse --key output_wheel \
+ && python3 -m pip install --break-system-packages --no-index --find-links=/wheelhouse -r /tmp/requirements-qwen.txt
 COPY release_assets/weights/qwen3vl-2b-int4/ /models/qwen/
 COPY weights/model_manifest.json /models/model_manifest.json
 COPY tools/verify_model_manifest.py /app/tools/verify_model_manifest.py
+COPY tools/create_qwen_launch_logs.py /app/tools/create_qwen_launch_logs.py
 COPY docker/entrypoints/qwen.sh /usr/local/bin/qwen-entrypoint
 RUN chmod 0555 /usr/local/bin/qwen-entrypoint
 EXPOSE 8001

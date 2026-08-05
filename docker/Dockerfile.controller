@@ -5,9 +5,17 @@ WORKDIR /app
 COPY docker/requirements-controller.txt docker/requirements-voice.txt /tmp/requirements/
 COPY release_assets/wheelhouse-controller/ /wheelhouse-controller/
 RUN python3 -m pip install --break-system-packages --no-index --find-links=/wheelhouse-controller -r /tmp/requirements/requirements-controller.txt -r /tmp/requirements/requirements-voice.txt
-COPY . /app
+COPY integration/ /app/integration/
+COPY voice_group/ /app/voice_group/
+COPY tools/ /app/tools/
+COPY compat.py /app/compat.py
+COPY docker/entrypoints/controller.sh /app/docker/entrypoints/controller.sh
 COPY release_assets/weights/asr/SenseVoiceSmall /models/asr/SenseVoiceSmall
 COPY weights/model_manifest.json /models/model_manifest.json
+COPY third_party/scenario-runner.lock.json /locks/scenario-runner.lock.json
+COPY tools/verify_release_lock.py /app/tools/verify_release_lock.py
+COPY release_assets/source/scenario_runner-94ff3b8af752bad2b9d464ad5105868906aa34c0.tar.gz /tmp/scenario_runner.tar.gz
+RUN python3 /app/tools/verify_release_lock.py --lock /locks/scenario-runner.lock.json --root /tmp --key archive && rm /tmp/scenario_runner.tar.gz
 ADD release_assets/source/scenario_runner-94ff3b8af752bad2b9d464ad5105868906aa34c0.tar.gz /opt/scenario_runner
 COPY release_assets/package/datasets/ /app/release_data/datasets/
 COPY release_assets/package/scenarios/ /app/release_data/scenarios/

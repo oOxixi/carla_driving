@@ -46,7 +46,7 @@ def verify_profile(manifest_path: Path, root: Path, profile: str) -> dict[str, o
         if relative in expected:
             raise ValueError(f"duplicate manifest file entry: {relative}")
         expected[relative] = item
-    if not root.is_dir():
+    if root.is_symlink() or not root.is_dir():
         raise ValueError(f"model root does not exist: {root}")
     actual = {
         path.relative_to(root).as_posix(): path
@@ -56,6 +56,13 @@ def verify_profile(manifest_path: Path, root: Path, profile: str) -> dict[str, o
     if set(actual) != set(expected):
         raise ValueError("model file set does not match manifest")
     for relative, path in actual.items():
+        if path.is_symlink():
+            raise ValueError(f"model files must not be symlinks: {relative}")
+        resolved = path.resolve(strict=True)
+        try:
+            resolved.relative_to(root.resolve(strict=True))
+        except ValueError as exc:
+            raise ValueError(f"model file escapes root: {relative}") from exc
         metadata = expected[relative]
         if path.stat().st_size != metadata.get("bytes"):
             raise ValueError(f"byte size mismatch: {relative}")

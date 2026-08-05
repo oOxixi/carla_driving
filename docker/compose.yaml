@@ -64,7 +64,7 @@ services:
       QWEN_BASE_URL: http://qwen:8001/v1
       SENSEVOICE_MODEL_PATH: /models/asr/SenseVoiceSmall
       SENSEVOICE_LORA_PATH: /app/voice_group/lora_dialect
-      REPRO_OUTPUT_ROOT: /output
+      REPRO_OUTPUT_ROOT: /output/runs
     volumes:
       - ${OUTPUT_DIR:-./output}:/output
     gpus: all
