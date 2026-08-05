@@ -8,10 +8,10 @@ from pathlib import Path
 from generate_wheelhouse_lock import sha256_file
 
 
-def verify_wheelhouse(lock_path: Path, root: Path) -> None:
+def verify_wheelhouse(lock_path: Path, root: Path, suffix: str = ".whl") -> None:
     lock = json.loads(lock_path.read_text(encoding="utf-8"))
     expected = {item["path"]: item for item in lock["files"]}
-    actual = {path.name: path for path in root.iterdir() if path.is_file() and path.suffix == ".whl"}
+    actual = {path.name: path for path in root.iterdir() if path.is_file() and path.name.endswith(suffix)}
     if set(actual) != set(expected):
         raise ValueError("wheelhouse file set does not match lock")
     for name, path in actual.items():
@@ -24,8 +24,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lock", type=Path, required=True)
     parser.add_argument("--wheelhouse", type=Path, required=True)
+    parser.add_argument("--suffix", default=".whl")
     args = parser.parse_args()
-    verify_wheelhouse(args.lock, args.wheelhouse)
+    verify_wheelhouse(args.lock, args.wheelhouse, args.suffix)
     return 0
 
 

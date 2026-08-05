@@ -40,6 +40,9 @@ def test_offline_images_do_not_copy_the_entire_build_context() -> None:
     assert "COPY . /app" not in controller
     assert "COPY integration/ /app/integration/" in controller
     assert "scenario-runner.lock.json" in controller
+    assert "controller-wheelhouse.lock.json" in controller
+    assert "requirements-controller.lock.txt" in controller
+    assert "--no-index" in controller and "--require-hashes" in controller
     qwen = (ROOT / "docker/Dockerfile.qwen-cu132").read_text(encoding="utf-8")
     assert "vllm.lock.json" in qwen
     assert "verify_release_lock.py" in qwen
@@ -80,4 +83,5 @@ def test_qwen_requirement_uses_the_staged_wheel_metadata_version() -> None:
 
 def test_controller_voice_uses_available_matched_cu132_torch_pair() -> None:
     requirements = (ROOT / "docker/requirements-voice.txt").read_text(encoding="utf-8").splitlines()
-    assert requirements[:2] == ["torch==2.11.0+cu132", "torchaudio==2.11.0+cu132"]
+    assert requirements[0] == "torch==2.12.1+cu132"
+    assert not any(line.startswith("torchaudio==") for line in requirements)
