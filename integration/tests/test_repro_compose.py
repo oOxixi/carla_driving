@@ -70,3 +70,9 @@ def test_qwen_launch_log_collision_cannot_append_or_reuse_evidence(tmp_path: Pat
     with pytest.raises(ValueError, match="collision"):
         create_launch_logs(tmp_path, launch_id)
     assert evidence.read_text(encoding="utf-8") == "old ready evidence"
+
+
+def test_qwen_requirement_uses_the_staged_wheel_metadata_version() -> None:
+    lock = json.loads((ROOT / "third_party/vllm.lock.json").read_text(encoding="utf-8"))
+    requirements = (ROOT / "docker/requirements-qwen.txt").read_text(encoding="utf-8").splitlines()
+    assert f"vllm=={lock['expected_wheel_version']}" in requirements

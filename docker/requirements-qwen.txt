@@ -1,6 +1,6 @@
 torch==2.12.1+cu132
 torchvision==0.27.1+cu132
-vllm==0.26.1.dev0+g568afb3a1.d20260802
+vllm==0.26.1.dev0+g568afb3a1.d20260802.cu132
 transformers==5.14.1
 openai==2.52.0
 pillow==12.2.0
