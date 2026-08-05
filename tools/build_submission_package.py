@@ -63,15 +63,26 @@ def _stage_release_data(root: Path) -> None:
     audio.parent.mkdir(parents=True, exist_ok=True)
     if not audio.is_file():
         ffmpeg = shutil.which("ffmpeg")
-        if ffmpeg is None:
-            raise FileNotFoundError("ffmpeg missing: required to create smoke WAV")
-        result = subprocess.run(
-            [ffmpeg, "-y", "-i", str(sources["smoke MP3"]), "-ac", "1", "-ar", "16000",
-             "-c:a", "pcm_s16le", str(audio)],
-            text=True, capture_output=True, check=False,
-        )
-        if result.returncode:
-            raise RuntimeError("ffmpeg smoke WAV conversion failed: " + result.stderr[-1000:])
+        if ffmpeg is not None:
+            result = subprocess.run(
+                [ffmpeg, "-y", "-i", str(sources["smoke MP3"]), "-ac", "1", "-ar", "16000",
+                 "-c:a", "pcm_s16le", str(audio)],
+                text=True, capture_output=True, check=False,
+            )
+            if result.returncode:
+                raise RuntimeError("ffmpeg smoke WAV conversion failed: " + result.stderr[-1000:])
+        else:
+            import numpy as np
+            import soundfile as sf
+
+            samples, sample_rate = sf.read(
+                sources["smoke MP3"], dtype="float32", always_2d=True
+            )
+            mono = samples.mean(axis=1)
+            target_size = round(len(mono) * 16000 / sample_rate)
+            positions = np.linspace(0, len(mono), target_size, endpoint=False)
+            mono_16k = np.interp(positions, np.arange(len(mono)), mono).astype("float32")
+            sf.write(audio, mono_16k, 16000, subtype="PCM_16")
     commands = package / "samples/commands.jsonl"
     commands.write_text(json.dumps({
         "audio": "samples/audio/smoke_set_speed_20.wav",
