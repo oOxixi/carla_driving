@@ -1,0 +1,185 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "SUP_A02_lead_brake_25m_late",
+  "category": "safety_D",
+  "official_level": "advanced",
+  "description": "25 m 较晚距离触发前车急刹。",
+  "tags": [
+    "acceptance_suite",
+    "p1",
+    "distance_triggered_lead_brake"
+  ],
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 412,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 40,
+    "max_startup_wait_s": 10
+  },
+  "ego_spawn": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5,
+    "yaw_deg": 0.0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0,
+        0
+      ],
+      [
+        20,
+        0
+      ],
+      [
+        40,
+        0
+      ],
+      [
+        60,
+        0
+      ],
+      [
+        80,
+        0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "跟随正前方车辆并保持安全距离",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 20
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "lead_target",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.audi.tt",
+      "spawn": {
+        "x": 25,
+        "y": 0.0,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      },
+      "behavior": {
+        "mode": "event_timeline",
+        "initial_speed_mps": 5.0,
+        "target_speed_mps": 5.0,
+        "events": [
+          {
+            "trigger": {
+              "type": "ego_distance_less_than_m",
+              "value": 16
+            },
+            "action": {
+              "type": "set_speed",
+              "target_speed_mps": 0.3
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 5
+    },
+    "lidar": {
+      "enabled": true
+    },
+    "collision": {
+      "enabled": true
+    },
+    "lane_invasion": {
+      "enabled": true
+    }
+  },
+  "controllers": {
+    "A_runtime": {
+      "only_apply_control_owner": true
+    },
+    "B_lateral": {
+      "enabled": true
+    },
+    "C_longitudinal": {
+      "enabled": true
+    },
+    "D_safety": {
+      "enabled": true,
+      "must_run_before_apply_control": true
+    }
+  },
+  "logging": {
+    "required_files": [
+      "frame_log.jsonl",
+      "event_log.jsonl",
+      "result.json",
+      "score_report.json",
+      "qwen_requests.jsonl"
+    ]
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_generate_logs": true,
+    "final_control_no_throttle_brake_overlap": true,
+    "min_front_gap_m": 2.5,
+    "required_real_actor_types": [
+      "vehicle"
+    ],
+    "expected_safety_override_allowed": true
+  },
+  "extensions": {
+    "suite_version": "acceptance-suite-2026.08-v2",
+    "priority": "P1",
+    "primary_capability": "distance_triggered_lead_brake",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "oracle": {
+      "expected_behaviors": [
+        "FOLLOW",
+        "SLOW_DOWN",
+        "STOP"
+      ],
+      "expected_target_actor_id": "lead_target"
+    },
+    "faults": [],
+    "proposed_acceptance": {
+      "expected_target_actor_id": "lead_target",
+      "lead_brake_trigger_distance_m": 16,
+      "qwen_calls_per_frame": 0
+    },
+    "runtime_support": {
+      "status": "extension_required",
+      "requirements": [
+        "all_voice_qwen",
+        "actor_distance_trigger",
+        "qwen_target_binding_acceptance"
+      ]
+    }
+  },
+  "notes": [
+    "正式结果必须使用 perception_mode=sensors 与 scenario_facts_mode=perception。"
+  ]
+}

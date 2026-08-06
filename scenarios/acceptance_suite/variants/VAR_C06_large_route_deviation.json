@@ -116,7 +116,7 @@
     "max_allowed_cross_track_error_m": 3.5
   },
   "extensions": {
-    "suite_version": "acceptance-suite-2026.08-v1",
+    "suite_version": "acceptance-suite-2026.08-v2",
     "priority": "P1",
     "primary_capability": "large_route_deviation",
     "input_mode": "raw_text_qwen",

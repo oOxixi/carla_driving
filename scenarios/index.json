@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "package_name": "carla_scenarios_four_types_full",
-  "description": "CARLA 智能驾驶基础场景、Qwen V2 全链路与东风赛道 43 场景验收套件。",
+  "description": "CARLA 智能驾驶基础场景、Qwen V2 全链路与东风赛道 84 场景验收套件。",
   "folders": {
     "smoke": "主链路冒烟测试：A/B/C/D是否接通、日志是否生成。",
     "lateral_B": "B横向控制专项：直道、偏移、缓弯、左右转、变道。",
@@ -10,7 +10,7 @@
     "qwen_routing": "Qwen 调用策略：FAST_LOCAL、QWEN_PLAN、CONFIRM_SAFE。",
     "qwen_fullchain": "复杂指令到 ManeuverPlan、车辆动作和终态的正常闭环。",
     "qwen_faults": "模型超时、非法输出与执行中安全抢占。",
-    "acceptance_suite": "东风赛道高质量验收套件：P0/P1/P2/P3 共 43 个场景。"
+    "acceptance_suite": "东风赛道高质量验收套件 v2：基础、进阶、挑战、综合和系统稳定性共 84 个场景。"
   },
   "official_level_mapping": {
     "basic": "基础场景：直道、控速、停车、保持车道、普通转向。",
@@ -59,6 +59,7 @@
     ,"acceptance_suite/advanced/ACC_A02_red_light_conflict.json"
     ,"acceptance_suite/advanced/ACC_A03_pedestrian_crossing.json"
     ,"acceptance_suite/advanced/ACC_A05_lane_change_left.json"
+    ,"acceptance_suite/complex/CX_MAIN_01_safe_urban_mission.json"
   ],
   "counts": {
     "smoke": 5,
@@ -68,7 +69,7 @@
     "qwen_routing": 4,
     "qwen_fullchain": 2,
     "qwen_faults": 3,
-    "acceptance_suite": 43,
-    "total": 89
+    "acceptance_suite": 84,
+    "total": 130
   }
 }

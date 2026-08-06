@@ -163,7 +163,7 @@
     ]
   },
   "extensions": {
-    "suite_version": "acceptance-suite-2026.08-v1",
+    "suite_version": "acceptance-suite-2026.08-v2",
     "priority": "P0",
     "primary_capability": "detour_return",
     "input_mode": "raw_text_qwen",

@@ -137,7 +137,7 @@
     "must_generate_event": true
   },
   "extensions": {
-    "suite_version": "acceptance-suite-2026.08-v1",
+    "suite_version": "acceptance-suite-2026.08-v2",
     "priority": "P1",
     "primary_capability": "low_ttc",
     "input_mode": "raw_text_qwen",

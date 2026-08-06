@@ -1,0 +1,482 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "CX_MAIN_01_safe_urban_mission",
+  "category": "regression",
+  "official_level": "challenge",
+  "description": "唯一正式主综合场景：多语音、多目标、急刹、行人、红灯冲突、施工绕行和紧急停车。",
+  "tags": [
+    "acceptance_suite",
+    "p2_main",
+    "safe_urban_mission",
+    "main_complex",
+    "all_voice_qwen",
+    "multi_command",
+    "full_chain"
+  ],
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 3001,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 180,
+    "max_startup_wait_s": 10
+  },
+  "ego_spawn": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5,
+    "yaw_deg": 0.0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0,
+        0
+      ],
+      [
+        20,
+        0
+      ],
+      [
+        40,
+        0
+      ],
+      [
+        60,
+        2
+      ],
+      [
+        80,
+        5
+      ],
+      [
+        105,
+        5
+      ],
+      [
+        125,
+        2
+      ],
+      [
+        145,
+        0
+      ],
+      [
+        165,
+        -3.5
+      ],
+      [
+        185,
+        -3.5
+      ],
+      [
+        205,
+        0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "开始行驶并保持当前车道",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 12
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "P1_START",
+      "trigger": {
+        "type": "scenario_started"
+      }
+    },
+    {
+      "time_s": 15,
+      "source_text": "将速度设置为二十公里每小时",
+      "intent": "SET_SPEED",
+      "parameters": {
+        "target_speed_kph": 20
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "P2_SET_SPEED",
+      "trigger": {
+        "all": [
+          {
+            "type": "previous_command_terminal",
+            "phase_id": "P1_START"
+          },
+          {
+            "type": "route_progress_greater_than_m",
+            "value": 10
+          }
+        ]
+      }
+    },
+    {
+      "time_s": 35,
+      "source_text": "跟随正前方同车道的车辆并保持安全距离",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 18
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "P3_FOLLOW",
+      "trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 35
+      }
+    },
+    {
+      "time_s": 90,
+      "source_text": "不用停，继续往前开",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 15
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "P6_RED_CONFLICT",
+      "trigger": {
+        "type": "traffic_light_state",
+        "state": "red"
+      }
+    },
+    {
+      "time_s": 110,
+      "source_text": "继续行驶",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 12
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "P7_RESTART",
+      "trigger": {
+        "all": [
+          {
+            "type": "traffic_light_state",
+            "state": "green"
+          },
+          {
+            "type": "ego_standstill_duration_greater_than_s",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "time_s": 135,
+      "source_text": "从左侧安全绕过前方施工障碍",
+      "intent": "AVOID_OBSTACLE",
+      "parameters": {
+        "direction": "LEFT",
+        "target": "OBSTACLE"
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "P8_DETOUR",
+      "trigger": {
+        "type": "ego_distance_to_actor_less_than_m",
+        "actor_id": "construction_blocker",
+        "value": 28
+      }
+    },
+    {
+      "time_s": 170,
+      "source_text": "紧急停车",
+      "intent": "EMERGENCY_STOP",
+      "parameters": {},
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "P9_ESTOP",
+      "trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 195
+      }
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "target_front",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.audi.tt",
+      "spawn": {
+        "x": 45,
+        "y": 0.0,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      },
+      "behavior": {
+        "mode": "event_timeline",
+        "initial_speed_mps": 4.0,
+        "target_speed_mps": 4.0,
+        "events": [
+          {
+            "trigger": {
+              "type": "ego_distance_less_than_m",
+              "value": 16
+            },
+            "action": {
+              "type": "set_speed",
+              "target_speed_mps": 0.3
+            }
+          },
+          {
+            "trigger": {
+              "type": "elapsed_since_previous_event_greater_than_s",
+              "value": 5
+            },
+            "action": {
+              "type": "set_speed",
+              "target_speed_mps": 3.0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "actor_id": "distractor_left",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.tesla.model3",
+      "spawn": {
+        "x": 40,
+        "y": 3.5,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      },
+      "behavior": {
+        "mode": "lead_vehicle",
+        "initial_speed_mps": 4.5,
+        "target_speed_mps": 4.5
+      }
+    },
+    {
+      "actor_id": "distractor_right",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.mercedes.coupe",
+      "spawn": {
+        "x": 48,
+        "y": -3.5,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      },
+      "behavior": {
+        "mode": "lead_vehicle",
+        "initial_speed_mps": 3.5,
+        "target_speed_mps": 3.5
+      }
+    },
+    {
+      "actor_id": "pedestrian_001",
+      "type": "walker.pedestrian",
+      "spawn": {
+        "x": 82,
+        "y": -3,
+        "z": 0.5,
+        "yaw_deg": 90.0
+      },
+      "behavior": {
+        "mode": "crossing",
+        "target_xy_m": [
+          82,
+          3
+        ],
+        "start_time_s": 70,
+        "speed_mps": 1.4,
+        "trigger": {
+          "type": "route_progress_greater_than_m",
+          "value": 68
+        }
+      }
+    },
+    {
+      "actor_id": "signal_001",
+      "type": "traffic_light",
+      "state": "green",
+      "distance_to_stop_line_m": 105,
+      "behavior": {
+        "mode": "event_timeline",
+        "states": [
+          {
+            "trigger": {
+              "type": "route_progress_greater_than_m",
+              "value": 90
+            },
+            "state": "red"
+          },
+          {
+            "trigger": {
+              "type": "ego_standstill_duration_greater_than_s",
+              "value": 3
+            },
+            "state": "green"
+          }
+        ]
+      }
+    },
+    {
+      "actor_id": "construction_blocker",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.audi.tt",
+      "spawn": {
+        "x": 160,
+        "y": 0.0,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      },
+      "behavior": {
+        "mode": "lead_vehicle",
+        "initial_speed_mps": 0.0,
+        "target_speed_mps": 0.0
+      }
+    },
+    {
+      "actor_id": "construction_warning",
+      "type": "static.prop",
+      "blueprint_id": "static.prop.warningconstruction",
+      "spawn": {
+        "x": 157,
+        "y": 2,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      }
+    }
+  ],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 5
+    },
+    "lidar": {
+      "enabled": true
+    },
+    "collision": {
+      "enabled": true
+    },
+    "lane_invasion": {
+      "enabled": true
+    }
+  },
+  "controllers": {
+    "A_runtime": {
+      "only_apply_control_owner": true
+    },
+    "B_lateral": {
+      "enabled": true
+    },
+    "C_longitudinal": {
+      "enabled": true
+    },
+    "D_safety": {
+      "enabled": true,
+      "must_run_before_apply_control": true
+    }
+  },
+  "logging": {
+    "required_files": [
+      "frame_log.jsonl",
+      "event_log.jsonl",
+      "result.json",
+      "score_report.json",
+      "qwen_requests.jsonl"
+    ]
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_generate_logs": true,
+    "final_control_no_throttle_brake_overlap": true,
+    "must_no_pedestrian_collision": true,
+    "must_stop_before_stop_line": true,
+    "must_execute_commands_in_order": true,
+    "must_stop_after_last_command": true,
+    "stop_speed_threshold_mps": 0.2,
+    "max_cross_track_error_m": 1.2,
+    "min_front_gap_m": 2.5,
+    "required_real_actor_types": [
+      "vehicle",
+      "walker.pedestrian",
+      "static.prop"
+    ],
+    "expected_safety_override_allowed": true
+  },
+  "extensions": {
+    "suite_version": "acceptance-suite-2026.08-v2",
+    "priority": "P2_MAIN",
+    "primary_capability": "safe_urban_mission",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "oracle": {
+      "expected_behaviors": [
+        "START",
+        "SET_SPEED",
+        "FOLLOW",
+        "SLOW_DOWN",
+        "STOP",
+        "KEEP_LANE",
+        "AVOID_OBSTACLE",
+        "RETURN_TO_LANE"
+      ],
+      "expected_target_actor_id": "target_front"
+    },
+    "faults": [],
+    "proposed_acceptance": {
+      "expected_phase_count": 9,
+      "all_phases_must_complete": true,
+      "qwen_request_count": 7,
+      "qwen_missing_request_count": 0,
+      "qwen_stale_result_applied_count": 0,
+      "all_commands_must_have_terminal_status": true,
+      "expected_target_actor_id": "target_front",
+      "must_return_to_original_lane": true
+    },
+    "runtime_support": {
+      "status": "extension_required",
+      "requirements": [
+        "all_voice_qwen",
+        "multi_command_qwen",
+        "event_triggers",
+        "command_queue_policy",
+        "actor_state_timeline",
+        "qwen_target_binding",
+        "qwen_lane_change_detour_actions",
+        "qwen_acceptance_metrics"
+      ]
+    },
+    "deprecated_from": "CX06_multi_command_full_trip",
+    "phase_plan": [
+      "P1_START",
+      "P2_SET_SPEED",
+      "P3_FOLLOW",
+      "P4_LEAD_BRAKE",
+      "P5_PEDESTRIAN",
+      "P6_RED_CONFLICT",
+      "P7_RESTART",
+      "P8_DETOUR",
+      "P9_ESTOP"
+    ]
+  },
+  "notes": [
+    "正式结果必须使用 perception_mode=sensors 与 scenario_facts_mode=perception。",
+    "由 CX06_multi_command_full_trip 升级并重命名；事件触发字段未实现前不得宣称完整通过。"
+  ]
+}

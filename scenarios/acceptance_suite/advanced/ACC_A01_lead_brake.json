@@ -136,7 +136,7 @@
     "expected_safety_override_allowed": true
   },
   "extensions": {
-    "suite_version": "acceptance-suite-2026.08-v1",
+    "suite_version": "acceptance-suite-2026.08-v2",
     "priority": "P0",
     "primary_capability": "lead_vehicle_brake",
     "input_mode": "raw_text_qwen",

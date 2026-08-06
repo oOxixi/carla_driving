@@ -163,7 +163,7 @@
     "expected_safety_override_allowed": true
   },
   "extensions": {
-    "suite_version": "acceptance-suite-2026.08-v1",
+    "suite_version": "acceptance-suite-2026.08-v2",
     "priority": "P1",
     "primary_capability": "occluded_target_binding",
     "input_mode": "raw_text_qwen",

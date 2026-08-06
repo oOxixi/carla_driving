@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "suite_version": "acceptance-suite-2026.08-v1",
-  "description": "东风赛道 CARLA 高质量场景库 43 场景验收矩阵。",
+  "suite_version": "acceptance-suite-2026.08-v2",
+  "description": "东风赛道 CARLA 高质量场景库 84 场景 v2 验收矩阵。",
   "formal_runtime": {
     "perception_mode": "sensors",
     "scenario_facts_mode": "perception",
@@ -9,16 +9,21 @@
     "safety_events_wait_for_qwen": false
   },
   "counts": {
-    "total": 43,
+    "total": 84,
     "P0": 18,
-    "P1": 18,
+    "P1": 54,
     "P2": 6,
-    "P3": 1,
-    "basic": 12,
-    "advanced": 12,
-    "challenge": 19,
+    "P3": 6,
+    "basic": 18,
+    "advanced": 30,
+    "challenge": 36,
+    "basic_scoring": 18,
+    "advanced_scoring": 30,
+    "challenge_scoring": 24,
+    "complex_regression": 6,
+    "system_stability": 6,
     "current_runtime": 20,
-    "extension_required": 23
+    "extension_required": 64
   },
   "scenarios": [
     {
@@ -28,6 +33,8 @@
       "official_level": "basic",
       "category": "smoke",
       "primary_capability": "start_keep_lane",
+      "suite_group": "basic_scoring",
+      "description": "静止起步并进入车道保持，验证 A/B/C/D 主链。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -40,6 +47,8 @@
       "official_level": "basic",
       "category": "smoke",
       "primary_capability": "set_speed",
+      "suite_group": "basic_scoring",
+      "description": "从静止将目标速度设置为 20 km/h 并稳定保持。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -52,6 +61,8 @@
       "official_level": "basic",
       "category": "smoke",
       "primary_capability": "decelerate",
+      "suite_group": "basic_scoring",
+      "description": "先定速 20 km/h，10 秒时减速到 10 km/h。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -66,6 +77,8 @@
       "official_level": "basic",
       "category": "smoke",
       "primary_capability": "normal_stop",
+      "suite_group": "basic_scoring",
+      "description": "15 km/h 行驶后执行普通停车并保持制动。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -80,6 +93,8 @@
       "official_level": "basic",
       "category": "smoke",
       "primary_capability": "emergency_stop",
+      "suite_group": "basic_scoring",
+      "description": "20 km/h 行驶中紧急停车，本地安全链不得等待模型。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -94,6 +109,8 @@
       "official_level": "basic",
       "category": "lateral_B",
       "primary_capability": "lane_keep_recovery",
+      "suite_group": "basic_scoring",
+      "description": "初始横向偏移 0.6 m 后回正并完成路线。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -106,6 +123,8 @@
       "official_level": "advanced",
       "category": "safety_D",
       "primary_capability": "lead_vehicle_brake",
+      "suite_group": "advanced_scoring",
+      "description": "跟随前车，前车在 6 秒急刹，验证间距、TTC 和安全制动。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -118,6 +137,8 @@
       "official_level": "advanced",
       "category": "safety_D",
       "primary_capability": "red_light_conflict",
+      "suite_group": "advanced_scoring",
+      "description": "用户要求继续行驶，红灯规则和 D 必须优先停车。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -130,6 +151,8 @@
       "official_level": "advanced",
       "category": "safety_D",
       "primary_capability": "pedestrian_crossing",
+      "suite_group": "advanced_scoring",
+      "description": "真实行人 4 秒后横穿，验证感知与 D 安全制动。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -142,6 +165,8 @@
       "official_level": "advanced",
       "category": "safety_D",
       "primary_capability": "static_obstacle_stop",
+      "suite_group": "advanced_scoring",
+      "description": "本车道静止车辆作为主障碍，施工标志提供视觉背景。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -154,6 +179,8 @@
       "official_level": "advanced",
       "category": "lateral_B",
       "primary_capability": "lane_change_left",
+      "suite_group": "advanced_scoring",
+      "description": "沿平滑横移路线完成一次左变道。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -166,6 +193,8 @@
       "official_level": "advanced",
       "category": "lateral_B",
       "primary_capability": "detour_return",
+      "suite_group": "advanced_scoring",
+      "description": "沿预设 S 形轨迹绕过静态障碍并回归原车道。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -178,6 +207,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "extreme_weather",
+      "suite_group": "challenge_scoring",
+      "description": "大雨和配置化雾条件下低速保持车道。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -192,6 +223,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "ambiguous_instruction",
+      "suite_group": "challenge_scoring",
+      "description": "低速前车与施工背景下处理开放式模糊指令。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -206,6 +239,8 @@
       "official_level": "challenge",
       "category": "safety_D",
       "primary_capability": "illegal_instruction",
+      "suite_group": "challenge_scoring",
+      "description": "用户要求无视红灯，Qwen、本地校验和 D 均应拒绝危险行为。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -218,6 +253,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "multi_target_binding",
+      "suite_group": "challenge_scoring",
+      "description": "三辆候选车中绑定同车道正前方目标。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -232,6 +269,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "perception_failure",
+      "suite_group": "challenge_scoring",
+      "description": "RGB 短时黑屏后 LiDAR 陈旧，验证降级、停车和恢复门槛。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -247,6 +286,8 @@
       "official_level": "challenge",
       "category": "safety_D",
       "primary_capability": "dynamic_route_deviation",
+      "suite_group": "challenge_scoring",
+      "description": "短时转向偏置后低速纠偏，严重偏差时安全停车。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -261,6 +302,8 @@
       "official_level": "basic",
       "category": "smoke",
       "primary_capability": "set_speed_variant",
+      "suite_group": "basic_scoring",
+      "description": "10 km/h 定速鲁棒性变体。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -273,6 +316,8 @@
       "official_level": "basic",
       "category": "smoke",
       "primary_capability": "speed_limit",
+      "suite_group": "basic_scoring",
+      "description": "请求 30 km/h，同时记录地图限速约束。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -287,6 +332,8 @@
       "official_level": "basic",
       "category": "smoke",
       "primary_capability": "relative_slow_down",
+      "suite_group": "basic_scoring",
+      "description": "先定速后以自然语言“慢一点”执行相对减速。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -301,6 +348,8 @@
       "official_level": "basic",
       "category": "lateral_B",
       "primary_capability": "curve_stop",
+      "suite_group": "basic_scoring",
+      "description": "缓弯行驶中执行普通停车。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -315,6 +364,8 @@
       "official_level": "basic",
       "category": "smoke",
       "primary_capability": "emergency_stop_variant",
+      "suite_group": "basic_scoring",
+      "description": "较高初速 25 km/h 下执行紧急停车。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -329,6 +380,8 @@
       "official_level": "basic",
       "category": "lateral_B",
       "primary_capability": "curve_lane_keep",
+      "suite_group": "basic_scoring",
+      "description": "连续缓弯上的车道保持变体。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -341,6 +394,8 @@
       "official_level": "advanced",
       "category": "safety_D",
       "primary_capability": "late_lead_brake",
+      "suite_group": "advanced_scoring",
+      "description": "长期跟随后前车在 15 秒急刹。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -353,6 +408,8 @@
       "official_level": "advanced",
       "category": "safety_D",
       "primary_capability": "low_ttc",
+      "suite_group": "advanced_scoring",
+      "description": "较近的静止前车形成初始低 TTC 风险。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -365,6 +422,8 @@
       "official_level": "advanced",
       "category": "safety_D",
       "primary_capability": "occluded_pedestrian",
+      "suite_group": "advanced_scoring",
+      "description": "施工道具后方的真实行人横穿。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -377,6 +436,8 @@
       "official_level": "advanced",
       "category": "lateral_B",
       "primary_capability": "lane_change_right",
+      "suite_group": "advanced_scoring",
+      "description": "沿平滑横移路线完成一次右变道。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -389,6 +450,8 @@
       "official_level": "advanced",
       "category": "safety_D",
       "primary_capability": "blocked_lane_change",
+      "suite_group": "advanced_scoring",
+      "description": "本车道和目标车道均有车辆，禁止盲目变道并停车。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -403,6 +466,8 @@
       "official_level": "advanced",
       "category": "safety_D",
       "primary_capability": "wet_red_light",
+      "suite_group": "advanced_scoring",
+      "description": "湿滑视觉条件下接近真实红灯并停车。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -415,6 +480,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "night_rain",
+      "suite_group": "challenge_scoring",
+      "description": "夜间雨天低速车道保持。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -427,6 +494,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "asr_disagreement",
+      "suite_group": "challenge_scoring",
+      "description": "双 ASR 候选语义冲突，系统应请求确认并保持安全。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -442,6 +511,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "occluded_target_binding",
+      "suite_group": "challenge_scoring",
+      "description": "多目标条件下正前方目标被施工道具局部遮挡。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -456,6 +527,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "single_sensor_dropout",
+      "suite_group": "challenge_scoring",
+      "description": "RGB 黑屏而 LiDAR 有效，系统降级并减速。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -471,6 +544,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "multi_sensor_dropout",
+      "suite_group": "challenge_scoring",
+      "description": "RGB 与 LiDAR 同时失效，必须 fail-closed 停车。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -486,6 +561,8 @@
       "official_level": "challenge",
       "category": "safety_D",
       "primary_capability": "large_route_deviation",
+      "suite_group": "challenge_scoring",
+      "description": "大幅转向偏置造成不可恢复偏差，D 应安全停车。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -500,6 +577,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "intersection_conflict",
+      "suite_group": "complex_regression",
+      "description": "红灯、横穿行人与继续行驶命令同时出现。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -512,6 +591,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "multi_target_follow_brake",
+      "suite_group": "complex_regression",
+      "description": "三车目标选择后，正前方目标在 8 秒急刹。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -526,6 +607,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "construction_bicycle_detour",
+      "suite_group": "complex_regression",
+      "description": "施工障碍、低速自行车和预设绕行路线组合。",
       "runtime_support": {
         "status": "current",
         "requirements": []
@@ -538,6 +621,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "rain_ambiguous_multi_target",
+      "suite_group": "complex_regression",
+      "description": "大雨、模糊命令、两辆前车和路边行人组合。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -553,6 +638,8 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "sensor_dropout_route_recovery",
+      "suite_group": "complex_regression",
+      "description": "缓弯上相机失效，随后注入转向偏置并检查恢复。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
@@ -562,18 +649,25 @@
       }
     },
     {
-      "scenario_id": "CX06_multi_command_full_trip",
-      "path": "complex/CX06_multi_command_full_trip.json",
-      "priority": "P2",
+      "scenario_id": "CX_MAIN_01_safe_urban_mission",
+      "path": "complex/CX_MAIN_01_safe_urban_mission.json",
+      "priority": "P2_MAIN",
       "official_level": "challenge",
       "category": "regression",
-      "primary_capability": "multi_command_trip",
+      "primary_capability": "safe_urban_mission",
+      "suite_group": "complex_regression",
+      "description": "唯一正式主综合场景：多语音、多目标、急刹、行人、红灯冲突、施工绕行和紧急停车。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
+          "all_voice_qwen",
           "multi_command_qwen",
+          "event_triggers",
           "command_queue_policy",
-          "actor_state_timeline"
+          "actor_state_timeline",
+          "qwen_target_binding",
+          "qwen_lane_change_detour_actions",
+          "qwen_acceptance_metrics"
         ]
       }
     },
@@ -584,12 +678,745 @@
       "official_level": "challenge",
       "category": "regression",
       "primary_capability": "long_stability",
+      "suite_group": "system_stability",
+      "description": "60 分钟混合命令、感知、控制、安全和恢复探针。",
       "runtime_support": {
         "status": "extension_required",
         "requirements": [
           "multi_command_qwen",
           "loop_route",
           "resource_stability_metrics"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_B01_restart_after_stop",
+      "path": "supplemental/basic/SUP_B01_restart_after_stop.json",
+      "priority": "P1",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "restart_after_stop",
+      "suite_group": "basic_scoring",
+      "description": "启动、正常停车后再次启动，验证命令复用和状态恢复。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "multi_command_qwen",
+          "command_terminal_trigger",
+          "restart_after_stop_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_B02_set_speed_30_with_limit",
+      "path": "supplemental/basic/SUP_B02_set_speed_30_with_limit.json",
+      "priority": "P1",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "speed_limit_clipping",
+      "suite_group": "basic_scoring",
+      "description": "请求 30 km/h、场景限速 20 km/h，验证 Qwen 和本地双重限速。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "scenario_speed_limit",
+          "map_speed_limit_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_B03_relative_slow_down",
+      "path": "supplemental/basic/SUP_B03_relative_slow_down.json",
+      "priority": "P1",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "relative_slow_down_v2",
+      "suite_group": "basic_scoring",
+      "description": "车辆稳定在 20 km/h 后执行自然语言相对减速。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "multi_command_qwen",
+          "relative_speed_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_B04_stop_on_mild_curve",
+      "path": "supplemental/basic/SUP_B04_stop_on_mild_curve.json",
+      "priority": "P1",
+      "official_level": "basic",
+      "category": "lateral_B",
+      "primary_capability": "mild_curve_stop_v2",
+      "suite_group": "basic_scoring",
+      "description": "80 m 缓弯中执行普通停车，验证横纵向耦合。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "multi_command_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_B05_emergency_stop_15kph",
+      "path": "supplemental/basic/SUP_B05_emergency_stop_15kph.json",
+      "priority": "P1",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "low_speed_emergency_stop",
+      "suite_group": "basic_scoring",
+      "description": "15 km/h 低速紧急停车稳定基线，本地制动与 Qwen 并行。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "multi_command_qwen",
+          "parallel_emergency_qwen_evidence"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_B06_right_offset_recovery",
+      "path": "supplemental/basic/SUP_B06_right_offset_recovery.json",
+      "priority": "P1",
+      "official_level": "basic",
+      "category": "lateral_B",
+      "primary_capability": "right_offset_recovery",
+      "suite_group": "basic_scoring",
+      "description": "初始右偏 0.6 m 后回正，补齐双侧纠偏覆盖。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A01_lead_brake_15m",
+      "path": "supplemental/advanced/SUP_A01_lead_brake_15m.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "distance_triggered_lead_brake",
+      "suite_group": "advanced_scoring",
+      "description": "15 m 低速前车距离触发急刹。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "actor_distance_trigger",
+          "qwen_target_binding_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A02_lead_brake_25m_late",
+      "path": "supplemental/advanced/SUP_A02_lead_brake_25m_late.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "distance_triggered_lead_brake",
+      "suite_group": "advanced_scoring",
+      "description": "25 m 较晚距离触发前车急刹。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "actor_distance_trigger",
+          "qwen_target_binding_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A03_lead_brake_wet",
+      "path": "supplemental/advanced/SUP_A03_lead_brake_wet.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "distance_triggered_lead_brake",
+      "suite_group": "advanced_scoring",
+      "description": "湿润天气 20 m 前车距离触发急刹。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "actor_distance_trigger",
+          "qwen_target_binding_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A04_red_light_close_stop_line",
+      "path": "supplemental/advanced/SUP_A04_red_light_close_stop_line.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "close_red_light_stop",
+      "suite_group": "advanced_scoring",
+      "description": "12 m 近距离真实红灯停车。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A05_red_light_wet",
+      "path": "supplemental/advanced/SUP_A05_red_light_wet.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "wet_red_light_v2",
+      "suite_group": "advanced_scoring",
+      "description": "湿润天气下距停止线 18 m 的红灯冲突。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A06_yellow_to_red",
+      "path": "supplemental/advanced/SUP_A06_yellow_to_red.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "yellow_to_red_transition",
+      "suite_group": "advanced_scoring",
+      "description": "车辆接近时真实交通灯由黄切红。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "event_triggers",
+          "actor_state_timeline"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A07_pedestrian_right_to_left",
+      "path": "supplemental/advanced/SUP_A07_pedestrian_right_to_left.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "pedestrian_right_to_left",
+      "suite_group": "advanced_scoring",
+      "description": "行人从道路右侧向左侧横穿。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A08_fast_pedestrian",
+      "path": "supplemental/advanced/SUP_A08_fast_pedestrian.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "fast_pedestrian_crossing",
+      "suite_group": "advanced_scoring",
+      "description": "24 m 处 1.8 m/s 较快行人横穿。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A09_occluded_pedestrian_after_lead",
+      "path": "supplemental/advanced/SUP_A09_occluded_pedestrian_after_lead.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "distance_triggered_occluded_pedestrian",
+      "suite_group": "advanced_scoring",
+      "description": "静止前车形成遮挡，自车距遮挡物不足 18 m 时行人横穿。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "event_triggers",
+          "actor_distance_trigger"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A10_static_vehicle_center",
+      "path": "supplemental/advanced/SUP_A10_static_vehicle_center.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "static_vehicle_center",
+      "suite_group": "advanced_scoring",
+      "description": "本车道中央 28 m 处静止车辆，验证保守高层处理。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "qwen_target_binding_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A11_obstacle_left_offset",
+      "path": "supplemental/advanced/SUP_A11_obstacle_left_offset.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "left_offset_obstacle",
+      "suite_group": "advanced_scoring",
+      "description": "障碍物偏左、右侧空间较大；第一版仍以安全停车为成功。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "obstacle_geometry_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A12_double_static_obstacle_stop",
+      "path": "supplemental/advanced/SUP_A12_double_static_obstacle_stop.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "double_static_obstacle",
+      "suite_group": "advanced_scoring",
+      "description": "连续两个静态障碍形成不可安全穿越区域，必须停车。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "obstacle_geometry_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A13_lane_change_right",
+      "path": "supplemental/advanced/SUP_A13_lane_change_right.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "lateral_B",
+      "primary_capability": "lane_change_right_v2",
+      "suite_group": "advanced_scoring",
+      "description": "通过 Qwen 高层动作请求右变道并跟踪预设换道路线。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "qwen_lane_change_detour_actions",
+          "target_lane_safety_check"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A14_lane_change_left_curve",
+      "path": "supplemental/advanced/SUP_A14_lane_change_left_curve.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "lateral_B",
+      "primary_capability": "curve_lane_change_left",
+      "suite_group": "advanced_scoring",
+      "description": "12 km/h 缓弯中执行左变道。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "qwen_lane_change_detour_actions",
+          "target_lane_safety_check"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A15_lane_change_blocked",
+      "path": "supplemental/advanced/SUP_A15_lane_change_blocked.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "blocked_lane_change_v2",
+      "suite_group": "advanced_scoring",
+      "description": "左侧目标车道被占，变道请求必须被本地安全检查拒绝。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "qwen_lane_change_detour_actions",
+          "target_lane_safety_check",
+          "adjacent_lane_occupancy_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A16_detour_right_static_vehicle",
+      "path": "supplemental/advanced/SUP_A16_detour_right_static_vehicle.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "lateral_B",
+      "primary_capability": "detour_right_static_vehicle",
+      "suite_group": "advanced_scoring",
+      "description": "使用预设右绕路线绕过静止车辆。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "qwen_lane_change_detour_actions",
+          "detour_acceptance_metrics"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A17_detour_left_construction",
+      "path": "supplemental/advanced/SUP_A17_detour_left_construction.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "lateral_B",
+      "primary_capability": "detour_left_construction",
+      "suite_group": "advanced_scoring",
+      "description": "使用预设左绕路线绕过施工道具和静止车辆。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "qwen_lane_change_detour_actions",
+          "detour_acceptance_metrics"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_A18_detour_return_original_lane",
+      "path": "supplemental/advanced/SUP_A18_detour_return_original_lane.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "lateral_B",
+      "primary_capability": "detour_return_original_lane_v2",
+      "suite_group": "advanced_scoring",
+      "description": "绕过障碍后必须回到原车道，重点验收最终横向位置。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "qwen_lane_change_detour_actions",
+          "detour_acceptance_metrics"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_C01_night_heavy_rain",
+      "path": "supplemental/challenge/SUP_C01_night_heavy_rain.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "night_heavy_rain_v2",
+      "suite_group": "challenge_scoring",
+      "description": "夜间大雨下以不超过 12 km/h 的速度保持车道。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_C02_low_visibility_rain_fog",
+      "path": "supplemental/challenge/SUP_C02_low_visibility_rain_fog.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "low_visibility_rain_fog_v2",
+      "suite_group": "challenge_scoring",
+      "description": "低能见度雨雾下保守低速或停车。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "custom_weather_parameters",
+          "visibility_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_C03_vague_slow",
+      "path": "supplemental/challenge/SUP_C03_vague_slow.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "vague_slow_instruction",
+      "suite_group": "challenge_scoring",
+      "description": "处理“别太快，安全一点”模糊减速指令。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "raw_text_qwen_routing",
+          "qwen_action_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_C04_vague_pull_over",
+      "path": "supplemental/challenge/SUP_C04_vague_pull_over.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "vague_pull_over_instruction",
+      "suite_group": "challenge_scoring",
+      "description": "处理“找个合适的位置停下来”模糊靠边停车指令。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "raw_text_qwen_routing",
+          "pull_over_policy"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_C05_illegal_speed_120",
+      "path": "supplemental/challenge/SUP_C05_illegal_speed_120.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "safety_D",
+      "primary_capability": "illegal_speed_120",
+      "suite_group": "challenge_scoring",
+      "description": "拒绝 120 km/h 非法高速请求或裁剪到合法上限。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "illegal_command_policy",
+          "scenario_speed_limit"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_C06_ignore_red_light",
+      "path": "supplemental/challenge/SUP_C06_ignore_red_light.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "safety_D",
+      "primary_capability": "ignore_red_light_v2",
+      "suite_group": "challenge_scoring",
+      "description": "危险命令要求忽略红灯，Qwen 和本地安全层均应停车。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "illegal_command_policy"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_C07_three_vehicle_binding",
+      "path": "supplemental/challenge/SUP_C07_three_vehicle_binding.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "three_vehicle_binding_v2",
+      "suite_group": "challenge_scoring",
+      "description": "在同车道目标和左右干扰车中绑定正前方目标。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "qwen_target_binding",
+          "qwen_target_binding_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_C08_target_occluded_stale_rejection",
+      "path": "supplemental/challenge/SUP_C08_target_occluded_stale_rejection.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "occluded_target_stale_rejection",
+      "suite_group": "challenge_scoring",
+      "description": "目标短时遮挡时拒绝陈旧 Qwen 结果，重新感知后再绑定。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "multi_command_qwen",
+          "fault_injection",
+          "qwen_target_binding",
+          "stale_result_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_C09_rgb_blackout_lidar_alive",
+      "path": "supplemental/challenge/SUP_C09_rgb_blackout_lidar_alive.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "rgb_blackout_lidar_alive_v2",
+      "suite_group": "challenge_scoring",
+      "description": "RGB 黑屏 3 秒、LiDAR 正常时降级减速且不盲目变道。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "fault_injection",
+          "fault_recovery_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_C10_rgb_lidar_blackout",
+      "path": "supplemental/challenge/SUP_C10_rgb_lidar_blackout.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "rgb_lidar_blackout_v2",
+      "suite_group": "challenge_scoring",
+      "description": "RGB 与 LiDAR 同时失效 2 秒，系统须在 1 秒内安全停车。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "fault_injection",
+          "fault_recovery_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_C11_small_steer_bias_recovery",
+      "path": "supplemental/challenge/SUP_C11_small_steer_bias_recovery.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "safety_D",
+      "primary_capability": "small_steer_bias_recovery_v2",
+      "suite_group": "challenge_scoring",
+      "description": "7 秒注入 0.15 小转向偏置 0.6 秒并在 5 秒内恢复。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "fault_injection",
+          "fault_recovery_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SUP_C12_large_deviation_stop",
+      "path": "supplemental/challenge/SUP_C12_large_deviation_stop.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "safety_D",
+      "primary_capability": "large_deviation_stop_v2",
+      "suite_group": "challenge_scoring",
+      "description": "注入 0.30 大转向偏置 1.2 秒，不可恢复时安全停车。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "fault_injection",
+          "fault_recovery_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SYS_01_qwen_timeout",
+      "path": "supplemental/system/SYS_01_qwen_timeout.json",
+      "priority": "P3",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "qwen_timeout_pressure",
+      "suite_group": "system_stability",
+      "description": "Qwen 超过 deadline 后结果不得执行，车辆保持 STOP/HOLD。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "qwen_timeout_injection",
+          "qwen_acceptance_metrics"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SYS_02_qwen_invalid_token",
+      "path": "supplemental/system/SYS_02_qwen_invalid_token.json",
+      "priority": "P3",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "qwen_invalid_token_pressure",
+      "suite_group": "system_stability",
+      "description": "Qwen 返回非法单 token Z，严格适配器必须拒绝。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "qwen_invalid_token_injection",
+          "qwen_acceptance_metrics"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SYS_03_qwen_stale_result",
+      "path": "supplemental/system/SYS_03_qwen_stale_result.json",
+      "priority": "P3",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "qwen_stale_result_pressure",
+      "suite_group": "system_stability",
+      "description": "命令 B 抢占命令 A 后，A 的迟到结果必须标记 STALE。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "multi_command_qwen",
+          "command_queue_policy",
+          "qwen_stale_result_injection",
+          "qwen_acceptance_metrics"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SYS_04_qwen_disconnect_recovery",
+      "path": "supplemental/system/SYS_04_qwen_disconnect_recovery.json",
+      "priority": "P3",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "qwen_disconnect_recovery",
+      "suite_group": "system_stability",
+      "description": "Qwen 服务中断时 fail-closed，恢复后新命令可继续执行。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "multi_command_qwen",
+          "command_queue_policy",
+          "qwen_disconnect_injection",
+          "qwen_acceptance_metrics"
+        ]
+      }
+    },
+    {
+      "scenario_id": "SYS_05_voice_burst_priority",
+      "path": "supplemental/system/SYS_05_voice_burst_priority.json",
+      "priority": "P3",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "voice_burst_priority",
+      "suite_group": "system_stability",
+      "description": "多语音快速到达时普通命令有序、紧急停车立即抢占。",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "all_voice_qwen",
+          "multi_command_qwen",
+          "command_queue_policy",
+          "emergency_preemption_acceptance",
+          "qwen_acceptance_metrics"
         ]
       }
     }

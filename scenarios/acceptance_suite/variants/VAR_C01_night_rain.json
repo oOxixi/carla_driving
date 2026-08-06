@@ -119,7 +119,7 @@
     "must_no_route_deviation": true
   },
   "extensions": {
-    "suite_version": "acceptance-suite-2026.08-v1",
+    "suite_version": "acceptance-suite-2026.08-v2",
     "priority": "P1",
     "primary_capability": "night_rain",
     "input_mode": "raw_text_qwen",

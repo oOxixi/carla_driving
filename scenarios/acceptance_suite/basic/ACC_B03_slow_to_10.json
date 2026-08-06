@@ -128,7 +128,7 @@
     "must_execute_commands_in_order": true
   },
   "extensions": {
-    "suite_version": "acceptance-suite-2026.08-v1",
+    "suite_version": "acceptance-suite-2026.08-v2",
     "priority": "P0",
     "primary_capability": "decelerate",
     "input_mode": "raw_text_qwen",

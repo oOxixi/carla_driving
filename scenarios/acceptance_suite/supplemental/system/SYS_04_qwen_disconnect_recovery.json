@@ -1,0 +1,185 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "SYS_04_qwen_disconnect_recovery",
+  "category": "regression",
+  "official_level": "challenge",
+  "description": "Qwen 服务中断时 fail-closed，恢复后新命令可继续执行。",
+  "tags": [
+    "acceptance_suite",
+    "p3",
+    "qwen_disconnect_recovery"
+  ],
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 454,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 40,
+    "max_startup_wait_s": 10
+  },
+  "ego_spawn": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5,
+    "yaw_deg": 0.0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0,
+        0
+      ],
+      [
+        20,
+        0
+      ],
+      [
+        40,
+        0
+      ],
+      [
+        60,
+        0
+      ],
+      [
+        80,
+        0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "开始行驶",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 10
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    },
+    {
+      "time_s": 8,
+      "source_text": "减速到每小时五公里",
+      "intent": "SET_SPEED",
+      "parameters": {
+        "target_speed_kph": 5
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    },
+    {
+      "time_s": 18,
+      "source_text": "服务恢复后继续保持车道",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 10
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    }
+  ],
+  "actors": [],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 5
+    },
+    "lidar": {
+      "enabled": true
+    },
+    "collision": {
+      "enabled": true
+    },
+    "lane_invasion": {
+      "enabled": true
+    }
+  },
+  "controllers": {
+    "A_runtime": {
+      "only_apply_control_owner": true
+    },
+    "B_lateral": {
+      "enabled": true
+    },
+    "C_longitudinal": {
+      "enabled": true
+    },
+    "D_safety": {
+      "enabled": true,
+      "must_run_before_apply_control": true
+    }
+  },
+  "logging": {
+    "required_files": [
+      "frame_log.jsonl",
+      "event_log.jsonl",
+      "result.json",
+      "score_report.json",
+      "qwen_requests.jsonl"
+    ]
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_generate_logs": true,
+    "final_control_no_throttle_brake_overlap": true,
+    "must_execute_commands_in_order": true,
+    "max_speed_mps": 3.0
+  },
+  "extensions": {
+    "suite_version": "acceptance-suite-2026.08-v2",
+    "priority": "P3",
+    "primary_capability": "qwen_disconnect_recovery",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "oracle": {
+      "expected_behaviors": [
+        "KEEP_LANE",
+        "SET_SPEED",
+        "HOLD"
+      ]
+    },
+    "faults": [
+      {
+        "fault_id": "qwen_disconnect",
+        "type": "qwen_service_disconnect",
+        "trigger": {
+          "type": "time",
+          "time_s": 6
+        },
+        "duration_s": 8
+      }
+    ],
+    "proposed_acceptance": {
+      "disconnect_fail_closed": true,
+      "post_recovery_command_succeeds": true
+    },
+    "runtime_support": {
+      "status": "extension_required",
+      "requirements": [
+        "all_voice_qwen",
+        "multi_command_qwen",
+        "command_queue_policy",
+        "qwen_disconnect_injection",
+        "qwen_acceptance_metrics"
+      ]
+    }
+  },
+  "notes": [
+    "正式结果必须使用 perception_mode=sensors 与 scenario_facts_mode=perception。"
+  ]
+}

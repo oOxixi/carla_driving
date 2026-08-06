@@ -121,7 +121,7 @@
     "max_abs_steer": 0.8
   },
   "extensions": {
-    "suite_version": "acceptance-suite-2026.08-v1",
+    "suite_version": "acceptance-suite-2026.08-v2",
     "priority": "P0",
     "primary_capability": "lane_change_left",
     "input_mode": "raw_text_qwen",

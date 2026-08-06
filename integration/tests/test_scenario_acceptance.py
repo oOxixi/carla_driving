@@ -12,6 +12,9 @@ SCENARIO_ROOT = Path(__file__).resolve().parents[2] / "scenarios"
 def _passing_metrics(expected: dict[str, object]) -> dict[str, object]:
     initial_offset = float(expected.get("initial_offset_y_m", 0.0))
     final_speed = float(expected.get("target_speed_kph", 0.0)) / 3.6
+    passing_max_speed = max(final_speed, 1.0)
+    if "max_speed_mps" in expected:
+        passing_max_speed = min(passing_max_speed, float(expected["max_speed_mps"]))
     reasons = [str(item) for item in expected.get("expected_reason_contains", ["EXPECTED_EVENT"])]
     return {
         "carla_started": True,
@@ -35,7 +38,7 @@ def _passing_metrics(expected: dict[str, object]) -> dict[str, object]:
         "initial_cross_track_error_m": initial_offset,
         "max_abs_steer": 0.0,
         "max_steer_rate_per_s": 0.0,
-        "max_speed_mps": max(final_speed, 1.0),
+        "max_speed_mps": passing_max_speed,
         "final_speed_mps": final_speed,
         "min_gap_m": 10.0,
         "duration_s": max(120.0, float(expected.get("min_run_time_s", 0.0))),

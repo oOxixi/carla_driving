@@ -205,7 +205,7 @@
     "max_cross_track_error_m": 1.5
   },
   "extensions": {
-    "suite_version": "acceptance-suite-2026.08-v1",
+    "suite_version": "acceptance-suite-2026.08-v2",
     "priority": "P3",
     "primary_capability": "long_stability",
     "input_mode": "raw_text_qwen",

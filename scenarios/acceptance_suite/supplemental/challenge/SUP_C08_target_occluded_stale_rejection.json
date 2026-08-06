@@ -1,21 +1,21 @@
 {
   "schema_version": "1.0",
-  "scenario_id": "CX06_multi_command_full_trip",
+  "scenario_id": "SUP_C08_target_occluded_stale_rejection",
   "category": "regression",
   "official_level": "challenge",
-  "description": "启动、定速、跟车、减速、红灯停车和终点停车的完整命令链。",
+  "description": "目标短时遮挡时拒绝陈旧 Qwen 结果，重新感知后再绑定。",
   "tags": [
     "acceptance_suite",
-    "p2",
-    "multi_command_trip"
+    "p1",
+    "occluded_target_stale_rejection"
   ],
   "map": "Town03",
   "weather": "ClearNoon",
-  "seed": 206,
+  "seed": 438,
   "runtime": {
     "sync_mode": true,
     "fixed_delta_seconds": 0.05,
-    "duration_s": 145,
+    "duration_s": 38,
     "max_startup_wait_s": 10
   },
   "ego_spawn": {
@@ -37,30 +37,14 @@
       ],
       [
         40,
-        2
-      ],
-      [
-        60,
-        6
-      ],
-      [
-        80,
-        6
-      ],
-      [
-        100,
-        2
-      ],
-      [
-        120,
         0
       ],
       [
-        145,
-        -3
+        60,
+        0
       ],
       [
-        170,
+        80,
         0
       ]
     ],
@@ -70,72 +54,19 @@
   "commands": [
     {
       "time_s": 0,
-      "source_text": "开始行驶并保持车道",
-      "intent": "KEEP_LANE",
-      "parameters": {
-        "target_speed_kph": 12
-      },
-      "intent_confidence": 0.95,
-      "status": "valid",
-      "confirm_required": false
-    },
-    {
-      "time_s": 8,
-      "source_text": "将速度设置为二十公里每小时",
-      "intent": "SET_SPEED",
-      "parameters": {
-        "target_speed_kph": 20
-      },
-      "intent_confidence": 0.95,
-      "status": "valid",
-      "confirm_required": false
-    },
-    {
-      "time_s": 25,
       "source_text": "跟随正前方车辆",
       "intent": "KEEP_LANE",
       "parameters": {
-        "target_speed_kph": 18
+        "target_speed_kph": 15
       },
       "intent_confidence": 0.95,
       "status": "valid",
       "confirm_required": false
     },
     {
-      "time_s": 50,
-      "source_text": "减速到十公里每小时",
-      "intent": "SET_SPEED",
-      "parameters": {
-        "target_speed_kph": 10
-      },
-      "intent_confidence": 0.95,
-      "status": "valid",
-      "confirm_required": false
-    },
-    {
-      "time_s": 75,
-      "source_text": "红灯前停车",
-      "intent": "STOP",
-      "parameters": {},
-      "intent_confidence": 0.95,
-      "status": "valid",
-      "confirm_required": false
-    },
-    {
-      "time_s": 95,
-      "source_text": "重新启动并保持车道",
-      "intent": "KEEP_LANE",
-      "parameters": {
-        "target_speed_kph": 12
-      },
-      "intent_confidence": 0.95,
-      "status": "valid",
-      "confirm_required": false
-    },
-    {
-      "time_s": 125,
-      "source_text": "到终点停车",
-      "intent": "STOP",
+      "time_s": 12,
+      "source_text": "目标看不清时先保持安全",
+      "intent": "HOLD",
       "parameters": {},
       "intent_confidence": 0.95,
       "status": "valid",
@@ -144,38 +75,30 @@
   ],
   "actors": [
     {
-      "actor_id": "lead_001",
+      "actor_id": "target_front",
       "type": "vehicle",
       "blueprint_id": "vehicle.audi.tt",
       "spawn": {
-        "x": 35,
+        "x": 28,
         "y": 0.0,
         "z": 0.5,
         "yaw_deg": 0.0
       },
       "behavior": {
         "mode": "lead_vehicle",
-        "initial_speed_mps": 3.0,
-        "target_speed_mps": 3.0
+        "initial_speed_mps": 2.8,
+        "target_speed_mps": 2.8
       }
     },
     {
-      "actor_id": "signal_001",
-      "type": "traffic_light",
-      "state": "green",
-      "distance_to_stop_line_m": 75,
-      "behavior": {
-        "mode": "state_timeline",
-        "states": [
-          {
-            "time_s": 65,
-            "state": "red"
-          },
-          {
-            "time_s": 90,
-            "state": "green"
-          }
-        ]
+      "actor_id": "temporary_occluder",
+      "type": "static.prop",
+      "blueprint_id": "static.prop.warningconstruction",
+      "spawn": {
+        "x": 22,
+        "y": -2.0,
+        "z": 0.5,
+        "yaw_deg": 90
       }
     }
   ],
@@ -225,18 +148,17 @@
     "must_no_collision": true,
     "must_generate_logs": true,
     "final_control_no_throttle_brake_overlap": true,
-    "must_execute_commands_in_order": true,
-    "must_stop_after_last_command": true,
-    "stop_speed_threshold_mps": 0.2,
     "required_real_actor_types": [
-      "vehicle"
+      "vehicle",
+      "static.prop"
     ],
+    "min_front_gap_m": 2.5,
     "expected_safety_override_allowed": true
   },
   "extensions": {
-    "suite_version": "acceptance-suite-2026.08-v1",
-    "priority": "P2",
-    "primary_capability": "multi_command_trip",
+    "suite_version": "acceptance-suite-2026.08-v2",
+    "priority": "P1",
+    "primary_capability": "occluded_target_stale_rejection",
     "input_mode": "raw_text_qwen",
     "qwen_policy": {
       "required_for_every_voice_event": true,
@@ -245,25 +167,37 @@
     },
     "oracle": {
       "expected_behaviors": [
-        "START",
-        "SET_SPEED",
         "FOLLOW",
-        "SLOW_DOWN",
-        "STOP",
-        "KEEP_LANE"
-      ]
+        "HOLD",
+        "STOP"
+      ],
+      "expected_target_actor_id": "target_front"
     },
-    "faults": [],
+    "faults": [
+      {
+        "fault_id": "target_occlusion",
+        "type": "actor_visibility",
+        "trigger": {
+          "type": "time",
+          "time_s": 8
+        },
+        "duration_s": 5,
+        "actor_id": "target_front",
+        "visible": false
+      }
+    ],
     "proposed_acceptance": {
-      "qwen_command_count": 7,
-      "qwen_stale_rejection_count": 0
+      "qwen_stale_result_applied_count": 0,
+      "rebind_requires_fresh_perception": true
     },
     "runtime_support": {
       "status": "extension_required",
       "requirements": [
+        "all_voice_qwen",
         "multi_command_qwen",
-        "command_queue_policy",
-        "actor_state_timeline"
+        "fault_injection",
+        "qwen_target_binding",
+        "stale_result_acceptance"
       ]
     }
   },

@@ -122,7 +122,7 @@
     "must_finish_route": true
   },
   "extensions": {
-    "suite_version": "acceptance-suite-2026.08-v1",
+    "suite_version": "acceptance-suite-2026.08-v2",
     "priority": "P0",
     "primary_capability": "lane_keep_recovery",
     "input_mode": "raw_text_qwen",
