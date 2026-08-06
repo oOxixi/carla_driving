@@ -18,6 +18,7 @@ from .service import (
     QwenServiceConfig,
     ServiceFailure,
     UnavailableBackend,
+    VllmQwenPlannerBackend,
 )
 
 
@@ -96,6 +97,19 @@ def build_service(args: argparse.Namespace) -> QwenDecisionService:
             if args.qwen_mode == "planner_v2"
             else DeterministicTestBackend()
         )
+    elif args.vllm_base_url is not None:
+        if args.qwen_mode != "planner_v2":
+            raise ValueError("--vllm-base-url currently requires --qwen-mode planner_v2")
+        if not args.vllm_model:
+            raise ValueError("--vllm-model is required with --vllm-base-url")
+        backend = VllmQwenPlannerBackend(
+            base_url=args.vllm_base_url,
+            model=args.vllm_model,
+            image_root=args.image_root,
+            max_new_tokens=args.max_new_tokens,
+            image_max_side=args.image_max_side,
+            jpeg_quality=args.jpeg_quality,
+        )
     elif args.model_path is not None:
         backend_type = LocalQwenPlannerBackend if args.qwen_mode == "planner_v2" else LocalQwenBackend
         backend = backend_type(
@@ -123,6 +137,9 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--model-path", type=Path)
+    parser.add_argument("--vllm-base-url",
+                        help="existing OpenAI-compatible vLLM /v1 endpoint")
+    parser.add_argument("--vllm-model", help="exact model id served by vLLM")
     parser.add_argument("--image-root", type=Path)
     parser.add_argument("--deterministic-test-backend", action="store_true",
                         help="contract tests only; never production evidence")
@@ -136,6 +153,8 @@ def main() -> None:
     )
     parser.add_argument("--min-pixels", type=int, default=64 * 28 * 28)
     parser.add_argument("--max-pixels", type=int, default=256 * 28 * 28)
+    parser.add_argument("--image-max-side", type=int, default=224)
+    parser.add_argument("--jpeg-quality", type=int, default=75)
     args = parser.parse_args()
     service = build_service(args)
     server = QwenHTTPServer((args.host, args.port), service)

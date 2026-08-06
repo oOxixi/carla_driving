@@ -5,6 +5,9 @@ from __future__ import annotations
 from collections.abc import Mapping
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError as FutureTimeout
 from dataclasses import dataclass
+import base64
+import io
+import json
 import math
 from pathlib import Path
 import statistics
@@ -346,6 +349,124 @@ class LocalQwenPlannerBackend:
         if not candidate.is_file():
             raise FileNotFoundError(f"Qwen RGB input not found: {candidate}")
         return candidate
+
+
+class VllmQwenPlannerBackend:
+    """Production Planner V2 adapter over an existing OpenAI-compatible vLLM."""
+
+    production_ready = True
+
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        model: str,
+        image_root: str | Path | None = None,
+        api_key: str = "unused",
+        timeout_s: float = 15.0,
+        max_new_tokens: int = 256,
+        image_max_side: int = 224,
+        jpeg_quality: int = 75,
+    ) -> None:
+        if not base_url.strip() or not model.strip():
+            raise ValueError("vLLM base URL and model must be non-empty")
+        try:
+            from openai import OpenAI
+        except ImportError as error:
+            raise RuntimeError("vLLM service backend requires the openai package") from error
+        self._client = OpenAI(
+            base_url=base_url.rstrip("/"), api_key=api_key,
+            timeout=timeout_s, max_retries=0,
+        )
+        self.model_id = model
+        self.image_root = None if image_root is None else Path(image_root).expanduser().resolve()
+        self.max_new_tokens = int(max_new_tokens)
+        self.image_max_side = int(image_max_side)
+        self.jpeg_quality = int(jpeg_quality)
+
+    def health(self) -> tuple[bool, str]:
+        return True, f"vLLM planner endpoint configured: {self.model_id}"
+
+    def infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]:
+        routing = request.get("routing")
+        if not isinstance(routing, Mapping):
+            raise ValueError("planner_v2 request is missing routing metadata")
+        prompt = build_planner_v2_prompt(
+            request, routing,
+            scene_capabilities=request.get("scene_capabilities", {}),
+        )
+        content: list[dict[str, Any]] = []
+        image_path = self._resolve_image(request.get("rgb_ref"))
+        if image_path is not None:
+            content.append({
+                "type": "image_url",
+                "image_url": {"url": self._image_data_url(image_path)},
+            })
+        content.append({"type": "text", "text": prompt})
+        response = self._client.chat.completions.create(
+            model=self.model_id,
+            messages=[{"role": "user", "content": content}],
+            temperature=0.0,
+            max_tokens=self.max_new_tokens,
+            response_format={"type": "json_object"},
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+        )
+        choices = getattr(response, "choices", None)
+        if not choices:
+            raise RuntimeError("vLLM returned no planner choices")
+        raw = getattr(getattr(choices[0], "message", None), "content", None)
+        plan = parse_maneuver_plan(raw)
+        # Identity and lifetime are transport contracts, not model judgement.
+        plan.update({
+            "schema_version": "2.0",
+            "request_id": request["request_id"],
+            "command_id": request["command_id"],
+            "plan_type": "MANEUVER_SEQUENCE",
+            "created_at_ns": int(request["created_at_ns"]),
+            "valid_until_ns": int(request["deadline_ns"]),
+            "model_id": self.model_id,
+        })
+        plan.setdefault("plan_id", f"plan-{request['request_id']}")
+        plan.setdefault("replan_conditions", [])
+        plan.setdefault("confidence", 0.80)
+        plan.setdefault("requires_confirmation", False)
+        plan.setdefault("reason_code", "QWEN_VLLM_PLANNER_V2")
+        return plan
+
+    def _resolve_image(self, value: Any) -> Path | None:
+        if value is None:
+            return None
+        candidate = Path(str(value)).expanduser()
+        if self.image_root is None:
+            candidate = candidate.resolve()
+        else:
+            if candidate.is_absolute():
+                raise ValueError("rgb_ref must be relative when image_root is configured")
+            candidate = (self.image_root / candidate).resolve()
+            candidate.relative_to(self.image_root)
+        if not candidate.is_file():
+            raise FileNotFoundError(f"Qwen RGB input not found: {candidate}")
+        return candidate
+
+    def _image_data_url(self, path: Path) -> str:
+        try:
+            from PIL import Image, ImageOps
+        except ImportError as error:
+            raise RuntimeError("vLLM image encoding requires Pillow") from error
+        with Image.open(path) as image:
+            image = ImageOps.contain(
+                image.convert("RGB"),
+                (self.image_max_side, self.image_max_side),
+                method=Image.Resampling.LANCZOS,
+            )
+            buffer = io.BytesIO()
+            image.save(buffer, format="JPEG", quality=self.jpeg_quality, optimize=True)
+        return "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+
+    def close(self) -> None:
+        close = getattr(self._client, "close", None)
+        if callable(close):
+            close()
 
 
 class LocalQwenBackend:
@@ -705,4 +826,5 @@ __all__ = [
     "QwenServiceConfig",
     "ServiceFailure",
     "UnavailableBackend",
+    "VllmQwenPlannerBackend",
 ]
