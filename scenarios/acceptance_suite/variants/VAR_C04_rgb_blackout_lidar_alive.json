@@ -146,8 +146,9 @@
       "must_recover_after_fault": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "fault_injection",
         "fault_recovery_acceptance"
       ]

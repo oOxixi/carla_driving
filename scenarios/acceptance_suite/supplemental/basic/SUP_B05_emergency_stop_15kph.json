@@ -147,8 +147,9 @@
       "brake_before_qwen_ready": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "multi_command_qwen",
         "parallel_emergency_qwen_evidence"

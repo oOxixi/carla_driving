@@ -59,7 +59,7 @@ def test_acceptance_matrix_matches_files_and_required_counts() -> None:
     }
     assert counts["current_runtime"] + counts["extension_required"] == 84
     matrix_paths = {item["path"] for item in entries}
-    actual_paths = {str(path.relative_to(SUITE_ROOT)) for path in _scenario_files()}
+    actual_paths = {path.relative_to(SUITE_ROOT).as_posix() for path in _scenario_files()}
     assert matrix_paths == actual_paths
 
 
@@ -89,7 +89,7 @@ def test_v2_supplemental_counts_and_main_complex_contract() -> None:
     assert len(main["commands"]) == 7
     assert main["extensions"]["proposed_acceptance"]["expected_phase_count"] == 9
     assert main["extensions"]["qwen_policy"]["required_for_every_voice_event"] is True
-    assert main["extensions"]["runtime_support"]["status"] == "extension_required"
+    assert main["extensions"]["runtime_support"]["status"] == "current"
     assert not (SUITE_ROOT / "complex" / "CX06_multi_command_full_trip.json").exists()
     assert (SUITE_ROOT / "BUILD_SUMMARY.md").exists()
 

@@ -47,6 +47,7 @@ class OrchestratorConfig:
     max_decel_mps2: float = 5.0
     top_k_targets: int = 8
     qwen_mode: str = "atomic_v1"
+    force_qwen_all_voice: bool = False
     allowed_slow_behaviors: tuple[str, ...] = (
         "KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
         "CHANGE_LANE", "TURN", "PULL_OVER",
@@ -65,6 +66,8 @@ class OrchestratorConfig:
             raise ValueError("minimum_confidence must be in [0, 1]")
         if self.qwen_mode not in {"atomic_v1", "planner_v2"}:
             raise ValueError("qwen_mode must be 'atomic_v1' or 'planner_v2'")
+        if type(self.force_qwen_all_voice) is not bool:
+            raise TypeError("force_qwen_all_voice must be bool")
         allowed_values = {
             "KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
             "CHANGE_LANE", "TURN", "PULL_OVER",
@@ -210,7 +213,7 @@ class PipelineOrchestrator:
                 **self._routing_fields(routing),
             )
 
-        if routing.disposition == FAST_LOCAL:
+        if routing.disposition == FAST_LOCAL and not self.config.force_qwen_all_voice:
             try:
                 control = self._fast_control(canonical, scene, now)
             except (ValueError, InterfaceValidationError) as error:
@@ -222,7 +225,7 @@ class PipelineOrchestrator:
                 **self._routing_fields(routing),
             )
 
-        if routing.disposition == CONFIRM_SAFE:
+        if routing.disposition == CONFIRM_SAFE and not self.config.force_qwen_all_voice:
             reason = routing.reasons[0] if routing.reasons else "CONFIRMATION_REQUIRED"
             return self._feedback_result(
                 command_id, now, "REJECTED", reason,

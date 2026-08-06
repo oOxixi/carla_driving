@@ -134,8 +134,9 @@
       "must_respect_map_speed_limit": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "map_speed_limit_acceptance"
       ]
     }

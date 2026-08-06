@@ -133,8 +133,9 @@
       "must_stop_when_perception_insufficient": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "custom_weather_parameters",
         "visibility_acceptance"

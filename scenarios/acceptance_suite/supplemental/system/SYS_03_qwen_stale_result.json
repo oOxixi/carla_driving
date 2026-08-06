@@ -157,8 +157,9 @@
       "current_plan_command_index": 1
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "multi_command_qwen",
         "command_queue_policy",

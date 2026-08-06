@@ -135,8 +135,9 @@
       "sustained_speed_max_kph": 22
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "scenario_speed_limit",
         "map_speed_limit_acceptance"

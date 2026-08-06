@@ -136,8 +136,9 @@
       "requires_confirmation": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "raw_text_qwen_routing",
         "multi_asr_candidates"
       ]

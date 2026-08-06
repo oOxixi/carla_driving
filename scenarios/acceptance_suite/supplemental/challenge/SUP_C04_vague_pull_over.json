@@ -137,8 +137,9 @@
       "must_not_select_unsafe_pull_over_point": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "raw_text_qwen_routing",
         "pull_over_policy"

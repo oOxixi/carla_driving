@@ -174,8 +174,9 @@
       "final_lateral_offset_abs_max_m": 0.5
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "qwen_lane_change_detour_actions",
         "detour_acceptance_metrics"

@@ -228,8 +228,9 @@
       "max_resource_growth_mb": 512
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "multi_command_qwen",
         "loop_route",
         "resource_stability_metrics"

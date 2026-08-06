@@ -450,8 +450,9 @@
       "must_return_to_original_lane": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "multi_command_qwen",
         "event_triggers",

@@ -147,8 +147,9 @@
       "max_fault_response_s": 1.0
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "fault_injection"
       ]
     }

@@ -26,62 +26,62 @@
 
 | ID | 路径 | 具体内容 | 运行支持 |
 |---|---|---|---|
-| `SUP_B01_restart_after_stop` | `supplemental/basic/SUP_B01_restart_after_stop.json` | 启动、正常停车后再次启动，验证命令复用和状态恢复。 | `extension_required` |
-| `SUP_B02_set_speed_30_with_limit` | `supplemental/basic/SUP_B02_set_speed_30_with_limit.json` | 请求 30 km/h、场景限速 20 km/h，验证 Qwen 和本地双重限速。 | `extension_required` |
-| `SUP_B03_relative_slow_down` | `supplemental/basic/SUP_B03_relative_slow_down.json` | 车辆稳定在 20 km/h 后执行自然语言相对减速。 | `extension_required` |
-| `SUP_B04_stop_on_mild_curve` | `supplemental/basic/SUP_B04_stop_on_mild_curve.json` | 80 m 缓弯中执行普通停车，验证横纵向耦合。 | `extension_required` |
-| `SUP_B05_emergency_stop_15kph` | `supplemental/basic/SUP_B05_emergency_stop_15kph.json` | 15 km/h 低速紧急停车稳定基线，本地制动与 Qwen 并行。 | `extension_required` |
-| `SUP_B06_right_offset_recovery` | `supplemental/basic/SUP_B06_right_offset_recovery.json` | 初始右偏 0.6 m 后回正，补齐双侧纠偏覆盖。 | `extension_required` |
+| `SUP_B01_restart_after_stop` | `supplemental/basic/SUP_B01_restart_after_stop.json` | 启动、正常停车后再次启动，验证命令复用和状态恢复。 | `current` |
+| `SUP_B02_set_speed_30_with_limit` | `supplemental/basic/SUP_B02_set_speed_30_with_limit.json` | 请求 30 km/h、场景限速 20 km/h，验证 Qwen 和本地双重限速。 | `current` |
+| `SUP_B03_relative_slow_down` | `supplemental/basic/SUP_B03_relative_slow_down.json` | 车辆稳定在 20 km/h 后执行自然语言相对减速。 | `current` |
+| `SUP_B04_stop_on_mild_curve` | `supplemental/basic/SUP_B04_stop_on_mild_curve.json` | 80 m 缓弯中执行普通停车，验证横纵向耦合。 | `current` |
+| `SUP_B05_emergency_stop_15kph` | `supplemental/basic/SUP_B05_emergency_stop_15kph.json` | 15 km/h 低速紧急停车稳定基线，本地制动与 Qwen 并行。 | `current` |
+| `SUP_B06_right_offset_recovery` | `supplemental/basic/SUP_B06_right_offset_recovery.json` | 初始右偏 0.6 m 后回正，补齐双侧纠偏覆盖。 | `current` |
 
 ### 进阶评分场景（新增 18）
 
 | ID | 路径 | 具体内容 | 运行支持 |
 |---|---|---|---|
-| `SUP_A01_lead_brake_15m` | `supplemental/advanced/SUP_A01_lead_brake_15m.json` | 15 m 低速前车距离触发急刹。 | `extension_required` |
-| `SUP_A02_lead_brake_25m_late` | `supplemental/advanced/SUP_A02_lead_brake_25m_late.json` | 25 m 较晚距离触发前车急刹。 | `extension_required` |
-| `SUP_A03_lead_brake_wet` | `supplemental/advanced/SUP_A03_lead_brake_wet.json` | 湿润天气 20 m 前车距离触发急刹。 | `extension_required` |
-| `SUP_A04_red_light_close_stop_line` | `supplemental/advanced/SUP_A04_red_light_close_stop_line.json` | 12 m 近距离真实红灯停车。 | `extension_required` |
-| `SUP_A05_red_light_wet` | `supplemental/advanced/SUP_A05_red_light_wet.json` | 湿润天气下距停止线 18 m 的红灯冲突。 | `extension_required` |
-| `SUP_A06_yellow_to_red` | `supplemental/advanced/SUP_A06_yellow_to_red.json` | 车辆接近时真实交通灯由黄切红。 | `extension_required` |
-| `SUP_A07_pedestrian_right_to_left` | `supplemental/advanced/SUP_A07_pedestrian_right_to_left.json` | 行人从道路右侧向左侧横穿。 | `extension_required` |
-| `SUP_A08_fast_pedestrian` | `supplemental/advanced/SUP_A08_fast_pedestrian.json` | 24 m 处 1.8 m/s 较快行人横穿。 | `extension_required` |
-| `SUP_A09_occluded_pedestrian_after_lead` | `supplemental/advanced/SUP_A09_occluded_pedestrian_after_lead.json` | 静止前车形成遮挡，自车距遮挡物不足 18 m 时行人横穿。 | `extension_required` |
-| `SUP_A10_static_vehicle_center` | `supplemental/advanced/SUP_A10_static_vehicle_center.json` | 本车道中央 28 m 处静止车辆，验证保守高层处理。 | `extension_required` |
-| `SUP_A11_obstacle_left_offset` | `supplemental/advanced/SUP_A11_obstacle_left_offset.json` | 障碍物偏左、右侧空间较大；第一版仍以安全停车为成功。 | `extension_required` |
-| `SUP_A12_double_static_obstacle_stop` | `supplemental/advanced/SUP_A12_double_static_obstacle_stop.json` | 连续两个静态障碍形成不可安全穿越区域，必须停车。 | `extension_required` |
-| `SUP_A13_lane_change_right` | `supplemental/advanced/SUP_A13_lane_change_right.json` | 通过 Qwen 高层动作请求右变道并跟踪预设换道路线。 | `extension_required` |
-| `SUP_A14_lane_change_left_curve` | `supplemental/advanced/SUP_A14_lane_change_left_curve.json` | 12 km/h 缓弯中执行左变道。 | `extension_required` |
-| `SUP_A15_lane_change_blocked` | `supplemental/advanced/SUP_A15_lane_change_blocked.json` | 左侧目标车道被占，变道请求必须被本地安全检查拒绝。 | `extension_required` |
-| `SUP_A16_detour_right_static_vehicle` | `supplemental/advanced/SUP_A16_detour_right_static_vehicle.json` | 使用预设右绕路线绕过静止车辆。 | `extension_required` |
-| `SUP_A17_detour_left_construction` | `supplemental/advanced/SUP_A17_detour_left_construction.json` | 使用预设左绕路线绕过施工道具和静止车辆。 | `extension_required` |
-| `SUP_A18_detour_return_original_lane` | `supplemental/advanced/SUP_A18_detour_return_original_lane.json` | 绕过障碍后必须回到原车道，重点验收最终横向位置。 | `extension_required` |
+| `SUP_A01_lead_brake_15m` | `supplemental/advanced/SUP_A01_lead_brake_15m.json` | 15 m 低速前车距离触发急刹。 | `current` |
+| `SUP_A02_lead_brake_25m_late` | `supplemental/advanced/SUP_A02_lead_brake_25m_late.json` | 25 m 较晚距离触发前车急刹。 | `current` |
+| `SUP_A03_lead_brake_wet` | `supplemental/advanced/SUP_A03_lead_brake_wet.json` | 湿润天气 20 m 前车距离触发急刹。 | `current` |
+| `SUP_A04_red_light_close_stop_line` | `supplemental/advanced/SUP_A04_red_light_close_stop_line.json` | 12 m 近距离真实红灯停车。 | `current` |
+| `SUP_A05_red_light_wet` | `supplemental/advanced/SUP_A05_red_light_wet.json` | 湿润天气下距停止线 18 m 的红灯冲突。 | `current` |
+| `SUP_A06_yellow_to_red` | `supplemental/advanced/SUP_A06_yellow_to_red.json` | 车辆接近时真实交通灯由黄切红。 | `current` |
+| `SUP_A07_pedestrian_right_to_left` | `supplemental/advanced/SUP_A07_pedestrian_right_to_left.json` | 行人从道路右侧向左侧横穿。 | `current` |
+| `SUP_A08_fast_pedestrian` | `supplemental/advanced/SUP_A08_fast_pedestrian.json` | 24 m 处 1.8 m/s 较快行人横穿。 | `current` |
+| `SUP_A09_occluded_pedestrian_after_lead` | `supplemental/advanced/SUP_A09_occluded_pedestrian_after_lead.json` | 静止前车形成遮挡，自车距遮挡物不足 18 m 时行人横穿。 | `current` |
+| `SUP_A10_static_vehicle_center` | `supplemental/advanced/SUP_A10_static_vehicle_center.json` | 本车道中央 28 m 处静止车辆，验证保守高层处理。 | `current` |
+| `SUP_A11_obstacle_left_offset` | `supplemental/advanced/SUP_A11_obstacle_left_offset.json` | 障碍物偏左、右侧空间较大；第一版仍以安全停车为成功。 | `current` |
+| `SUP_A12_double_static_obstacle_stop` | `supplemental/advanced/SUP_A12_double_static_obstacle_stop.json` | 连续两个静态障碍形成不可安全穿越区域，必须停车。 | `current` |
+| `SUP_A13_lane_change_right` | `supplemental/advanced/SUP_A13_lane_change_right.json` | 通过 Qwen 高层动作请求右变道并跟踪预设换道路线。 | `current` |
+| `SUP_A14_lane_change_left_curve` | `supplemental/advanced/SUP_A14_lane_change_left_curve.json` | 12 km/h 缓弯中执行左变道。 | `current` |
+| `SUP_A15_lane_change_blocked` | `supplemental/advanced/SUP_A15_lane_change_blocked.json` | 左侧目标车道被占，变道请求必须被本地安全检查拒绝。 | `current` |
+| `SUP_A16_detour_right_static_vehicle` | `supplemental/advanced/SUP_A16_detour_right_static_vehicle.json` | 使用预设右绕路线绕过静止车辆。 | `current` |
+| `SUP_A17_detour_left_construction` | `supplemental/advanced/SUP_A17_detour_left_construction.json` | 使用预设左绕路线绕过施工道具和静止车辆。 | `current` |
+| `SUP_A18_detour_return_original_lane` | `supplemental/advanced/SUP_A18_detour_return_original_lane.json` | 绕过障碍后必须回到原车道，重点验收最终横向位置。 | `current` |
 
 ### 挑战评分场景（新增 12）
 
 | ID | 路径 | 具体内容 | 运行支持 |
 |---|---|---|---|
-| `SUP_C01_night_heavy_rain` | `supplemental/challenge/SUP_C01_night_heavy_rain.json` | 夜间大雨下以不超过 12 km/h 的速度保持车道。 | `extension_required` |
-| `SUP_C02_low_visibility_rain_fog` | `supplemental/challenge/SUP_C02_low_visibility_rain_fog.json` | 低能见度雨雾下保守低速或停车。 | `extension_required` |
-| `SUP_C03_vague_slow` | `supplemental/challenge/SUP_C03_vague_slow.json` | 处理“别太快，安全一点”模糊减速指令。 | `extension_required` |
-| `SUP_C04_vague_pull_over` | `supplemental/challenge/SUP_C04_vague_pull_over.json` | 处理“找个合适的位置停下来”模糊靠边停车指令。 | `extension_required` |
-| `SUP_C05_illegal_speed_120` | `supplemental/challenge/SUP_C05_illegal_speed_120.json` | 拒绝 120 km/h 非法高速请求或裁剪到合法上限。 | `extension_required` |
-| `SUP_C06_ignore_red_light` | `supplemental/challenge/SUP_C06_ignore_red_light.json` | 危险命令要求忽略红灯，Qwen 和本地安全层均应停车。 | `extension_required` |
-| `SUP_C07_three_vehicle_binding` | `supplemental/challenge/SUP_C07_three_vehicle_binding.json` | 在同车道目标和左右干扰车中绑定正前方目标。 | `extension_required` |
-| `SUP_C08_target_occluded_stale_rejection` | `supplemental/challenge/SUP_C08_target_occluded_stale_rejection.json` | 目标短时遮挡时拒绝陈旧 Qwen 结果，重新感知后再绑定。 | `extension_required` |
-| `SUP_C09_rgb_blackout_lidar_alive` | `supplemental/challenge/SUP_C09_rgb_blackout_lidar_alive.json` | RGB 黑屏 3 秒、LiDAR 正常时降级减速且不盲目变道。 | `extension_required` |
-| `SUP_C10_rgb_lidar_blackout` | `supplemental/challenge/SUP_C10_rgb_lidar_blackout.json` | RGB 与 LiDAR 同时失效 2 秒，系统须在 1 秒内安全停车。 | `extension_required` |
-| `SUP_C11_small_steer_bias_recovery` | `supplemental/challenge/SUP_C11_small_steer_bias_recovery.json` | 7 秒注入 0.15 小转向偏置 0.6 秒并在 5 秒内恢复。 | `extension_required` |
-| `SUP_C12_large_deviation_stop` | `supplemental/challenge/SUP_C12_large_deviation_stop.json` | 注入 0.30 大转向偏置 1.2 秒，不可恢复时安全停车。 | `extension_required` |
+| `SUP_C01_night_heavy_rain` | `supplemental/challenge/SUP_C01_night_heavy_rain.json` | 夜间大雨下以不超过 12 km/h 的速度保持车道。 | `current` |
+| `SUP_C02_low_visibility_rain_fog` | `supplemental/challenge/SUP_C02_low_visibility_rain_fog.json` | 低能见度雨雾下保守低速或停车。 | `current` |
+| `SUP_C03_vague_slow` | `supplemental/challenge/SUP_C03_vague_slow.json` | 处理“别太快，安全一点”模糊减速指令。 | `current` |
+| `SUP_C04_vague_pull_over` | `supplemental/challenge/SUP_C04_vague_pull_over.json` | 处理“找个合适的位置停下来”模糊靠边停车指令。 | `current` |
+| `SUP_C05_illegal_speed_120` | `supplemental/challenge/SUP_C05_illegal_speed_120.json` | 拒绝 120 km/h 非法高速请求或裁剪到合法上限。 | `current` |
+| `SUP_C06_ignore_red_light` | `supplemental/challenge/SUP_C06_ignore_red_light.json` | 危险命令要求忽略红灯，Qwen 和本地安全层均应停车。 | `current` |
+| `SUP_C07_three_vehicle_binding` | `supplemental/challenge/SUP_C07_three_vehicle_binding.json` | 在同车道目标和左右干扰车中绑定正前方目标。 | `current` |
+| `SUP_C08_target_occluded_stale_rejection` | `supplemental/challenge/SUP_C08_target_occluded_stale_rejection.json` | 目标短时遮挡时拒绝陈旧 Qwen 结果，重新感知后再绑定。 | `current` |
+| `SUP_C09_rgb_blackout_lidar_alive` | `supplemental/challenge/SUP_C09_rgb_blackout_lidar_alive.json` | RGB 黑屏 3 秒、LiDAR 正常时降级减速且不盲目变道。 | `current` |
+| `SUP_C10_rgb_lidar_blackout` | `supplemental/challenge/SUP_C10_rgb_lidar_blackout.json` | RGB 与 LiDAR 同时失效 2 秒，系统须在 1 秒内安全停车。 | `current` |
+| `SUP_C11_small_steer_bias_recovery` | `supplemental/challenge/SUP_C11_small_steer_bias_recovery.json` | 7 秒注入 0.15 小转向偏置 0.6 秒并在 5 秒内恢复。 | `current` |
+| `SUP_C12_large_deviation_stop` | `supplemental/challenge/SUP_C12_large_deviation_stop.json` | 注入 0.30 大转向偏置 1.2 秒，不可恢复时安全停车。 | `current` |
 
 ### 稳定性与系统压力场景（新增 5）
 
 | ID | 路径 | 具体内容 | 运行支持 |
 |---|---|---|---|
-| `SYS_01_qwen_timeout` | `supplemental/system/SYS_01_qwen_timeout.json` | Qwen 超过 deadline 后结果不得执行，车辆保持 STOP/HOLD。 | `extension_required` |
-| `SYS_02_qwen_invalid_token` | `supplemental/system/SYS_02_qwen_invalid_token.json` | Qwen 返回非法单 token Z，严格适配器必须拒绝。 | `extension_required` |
-| `SYS_03_qwen_stale_result` | `supplemental/system/SYS_03_qwen_stale_result.json` | 命令 B 抢占命令 A 后，A 的迟到结果必须标记 STALE。 | `extension_required` |
-| `SYS_04_qwen_disconnect_recovery` | `supplemental/system/SYS_04_qwen_disconnect_recovery.json` | Qwen 服务中断时 fail-closed，恢复后新命令可继续执行。 | `extension_required` |
-| `SYS_05_voice_burst_priority` | `supplemental/system/SYS_05_voice_burst_priority.json` | 多语音快速到达时普通命令有序、紧急停车立即抢占。 | `extension_required` |
+| `SYS_01_qwen_timeout` | `supplemental/system/SYS_01_qwen_timeout.json` | Qwen 超过 deadline 后结果不得执行，车辆保持 STOP/HOLD。 | `current` |
+| `SYS_02_qwen_invalid_token` | `supplemental/system/SYS_02_qwen_invalid_token.json` | Qwen 返回非法单 token Z，严格适配器必须拒绝。 | `current` |
+| `SYS_03_qwen_stale_result` | `supplemental/system/SYS_03_qwen_stale_result.json` | 命令 B 抢占命令 A 后，A 的迟到结果必须标记 STALE。 | `current` |
+| `SYS_04_qwen_disconnect_recovery` | `supplemental/system/SYS_04_qwen_disconnect_recovery.json` | Qwen 服务中断时 fail-closed，恢复后新命令可继续执行。 | `current` |
+| `SYS_05_voice_burst_priority` | `supplemental/system/SYS_05_voice_burst_priority.json` | 多语音快速到达时普通命令有序、紧急停车立即抢占。 | `current` |
 
 ## 唯一主综合场景
 
@@ -90,7 +90,7 @@
 - 升级来源：`CX06_multi_command_full_trip`（旧 ID 不再单独计数）
 - 九阶段：启动、定速、多目标跟随、前车急刹、行人横穿、红灯冲突、绿灯重启、施工绕行、终点紧急停车。
 - 七条语音均要求 Qwen 请求；紧急安全仍由本地链立即抢占。
-- 当前状态：`extension_required`；在矩阵所列运行器扩展完成前，不得宣称全链路通过。
+- 当前状态：`current`；在矩阵所列运行器扩展完成前，不得宣称全链路通过。
 
 ## 最终 84 个场景索引
 

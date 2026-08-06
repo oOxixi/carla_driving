@@ -165,8 +165,9 @@
       "first_version_requires_stop_not_detour": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "obstacle_geometry_acceptance"
       ]

@@ -136,8 +136,9 @@
       "conservative_speed_required": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "raw_text_qwen_routing",
         "qwen_action_acceptance"

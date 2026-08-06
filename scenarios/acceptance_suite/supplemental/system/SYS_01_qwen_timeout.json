@@ -147,8 +147,9 @@
       "timeout_event_log_required": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "qwen_timeout_injection",
         "qwen_acceptance_metrics"

@@ -173,8 +173,9 @@
       "lane_change_rejection_reason_required": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "qwen_lane_change_detour_actions",
         "target_lane_safety_check",

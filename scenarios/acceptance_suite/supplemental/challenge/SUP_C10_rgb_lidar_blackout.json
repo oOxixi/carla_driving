@@ -156,8 +156,9 @@
       "qwen_must_not_override_safety_stop": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "fault_injection",
         "fault_recovery_acceptance"

@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Build the 84-scenario Dongfeng-track acceptance suite.
-
-The generated JSON stays on the repository's existing schema_version=1.0
-contract.  Runtime capabilities that the current ScenarioSpec intentionally
-ignores (fault injection, custom fog, route looping, and richer Qwen oracles)
-live under ``extensions`` and are labelled as such in matrix.json.
-"""
+"""Build the 84-scenario Dongfeng-track acceptance suite."""
 
 from __future__ import annotations
 
@@ -14,10 +8,14 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SUITE_ROOT = REPO_ROOT / "scenarios" / "acceptance_suite"
 SUITE_VERSION = "acceptance-suite-2026.08-v2"
+
+# Keep the generator runnable as ``python tools/build_acceptance_suite.py``.
+import sys
+sys.path.insert(0, str(REPO_ROOT))
+from integration.scenario_extensions import missing_runtime_requirements
 
 STRAIGHT_80 = [[0, 0], [20, 0], [40, 0], [60, 0], [80, 0]]
 STRAIGHT_100 = [[0, 0], [20, 0], [40, 0], [70, 0], [100, 0]]
@@ -204,7 +202,6 @@ def scenario(
     extra_tags: list[str] | None = None,
 ) -> tuple[str, dict[str, Any], dict[str, Any]]:
     extension_requirements = list(extension_requirements or [])
-    current_runtime = not extension_requirements
     oracle: dict[str, Any] = {
         "expected_behaviors": oracle_behaviors or [commands[-1]["intent"]],
     }
@@ -224,11 +221,17 @@ def scenario(
         "faults": faults or [],
         "proposed_acceptance": proposed_acceptance or {},
         "runtime_support": {
-            "status": "current" if current_runtime else "extension_required",
+            "status": "pending_capability_check",
             "requirements": extension_requirements,
         },
     }
     extensions.update(extension_values or {})
+    missing = missing_runtime_requirements(extensions)
+    extensions["runtime_support"] = {
+        "status": "current" if not missing else "extension_required",
+        "requirements": list(missing),
+        "declared_requirements": extension_requirements,
+    }
     if suite_group is None:
         if folder == "complex":
             suite_group = "complex_regression"

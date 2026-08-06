@@ -171,8 +171,9 @@
       "qwen_calls_per_frame": 0
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "actor_distance_trigger",
         "qwen_target_binding_acceptance"

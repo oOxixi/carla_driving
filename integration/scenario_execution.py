@@ -46,6 +46,8 @@ def _nonempty_text(value: object, name: str) -> str:
 class ScheduledCommand:
     time_s: float
     envelope: dict[str, object]
+    phase_id: str | None = None
+    trigger: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -69,6 +71,7 @@ class ScenarioSpec:
     qwen_fault: dict[str, object] | None
     qwen_expected: dict[str, object] | None
     expected: dict[str, object]
+    extensions: dict[str, object]
 
     @classmethod
     def load(cls, path: str | Path) -> "ScenarioSpec":
@@ -131,6 +134,8 @@ class ScenarioSpec:
                         duration_s - command.time_s + 1.0,
                     ),
                 },
+                command.phase_id,
+                command.trigger,
             )
             for command in parsed_commands
         )
@@ -139,10 +144,13 @@ class ScenarioSpec:
         qwen_fault = data.get("qwen_fault")
         qwen_expected = data.get("qwen_expected")
         expected = data.get("expected", {})
+        extensions = data.get("extensions", {})
         if type(actors) is not list or any(type(item) is not dict for item in actors):
             raise TypeError("actors must be a list of objects")
         if type(sensors) is not dict or type(expected) is not dict:
             raise TypeError("sensors and expected must be objects")
+        if type(extensions) is not dict:
+            raise TypeError("extensions must be an object")
         if qwen_fault is not None and type(qwen_fault) is not dict:
             raise TypeError("qwen_fault must be an object when provided")
         if qwen_expected is not None and type(qwen_expected) is not dict:
@@ -177,6 +185,7 @@ class ScenarioSpec:
             qwen_fault=(None if qwen_fault is None else dict(qwen_fault)),
             qwen_expected=(None if qwen_expected is None else dict(qwen_expected)),
             expected=dict(expected),
+            extensions=dict(extensions),
         )
 
     @property
@@ -222,22 +231,78 @@ def _resample_polyline(
 
 
 class CommandTimeline:
-    """Return each scheduled command exactly once when simulation time reaches it."""
+    """Return each scheduled command once its time and optional event trigger hold."""
 
     def __init__(self, commands: Iterable[ScheduledCommand]) -> None:
         self._commands = tuple(sorted(commands, key=lambda item: item.time_s))
         self._next_index = 0
 
-    def due(self, elapsed_s: float) -> tuple[dict[str, object], ...]:
+    def due(
+        self,
+        elapsed_s: float,
+        context: Mapping[str, object] | None = None,
+    ) -> tuple[dict[str, object], ...]:
         elapsed = _finite_number(elapsed_s, "elapsed_s", minimum=0.0)
+        values = dict(context or {})
         due: list[dict[str, object]] = []
         while self._next_index < len(self._commands):
             command = self._commands[self._next_index]
             if command.time_s > elapsed + 1e-9:
                 break
+            if command.trigger is not None and not scenario_trigger_satisfied(
+                command.trigger, elapsed_s=elapsed, context=values,
+            ):
+                break
             due.append(dict(command.envelope))
             self._next_index += 1
         return tuple(due)
+
+
+def scenario_trigger_satisfied(
+    trigger: Mapping[str, object],
+    *,
+    elapsed_s: float,
+    context: Mapping[str, object] | None = None,
+) -> bool:
+    """Evaluate the declarative trigger vocabulary used by acceptance-suite v2."""
+    if not isinstance(trigger, Mapping):
+        raise TypeError("scenario trigger must be an object")
+    values = context or {}
+    children = trigger.get("all")
+    if children is not None:
+        if not isinstance(children, Sequence) or isinstance(children, (str, bytes)):
+            raise TypeError("scenario trigger.all must be a list")
+        return bool(children) and all(
+            scenario_trigger_satisfied(child, elapsed_s=elapsed_s, context=values)
+            for child in children
+        )
+    trigger_type = str(trigger.get("type", "")).strip().lower()
+    if trigger_type == "scenario_started":
+        return True
+    if trigger_type == "time":
+        return elapsed_s + 1e-9 >= float(trigger.get("time_s", 0.0))
+    if trigger_type == "route_progress_greater_than_m":
+        return float(values.get("route_progress_m", 0.0)) >= float(trigger.get("value", 0.0))
+    if trigger_type in {"ego_distance_less_than_m", "ego_distance_to_actor_less_than_m"}:
+        actor_id = str(trigger.get("actor_id", values.get("default_actor_id", "")))
+        distances = values.get("actor_distances_m", {})
+        distance = distances.get(actor_id) if isinstance(distances, Mapping) else None
+        return distance is not None and float(distance) <= float(trigger.get("value", 0.0))
+    if trigger_type == "ego_distance_to_stop_line_less_than_m":
+        distance = values.get("distance_to_stop_line_m")
+        return distance is not None and float(distance) <= float(trigger.get("value", 0.0))
+    if trigger_type == "traffic_light_state":
+        return str(values.get("traffic_light_state", "UNKNOWN")).upper() == str(
+            trigger.get("state", "")
+        ).upper()
+    if trigger_type == "ego_standstill_duration_greater_than_s":
+        return float(values.get("ego_standstill_duration_s", 0.0)) >= float(trigger.get("value", 0.0))
+    if trigger_type == "previous_command_terminal":
+        terminals = values.get("terminal_phase_ids", ())
+        return str(trigger.get("phase_id", "")) in set(terminals if isinstance(terminals, Sequence) else ())
+    if trigger_type == "elapsed_since_previous_event_greater_than_s":
+        return float(values.get("elapsed_since_previous_event_s", -1.0)) >= float(trigger.get("value", 0.0))
+    raise ValueError(f"unsupported scenario trigger type: {trigger_type or '<missing>'}")
 
 
 def select_best_route_anchor(
@@ -363,7 +428,19 @@ def _parse_command(raw: object, index: int) -> ScheduledCommand:
         "warnings": [],
         "valid_duration_s": max(3.0, time_s + 30.0),
     }
-    return ScheduledCommand(time_s=time_s, envelope=envelope)
+    phase_id = raw.get("phase_id")
+    if phase_id is not None:
+        phase_id = _nonempty_text(phase_id, f"commands[{index}].phase_id")
+        envelope["phase_id"] = phase_id
+    trigger = raw.get("trigger")
+    if trigger is not None and type(trigger) is not dict:
+        raise TypeError(f"commands[{index}].trigger must be an object")
+    return ScheduledCommand(
+        time_s=time_s,
+        envelope=envelope,
+        phase_id=phase_id,
+        trigger=None if trigger is None else dict(trigger),
+    )
 
 
 __all__ = [
@@ -373,4 +450,5 @@ __all__ = [
     "ScheduledCommand",
     "select_best_route_anchor",
     "resolve_scenario_command",
+    "scenario_trigger_satisfied",
 ]

@@ -169,7 +169,8 @@
     },
     "runtime_support": {
       "status": "current",
-      "requirements": []
+      "requirements": [],
+      "declared_requirements": []
     }
   },
   "notes": [

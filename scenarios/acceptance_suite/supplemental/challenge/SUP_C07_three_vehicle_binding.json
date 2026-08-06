@@ -188,8 +188,9 @@
       "target_binding_correct": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "qwen_target_binding",
         "qwen_target_binding_acceptance"

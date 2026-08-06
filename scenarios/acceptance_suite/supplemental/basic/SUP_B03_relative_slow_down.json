@@ -146,8 +146,9 @@
       "must_not_stop_without_environment_risk": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "multi_command_qwen",
         "relative_speed_acceptance"

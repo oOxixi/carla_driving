@@ -144,8 +144,9 @@
     "faults": [],
     "proposed_acceptance": {},
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "multi_command_qwen"
       ]
     }

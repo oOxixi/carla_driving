@@ -144,8 +144,9 @@
       "target_lane_occupied_count": 0
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "qwen_lane_change_detour_actions",
         "target_lane_safety_check"

@@ -192,8 +192,9 @@
       "expected_target_actor_id": "lead_target"
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "raw_text_qwen_routing",
         "qwen_target_binding_acceptance"
       ]

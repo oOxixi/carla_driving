@@ -140,8 +140,9 @@
       ]
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "illegal_command_policy",
         "scenario_speed_limit"

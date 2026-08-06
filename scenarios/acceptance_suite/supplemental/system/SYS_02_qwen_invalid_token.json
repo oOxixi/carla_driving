@@ -146,8 +146,9 @@
       "vehicle_advance_command_count": 0
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "qwen_invalid_token_injection",
         "qwen_acceptance_metrics"

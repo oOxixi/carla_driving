@@ -63,8 +63,14 @@ from .qwen_fault_injection import ScenarioQwenFaultInjector
 from .qwen_scenario_monitor import QwenScenarioMonitor
 from .runtime_loop import ControlRuntime
 from .rgb_detector import OnnxYoloDetector, carla_rgb_array
-from .scenario_execution import CommandTimeline, ScenarioSpec, resolve_scenario_command
+from .scenario_execution import (
+    CommandTimeline,
+    ScenarioSpec,
+    resolve_scenario_command,
+    scenario_trigger_satisfied,
+)
 from .scenario_evidence import FrameTiming, ScenarioEvidenceRecorder
+from .scenario_extensions import ScenarioExtensionRuntime
 from .second_group_runtime import CanonicalRuntimeBridge
 
 
@@ -163,6 +169,29 @@ def _record_maneuver_update(
                     "completed_at_s": event.now_s,
                     "detail": event.reason_code,
                 })
+
+
+def _note_extension_terminal(
+    runtime: ScenarioExtensionRuntime | None,
+    feedback: Mapping[str, object] | object,
+) -> None:
+    if runtime is None:
+        return
+    status = (
+        feedback.get("status") if isinstance(feedback, Mapping)
+        else getattr(feedback, "status", None)
+    )
+    normalized = str(getattr(status, "value", status)).upper()
+    if normalized not in {
+        "SUCCEEDED", "FAILED", "REJECTED", "EXPIRED", "TIMED_OUT",
+        "SAFETY_OVERRIDE",
+    }:
+        return
+    command_id = (
+        feedback.get("command_id") if isinstance(feedback, Mapping)
+        else getattr(feedback, "command_id", "")
+    )
+    runtime.note_terminal(str(command_id), status)
 
 
 def _speed_mps(vector: Any) -> float:
@@ -716,11 +745,16 @@ def _update_scenario_vehicle(
     actor_spec: Mapping[str, object],
     elapsed_s: float,
     carla_api: Any,
+    *,
+    desired_speed_mps: float | None = None,
 ) -> None:
     """Apply a small deterministic speed controller to a scenario vehicle."""
     if lead is None or not getattr(lead, "is_alive", True):
         raise RuntimeError("configured scenario lead vehicle is not alive")
-    desired = _scenario_vehicle_speed_mps(actor_spec, elapsed_s)
+    desired = (
+        _scenario_vehicle_speed_mps(actor_spec, elapsed_s)
+        if desired_speed_mps is None else max(0.0, float(desired_speed_mps))
+    )
     current = _signed_forward_speed_mps(lead)
     error = desired - current
     if error < -0.15:
@@ -801,6 +835,8 @@ def _update_scenario_walker(
     elapsed_s: float,
     target_location: Any,
     carla_api: Any,
+    *,
+    trigger_ready: bool = True,
 ) -> None:
     """Move a scenario pedestrian with CARLA's public WalkerControl API."""
     if walker is None or not getattr(walker, "is_alive", True):
@@ -814,7 +850,7 @@ def _update_scenario_walker(
     dx = float(target_location.x) - float(location.x)
     dy = float(target_location.y) - float(location.y)
     distance = math.hypot(dx, dy)
-    speed = speed_mps if elapsed_s >= start_time_s and distance > 0.2 else 0.0
+    speed = speed_mps if trigger_ready and elapsed_s >= start_time_s and distance > 0.2 else 0.0
     direction = carla_api.Vector3D(
         x=0.0 if distance <= 1e-6 else dx / distance,
         y=0.0 if distance <= 1e-6 else dy / distance,
@@ -1526,6 +1562,11 @@ def _import_carla_api() -> Any:
 
 def run(args: argparse.Namespace) -> None:
     spec = ScenarioSpec.load(args.scenario_file) if args.scenario_file else None
+    extension_runtime = (
+        ScenarioExtensionRuntime(spec.extensions)
+        if spec is not None and spec.extensions
+        else None
+    )
     qwen_scenario_monitor = (
         QwenScenarioMonitor(spec.qwen_expected)
         if spec is not None and spec.qwen_expected is not None
@@ -1548,6 +1589,16 @@ def run(args: argparse.Namespace) -> None:
             "validation": "PASS",
         }, ensure_ascii=False, indent=2))
         return
+
+    if (
+        extension_runtime is not None
+        and isinstance(spec.extensions.get("qwen_policy"), Mapping)
+        and spec.extensions["qwen_policy"].get("required_for_every_voice_event") is True
+        and not args.qwen_service_url
+    ):
+        raise ValueError(
+            "acceptance-suite v2 requires --qwen-service-url so every voice event is audited by Qwen"
+        )
 
     qwen_enabled = bool(getattr(args, "qwen_remote", False))
     qwen_voice_text = _qwen_voice_command(args, spec) if qwen_enabled else ""
@@ -1640,6 +1691,8 @@ def run(args: argparse.Namespace) -> None:
         else "CANONICAL_READY" if args.qwen_service_url
         else "DISABLED"
     )
+    ego_standstill_since_s: float | None = None
+    extension_frame: Any | None = None
     try:
         if qwen_enabled:
             qwen_backend = OpenAICompatibleQwenVLBackend(
@@ -1683,6 +1736,11 @@ def run(args: argparse.Namespace) -> None:
             weather = getattr(carla.WeatherParameters, spec.weather, None)
             if weather is None:
                 raise ValueError(f"CARLA has no WeatherParameters preset named {spec.weather!r}")
+            if extension_runtime is not None:
+                for name, value in extension_runtime.weather_parameters.items():
+                    if not hasattr(weather, name):
+                        raise ValueError(f"CARLA weather has no parameter {name!r}")
+                    setattr(weather, name, value)
             world.set_weather(weather)
         world_map = world.get_map()
         blueprints = world.get_blueprint_library().filter("vehicle.*model3*")
@@ -1718,10 +1776,26 @@ def run(args: argparse.Namespace) -> None:
                 timeout_s=max(0.1, args.qwen_timeout_ms / 1000.0 + 0.05),
                 request_transform=qwen_image_stager.prepare_request,
             )
+            qwen_faults: list[Mapping[str, Any]] = []
+            if spec is not None and spec.qwen_fault is not None:
+                qwen_faults.append(spec.qwen_fault)
+            if extension_runtime is not None:
+                qwen_faults.extend(extension_runtime.qwen_faults)
             qwen_infer = (
-                ScenarioQwenFaultInjector(qwen_client, spec.qwen_fault)
-                if spec is not None and spec.qwen_fault is not None
-                else qwen_client
+                ScenarioQwenFaultInjector(
+                    qwen_client,
+                    qwen_faults,
+                    command_times_s=(
+                        tuple(item.time_s for item in spec.commands)
+                        if spec is not None else ()
+                    ),
+                )
+                if qwen_faults else qwen_client
+            )
+            force_all_voice_qwen = bool(
+                spec is not None
+                and isinstance(spec.extensions.get("qwen_policy"), Mapping)
+                and spec.extensions["qwen_policy"].get("required_for_every_voice_event") is True
             )
             canonical_orchestrator = PipelineOrchestrator(
                 infer=qwen_infer,
@@ -1729,6 +1803,7 @@ def run(args: argparse.Namespace) -> None:
                     qwen_queue_size=args.qwen_queue_size,
                     model_timeout_ms=args.qwen_timeout_ms,
                     qwen_mode=args.qwen_mode,
+                    force_qwen_all_voice=force_all_voice_qwen,
                 ),
             )
             canonical_bridge = CanonicalRuntimeBridge(runtime, canonical_orchestrator)
@@ -1877,6 +1952,7 @@ def run(args: argparse.Namespace) -> None:
             scenario_lead = None
             scenario_vehicles: list[tuple[Any, Mapping[str, object]]] = []
             scenario_walkers: list[tuple[Any, Mapping[str, object], Any]] = []
+            scenario_props: list[tuple[Any, Mapping[str, object]]] = []
             spawned_scenario_actor_types: list[str] = []
             for vehicle_spec in _scenario_actors(spec, "vehicle"):
                 vehicle = _spawn_scenario_vehicle(
@@ -1893,7 +1969,8 @@ def run(args: argparse.Namespace) -> None:
                     str(walker_spec.get("type", "walker.pedestrian")).lower()
                 )
             for prop_spec in _scenario_static_props(spec):
-                _spawn_scenario_static_prop(session, world, carla, ego, prop_spec)
+                prop = _spawn_scenario_static_prop(session, world, carla, ego, prop_spec)
+                scenario_props.append((prop, prop_spec))
                 spawned_scenario_actor_types.append(
                     str(prop_spec.get("type", "static.prop")).lower()
                 )
@@ -2038,18 +2115,112 @@ def run(args: argparse.Namespace) -> None:
                 max_speed_mps = max(max_speed_mps, state.speed_mps)
                 last_sim_time_s = state.sim_time_s
                 elapsed_s = state.sim_time_s - episode_start_s
+                if state.speed_mps <= 0.15:
+                    if ego_standstill_since_s is None:
+                        ego_standstill_since_s = state.sim_time_s
+                else:
+                    ego_standstill_since_s = None
+                standstill_duration_s = (
+                    0.0 if ego_standstill_since_s is None
+                    else state.sim_time_s - ego_standstill_since_s
+                )
+                actor_distances_m: dict[str, float] = {}
+                for actor, actor_spec in [
+                    *scenario_vehicles,
+                    *((walker, walker_spec) for walker, walker_spec, _target in scenario_walkers),
+                    *scenario_props,
+                ]:
+                    actor_id = str(actor_spec.get("actor_id", ""))
+                    if actor_id:
+                        actor_distances_m[actor_id] = float(
+                            ego.get_location().distance(actor.get_location())
+                        )
+                route_progress_m = math.dist(
+                    (origin[0], origin[1]), (state.x_m, state.y_m),
+                )
+                traffic_state = (
+                    str(scenario_traffic_light.get_state()).rsplit(".", 1)[-1].upper()
+                    if scenario_traffic_light is not None else "UNKNOWN"
+                )
+                if extension_runtime is not None:
+                    extension_frame = extension_runtime.update_frame(
+                        elapsed_s=elapsed_s,
+                        route_progress_m=route_progress_m,
+                        ego_speed_mps=state.speed_mps,
+                        ego_standstill_duration_s=standstill_duration_s,
+                        actor_distances_m=actor_distances_m,
+                        traffic_light_state=traffic_state,
+                        distance_to_stop_line_m=None,
+                        lane_id=state.lane_id,
+                    )
+                    light_spec = _scenario_actor(spec, "traffic_light")
+                    if light_spec is not None and scenario_traffic_light is not None:
+                        light_state = extension_runtime.actor_state(
+                            light_spec,
+                            elapsed_s=elapsed_s,
+                            trigger_context=extension_frame.trigger_context,
+                        )["traffic_light_state"]
+                        desired_state = getattr(
+                            carla.TrafficLightState, str(light_state).title(), None,
+                        )
+                        if desired_state is not None:
+                            scenario_traffic_light.set_state(desired_state)
+                            extension_frame.trigger_context["traffic_light_state"] = str(light_state)
+                    for fault_id in extension_frame.newly_active_fault_ids:
+                        print(json.dumps({
+                            "record_type": "scenario_fault",
+                            "fault_id": fault_id,
+                            "status": "ACTIVE",
+                            "elapsed_s": elapsed_s,
+                        }, ensure_ascii=False), flush=True)
+                    for fault_id in extension_frame.newly_recovered_fault_ids:
+                        print(json.dumps({
+                            "record_type": "scenario_fault",
+                            "fault_id": fault_id,
+                            "status": "RECOVERED",
+                            "elapsed_s": elapsed_s,
+                        }, ensure_ascii=False), flush=True)
                 for vehicle, vehicle_spec in scenario_vehicles:
-                    _update_scenario_vehicle(vehicle, vehicle_spec, elapsed_s, carla)
+                    actor_state = (
+                        extension_runtime.actor_state(
+                            vehicle_spec,
+                            elapsed_s=elapsed_s,
+                            trigger_context=extension_frame.trigger_context,
+                        )
+                        if extension_runtime is not None else {}
+                    )
+                    _update_scenario_vehicle(
+                        vehicle, vehicle_spec, elapsed_s, carla,
+                        desired_speed_mps=actor_state.get("target_speed_mps"),
+                    )
                 for walker, walker_spec, walker_target in scenario_walkers:
+                    walker_behavior = walker_spec.get("behavior", {})
+                    walker_trigger = (
+                        walker_behavior.get("trigger")
+                        if isinstance(walker_behavior, Mapping) else None
+                    )
+                    walker_ready = (
+                        walker_trigger is None
+                        or extension_frame is None
+                        or scenario_trigger_satisfied(
+                            walker_trigger,
+                            elapsed_s=elapsed_s,
+                            context=extension_frame.trigger_context,
+                        )
+                    )
                     _update_scenario_walker(
                         walker, walker_spec, elapsed_s, walker_target, carla,
+                        trigger_ready=walker_ready,
                     )
                 if scenario_vehicles:
                     scenario_lead = _select_scenario_lead(
                         ego, [vehicle for vehicle, _ in scenario_vehicles],
                     )
                 if timeline is not None:
-                    for scheduled in timeline.due(elapsed_s):
+                    for scheduled in timeline.due(
+                        elapsed_s,
+                        None if extension_frame is None else extension_frame.trigger_context,
+                    ):
                         scenario_command = resolve_scenario_command(
                             scheduled,
                             requested_speed_mps=runtime.requested_speed_mps,
@@ -2265,6 +2436,28 @@ def run(args: argparse.Namespace) -> None:
                             scene, configured_scene, args.scenario_facts_mode,
                         )
                         perception_sources.update(fact_sources)
+                    if extension_frame is not None:
+                        active_sensor_faults = {
+                            str(item.get("sensor", ""))
+                            for item in extension_frame.active_faults
+                            if str(item.get("type", "")).lower() in {
+                                "sensor_blackout", "sensor_stale",
+                            }
+                        }
+                        for sensor_name in sorted(active_sensor_faults):
+                            perception_sources[f"fault_{sensor_name}"] = "SCENARIO_FAULT_ACTIVE"
+                        if {"front_rgb", "lidar"}.issubset(active_sensor_faults):
+                            perception_control_override = {
+                                "throttle": 0.0, "brake": 1.0, "steer": 0.0,
+                            }
+                            c_perception_override_reason = "SCENARIO_PERCEPTION_INSUFFICIENT"
+                        if any(
+                            str(item.get("type", "")).lower() == "actor_visibility"
+                            and item.get("visible") is False
+                            for item in extension_frame.active_faults
+                        ):
+                            scene = replace(scene, detected_objects=())
+                            perception_sources["actor_visibility"] = "SCENARIO_TARGET_OCCLUDED"
                     watchdog.heartbeat("perception", now_s=time.monotonic())
                 except PerceptionAcquisitionError as error:
                     scene = PerceptionFrame(frame, state.sim_time_s)
@@ -2437,6 +2630,15 @@ def run(args: argparse.Namespace) -> None:
                                 world_map, ego, scene, route,
                             ),
                         )
+                        if extension_runtime is not None:
+                            extension_runtime.note_command_submitted(
+                                deferred.envelope,
+                                qwen=submission.orchestration.disposition == "SLOW_PENDING",
+                            )
+                            if submission.orchestration.feedback is not None:
+                                _note_extension_terminal(
+                                    extension_runtime, submission.orchestration.feedback,
+                                )
                         if qwen_scenario_monitor is not None:
                             observed_route = (
                                 "FAST_LOCAL"
@@ -2508,6 +2710,7 @@ def run(args: argparse.Namespace) -> None:
                                 )
                             for feedback in submission.feedbacks:
                                 recorder.record_feedback(feedback)
+                                _note_extension_terminal(extension_runtime, feedback)
                             if (
                                 submission.safety_adapted is not None
                                 and submission.safety_adapted.feedback is not None
@@ -2563,6 +2766,7 @@ def run(args: argparse.Namespace) -> None:
                             )
                             for feedback in resolution.feedbacks:
                                 recorder.record_feedback(feedback)
+                                _note_extension_terminal(extension_runtime, feedback)
                             if resolution.vehicle_feedback is not None:
                                 recorder.record_feedback(resolution.vehicle_feedback)
                         if qwen_scenario_monitor is not None:
@@ -2579,7 +2783,14 @@ def run(args: argparse.Namespace) -> None:
                                 qwen_scenario_monitor.record_terminal(
                                     feedback["status"], command_id=feedback["command_id"],
                                 )
+                        for feedback in resolution.feedbacks:
+                            _note_extension_terminal(extension_runtime, feedback)
                         orchestration = resolution.orchestration
+                        if extension_runtime is not None and orchestration is not None:
+                            if orchestration.decision_plan is not None:
+                                extension_runtime.note_qwen_plan(orchestration.decision_plan)
+                            if orchestration.compiled_plan is not None:
+                                extension_runtime.note_qwen_plan(orchestration.compiled_plan)
                         if (
                             orchestration is not None
                             and orchestration.compiled_plan is not None
@@ -2699,19 +2910,39 @@ def run(args: argparse.Namespace) -> None:
                 if not raw_control_fault_injected:
                     raw_control_override = _scenario_raw_control_fault(spec, elapsed_s)
                     raw_control_fault_injected = raw_control_override is not None
+                if extension_frame is not None:
+                    steer_fault = next((
+                        item for item in extension_frame.active_faults
+                        if str(item.get("type", "")).lower() == "steer_bias"
+                    ), None)
+                    if steer_fault is not None:
+                        raw_control_override = {
+                            "throttle": 0.10,
+                            "brake": 0.0,
+                            "steer": float(steer_fault.get("value", 0.0)),
+                            "fault_injected": True,
+                        }
                 if raw_control_override is None:
                     raw_control_override = perception_control_override
                 effective_route = route
-                if c_speed_cap_mps is not None:
+                extension_speed_cap_mps = (
+                    None if extension_frame is None else extension_frame.speed_limit_mps
+                )
+                active_speed_cap_mps = min(
+                    value for value in (c_speed_cap_mps, extension_speed_cap_mps)
+                    if value is not None
+                ) if any(
+                    value is not None for value in (c_speed_cap_mps, extension_speed_cap_mps)
+                ) else None
+                if active_speed_cap_mps is not None:
                     effective_route = replace(
-                        route,
-                        target_speed_mps=min(route.target_speed_mps, c_speed_cap_mps),
+                        route, target_speed_mps=min(route.target_speed_mps, active_speed_cap_mps),
                     )
                 result = runtime.step(
                     state, scene, effective_route, dt_s=args.fixed_delta_s,
                     watchdog_alerts=tuple(watchdog_alerts),
                     raw_control_override=raw_control_override,
-                    speed_cap_mps=c_speed_cap_mps,
+                    speed_cap_mps=active_speed_cap_mps,
                     safety_override_reason=c_perception_override_reason,
                 )
                 if qwen_scenario_monitor is not None:
@@ -2726,6 +2957,8 @@ def run(args: argparse.Namespace) -> None:
                                 else None
                             ),
                         )
+                for feedback in result.feedback:
+                    _note_extension_terminal(extension_runtime, feedback)
                 if sensor_startup_grace:
                     result = replace(
                         result,
@@ -3059,6 +3292,22 @@ def run(args: argparse.Namespace) -> None:
                 "record_type": "qwen_scenario_acceptance",
                 **qwen_contract_report.to_dict(),
             }, ensure_ascii=False), flush=True)
+        extension_report = None
+        if extension_runtime is not None:
+            proposed = spec.extensions.get("proposed_acceptance", {})
+            if not isinstance(proposed, Mapping):
+                raise TypeError("extensions.proposed_acceptance must be an object")
+            extension_report = extension_runtime.evaluate(
+                proposed,
+                expected_command_count=len(spec.commands),
+                safety_reasons=tuple(sorted(safety_reasons)),
+            )
+            completion = completion and bool(extension_report["passed"])
+            print(json.dumps({
+                "record_type": "scenario_extension_acceptance",
+                "scenario": spec.scenario_id,
+                **extension_report,
+            }, ensure_ascii=False), flush=True)
         if recorder is not None:
             expected_contract = None if spec is None else dict(spec.expected)
             if expected_contract is not None and road_fit_required:
@@ -3079,6 +3328,7 @@ def run(args: argparse.Namespace) -> None:
                     "expected_command_count": len(spec.commands),
                     "configured_route_deviation_trigger_m": route_deviation_trigger_m,
                     "spawned_scenario_actor_types": sorted(set(spawned_scenario_actor_types)),
+                    "extension_acceptance": extension_report,
                 },
             )
             acceptance = summary.get("acceptance")

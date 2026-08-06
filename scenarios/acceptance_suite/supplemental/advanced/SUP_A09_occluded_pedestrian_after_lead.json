@@ -180,8 +180,9 @@
       "pedestrian_trigger_actor_id": "occluding_vehicle"
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "event_triggers",
         "actor_distance_trigger"

@@ -159,8 +159,9 @@
       "qwen_request_count": 1
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "event_triggers",
         "actor_state_timeline"

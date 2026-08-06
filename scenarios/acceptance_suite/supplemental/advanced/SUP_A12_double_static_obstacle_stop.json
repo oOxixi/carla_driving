@@ -181,8 +181,9 @@
       "must_not_pass_between_obstacles": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "obstacle_geometry_acceptance"
       ]

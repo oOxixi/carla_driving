@@ -172,8 +172,9 @@
       "must_not_change_lane": true
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "adjacent_lane_occupancy_acceptance"
       ]
     }

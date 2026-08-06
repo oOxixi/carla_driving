@@ -147,8 +147,9 @@
       "recovery_deadline_s": 5.0
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "fault_injection",
         "fault_recovery_acceptance"

@@ -150,8 +150,9 @@
       "qwen_request_count": 2
     },
     "runtime_support": {
-      "status": "extension_required",
-      "requirements": [
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
         "all_voice_qwen",
         "multi_command_qwen"
       ]
