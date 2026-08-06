@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 
@@ -17,9 +18,14 @@ SCENARIO_ROOT = Path(__file__).resolve().parents[2] / "scenarios"
 
 
 def test_all_repository_scenarios_load() -> None:
-    paths = sorted(SCENARIO_ROOT.glob("*/*.json"))
+    metadata_files = {"index.json", "matrix.json", "scenario_schema.json"}
+    paths = sorted(
+        path for path in SCENARIO_ROOT.rglob("*.json")
+        if path.name not in metadata_files
+    )
     specs = [ScenarioSpec.load(path) for path in paths]
-    assert len(specs) == 46
+    index = json.loads((SCENARIO_ROOT / "index.json").read_text(encoding="utf-8"))
+    assert len(specs) == index["counts"]["total"]
     assert {spec.official_level for spec in specs} == {"basic", "advanced", "challenge"}
     assert all(spec.frame_count > 0 for spec in specs)
 

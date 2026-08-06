@@ -38,7 +38,7 @@ def _passing_metrics(expected: dict[str, object]) -> dict[str, object]:
         "max_speed_mps": max(final_speed, 1.0),
         "final_speed_mps": final_speed,
         "min_gap_m": 10.0,
-        "duration_s": 120.0,
+        "duration_s": max(120.0, float(expected.get("min_run_time_s", 0.0))),
         "final_lateral_shift_m": float(expected.get("final_lateral_shift_m", 0.0)),
         "turn_direction": str(expected.get("turn_direction", "STRAIGHT")),
         "safety_override_frames": 1,
@@ -59,7 +59,7 @@ def _passing_metrics(expected: dict[str, object]) -> dict[str, object]:
 
 def test_every_repository_expected_key_is_supported() -> None:
     for path in sorted(SCENARIO_ROOT.rglob("*.json")):
-        if path.name in {"index.json", "scenario_schema.json"}:
+        if path.name in {"index.json", "matrix.json", "scenario_schema.json"}:
             continue
         data = json.loads(path.read_text(encoding="utf-8"))
         expected = data.get("expected", {})

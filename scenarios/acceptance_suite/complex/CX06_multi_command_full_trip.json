@@ -1,0 +1,273 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "CX06_multi_command_full_trip",
+  "category": "regression",
+  "official_level": "challenge",
+  "description": "启动、定速、跟车、减速、红灯停车和终点停车的完整命令链。",
+  "tags": [
+    "acceptance_suite",
+    "p2",
+    "multi_command_trip"
+  ],
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 206,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 145,
+    "max_startup_wait_s": 10
+  },
+  "ego_spawn": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5,
+    "yaw_deg": 0.0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0,
+        0
+      ],
+      [
+        20,
+        0
+      ],
+      [
+        40,
+        2
+      ],
+      [
+        60,
+        6
+      ],
+      [
+        80,
+        6
+      ],
+      [
+        100,
+        2
+      ],
+      [
+        120,
+        0
+      ],
+      [
+        145,
+        -3
+      ],
+      [
+        170,
+        0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "开始行驶并保持车道",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 12
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    },
+    {
+      "time_s": 8,
+      "source_text": "将速度设置为二十公里每小时",
+      "intent": "SET_SPEED",
+      "parameters": {
+        "target_speed_kph": 20
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    },
+    {
+      "time_s": 25,
+      "source_text": "跟随正前方车辆",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 18
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    },
+    {
+      "time_s": 50,
+      "source_text": "减速到十公里每小时",
+      "intent": "SET_SPEED",
+      "parameters": {
+        "target_speed_kph": 10
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    },
+    {
+      "time_s": 75,
+      "source_text": "红灯前停车",
+      "intent": "STOP",
+      "parameters": {},
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    },
+    {
+      "time_s": 95,
+      "source_text": "重新启动并保持车道",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 12
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    },
+    {
+      "time_s": 125,
+      "source_text": "到终点停车",
+      "intent": "STOP",
+      "parameters": {},
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "lead_001",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.audi.tt",
+      "spawn": {
+        "x": 35,
+        "y": 0.0,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      },
+      "behavior": {
+        "mode": "lead_vehicle",
+        "initial_speed_mps": 3.0,
+        "target_speed_mps": 3.0
+      }
+    },
+    {
+      "actor_id": "signal_001",
+      "type": "traffic_light",
+      "state": "green",
+      "distance_to_stop_line_m": 75,
+      "behavior": {
+        "mode": "state_timeline",
+        "states": [
+          {
+            "time_s": 65,
+            "state": "red"
+          },
+          {
+            "time_s": 90,
+            "state": "green"
+          }
+        ]
+      }
+    }
+  ],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 5
+    },
+    "lidar": {
+      "enabled": true
+    },
+    "collision": {
+      "enabled": true
+    },
+    "lane_invasion": {
+      "enabled": true
+    }
+  },
+  "controllers": {
+    "A_runtime": {
+      "only_apply_control_owner": true
+    },
+    "B_lateral": {
+      "enabled": true
+    },
+    "C_longitudinal": {
+      "enabled": true
+    },
+    "D_safety": {
+      "enabled": true,
+      "must_run_before_apply_control": true
+    }
+  },
+  "logging": {
+    "required_files": [
+      "frame_log.jsonl",
+      "event_log.jsonl",
+      "result.json",
+      "score_report.json",
+      "qwen_requests.jsonl"
+    ]
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_generate_logs": true,
+    "final_control_no_throttle_brake_overlap": true,
+    "must_execute_commands_in_order": true,
+    "must_stop_after_last_command": true,
+    "stop_speed_threshold_mps": 0.2,
+    "required_real_actor_types": [
+      "vehicle"
+    ],
+    "expected_safety_override_allowed": true
+  },
+  "extensions": {
+    "suite_version": "acceptance-suite-2026.08-v1",
+    "priority": "P2",
+    "primary_capability": "multi_command_trip",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "oracle": {
+      "expected_behaviors": [
+        "START",
+        "SET_SPEED",
+        "FOLLOW",
+        "SLOW_DOWN",
+        "STOP",
+        "KEEP_LANE"
+      ]
+    },
+    "faults": [],
+    "proposed_acceptance": {
+      "qwen_command_count": 7,
+      "qwen_stale_rejection_count": 0
+    },
+    "runtime_support": {
+      "status": "extension_required",
+      "requirements": [
+        "multi_command_qwen",
+        "command_queue_policy",
+        "actor_state_timeline"
+      ]
+    }
+  },
+  "notes": [
+    "正式结果必须使用 perception_mode=sensors 与 scenario_facts_mode=perception。"
+  ]
+}

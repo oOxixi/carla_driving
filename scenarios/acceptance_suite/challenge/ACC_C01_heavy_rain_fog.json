@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "ACC_C01_heavy_rain_fog",
+  "category": "regression",
+  "official_level": "challenge",
+  "description": "大雨和配置化雾条件下低速保持车道。",
+  "tags": [
+    "acceptance_suite",
+    "p0",
+    "extreme_weather"
+  ],
+  "map": "Town03",
+  "weather": "HardRainNoon",
+  "seed": 0,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 35.0,
+    "max_startup_wait_s": 10
+  },
+  "ego_spawn": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5,
+    "yaw_deg": 0.0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0,
+        0
+      ],
+      [
+        20,
+        0
+      ],
+      [
+        35,
+        0.8
+      ],
+      [
+        50,
+        2.4
+      ],
+      [
+        65,
+        4.5
+      ],
+      [
+        85,
+        7.0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "雨雾很大，保持车道并安全行驶",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 10
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    }
+  ],
+  "actors": [],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 5
+    },
+    "lidar": {
+      "enabled": true
+    },
+    "collision": {
+      "enabled": true
+    },
+    "lane_invasion": {
+      "enabled": true
+    }
+  },
+  "controllers": {
+    "A_runtime": {
+      "only_apply_control_owner": true
+    },
+    "B_lateral": {
+      "enabled": true
+    },
+    "C_longitudinal": {
+      "enabled": true
+    },
+    "D_safety": {
+      "enabled": true,
+      "must_run_before_apply_control": true
+    }
+  },
+  "logging": {
+    "required_files": [
+      "frame_log.jsonl",
+      "event_log.jsonl",
+      "result.json",
+      "score_report.json",
+      "qwen_requests.jsonl"
+    ]
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_generate_logs": true,
+    "final_control_no_throttle_brake_overlap": true,
+    "max_cross_track_error_m": 1.5,
+    "must_no_route_deviation": true
+  },
+  "extensions": {
+    "suite_version": "acceptance-suite-2026.08-v1",
+    "priority": "P0",
+    "primary_capability": "extreme_weather",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "oracle": {
+      "expected_behaviors": [
+        "KEEP_LANE",
+        "SLOW_DOWN"
+      ]
+    },
+    "faults": [],
+    "proposed_acceptance": {},
+    "runtime_support": {
+      "status": "extension_required",
+      "requirements": [
+        "custom_weather_parameters"
+      ]
+    },
+    "weather_parameters": {
+      "cloudiness": 100,
+      "precipitation": 90,
+      "precipitation_deposits": 80,
+      "wetness": 100,
+      "wind_intensity": 70,
+      "fog_density": 45,
+      "fog_distance": 20
+    }
+  },
+  "notes": [
+    "正式结果必须使用 perception_mode=sensors 与 scenario_facts_mode=perception。"
+  ]
+}

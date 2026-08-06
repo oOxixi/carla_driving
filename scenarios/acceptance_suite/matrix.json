@@ -1,0 +1,597 @@
+{
+  "schema_version": "1.0",
+  "suite_version": "acceptance-suite-2026.08-v1",
+  "description": "东风赛道 CARLA 高质量场景库 43 场景验收矩阵。",
+  "formal_runtime": {
+    "perception_mode": "sensors",
+    "scenario_facts_mode": "perception",
+    "qwen_invocation": "once_per_voice_event",
+    "safety_events_wait_for_qwen": false
+  },
+  "counts": {
+    "total": 43,
+    "P0": 18,
+    "P1": 18,
+    "P2": 6,
+    "P3": 1,
+    "basic": 12,
+    "advanced": 12,
+    "challenge": 19,
+    "current_runtime": 20,
+    "extension_required": 23
+  },
+  "scenarios": [
+    {
+      "scenario_id": "ACC_B01_start_keep_lane",
+      "path": "basic/ACC_B01_start_keep_lane.json",
+      "priority": "P0",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "start_keep_lane",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "ACC_B02_set_speed_20",
+      "path": "basic/ACC_B02_set_speed_20.json",
+      "priority": "P0",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "set_speed",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "ACC_B03_slow_to_10",
+      "path": "basic/ACC_B03_slow_to_10.json",
+      "priority": "P0",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "decelerate",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "multi_command_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "ACC_B04_normal_stop",
+      "path": "basic/ACC_B04_normal_stop.json",
+      "priority": "P0",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "normal_stop",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "multi_command_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "ACC_B05_emergency_stop",
+      "path": "basic/ACC_B05_emergency_stop.json",
+      "priority": "P0",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "emergency_stop",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "multi_command_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "ACC_B06_offset_recovery",
+      "path": "basic/ACC_B06_offset_recovery.json",
+      "priority": "P0",
+      "official_level": "basic",
+      "category": "lateral_B",
+      "primary_capability": "lane_keep_recovery",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "ACC_A01_lead_brake",
+      "path": "advanced/ACC_A01_lead_brake.json",
+      "priority": "P0",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "lead_vehicle_brake",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "ACC_A02_red_light_conflict",
+      "path": "advanced/ACC_A02_red_light_conflict.json",
+      "priority": "P0",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "red_light_conflict",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "ACC_A03_pedestrian_crossing",
+      "path": "advanced/ACC_A03_pedestrian_crossing.json",
+      "priority": "P0",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "pedestrian_crossing",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "ACC_A04_static_obstacle_stop",
+      "path": "advanced/ACC_A04_static_obstacle_stop.json",
+      "priority": "P0",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "static_obstacle_stop",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "ACC_A05_lane_change_left",
+      "path": "advanced/ACC_A05_lane_change_left.json",
+      "priority": "P0",
+      "official_level": "advanced",
+      "category": "lateral_B",
+      "primary_capability": "lane_change_left",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "ACC_A06_obstacle_detour_return",
+      "path": "advanced/ACC_A06_obstacle_detour_return.json",
+      "priority": "P0",
+      "official_level": "advanced",
+      "category": "lateral_B",
+      "primary_capability": "detour_return",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "ACC_C01_heavy_rain_fog",
+      "path": "challenge/ACC_C01_heavy_rain_fog.json",
+      "priority": "P0",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "extreme_weather",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "custom_weather_parameters"
+        ]
+      }
+    },
+    {
+      "scenario_id": "ACC_C02_ambiguous_instruction",
+      "path": "challenge/ACC_C02_ambiguous_instruction.json",
+      "priority": "P0",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "ambiguous_instruction",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "raw_text_qwen_routing"
+        ]
+      }
+    },
+    {
+      "scenario_id": "ACC_C03_illegal_instruction",
+      "path": "challenge/ACC_C03_illegal_instruction.json",
+      "priority": "P0",
+      "official_level": "challenge",
+      "category": "safety_D",
+      "primary_capability": "illegal_instruction",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "ACC_C04_multi_target_binding",
+      "path": "challenge/ACC_C04_multi_target_binding.json",
+      "priority": "P0",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "multi_target_binding",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "qwen_target_binding_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "ACC_C05_perception_failure",
+      "path": "challenge/ACC_C05_perception_failure.json",
+      "priority": "P0",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "perception_failure",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "fault_injection",
+          "fault_recovery_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "ACC_C06_dynamic_route_deviation",
+      "path": "challenge/ACC_C06_dynamic_route_deviation.json",
+      "priority": "P0",
+      "official_level": "challenge",
+      "category": "safety_D",
+      "primary_capability": "dynamic_route_deviation",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "fault_injection"
+        ]
+      }
+    },
+    {
+      "scenario_id": "VAR_B01_set_speed_10",
+      "path": "variants/VAR_B01_set_speed_10.json",
+      "priority": "P1",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "set_speed_variant",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "VAR_B02_set_speed_30_limit",
+      "path": "variants/VAR_B02_set_speed_30_limit.json",
+      "priority": "P1",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "speed_limit",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "map_speed_limit_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "VAR_B03_relative_slow_down",
+      "path": "variants/VAR_B03_relative_slow_down.json",
+      "priority": "P1",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "relative_slow_down",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "multi_command_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "VAR_B04_stop_on_mild_curve",
+      "path": "variants/VAR_B04_stop_on_mild_curve.json",
+      "priority": "P1",
+      "official_level": "basic",
+      "category": "lateral_B",
+      "primary_capability": "curve_stop",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "multi_command_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "VAR_B05_emergency_stop_25kph",
+      "path": "variants/VAR_B05_emergency_stop_25kph.json",
+      "priority": "P1",
+      "official_level": "basic",
+      "category": "smoke",
+      "primary_capability": "emergency_stop_variant",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "multi_command_qwen"
+        ]
+      }
+    },
+    {
+      "scenario_id": "VAR_B06_lane_keep_smooth_curve",
+      "path": "variants/VAR_B06_lane_keep_smooth_curve.json",
+      "priority": "P1",
+      "official_level": "basic",
+      "category": "lateral_B",
+      "primary_capability": "curve_lane_keep",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "VAR_A01_lead_brake_late",
+      "path": "variants/VAR_A01_lead_brake_late.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "late_lead_brake",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "VAR_A02_low_ttc_stationary_lead",
+      "path": "variants/VAR_A02_low_ttc_stationary_lead.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "low_ttc",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "VAR_A03_occluded_pedestrian",
+      "path": "variants/VAR_A03_occluded_pedestrian.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "occluded_pedestrian",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "VAR_A04_lane_change_right",
+      "path": "variants/VAR_A04_lane_change_right.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "lateral_B",
+      "primary_capability": "lane_change_right",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "VAR_A05_adjacent_lane_blocked",
+      "path": "variants/VAR_A05_adjacent_lane_blocked.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "blocked_lane_change",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "adjacent_lane_occupancy_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "VAR_A06_red_light_wet_weather",
+      "path": "variants/VAR_A06_red_light_wet_weather.json",
+      "priority": "P1",
+      "official_level": "advanced",
+      "category": "safety_D",
+      "primary_capability": "wet_red_light",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "VAR_C01_night_rain",
+      "path": "variants/VAR_C01_night_rain.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "night_rain",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "VAR_C02_asr_disagreement",
+      "path": "variants/VAR_C02_asr_disagreement.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "asr_disagreement",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "raw_text_qwen_routing",
+          "multi_asr_candidates"
+        ]
+      }
+    },
+    {
+      "scenario_id": "VAR_C03_multi_target_partial_occlusion",
+      "path": "variants/VAR_C03_multi_target_partial_occlusion.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "occluded_target_binding",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "qwen_target_binding_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "VAR_C04_rgb_blackout_lidar_alive",
+      "path": "variants/VAR_C04_rgb_blackout_lidar_alive.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "single_sensor_dropout",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "fault_injection",
+          "fault_recovery_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "VAR_C05_rgb_lidar_blackout",
+      "path": "variants/VAR_C05_rgb_lidar_blackout.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "multi_sensor_dropout",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "fault_injection",
+          "fault_recovery_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "VAR_C06_large_route_deviation",
+      "path": "variants/VAR_C06_large_route_deviation.json",
+      "priority": "P1",
+      "official_level": "challenge",
+      "category": "safety_D",
+      "primary_capability": "large_route_deviation",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "fault_injection"
+        ]
+      }
+    },
+    {
+      "scenario_id": "CX01_urban_intersection_conflict",
+      "path": "complex/CX01_urban_intersection_conflict.json",
+      "priority": "P2",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "intersection_conflict",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "CX02_multi_vehicle_target_follow_brake",
+      "path": "complex/CX02_multi_vehicle_target_follow_brake.json",
+      "priority": "P2",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "multi_target_follow_brake",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "qwen_target_binding_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "CX03_construction_bicycle_detour",
+      "path": "complex/CX03_construction_bicycle_detour.json",
+      "priority": "P2",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "construction_bicycle_detour",
+      "runtime_support": {
+        "status": "current",
+        "requirements": []
+      }
+    },
+    {
+      "scenario_id": "CX04_heavy_rain_ambiguous_multi_target",
+      "path": "complex/CX04_heavy_rain_ambiguous_multi_target.json",
+      "priority": "P2",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "rain_ambiguous_multi_target",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "raw_text_qwen_routing",
+          "qwen_target_binding_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "CX05_sensor_dropout_route_recovery",
+      "path": "complex/CX05_sensor_dropout_route_recovery.json",
+      "priority": "P2",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "sensor_dropout_route_recovery",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "fault_injection",
+          "fault_recovery_acceptance"
+        ]
+      }
+    },
+    {
+      "scenario_id": "CX06_multi_command_full_trip",
+      "path": "complex/CX06_multi_command_full_trip.json",
+      "priority": "P2",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "multi_command_trip",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "multi_command_qwen",
+          "command_queue_policy",
+          "actor_state_timeline"
+        ]
+      }
+    },
+    {
+      "scenario_id": "STB01_60min_mixed_cycle",
+      "path": "stability/STB01_60min_mixed_cycle.json",
+      "priority": "P3",
+      "official_level": "challenge",
+      "category": "regression",
+      "primary_capability": "long_stability",
+      "runtime_support": {
+        "status": "extension_required",
+        "requirements": [
+          "multi_command_qwen",
+          "loop_route",
+          "resource_stability_metrics"
+        ]
+      }
+    }
+  ]
+}

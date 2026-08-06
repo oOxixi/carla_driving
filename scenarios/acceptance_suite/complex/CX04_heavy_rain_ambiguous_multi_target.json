@@ -1,0 +1,205 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "CX04_heavy_rain_ambiguous_multi_target",
+  "category": "regression",
+  "official_level": "challenge",
+  "description": "大雨、模糊命令、两辆前车和路边行人组合。",
+  "tags": [
+    "acceptance_suite",
+    "p2",
+    "rain_ambiguous_multi_target"
+  ],
+  "map": "Town03",
+  "weather": "HardRainNoon",
+  "seed": 204,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 45,
+    "max_startup_wait_s": 10
+  },
+  "ego_spawn": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5,
+    "yaw_deg": 0.0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0,
+        0
+      ],
+      [
+        20,
+        0
+      ],
+      [
+        40,
+        0
+      ],
+      [
+        60,
+        0
+      ],
+      [
+        80,
+        0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "前面有点乱，安全处理",
+      "intent": "SLOW_DOWN",
+      "parameters": {},
+      "intent_confidence": 0.55,
+      "status": "ambiguous",
+      "confirm_required": true
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "lead_target",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.audi.tt",
+      "spawn": {
+        "x": 26,
+        "y": 0.0,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      },
+      "behavior": {
+        "mode": "lead_vehicle",
+        "initial_speed_mps": 2.5,
+        "target_speed_mps": 2.5
+      }
+    },
+    {
+      "actor_id": "distractor_left",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.tesla.model3",
+      "spawn": {
+        "x": 22,
+        "y": 3.5,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      },
+      "behavior": {
+        "mode": "lead_vehicle",
+        "initial_speed_mps": 3.0,
+        "target_speed_mps": 3.0
+      }
+    },
+    {
+      "actor_id": "roadside_ped",
+      "type": "walker.pedestrian",
+      "spawn": {
+        "x": 34,
+        "y": -4.5,
+        "z": 0.5,
+        "yaw_deg": 90.0
+      },
+      "behavior": {
+        "mode": "crossing",
+        "target_xy_m": [
+          34,
+          -3.5
+        ],
+        "start_time_s": 30,
+        "speed_mps": 0.5
+      }
+    }
+  ],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 5
+    },
+    "lidar": {
+      "enabled": true
+    },
+    "collision": {
+      "enabled": true
+    },
+    "lane_invasion": {
+      "enabled": true
+    }
+  },
+  "controllers": {
+    "A_runtime": {
+      "only_apply_control_owner": true
+    },
+    "B_lateral": {
+      "enabled": true
+    },
+    "C_longitudinal": {
+      "enabled": true
+    },
+    "D_safety": {
+      "enabled": true,
+      "must_run_before_apply_control": true
+    }
+  },
+  "logging": {
+    "required_files": [
+      "frame_log.jsonl",
+      "event_log.jsonl",
+      "result.json",
+      "score_report.json",
+      "qwen_requests.jsonl"
+    ]
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_generate_logs": true,
+    "final_control_no_throttle_brake_overlap": true,
+    "required_real_actor_types": [
+      "vehicle",
+      "walker.pedestrian"
+    ],
+    "min_front_gap_m": 2.5,
+    "expected_safety_override_allowed": true
+  },
+  "extensions": {
+    "suite_version": "acceptance-suite-2026.08-v1",
+    "priority": "P2",
+    "primary_capability": "rain_ambiguous_multi_target",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "oracle": {
+      "expected_behaviors": [
+        "SLOW_DOWN",
+        "STOP",
+        "HOLD"
+      ],
+      "expected_target_actor_id": "lead_target"
+    },
+    "faults": [],
+    "proposed_acceptance": {
+      "must_call_qwen": true,
+      "expected_target_actor_id": "lead_target"
+    },
+    "runtime_support": {
+      "status": "extension_required",
+      "requirements": [
+        "raw_text_qwen_routing",
+        "qwen_target_binding_acceptance"
+      ]
+    }
+  },
+  "notes": [
+    "正式结果必须使用 perception_mode=sensors 与 scenario_facts_mode=perception。"
+  ]
+}

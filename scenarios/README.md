@@ -22,6 +22,9 @@
 
 7. `qwen_faults/`：验证超时、低层非法输出和 D 安全抢占。
 
+8. `acceptance_suite/`：东风赛道高质量验收套件
+   包含 18 个 P0 核心、18 个 P1 变体、6 个 P2 综合和 1 个 P3 长稳场景。
+
 ## 使用方式
 
 把整个`scenarios`文件夹复制到：
@@ -47,7 +50,8 @@ my_project/
 │   ├── regression/
 │   ├── qwen_routing/
 │   ├── qwen_fullchain/
-│   └── qwen_faults/
+│   ├── qwen_faults/
+│   └── acceptance_suite/
 └── logs/
 ```
 
@@ -95,6 +99,9 @@ safety_D/D07_low_ttc_emergency_brake.json
 ```
 
 最后跑`regression/`里的综合回归。
+
+东风赛道验收套件的清单、成熟度和执行方式见
+`acceptance_suite/README.md` 与 `acceptance_suite/matrix.json`。
 
 ## 每个场景必须生成的证据
 

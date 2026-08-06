@@ -83,7 +83,8 @@ def validate_one(path: Path):
 
 def main():
     root = Path(__file__).resolve().parents[1] / "scenarios"
-    files = [p for p in root.rglob("*.json") if p.name not in {"index.json", "scenario_schema.json"}]
+    metadata_files = {"index.json", "matrix.json", "scenario_schema.json"}
+    files = [p for p in root.rglob("*.json") if p.name not in metadata_files]
     total = 0
     failed = 0
 
