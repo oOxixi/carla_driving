@@ -355,6 +355,13 @@ class VllmQwenPlannerBackend:
     """Production Planner V2 adapter over an existing OpenAI-compatible vLLM."""
 
     production_ready = True
+    _CHOICES = {
+        "A": "KEEP_LANE", "B": "SET_SPEED", "C": "SLOW_DOWN", "D": "STOP",
+        "E": "YIELD", "F": "FOLLOW", "G": "CHANGE_LANE_LEFT",
+        "H": "CHANGE_LANE_RIGHT", "I": "TURN_LEFT", "J": "TURN_RIGHT",
+        "K": "AVOID_OBSTACLE", "L": "RETURN_TO_LANE", "M": "PULL_OVER",
+        "N": "HOLD",
+    }
 
     def __init__(
         self,
@@ -380,7 +387,9 @@ class VllmQwenPlannerBackend:
         )
         self.model_id = model
         self.image_root = None if image_root is None else Path(image_root).expanduser().resolve()
-        self.max_new_tokens = int(max_new_tokens)
+        # One constrained semantic token keeps the model inside the 150 ms
+        # budget; strict ManeuverPlan JSON is assembled deterministically.
+        self.max_new_tokens = 1
         self.image_max_side = int(image_max_side)
         self.jpeg_quality = int(jpeg_quality)
 
@@ -388,13 +397,7 @@ class VllmQwenPlannerBackend:
         return True, f"vLLM planner endpoint configured: {self.model_id}"
 
     def infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]:
-        routing = request.get("routing")
-        if not isinstance(routing, Mapping):
-            raise ValueError("planner_v2 request is missing routing metadata")
-        prompt = build_planner_v2_prompt(
-            request, routing,
-            scene_capabilities=request.get("scene_capabilities", {}),
-        )
+        prompt = self._choice_prompt(request)
         content: list[dict[str, Any]] = []
         image_path = self._resolve_image(request.get("rgb_ref"))
         if image_path is not None:
@@ -408,30 +411,116 @@ class VllmQwenPlannerBackend:
             messages=[{"role": "user", "content": content}],
             temperature=0.0,
             max_tokens=self.max_new_tokens,
-            response_format={"type": "json_object"},
-            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+            extra_body={
+                "structured_outputs": {"choice": list(self._CHOICES)},
+                "chat_template_kwargs": {"enable_thinking": False},
+            },
         )
         choices = getattr(response, "choices", None)
         if not choices:
             raise RuntimeError("vLLM returned no planner choices")
-        raw = getattr(getattr(choices[0], "message", None), "content", None)
-        plan = parse_maneuver_plan(raw)
-        # Identity and lifetime are transport contracts, not model judgement.
-        plan.update({
+        raw = str(getattr(getattr(choices[0], "message", None), "content", "")).strip().upper()
+        if raw not in self._CHOICES:
+            raise ValueError(f"vLLM returned invalid constrained planner choice: {raw!r}")
+        behavior = self._CHOICES[raw]
+        constraints = request["constraints"]
+        if constraints["must_stop"]:
+            behavior = "STOP"
+        allowed = set(constraints["allowed_behaviors"])
+        normalized = behavior.removesuffix("_LEFT").removesuffix("_RIGHT")
+        if behavior not in {"HOLD"} and behavior not in allowed and normalized not in allowed:
+            raise ValueError(f"Qwen behavior {behavior} violates allowed_behaviors")
+        steps = [self._step(request, behavior, index=1)]
+        if behavior == "AVOID_OBSTACLE":
+            steps.append(self._step(request, "RETURN_TO_LANE", index=2))
+        return {
             "schema_version": "2.0",
             "request_id": request["request_id"],
             "command_id": request["command_id"],
+            "plan_id": f"plan-{request['request_id']}",
             "plan_type": "MANEUVER_SEQUENCE",
+            "steps": steps,
+            "replan_conditions": ["NEW_EMERGENCY_OBJECT", "ROUTE_DEVIATION"],
+            "confidence": 0.90,
+            "requires_confirmation": False,
             "created_at_ns": int(request["created_at_ns"]),
             "valid_until_ns": int(request["deadline_ns"]),
+            "reason_code": f"QWEN_VLLM_CHOICE_{raw}_{behavior}",
             "model_id": self.model_id,
-        })
-        plan.setdefault("plan_id", f"plan-{request['request_id']}")
-        plan.setdefault("replan_conditions", [])
-        plan.setdefault("confidence", 0.80)
-        plan.setdefault("requires_confirmation", False)
-        plan.setdefault("reason_code", "QWEN_VLLM_PLANNER_V2")
-        return plan
+        }
+
+    def _choice_prompt(self, request: Mapping[str, Any]) -> str:
+        compact = {
+            "command": request["source_text"],
+            "hint": request.get("command_hint"),
+            "scene": request["scene_summary"],
+            "targets": request["targets"],
+            "constraints": request["constraints"],
+            "lanes": request.get("scene_capabilities", {}),
+        }
+        legend = " ".join(f"{code}={behavior}" for code, behavior in self._CHOICES.items())
+        return (
+            "Choose exactly one safe high-level driving action code. "
+            "Traffic rules and emergency safety override voice. No explanation.\n"
+            + legend + "\nINPUT="
+            + json.dumps(compact, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+        )
+
+    def _step(self, request: Mapping[str, Any], behavior: str, *, index: int) -> dict[str, Any]:
+        hint = request.get("command_hint", {})
+        capabilities = request.get("scene_capabilities", {})
+        targets = request.get("targets", ())
+        target_id = targets[0]["target_id"] if targets and behavior in {
+            "FOLLOW", "AVOID_OBSTACLE", "YIELD",
+        } else None
+        lane = "CURRENT"
+        direction = None
+        if behavior.endswith("_LEFT"):
+            lane, direction = "LEFT_ADJACENT", "LEFT"
+        elif behavior.endswith("_RIGHT"):
+            lane, direction = "RIGHT_ADJACENT", "RIGHT"
+        elif behavior.startswith("TURN_"):
+            lane, direction = "ROUTE_BRANCH", behavior.rsplit("_", 1)[-1]
+        elif behavior == "PULL_OVER":
+            lane = "SHOULDER"
+        elif behavior == "RETURN_TO_LANE":
+            lane = "CURRENT"
+            direction = capabilities.get("return_direction")
+        target_speed = hint.get("target_speed_mps") if isinstance(hint, Mapping) else None
+        if behavior in {"STOP", "HOLD"}:
+            target_speed = 0.0
+        elif behavior == "SLOW_DOWN" and target_speed is None:
+            target_speed = min(2.0, float(request["constraints"].get("max_target_speed_mps") or 2.0))
+        completion_type = {
+            "STOP": "STOPPED", "HOLD": "HOLD_FRAMES",
+            "FOLLOW": "TARGET_GAP_REACHED", "AVOID_OBSTACLE": "TARGET_PASSED",
+            "RETURN_TO_LANE": "LANE_CENTERED", "CHANGE_LANE_LEFT": "LANE_CENTERED",
+            "CHANGE_LANE_RIGHT": "LANE_CENTERED", "TURN_LEFT": "JUNCTION_EXITED",
+            "TURN_RIGHT": "JUNCTION_EXITED",
+        }.get(behavior, "SPEED_REACHED")
+        timeout = 30.0 if behavior.startswith("TURN_") else 20.0 if behavior in {
+            "AVOID_OBSTACLE", "RETURN_TO_LANE",
+        } else 12.0 if behavior.startswith("CHANGE_LANE_") else 8.0
+        return {
+            "step_id": f"step-{index}",
+            "behavior": behavior,
+            "target": {
+                "target_id": target_id,
+                "target_lane": lane,
+                "target_speed_mps": target_speed,
+                "time_gap_s": 2.0 if behavior == "FOLLOW" else None,
+                "route_direction": direction,
+            },
+            "preconditions": ["PERCEPTION_FRESH"],
+            "completion": {
+                "type": completion_type,
+                "value": 0.2 if completion_type in {"STOPPED", "SPEED_BELOW"} else target_speed,
+                "lane": lane if completion_type == "LANE_CENTERED" else None,
+                "hold_frames": 3,
+            },
+            "timeout_s": timeout,
+            "on_failure": "SAFE_STOP",
+        }
 
     def _resolve_image(self, value: Any) -> Path | None:
         if value is None:

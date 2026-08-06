@@ -50,7 +50,7 @@ class OrchestratorConfig:
     force_qwen_all_voice: bool = False
     allowed_slow_behaviors: tuple[str, ...] = (
         "KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
-        "CHANGE_LANE", "TURN", "PULL_OVER",
+        "CHANGE_LANE", "TURN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "PULL_OVER",
     )
 
     def __post_init__(self) -> None:
@@ -70,7 +70,7 @@ class OrchestratorConfig:
             raise TypeError("force_qwen_all_voice must be bool")
         allowed_values = {
             "KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
-            "CHANGE_LANE", "TURN", "PULL_OVER",
+            "CHANGE_LANE", "TURN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "PULL_OVER",
         }
         if (
             type(self.allowed_slow_behaviors) is not tuple
@@ -626,6 +626,12 @@ class PipelineOrchestrator:
             "created_at_ns": now,
             "deadline_ns": deadline,
             "source_text": command["source_text"],
+            "command_hint": {
+                "intent": command["intent"],
+                "target_speed_mps": command["parameters"].get("target_speed_mps"),
+                "direction": command["parameters"].get("direction"),
+                "target": command["parameters"].get("target"),
+            },
             "rgb_ref": rgb_ref,
             "scene_summary": {
                 "frame_id": scene["frame_id"],
