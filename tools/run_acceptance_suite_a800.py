@@ -110,6 +110,11 @@ def main() -> int:
     parser.add_argument("--qwen-service-url", default="http://127.0.0.1:8765")
     parser.add_argument("--carla-host", default="127.0.0.1")
     parser.add_argument("--carla-port", type=int, default=2000)
+    parser.add_argument(
+        "--suite-revision",
+        default="4238023+server-carla-perception-e2e",
+        help="deployment revision used when the server copy has no .git directory",
+    )
     args = parser.parse_args()
 
     project = args.project.resolve()
@@ -127,9 +132,13 @@ def main() -> int:
     if not health or health.get("production_ready") is not True:
         raise RuntimeError(f"production Qwen service is not ready: {health}")
 
-    revision = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=project, text=True,
-    ).strip()
+    try:
+        revision = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=project, text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except subprocess.CalledProcessError:
+        revision = args.suite_revision
     metadata: dict[str, object] = {
         "schema_version": "1.0",
         "suite_revision": revision,

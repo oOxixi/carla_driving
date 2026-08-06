@@ -140,6 +140,7 @@ def _record_maneuver_update(
     *,
     monitor: QwenScenarioMonitor | None,
     recorder: ScenarioEvidenceRecorder | None,
+    extension_runtime: ScenarioExtensionRuntime | None = None,
 ) -> None:
     """Persist step/terminal events and feed only plan-owned terminals to acceptance."""
     for event in update.events:
@@ -154,6 +155,8 @@ def _record_maneuver_update(
         if event.event_type == "qwen_replan_triggered" and monitor is not None:
             monitor.record_replan()
         if event.event_type == "qwen_terminal":
+            if extension_runtime is not None:
+                extension_runtime.note_terminal(event.command_id, event.state)
             if monitor is not None:
                 monitor.record_terminal(
                     event.state,
@@ -2836,6 +2839,7 @@ def run(args: argparse.Namespace) -> None:
                                     maneuver_update,
                                     monitor=qwen_scenario_monitor,
                                     recorder=recorder,
+                                    extension_runtime=extension_runtime,
                                 )
                                 route, compiled_speed, route_behavior = _apply_compiled_plan_route(
                                     orchestration.compiled_plan,
@@ -3066,6 +3070,7 @@ def run(args: argparse.Namespace) -> None:
                         maneuver_update,
                         monitor=qwen_scenario_monitor,
                         recorder=recorder,
+                        extension_runtime=extension_runtime,
                     )
                     started_route_step = (
                         maneuver_update.current_step
@@ -3131,6 +3136,7 @@ def run(args: argparse.Namespace) -> None:
                                 failed_update,
                                 monitor=qwen_scenario_monitor,
                                 recorder=recorder,
+                                extension_runtime=extension_runtime,
                             )
                             watchdog_alerts.append("QWEN_STEP_ROUTE_INFEASIBLE")
                             print(json.dumps({
@@ -3246,6 +3252,7 @@ def run(args: argparse.Namespace) -> None:
                 maneuver_fsm.fail("RUNTIME_ENDED", now_s=last_sim_time_s),
                 monitor=qwen_scenario_monitor,
                 recorder=recorder,
+                extension_runtime=extension_runtime,
             )
 
         final_speed = None if final_state is None else final_state.speed_mps
