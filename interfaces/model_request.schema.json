@@ -16,6 +16,42 @@
     "deadline_ns": {"type": "integer", "minimum": 1},
     "source_text": {"type": "string", "minLength": 1, "maxLength": 1000},
     "rgb_ref": {"type": ["string", "null"], "maxLength": 4096},
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "score", "reasons", "safe_wait_behavior"],
+      "properties": {
+        "disposition": {"enum": ["FAST_LOCAL", "QWEN_PLAN", "CONFIRM_SAFE"]},
+        "score": {"type": "integer"},
+        "reasons": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 128}
+        },
+        "safe_wait_behavior": {
+          "enum": ["KEEP_LANE_LIMITED", "SLOW_DOWN", "STOP", "EMERGENCY_STOP"]
+        }
+      }
+    },
+    "scene_capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "available_lanes": {
+          "type": "array", "uniqueItems": true,
+          "items": {"enum": ["CURRENT", "LEFT_ADJACENT", "RIGHT_ADJACENT", "SHOULDER"]}
+        },
+        "left_lane_exists": {"type": "boolean"},
+        "right_lane_exists": {"type": "boolean"},
+        "left_gap_safe": {"type": "boolean"},
+        "right_gap_safe": {"type": "boolean"},
+        "route_available": {"type": "boolean"},
+        "intersection_ahead": {"type": "boolean"},
+        "stop_line_clear": {"type": "boolean"},
+        "original_lane": {"type": "string", "minLength": 1, "maxLength": 128},
+        "current_lane": {"type": "string", "minLength": 1, "maxLength": 128},
+        "return_direction": {"enum": ["LEFT", "RIGHT"]}
+      }
+    },
     "scene_summary": {
       "type": "object",
       "additionalProperties": false,

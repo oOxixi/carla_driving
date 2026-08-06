@@ -12,7 +12,15 @@ import time
 from typing import Any
 from uuid import uuid4
 
+from .complexity_router import (
+    CONFIRM_SAFE,
+    FAST_LOCAL,
+    ComplexityRouter,
+    QwenRoutingDecision,
+)
 from .interface_registry import InterfaceRegistry, InterfaceValidationError
+from .plan_compiler import CompiledManeuverPlan, PlanCompiler
+from .plan_validator import PlanValidationError, PlanValidator
 
 
 FAST_INTENTS = frozenset({
@@ -38,6 +46,7 @@ class OrchestratorConfig:
     max_accel_mps2: float = 2.5
     max_decel_mps2: float = 5.0
     top_k_targets: int = 8
+    qwen_mode: str = "atomic_v1"
     allowed_slow_behaviors: tuple[str, ...] = (
         "KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
         "CHANGE_LANE", "TURN", "PULL_OVER",
@@ -54,6 +63,8 @@ class OrchestratorConfig:
                 raise ValueError(f"{name} must be finite and positive")
         if not 0.0 <= self.minimum_confidence <= 1.0:
             raise ValueError("minimum_confidence must be in [0, 1]")
+        if self.qwen_mode not in {"atomic_v1", "planner_v2"}:
+            raise ValueError("qwen_mode must be 'atomic_v1' or 'planner_v2'")
         allowed_values = {
             "KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
             "CHANGE_LANE", "TURN", "PULL_OVER",
@@ -87,6 +98,12 @@ class OrchestrationResult:
     feedback: Mapping[str, Any] | None = None
     reason_code: str = "NONE"
     queues: QueueSnapshot | None = None
+    routing_score: int | None = None
+    routing_reasons: tuple[str, ...] = ()
+    routing_features: Mapping[str, Any] | None = None
+    qwen_mode: str = "atomic_v1"
+    safe_wait_behavior: str = "STOP"
+    compiled_plan: Mapping[str, Any] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,6 +111,8 @@ class _SlowJob:
     request: dict[str, Any]
     perception: dict[str, Any]
     submitted_wall_ns: int
+    routing: QwenRoutingDecision
+    runtime_state: dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,6 +121,7 @@ class _SlowResult:
     status: str
     completed_wall_ns: int
     plan: dict[str, Any] | None = None
+    compiled: CompiledManeuverPlan | None = None
     error: str | None = None
 
 
@@ -119,10 +139,23 @@ class PipelineOrchestrator:
         *,
         config: OrchestratorConfig | None = None,
         registry: InterfaceRegistry | None = None,
+        complexity_router: ComplexityRouter | None = None,
+        plan_validator: PlanValidator | None = None,
+        plan_compiler: PlanCompiler | None = None,
         clock_ns: Callable[[], int] = time.monotonic_ns,
     ) -> None:
         self.config = config or OrchestratorConfig()
         self.registry = registry or InterfaceRegistry()
+        self.complexity_router = complexity_router or ComplexityRouter(
+            minimum_confidence=self.config.minimum_confidence,
+        )
+        self.plan_validator = plan_validator or PlanValidator(
+            registry=self.registry,
+            maximum_speed_mps=self.config.max_speed_mps,
+            minimum_confidence=self.config.minimum_confidence,
+            clock_ns=clock_ns,
+        )
+        self.plan_compiler = plan_compiler or PlanCompiler()
         self._clock_ns = clock_ns
         self._infer = infer
         self._qwen_queue: Queue[_SlowJob | None] = Queue(maxsize=self.config.qwen_queue_size)
@@ -148,6 +181,7 @@ class PipelineOrchestrator:
         *,
         now_ns: int | None = None,
         rgb_ref: str | None = None,
+        runtime_state: Mapping[str, Any] | None = None,
     ) -> OrchestrationResult:
         now = self._now(now_ns)
         try:
@@ -157,24 +191,26 @@ class PipelineOrchestrator:
             command_id = str(command.get("command_id", "invalid-command")) if isinstance(command, Mapping) else "invalid-command"
             return self._rejected(command_id, now, "INVALID_INTERFACE", str(error))
         command_id = canonical["command_id"]
+        runtime_snapshot = dict(runtime_state or {})
         if canonical["deadline_ns"] <= canonical["received_at_ns"]:
             return self._rejected(command_id, now, "INVALID_DEADLINE", "deadline must follow receipt")
         if now >= canonical["deadline_ns"]:
             return self._feedback_result(command_id, now, "EXPIRED", "COMMAND_EXPIRED", "command deadline elapsed")
 
+        routing = self.complexity_router.decide(canonical, scene, runtime_snapshot)
+        self._publish_routing_event(command_id, scene, routing)
         emergency_reason = self._perception_stop_reason(scene)
         intent = canonical["intent"]
-        confidence = float(canonical["confidence"])
-        confirmation = bool(canonical.get("requires_confirmation", False))
         if emergency_reason is not None and intent not in {"STOP", "EMERGENCY_STOP"}:
             control = self._safety_stop(canonical, scene, now, emergency_reason)
             return OrchestrationResult(
                 "FAST", command_id, control_command=control,
                 feedback=self._feedback(command_id, now, "SAFETY_OVERRIDE", "safety stop issued", emergency_reason),
                 reason_code=emergency_reason, queues=self.queue_snapshot(),
+                **self._routing_fields(routing),
             )
 
-        if intent in FAST_INTENTS and confidence >= self.config.minimum_confidence and not confirmation:
+        if routing.disposition == FAST_LOCAL:
             try:
                 control = self._fast_control(canonical, scene, now)
             except (ValueError, InterfaceValidationError) as error:
@@ -183,16 +219,28 @@ class PipelineOrchestrator:
                 "FAST", command_id, control_command=control,
                 feedback=self._feedback(command_id, now, "RECEIVED", "fast command validated", None),
                 reason_code=control["reason_code"], queues=self.queue_snapshot(),
+                **self._routing_fields(routing),
             )
 
-        request = self._model_request(canonical, scene, now, rgb_ref=rgb_ref)
+        if routing.disposition == CONFIRM_SAFE:
+            reason = routing.reasons[0] if routing.reasons else "CONFIRMATION_REQUIRED"
+            return self._feedback_result(
+                command_id, now, "REJECTED", reason,
+                "command requires safe clarification and was not sent to Qwen",
+                disposition="CONFIRM_SAFE", routing=routing,
+            )
+
+        request = self._model_request(
+            canonical, scene, now, rgb_ref=rgb_ref,
+            runtime_state=runtime_snapshot, routing=routing,
+        )
         if self._infer is None:
             return self._feedback_result(
                 command_id, now, "REJECTED", "QWEN_UNAVAILABLE",
                 "complex command rejected because Qwen service is unavailable",
-                model_request=request,
+                model_request=request, routing=routing,
             )
-        job = _SlowJob(request, scene, self._clock_ns())
+        job = _SlowJob(request, scene, self._clock_ns(), routing, runtime_snapshot)
         evicted = self._enqueue_slow_job(job)
         if evicted is not None:
             self._put_latest(
@@ -210,6 +258,7 @@ class PipelineOrchestrator:
             "SLOW_PENDING", command_id, model_request=request,
             feedback=self._feedback(command_id, now, "RECEIVED", "slow request queued", None),
             reason_code="QWEN_QUEUED", queues=self.queue_snapshot(),
+            **self._routing_fields(routing),
         )
 
     def poll_slow(self, *, now_ns: int | None = None) -> tuple[OrchestrationResult, ...]:
@@ -229,7 +278,7 @@ class PipelineOrchestrator:
                     results.append(self._feedback_result(
                         active.request["command_id"], now, "TIMED_OUT", "QWEN_TIMEOUT",
                         "Qwen inference exceeded wall-clock deadline",
-                        model_request=active.request,
+                        model_request=active.request, routing=active.routing,
                     ))
         while True:
             try:
@@ -305,8 +354,27 @@ class PipelineOrchestrator:
             try:
                 assert self._infer is not None
                 raw = self._infer(job.request)
-                plan = self.registry.validate("decision_plan", raw)
-                result = _SlowResult(job, "READY", self._clock_ns(), plan=plan)
+                if self.config.qwen_mode == "planner_v2":
+                    validation_scene = {**job.perception, **job.runtime_state}
+                    plan = self.plan_validator.validate(
+                        raw,
+                        scene=validation_scene,
+                        expected_request_id=job.request["request_id"],
+                        expected_command_id=job.request["command_id"],
+                        now_ns=job.request["created_at_ns"],
+                    )
+                    compiled = self.plan_compiler.compile(plan, scene=validation_scene)
+                else:
+                    plan = self.registry.validate("decision_plan", raw)
+                    compiled = None
+                result = _SlowResult(
+                    job, "READY", self._clock_ns(), plan=plan, compiled=compiled,
+                )
+            except (PlanValidationError, InterfaceValidationError) as error:
+                result = _SlowResult(
+                    job, "REJECTED", self._clock_ns(),
+                    error=f"{type(error).__name__}: {error}",
+                )
             except Exception as error:
                 result = _SlowResult(
                     job, "ERROR", self._clock_ns(),
@@ -336,54 +404,85 @@ class PipelineOrchestrator:
             return self._feedback_result(
                 command_id, now, "REJECTED", "QUEUE_OVERFLOW",
                 result.error or "queued Qwen request was superseded",
-                model_request=request,
+                model_request=request, routing=result.job.routing,
+            )
+        if result.status == "REJECTED":
+            return self._feedback_result(
+                command_id, now, "REJECTED", "QWEN_PLAN_REJECTED",
+                result.error or "Qwen plan failed the runtime trust boundary",
+                model_request=request, routing=result.job.routing,
             )
         if result.status != "READY" or result.plan is None:
             return self._feedback_result(
                 command_id, now, "FAILED", "QWEN_ERROR",
                 result.error or "Qwen inference failed", model_request=request,
+                routing=result.job.routing,
             )
         plan = result.plan
         if now >= request["deadline_ns"] or now >= plan["valid_until_ns"]:
             return self._feedback_result(
                 command_id, now, "EXPIRED", "QWEN_STALE",
                 "Qwen decision arrived after its validity boundary", model_request=request,
+                routing=result.job.routing,
             )
         if plan["request_id"] != request["request_id"] or plan["command_id"] != command_id:
             return self._feedback_result(
                 command_id, now, "REJECTED", "QWEN_ID_MISMATCH",
                 "Qwen request_id/command_id mismatch", model_request=request,
+                routing=result.job.routing,
             )
         if float(plan["confidence"]) < self.config.minimum_confidence or plan.get("requires_confirmation"):
             return self._feedback_result(
                 command_id, now, "REJECTED", "QWEN_LOW_CONFIDENCE",
                 "Qwen plan requires confirmation or has low confidence", model_request=request,
+                routing=result.job.routing,
             )
         target_id = plan.get("target_id")
+        if self.config.qwen_mode == "planner_v2":
+            target_ids = {
+                step["target"].get("target_id")
+                for step in plan["steps"]
+                if step["target"].get("target_id") is not None
+            }
+            target_id = next(iter(target_ids), None)
         available = {item["track_id"] for item in result.job.perception["objects"]}
-        if target_id is not None and target_id not in available:
+        if self.config.qwen_mode == "planner_v2":
+            missing_targets = target_ids - available
+        else:
+            missing_targets = {target_id} - available if target_id is not None else set()
+        if missing_targets:
             return self._feedback_result(
                 command_id, now, "REJECTED", "QWEN_TARGET_NOT_FOUND",
                 "Qwen target_id is absent from current PerceptionState", model_request=request,
+                routing=result.job.routing,
             )
         if result.job.perception["stale"] or not result.job.perception["sync"]["within_tolerance"]:
             return self._feedback_result(
                 command_id, now, "REJECTED", "PERCEPTION_STALE",
                 "slow plan cannot execute on stale or unsynchronized perception",
-                model_request=request,
+                model_request=request, routing=result.job.routing,
             )
         try:
-            control = self._plan_control(plan, request, result.job.perception, now)
-        except (ValueError, InterfaceValidationError) as error:
+            if self.config.qwen_mode == "planner_v2":
+                if result.compiled is None:
+                    raise ValueError("planner_v2 result is missing compiled steps")
+                control = self._compiled_plan_control(
+                    plan, result.compiled, request, result.job.perception, now,
+                )
+            else:
+                control = self._plan_control(plan, request, result.job.perception, now)
+        except (ValueError, InterfaceValidationError, PlanValidationError) as error:
             return self._feedback_result(
                 command_id, now, "REJECTED", "QWEN_PLAN_INFEASIBLE", str(error),
-                model_request=request,
+                model_request=request, routing=result.job.routing,
             )
         return OrchestrationResult(
             "SLOW_READY", command_id, control_command=control, model_request=request,
             decision_plan=plan,
             feedback=self._feedback(command_id, now, "EXECUTING", "validated Qwen plan dispatched", None),
             reason_code=control["reason_code"], queues=self.queue_snapshot(),
+            compiled_plan=(None if result.compiled is None else result.compiled.to_dict()),
+            **self._routing_fields(result.job.routing),
         )
 
     def _fast_control(self, command: Mapping[str, Any], scene: Mapping[str, Any], now: int) -> dict[str, Any]:
@@ -448,6 +547,44 @@ class PipelineOrchestrator:
             "reason_code": plan["reason_code"],
         })
 
+    def _compiled_plan_control(
+        self,
+        plan: Mapping[str, Any],
+        compiled: CompiledManeuverPlan,
+        request: Mapping[str, Any],
+        scene: Mapping[str, Any],
+        now: int,
+    ) -> dict[str, Any]:
+        step = compiled.steps[0]
+        behavior = step.behavior
+        if behavior in {"WAIT_SAFE_GAP", "PASS_TARGET"}:
+            behavior = "HOLD"
+        allowed = set(request["constraints"]["allowed_behaviors"])
+        normalized = behavior.removesuffix("_LEFT").removesuffix("_RIGHT")
+        if behavior not in {"HOLD", "STOP"} and normalized not in allowed and behavior not in allowed:
+            raise ValueError(f"compiled behavior {behavior} violates allowed_behaviors")
+        target_speed = step.target.get("target_speed_mps")
+        if target_speed is not None:
+            target_speed = min(float(target_speed), self._scene_speed_limit(scene))
+        time_gap = step.target.get("time_gap_s")
+        return self.registry.validate("control_command", {
+            "schema_version": "1.0",
+            "command_id": plan["command_id"],
+            "path_type": "SLOW",
+            "behavior": behavior,
+            "target": {
+                "target_id": step.target.get("target_id"),
+                "target_speed_mps": target_speed,
+                "time_gap_s": time_gap,
+            },
+            "limits": self._limits(scene),
+            "issued_at_ns": now,
+            "deadline_ns": min(request["deadline_ns"], plan["valid_until_ns"]),
+            "source": "QWEN_DECISION_PLAN",
+            "confidence": plan["confidence"],
+            "reason_code": f"{plan['reason_code']}:{step.step_id}",
+        })
+
     def _model_request(
         self,
         command: Mapping[str, Any],
@@ -455,6 +592,8 @@ class PipelineOrchestrator:
         now: int,
         *,
         rgb_ref: str | None,
+        runtime_state: Mapping[str, Any] | None = None,
+        routing: QwenRoutingDecision | None = None,
     ) -> dict[str, Any]:
         objects = sorted(
             scene["objects"],
@@ -501,6 +640,27 @@ class PipelineOrchestrator:
                 "max_target_speed_mps": self._scene_speed_limit(scene),
             },
         }
+        if self.config.qwen_mode == "planner_v2":
+            if routing is None:
+                raise ValueError("planner_v2 model requests require routing metadata")
+            payload["routing"] = {
+                "disposition": routing.disposition,
+                "score": routing.score,
+                "reasons": list(routing.reasons),
+                "safe_wait_behavior": routing.safe_wait_behavior,
+            }
+            capability_names = (
+                "available_lanes", "left_lane_exists", "right_lane_exists",
+                "left_gap_safe", "right_gap_safe", "route_available",
+                "intersection_ahead", "stop_line_clear", "original_lane",
+                "current_lane", "return_direction",
+            )
+            capabilities = {
+                name: runtime_state[name]
+                for name in capability_names
+                if runtime_state is not None and name in runtime_state
+            }
+            payload["scene_capabilities"] = capabilities
         return self.registry.validate("model_request", payload)
 
     def _safety_stop(self, command: Mapping[str, Any], scene: Mapping[str, Any], now: int, reason: str) -> dict[str, Any]:
@@ -557,15 +717,48 @@ class PipelineOrchestrator:
         detail: str,
         *,
         model_request: Mapping[str, Any] | None = None,
+        disposition: str = "REJECTED",
+        routing: QwenRoutingDecision | None = None,
     ) -> OrchestrationResult:
         return OrchestrationResult(
-            "REJECTED", command_id, model_request=model_request,
+            disposition, command_id, model_request=model_request,
             feedback=self._feedback(command_id, now, status, detail, reason),
             reason_code=reason, queues=self.queue_snapshot(),
+            **({} if routing is None else self._routing_fields(routing)),
         )
 
     def _rejected(self, command_id: str, now: int, reason: str, detail: str) -> OrchestrationResult:
         return self._feedback_result(command_id, now, "REJECTED", reason, detail)
+
+    def _routing_fields(self, routing: QwenRoutingDecision) -> dict[str, Any]:
+        return {
+            "routing_score": routing.score,
+            "routing_reasons": routing.reasons,
+            "routing_features": routing.features.to_dict(),
+            "qwen_mode": self.config.qwen_mode,
+            "safe_wait_behavior": routing.safe_wait_behavior,
+        }
+
+    def _publish_routing_event(
+        self,
+        command_id: str,
+        scene: Mapping[str, Any],
+        routing: QwenRoutingDecision,
+    ) -> None:
+        self.publish_log({
+            "record_type": "qwen_routing_event",
+            "command_id": command_id,
+            "plan_id": None,
+            "frame_id": scene["frame_id"],
+            "sim_time_s": scene["sim_time_s"],
+            "route": routing.disposition,
+            "routing_score": routing.score,
+            "reason_codes": list(routing.reasons),
+            "qwen_call_index": 0,
+            "safe_wait_behavior": routing.safe_wait_behavior,
+            "qwen_mode": self.config.qwen_mode,
+            "routing_features": routing.features.to_dict(),
+        })
 
     def _feedback(self, command_id: str, now: int, status: str, detail: str, reason: str | None) -> dict[str, Any]:
         return self.registry.validate("execution_feedback", {

@@ -128,7 +128,7 @@ class SafetyStateSummary:
 
     @property
     def fail_closed(self) -> bool:
-        return self.recommended_action == "FULL_BRAKE"
+        return self.recommended_action in {"FULL_BRAKE", "EMERGENCY_BRAKE"}
 
     def to_dict(self) -> dict[str, object]:
         return {

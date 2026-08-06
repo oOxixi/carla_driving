@@ -13,6 +13,7 @@ NAMES = (
     "driving_command",
     "model_request",
     "decision_plan",
+    "maneuver_plan",
     "perception_state",
     "control_command",
     "execution_feedback",
@@ -41,7 +42,7 @@ def test_frozen_interfaces_reject_unknown_fields_and_versions(name: str) -> None
     with pytest.raises(Exception):
         _validator(name).validate(unknown)
     wrong_version = copy.deepcopy(payload)
-    wrong_version["schema_version"] = "2.0"
+    wrong_version["schema_version"] = "1.0" if name == "maneuver_plan" else "2.0"
     with pytest.raises(Exception):
         _validator(name).validate(wrong_version)
 

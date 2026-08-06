@@ -12,6 +12,7 @@ INTERFACE_NAMES = frozenset({
     "driving_command",
     "model_request",
     "decision_plan",
+    "maneuver_plan",
     "perception_state",
     "control_command",
     "execution_feedback",

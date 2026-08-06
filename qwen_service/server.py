@@ -10,8 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from .service import (
+    DeterministicPlannerV2Backend,
     DeterministicTestBackend,
     LocalQwenBackend,
+    LocalQwenPlannerBackend,
     QwenDecisionService,
     QwenServiceConfig,
     ServiceFailure,
@@ -89,9 +91,14 @@ class QwenRequestHandler(BaseHTTPRequestHandler):
 
 def build_service(args: argparse.Namespace) -> QwenDecisionService:
     if args.deterministic_test_backend:
-        backend = DeterministicTestBackend()
+        backend = (
+            DeterministicPlannerV2Backend()
+            if args.qwen_mode == "planner_v2"
+            else DeterministicTestBackend()
+        )
     elif args.model_path is not None:
-        backend = LocalQwenBackend(
+        backend_type = LocalQwenPlannerBackend if args.qwen_mode == "planner_v2" else LocalQwenBackend
+        backend = backend_type(
             args.model_path,
             image_root=args.image_root,
             max_new_tokens=args.max_new_tokens,
@@ -107,6 +114,7 @@ def build_service(args: argparse.Namespace) -> QwenDecisionService:
             max_concurrency=args.max_concurrency,
             max_request_bytes=args.max_request_bytes,
         ),
+        qwen_mode=args.qwen_mode,
     )
 
 
@@ -118,10 +126,14 @@ def main() -> None:
     parser.add_argument("--image-root", type=Path)
     parser.add_argument("--deterministic-test-backend", action="store_true",
                         help="contract tests only; never production evidence")
+    parser.add_argument("--qwen-mode", choices=("atomic_v1", "planner_v2"), default="atomic_v1")
     parser.add_argument("--timeout-ms", type=float, default=300.0)
     parser.add_argument("--max-concurrency", type=int, default=1)
     parser.add_argument("--max-request-bytes", type=int, default=262_144)
-    parser.add_argument("--max-new-tokens", type=int, default=48)
+    parser.add_argument(
+        "--max-new-tokens", type=int, default=256,
+        help="generation ceiling; Planner V2 needs enough room for strict JSON",
+    )
     parser.add_argument("--min-pixels", type=int, default=64 * 28 * 28)
     parser.add_argument("--max-pixels", type=int, default=256 * 28 * 28)
     args = parser.parse_args()

@@ -175,8 +175,13 @@ class ControlRuntime:
 
     def step(self, vehicle: RuntimeVehicleState, scene: PerceptionFrame, route: RouteReference, *, dt_s: float,
              watchdog_alerts: tuple[str, ...] = (), raw_control_override: object | None = None,
-             speed_cap_mps: float | None = None) -> FrameResult:
+             speed_cap_mps: float | None = None,
+             safety_override_reason: str | None = None) -> FrameResult:
         """Compose lateral, longitudinal and final safety arbitration for one aligned frame."""
+        if safety_override_reason is not None and (
+            type(safety_override_reason) is not str or not safety_override_reason.strip()
+        ):
+            raise ValueError("safety_override_reason must be a non-empty string or None")
         if speed_cap_mps is not None:
             if type(speed_cap_mps) not in (int, float) or isinstance(speed_cap_mps, bool):
                 raise TypeError("speed_cap_mps must be a finite non-negative number or None")
@@ -273,10 +278,23 @@ class ControlRuntime:
                 safety_command = None
             safety = self.safety.arbitrate(raw_for_safety, safety_vehicle_state(vehicle, scene), safety_command,
                                            longitudinal.risk, tuple(expired_alerts))
+            if safety_override_reason is not None and not safety.safety_override:
+                # C may request a semantic emergency brake that is already a
+                # valid raw control. D keeps the final control but owns the
+                # override/lifecycle decision so the active command receives
+                # one auditable terminal status.
+                safety = replace(
+                    safety,
+                    safety_override=True,
+                    reason=safety_override_reason,
+                )
             final = ControlOutput(safety.final_control.throttle, safety.final_control.brake, safety.final_control.steer)
             command_owned_override = (
                 safety.safety_override
-                and safety.reason in _TERMINAL_SAFETY_REASONS
+                and (
+                    safety.reason in _TERMINAL_SAFETY_REASONS
+                    or safety_override_reason is not None
+                )
                 and self._active_command_id is not None
             )
             if command_owned_override:

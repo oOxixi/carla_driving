@@ -296,6 +296,31 @@ def test_external_hazard_emits_safety_override_terminal_feedback():
     assert runtime.active_command_id is None
 
 
+def test_c_semantic_brake_becomes_one_d_owned_terminal_override():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.submit_voice(_voice(), now_s=0.05)
+
+    result = runtime.step(
+        _vehicle(speed=3.0),
+        PerceptionFrame(
+            frame=1, sim_time_s=0.05,
+            lead_distance_m=8.0, lead_speed_mps=0.0,
+        ),
+        _route(),
+        dt_s=0.05,
+        raw_control_override={"throttle": 0.0, "brake": 1.0, "steer": 0.0},
+        safety_override_reason="C_FRONT_PEDESTRIAN_VRU_SHORT_FRONT_DISTANCE",
+    )
+
+    terminal = [item for item in result.feedback if item.command_id == "voice-1"]
+    assert result.safety_override is True
+    assert result.safety_reason == "C_FRONT_PEDESTRIAN_VRU_SHORT_FRONT_DISTANCE"
+    assert result.final_control.brake == 1.0
+    assert len(terminal) == 1
+    assert terminal[0].status.value == "SAFETY_OVERRIDE"
+    assert runtime.active_command_id is None
+
+
 def test_transient_route_recovery_does_not_discard_high_level_command():
     runtime = ControlRuntime(PurePursuitController())
     runtime.submit_voice(_voice(), now_s=0.05)

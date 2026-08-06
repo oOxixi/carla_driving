@@ -20,6 +20,7 @@ _CLASS_MAP = {
     "truck": "vehicle",
     "bus": "vehicle",
     "vehicle": "vehicle",
+    "obstacle": "obstacle",
 }
 
 
@@ -106,7 +107,11 @@ def perception_frame_to_state(
         velocity_x = float(scene.lead_speed_mps or 0.0) if index == 0 else 0.0
         closing = float(vehicle.speed_mps) - velocity_x
         ttc = distance / closing if closing > 0.05 else None
-        sources = ["RGB"] + (["LIDAR"] if item.distance_m is not None else [])
+        sources = (
+            ["LIDAR"]
+            if class_name == "obstacle" and item.distance_m is not None
+            else ["RGB"] + (["LIDAR"] if item.distance_m is not None else [])
+        )
         if not sensor_mode:
             sources = ["WORLD"]
         objects.append({
@@ -181,6 +186,10 @@ def control_command_to_voice_envelope(
 ) -> dict[str, Any]:
     behavior = str(control["behavior"])
     target_speed = control["target"].get("target_speed_mps")
+    compiled_maneuver = bool(
+        control.get("path_type") == "SLOW"
+        and control.get("source") == "QWEN_DECISION_PLAN"
+    )
     if behavior in {"SET_SPEED", "SLOW_DOWN"}:
         if target_speed is None:
             raise ValueError(f"{behavior} requires target_speed_mps")
@@ -195,6 +204,20 @@ def control_command_to_voice_envelope(
         intent, parameters = "EMERGENCY_STOP", {}
     elif behavior == "KEEP_LANE":
         intent, parameters = "KEEP_LANE", {}
+    elif behavior in {"TURN_LEFT", "TURN_RIGHT"}:
+        if not compiled_maneuver:
+            raise ValueError(f"current deterministic runtime cannot execute slow behavior {behavior}")
+        intent = "TURN"
+        parameters = {"direction": behavior.rsplit("_", 1)[-1]}
+    elif behavior in {"CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}:
+        if not compiled_maneuver:
+            raise ValueError(f"current deterministic runtime cannot execute slow behavior {behavior}")
+        intent = "CHANGE_LANE"
+        parameters = {"direction": behavior.rsplit("_", 1)[-1]}
+    elif behavior == "PULL_OVER":
+        if not compiled_maneuver:
+            raise ValueError(f"current deterministic runtime cannot execute slow behavior {behavior}")
+        intent, parameters = "PULL_OVER", {}
     else:
         raise ValueError(f"current deterministic runtime cannot execute slow behavior {behavior}")
     confidence = float(control.get("confidence", 1.0))
@@ -209,6 +232,12 @@ def control_command_to_voice_envelope(
         "status": "valid",
         "ambiguity_type": "NONE",
         "confirm_required": False,
+        "compiled_maneuver": bool(
+            compiled_maneuver and behavior in {
+                "TURN_LEFT", "TURN_RIGHT", "CHANGE_LANE_LEFT",
+                "CHANGE_LANE_RIGHT", "PULL_OVER",
+            }
+        ),
         "errors": [],
         "warnings": [{
             "code": ("QWEN_HIGH_LEVEL_PLAN" if control.get("path_type") == "SLOW"

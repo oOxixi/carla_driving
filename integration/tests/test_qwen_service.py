@@ -8,7 +8,9 @@ import time
 
 import pytest
 
+from integration.qwen_plan_adapter import QwenPlanParseError
 from qwen_service import (
+    DeterministicPlannerV2Backend,
     DeterministicTestBackend,
     QwenDecisionService,
     QwenServiceConfig,
@@ -110,5 +112,120 @@ def test_service_rejects_model_id_mismatch() -> None:
         with pytest.raises(ServiceFailure) as caught:
             service.infer(_request())
         assert caught.value.error_code == "MODEL_ID_MISMATCH"
+    finally:
+        service.close()
+
+
+def test_planner_v2_service_returns_strict_maneuver_plan():
+    request = _request()
+    request["source_text"] = "跟随前方车辆"
+    request["routing"] = {
+        "disposition": "QWEN_PLAN", "score": 5,
+        "reasons": ["VISUAL_REFERENCE", "COMPLEX_MANEUVER"],
+        "safe_wait_behavior": "SLOW_DOWN",
+    }
+    request["scene_capabilities"] = {}
+    service = QwenDecisionService(
+        DeterministicPlannerV2Backend(), qwen_mode="planner_v2",
+    )
+    try:
+        result = service.infer(request)
+        assert result["schema_version"] == "2.0"
+        assert result["steps"][0]["behavior"] == "FOLLOW"
+        assert result["steps"][0]["target"]["target_id"] == "vehicle-right-01"
+        assert service.health()["qwen_mode"] == "planner_v2"
+        assert service.metrics()["counts"]["success"] == 1
+    finally:
+        service.close()
+
+
+def test_planner_v2_service_rejects_low_level_model_output():
+    class UnsafePlanner(DeterministicPlannerV2Backend):
+        def infer(self, request):
+            plan = copy.deepcopy(super().infer(request))
+            plan["steps"][0]["steer"] = 0.8
+            return plan
+
+    request = _request()
+    service = QwenDecisionService(UnsafePlanner(), qwen_mode="planner_v2")
+    try:
+        with pytest.raises(ServiceFailure) as caught:
+            service.infer(request)
+        assert caught.value.error_code == "LOW_LEVEL_OUTPUT_FORBIDDEN"
+        assert caught.value.status_code == 502
+    finally:
+        service.close()
+
+
+def test_planner_v2_service_classifies_malformed_generation_as_bad_gateway():
+    class MalformedPlanner(DeterministicPlannerV2Backend):
+        def infer(self, request):
+            raise QwenPlanParseError("MODEL_OUTPUT_MUST_BE_BARE_JSON_OBJECT")
+
+    service = QwenDecisionService(MalformedPlanner(), qwen_mode="planner_v2")
+    try:
+        with pytest.raises(ServiceFailure) as caught:
+            service.infer(_request())
+        assert caught.value.status_code == 502
+        assert caught.value.error_code == "INVALID_MODEL_OUTPUT"
+        assert service.metrics()["counts"]["invalid"] == 1
+    finally:
+        service.close()
+
+
+def test_planner_v2_stub_preserves_lane_change_then_speed_sequence():
+    request = _request()
+    request["source_text"] = "确认安全后向左变道并保持二十公里每小时"
+    request["routing"] = {
+        "disposition": "QWEN_PLAN", "score": 8,
+        "reasons": ["MULTI_ACTION", "SEQUENCE", "COMPLEX_MANEUVER"],
+        "safe_wait_behavior": "SLOW_DOWN",
+    }
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT", "LEFT_ADJACENT"],
+        "left_lane_exists": True,
+        "left_gap_safe": True,
+    }
+    service = QwenDecisionService(
+        DeterministicPlannerV2Backend(), qwen_mode="planner_v2",
+    )
+    try:
+        plan = service.infer(request)
+        assert [step["behavior"] for step in plan["steps"]] == [
+            "CHANGE_LANE_LEFT", "SET_SPEED",
+        ]
+        assert plan["steps"][0]["timeout_s"] >= 12.0
+    finally:
+        service.close()
+
+
+def test_planner_v2_stub_grounds_avoid_and_return_in_sensor_target():
+    request = _request()
+    request["source_text"] = "绕过前方障碍物后回到当前车道"
+    request["routing"] = {
+        "disposition": "QWEN_PLAN", "score": 9,
+        "reasons": ["MULTI_ACTION", "SEQUENCE", "VISUAL_REFERENCE"],
+        "safe_wait_behavior": "SLOW_DOWN",
+    }
+    request["targets"] = [{
+        "target_id": "legacy-obstacle-000", "class": "obstacle",
+        "distance_m": 18.0, "relative_speed_mps": 0.0,
+        "confidence": 1.0, "relation": "center_ahead",
+    }]
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT", "LEFT_ADJACENT"],
+        "left_lane_exists": True,
+        "left_gap_safe": True,
+    }
+    service = QwenDecisionService(
+        DeterministicPlannerV2Backend(), qwen_mode="planner_v2",
+    )
+    try:
+        plan = service.infer(request)
+        assert [step["behavior"] for step in plan["steps"]] == [
+            "AVOID_OBSTACLE", "RETURN_TO_LANE",
+        ]
+        assert plan["steps"][0]["target"]["target_id"] == "legacy-obstacle-000"
+        assert plan["steps"][0]["target"]["target_lane"] == "LEFT_ADJACENT"
     finally:
         service.close()

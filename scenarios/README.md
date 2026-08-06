@@ -1,8 +1,8 @@
-# CARLA四类完整测试场景包
+# CARLA 基础与 Qwen 全链路测试场景包
 
 本包用于项目本地联调、回归测试和最终证据生成。它不是CARLA官方隐藏测试，而是用于模拟基础、进阶、挑战任务的内部标准场景库。
 
-## 四类场景
+## 场景分层
 
 1. `smoke/`：主链路冒烟测试  
    验证A能启动CARLA、B/C/D能被调用、D在`apply_control`前运行、日志能生成。
@@ -15,6 +15,12 @@
 
 4. `regression/`：综合回归测试  
    将基础、进阶、挑战场景混合，加入不同seed、天气、命令序列和稳定性测试。
+
+5. `qwen_routing/`：验证简单命令不调用、复杂命令调用以及歧义命令安全确认。
+
+6. `qwen_fullchain/`：验证 Planner V2 正常计划、编译和车辆闭环。
+
+7. `qwen_faults/`：验证超时、低层非法输出和 D 安全抢占。
 
 ## 使用方式
 
@@ -38,7 +44,10 @@ my_project/
 │   ├── smoke/
 │   ├── lateral_B/
 │   ├── safety_D/
-│   └── regression/
+│   ├── regression/
+│   ├── qwen_routing/
+│   ├── qwen_fullchain/
+│   └── qwen_faults/
 └── logs/
 ```
 

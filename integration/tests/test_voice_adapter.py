@@ -84,6 +84,18 @@ def test_complex_intents_are_confirmation_gated(intent: str) -> None:
     assert adapted.metadata.intent == intent
 
 
+@pytest.mark.parametrize("intent", ["TURN", "CHANGE_LANE"])
+def test_only_compiled_maneuvers_can_cross_complex_execution_boundary(intent: str) -> None:
+    adapted = VoiceCommandAdapter().adapt(envelope(
+        intent=intent,
+        parameters={"direction": "LEFT"},
+        compiled_maneuver=True,
+    ), now_s=1.0)
+    assert adapted.control_authorized
+    assert adapted.command.action == "KEEP_LANE"
+    assert not adapted.command.requires_confirmation
+
+
 def test_invalid_or_unknown_command_is_a_rejected_no_op() -> None:
     adapted = VoiceCommandAdapter().adapt(envelope(intent="UNKNOWN", status="invalid", errors=["unknown_intent"]), now_s=1.0)
     assert adapted.command.action == "NO_OP"

@@ -1,12 +1,15 @@
 {
   "schema_version": "1.0",
   "package_name": "carla_scenarios_four_types_full",
-  "description": "CARLA智能驾驶项目四类完整测试场景：smoke、lateral_B、safety_D、regression。",
+  "description": "CARLA 智能驾驶基础场景与 Qwen V2 全链路测试套件。",
   "folders": {
     "smoke": "主链路冒烟测试：A/B/C/D是否接通、日志是否生成。",
     "lateral_B": "B横向控制专项：直道、偏移、缓弯、左右转、变道。",
     "safety_D": "D安全仲裁专项：红灯、行人、前车、路线偏差、非法控制、低TTC。",
-    "regression": "综合回归：基础/进阶/挑战混合，多seed、多天气、多命令。"
+    "regression": "综合回归：基础/进阶/挑战混合，多seed、多天气、多命令。",
+    "qwen_routing": "Qwen 调用策略：FAST_LOCAL、QWEN_PLAN、CONFIRM_SAFE。",
+    "qwen_fullchain": "复杂指令到 ManeuverPlan、车辆动作和终态的正常闭环。",
+    "qwen_faults": "模型超时、非法输出与执行中安全抢占。"
   },
   "official_level_mapping": {
     "basic": "基础场景：直道、控速、停车、保持车道、普通转向。",
@@ -36,12 +39,24 @@
     "regression/REG_013_multi_vehicle_brake.json",
     "regression/REG_014_occluded_pedestrian_crossing.json",
     "regression/REG_015_construction_bicycle_lead.json"
+    ,"qwen_routing/QWR_01_fast_speed_no_qwen.json"
+    ,"qwen_routing/QWR_05_turn_requires_qwen.json"
+    ,"qwen_routing/QWR_07_visual_avoid_return.json"
+    ,"qwen_routing/QWR_09_ambiguous_white_vehicle.json"
+    ,"qwen_fullchain/QWF_01_turn_then_speed.json"
+    ,"qwen_fullchain/QWF_02_lane_change_then_speed.json"
+    ,"qwen_faults/QWX_01_model_timeout.json"
+    ,"qwen_faults/QWX_05_low_level_output_rejected.json"
+    ,"qwen_faults/QWX_06_pedestrian_safety_override.json"
   ],
   "counts": {
     "smoke": 5,
     "lateral_B": 9,
     "safety_D": 8,
     "regression": 15,
-    "total": 37
+    "qwen_routing": 4,
+    "qwen_fullchain": 2,
+    "qwen_faults": 3,
+    "total": 46
   }
 }

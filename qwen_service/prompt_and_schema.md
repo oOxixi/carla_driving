@@ -36,3 +36,31 @@ target_id 只能从输入 targets[].target_id 精确复制，禁止编造。
 即使模型给出不兼容计划也会被 A/D 拒绝并保持停车。
 
 Qwen 的输出只能成为 A 校验后的高层计划。D 独立计算并仲裁最终油门、制动和方向。
+
+## Planner V2
+
+复杂机动使用 `--qwen-mode planner_v2`，输出严格的
+`interfaces/maneuver_plan.schema.json`，不替换 V1。完整提示词位于
+`integration/qwen_plan_adapter.py::PLANNER_V2_SYSTEM_PROMPT`。
+
+- 只允许 14 个受限高层行为，步骤数为 1–4；
+- 每步必须声明前置条件、确定性完成条件、超时与失败策略；
+- `target_id` 只能复制请求中的可见目标；目标车道必须来自
+  `scene_capabilities.available_lanes`；
+- 红灯、`must_stop`、紧急风险和限速优先；
+- 不确定时 `requires_confirmation=true`，由 A 安全等待；
+- 递归拒绝 `throttle/brake/steer/wheel_angle/torque/raw_waypoints`。
+
+本地服务示例：
+
+```bash
+python -m qwen_service.server \
+  --qwen-mode planner_v2 \
+  --model-path /path/to/Qwen2.5-VL-7B-Instruct \
+  --image-root /shared/carla_driving \
+  --timeout-ms 5000 \
+  --max-new-tokens 256
+```
+
+`--deterministic-test-backend` 在 Planner V2 下会启用独立的契约 stub；其结果只能
+用于接口与故障测试，不能作为真实模型准确率或延迟证据。

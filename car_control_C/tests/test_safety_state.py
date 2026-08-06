@@ -42,6 +42,7 @@ def test_temporal_lidar_difference_computes_low_ttc_without_actor_truth() -> Non
     assert summary.closing_speed_mps == pytest.approx(10.0)
     assert summary.ttc_s == pytest.approx(0.9)
     assert summary.recommended_action == "EMERGENCY_BRAKE"
+    assert summary.fail_closed
     assert summary.source_by_field["closing_speed_mps"] == "LIDAR_TEMPORAL_DIFFERENCE"
 
 

@@ -25,7 +25,7 @@ from car_control_A import CarlaSession
 from car_control_A.routing import RouteReference
 from car_control_C import ConservativeSensorFusion, SafetyStateSummary, VisualObservation
 
-from .contracts import PerceptionFrame
+from .contracts import DetectedObject, PerceptionFrame
 from .rgb_detector import driving_corridor_detections
 
 
@@ -701,6 +701,19 @@ class CarlaPerceptionBridge:
             sources["radar_observation"] = "RADAR_FRONT_CORRIDOR_ASSOCIATED"
         elif radar_target is not None:
             sources["radar_observation"] = "RADAR_LIDAR_RANGE_GATE_REJECTED"
+        if lead_distance is not None and not corridor_objects:
+            # Keep a range-grounded generic target available to the
+            # high-level planner without pretending that RGB supplied a
+            # semantic class. This also covers radar-range fallback frames.
+            lidar_target = DetectedObject(
+                0,
+                "obstacle",
+                1.0,
+                (0.40, 0.30, 0.60, 0.80),
+                lead_distance,
+            )
+            detected_objects = (lidar_target,) + tuple(detected_objects)
+            sources["detected_objects"] = "LIDAR_RADAR_FRONT_CORRIDOR_OBJECT"
         if self._detector is not None and corridor_objects and lead_distance is not None:
             selected = max(corridor_objects, key=lambda item: item.confidence)
             detected_objects = tuple(

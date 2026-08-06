@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "QWX_06_pedestrian_safety_override",
+  "category": "qwen_faults",
+  "official_level": "challenge",
+  "description": "计划执行中行人横穿，D 必须立即抢占，不能等待 Qwen。",
+  "map": "Town03",
+  "weather": "CloudyNoon",
+  "seed": 4306,
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 30},
+  "ego_spawn": {"x": 0, "y": 0, "z": 0.5, "yaw_deg": 0},
+  "route": {"coordinate_type": "scenario_local_xy_m", "points_xy_m": [[0, 0], [30, 0], [65, 0], [90, 0]], "resample_interval_m": 1.0, "finish_radius_m": 3.0},
+  "commands": [{"time_s": 1, "source_text": "绕过前方障碍物后回到当前车道", "intent": "AVOID_OBSTACLE", "parameters": {}, "intent_confidence": 0.96, "status": "valid", "confirm_required": false}],
+  "actors": [
+    {"actor_id": "obstacle-01", "type": "static.prop", "blueprint_id": "static.prop.warningconstruction", "spawn": {"x": 25, "y": 0, "z": 0.5, "yaw_deg": 0}},
+    {"actor_id": "ped-crossing", "type": "walker.pedestrian", "spawn": {"x": 30, "y": -3.4, "z": 0.5, "yaw_deg": 90}, "behavior": {"mode": "crossing", "target_xy_m": [30, 3.4], "start_time_s": 12, "speed_mps": 1.5}}
+  ],
+  "qwen_expected": {"route": "QWEN_PLAN", "min_calls": 1, "max_calls": 2, "expected_behaviors": ["SLOW_DOWN", "AVOID_OBSTACLE"], "expected_terminal": "SAFETY_OVERRIDE", "expected_terminal_reason_prefix": "C_FRONT_PEDESTRIAN_", "allowed_replans": 1, "forbidden_low_level_fields": true},
+  "expected": {"must_no_pedestrian_collision": true, "required_real_actor_types": ["walker.pedestrian", "static.prop"], "expected_safety_override": true}
+}

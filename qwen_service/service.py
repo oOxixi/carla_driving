@@ -13,8 +13,14 @@ import time
 from typing import Any, Protocol
 
 from integration.qwen_boundary import QwenInputContext
-from integration.qwen_vl_adapter import StrictQwenVLAdapter
+from integration.qwen_plan_adapter import (
+    QwenPlanParseError,
+    build_planner_v2_prompt,
+    parse_maneuver_plan,
+)
+from integration.qwen_vl_adapter import StrictQwenVLAdapter, TransformersQwen25VLBackend
 from runtime.interface_registry import InterfaceRegistry, InterfaceValidationError
+from runtime.plan_validator import PlanValidationError, PlanValidator
 
 
 def _percentile(values: list[float], quantile: float) -> float | None:
@@ -130,6 +136,218 @@ class DeterministicTestBackend:
         }
 
 
+class DeterministicPlannerV2Backend:
+    """Planner V2 contract stub; explicitly excluded from model evidence."""
+
+    model_id = "DETERMINISTIC_PLANNER_V2_TEST_BACKEND"
+    production_ready = False
+
+    def health(self) -> tuple[bool, str]:
+        return True, "planner v2 test backend ready (not a production Qwen model)"
+
+    def infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]:
+        text = str(request["source_text"])
+        lower = text.lower()
+        constraints = request["constraints"]
+        capabilities = request.get("scene_capabilities", {})
+        targets = request["targets"]
+        maximum = float(constraints.get("max_target_speed_mps") or 4.0)
+        cruise_speed = min(4.17, maximum)
+        slow_speed = min(3.0, maximum)
+        steps: list[dict[str, Any]] = []
+        confirmation = False
+        reason = "DETERMINISTIC_PLANNER_V2"
+
+        if constraints["must_stop"]:
+            steps.append(_planner_step(
+                "s1", "STOP", speed=0.0,
+                completion="STOPPED", completion_value=None,
+                timeout_s=5.0, failure="SAFE_STOP",
+            ))
+            reason = "DETERMINISTIC_SAFETY_STOP"
+        elif any(token in lower for token in ("右转", "turn right", "next right")):
+            steps.extend((
+                _planner_step("s1", "SLOW_DOWN", speed=slow_speed),
+                _planner_step(
+                    "s2", "TURN_RIGHT", speed=slow_speed, lane="ROUTE_BRANCH",
+                    route_direction="RIGHT", preconditions=(
+                        "PERCEPTION_FRESH", "ROUTE_AVAILABLE",
+                        "INTERSECTION_AHEAD", "NO_EMERGENCY_RISK",
+                    ), completion="JUNCTION_EXITED", completion_value=None,
+                    timeout_s=30.0,
+                ),
+            ))
+            if any(token in lower for token in ("公里", "km", "速度", "speed")):
+                steps.append(_planner_step(
+                    "s3", "SET_SPEED", speed=cruise_speed,
+                    completion="SPEED_REACHED", completion_value=cruise_speed,
+                ))
+            reason = "DETERMINISTIC_TURN_RIGHT_SEQUENCE"
+        elif any(token in lower for token in ("左转", "turn left", "next left")):
+            steps.append(_planner_step(
+                "s1", "TURN_LEFT", speed=slow_speed, lane="ROUTE_BRANCH",
+                route_direction="LEFT", preconditions=(
+                    "PERCEPTION_FRESH", "ROUTE_AVAILABLE",
+                    "INTERSECTION_AHEAD", "NO_EMERGENCY_RISK",
+                ), completion="JUNCTION_EXITED", completion_value=None,
+                timeout_s=30.0,
+            ))
+            reason = "DETERMINISTIC_TURN_LEFT"
+        elif any(token in lower for token in ("左变道", "向左变道", "left lane")):
+            if capabilities.get("left_lane_exists") is True:
+                steps.append(_planner_step(
+                    "s1", "CHANGE_LANE_LEFT", speed=slow_speed,
+                    lane="LEFT_ADJACENT", preconditions=(
+                        "PERCEPTION_FRESH", "LEFT_LANE_EXISTS", "LEFT_GAP_SAFE",
+                        "NO_EMERGENCY_RISK",
+                    ), completion="LANE_CENTERED", completion_value=None,
+                    timeout_s=12.0, failure="SAFE_STOP",
+                ))
+                if any(token in lower for token in ("公里", "km", "速度", "speed")):
+                    steps.append(_planner_step(
+                        "s2", "SET_SPEED", speed=cruise_speed,
+                        completion="SPEED_REACHED", completion_value=cruise_speed,
+                    ))
+                    reason = "DETERMINISTIC_CHANGE_LANE_LEFT_SEQUENCE"
+                else:
+                    reason = "DETERMINISTIC_CHANGE_LANE_LEFT"
+            else:
+                steps.append(_planner_step(
+                    "s1", "HOLD", speed=None, completion="HOLD_FRAMES",
+                    completion_value=None, failure="CONFIRM",
+                ))
+                confirmation = True
+                reason = "LEFT_LANE_UNVERIFIED"
+        elif any(token in lower for token in ("跟随", "follow")) and len(targets) == 1:
+            steps.append(_planner_step(
+                "s1", "FOLLOW", speed=min(4.0, maximum),
+                target_id=targets[0]["target_id"], time_gap_s=2.0,
+                preconditions=("PERCEPTION_FRESH", "TARGET_VISIBLE", "NO_EMERGENCY_RISK"),
+                completion="TARGET_GAP_REACHED", completion_value=2.0,
+            ))
+            reason = "DETERMINISTIC_UNIQUE_TARGET_FOLLOW"
+        elif any(token in lower for token in ("绕过", "绕开", "避开", "avoid", "go around")):
+            lane = (
+                "LEFT_ADJACENT" if capabilities.get("left_lane_exists") is True
+                else "RIGHT_ADJACENT" if capabilities.get("right_lane_exists") is True
+                else None
+            )
+            if targets and lane is not None:
+                side = "LEFT" if lane == "LEFT_ADJACENT" else "RIGHT"
+                steps.extend((
+                    _planner_step(
+                        "s1", "AVOID_OBSTACLE", speed=slow_speed,
+                        target_id=targets[0]["target_id"], lane=lane,
+                        preconditions=(
+                            "PERCEPTION_FRESH", "TARGET_VISIBLE",
+                            f"{side}_LANE_EXISTS", f"{side}_GAP_SAFE",
+                            "NO_EMERGENCY_RISK",
+                        ),
+                        completion="TARGET_PASSED", completion_value=None,
+                        timeout_s=20.0,
+                    ),
+                    _planner_step(
+                        "s2", "RETURN_TO_LANE", speed=slow_speed,
+                        lane="CURRENT",
+                        completion="LANE_CENTERED", completion_value=None,
+                        timeout_s=20.0,
+                    ),
+                ))
+                reason = "DETERMINISTIC_AVOID_AND_RETURN"
+            else:
+                steps.append(_planner_step(
+                    "s1", "HOLD", speed=None, completion="HOLD_FRAMES",
+                    completion_value=None, failure="CONFIRM",
+                ))
+                confirmation = True
+                reason = "OBSTACLE_OR_ADJACENT_LANE_UNVERIFIED"
+        else:
+            steps.append(_planner_step(
+                "s1", "HOLD", speed=None, completion="HOLD_FRAMES",
+                completion_value=None, failure="CONFIRM",
+            ))
+            confirmation = True
+            reason = "DETERMINISTIC_INSUFFICIENT_GROUNDING"
+        now = time.monotonic_ns()
+        return {
+            "schema_version": "2.0",
+            "request_id": request["request_id"],
+            "command_id": request["command_id"],
+            "plan_id": "plan-" + str(request["request_id"]),
+            "plan_type": "MANEUVER_SEQUENCE",
+            "steps": steps,
+            "replan_conditions": ["NEW_EMERGENCY_OBJECT", "PROGRESS_STALLED"],
+            "confidence": 0.5 if confirmation else 1.0,
+            "requires_confirmation": confirmation,
+            "created_at_ns": now,
+            "valid_until_ns": request["deadline_ns"],
+            "reason_code": reason,
+            "model_id": self.model_id,
+        }
+
+
+class LocalQwenPlannerBackend:
+    """Real local Qwen2.5-VL generation backend for ManeuverPlan V2 JSON."""
+
+    production_ready = True
+
+    def __init__(
+        self,
+        model_path: str | Path,
+        *,
+        image_root: str | Path | None = None,
+        max_new_tokens: int = 256,
+        min_pixels: int = 64 * 28 * 28,
+        max_pixels: int = 256 * 28 * 28,
+    ) -> None:
+        path = Path(model_path).expanduser().resolve()
+        if not path.is_dir():
+            raise FileNotFoundError(f"local Qwen checkpoint not found: {path}")
+        self.model_path = path
+        self.image_root = None if image_root is None else Path(image_root).expanduser().resolve()
+        self.model_id = path.name
+        self.backend = TransformersQwen25VLBackend(
+            path,
+            max_new_tokens=max_new_tokens,
+            min_pixels=min_pixels,
+            max_pixels=max_pixels,
+        )
+
+    def health(self) -> tuple[bool, str]:
+        return True, f"local planner checkpoint loaded: {self.model_path}"
+
+    def infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]:
+        routing = request.get("routing")
+        if not isinstance(routing, Mapping):
+            raise ValueError("planner_v2 request is missing routing metadata")
+        prompt = build_planner_v2_prompt(
+            request, routing,
+            scene_capabilities=request.get("scene_capabilities", {}),
+        )
+        return parse_maneuver_plan(self.backend.generate(
+            prompt=prompt,
+            image_path=self._resolve_image(request.get("rgb_ref")),
+        ))
+
+    def _resolve_image(self, value: Any) -> Path | None:
+        if value is None:
+            return None
+        candidate = Path(str(value)).expanduser()
+        if self.image_root is None:
+            candidate = candidate.resolve()
+        else:
+            if candidate.is_absolute():
+                raise ValueError("rgb_ref must be relative when image_root is configured")
+            candidate = (self.image_root / candidate).resolve()
+            try:
+                candidate.relative_to(self.image_root)
+            except ValueError as error:
+                raise ValueError("rgb_ref escapes image_root") from error
+        if not candidate.is_file():
+            raise FileNotFoundError(f"Qwen RGB input not found: {candidate}")
+        return candidate
+
+
 class LocalQwenBackend:
     """Adapter from the repository's real local Qwen2.5-VL implementation."""
 
@@ -228,6 +446,43 @@ class LocalQwenBackend:
         }
 
 
+def _planner_step(
+    step_id: str,
+    behavior: str,
+    *,
+    speed: float | None,
+    target_id: str | None = None,
+    lane: str | None = "CURRENT",
+    time_gap_s: float | None = None,
+    route_direction: str | None = None,
+    preconditions: tuple[str, ...] = ("PERCEPTION_FRESH", "NO_EMERGENCY_RISK"),
+    completion: str = "SPEED_BELOW",
+    completion_value: float | None = 3.3,
+    timeout_s: float = 5.0,
+    failure: str = "SAFE_STOP",
+) -> dict[str, Any]:
+    return {
+        "step_id": step_id,
+        "behavior": behavior,
+        "target": {
+            "target_id": target_id,
+            "target_lane": lane,
+            "target_speed_mps": speed,
+            "time_gap_s": time_gap_s,
+            "route_direction": route_direction,
+        },
+        "preconditions": list(preconditions),
+        "completion": {
+            "type": completion,
+            "value": completion_value,
+            "lane": lane if completion == "LANE_CENTERED" else None,
+            "hold_frames": 5,
+        },
+        "timeout_s": timeout_s,
+        "on_failure": failure,
+    }
+
+
 class QwenDecisionService:
     def __init__(
         self,
@@ -235,13 +490,21 @@ class QwenDecisionService:
         *,
         config: QwenServiceConfig | None = None,
         registry: InterfaceRegistry | None = None,
+        qwen_mode: str = "atomic_v1",
         clock_ns: Any = time.monotonic_ns,
     ) -> None:
         if not callable(getattr(backend, "infer", None)) or not callable(getattr(backend, "health", None)):
             raise TypeError("backend must provide infer() and health()")
         self.backend = backend
+        if qwen_mode not in {"atomic_v1", "planner_v2"}:
+            raise ValueError("qwen_mode must be 'atomic_v1' or 'planner_v2'")
+        self.qwen_mode = qwen_mode
         self.config = config or QwenServiceConfig()
         self.registry = registry or InterfaceRegistry()
+        self.plan_validator = PlanValidator(
+            registry=self.registry,
+            clock_ns=clock_ns,
+        )
         self._clock_ns = clock_ns
         self._slots = BoundedSemaphore(self.config.max_concurrency)
         self._executor = ThreadPoolExecutor(
@@ -298,15 +561,31 @@ class QwenDecisionService:
         except FutureTimeout as error:
             self._increment("timeouts")
             raise ServiceFailure(504, "MODEL_TIMEOUT", "Qwen inference exceeded deadline", request_id=request_id) from error
+        except (QwenPlanParseError, PlanValidationError) as error:
+            self._increment("invalid")
+            code = error.reason_code if isinstance(error, PlanValidationError) else "INVALID_MODEL_OUTPUT"
+            raise ServiceFailure(502, code, str(error), request_id=request_id) from error
         except Exception as error:
             self._increment("backend_errors")
             raise ServiceFailure(500, "MODEL_ERROR", f"{type(error).__name__}: {error}", request_id=request_id) from error
         elapsed_ms = (time.perf_counter_ns() - started) / 1e6
+        validation_now = self._clock_ns()
         try:
-            plan = self.registry.validate("decision_plan", raw)
-        except InterfaceValidationError as error:
+            if self.qwen_mode == "planner_v2":
+                plan = self.plan_validator.validate(
+                    raw,
+                    scene=_planner_scene(request),
+                    expected_request_id=request_id,
+                    expected_command_id=request["command_id"],
+                    now_ns=validation_now,
+                    allow_confirmation=True,
+                )
+            else:
+                plan = self.registry.validate("decision_plan", raw)
+        except (InterfaceValidationError, PlanValidationError) as error:
             self._increment("invalid")
-            raise ServiceFailure(502, "INVALID_MODEL_OUTPUT", str(error), request_id=request_id) from error
+            code = error.reason_code if isinstance(error, PlanValidationError) else "INVALID_MODEL_OUTPUT"
+            raise ServiceFailure(502, code, str(error), request_id=request_id) from error
         if plan["request_id"] != request_id or plan["command_id"] != request["command_id"]:
             self._increment("invalid")
             raise ServiceFailure(502, "MODEL_ID_MISMATCH", "model output IDs do not match request", request_id=request_id)
@@ -334,6 +613,7 @@ class QwenDecisionService:
             "active_requests": active,
             "max_concurrency": self.config.max_concurrency,
             "timeout_ms": self.config.timeout_ms,
+            "qwen_mode": self.qwen_mode,
             "gpu": _gpu_metrics(),
         }
 
@@ -346,6 +626,7 @@ class QwenDecisionService:
             "schema_version": "1.0",
             "model_id": self.backend.model_id,
             "production_ready": bool(self.backend.production_ready),
+            "qwen_mode": self.qwen_mode,
             "active_requests": active,
             "max_concurrency": self.config.max_concurrency,
             "counts": counts,
@@ -392,10 +673,34 @@ def _gpu_metrics() -> dict[str, Any]:
         return {"available": False, "reason": f"{type(error).__name__}: {error}"}
 
 
+def _planner_scene(request: Mapping[str, Any]) -> dict[str, Any]:
+    summary = request["scene_summary"]
+    capabilities = request.get("scene_capabilities", {})
+    return {
+        "objects": [
+            {"track_id": target["target_id"]}
+            for target in request["targets"]
+        ],
+        "traffic_light": summary["traffic_light"],
+        "distance_to_stop_line_m": (
+            1.0 if request["constraints"]["must_stop"]
+            and summary["traffic_light"] in {"RED", "YELLOW"} else None
+        ),
+        "risk_level": summary["risk_level"],
+        "speed_limit_mps": request["constraints"].get("speed_limit_mps"),
+        "must_stop": request["constraints"]["must_stop"],
+        "stale": False,
+        "sync": {"within_tolerance": True},
+        **(dict(capabilities) if isinstance(capabilities, Mapping) else {}),
+    }
+
+
 __all__ = [
     "DecisionBackend",
+    "DeterministicPlannerV2Backend",
     "DeterministicTestBackend",
     "LocalQwenBackend",
+    "LocalQwenPlannerBackend",
     "QwenDecisionService",
     "QwenServiceConfig",
     "ServiceFailure",

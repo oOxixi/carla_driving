@@ -19,7 +19,7 @@ SCENARIO_ROOT = Path(__file__).resolve().parents[2] / "scenarios"
 def test_all_repository_scenarios_load() -> None:
     paths = sorted(SCENARIO_ROOT.glob("*/*.json"))
     specs = [ScenarioSpec.load(path) for path in paths]
-    assert len(specs) == 37
+    assert len(specs) == 46
     assert {spec.official_level for spec in specs} == {"basic", "advanced", "challenge"}
     assert all(spec.frame_count > 0 for spec in specs)
 
@@ -127,3 +127,16 @@ def test_trusted_route_manoeuvre_uses_scenario_route_and_concrete_speed(
     assert resolved["intent"] == "SET_SPEED"
     assert resolved["scenario_original_intent"] == expected_original_intent
     assert resolved["parameters"] == {"speed": pytest.approx(expected_speed), "unit": "m/s"}
+
+
+def test_qwen_scenario_preserves_visual_follow_for_complexity_routing() -> None:
+    spec = ScenarioSpec.load(
+        SCENARIO_ROOT / "qwen_routing" / "QWR_09_ambiguous_white_vehicle.json"
+    )
+    resolved = resolve_scenario_command(
+        spec.commands[0].envelope,
+        requested_speed_mps=5.0,
+        preserve_high_level=True,
+    )
+    assert resolved["intent"] == "FOLLOW_ROUTE"
+    assert resolved["parameters"] == {}

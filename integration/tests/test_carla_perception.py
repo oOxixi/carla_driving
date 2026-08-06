@@ -274,6 +274,9 @@ def test_bridge_combines_aligned_lidar_events_map_and_associated_actor_truth() -
     assert not frame.red_light_violation
     assert sample.source_by_field["lead_distance_m"] == "LIDAR_FRONT_CORRIDOR"
     assert sample.source_by_field["lead_speed_mps"] == "CARLA_TRUTH_LIDAR_ASSOCIATED_ACTOR"
+    assert frame.detected_objects[0].class_name == "obstacle"
+    assert frame.detected_objects[0].distance_m == pytest.approx(11.84, abs=0.02)
+    assert sample.source_by_field["detected_objects"] == "LIDAR_RADAR_FRONT_CORRIDOR_OBJECT"
     assert sample.source_by_field["distance_to_stop_line_m"] == "CARLA_MAP_STOP_WAYPOINT"
     assert sample.safety_summary.front_distance_m == pytest.approx(11.84, abs=0.02)
     assert sample.safety_summary.ttc_s == pytest.approx(5.92, abs=0.02)
@@ -340,7 +343,10 @@ def test_lidar_obstacle_without_actor_is_kept_as_stationary_hazard() -> None:
 
     assert sample.frame.lead_distance_m == pytest.approx(6.02)
     assert sample.frame.lead_speed_mps == 0.0
+    assert sample.frame.detected_objects[0].class_name == "obstacle"
+    assert sample.frame.detected_objects[0].distance_m == pytest.approx(6.02)
     assert sample.source_by_field["lead_speed_mps"] == "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
+    assert sample.source_by_field["detected_objects"] == "LIDAR_RADAR_FRONT_CORRIDOR_OBJECT"
 
 
 def test_rgb_detection_and_lidar_distance_replace_actor_truth_speed() -> None:

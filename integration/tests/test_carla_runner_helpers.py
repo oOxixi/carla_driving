@@ -11,9 +11,11 @@ from car_control_B.schemas import RouteReference, VehiclePose
 from integration.carla_perception import EventLedger, PerceptionTimeoutError
 from integration.carla_runner import (
     _acceptance_lateral_controller,
+    _apply_compiled_plan_route,
     _load_command,
     _lead_vehicle_travel_m,
     _map_contract_name,
+    _maneuver_target_visible,
     _minimum_gap_contract_completed,
     _build_qwen_context,
     _c_safety_speed_cap_mps,
@@ -73,6 +75,45 @@ def test_c_vru_speed_cap_is_temporary_and_requires_a_valid_slow_down_summary() -
     assert _c_speed_cap_control_override(5.0, 2.0) == {
         "throttle": 0.0, "brake": 1.0, "steer": 0.0,
     }
+
+
+def test_compiled_maneuver_reuses_the_topology_validated_route() -> None:
+    current = RouteReference([(0.0, 0.0), (10.0, 0.0)], target_speed_mps=2.0)
+    validated = RouteReference([(0.0, 0.0), (10.0, 3.5)], target_speed_mps=2.0)
+    compiled = {
+        "steps": [
+            {"behavior": "CHANGE_LANE_LEFT", "target": {}},
+            {"behavior": "SET_SPEED", "target": {"target_speed_mps": 5.0}},
+        ],
+    }
+
+    route, speed, behavior = _apply_compiled_plan_route(
+        compiled,
+        world_map=None,
+        ego=None,
+        current_route=current,
+        requested_speed_mps=2.0,
+        distance_m=60.0,
+        prevalidated_maneuver_route=validated,
+    )
+
+    assert route.points_xy_m == validated.points_xy_m
+    assert route.target_speed_mps == pytest.approx(5.0)
+    assert speed == pytest.approx(5.0)
+    assert behavior == "CHANGE_LANE_LEFT"
+
+
+def test_maneuver_target_visibility_does_not_confuse_generic_lidar_obstacles() -> None:
+    vehicle_step = Namespace(target={"target_id": "legacy-vehicle-000"})
+    vehicle = DetectedObject(2, "car", 0.9, (0.1, 0.2, 0.4, 0.8), 12.0)
+    generic = DetectedObject(0, "obstacle", 1.0, (0.4, 0.3, 0.6, 0.8), 13.0)
+
+    assert _maneuver_target_visible(
+        vehicle_step, PerceptionFrame(1, 0.05, detected_objects=(vehicle,)),
+    )
+    assert not _maneuver_target_visible(
+        vehicle_step, PerceptionFrame(2, 0.10, detected_objects=(generic,)),
+    )
 
 
 def test_scenario_facts_can_override_or_only_fill_missing_perception() -> None:
@@ -718,6 +759,9 @@ def test_acceptance_lateral_tuning_limits_steer_and_rate() -> None:
         ("lateral_B/B05_smooth_right_curve.json", "FOLLOW_RIGHT"),
         ("regression/REG_003_basic_clear_seed2.json", "FOLLOW_RIGHT"),
         ("regression/REG_001_basic_clear_seed0.json", "FOLLOW"),
+        ("qwen_fullchain/QWF_01_turn_then_speed.json", "TURN_RIGHT"),
+        ("qwen_fullchain/QWF_02_lane_change_then_speed.json", "CHANGE_LANE_LEFT"),
+        ("qwen_faults/QWX_06_pedestrian_safety_override.json", "CHANGE_LANE_LEFT"),
     ],
 )
 def test_scenario_maneuver_preserves_declared_curve_direction(relative_path, expected):

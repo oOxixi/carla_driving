@@ -49,6 +49,7 @@ class CanonicalResolution:
     runtime_adapted: Any | None
     feedbacks: tuple[Mapping[str, Any], ...]
     vehicle_feedback: Any | None = None
+    orchestration: OrchestrationResult | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,6 +87,7 @@ class CanonicalRuntimeBridge:
         perception_mode: str,
         received_at_ns: int | None = None,
         rgb_ref: str | None = None,
+        runtime_state: Mapping[str, Any] | None = None,
     ) -> CanonicalSubmission:
         received = self._clock_ns() if received_at_ns is None else received_at_ns
         state = self._publish_state(scene, vehicle, perception_mode, received)
@@ -104,6 +106,7 @@ class CanonicalRuntimeBridge:
         else:
             result = self.orchestrator.submit_command(
                 canonical, state, now_ns=received, rgb_ref=rgb_ref,
+                runtime_state=runtime_state,
             )
 
         feedbacks = () if result.feedback is None else (result.feedback,)
@@ -152,7 +155,7 @@ class CanonicalRuntimeBridge:
                 feedbacks = () if result.feedback is None else (result.feedback,)
                 resolutions.append(CanonicalResolution(
                     result.command_id, result.disposition, None, None,
-                    feedbacks, vehicle_feedback,
+                    feedbacks, vehicle_feedback, result,
                 ))
                 continue
 
@@ -163,7 +166,7 @@ class CanonicalRuntimeBridge:
                     "SUPERSEDED_BY_NEWER_COMMAND",
                 )
                 resolutions.append(CanonicalResolution(
-                    result.command_id, "REJECTED", None, None, (feedback,), None,
+                    result.command_id, "REJECTED", None, None, (feedback,), None, result,
                 ))
                 continue
 
@@ -179,16 +182,45 @@ class CanonicalRuntimeBridge:
                     pending, result.command_id, sim_time_s, "QWEN_TARGET_STALE",
                 )
                 resolutions.append(CanonicalResolution(
-                    result.command_id, "REJECTED", None, None, (feedback,), vehicle_feedback,
+                    result.command_id, "REJECTED", None, None, (feedback,), vehicle_feedback, result,
                 ))
                 continue
 
             source_text = pending.source_text if pending is not None else "<Qwen decision>"
             try:
+                dispatch_control = result.control_command
+                if result.compiled_plan is not None:
+                    compiled_steps = result.compiled_plan.get("steps", ())
+                    first_step_id = (
+                        str(compiled_steps[0].get("step_id", "s1"))
+                        if compiled_steps and isinstance(compiled_steps[0], Mapping)
+                        else "s1"
+                    )
+                    dispatch_control = {
+                        **result.control_command,
+                        # The ManeuverFSM owns the original command lifecycle.
+                        # D executes plan steps under internal IDs so a quick
+                        # SLOW_DOWN/KEEP_LANE step cannot falsely terminate the
+                        # complete multi-step user command.
+                        "command_id": f"qwen-step-{result.command_id}-{first_step_id}",
+                    }
                 runtime_envelope = control_command_to_voice_envelope(
-                    result.control_command,
+                    dispatch_control,
                     source_text=source_text,
                 )
+                if result.compiled_plan is not None:
+                    execution_ttl_s = 1.0 + sum(
+                        float(step.get("timeout_s", 0.0))
+                        for step in result.compiled_plan.get("steps", ())
+                        if isinstance(step, Mapping)
+                    )
+                    runtime_envelope = {
+                        **runtime_envelope,
+                        "valid_duration_s": max(
+                            float(runtime_envelope["valid_duration_s"]),
+                            execution_ttl_s,
+                        ),
+                    }
             except (KeyError, TypeError, ValueError) as error:
                 feedback = self._feedback(
                     result.command_id, captured, "REJECTED",
@@ -200,6 +232,7 @@ class CanonicalRuntimeBridge:
                 )
                 resolutions.append(CanonicalResolution(
                     result.command_id, "REJECTED", None, None, (feedback,), vehicle_feedback,
+                    result,
                 ))
                 continue
 
@@ -215,13 +248,13 @@ class CanonicalRuntimeBridge:
                 )
                 resolutions.append(CanonicalResolution(
                     result.command_id, "REJECTED", runtime_envelope, adapted,
-                    (feedback,), vehicle_feedback,
+                    (feedback,), vehicle_feedback, result,
                 ))
                 continue
             feedbacks = () if result.feedback is None else (result.feedback,)
             resolutions.append(CanonicalResolution(
                 result.command_id, result.disposition, runtime_envelope, adapted,
-                feedbacks, None,
+                feedbacks, None, result,
             ))
         return tuple(resolutions)
 

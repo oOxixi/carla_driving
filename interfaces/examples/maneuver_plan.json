@@ -1,0 +1,61 @@
+{
+  "schema_version": "2.0",
+  "request_id": "qwen-plan-0001",
+  "command_id": "voice-complex-0001",
+  "plan_id": "plan-0001",
+  "plan_type": "MANEUVER_SEQUENCE",
+  "steps": [
+    {
+      "step_id": "s1",
+      "behavior": "SLOW_DOWN",
+      "target": {
+        "target_id": null,
+        "target_lane": "CURRENT",
+        "target_speed_mps": 3.0,
+        "time_gap_s": null,
+        "route_direction": null
+      },
+      "preconditions": ["PERCEPTION_FRESH", "NO_EMERGENCY_RISK"],
+      "completion": {
+        "type": "SPEED_BELOW",
+        "value": 3.3,
+        "lane": null,
+        "hold_frames": 5
+      },
+      "timeout_s": 5.0,
+      "on_failure": "SAFE_STOP"
+    },
+    {
+      "step_id": "s2",
+      "behavior": "CHANGE_LANE_LEFT",
+      "target": {
+        "target_id": null,
+        "target_lane": "LEFT_ADJACENT",
+        "target_speed_mps": 3.0,
+        "time_gap_s": null,
+        "route_direction": null
+      },
+      "preconditions": [
+        "PERCEPTION_FRESH", "LEFT_LANE_EXISTS", "LEFT_GAP_SAFE",
+        "NO_EMERGENCY_RISK"
+      ],
+      "completion": {
+        "type": "LANE_CENTERED",
+        "value": null,
+        "lane": "LEFT_ADJACENT",
+        "hold_frames": 10
+      },
+      "timeout_s": 12.0,
+      "on_failure": "HOLD_CURRENT_LANE"
+    }
+  ],
+  "replan_conditions": [
+    "LANE_BLOCKED", "NEW_EMERGENCY_OBJECT", "PROGRESS_STALLED"
+  ],
+  "confidence": 0.92,
+  "requires_confirmation": false,
+  "created_at_ns": 1200000000,
+  "valid_until_ns": 12000000000,
+  "reason_code": "MULTI_STEP_LANE_MANEUVER",
+  "model_id": "Qwen2.5-VL-7B-Instruct"
+}

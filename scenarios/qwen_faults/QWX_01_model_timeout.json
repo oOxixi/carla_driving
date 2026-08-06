@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "QWX_01_model_timeout",
+  "category": "qwen_faults",
+  "official_level": "challenge",
+  "description": "Planner 超时必须安全等待且只产生一个 TIMED_OUT 终态。",
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 4301,
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 20},
+  "ego_spawn": {"x": 0, "y": 0, "z": 0.5, "yaw_deg": 0},
+  "route": {"coordinate_type": "scenario_local_xy_m", "points_xy_m": [[0, 0], [30, 0], [60, 0]], "resample_interval_m": 1.0, "finish_radius_m": 3.0},
+  "commands": [{"time_s": 1, "source_text": "前方路口右转后保持十五公里每小时", "intent": "TURN", "parameters": {"direction": "RIGHT"}, "intent_confidence": 0.96, "status": "valid", "confirm_required": false}],
+  "actors": [],
+  "qwen_fault": {"type": "TIMEOUT", "delay_ms": 6000},
+  "qwen_expected": {"route": "QWEN_PLAN", "min_calls": 1, "max_calls": 1, "expected_behaviors": ["HOLD"], "expected_terminal": "TIMED_OUT", "allowed_replans": 0, "forbidden_low_level_fields": true},
+  "expected": {"must_no_collision": true}
+}

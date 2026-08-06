@@ -66,6 +66,8 @@ class ScenarioSpec:
     commands: tuple[ScheduledCommand, ...]
     actors: tuple[dict[str, object], ...]
     sensors: dict[str, object]
+    qwen_fault: dict[str, object] | None
+    qwen_expected: dict[str, object] | None
     expected: dict[str, object]
 
     @classmethod
@@ -134,11 +136,17 @@ class ScenarioSpec:
         )
         actors = data.get("actors", [])
         sensors = data.get("sensors", {})
+        qwen_fault = data.get("qwen_fault")
+        qwen_expected = data.get("qwen_expected")
         expected = data.get("expected", {})
         if type(actors) is not list or any(type(item) is not dict for item in actors):
             raise TypeError("actors must be a list of objects")
         if type(sensors) is not dict or type(expected) is not dict:
             raise TypeError("sensors and expected must be objects")
+        if qwen_fault is not None and type(qwen_fault) is not dict:
+            raise TypeError("qwen_fault must be an object when provided")
+        if qwen_expected is not None and type(qwen_expected) is not dict:
+            raise TypeError("qwen_expected must be an object when provided")
 
         return cls(
             source_path=source,
@@ -166,6 +174,8 @@ class ScenarioSpec:
             commands=commands,
             actors=tuple(dict(item) for item in actors),
             sensors=dict(sensors),
+            qwen_fault=(None if qwen_fault is None else dict(qwen_fault)),
+            qwen_expected=(None if qwen_expected is None else dict(qwen_expected)),
             expected=dict(expected),
         )
 
@@ -272,6 +282,7 @@ def resolve_scenario_command(
     *,
     requested_speed_mps: float,
     relative_speed_step_mps: float = DEFAULT_RELATIVE_SPEED_STEP_MPS,
+    preserve_high_level: bool = False,
 ) -> dict[str, object]:
     """Resolve trusted scenario shorthand into a concrete runtime command.
 
@@ -280,6 +291,8 @@ def resolve_scenario_command(
     """
     current_speed = _finite_number(requested_speed_mps, "requested_speed_mps", minimum=0.0)
     step = _finite_number(relative_speed_step_mps, "relative_speed_step_mps", minimum=0.001)
+    if type(preserve_high_level) is not bool:
+        raise TypeError("preserve_high_level must be bool")
     resolved = dict(envelope)
     intent = str(resolved.get("intent", "")).upper()
     parameters = resolved.get("parameters", {})
@@ -291,7 +304,7 @@ def resolve_scenario_command(
         target_speed_mps = max(0.0, current_speed - step)
     elif intent == "SPEED_UP":
         target_speed_mps = current_speed + step
-    elif intent in ROUTE_FOLLOWING_INTENTS:
+    elif intent in ROUTE_FOLLOWING_INTENTS and not preserve_high_level:
         if "target_speed_mps" in parameters:
             target_speed_mps = _finite_number(
                 parameters["target_speed_mps"], "target_speed_mps", minimum=0.0,
