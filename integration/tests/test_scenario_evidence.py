@@ -84,6 +84,24 @@ def test_unified_evidence_is_auditable_and_scored(tmp_path):
     assert path.with_suffix(".summary.json").is_file()
 
 
+def test_qwen_trajectory_records_official_end_to_end_boundary(tmp_path):
+    path = tmp_path / "qwen-e2e.jsonl"
+    recorder = ScenarioEvidenceRecorder(path)
+    recorder.start_run(scenario_id="ACC_A01")
+    recorder.record_qwen_trajectory(
+        command_id="cmd-1", request_id="req-1",
+        sensor_ready_ns=1_000_000_000,
+        model_completed_ns=1_080_000_000,
+        trajectory_ready_ns=1_095_000_000,
+    )
+    summary = recorder.complete(completion=True)
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    trajectory = next(row for row in rows if row["record_type"] == "qwen_trajectory")
+    assert trajectory["latency"]["model_ms"] == 80.0
+    assert trajectory["latency"]["sensor_to_trajectory_ms"] == 95.0
+    assert summary["latency"]["sensor_to_trajectory_p95_ms"] == 95.0
+
+
 def test_collision_and_override_are_counted_as_episodes(tmp_path):
     recorder = ScenarioEvidenceRecorder(tmp_path / "follow.jsonl")
     recorder.start_run(scenario_id="S06")

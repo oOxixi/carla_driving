@@ -31,6 +31,7 @@ class DetectedObject:
     confidence: float
     bbox_xyxy_norm: tuple[float, float, float, float]
     distance_m: float | None = None
+    track_id: str | None = None
 
     def __post_init__(self) -> None:
         if type(self.class_id) is not int or self.class_id < 0:
@@ -57,6 +58,8 @@ class DetectedObject:
         if distance is not None and distance < 0.0:
             raise ValueError("distance_m must be non-negative")
         object.__setattr__(self, "distance_m", distance)
+        if self.track_id is not None and (type(self.track_id) is not str or not self.track_id):
+            raise ValueError("track_id must be a non-empty string or None")
 
 
 @dataclass(frozen=True, slots=True)

@@ -523,6 +523,95 @@ def _world_vehicle_detections(
     return tuple(item for _distance, item in detections)
 
 
+def _bind_scenario_actor_ids(
+    scene: PerceptionFrame,
+    ego: Any,
+    actors: Sequence[tuple[Any, Mapping[str, object]]],
+) -> PerceptionFrame:
+    """Attach stable scenario IDs to sensor detections by nearest range.
+
+    CARLA RGB/LiDAR fusion currently has no persistent tracker.  The
+    acceptance actors do have stable IDs, so a deterministic nearest-range
+    association supplies the provenance needed to audit target binding while
+    leaving unmatched road users on legacy tracker IDs.
+    """
+    if not scene.detected_objects or not actors:
+        return scene
+    ego_transform = ego.get_transform()
+    origin = ego_transform.location
+    forward = ego_transform.get_forward_vector()
+    candidates: list[tuple[float, float, str, str]] = []
+    for actor, actor_spec in actors:
+        if not getattr(actor, "is_alive", False):
+            continue
+        actor_id = str(actor_spec.get("actor_id", ""))
+        if not actor_id:
+            continue
+        actor_type = str(actor_spec.get("type", "")).lower()
+        if actor_type == "vehicle":
+            family = "vehicle"
+        elif "walker" in actor_type or "pedestrian" in actor_type:
+            family = "pedestrian"
+        else:
+            family = "obstacle"
+        actor_location = actor.get_location()
+        dx = float(actor_location.x) - float(origin.x)
+        dy = float(actor_location.y) - float(origin.y)
+        longitudinal = dx * float(forward.x) + dy * float(forward.y)
+        if longitudinal <= 0.0:
+            continue
+        lateral = -dx * float(forward.y) + dy * float(forward.x)
+        image_center_x = 0.5 + math.atan2(lateral, longitudinal) / math.radians(90.0)
+        if not 0.0 <= image_center_x <= 1.0:
+            continue
+        candidates.append((
+            float(origin.distance(actor_location)), image_center_x, actor_id, family,
+        ))
+    if not candidates:
+        return scene
+    used: set[str] = set()
+    bound: list[DetectedObject] = []
+    for detection in scene.detected_objects:
+        detected_class = str(detection.class_name).lower()
+        family = (
+            "vehicle" if detected_class in {"car", "truck", "bus", "vehicle"}
+            else "pedestrian" if detected_class in {"person", "pedestrian"}
+            else "obstacle" if detected_class == "obstacle"
+            else "unknown"
+        )
+        choices = [
+            item for item in candidates
+            if item[2] not in used and (item[3] == family or family == "unknown")
+        ]
+        if not choices:
+            bound.append(detection)
+            continue
+        x1, _y1, x2, _y2 = detection.bbox_xyxy_norm
+        detection_center_x = (x1 + x2) / 2.0
+        distance_scale = max(4.0, float(detection.distance_m or 20.0))
+        distance, projected_x, actor_id, _family = min(
+            choices,
+            key=lambda item: (
+                abs(item[1] - detection_center_x)
+                + (
+                    0.5 * abs(item[0] - float(detection.distance_m)) / distance_scale
+                    if detection.distance_m is not None else 0.0
+                )
+            ),
+        )
+        tolerance_m = max(3.0, min(8.0, distance * 0.20))
+        distance_mismatch = (
+            detection.distance_m is not None
+            and abs(distance - float(detection.distance_m)) > tolerance_m
+        )
+        if distance_mismatch or abs(projected_x - detection_center_x) > 0.25:
+            bound.append(detection)
+            continue
+        used.add(actor_id)
+        bound.append(replace(detection, track_id=actor_id))
+    return replace(scene, detected_objects=tuple(bound))
+
+
 def _spawn_static_lead(session: CarlaSession, world: Any, world_map: Any, ego: Any, blueprint: Any,
                        distance_m: float) -> Any:
     """Spawn a deterministic stationary lead vehicle in ego's current lane."""
@@ -2358,12 +2447,14 @@ def run(args: argparse.Namespace) -> None:
                 sensor_startup_grace = False
                 qwen_rgb_measurement: Any | None = None
                 current_rgb: Any | None = None
+                sensor_ready_ns: int | None = None
                 perception_start_ns = time.monotonic_ns()
                 try:
                     if perception_bridge is not None:
                         sample = perception_bridge.acquire(
                             frame, state.sim_time_s, route=route, timeout_s=args.sensor_timeout_s,
                         )
+                        sensor_ready_ns = sample.sensor_ready_ns
                         scene = sample.frame
                         qwen_rgb_measurement = sample.rgb
                         current_rgb = sample.rgb
@@ -2410,6 +2501,7 @@ def run(args: argparse.Namespace) -> None:
                             ),
                             events=world_events,
                         )
+                        sensor_ready_ns = time.monotonic_ns()
                         if args.perception_mode == "virtual":
                             scene = _apply_virtual_scenario(scene, ego, origin, args)
                             perception_sources["scenario"] = "VIRTUAL_ACCEPTANCE_TRUTH"
@@ -2464,6 +2556,7 @@ def run(args: argparse.Namespace) -> None:
                     watchdog.heartbeat("perception", now_s=time.monotonic())
                 except PerceptionAcquisitionError as error:
                     scene = PerceptionFrame(frame, state.sim_time_s)
+                    sensor_ready_ns = time.monotonic_ns()
                     perception_sources = {"failure": type(error).__name__}
                     sensor_startup_grace = step_index < args.sensor_startup_grace_frames
                     if not sensor_startup_grace:
@@ -2598,7 +2691,18 @@ def run(args: argparse.Namespace) -> None:
                                     flush=True,
                                 )
                     perception_sources["qwen_status"] = qwen_status
-                sensor_ready_ns = time.monotonic_ns()
+                if spec is not None:
+                    scene = _bind_scenario_actor_ids(
+                        scene,
+                        ego,
+                        tuple(scenario_vehicles)
+                        + tuple((actor, actor_spec) for actor, actor_spec, _target in scenario_walkers)
+                        + tuple(scenario_props),
+                    )
+                    if any(item.track_id for item in scene.detected_objects):
+                        perception_sources["target_ids"] = "CARLA_SCENARIO_TRACK_ASSOCIATION"
+                if sensor_ready_ns is None:
+                    raise RuntimeError("sensor-ready timestamp was not captured")
                 if canonical_bridge is not None:
                     canonical_mode = (
                         "sensor_failure" if "failure" in perception_sources
@@ -2612,6 +2716,7 @@ def run(args: argparse.Namespace) -> None:
                         canonical_mode = "sensors_radar"
                     queued_now = tuple(deferred_commands)
                     deferred_commands.clear()
+                    slow_submitted_now = False
                     for deferred in queued_now:
                         rgb_ref = None
                         staged_command_id = str(
@@ -2628,10 +2733,14 @@ def run(args: argparse.Namespace) -> None:
                             sim_time_s=state.sim_time_s,
                             perception_mode=canonical_mode,
                             received_at_ns=deferred.received_ns,
+                            captured_at_ns=sensor_ready_ns,
                             rgb_ref=rgb_ref,
                             runtime_state=_planner_runtime_state(
                                 world_map, ego, scene, route,
                             ),
+                        )
+                        slow_submitted_now = slow_submitted_now or (
+                            submission.orchestration.disposition == "SLOW_PENDING"
                         )
                         if extension_runtime is not None:
                             extension_runtime.note_command_submitted(
@@ -2757,6 +2866,9 @@ def run(args: argparse.Namespace) -> None:
                         sim_time_s=state.sim_time_s,
                         perception_mode=canonical_mode,
                         captured_at_ns=sensor_ready_ns,
+                        wait_timeout_ms=(
+                            args.qwen_timeout_ms if slow_submitted_now else 0.0
+                        ),
                     )
                     for resolution in resolutions:
                         if qwen_image_stager is not None:
@@ -2871,6 +2983,19 @@ def run(args: argparse.Namespace) -> None:
                                     )
                                     if first_route_step is not None:
                                         maneuver_route_steps_applied.add(first_route_step)
+                                trajectory_ready_ns = time.monotonic_ns()
+                                if (
+                                    recorder is not None
+                                    and orchestration.model_request is not None
+                                    and orchestration.model_completed_ns is not None
+                                ):
+                                    recorder.record_qwen_trajectory(
+                                        command_id=resolution.command_id,
+                                        request_id=str(orchestration.model_request["request_id"]),
+                                        sensor_ready_ns=int(orchestration.model_request["created_at_ns"]),
+                                        model_completed_ns=orchestration.model_completed_ns,
+                                        trajectory_ready_ns=trajectory_ready_ns,
+                                    )
                                 print(json.dumps({
                                     "record_type": "qwen_plan_route_applied",
                                     "command_id": resolution.command_id,
@@ -2880,6 +3005,10 @@ def run(args: argparse.Namespace) -> None:
                                     "compiled_steps": len(
                                         orchestration.compiled_plan.get("steps", ())
                                     ),
+                                    "sensor_to_trajectory_ms": (
+                                        trajectory_ready_ns
+                                        - int(orchestration.model_request["created_at_ns"])
+                                    ) / 1e6,
                                 }, ensure_ascii=False), flush=True)
                             except (AttributeError, KeyError, TypeError, ValueError, RuntimeError) as error:
                                 watchdog_alerts.append("QWEN_PLAN_ROUTE_INFEASIBLE")

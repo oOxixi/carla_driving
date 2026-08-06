@@ -9,6 +9,7 @@ from .service import (
     QwenServiceConfig,
     ServiceFailure,
     UnavailableBackend,
+    VllmQwenPlannerBackend,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "QwenServiceConfig",
     "ServiceFailure",
     "UnavailableBackend",
+    "VllmQwenPlannerBackend",
 ]

@@ -118,7 +118,7 @@ def perception_frame_to_state(
             # The legacy bridge has no tracker-owned ID.  A class/index key is
             # at least stable across adjacent low-frequency detector frames;
             # never embed frame_id, which would guarantee Qwen target expiry.
-            "track_id": f"legacy-{class_name}-{index:03d}",
+            "track_id": item.track_id or f"legacy-{class_name}-{index:03d}",
             "class": class_name,
             "position_m": [distance, lateral, 0.0],
             "velocity_mps": [velocity_x, 0.0, 0.0],

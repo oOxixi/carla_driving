@@ -181,6 +181,8 @@ class ScenarioEvidenceRecorder:
         self._last_route_deviation = False
         self._frame_decision_ms: list[float] = []
         self._frame_sensor_to_control_ms: list[float] = []
+        self._qwen_sensor_to_trajectory_ms: list[float] = []
+        self._qwen_model_ms: list[float] = []
         self._frame_simulator_tick_ms: list[float] = []
         self._frame_perception_acquire_ms: list[float] = []
         self._frame_pipeline_active_ms: list[float] = []
@@ -287,6 +289,39 @@ class ScenarioEvidenceRecorder:
             runtime_command=_jsonable(runtime_command),
             trace=_jsonable(trace),
             error=error,
+        )
+
+    def record_qwen_trajectory(
+        self,
+        *,
+        command_id: str,
+        request_id: str,
+        sensor_ready_ns: int,
+        model_completed_ns: int,
+        trajectory_ready_ns: int,
+    ) -> None:
+        """Record the official sensor-ready to valid-trajectory boundary."""
+        self._ensure_active()
+        if not command_id or not request_id:
+            raise ValueError("command_id and request_id must be non-empty")
+        stamps = (sensor_ready_ns, model_completed_ns, trajectory_ready_ns)
+        if any(type(value) is not int or value < 0 for value in stamps):
+            raise ValueError("Qwen trajectory timestamps must be non-negative integers")
+        if not sensor_ready_ns <= model_completed_ns <= trajectory_ready_ns:
+            raise ValueError("Qwen trajectory timestamps must be monotonic")
+        model_ms = (model_completed_ns - sensor_ready_ns) / 1e6
+        end_to_end_ms = (trajectory_ready_ns - sensor_ready_ns) / 1e6
+        self._qwen_model_ms.append(model_ms)
+        self._qwen_sensor_to_trajectory_ms.append(end_to_end_ms)
+        self._write(
+            "qwen_trajectory", command_id=command_id, request_id=request_id,
+            latency={
+                "sensor_ready_ns": sensor_ready_ns,
+                "model_completed_ns": model_completed_ns,
+                "trajectory_ready_ns": trajectory_ready_ns,
+                "model_ms": model_ms,
+                "sensor_to_trajectory_ms": end_to_end_ms,
+            },
         )
 
     def record_frame(self, *, vehicle: object, scene: object, raw_control: object,
@@ -556,6 +591,12 @@ class ScenarioEvidenceRecorder:
                 "sensor_to_control_p95_ms": self._percentile(self._frame_sensor_to_control_ms, 0.95),
                 "sensor_to_control_p99_ms": self._percentile(self._frame_sensor_to_control_ms, 0.99),
                 "sensor_to_control_max_ms": max(self._frame_sensor_to_control_ms, default=None),
+                "qwen_model_avg_ms": self._average(self._qwen_model_ms),
+                "qwen_model_p95_ms": self._percentile(self._qwen_model_ms, 0.95),
+                "sensor_to_trajectory_avg_ms": self._average(self._qwen_sensor_to_trajectory_ms),
+                "sensor_to_trajectory_p95_ms": self._percentile(self._qwen_sensor_to_trajectory_ms, 0.95),
+                "sensor_to_trajectory_p99_ms": self._percentile(self._qwen_sensor_to_trajectory_ms, 0.99),
+                "sensor_to_trajectory_max_ms": max(self._qwen_sensor_to_trajectory_ms, default=None),
             },
         }
         if self._acceptance_report is not None:

@@ -16,6 +16,7 @@ from qwen_service import (
     QwenServiceConfig,
     ServiceFailure,
     UnavailableBackend,
+    VllmQwenPlannerBackend,
 )
 
 
@@ -229,3 +230,70 @@ def test_planner_v2_stub_grounds_avoid_and_return_in_sensor_target():
         assert plan["steps"][0]["target"]["target_lane"] == "LEFT_ADJACENT"
     finally:
         service.close()
+
+
+def test_vllm_prompt_does_not_leak_hint_and_is_bounded() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "follow the vehicle directly ahead " * 100
+    request["command_hint"] = {"intent": "KEEP_LANE", "target_speed_mps": 9.0}
+    request["targets"] = [
+        {"target_id": f"target-{index}", "class": "vehicle", "distance_m": 10 + index,
+         "relative_speed_mps": 0.0, "confidence": 0.9, "relation": "center_ahead"}
+        for index in range(20)
+    ]
+    request["scene_capabilities"] = {"left_lane_exists": True, "right_lane_exists": True}
+    prompt = backend._choice_prompt(request)
+    assert '"hint"' not in prompt
+    assert "KEEP_LANE\",\"target_speed_mps" not in prompt
+    assert len(prompt) < 3000
+
+
+def test_vllm_follow_binds_center_ahead_not_nearest_distractor() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "跟随正前方同车道车辆，不要跟左右车辆"
+    request["scene_capabilities"] = {}
+    request["targets"] = [
+        {"target_id": "left-distractor", "distance_m": 10.0, "relation": "left_ahead"},
+        {"target_id": "lead-target", "distance_m": 20.0, "relation": "center_ahead"},
+    ]
+    step = backend._step(request, "FOLLOW", index=1)
+    assert step["target"]["target_id"] == "lead-target"
+    assert step["completion"]["type"] == "TARGET_GAP_REACHED"
+    assert step["completion"]["value"] == 2.0
+
+
+def test_vllm_keep_lane_without_speed_has_valid_hold_completion() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["scene_capabilities"] = {}
+    request["command_hint"] = {"intent": "KEEP_LANE", "target_speed_mps": None}
+    step = backend._step(request, "KEEP_LANE", index=1)
+    assert step["completion"]["type"] == "HOLD_FRAMES"
+    assert step["completion"]["value"] is None
+
+
+def test_vllm_ambiguous_route_is_forced_to_hold_after_model_choice() -> None:
+    class _Completions:
+        @staticmethod
+        def create(**_kwargs):
+            message = type("Message", (), {"content": "G"})()
+            return type("Response", (), {"choices": [type("Choice", (), {"message": message})()]})()
+
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    backend._client = type("Client", (), {
+        "chat": type("Chat", (), {"completions": _Completions()})(),
+    })()
+    backend.model_id = "test"
+    backend.image_root = None
+    backend.max_new_tokens = 1
+    request = _request()
+    request["rgb_ref"] = None
+    request["routing"] = {
+        "disposition": "CONFIRM_SAFE", "score": 9,
+        "reasons": ["CONFIRMATION_REQUIRED"], "safe_wait_behavior": "STOP",
+    }
+    request["scene_capabilities"] = {}
+    plan = backend.infer(request)
+    assert plan["steps"][0]["behavior"] == "HOLD"

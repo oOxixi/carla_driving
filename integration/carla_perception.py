@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 import math
 import threading
+import time
 from types import MappingProxyType
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
@@ -233,6 +234,7 @@ class PerceptionSample:
     """Controller frame plus auditable provenance and aligned raw payloads."""
 
     frame: PerceptionFrame
+    sensor_ready_ns: int
     source_by_field: Mapping[str, str]
     rgb: Any
     lidar: Any
@@ -606,6 +608,11 @@ class CarlaPerceptionBridge:
                 raise FrameAlignmentError(
                     f"{sensor_id} payload frame={payload_frame!r}, expected frame={frame}"
                 )
+        # Official end-to-end latency starts when all available modalities for
+        # this frame have been received and frame-aligned.  Keep the timestamp
+        # here so detector/fusion/model/trajectory work cannot be omitted by a
+        # later caller-side timestamp.
+        sensor_ready_ns = time.monotonic_ns()
 
         sources: dict[str, str] = {}
         detected_objects = ()
@@ -772,5 +779,6 @@ class CarlaPerceptionBridge:
             detected_objects=detected_objects,
         )
         return PerceptionSample(
-            perception, MappingProxyType(sources), rgb, lidar, radar, safety_summary,
+            perception, sensor_ready_ns, MappingProxyType(sources),
+            rgb, lidar, radar, safety_summary,
         )

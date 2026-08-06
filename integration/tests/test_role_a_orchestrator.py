@@ -99,6 +99,70 @@ def test_slow_path_is_async_and_validates_matching_target() -> None:
     assert ready[0].control_command["target"]["target_id"] == "vehicle-0001"
 
 
+def test_completed_slow_result_uses_completion_time_not_late_poll_time() -> None:
+    state, clock = _clock(1_100_000_000)
+    command = _example("driving_command")
+    command.update({"command_id": "completed", "intent": "FOLLOW"})
+    command["parameters"] = {"target_id": "vehicle-0001"}
+    scene = _example("perception_state")
+    finished = threading.Event()
+
+    def infer(request):
+        state["now"] = 1_180_000_000
+        finished.set()
+        return {
+            "schema_version": "1.0", "request_id": request["request_id"],
+            "command_id": request["command_id"], "intent": "FOLLOW",
+            "target_id": "vehicle-0001", "behavior": "FOLLOW",
+            "parameters": {"target_speed_mps": 4.0, "time_gap_s": 2.0},
+            "confidence": 0.95, "reason_code": "TEST",
+            "created_at_ns": request["created_at_ns"] + 1,
+            "valid_until_ns": request["deadline_ns"],
+            "requires_confirmation": False, "model_id": "test-backend",
+        }
+
+    with PipelineOrchestrator(infer=infer, clock_ns=clock) as runtime:
+        runtime.submit_command(command, scene, now_ns=1_100_000_000)
+        assert finished.wait(0.5)
+        deadline = time.monotonic() + 0.5
+        while runtime._result_queue.empty() and time.monotonic() < deadline:
+            time.sleep(0.001)
+        assert not runtime._result_queue.empty()
+        state["now"] = 1_500_000_000
+        result = runtime.poll_slow(now_ns=1_500_000_000)
+
+    assert len(result) == 1
+    assert result[0].disposition == "SLOW_READY"
+    assert result[0].model_completed_ns == 1_180_000_000
+
+
+def test_poll_slow_can_wait_for_same_frame_result() -> None:
+    command = _example("driving_command")
+    command.update({"command_id": "wait", "intent": "FOLLOW"})
+    command["parameters"] = {"target_id": "vehicle-0001"}
+    scene = _example("perception_state")
+
+    def infer(request):
+        time.sleep(0.01)
+        return {
+            "schema_version": "1.0", "request_id": request["request_id"],
+            "command_id": request["command_id"], "intent": "FOLLOW",
+            "target_id": "vehicle-0001", "behavior": "FOLLOW",
+            "parameters": {"target_speed_mps": 4.0, "time_gap_s": 2.0},
+            "confidence": 0.95, "reason_code": "TEST",
+            "created_at_ns": request["created_at_ns"] + 1,
+            "valid_until_ns": request["deadline_ns"],
+            "requires_confirmation": False, "model_id": "test-backend",
+        }
+
+    with PipelineOrchestrator(infer=infer) as runtime:
+        runtime.submit_command(command, scene, now_ns=1_100_000_000)
+        result = runtime.poll_slow(now_ns=1_100_000_000, wait_timeout_ms=100.0)
+
+    assert len(result) == 1
+    assert result[0].disposition == "SLOW_READY"
+
+
 def test_qwen_timeout_does_not_block_caller() -> None:
     release = threading.Event()
     command = _example("driving_command")

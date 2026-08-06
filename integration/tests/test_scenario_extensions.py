@@ -59,3 +59,26 @@ def test_qwen_faults_are_separated_from_sensor_faults():
         ],
     })
     assert [item["fault_id"] for item in runtime.qwen_faults] == ["q"]
+
+
+def test_qwen_plan_collects_schema_v2_target_id() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_qwen_plan({
+        "steps": [{"behavior": "FOLLOW", "target": {"target_id": "lead-target"}}],
+    })
+    assert runtime.evidence()["qwen_target_actor_ids"] == ["lead-target"]
+
+
+def test_speed_overshoot_is_measured_from_submitted_target() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_command_submitted({
+        "command_id": "speed", "parameters": {"speed": 20, "unit": "km/h"},
+    }, qwen=True)
+    runtime.update_frame(
+        elapsed_s=1.0, route_progress_m=1.0, ego_speed_mps=5.8,
+        ego_standstill_duration_s=0.0, actor_distances_m={},
+        traffic_light_state="UNKNOWN", distance_to_stop_line_m=None, lane_id="1",
+    )
+    result = runtime.evaluate({"max_speed_overshoot_kph": 2.0}, expected_command_count=1)
+    assert result["passed"] is True
+    assert abs(result["checks"][0]["actual"] - 0.88) < 1e-9

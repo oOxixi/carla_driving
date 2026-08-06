@@ -1,4 +1,4 @@
-"""A-owned non-blocking fast/slow router with strict deadlines and queues."""
+"""A-owned fast/slow router with strict deadlines and bounded queues."""
 
 from __future__ import annotations
 
@@ -107,6 +107,7 @@ class OrchestrationResult:
     qwen_mode: str = "atomic_v1"
     safe_wait_behavior: str = "STOP"
     compiled_plan: Mapping[str, Any] | None = None
+    model_completed_ns: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,11 +130,14 @@ class _SlowResult:
 
 
 class PipelineOrchestrator:
-    """Route commands without ever blocking a 20–50 Hz control thread.
+    """Route commands while model inference stays on a private slow worker.
 
     ``infer`` is deliberately a callback boundary. It may be an HTTP Qwen
     client or a local adapter, but it executes only on the private slow worker.
     A missing callback keeps the fast path available and rejects slow requests.
+    ``poll_slow`` is non-blocking by default; an explicit bounded wait is used
+    only on a newly submitted acceptance command to measure the same-frame
+    sensor-to-trajectory boundary.
     """
 
     def __init__(
@@ -264,7 +268,27 @@ class PipelineOrchestrator:
             **self._routing_fields(routing),
         )
 
-    def poll_slow(self, *, now_ns: int | None = None) -> tuple[OrchestrationResult, ...]:
+    def poll_slow(
+        self,
+        *,
+        now_ns: int | None = None,
+        wait_timeout_ms: float = 0.0,
+    ) -> tuple[OrchestrationResult, ...]:
+        if (
+            type(wait_timeout_ms) not in (int, float)
+            or isinstance(wait_timeout_ms, bool)
+            or not math.isfinite(float(wait_timeout_ms))
+            or wait_timeout_ms < 0
+        ):
+            raise ValueError("wait_timeout_ms must be finite and non-negative")
+        completed_results: list[_SlowResult] = []
+        if wait_timeout_ms > 0:
+            try:
+                completed_results.append(
+                    self._result_queue.get(timeout=float(wait_timeout_ms) / 1000.0),
+                )
+            except Empty:
+                pass
         now = self._now(now_ns)
         results: list[OrchestrationResult] = []
         active = self._active_snapshot()
@@ -285,10 +309,11 @@ class PipelineOrchestrator:
                     ))
         while True:
             try:
-                completed = self._result_queue.get_nowait()
+                completed_results.append(self._result_queue.get_nowait())
             except Empty:
                 break
-            consumed = self._consume_slow_result(completed, now)
+        for completed in completed_results:
+            consumed = self._consume_slow_result(completed)
             if consumed is not None:
                 results.append(consumed)
         return tuple(results)
@@ -395,50 +420,65 @@ class PipelineOrchestrator:
             # second terminal status.
             self._put_latest(self._result_queue, result, "qwen", count_overflow=False)
 
-    def _consume_slow_result(self, result: _SlowResult, now: int) -> OrchestrationResult | None:
+    def _consume_slow_result(self, result: _SlowResult) -> OrchestrationResult | None:
         request = result.job.request
         command_id = request["command_id"]
         request_id = request["request_id"]
+        # Requests may use a caller-supplied monotonic epoch (tests and remote
+        # adapters do this).  Translate the measured worker duration onto that
+        # epoch instead of comparing unrelated absolute clocks.
+        created_ns = int(request["created_at_ns"])
+        if abs(result.job.submitted_wall_ns - created_ns) <= 60_000_000_000:
+            # Production path: same monotonic epoch.  Keep the absolute worker
+            # completion time so image staging/queueing remains in E2E.
+            decision_ns = result.completed_wall_ns
+        else:
+            # Synthetic callers can supply another monotonic epoch.
+            decision_ns = created_ns + max(
+                0, result.completed_wall_ns - result.job.submitted_wall_ns,
+            )
         with self._lock:
             if request_id in self._revoked_request_ids:
                 self._revoked_request_ids.remove(request_id)
                 return None
         if result.status == "OVERFLOW":
             return self._feedback_result(
-                command_id, now, "REJECTED", "QUEUE_OVERFLOW",
+                command_id, decision_ns, "REJECTED", "QUEUE_OVERFLOW",
                 result.error or "queued Qwen request was superseded",
                 model_request=request, routing=result.job.routing,
+                model_completed_ns=decision_ns,
             )
         if result.status == "REJECTED":
             return self._feedback_result(
-                command_id, now, "REJECTED", "QWEN_PLAN_REJECTED",
+                command_id, decision_ns, "REJECTED", "QWEN_PLAN_REJECTED",
                 result.error or "Qwen plan failed the runtime trust boundary",
                 model_request=request, routing=result.job.routing,
+                model_completed_ns=decision_ns,
             )
         if result.status != "READY" or result.plan is None:
             return self._feedback_result(
-                command_id, now, "FAILED", "QWEN_ERROR",
+                command_id, decision_ns, "FAILED", "QWEN_ERROR",
                 result.error or "Qwen inference failed", model_request=request,
-                routing=result.job.routing,
+                routing=result.job.routing, model_completed_ns=decision_ns,
             )
         plan = result.plan
-        if now >= request["deadline_ns"] or now >= plan["valid_until_ns"]:
+        if decision_ns >= request["deadline_ns"] or decision_ns >= plan["valid_until_ns"]:
             return self._feedback_result(
-                command_id, now, "EXPIRED", "QWEN_STALE",
+                command_id, decision_ns, "EXPIRED", "QWEN_STALE",
                 "Qwen decision arrived after its validity boundary", model_request=request,
-                routing=result.job.routing,
+                routing=result.job.routing, model_completed_ns=decision_ns,
             )
         if plan["request_id"] != request["request_id"] or plan["command_id"] != command_id:
             return self._feedback_result(
-                command_id, now, "REJECTED", "QWEN_ID_MISMATCH",
+                command_id, decision_ns, "REJECTED", "QWEN_ID_MISMATCH",
                 "Qwen request_id/command_id mismatch", model_request=request,
-                routing=result.job.routing,
+                routing=result.job.routing, model_completed_ns=decision_ns,
             )
         if float(plan["confidence"]) < self.config.minimum_confidence or plan.get("requires_confirmation"):
             return self._feedback_result(
-                command_id, now, "REJECTED", "QWEN_LOW_CONFIDENCE",
+                command_id, decision_ns, "REJECTED", "QWEN_LOW_CONFIDENCE",
                 "Qwen plan requires confirmation or has low confidence", model_request=request,
-                routing=result.job.routing,
+                routing=result.job.routing, model_completed_ns=decision_ns,
             )
         target_id = plan.get("target_id")
         if self.config.qwen_mode == "planner_v2":
@@ -455,36 +495,39 @@ class PipelineOrchestrator:
             missing_targets = {target_id} - available if target_id is not None else set()
         if missing_targets:
             return self._feedback_result(
-                command_id, now, "REJECTED", "QWEN_TARGET_NOT_FOUND",
+                command_id, decision_ns, "REJECTED", "QWEN_TARGET_NOT_FOUND",
                 "Qwen target_id is absent from current PerceptionState", model_request=request,
-                routing=result.job.routing,
+                routing=result.job.routing, model_completed_ns=decision_ns,
             )
         if result.job.perception["stale"] or not result.job.perception["sync"]["within_tolerance"]:
             return self._feedback_result(
-                command_id, now, "REJECTED", "PERCEPTION_STALE",
+                command_id, decision_ns, "REJECTED", "PERCEPTION_STALE",
                 "slow plan cannot execute on stale or unsynchronized perception",
                 model_request=request, routing=result.job.routing,
+                model_completed_ns=decision_ns,
             )
         try:
             if self.config.qwen_mode == "planner_v2":
                 if result.compiled is None:
                     raise ValueError("planner_v2 result is missing compiled steps")
                 control = self._compiled_plan_control(
-                    plan, result.compiled, request, result.job.perception, now,
+                    plan, result.compiled, request, result.job.perception, decision_ns,
                 )
             else:
-                control = self._plan_control(plan, request, result.job.perception, now)
+                control = self._plan_control(plan, request, result.job.perception, decision_ns)
         except (ValueError, InterfaceValidationError, PlanValidationError) as error:
             return self._feedback_result(
-                command_id, now, "REJECTED", "QWEN_PLAN_INFEASIBLE", str(error),
+                command_id, decision_ns, "REJECTED", "QWEN_PLAN_INFEASIBLE", str(error),
                 model_request=request, routing=result.job.routing,
+                model_completed_ns=decision_ns,
             )
         return OrchestrationResult(
             "SLOW_READY", command_id, control_command=control, model_request=request,
             decision_plan=plan,
-            feedback=self._feedback(command_id, now, "EXECUTING", "validated Qwen plan dispatched", None),
+            feedback=self._feedback(command_id, decision_ns, "EXECUTING", "validated Qwen plan dispatched", None),
             reason_code=control["reason_code"], queues=self.queue_snapshot(),
             compiled_plan=(None if result.compiled is None else result.compiled.to_dict()),
+            model_completed_ns=decision_ns,
             **self._routing_fields(result.job.routing),
         )
 
@@ -728,11 +771,13 @@ class PipelineOrchestrator:
         model_request: Mapping[str, Any] | None = None,
         disposition: str = "REJECTED",
         routing: QwenRoutingDecision | None = None,
+        model_completed_ns: int | None = None,
     ) -> OrchestrationResult:
         return OrchestrationResult(
             disposition, command_id, model_request=model_request,
             feedback=self._feedback(command_id, now, status, detail, reason),
             reason_code=reason, queues=self.queue_snapshot(),
+            model_completed_ns=model_completed_ns,
             **({} if routing is None else self._routing_fields(routing)),
         )
 

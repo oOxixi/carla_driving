@@ -86,11 +86,13 @@ class CanonicalRuntimeBridge:
         sim_time_s: float,
         perception_mode: str,
         received_at_ns: int | None = None,
+        captured_at_ns: int | None = None,
         rgb_ref: str | None = None,
         runtime_state: Mapping[str, Any] | None = None,
     ) -> CanonicalSubmission:
         received = self._clock_ns() if received_at_ns is None else received_at_ns
-        state = self._publish_state(scene, vehicle, perception_mode, received)
+        captured = received if captured_at_ns is None else captured_at_ns
+        state = self._publish_state(scene, vehicle, perception_mode, captured)
         canonical = voice_envelope_to_driving_command(
             envelope,
             received_at_ns=received,
@@ -98,14 +100,15 @@ class CanonicalRuntimeBridge:
         )
         self._latest_command_id = canonical["command_id"]
 
-        if str(envelope.get("status", "valid")).lower() != "valid":
+        envelope_status = str(envelope.get("status", "valid")).lower()
+        if envelope_status not in {"valid", "ambiguous"}:
             result = self._rejection(
                 canonical["command_id"], received, "VOICE_INPUT_INVALID",
                 "voice envelope status is not valid",
             )
         else:
             result = self.orchestrator.submit_command(
-                canonical, state, now_ns=received, rgb_ref=rgb_ref,
+                canonical, state, now_ns=captured, rgb_ref=rgb_ref,
                 runtime_state=runtime_state,
             )
 
@@ -142,11 +145,14 @@ class CanonicalRuntimeBridge:
         sim_time_s: float,
         perception_mode: str,
         captured_at_ns: int | None = None,
+        wait_timeout_ms: float = 0.0,
     ) -> tuple[CanonicalResolution, ...]:
         captured = self._clock_ns() if captured_at_ns is None else captured_at_ns
         current_state = self._publish_state(scene, vehicle, perception_mode, captured)
         resolutions: list[CanonicalResolution] = []
-        for result in self.orchestrator.poll_slow(now_ns=captured):
+        for result in self.orchestrator.poll_slow(
+            now_ns=captured, wait_timeout_ms=wait_timeout_ms,
+        ):
             pending = self._pending.pop(result.command_id, None)
             if result.disposition != "SLOW_READY" or result.control_command is None:
                 vehicle_feedback = self._fail_wait_if_current(

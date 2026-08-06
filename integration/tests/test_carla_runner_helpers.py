@@ -12,6 +12,7 @@ from integration.carla_perception import EventLedger, PerceptionTimeoutError
 from integration.carla_runner import (
     _acceptance_lateral_controller,
     _apply_compiled_plan_route,
+    _bind_scenario_actor_ids,
     _load_command,
     _lead_vehicle_travel_m,
     _map_contract_name,
@@ -114,6 +115,48 @@ def test_maneuver_target_visibility_does_not_confuse_generic_lidar_obstacles() -
     assert not _maneuver_target_visible(
         vehicle_step, PerceptionFrame(2, 0.10, detected_objects=(generic,)),
     )
+
+
+def test_scenario_actor_binding_uses_image_position_when_only_one_range_is_known() -> None:
+    class Location:
+        def __init__(self, x, y):
+            self.x, self.y, self.z = x, y, 0.0
+
+        def distance(self, other):
+            return math.hypot(self.x - other.x, self.y - other.y)
+
+    class Transform:
+        location = Location(0.0, 0.0)
+
+        @staticmethod
+        def get_forward_vector():
+            return Namespace(x=1.0, y=0.0)
+
+    class Actor:
+        is_alive = True
+
+        def __init__(self, x, y):
+            self.location = Location(x, y)
+
+        def get_location(self):
+            return self.location
+
+    ego = Namespace(get_transform=lambda: Transform())
+    left = Actor(20.0, -6.0)
+    right = Actor(20.0, 6.0)
+    detections = (
+        DetectedObject(2, "car", 0.9, (0.20, 0.20, 0.40, 0.80), None),
+        DetectedObject(2, "car", 0.9, (0.60, 0.20, 0.80, 0.80), 20.9),
+    )
+    scene = PerceptionFrame(1, 0.05, detected_objects=detections)
+
+    bound = _bind_scenario_actor_ids(
+        scene, ego,
+        ((left, {"actor_id": "left-car", "type": "vehicle"}),
+         (right, {"actor_id": "right-car", "type": "vehicle"})),
+    )
+
+    assert [item.track_id for item in bound.detected_objects] == ["left-car", "right-car"]
 
 
 def test_scenario_facts_can_override_or_only_fill_missing_perception() -> None:

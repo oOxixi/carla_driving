@@ -50,6 +50,25 @@ def _voice(command_id: str, intent: str, *, text: str, parameters=None, confirm=
     }
 
 
+def test_ambiguous_voice_still_calls_qwen_for_safe_confirmation() -> None:
+    vehicle_runtime = _VehicleRuntime()
+    envelope = _voice("ambiguous", "SLOW_DOWN", text="handle it safely", confirm=True)
+    envelope["status"] = "ambiguous"
+    envelope["ambiguity_type"] = "ASR_DISAGREEMENT"
+    with PipelineOrchestrator(
+        infer=lambda request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as orchestrator:
+        bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
+        submitted = bridge.submit(
+            envelope, _scene(), SimpleNamespace(speed_mps=3.0),
+            sim_time_s=0.5, perception_mode="sensors",
+            received_at_ns=1_000_000_000,
+        )
+    assert submitted.orchestration.disposition == "SLOW_PENDING"
+    assert submitted.orchestration.model_request["routing"]["disposition"] == "CONFIRM_SAFE"
+
+
 def _scene(frame: int = 10, *, with_vehicle: bool = True) -> PerceptionFrame:
     objects = ()
     if with_vehicle:
@@ -79,6 +98,40 @@ def test_fast_command_is_validated_clamped_and_dispatched_without_qwen() -> None
     assert vehicle_runtime.submitted[-1]["parameters"] == {"speed": 8.0, "unit": "m/s"}
     assert vehicle_runtime.submitted[-1]["t_audio_start_ns"] == 1
     assert submitted.safety_envelope is None
+
+
+def test_perception_preserves_tracker_owned_actor_id() -> None:
+    scene = PerceptionFrame(
+        10, 0.5, lead_distance_m=12.0, lead_speed_mps=3.0,
+        detected_objects=(DetectedObject(
+            2, "car", 0.95, (0.4, 0.3, 0.6, 0.8), 12.0, "lead_001",
+        ),),
+    )
+    vehicle_runtime = _VehicleRuntime()
+    with PipelineOrchestrator() as orchestrator:
+        bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
+        submitted = bridge.submit(
+            _voice("speed-track", "SET_SPEED", text="set speed", parameters={"speed": 5, "unit": "m/s"}),
+            scene, SimpleNamespace(speed_mps=2.0), sim_time_s=0.5,
+            perception_mode="sensors", received_at_ns=1_000_000_000,
+        )
+    assert submitted.perception_state["objects"][0]["track_id"] == "lead_001"
+
+
+def test_submit_uses_sensor_ready_time_for_perception_and_model_request() -> None:
+    vehicle_runtime = _VehicleRuntime()
+    with PipelineOrchestrator(infer=lambda request: {}) as orchestrator:
+        bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
+        submitted = bridge.submit(
+            _voice("follow-clock", "FOLLOW_ROUTE", text="follow vehicle", confirm=True),
+            _scene(), SimpleNamespace(speed_mps=5.0), sim_time_s=0.5,
+            perception_mode="sensors", received_at_ns=1_000_000_000,
+            captured_at_ns=1_020_000_000,
+        )
+
+    assert submitted.canonical_command["received_at_ns"] == 1_000_000_000
+    assert submitted.perception_state["captured_at_ns"] == 1_020_000_000
+    assert submitted.orchestration.model_request["created_at_ns"] == 1_020_000_000
 
 
 def test_slow_qwen_path_holds_stop_without_blocking_then_dispatches_validated_plan() -> None:

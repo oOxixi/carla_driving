@@ -390,7 +390,9 @@ class VllmQwenPlannerBackend:
         # One constrained semantic token keeps the model inside the 150 ms
         # budget; strict ManeuverPlan JSON is assembled deterministically.
         self.max_new_tokens = 1
-        self.image_max_side = int(image_max_side)
+        if int(image_max_side) != 224:
+            raise ValueError("planner_v2 fixes images at 224x224 (64 visual tokens)")
+        self.image_max_side = 224
         self.jpeg_quality = int(jpeg_quality)
 
     def health(self) -> tuple[bool, str]:
@@ -423,6 +425,9 @@ class VllmQwenPlannerBackend:
         if raw not in self._CHOICES:
             raise ValueError(f"vLLM returned invalid constrained planner choice: {raw!r}")
         behavior = self._CHOICES[raw]
+        routing = request.get("routing", {})
+        if isinstance(routing, Mapping) and routing.get("disposition") == "CONFIRM_SAFE":
+            behavior = "HOLD"
         constraints = request["constraints"]
         if constraints["must_stop"]:
             behavior = "STOP"
@@ -450,13 +455,38 @@ class VllmQwenPlannerBackend:
         }
 
     def _choice_prompt(self, request: Mapping[str, Any]) -> str:
+        source_text = str(request["source_text"])[:320]
+        scene = request["scene_summary"]
+        compact_scene = {
+            key: scene[key]
+            for key in ("traffic_light", "risk_level", "min_gap_m", "ttc_s")
+            if key in scene
+        }
+        compact_targets = [
+            {
+                key: target[key]
+                for key in ("target_id", "class", "distance_m", "relative_speed_mps", "relation")
+                if key in target
+            }
+            for target in list(request.get("targets", ()))[:8]
+            if isinstance(target, Mapping)
+        ]
+        lanes = request.get("scene_capabilities", {})
+        compact_lanes = {
+            key: lanes[key]
+            for key in (
+                "left_lane_exists", "right_lane_exists", "left_gap_safe",
+                "right_gap_safe", "available_lanes", "return_direction",
+            )
+            if isinstance(lanes, Mapping) and key in lanes
+        }
         compact = {
-            "command": request["source_text"],
-            "hint": request.get("command_hint"),
-            "scene": request["scene_summary"],
-            "targets": request["targets"],
+            "command": source_text,
+            "scene": compact_scene,
+            "targets": compact_targets,
             "constraints": request["constraints"],
-            "lanes": request.get("scene_capabilities", {}),
+            "lanes": compact_lanes,
+            "route": request.get("routing", {}),
         }
         legend = " ".join(f"{code}={behavior}" for code, behavior in self._CHOICES.items())
         return (
@@ -470,9 +500,19 @@ class VllmQwenPlannerBackend:
         hint = request.get("command_hint", {})
         capabilities = request.get("scene_capabilities", {})
         targets = request.get("targets", ())
-        target_id = targets[0]["target_id"] if targets and behavior in {
-            "FOLLOW", "AVOID_OBSTACLE", "YIELD",
-        } else None
+        target_id = None
+        if targets and behavior in {"FOLLOW", "AVOID_OBSTACLE", "YIELD"}:
+            preferred_relations = (
+                {"center_ahead", "far_ahead"}
+                if behavior == "FOLLOW"
+                else {"center_ahead", "far_ahead", "occluded_ahead"}
+            )
+            candidates = [
+                item for item in targets
+                if str(item.get("relation", "")).lower() in preferred_relations
+            ]
+            selected = candidates[0] if candidates else targets[0]
+            target_id = selected["target_id"]
         lane = "CURRENT"
         direction = None
         if behavior.endswith("_LEFT"):
@@ -497,10 +537,18 @@ class VllmQwenPlannerBackend:
             "RETURN_TO_LANE": "LANE_CENTERED", "CHANGE_LANE_LEFT": "LANE_CENTERED",
             "CHANGE_LANE_RIGHT": "LANE_CENTERED", "TURN_LEFT": "JUNCTION_EXITED",
             "TURN_RIGHT": "JUNCTION_EXITED",
+            "KEEP_LANE": "HOLD_FRAMES", "YIELD": "SPEED_BELOW",
         }.get(behavior, "SPEED_REACHED")
         timeout = 30.0 if behavior.startswith("TURN_") else 20.0 if behavior in {
             "AVOID_OBSTACLE", "RETURN_TO_LANE",
         } else 12.0 if behavior.startswith("CHANGE_LANE_") else 8.0
+        completion_value = target_speed
+        if completion_type == "TARGET_GAP_REACHED":
+            completion_value = 2.0
+        elif completion_type == "SPEED_BELOW":
+            completion_value = target_speed if target_speed is not None else 2.0
+        elif completion_type in {"HOLD_FRAMES", "LANE_CENTERED", "JUNCTION_EXITED", "TARGET_PASSED"}:
+            completion_value = None
         return {
             "step_id": f"step-{index}",
             "behavior": behavior,
@@ -514,7 +562,7 @@ class VllmQwenPlannerBackend:
             "preconditions": ["PERCEPTION_FRESH"],
             "completion": {
                 "type": completion_type,
-                "value": 0.2 if completion_type in {"STOPPED", "SPEED_BELOW"} else target_speed,
+                "value": 0.2 if completion_type == "STOPPED" else completion_value,
                 "lane": lane if completion_type == "LANE_CENTERED" else None,
                 "hold_frames": 3,
             },
@@ -543,10 +591,11 @@ class VllmQwenPlannerBackend:
         except ImportError as error:
             raise RuntimeError("vLLM image encoding requires Pillow") from error
         with Image.open(path) as image:
-            image = ImageOps.contain(
+            image = ImageOps.pad(
                 image.convert("RGB"),
                 (self.image_max_side, self.image_max_side),
                 method=Image.Resampling.LANCZOS,
+                color=(0, 0, 0),
             )
             buffer = io.BytesIO()
             image.save(buffer, format="JPEG", quality=self.jpeg_quality, optimize=True)

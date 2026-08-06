@@ -87,6 +87,7 @@ class ScenarioExtensionRuntime:
         self._qwen_behaviors: list[str] = []
         self._qwen_target_ids: set[str] = set()
         self._max_speed_mps = 0.0
+        self._requested_speed_kph: float | None = None
         self._traffic_light_states: list[str] = []
         self._rss_start_mb = self._rss_mb()
         self._rss_peak_mb = self._rss_start_mb
@@ -128,6 +129,14 @@ class ScenarioExtensionRuntime:
                 self._command_phase_by_id[command_id] = phase_id
         if command.get("confirm_required") is True:
             self._confirmation_commands += 1
+        parameters = command.get("parameters", {})
+        if isinstance(parameters, Mapping):
+            speed = parameters.get("speed")
+            if type(speed) in (int, float) and not isinstance(speed, bool):
+                unit = str(parameters.get("unit", "km/h")).lower().replace(" ", "")
+                self._requested_speed_kph = float(speed) * (
+                    3.6 if unit in {"m/s", "mps", "m／s"} else 1.0
+                )
         if qwen:
             self._qwen_requests += 1
 
@@ -148,7 +157,7 @@ class ScenarioExtensionRuntime:
                     normalized_key = str(child_key).lower()
                     if normalized_key in {"behavior", "action", "intent"} and isinstance(child, str):
                         self._qwen_behaviors.append(child.upper())
-                    if normalized_key in {"target_actor_id", "actor_id"} and isinstance(child, str):
+                    if normalized_key in {"target_actor_id", "actor_id", "target_id"} and isinstance(child, str):
                         self._qwen_target_ids.add(child)
                     walk(child, normalized_key)
             elif isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
@@ -282,6 +291,7 @@ class ScenarioExtensionRuntime:
             "qwen_behaviors": list(self._qwen_behaviors),
             "qwen_target_actor_ids": sorted(self._qwen_target_ids),
             "max_speed_mps": self._max_speed_mps,
+            "requested_speed_kph": self._requested_speed_kph,
             "traffic_light_states": list(self._traffic_light_states),
         }
 
@@ -354,7 +364,12 @@ class ScenarioExtensionRuntime:
                 actual = float(evidence["max_speed_mps"]) * 3.6
                 add(key, actual <= float(required), actual, required)
             elif key == "max_speed_overshoot_kph":
-                add(key, False, None, required)
+                requested = evidence["requested_speed_kph"]
+                actual = (
+                    None if requested is None
+                    else max(0.0, float(evidence["max_speed_mps"]) * 3.6 - float(requested))
+                )
+                add(key, actual is not None and actual <= float(required), actual, required)
             elif key in {"expected_phase_count", "vehicle_advance_command_count", "current_plan_command_index"}:
                 actual = len(submitted) if key != "current_plan_command_index" else max(0, len(submitted) - 1)
                 add(key, actual == int(required), actual, required)
