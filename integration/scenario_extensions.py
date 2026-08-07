@@ -68,10 +68,15 @@ class ScenarioExtensionRuntime:
             raise TypeError("extensions.faults must be a list")
         self.faults = tuple(dict(item) for item in raw_faults if isinstance(item, Mapping))
         self._fault_started_s: dict[str, float] = {}
+        self._fault_recovered_s: dict[str, float] = {}
+        self._fault_response_s: dict[str, float] = {}
+        self._fault_recovery_response_s: dict[str, float] = {}
         self._fault_active: set[str] = set()
         self._fault_recovered: set[str] = set()
         self._terminal_phase_ids: set[str] = set()
+        self._completed_phase_ids: set[str] = set()
         self._command_phase_by_id: dict[str, str] = {}
+        self._command_intent_by_id: dict[str, str] = {}
         self._actor_event_index: dict[str, int] = {}
         self._actor_event_time_s: dict[str, float] = {}
         self._actor_speed_mps: dict[str, float] = {}
@@ -82,13 +87,47 @@ class ScenarioExtensionRuntime:
         self._qwen_requests = 0
         self._qwen_terminals: set[str] = set()
         self._qwen_status_counts: dict[str, int] = {}
+        self._successful_terminal_s: dict[str, float] = {}
         self._submitted_command_ids: list[str] = []
         self._confirmation_commands = 0
         self._qwen_behaviors: list[str] = []
         self._qwen_target_ids: set[str] = set()
+        self._qwen_target_speeds_kph: list[float] = []
+        self._qwen_outcomes: list[str] = []
+        self._qwen_resolution_reasons: list[str] = []
+        self._qwen_stale_results = 0
+        self._qwen_stale_results_applied = 0
+        self._qwen_late_results_applied = 0
+        self._qwen_invalid_results = 0
+        self._qwen_timeouts = 0
+        self._vehicle_advance_commands = 0
+        self._latest_applied_command_index: int | None = None
+        self._qwen_applied_s: list[float] = []
+        self._first_qwen_plan_s: float | None = None
         self._max_speed_mps = 0.0
+        self._min_speed_after_command_mps: float | None = None
+        self._last_speed_mps = 0.0
         self._requested_speed_kph: float | None = None
         self._traffic_light_states: list[str] = []
+        self._last_elapsed_s = 0.0
+        self._last_route_progress_m = 0.0
+        self._restart_route_progress_m: float | None = None
+        self._restart_displacement_m: float | None = None
+        self._stop_seen = False
+        self._slow_command_s: float | None = None
+        self._slow_command_speed_mps: float | None = None
+        self._speed_drop_latency_s: float | None = None
+        self._last_lateral_offset_m: float | None = None
+        self._last_route_deviation_m: float | None = None
+        self._max_route_deviation_m = 0.0
+        self._first_brake_s: float | None = None
+        self._safety_reasons: set[str] = set()
+        self._safety_first_s: float | None = None
+        self._collision_seen = False
+        self._degraded_mode_entered = False
+        self._target_lane_occupied_count: int | None = None
+        self._lead_brake_trigger_distance_m: float | None = None
+        self._actor_trigger_ids: set[str] = set()
         self._rss_start_mb = self._rss_mb()
         self._rss_peak_mb = self._rss_start_mb
 
@@ -122,8 +161,10 @@ class ScenarioExtensionRuntime:
 
     def note_command_submitted(self, command: Mapping[str, object], *, qwen: bool) -> None:
         command_id = str(command.get("command_id", ""))
+        intent = str(command.get("intent", "")).upper()
         if command_id:
             self._submitted_command_ids.append(command_id)
+            self._command_intent_by_id[command_id] = intent
             phase_id = str(command.get("phase_id", ""))
             if phase_id:
                 self._command_phase_by_id[command_id] = phase_id
@@ -139,6 +180,13 @@ class ScenarioExtensionRuntime:
                 )
         if qwen:
             self._qwen_requests += 1
+        if intent in {"STOP", "EMERGENCY_STOP"}:
+            self._stop_seen = True
+        elif self._stop_seen and intent in {"KEEP_LANE", "START", "SET_SPEED"}:
+            self._restart_route_progress_m = self._last_route_progress_m
+        if intent == "SLOW_DOWN":
+            self._slow_command_s = self._last_elapsed_s
+            self._slow_command_speed_mps = self._last_speed_mps
 
     def note_terminal(self, command_id: str, status: object) -> None:
         normalized_id = str(command_id)
@@ -146,11 +194,17 @@ class ScenarioExtensionRuntime:
         phase_id = self._command_phase_by_id.get(normalized_id)
         if phase_id:
             self._terminal_phase_ids.add(phase_id)
+            self._completed_phase_ids.add(phase_id)
         normalized_status = str(getattr(status, "value", status)).upper()
         self._qwen_status_counts[normalized_status] = self._qwen_status_counts.get(normalized_status, 0) + 1
+        if normalized_status == "SUCCEEDED":
+            self._successful_terminal_s[normalized_id] = self._last_elapsed_s
 
-    def note_qwen_plan(self, plan: Mapping[str, Any]) -> None:
+    def note_qwen_plan(self, plan: Mapping[str, Any], *, elapsed_s: float | None = None) -> None:
         """Collect high-level actions and semantic target IDs from a validated plan."""
+        if self._first_qwen_plan_s is None:
+            self._first_qwen_plan_s = self._last_elapsed_s if elapsed_s is None else float(elapsed_s)
+
         def walk(value: Any, key: str = "") -> None:
             if isinstance(value, Mapping):
                 for child_key, child in value.items():
@@ -159,11 +213,66 @@ class ScenarioExtensionRuntime:
                         self._qwen_behaviors.append(child.upper())
                     if normalized_key in {"target_actor_id", "actor_id", "target_id"} and isinstance(child, str):
                         self._qwen_target_ids.add(child)
+                    if normalized_key == "target_speed_mps" and type(child) in (int, float) and not isinstance(child, bool):
+                        self._qwen_target_speeds_kph.append(float(child) * 3.6)
+                    if normalized_key == "target_speed_kph" and type(child) in (int, float) and not isinstance(child, bool):
+                        self._qwen_target_speeds_kph.append(float(child))
                     walk(child, normalized_key)
             elif isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
                 for child in value:
                     walk(child, key)
         walk(plan)
+
+    def note_qwen_resolution(
+        self,
+        *,
+        disposition: str,
+        reason_code: str | None,
+        applied: bool,
+        command_id: str | None = None,
+    ) -> None:
+        normalized_disposition = str(disposition).upper()
+        normalized_reason = str(reason_code or "").upper()
+        self._qwen_outcomes.append(normalized_disposition)
+        if normalized_reason:
+            self._qwen_resolution_reasons.append(normalized_reason)
+        stale = "STALE" in normalized_disposition or "STALE" in normalized_reason
+        late = "LATE" in normalized_disposition or "LATE" in normalized_reason
+        invalid = any(token in normalized_reason for token in ("INVALID", "SCHEMA", "TOKEN")) or any(
+            str(item.get("type", "")).lower() == "qwen_invalid_token"
+            for item in self.qwen_faults
+        )
+        timed_out = "TIMEOUT" in normalized_disposition or "TIMEOUT" in normalized_reason
+        if stale:
+            self._qwen_stale_results += 1
+            if applied:
+                self._qwen_stale_results_applied += 1
+        if late and applied:
+            self._qwen_late_results_applied += 1
+        if invalid:
+            self._qwen_invalid_results += 1
+        if timed_out:
+            self._qwen_timeouts += 1
+        if applied:
+            self._vehicle_advance_commands += 1
+            self._qwen_applied_s.append(self._last_elapsed_s)
+            if command_id in self._submitted_command_ids:
+                self._latest_applied_command_index = self._submitted_command_ids.index(command_id)
+
+    def note_phase_completed(self, phase_id: str) -> None:
+        normalized = str(phase_id).strip()
+        if normalized:
+            self._completed_phase_ids.add(normalized)
+
+    def note_actor_trigger(self, actor_id: str) -> None:
+        normalized = str(actor_id).strip()
+        if normalized:
+            self._actor_trigger_ids.add(normalized)
+
+    def note_target_lane_occupancy(self, count: int) -> None:
+        if type(count) is not int or count < 0:
+            raise ValueError("target lane occupancy must be a non-negative integer")
+        self._target_lane_occupied_count = count
 
     def update_frame(
         self,
@@ -176,6 +285,8 @@ class ScenarioExtensionRuntime:
         traffic_light_state: str,
         distance_to_stop_line_m: float | None,
         lane_id: str,
+        lateral_offset_m: float | None = None,
+        route_deviation_m: float | None = None,
     ) -> ExtensionFrameState:
         context: dict[str, object] = {
             "route_progress_m": float(route_progress_m),
@@ -191,6 +302,26 @@ class ScenarioExtensionRuntime:
         if self._last_lane_id is not None and lane_id != self._last_lane_id:
             self._lane_change_count += 1
         self._last_lane_id = lane_id
+        self._last_elapsed_s = float(elapsed_s)
+        self._last_route_progress_m = float(route_progress_m)
+        self._last_speed_mps = float(ego_speed_mps)
+        if self._submitted_command_ids:
+            self._min_speed_after_command_mps = (
+                float(ego_speed_mps)
+                if self._min_speed_after_command_mps is None
+                else min(self._min_speed_after_command_mps, float(ego_speed_mps))
+            )
+        if lateral_offset_m is not None:
+            self._last_lateral_offset_m = abs(float(lateral_offset_m))
+        if route_deviation_m is not None:
+            self._last_route_deviation_m = abs(float(route_deviation_m))
+            self._max_route_deviation_m = max(
+                self._max_route_deviation_m, self._last_route_deviation_m,
+            )
+        if self._restart_route_progress_m is not None:
+            self._restart_displacement_m = max(
+                0.0, self._last_route_progress_m - self._restart_route_progress_m,
+            )
         self._rss_peak_mb = max(self._rss_peak_mb, self._rss_mb())
         self._max_speed_mps = max(self._max_speed_mps, float(ego_speed_mps))
         normalized_light = str(traffic_light_state).upper()
@@ -219,6 +350,7 @@ class ScenarioExtensionRuntime:
             elif fault_id in self._fault_active and fault_id not in self._fault_recovered:
                 newly_recovered.append(fault_id)
                 self._fault_recovered.add(fault_id)
+                self._fault_recovered_s[fault_id] = float(elapsed_s)
 
         speed_policy = self.extensions.get("speed_policy", {})
         speed_limit = None
@@ -231,6 +363,72 @@ class ScenarioExtensionRuntime:
             newly_recovered_fault_ids=tuple(newly_recovered),
             speed_limit_mps=speed_limit,
         )
+
+    def note_control_observation(
+        self,
+        *,
+        elapsed_s: float,
+        speed_mps: float,
+        route_progress_m: float,
+        brake: float,
+        safety_override: bool,
+        safety_reason: str,
+        route_deviation_m: float | None,
+        collision: bool = False,
+        lateral_offset_m: float | None = None,
+    ) -> None:
+        """Record the actually applied control outcome for acceptance timing."""
+        now = float(elapsed_s)
+        speed = float(speed_mps)
+        self._last_elapsed_s = now
+        self._last_speed_mps = speed
+        self._last_route_progress_m = float(route_progress_m)
+        self._collision_seen = self._collision_seen or bool(collision)
+        if lateral_offset_m is not None:
+            self._last_lateral_offset_m = abs(float(lateral_offset_m))
+        if route_deviation_m is not None:
+            deviation = abs(float(route_deviation_m))
+            self._last_route_deviation_m = deviation
+            self._max_route_deviation_m = max(self._max_route_deviation_m, deviation)
+        if float(brake) >= 0.5 and self._first_brake_s is None:
+            self._first_brake_s = now
+        normalized_reason = str(safety_reason).strip().upper()
+        meaningful_safety = bool(safety_override and normalized_reason not in {"", "NONE"})
+        active_sensor_faults = {
+            str(item.get("sensor", ""))
+            for item in self.faults
+            if str(item.get("fault_id", item.get("type", "fault"))) in self._fault_active
+            and str(item.get("type", "")).lower() in {"sensor_blackout", "sensor_stale"}
+        }
+        if active_sensor_faults and not {"front_rgb", "lidar"}.issubset(active_sensor_faults):
+            self._degraded_mode_entered = True
+        if meaningful_safety:
+            self._safety_reasons.add(normalized_reason)
+            if self._safety_first_s is None:
+                self._safety_first_s = now
+        responded = meaningful_safety or float(brake) >= 0.5
+        if responded:
+            for fault_id, started_s in self._fault_started_s.items():
+                if fault_id in self._fault_active and fault_id not in self._fault_response_s:
+                    self._fault_response_s[fault_id] = max(0.0, now - started_s)
+        for fault_id, recovered_s in self._fault_recovered_s.items():
+            if fault_id in self._fault_recovery_response_s:
+                continue
+            recovered_control = not meaningful_safety
+            recovered_route = route_deviation_m is None or abs(float(route_deviation_m)) <= 1.0
+            if recovered_control and recovered_route:
+                self._fault_recovery_response_s[fault_id] = max(0.0, now - recovered_s)
+        if (
+            self._slow_command_s is not None
+            and self._slow_command_speed_mps is not None
+            and self._speed_drop_latency_s is None
+            and speed < self._slow_command_speed_mps - 0.1
+        ):
+            self._speed_drop_latency_s = max(0.0, now - self._slow_command_s)
+        if self._restart_route_progress_m is not None:
+            self._restart_displacement_m = max(
+                0.0, self._last_route_progress_m - self._restart_route_progress_m,
+            )
 
     def actor_state(
         self,
@@ -263,12 +461,23 @@ class ScenarioExtensionRuntime:
                 trigger, elapsed_s=elapsed_s, context=context,
             ):
                 action = event.get("action", {})
+                previous_speed = self._actor_speed_mps.get(actor_id, math.inf)
                 if isinstance(action, Mapping) and str(action.get("type", "")).lower() == "set_speed":
                     self._actor_speed_mps[actor_id] = max(0.0, float(action.get("target_speed_mps", 0.0)))
                 if "state" in event:
                     self._traffic_light_state[actor_id] = str(event["state"]).upper()
                 self._actor_event_index[actor_id] = index + 1
                 self._actor_event_time_s[actor_id] = float(elapsed_s)
+                phase_id = str(event.get("phase_id", ""))
+                if phase_id:
+                    self.note_phase_completed(phase_id)
+                self.note_actor_trigger(actor_id)
+                distances = context.get("actor_distances_m", {})
+                if isinstance(distances, Mapping) and actor_id in distances:
+                    action = event.get("action", {})
+                    target_speed = action.get("target_speed_mps") if isinstance(action, Mapping) else None
+                    if type(target_speed) in (int, float) and float(target_speed) < previous_speed:
+                        self._lead_brake_trigger_distance_m = float(distances[actor_id])
         return {
             "target_speed_mps": self._actor_speed_mps[actor_id],
             "traffic_light_state": self._traffic_light_state[actor_id],
@@ -281,8 +490,11 @@ class ScenarioExtensionRuntime:
             "submitted_command_ids": list(self._submitted_command_ids),
             "terminal_command_ids": sorted(self._qwen_terminals),
             "qwen_status_counts": dict(self._qwen_status_counts),
+            "successful_terminal_s": dict(self._successful_terminal_s),
             "fault_started_ids": sorted(self._fault_started_s),
             "fault_recovered_ids": sorted(self._fault_recovered),
+            "fault_response_s": dict(self._fault_response_s),
+            "fault_recovery_response_s": dict(self._fault_recovery_response_s),
             "lane_change_count": self._lane_change_count,
             "initial_lane_id": self._initial_lane_id,
             "final_lane_id": self._last_lane_id,
@@ -290,9 +502,37 @@ class ScenarioExtensionRuntime:
             "confirmation_command_count": self._confirmation_commands,
             "qwen_behaviors": list(self._qwen_behaviors),
             "qwen_target_actor_ids": sorted(self._qwen_target_ids),
+            "qwen_target_speeds_kph": list(self._qwen_target_speeds_kph),
+            "qwen_outcomes": list(self._qwen_outcomes),
+            "qwen_resolution_reasons": list(self._qwen_resolution_reasons),
+            "qwen_stale_result_count": self._qwen_stale_results,
+            "qwen_stale_result_applied_count": self._qwen_stale_results_applied,
+            "late_result_applied_count": self._qwen_late_results_applied,
+            "qwen_invalid_result_count": self._qwen_invalid_results,
+            "qwen_timeout_count": self._qwen_timeouts,
+            "vehicle_advance_command_count": self._vehicle_advance_commands,
+            "current_plan_command_index": self._latest_applied_command_index,
+            "qwen_applied_s": list(self._qwen_applied_s),
             "max_speed_mps": self._max_speed_mps,
+            "min_speed_after_command_mps": self._min_speed_after_command_mps,
+            "final_speed_mps": self._last_speed_mps,
             "requested_speed_kph": self._requested_speed_kph,
             "traffic_light_states": list(self._traffic_light_states),
+            "completed_phase_ids": sorted(self._completed_phase_ids),
+            "target_lane_occupied_count": self._target_lane_occupied_count,
+            "restart_displacement_m": self._restart_displacement_m,
+            "final_lateral_offset_abs_m": self._last_lateral_offset_m,
+            "lead_brake_trigger_distance_m": self._lead_brake_trigger_distance_m,
+            "actor_trigger_ids": sorted(self._actor_trigger_ids),
+            "first_brake_s": self._first_brake_s,
+            "first_qwen_plan_s": self._first_qwen_plan_s,
+            "safety_reasons": sorted(self._safety_reasons),
+            "safety_first_s": self._safety_first_s,
+            "last_route_deviation_m": self._last_route_deviation_m,
+            "max_route_deviation_m": self._max_route_deviation_m,
+            "collision_seen": self._collision_seen,
+            "degraded_mode_entered": self._degraded_mode_entered,
+            "speed_drop_latency_s": self._speed_drop_latency_s,
         }
 
     def evaluate(
@@ -312,6 +552,9 @@ class ScenarioExtensionRuntime:
         target_ids = set(evidence["qwen_target_actor_ids"])
         faults_started = set(evidence["fault_started_ids"])
         faults_recovered = set(evidence["fault_recovered_ids"])
+        oracle_contract = {} if oracle is None else oracle
+        if not isinstance(oracle_contract, Mapping):
+            raise TypeError("extensions.oracle must be an object")
         checks: list[dict[str, object]] = []
 
         def add(key: str, passed: bool, actual: object, required: object) -> None:
@@ -326,30 +569,61 @@ class ScenarioExtensionRuntime:
                 actual = max(0, expected_command_count - request_count)
                 add(key, actual == int(required), actual, required)
             elif key in {"qwen_stale_result_applied_count", "late_result_applied_count"}:
-                add(key, int(required) == 0, 0, required)
+                actual = int(evidence[key])
+                add(key, actual == int(required), actual, required)
             elif key == "all_commands_must_have_terminal_status":
                 actual = all(command_id in terminals for command_id in submitted)
                 add(key, required is not True or actual, actual, True)
-            elif key in {"must_recover_after_fault", "post_recovery_command_succeeds"}:
-                actual = bool(faults_started) and faults_started.issubset(faults_recovered)
+            elif key == "must_recover_after_fault":
+                recovered_responses = set(evidence["fault_recovery_response_s"])
+                actual = (
+                    bool(faults_started)
+                    and faults_started.issubset(faults_recovered)
+                    and faults_started.issubset(recovered_responses)
+                )
                 add(key, required is not True or actual, actual, True)
-            elif key in {"max_fault_response_s", "recovery_deadline_s", "speed_drop_deadline_s"}:
-                # Fault activation and controller policy are applied in the same 50 ms frame.
-                actual = 0.05 if faults_started else None
+            elif key == "post_recovery_command_succeeds":
+                recovered_at = max(self._fault_recovered_s.values(), default=None)
+                actual = recovered_at is not None and any(
+                    float(item) >= recovered_at
+                    for item in evidence["successful_terminal_s"].values()
+                )
+                add(key, required is not True or actual, actual, True)
+            elif key == "max_fault_response_s":
+                samples = list(evidence["fault_response_s"].values())
+                actual = max(samples) if samples else None
+                add(key, actual is not None and actual <= float(required), actual, required)
+            elif key == "recovery_deadline_s":
+                samples = list(evidence["fault_recovery_response_s"].values())
+                actual = max(samples) if samples else None
+                add(key, actual is not None and actual <= float(required), actual, required)
+            elif key == "speed_drop_deadline_s":
+                actual = evidence["speed_drop_latency_s"]
                 add(key, actual is not None and actual <= float(required), actual, required)
             elif key == "max_resource_growth_mb":
                 actual = float(evidence["resource_growth_mb"])
                 add(key, actual <= float(required), actual, required)
             elif key == "must_return_to_original_lane":
-                actual = evidence["initial_lane_id"] == evidence["final_lane_id"]
+                actual = (
+                    evidence["initial_lane_id"] == evidence["final_lane_id"]
+                    and int(evidence["lane_change_count"]) >= 2
+                )
                 add(key, required is not True or actual, actual, True)
             elif key == "must_not_change_lane":
                 actual = int(evidence["lane_change_count"]) == 0
                 add(key, required is not True or actual, actual, True)
-            elif key in {"expected_target_actor_id", "pedestrian_trigger_actor_id"}:
+            elif key == "expected_target_actor_id":
                 add(key, str(required) in target_ids, sorted(target_ids), required)
+            elif key == "pedestrian_trigger_actor_id":
+                actual_ids = set(evidence["actor_trigger_ids"])
+                add(key, str(required) in actual_ids, sorted(actual_ids), required)
             elif key == "target_binding_correct":
-                actual = bool(target_ids)
+                expected_target = oracle_contract.get("expected_target_actor_id")
+                actual = (
+                    str(expected_target) in target_ids
+                    if expected_target is not None
+                    else len(target_ids) == 1
+                )
                 add(key, required is not True or actual, actual, True)
             elif key in {"requires_confirmation", "requires_confirmation_allowed"}:
                 actual = int(evidence["confirmation_command_count"]) > 0
@@ -361,7 +635,11 @@ class ScenarioExtensionRuntime:
                 required_states = [str(item).upper() for item in required]
                 actual_states = list(evidence["traffic_light_states"])
                 add(key, all(item in actual_states for item in required_states), actual_states, required_states)
-            elif key in {"qwen_target_speed_max_kph", "sustained_speed_max_kph"}:
+            elif key == "qwen_target_speed_max_kph":
+                speeds = list(evidence["qwen_target_speeds_kph"])
+                actual = max(speeds) if speeds else None
+                add(key, actual is not None and actual <= float(required), actual, required)
+            elif key == "sustained_speed_max_kph":
                 actual = float(evidence["max_speed_mps"]) * 3.6
                 add(key, actual <= float(required), actual, required)
             elif key == "max_speed_overshoot_kph":
@@ -371,20 +649,35 @@ class ScenarioExtensionRuntime:
                     else max(0.0, float(evidence["max_speed_mps"]) * 3.6 - float(requested))
                 )
                 add(key, actual is not None and actual <= float(required), actual, required)
-            elif key in {"expected_phase_count", "vehicle_advance_command_count", "current_plan_command_index"}:
-                actual = len(submitted) if key != "current_plan_command_index" else max(0, len(submitted) - 1)
+            elif key == "expected_phase_count":
+                phase_plan = self.extensions.get("phase_plan", ())
+                actual = len(phase_plan) if isinstance(phase_plan, Sequence) and not isinstance(phase_plan, (str, bytes)) else 0
+                add(key, actual == int(required), actual, required)
+            elif key == "vehicle_advance_command_count":
+                actual = int(evidence["vehicle_advance_command_count"])
+                add(key, actual == int(required), actual, required)
+            elif key == "current_plan_command_index":
+                actual = evidence["current_plan_command_index"]
                 add(key, actual == int(required), actual, required)
             elif key == "all_phases_must_complete":
-                actual = len(terminals) >= len(submitted) and len(submitted) > 0
+                phase_plan = self.extensions.get("phase_plan", ())
+                required_phases = {
+                    str(item) for item in phase_plan
+                } if isinstance(phase_plan, Sequence) and not isinstance(phase_plan, (str, bytes)) else set()
+                actual = bool(required_phases) and required_phases.issubset(
+                    set(evidence["completed_phase_ids"])
+                )
                 add(key, required is not True or actual, actual, True)
             elif key == "qwen_calls_per_frame":
-                add(key, request_count <= int(required) * max(1, expected_command_count), request_count, required)
+                # Qwen is event-driven: every counted request is tied to one
+                # submitted voice command. Any excess is a forbidden frame poll.
+                actual = max(0, request_count - len(submitted))
+                add(key, actual <= int(required), actual, required)
             elif key in {"qwen_timeout_count", "qwen_invalid_result_count"}:
-                status = "TIMED_OUT" if key == "qwen_timeout_count" else "REJECTED"
-                actual = int(evidence["qwen_status_counts"].get(status, 0))
+                actual = int(evidence[key])
                 add(key, actual >= int(required), actual, required)
             elif key == "timeout_event_log_required":
-                actual = int(evidence["qwen_status_counts"].get("TIMED_OUT", 0)) > 0
+                actual = int(evidence["qwen_timeout_count"]) > 0
                 add(key, required is not True or actual, actual, True)
             elif key in {
                 "brake_before_qwen_ready", "disconnect_fail_closed",
@@ -396,24 +689,107 @@ class ScenarioExtensionRuntime:
                 "qwen_must_not_override_safety_stop", "rebind_requires_fresh_perception",
                 "unsafe_qwen_result_must_be_overridden", "conservative_speed_required",
             }:
-                actual = bool(safety_reasons) or key in {
-                    "must_not_stop_without_environment_risk", "must_respect_map_speed_limit",
-                    "must_not_pass_between_obstacles", "must_not_select_unsafe_pull_over_point",
+                final_speed = float(evidence["final_speed_mps"])
+                first_brake = evidence["first_brake_s"]
+                first_plan = evidence["first_qwen_plan_s"]
+                reasons = {
+                    str(item).upper()
+                    for item in (*evidence["safety_reasons"], *safety_reasons)
+                    if str(item).upper() not in {"", "NONE", "PERCEPTION_STARTUP_GRACE"}
                 }
+                outcomes = {str(item).upper() for item in evidence["qwen_outcomes"]}
+                resolution_reasons = {
+                    str(item).upper() for item in evidence["qwen_resolution_reasons"]
+                }
+                if key == "brake_before_qwen_ready":
+                    actual = first_brake is not None and (first_plan is None or first_brake <= first_plan)
+                elif key == "disconnect_fail_closed":
+                    actual = any("DISCONNECT" in item for item in resolution_reasons) and first_brake is not None
+                elif key == "emergency_command_preempts_normal_queue":
+                    intents = [self._command_intent_by_id.get(item, "") for item in submitted]
+                    emergency = [i for i, item in enumerate(intents) if item in {"STOP", "EMERGENCY_STOP"}]
+                    actual = (
+                        bool(emergency)
+                        and emergency[-1] == len(intents) - 1
+                        and submitted[emergency[-1]] in terminals
+                    )
+                elif key == "first_version_requires_stop_not_detour":
+                    actual = bool(evidence["qwen_behaviors"]) and evidence["qwen_behaviors"][0] in {"STOP", "HOLD"}
+                elif key == "must_enter_degraded_mode":
+                    actual = bool(evidence["degraded_mode_entered"])
+                elif key == "must_not_continue_route_deviation":
+                    actual = final_speed <= 0.3 and evidence["max_route_deviation_m"] > 0.0
+                elif key == "must_not_pass_between_obstacles":
+                    actual = not bool(evidence["collision_seen"]) and final_speed <= 0.3
+                elif key == "must_not_select_unsafe_pull_over_point":
+                    actual = "PULL_OVER" not in behaviors and bool(behaviors)
+                elif key == "must_not_stop_without_environment_risk":
+                    actual = final_speed > 0.3 or bool(reasons)
+                elif key == "must_respect_map_speed_limit":
+                    speed_policy = self.extensions.get("speed_policy", {})
+                    limit = speed_policy.get("scenario_limit_kph") if isinstance(speed_policy, Mapping) else None
+                    actual = limit is not None and float(evidence["max_speed_mps"]) * 3.6 <= float(limit) + 0.5
+                elif key == "must_stop_if_recovery_fails":
+                    actual = final_speed <= 0.3 and bool(faults_started)
+                elif key == "must_stop_when_perception_insufficient":
+                    actual = final_speed <= 0.3 and any("PERCEPTION" in item for item in reasons)
+                elif key == "qwen_must_not_override_safety_stop":
+                    safety_first = evidence["safety_first_s"]
+                    actual = bool(reasons) and final_speed <= 0.3 and not any(
+                        safety_first is not None and float(item) > float(safety_first)
+                        for item in evidence["qwen_applied_s"]
+                    )
+                elif key == "rebind_requires_fresh_perception":
+                    actual = int(evidence["qwen_stale_result_applied_count"]) == 0 and any(
+                        "STALE" in item for item in resolution_reasons
+                    )
+                elif key == "unsafe_qwen_result_must_be_overridden":
+                    actual = bool(reasons) and final_speed <= 0.3
+                elif key == "conservative_speed_required":
+                    requested = evidence["requested_speed_kph"]
+                    target_speeds = list(evidence["qwen_target_speeds_kph"])
+                    actual = bool(behaviors.intersection({"SLOW_DOWN", "STOP", "HOLD"})) or (
+                        bool(target_speeds)
+                        and max(target_speeds) <= (
+                            float(requested) if requested is not None else 15.0
+                        )
+                    )
+                else:
+                    actual = False
                 add(key, required is not True or actual, actual, True)
             elif key in {"target_lane_occupied_count", "restart_displacement_m", "final_lateral_offset_abs_max_m", "lead_brake_trigger_distance_m"}:
-                # These are calculated in the frame/official scorer; retain a
-                # fail-closed marker until that observed value is present.
-                add(key, False, None, required)
-            elif key in {"allowed_outcomes", "lane_change_rejection_reason_required"}:
-                actual = sorted(behaviors)
+                evidence_key = {
+                    "target_lane_occupied_count": "target_lane_occupied_count",
+                    "restart_displacement_m": "restart_displacement_m",
+                    "final_lateral_offset_abs_max_m": "final_lateral_offset_abs_m",
+                    "lead_brake_trigger_distance_m": "lead_brake_trigger_distance_m",
+                }[key]
+                actual = evidence[evidence_key]
+                if key == "restart_displacement_m":
+                    passed = actual is not None and float(actual) >= float(required)
+                else:
+                    passed = actual is not None and float(actual) <= float(required)
+                add(key, passed, actual, required)
+            elif key == "allowed_outcomes":
+                allowed = {str(item).upper() for item in required}
+                actual_set = set(behaviors)
+                for item in evidence["qwen_outcomes"]:
+                    normalized = str(item).upper()
+                    if "REJECT" in normalized or "ERROR" in normalized:
+                        actual_set.add("REJECT")
+                for item in evidence["qwen_resolution_reasons"]:
+                    if "CLIP" in str(item).upper() or "SPEED_LIMIT" in str(item).upper():
+                        actual_set.add("CLIP_TO_LIMIT")
+                add(key, bool(actual_set) and actual_set.issubset(allowed), sorted(actual_set), sorted(allowed))
+            elif key == "lane_change_rejection_reason_required":
+                actual = [
+                    item for item in evidence["qwen_resolution_reasons"]
+                    if "LANE" in str(item).upper() or "OCCUP" in str(item).upper()
+                ]
                 add(key, bool(actual), actual, required)
             else:
                 add(key, False, None, required)
 
-        oracle_contract = {} if oracle is None else oracle
-        if not isinstance(oracle_contract, Mapping):
-            raise TypeError("extensions.oracle must be an object")
         expected_behaviors = oracle_contract.get("expected_behaviors")
         if expected_behaviors is not None:
             if not isinstance(expected_behaviors, Sequence) or isinstance(

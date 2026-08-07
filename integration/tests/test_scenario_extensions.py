@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from integration.scenario_execution import CommandTimeline, ScheduledCommand
 from integration.scenario_extensions import (
     IMPLEMENTED_RUNTIME_REQUIREMENTS,
@@ -116,3 +118,208 @@ def test_oracle_fails_unexpected_qwen_behavior() -> None:
 
     assert result["passed"] is False
     assert result["failed_keys"] == ["oracle_expected_behaviors"]
+
+
+def _frame(runtime: ScenarioExtensionRuntime, *, elapsed_s: float, progress_m: float,
+           speed_mps: float, lateral_offset_m: float = 0.0,
+           distance_to_stop_line_m: float | None = None) -> None:
+    runtime.update_frame(
+        elapsed_s=elapsed_s,
+        route_progress_m=progress_m,
+        ego_speed_mps=speed_mps,
+        ego_standstill_duration_s=0.0,
+        actor_distances_m={},
+        traffic_light_state="UNKNOWN",
+        distance_to_stop_line_m=distance_to_stop_line_m,
+        lane_id="1",
+        lateral_offset_m=lateral_offset_m,
+    )
+
+
+def test_observed_geometry_metrics_replace_fail_closed_placeholders() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_target_lane_occupancy(0)
+    _frame(runtime, elapsed_s=0.0, progress_m=0.0, speed_mps=0.0)
+    runtime.note_command_submitted({"command_id": "go", "intent": "KEEP_LANE"}, qwen=True)
+    _frame(runtime, elapsed_s=5.0, progress_m=10.0, speed_mps=0.0)
+    runtime.note_command_submitted({"command_id": "stop", "intent": "STOP"}, qwen=True)
+    runtime.note_command_submitted({"command_id": "restart", "intent": "KEEP_LANE"}, qwen=True)
+    _frame(runtime, elapsed_s=8.0, progress_m=16.0, speed_mps=2.0, lateral_offset_m=0.3)
+
+    result = runtime.evaluate(
+        {
+            "target_lane_occupied_count": 0,
+            "restart_displacement_m": 5.0,
+            "final_lateral_offset_abs_max_m": 0.5,
+        },
+        expected_command_count=3,
+    )
+
+    assert result["passed"] is True
+    assert {item["key"]: item["actual"] for item in result["checks"]} == {
+        "target_lane_occupied_count": 0,
+        "restart_displacement_m": 6.0,
+        "final_lateral_offset_abs_max_m": 0.3,
+    }
+
+
+def test_actor_event_records_real_lead_brake_trigger_distance() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    actor = {
+        "actor_id": "lead",
+        "behavior": {
+            "initial_speed_mps": 4.0,
+            "events": [{
+                "phase_id": "P4_LEAD_BRAKE",
+                "trigger": {"type": "ego_distance_less_than_m", "value": 12.0},
+                "action": {"type": "set_speed", "target_speed_mps": 0.3},
+            }],
+        },
+    }
+    state = runtime.actor_state(
+        actor,
+        elapsed_s=2.0,
+        trigger_context={"actor_distances_m": {"lead": 11.8}},
+    )
+    result = runtime.evaluate(
+        {"lead_brake_trigger_distance_m": 12.0}, expected_command_count=1,
+    )
+
+    assert state["event_index"] == 1
+    assert result["passed"] is True
+    assert result["checks"][0]["actual"] == 11.8
+    assert runtime.evidence()["completed_phase_ids"] == ["P4_LEAD_BRAKE"]
+
+
+def test_fault_and_speed_deadlines_use_observed_control_frames() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "faults": [{
+            "fault_id": "rgb",
+            "type": "sensor_blackout",
+            "trigger": {"type": "time", "time_s": 2.0},
+            "duration_s": 1.0,
+        }],
+    })
+    _frame(runtime, elapsed_s=1.0, progress_m=0.0, speed_mps=4.0)
+    runtime.note_command_submitted({"command_id": "slow", "intent": "SLOW_DOWN"}, qwen=True)
+    _frame(runtime, elapsed_s=2.0, progress_m=4.0, speed_mps=4.0)
+    runtime.note_control_observation(
+        elapsed_s=2.2, speed_mps=3.7, route_progress_m=4.5,
+        brake=0.7, safety_override=True, safety_reason="SCENARIO_PERCEPTION_INSUFFICIENT",
+        route_deviation_m=0.0,
+    )
+
+    result = runtime.evaluate(
+        {"max_fault_response_s": 0.5, "speed_drop_deadline_s": 1.5},
+        expected_command_count=1,
+    )
+
+    assert result["passed"] is True
+    actual = {item["key"]: item["actual"] for item in result["checks"]}
+    assert actual["max_fault_response_s"] == pytest.approx(0.2)
+    assert actual["speed_drop_deadline_s"] == pytest.approx(1.2)
+
+
+def test_phase_and_vehicle_advance_counts_use_observed_events() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "phase_plan": ["P1", "P2", "P3"],
+    })
+    runtime.note_command_submitted({"command_id": "c1", "phase_id": "P1"}, qwen=True)
+    runtime.note_terminal("c1", "SUCCEEDED")
+    runtime.note_phase_completed("P2")
+    runtime.note_phase_completed("P3")
+    runtime.note_qwen_resolution(
+        disposition="REJECTED", reason_code="QWEN_INVALID_RESULT", applied=False,
+    )
+
+    result = runtime.evaluate(
+        {
+            "expected_phase_count": 3,
+            "all_phases_must_complete": True,
+            "vehicle_advance_command_count": 0,
+            "qwen_invalid_result_count": 1,
+        },
+        expected_command_count=1,
+    )
+
+    assert result["passed"] is True
+
+
+def test_pedestrian_trigger_actor_is_trigger_evidence_not_qwen_target() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_actor_trigger("occluding_vehicle")
+    result = runtime.evaluate(
+        {"pedestrian_trigger_actor_id": "occluding_vehicle"},
+        expected_command_count=1,
+    )
+    assert result["passed"] is True
+
+
+def test_current_plan_index_tracks_the_applied_command_not_submission_count() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_command_submitted({"command_id": "delayed", "intent": "SET_SPEED"}, qwen=True)
+    runtime.note_command_submitted({"command_id": "stop", "intent": "STOP"}, qwen=True)
+    runtime.note_qwen_resolution(
+        disposition="REJECTED", reason_code="QWEN_STALE", applied=False,
+        command_id="delayed",
+    )
+    runtime.note_qwen_resolution(
+        disposition="SLOW_READY", reason_code="QWEN_READY", applied=True,
+        command_id="stop",
+    )
+
+    result = runtime.evaluate(
+        {"qwen_stale_result_applied_count": 0, "current_plan_command_index": 1},
+        expected_command_count=2,
+    )
+
+    assert result["passed"] is True
+
+
+def test_degraded_and_post_recovery_contracts_require_observed_events() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "faults": [{
+            "fault_id": "rgb",
+            "type": "sensor_blackout",
+            "sensor": "front_rgb",
+            "trigger": {"type": "time", "time_s": 1.0},
+            "duration_s": 1.0,
+        }],
+    })
+    _frame(runtime, elapsed_s=1.0, progress_m=1.0, speed_mps=2.0)
+    runtime.note_control_observation(
+        elapsed_s=1.0, speed_mps=2.0, route_progress_m=1.0,
+        brake=0.0, safety_override=False, safety_reason="NONE",
+        route_deviation_m=0.0,
+    )
+    _frame(runtime, elapsed_s=2.0, progress_m=2.0, speed_mps=2.0)
+    runtime.note_control_observation(
+        elapsed_s=2.0, speed_mps=2.0, route_progress_m=2.0,
+        brake=0.0, safety_override=False, safety_reason="NONE",
+        route_deviation_m=0.0,
+    )
+    runtime.note_command_submitted({"command_id": "after", "intent": "KEEP_LANE"}, qwen=True)
+    runtime.note_qwen_resolution(
+        disposition="SLOW_READY", reason_code="QWEN_READY", applied=True,
+        command_id="after",
+    )
+    runtime.note_terminal("after", "SUCCEEDED")
+
+    result = runtime.evaluate(
+        {"must_enter_degraded_mode": True, "post_recovery_command_succeeds": True},
+        expected_command_count=1,
+    )
+    assert result["passed"] is True
+
+
+def test_specific_safety_contract_does_not_pass_on_unrelated_reason() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_control_observation(
+        elapsed_s=1.0, speed_mps=1.0, route_progress_m=1.0,
+        brake=0.8, safety_override=True, safety_reason="UNRELATED_ALERT",
+        route_deviation_m=0.0,
+    )
+    result = runtime.evaluate(
+        {"must_enter_degraded_mode": True}, expected_command_count=1,
+    )
+    assert result["passed"] is False

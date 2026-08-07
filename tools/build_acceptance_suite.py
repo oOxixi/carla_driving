@@ -123,6 +123,7 @@ def walker(
     start_time_s: float = 4.0,
     speed_mps: float = 1.4,
     trigger: dict[str, Any] | None = None,
+    phase_id: str | None = None,
 ) -> dict[str, Any]:
     behavior: dict[str, Any] = {
         "mode": "crossing",
@@ -132,6 +133,8 @@ def walker(
     }
     if trigger is not None:
         behavior["trigger"] = trigger
+    if phase_id is not None:
+        behavior["phase_id"] = phase_id
     return {
         "actor_id": actor_id,
         "type": "walker.pedestrian",
@@ -800,7 +803,8 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
             vehicle("target_front", 45, speed_mps=4.0, target_speed_mps=4.0,
                     behavior_mode="event_timeline", behavior_events=[
                         {"trigger": {"type": "ego_distance_less_than_m", "value": 16},
-                         "action": {"type": "set_speed", "target_speed_mps": 0.3}},
+                         "action": {"type": "set_speed", "target_speed_mps": 0.3},
+                         "phase_id": "P4_LEAD_BRAKE"},
                         {"trigger": {"type": "elapsed_since_previous_event_greater_than_s", "value": 5},
                          "action": {"type": "set_speed", "target_speed_mps": 3.0}},
                     ]),
@@ -809,7 +813,8 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
             vehicle("distractor_right", 48, -3.5, speed_mps=3.5,
                     blueprint_id="vehicle.mercedes.coupe"),
             walker("pedestrian_001", 82, -3, 3, start_time_s=70, speed_mps=1.4,
-                   trigger={"type": "route_progress_greater_than_m", "value": 68}),
+                   trigger={"type": "route_progress_greater_than_m", "value": 68},
+                   phase_id="P5_PEDESTRIAN"),
             {
                 **red_light(105),
                 "state": "green",

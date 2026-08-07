@@ -39,6 +39,8 @@ from integration.carla_runner import (
     _scenario_maneuver,
     _scenario_local_transform,
     _scenario_traffic_light_observation,
+    _scenario_traffic_light_distance_to_stop_line_m,
+    _scenario_target_lane_occupied_count,
     _scenario_vehicle_speed_mps,
     _select_scene_facts,
     _select_scenario_lead,
@@ -718,6 +720,36 @@ def test_real_traffic_light_observation_replaces_config_fallback_provenance() ->
     assert observed.distance_to_stop_line_m == pytest.approx(12.0)
     assert sources["traffic_light"] == "CARLA_SCENARIO_TRAFFIC_LIGHT_ACTOR_STOP_WAYPOINT"
     assert "FALLBACK" not in sources["traffic_light"]
+    assert _scenario_traffic_light_distance_to_stop_line_m(ego, light) == pytest.approx(12.0)
+
+
+def test_target_lane_occupancy_uses_real_actor_lane_ids() -> None:
+    left = Namespace(road_id=7, lane_id=2)
+    ego_waypoint = Namespace(
+        road_id=7,
+        lane_id=1,
+        get_left_lane=lambda: left,
+        get_right_lane=lambda: None,
+    )
+    occupied_waypoint = Namespace(road_id=7, lane_id=2)
+    current_waypoint = Namespace(road_id=7, lane_id=1)
+    ego_location = object()
+    occupied_location = object()
+    current_location = object()
+    world_map = Namespace(get_waypoint=lambda location, project_to_road=True: {
+        id(ego_location): ego_waypoint,
+        id(occupied_location): occupied_waypoint,
+        id(current_location): current_waypoint,
+    }[id(location)])
+    ego = Namespace(get_location=lambda: ego_location)
+    vehicles = (
+        (Namespace(get_location=lambda: occupied_location), {}),
+        (Namespace(get_location=lambda: current_location), {}),
+    )
+
+    assert _scenario_target_lane_occupied_count(
+        world_map, ego, vehicles, "CHANGE_LANE_LEFT",
+    ) == 1
 
 
 def test_front_gap_expected_value_is_a_hard_completion_contract() -> None:

@@ -232,7 +232,8 @@
             "action": {
               "type": "set_speed",
               "target_speed_mps": 0.3
-            }
+            },
+            "phase_id": "P4_LEAD_BRAKE"
           },
           {
             "trigger": {
@@ -299,7 +300,8 @@
         "trigger": {
           "type": "route_progress_greater_than_m",
           "value": 68
-        }
+        },
+        "phase_id": "P5_PEDESTRIAN"
       }
     },
     {

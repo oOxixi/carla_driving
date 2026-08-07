@@ -887,6 +887,45 @@ def _update_scenario_vehicle(
         _scenario_vehicle_speed_mps(actor_spec, elapsed_s)
         if desired_speed_mps is None else max(0.0, float(desired_speed_mps))
     )
+
+
+def _scenario_target_lane_occupied_count(
+    world_map: Any,
+    ego: Any,
+    scenario_vehicles: Sequence[tuple[Any, Mapping[str, object]]],
+    maneuver: str,
+) -> int:
+    """Count owned scenario vehicles in the commanded adjacent lane."""
+    ego_waypoint = world_map.get_waypoint(ego.get_location(), project_to_road=True)
+    if ego_waypoint is None:
+        raise RuntimeError("cannot measure target-lane occupancy without ego waypoint")
+    normalized = str(maneuver).upper()
+    target = (
+        ego_waypoint.get_left_lane()
+        if normalized.endswith("LEFT")
+        else ego_waypoint.get_right_lane()
+        if normalized.endswith("RIGHT")
+        else None
+    )
+    if target is None:
+        if normalized.endswith("LEFT") or normalized.endswith("RIGHT"):
+            raise RuntimeError("scenario target lane is unavailable for occupancy acceptance")
+        return 0
+    target_road = getattr(target, "road_id", None)
+    target_lane = getattr(target, "lane_id", None)
+    occupied = 0
+    for vehicle, _spec in scenario_vehicles:
+        waypoint = world_map.get_waypoint(
+            vehicle.get_location(), project_to_road=True,
+        )
+        if waypoint is None:
+            continue
+        if (
+            getattr(waypoint, "road_id", None) == target_road
+            and getattr(waypoint, "lane_id", None) == target_lane
+        ):
+            occupied += 1
+    return occupied
     current = _signed_forward_speed_mps(lead)
     error = desired - current
     if error < -0.15:
@@ -1123,6 +1162,22 @@ def _scenario_traffic_light_observation(
     state = str(light.get_state()).split(".")[-1].upper()
     if state not in {"RED", "YELLOW", "GREEN"}:
         raise RuntimeError(f"selected CARLA traffic light has unsupported state {state!r}")
+    distance_to_stop_line_m = _scenario_traffic_light_distance_to_stop_line_m(
+        ego, light,
+    )
+    source = "CARLA_SCENARIO_TRAFFIC_LIGHT_ACTOR_STOP_WAYPOINT"
+    return replace(
+        scene,
+        traffic_light=state,
+        distance_to_stop_line_m=distance_to_stop_line_m,
+    ), {
+        "traffic_light": source,
+        "distance_to_stop_line_m": source,
+    }
+
+
+def _scenario_traffic_light_distance_to_stop_line_m(ego: Any, light: Any) -> float:
+    """Measure the selected signal's forward stop-line distance from CARLA truth."""
     ego_location = ego.get_location()
     forward = ego.get_transform().get_forward_vector()
     distances: list[float] = []
@@ -1138,15 +1193,7 @@ def _scenario_traffic_light_observation(
                 distances.append(max(0.0, along))
     if not distances:
         raise RuntimeError("selected CARLA traffic light has no forward stop waypoint")
-    source = "CARLA_SCENARIO_TRAFFIC_LIGHT_ACTOR_STOP_WAYPOINT"
-    return replace(
-        scene,
-        traffic_light=state,
-        distance_to_stop_line_m=min(distances),
-    ), {
-        "traffic_light": source,
-        "distance_to_stop_line_m": source,
-    }
+    return min(distances)
 
 
 def _apply_virtual_scenario(scene: PerceptionFrame, ego: Any, origin: tuple[float, float, float], args: argparse.Namespace) -> PerceptionFrame:
@@ -2130,6 +2177,12 @@ def run(args: argparse.Namespace) -> None:
             scenario_lead = _select_scenario_lead(
                 ego, [vehicle for vehicle, _ in scenario_vehicles],
             )
+            if extension_runtime is not None and spec is not None:
+                extension_runtime.note_target_lane_occupancy(
+                    _scenario_target_lane_occupied_count(
+                        world_map, ego, scenario_vehicles, _scenario_maneuver(spec),
+                    )
+                )
             if args.perception_mode in {"sensors", "world"} and args.scenario in {"follow", "emergency"}:
                 lead_distance = args.lead_distance_m if args.scenario == "follow" else args.emergency_distance_m
                 scenario_lead = _spawn_static_lead(session, world, world_map, ego, bp, lead_distance)
@@ -2295,6 +2348,12 @@ def run(args: argparse.Namespace) -> None:
                     str(scenario_traffic_light.get_state()).rsplit(".", 1)[-1].upper()
                     if scenario_traffic_light is not None else "UNKNOWN"
                 )
+                extension_stop_line_m = (
+                    _scenario_traffic_light_distance_to_stop_line_m(
+                        ego, scenario_traffic_light,
+                    )
+                    if scenario_traffic_light is not None else None
+                )
                 if extension_runtime is not None:
                     extension_frame = extension_runtime.update_frame(
                         elapsed_s=elapsed_s,
@@ -2303,7 +2362,7 @@ def run(args: argparse.Namespace) -> None:
                         ego_standstill_duration_s=standstill_duration_s,
                         actor_distances_m=actor_distances_m,
                         traffic_light_state=traffic_state,
-                        distance_to_stop_line_m=None,
+                        distance_to_stop_line_m=extension_stop_line_m,
                         lane_id=state.lane_id,
                     )
                     light_spec = _scenario_actor(spec, "traffic_light")
@@ -2361,6 +2420,17 @@ def run(args: argparse.Namespace) -> None:
                             context=extension_frame.trigger_context,
                         )
                     )
+                    if (
+                        walker_ready
+                        and walker_trigger is not None
+                        and extension_runtime is not None
+                    ):
+                        trigger_actor_id = walker_trigger.get("actor_id")
+                        if isinstance(trigger_actor_id, str):
+                            extension_runtime.note_actor_trigger(trigger_actor_id)
+                        phase_id = walker_behavior.get("phase_id")
+                        if isinstance(phase_id, str):
+                            extension_runtime.note_phase_completed(phase_id)
                     _update_scenario_walker(
                         walker, walker_spec, elapsed_s, walker_target, carla,
                         trigger_ready=walker_ready,
@@ -2961,6 +3031,25 @@ def run(args: argparse.Namespace) -> None:
                     for resolution in resolutions:
                         if qwen_image_stager is not None:
                             qwen_image_stager.discard(resolution.command_id)
+                        orchestration = resolution.orchestration
+                        if extension_runtime is not None:
+                            resolution_reason = None
+                            if orchestration is not None:
+                                resolution_reason = orchestration.reason_code
+                                if isinstance(orchestration.feedback, Mapping):
+                                    detail = orchestration.feedback.get("detail")
+                                    if isinstance(detail, str) and detail:
+                                        resolution_reason = f"{resolution_reason} {detail}"
+                            extension_runtime.note_qwen_resolution(
+                                disposition=resolution.disposition,
+                                reason_code=resolution_reason,
+                                applied=(
+                                    resolution.disposition == "SLOW_READY"
+                                    and orchestration is not None
+                                    and orchestration.control_command is not None
+                                ),
+                                command_id=resolution.command_id,
+                            )
                         if recorder is not None:
                             recorder.record_canonical_routing(
                                 phase="RESOLVE",
@@ -2989,12 +3078,15 @@ def run(args: argparse.Namespace) -> None:
                                 )
                         for feedback in resolution.feedbacks:
                             _note_extension_terminal(extension_runtime, feedback)
-                        orchestration = resolution.orchestration
                         if extension_runtime is not None and orchestration is not None:
                             if orchestration.decision_plan is not None:
-                                extension_runtime.note_qwen_plan(orchestration.decision_plan)
+                                extension_runtime.note_qwen_plan(
+                                    orchestration.decision_plan, elapsed_s=elapsed_s,
+                                )
                             if orchestration.compiled_plan is not None:
-                                extension_runtime.note_qwen_plan(orchestration.compiled_plan)
+                                extension_runtime.note_qwen_plan(
+                                    orchestration.compiled_plan, elapsed_s=elapsed_s,
+                                )
                         if (
                             orchestration is not None
                             and orchestration.compiled_plan is not None
@@ -3403,6 +3495,18 @@ def run(args: argparse.Namespace) -> None:
                     and result.safety_reason == "WATCHDOG_ALERT"
                 ):
                     safety_reasons.add(result.safety_reason)
+                if extension_runtime is not None:
+                    extension_runtime.note_control_observation(
+                        elapsed_s=elapsed_s,
+                        speed_mps=state.speed_mps,
+                        route_progress_m=route_progress_m,
+                        brake=result.final_control.brake,
+                        safety_override=result.safety_override,
+                        safety_reason=result.safety_reason,
+                        route_deviation_m=scene.route_deviation_m,
+                        collision=scene.collision,
+                        lateral_offset_m=scene.lane_offset_m,
+                    )
                 decision_end_ns = time.monotonic_ns()
                 ego.apply_control(carla.VehicleControl(
                     throttle=result.final_control.throttle,
