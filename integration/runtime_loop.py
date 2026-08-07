@@ -173,6 +173,15 @@ class ControlRuntime:
         self._clear_active_command()
         return feedback
 
+    def complete_active(self, *, now_s: float, detail: str) -> ExecutionFeedback | None:
+        """Complete an internal command whose outer maneuver contract succeeded."""
+        command_id = self._active_command_id
+        if command_id is None:
+            return None
+        feedback = self.fsm.complete(command_id, now_s=now_s, detail=detail)
+        self._clear_active_command()
+        return feedback
+
     def step(self, vehicle: RuntimeVehicleState, scene: PerceptionFrame, route: RouteReference, *, dt_s: float,
              watchdog_alerts: tuple[str, ...] = (), raw_control_override: object | None = None,
              speed_cap_mps: float | None = None,

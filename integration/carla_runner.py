@@ -3316,6 +3316,13 @@ def run(args: argparse.Namespace) -> None:
                         recorder=recorder,
                         extension_runtime=extension_runtime,
                     )
+                    if maneuver_update.state == "SUCCEEDED":
+                        step_feedback = runtime.complete_active(
+                            now_s=state.sim_time_s,
+                            detail="outer Qwen maneuver plan completed",
+                        )
+                        if step_feedback is not None and recorder is not None:
+                            recorder.record_feedback(step_feedback)
                     started_route_step = (
                         maneuver_update.current_step
                         if any(

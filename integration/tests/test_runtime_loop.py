@@ -73,6 +73,22 @@ def test_runtime_executes_slow_down_and_keep_lane_with_terminal_feedback():
     assert keep.active_command_id is None
 
 
+def test_outer_maneuver_can_complete_and_clear_internal_runtime_command():
+    runtime = ControlRuntime(PurePursuitController())
+    command = _voice("SLOW_DOWN", {"speed": 2.0, "unit": "m/s"})
+    command["command_id"] = "qwen-step-user-step-1"
+    command["valid_duration_s"] = 9.0
+    runtime.submit_voice(command, now_s=0.05)
+
+    feedback = runtime.complete_active(
+        now_s=0.15, detail="outer Qwen maneuver plan completed",
+    )
+
+    assert feedback is not None
+    assert feedback.status.value == "SUCCEEDED"
+    assert runtime.active_command_id is None
+
+
 def test_runtime_fault_override_is_checked_by_d_before_apply_control():
     runtime = ControlRuntime(PurePursuitController())
     result = runtime.step(
