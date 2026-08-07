@@ -605,6 +605,10 @@ class CarlaPerceptionBridge:
                 f"required RGB/LiDAR frame {frame} unavailable; pending sensor frames={pending}; "
                 "normal control must be suppressed"
             ) from error
+        # Official latency starts only after every continuous input for this
+        # frame is present. Capture that boundary before validation/fusion so
+        # the interval includes all downstream perception work.
+        sensor_ready_ns = time.monotonic_ns()
         rgb, lidar = aligned[RGB_SENSOR_ID], aligned[LIDAR_SENSOR_ID]
         radar = aligned.get(RADAR_SENSOR_ID)
         for sensor_id, payload in aligned.items():
@@ -613,12 +617,6 @@ class CarlaPerceptionBridge:
                 raise FrameAlignmentError(
                     f"{sensor_id} payload frame={payload_frame!r}, expected frame={frame}"
                 )
-        # Official end-to-end latency starts when all available modalities for
-        # this frame have been received and frame-aligned.  Keep the timestamp
-        # here so detector/fusion/model/trajectory work cannot be omitted by a
-        # later caller-side timestamp.
-        sensor_ready_ns = time.monotonic_ns()
-
         sources: dict[str, str] = {}
         detected_objects = ()
         corridor_objects = ()

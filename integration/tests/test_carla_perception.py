@@ -282,6 +282,8 @@ def test_bridge_combines_aligned_lidar_events_map_and_associated_actor_truth() -
     assert sample.safety_summary.front_distance_m == pytest.approx(11.84, abs=0.02)
     assert sample.safety_summary.ttc_s == pytest.approx(5.92, abs=0.02)
     assert not sample.safety_summary.visual_valid
+    assert type(sample.sensor_ready_ns) is int
+    assert sample.sensor_ready_ns > 0
 
 
 def test_exact_frame_radar_velocity_overrides_static_rgb_assumption() -> None:
