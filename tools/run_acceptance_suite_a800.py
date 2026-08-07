@@ -149,7 +149,9 @@ def warm_qwen_service(
         request = {
             "schema_version": "1.0", "request_id": f"warmup-{index}-{now}",
             "command_id": f"warmup-{index}", "created_at_ns": now,
-            "deadline_ns": now + 300_000_000, "source_text": "保持当前车道安全行驶",
+            # Warm-up owns no vehicle control and may trigger one-time CUDA
+            # compilation.  Measured CARLA requests retain their 300 ms limit.
+            "deadline_ns": now + 30_000_000_000, "source_text": "保持当前车道安全行驶",
             "command_hint": {"intent": "KEEP_LANE", "target_speed_mps": None,
                              "direction": None, "target": None},
             "rgb_ref": rgb_ref,
