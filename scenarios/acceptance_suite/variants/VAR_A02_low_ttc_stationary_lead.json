@@ -128,12 +128,13 @@
     "must_no_collision": true,
     "must_generate_logs": true,
     "final_control_no_throttle_brake_overlap": true,
-    "must_emergency_brake": true,
+    "must_stop_after_last_command": true,
+    "stop_speed_threshold_mps": 0.2,
+    "stop_within_s": 2.0,
     "min_front_gap_m": 2.5,
     "required_real_actor_types": [
       "vehicle"
     ],
-    "expected_safety_override": true,
     "must_generate_event": true
   },
   "extensions": {

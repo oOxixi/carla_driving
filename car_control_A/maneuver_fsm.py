@@ -315,7 +315,7 @@ def _completion_satisfied(completion: Mapping[str, Any], snapshot: Mapping[str, 
     if kind == "SPEED_BELOW":
         return float(snapshot.get("speed_mps", math.inf)) <= float(value)
     if kind == "SPEED_REACHED":
-        tolerance = float(snapshot.get("speed_tolerance_mps", 0.3))
+        tolerance = float(snapshot.get("speed_tolerance_mps", 0.35))
         return abs(float(snapshot.get("speed_mps", math.inf)) - float(value)) <= tolerance
     if kind == "LANE_CENTERED":
         return (

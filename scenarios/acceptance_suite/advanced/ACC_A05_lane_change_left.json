@@ -122,6 +122,7 @@
   },
   "extensions": {
     "suite_version": "acceptance-suite-2026.08-v2",
+    "route_anchor_spawn_index": 135,
     "priority": "P0",
     "primary_capability": "lane_change_left",
     "input_mode": "raw_text_qwen",

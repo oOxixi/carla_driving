@@ -457,12 +457,33 @@ class VllmQwenPlannerBackend:
 
     def _choice_codes(self, request: Mapping[str, Any]) -> list[str]:
         allowed = set(request["constraints"]["allowed_behaviors"])
+        hint = request.get("command_hint", {})
+        direction = (
+            str(hint.get("direction", "")).upper()
+            if isinstance(hint, Mapping) else ""
+        )
         codes = [
             code
             for code, behavior in self._CHOICES.items()
             if behavior in allowed
             or behavior.removesuffix("_LEFT").removesuffix("_RIGHT") in allowed
         ]
+        intent_codes = {
+            "FOLLOW": {"D", "F"},
+            "CHANGE_LANE": {"D", "G", "H"},
+            "TURN": {"D", "I", "J"},
+            "AVOID_OBSTACLE": {"D", "K"},
+            "RETURN_TO_LANE": {"D", "L"},
+            "PULL_OVER": {"D", "M"},
+        }.get(str(hint.get("intent", "")).upper() if isinstance(hint, Mapping) else "")
+        if intent_codes is not None:
+            codes = [code for code in codes if code in intent_codes]
+        if direction in {"LEFT", "RIGHT"}:
+            opposite = "RIGHT" if direction == "LEFT" else "LEFT"
+            codes = [
+                code for code in codes
+                if not self._CHOICES[code].endswith("_" + opposite)
+            ]
         return codes or ["D"]
 
     def _choice_prompt(
@@ -518,7 +539,9 @@ class VllmQwenPlannerBackend:
         capabilities = request.get("scene_capabilities", {})
         targets = request.get("targets", ())
         target_id = None
-        if targets and behavior in {"FOLLOW", "AVOID_OBSTACLE", "YIELD"}:
+        if targets and behavior in {
+            "FOLLOW", "AVOID_OBSTACLE", "YIELD", "SLOW_DOWN", "STOP",
+        }:
             preferred_relations = (
                 {"center_ahead", "far_ahead"}
                 if behavior == "FOLLOW"
@@ -538,18 +561,40 @@ class VllmQwenPlannerBackend:
             lane, direction = "RIGHT_ADJACENT", "RIGHT"
         elif behavior.startswith("TURN_"):
             lane, direction = "ROUTE_BRANCH", behavior.rsplit("_", 1)[-1]
+        elif behavior == "AVOID_OBSTACLE" and isinstance(hint, Mapping):
+            hinted_direction = str(hint.get("direction", "")).upper()
+            if hinted_direction in {"LEFT", "RIGHT"}:
+                direction = hinted_direction
+                lane = f"{hinted_direction}_ADJACENT"
         elif behavior == "PULL_OVER":
             lane = "SHOULDER"
         elif behavior == "RETURN_TO_LANE":
             lane = "CURRENT"
             direction = capabilities.get("return_direction")
         target_speed = hint.get("target_speed_mps") if isinstance(hint, Mapping) else None
-        if behavior in {"STOP", "HOLD"}:
+        if behavior in {"STOP", "HOLD", "PULL_OVER"}:
             target_speed = 0.0
-        elif behavior == "SLOW_DOWN" and target_speed is None:
-            target_speed = min(2.0, float(request["constraints"].get("max_target_speed_mps") or 2.0))
+        elif behavior == "SLOW_DOWN":
+            requested = math.inf if target_speed is None else float(target_speed)
+            target_speed = min(
+                requested,
+                3.0,
+                float(request["constraints"].get("max_target_speed_mps") or 3.0),
+            )
+        elif target_speed is None and behavior in {
+            "KEEP_LANE", "FOLLOW", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
+            "TURN_LEFT", "TURN_RIGHT", "AVOID_OBSTACLE", "RETURN_TO_LANE",
+        }:
+            target_speed = min(
+                3.0,
+                float(request["constraints"].get("max_target_speed_mps") or 3.0),
+            )
+        if type(target_speed) in (int, float) and not isinstance(target_speed, bool):
+            maximum = request["constraints"].get("max_target_speed_mps")
+            if type(maximum) in (int, float) and not isinstance(maximum, bool):
+                target_speed = min(float(target_speed), float(maximum))
         completion_type = {
-            "STOP": "STOPPED", "HOLD": "HOLD_FRAMES",
+            "STOP": "STOPPED", "HOLD": "HOLD_FRAMES", "PULL_OVER": "STOPPED",
             "FOLLOW": "TARGET_GAP_REACHED", "AVOID_OBSTACLE": "TARGET_PASSED",
             "RETURN_TO_LANE": "LANE_CENTERED", "CHANGE_LANE_LEFT": "LANE_CENTERED",
             "CHANGE_LANE_RIGHT": "LANE_CENTERED", "TURN_LEFT": "JUNCTION_EXITED",

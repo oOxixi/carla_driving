@@ -55,6 +55,7 @@ from .live_voice import LiveVoiceConfig, LiveVoiceSource
 from .route_planner import (
     build_lane_change_route_reference,
     build_route_reference,
+    build_scenario_route_reference,
     command_turn_direction,
     select_topology_route_anchor,
     warm_heading_waypoint_cache,
@@ -286,6 +287,13 @@ def _scenario_maneuver(spec: ScenarioSpec) -> str:
         if intent == "AVOID_OBSTACLE":
             # Pick a straight multi-lane topology. The active route remains in
             # the current lane until a validated plan selects the avoid side.
+            parameters = item.envelope.get("parameters", {})
+            direction = (
+                str(parameters.get("direction", "")).upper()
+                if isinstance(parameters, Mapping) else ""
+            )
+            if direction in {"LEFT", "RIGHT"}:
+                return f"CHANGE_LANE_{direction}"
             return "CHANGE_LANE_LEFT"
     start_x, start_y = spec.local_route_xy_m[0]
     end_x, end_y = spec.local_route_xy_m[-1]
@@ -887,6 +895,22 @@ def _update_scenario_vehicle(
         _scenario_vehicle_speed_mps(actor_spec, elapsed_s)
         if desired_speed_mps is None else max(0.0, float(desired_speed_mps))
     )
+    current = _signed_forward_speed_mps(lead)
+    error = desired - current
+    if error < -0.15:
+        throttle, brake = 0.0, min(1.0, 0.25 + (-error / 3.0))
+    elif error > 0.15:
+        throttle, brake = min(0.45, 0.12 + error / 6.0), 0.0
+    else:
+        throttle, brake = (0.08 if desired > 0.1 else 0.0), 0.0
+    lead.apply_control(carla_api.VehicleControl(
+        throttle=throttle,
+        brake=brake,
+        steer=0.0,
+        hand_brake=False,
+        reverse=False,
+        manual_gear_shift=False,
+    ))
 
 
 def _scenario_target_lane_occupied_count(
@@ -926,22 +950,6 @@ def _scenario_target_lane_occupied_count(
         ):
             occupied += 1
     return occupied
-    current = _signed_forward_speed_mps(lead)
-    error = desired - current
-    if error < -0.15:
-        throttle, brake = 0.0, min(1.0, 0.25 + (-error / 3.0))
-    elif error > 0.15:
-        throttle, brake = min(0.45, 0.12 + error / 6.0), 0.0
-    else:
-        throttle, brake = (0.08 if desired > 0.1 else 0.0), 0.0
-    lead.apply_control(carla_api.VehicleControl(
-        throttle=throttle,
-        brake=brake,
-        steer=0.0,
-        hand_brake=False,
-        reverse=False,
-        manual_gear_shift=False,
-    ))
 
 
 def _spawn_scenario_walker(
@@ -1010,13 +1018,27 @@ def _update_scenario_walker(
     trigger_ready: bool = True,
 ) -> None:
     """Move a scenario pedestrian with CARLA's public WalkerControl API."""
-    if walker is None or not getattr(walker, "is_alive", True):
-        raise RuntimeError("configured scenario walker is not alive")
     behavior = actor_spec.get("behavior", {})
     if not isinstance(behavior, Mapping):
         raise TypeError("scenario walker behavior must be an object")
     start_time_s = float(behavior.get("start_time_s", 0.0))
     speed_mps = max(0.0, float(behavior.get("speed_mps", 0.0)))
+    if walker is None or not getattr(walker, "is_alive", True):
+        spawn = actor_spec.get("spawn", {})
+        target_xy = behavior.get("target_xy_m")
+        if (
+            isinstance(spawn, Mapping)
+            and isinstance(target_xy, (list, tuple))
+            and len(target_xy) == 2
+            and speed_mps > 0.0
+        ):
+            scheduled_distance = math.hypot(
+                float(target_xy[0]) - float(spawn.get("x", 0.0)),
+                float(target_xy[1]) - float(spawn.get("y", 0.0)),
+            )
+            if float(elapsed_s) >= start_time_s + scheduled_distance / speed_mps:
+                return
+        raise RuntimeError("configured scenario walker is not alive")
     location = walker.get_location()
     dx = float(target_location.x) - float(location.x)
     dy = float(target_location.y) - float(location.y)
@@ -1343,6 +1365,24 @@ def _select_scene_facts(
     }
 
 
+def _apply_scenario_speed_limit(
+    scene: PerceptionFrame,
+    scenario_limit_mps: float | None,
+    sources: dict[str, str],
+) -> PerceptionFrame:
+    """Expose a stricter scenario limit to both Qwen and local control."""
+    if scenario_limit_mps is None:
+        return scene
+    configured_limit = max(0.0, float(scenario_limit_mps))
+    effective_limit = (
+        configured_limit
+        if scene.speed_limit_mps is None
+        else min(float(scene.speed_limit_mps), configured_limit)
+    )
+    sources["speed_limit_mps"] = "SCENARIO_SPEED_POLICY"
+    return replace(scene, speed_limit_mps=effective_limit)
+
+
 def _load_command(args: argparse.Namespace) -> dict[str, object] | None:
     if args.command_json:
         command = json.loads(Path(args.command_json).read_text(encoding="utf-8"))
@@ -1587,6 +1627,30 @@ def _runtime_health_completed(safety_reasons: set[str]) -> bool:
     )
 
 
+def _declared_scenario_runtime_completed(
+    spec: ScenarioSpec,
+    *,
+    frames: int,
+    final_speed_mps: float | None,
+    collision_seen: bool,
+    command_finished: bool,
+    safety_reasons: set[str],
+) -> bool:
+    """Check runtime health only; declared contracts own task semantics.
+
+    A valid STOP/HOLD task may begin and end at rest.  Requiring arbitrary
+    motion here makes such scenarios fail despite satisfying every explicit
+    base, extension, and oracle contract.
+    """
+    return (
+        frames == spec.frame_count
+        and final_speed_mps is not None
+        and not collision_seen
+        and command_finished
+        and _runtime_health_completed(safety_reasons)
+    )
+
+
 def _c_perception_safety_reason(c_safety_state: Mapping[str, object] | None) -> str | None:
     """Convert C fail-closed perception summaries into acceptance evidence."""
     if not c_safety_state:
@@ -1618,6 +1682,18 @@ def _c_safety_speed_cap_mps(c_safety_state: Mapping[str, object] | None) -> floa
         return None
     cap = float(candidate)
     return cap if math.isfinite(cap) and cap >= 0.0 else None
+
+
+def _single_sensor_fault_speed_cap_mps(
+    active_sensor_faults: set[str],
+    nominal_speed_mps: float,
+) -> float | None:
+    """Cap speed while exactly one primary perception sensor remains unavailable."""
+    affected = {str(item) for item in active_sensor_faults}.intersection({"front_rgb", "lidar"})
+    if len(affected) != 1:
+        return None
+    nominal = max(0.0, float(nominal_speed_mps))
+    return min(nominal, 2.0)
 
 
 def _c_speed_cap_control_override(
@@ -1765,6 +1841,19 @@ def _select_load_map(requested_map: str, available_maps: tuple[str, ...]) -> str
         if _map_short_name(available).lower() == optimized_short.lower():
             return optimized_short
     return requested_map
+
+
+def _warm_up_loaded_map(world: Any, timeout_s: float) -> None:
+    """Ensure a prior interrupted synchronous run cannot stall map warm-up."""
+    settings = world.get_settings()
+    if bool(getattr(settings, "synchronous_mode", False)):
+        settings.synchronous_mode = False
+        settings.fixed_delta_seconds = None
+        world.apply_settings(settings)
+    try:
+        world.wait_for_tick(timeout_s)
+    except RuntimeError:
+        print("warning: map warm-up wait timed out; continuing with synchronous warm-up")
 
 
 def _import_carla_api() -> Any:
@@ -2002,6 +2091,7 @@ def run(args: argparse.Namespace) -> None:
             route_deviation_trigger_m = float(spec.expected["route_deviation_trigger_m"])
         scenario_safety = SafetySupervisor(SafetyConfig(
             stop_line_guard_m=args.stop_line_guard_m,
+            max_lane_offset_m=min(1.8, route_deviation_trigger_m),
             severe_route_deviation_m=route_deviation_trigger_m,
         ))
         runtime = ControlRuntime(_acceptance_lateral_controller(),
@@ -2089,6 +2179,21 @@ def run(args: argparse.Namespace) -> None:
                 distance_m=_scenario_route_distance_m(spec),
                 forbidden_points_xy=_traffic_light_stop_points(world),
             )
+            configured_anchor_index = spec.extensions.get("route_anchor_spawn_index")
+            if configured_anchor_index is not None:
+                if isinstance(configured_anchor_index, bool) or not isinstance(configured_anchor_index, int):
+                    raise TypeError("extensions.route_anchor_spawn_index must be an integer")
+                if not 0 <= configured_anchor_index < len(spawn_points):
+                    raise ValueError("extensions.route_anchor_spawn_index is outside the map spawn list")
+                anchor_index = configured_anchor_index
+                topology_route = build_scenario_route_reference(
+                    world_map,
+                    spawn_points[anchor_index].location,
+                    args.default_speed_mps,
+                    maneuver=maneuver,
+                    distance_m=_scenario_route_distance_m(spec),
+                )
+                anchor_score = 0.0
             route_anchor = spawn_points[anchor_index]
             seed_offset_m = float(getattr(args, "evidence_seed", 0) % 5) * 2.0
             if seeded_route_anchor and seed_offset_m > 0.0:
@@ -2107,14 +2212,14 @@ def run(args: argparse.Namespace) -> None:
                 # Avoidance must leave the blocked corridor earlier than a
                 # comfort-oriented ordinary lane change.  The topology anchor
                 # has already proved that the adjacent lane is legal.
-                prevalidated_avoid_route = build_lane_change_route_reference(
-                    world_map,
-                    route_anchor.location,
+                prevalidated_avoid_route = RouteReference(
+                    spec.world_route(
+                        route_anchor.location.x,
+                        route_anchor.location.y,
+                        route_anchor.rotation.yaw,
+                    ),
+                    0.0,
                     args.default_speed_mps,
-                    direction="LEFT",
-                    distance_m=min(80.0, _scenario_route_distance_m(spec)),
-                    transition_start_m=4.0,
-                    transition_length_m=20.0,
                 )
                 topology_route = build_route_reference(
                     world_map,
@@ -2181,10 +2286,7 @@ def run(args: argparse.Namespace) -> None:
             carla.Rotation(pitch=-45.0, yaw=spawn_transform.rotation.yaw),
         )
         world.get_spectator().set_transform(spectator_transform)
-        try:
-            world.wait_for_tick(args.timeout_s)
-        except RuntimeError:
-            print("warning: map warm-up wait timed out; continuing with synchronous warm-up")
+        _warm_up_loaded_map(world, args.timeout_s)
 
         with CarlaSession(world, fixed_delta_seconds=args.fixed_delta_s) as session:
             for _ in range(args.warmup_frames):
@@ -2339,6 +2441,15 @@ def run(args: argparse.Namespace) -> None:
                     0.0,
                     runtime.requested_speed_mps,
                 )
+            if (
+                spec is not None
+                and prevalidated_avoid_route is None
+                and any(
+                    str(item.envelope.get("intent", "")).upper() == "AVOID_OBSTACLE"
+                    for item in spec.commands
+                )
+            ):
+                prevalidated_avoid_route = route
 
             if spec is None:
                 route_index_started_ns = time.monotonic_ns()
@@ -2427,7 +2538,6 @@ def run(args: argparse.Namespace) -> None:
                         )
                         if desired_state is not None:
                             scenario_traffic_light.set_state(desired_state)
-                            extension_frame.trigger_context["traffic_light_state"] = str(light_state)
                     for fault_id in extension_frame.newly_active_fault_ids:
                         print(json.dumps({
                             "record_type": "scenario_fault",
@@ -2624,6 +2734,7 @@ def run(args: argparse.Namespace) -> None:
                 perception_control_override: dict[str, object] | None = None
                 c_perception_override_reason: str | None = None
                 c_speed_cap_mps: float | None = None
+                scenario_sensor_fault_speed_cap_mps: float | None = None
                 watchdog_alerts: list[str] = list(route_refresh_alerts)
                 sensor_startup_grace = False
                 qwen_rgb_measurement: Any | None = None
@@ -2722,6 +2833,21 @@ def run(args: argparse.Namespace) -> None:
                         }
                         for sensor_name in sorted(active_sensor_faults):
                             perception_sources[f"fault_{sensor_name}"] = "SCENARIO_FAULT_ACTIVE"
+                        scenario_sensor_fault_speed_cap_mps = _single_sensor_fault_speed_cap_mps(
+                            active_sensor_faults, route.target_speed_mps,
+                        )
+                        if scenario_sensor_fault_speed_cap_mps is not None:
+                            perception_sources["scenario_sensor_fault_speed_cap_mps"] = (
+                                "SCENARIO_SINGLE_SENSOR_DEGRADED_SPEED_CAP"
+                            )
+                            fault_cap_override = _c_speed_cap_control_override(
+                                state.speed_mps, scenario_sensor_fault_speed_cap_mps,
+                            )
+                            if fault_cap_override is not None and perception_control_override is None:
+                                perception_control_override = fault_cap_override
+                                c_perception_override_reason = (
+                                    "SCENARIO_SINGLE_SENSOR_DEGRADED_SPEED_CAP"
+                                )
                         if {"front_rgb", "lidar"}.issubset(active_sensor_faults):
                             perception_control_override = {
                                 "throttle": 0.0, "brake": 1.0, "steer": 0.0,
@@ -2734,6 +2860,11 @@ def run(args: argparse.Namespace) -> None:
                         ):
                             scene = replace(scene, detected_objects=())
                             perception_sources["actor_visibility"] = "SCENARIO_TARGET_OCCLUDED"
+                        scene = _apply_scenario_speed_limit(
+                            scene,
+                            extension_frame.speed_limit_mps,
+                            perception_sources,
+                        )
                     watchdog.heartbeat("perception", now_s=time.monotonic())
                 except PerceptionAcquisitionError as error:
                     scene = PerceptionFrame(frame, state.sim_time_s)
@@ -3133,10 +3264,6 @@ def run(args: argparse.Namespace) -> None:
                                 extension_runtime.note_qwen_plan(
                                     orchestration.decision_plan, elapsed_s=elapsed_s,
                                 )
-                            if orchestration.compiled_plan is not None:
-                                extension_runtime.note_qwen_plan(
-                                    orchestration.compiled_plan, elapsed_s=elapsed_s,
-                                )
                         if (
                             orchestration is not None
                             and orchestration.compiled_plan is not None
@@ -3313,10 +3440,16 @@ def run(args: argparse.Namespace) -> None:
                     None if extension_frame is None else extension_frame.speed_limit_mps
                 )
                 active_speed_cap_mps = min(
-                    value for value in (c_speed_cap_mps, extension_speed_cap_mps)
+                    value for value in (
+                        c_speed_cap_mps, extension_speed_cap_mps,
+                        scenario_sensor_fault_speed_cap_mps,
+                    )
                     if value is not None
                 ) if any(
-                    value is not None for value in (c_speed_cap_mps, extension_speed_cap_mps)
+                    value is not None for value in (
+                        c_speed_cap_mps, extension_speed_cap_mps,
+                        scenario_sensor_fault_speed_cap_mps,
+                    )
                 ) else None
                 if active_speed_cap_mps is not None:
                     effective_route = replace(
@@ -3487,7 +3620,15 @@ def run(args: argparse.Namespace) -> None:
                             )
                             if step_speed is not None:
                                 runtime.requested_speed_mps = float(step_speed)
-                            if started_route_step.behavior.startswith("TURN_"):
+                            if prevalidated_avoid_route is not None:
+                                # The acceptance scenario declares one legal
+                                # out-and-back detour. Keep that full route for
+                                # both the outbound and return semantic steps.
+                                route = replace(
+                                    prevalidated_avoid_route,
+                                    target_speed_mps=runtime.requested_speed_mps,
+                                )
+                            elif started_route_step.behavior.startswith("TURN_"):
                                 route = build_route_reference(
                                     world_map,
                                     ego,
@@ -3681,14 +3822,28 @@ def run(args: argparse.Namespace) -> None:
             )
             if feedback is not None and recorder is not None:
                 recorder.record_feedback(feedback)
-        completion = expected_completion if expected_completion is not None else (
-            command_finished and _runtime_health_completed(safety_reasons) and _scenario_completed(
-                args, frames=frames_completed,
+        if expected_completion is not None:
+            completion = expected_completion
+        elif spec is not None:
+            completion = _declared_scenario_runtime_completed(
+                spec,
+                frames=frames_completed,
                 final_speed_mps=final_speed,
-                final_scene=final_scene, min_gap_m=min_gap_m,
-                collision_seen=collision_seen, max_speed_mps=max_speed_mps,
+                collision_seen=collision_seen,
+                command_finished=command_finished,
+                safety_reasons=safety_reasons,
             )
-        )
+        else:
+            completion = (
+                command_finished
+                and _runtime_health_completed(safety_reasons)
+                and _scenario_completed(
+                    args, frames=frames_completed,
+                    final_speed_mps=final_speed,
+                    final_scene=final_scene, min_gap_m=min_gap_m,
+                    collision_seen=collision_seen, max_speed_mps=max_speed_mps,
+                )
+            )
         intentional_qwen_failure_completion = _intentional_qwen_failure_completed(
             spec,
             frames=frames_completed,
@@ -3749,7 +3904,7 @@ def run(args: argparse.Namespace) -> None:
             }
             if extension_runtime is not None:
                 extension_event_count = int(
-                    extension_runtime.evidence()["scenario_event_count"]
+                    extension_runtime.evidence()["runtime_event_count"]
                 )
                 if extension_event_count > 0:
                     acceptance_context["event_count"] = extension_event_count

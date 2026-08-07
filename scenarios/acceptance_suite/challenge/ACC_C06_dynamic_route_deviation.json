@@ -146,7 +146,7 @@
     ],
     "proposed_acceptance": {
       "must_recover_after_fault": true,
-      "max_fault_response_s": 1.0
+      "recovery_deadline_s": 1.0
     },
     "runtime_support": {
       "status": "current",

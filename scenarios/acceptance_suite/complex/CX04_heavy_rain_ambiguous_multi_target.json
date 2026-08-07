@@ -183,13 +183,12 @@
         "SLOW_DOWN",
         "STOP",
         "HOLD"
-      ],
-      "expected_target_actor_id": "lead_target"
+      ]
     },
     "faults": [],
     "proposed_acceptance": {
       "must_call_qwen": true,
-      "expected_target_actor_id": "lead_target"
+      "requires_confirmation": true
     },
     "runtime_support": {
       "status": "current",

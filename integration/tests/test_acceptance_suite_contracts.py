@@ -105,6 +105,58 @@ def test_acceptance_suite_passes_repository_json_schema() -> None:
         validator.validate(json.loads(path.read_text(encoding="utf-8")))
 
 
+def test_steer_bias_scenario_measures_recovery_not_brake_response() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "challenge" / "ACC_C06_dynamic_route_deviation.json")
+        .read_text(encoding="utf-8")
+    )
+    proposed = scenario["extensions"]["proposed_acceptance"]
+
+    assert proposed["recovery_deadline_s"] == 1.0
+    assert "max_fault_response_s" not in proposed
+
+
+def test_var_b02_declares_the_speed_limit_used_by_its_oracle() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "variants" / "VAR_B02_set_speed_30_limit.json")
+        .read_text(encoding="utf-8")
+    )
+
+    assert scenario["extensions"]["speed_policy"]["scenario_limit_kph"] == 30
+
+
+def test_var_b04_oracle_allows_safe_slowdown_before_stop() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "variants" / "VAR_B04_stop_on_mild_curve.json")
+        .read_text(encoding="utf-8")
+    )
+    allowed = set(scenario["extensions"]["oracle"]["expected_behaviors"])
+
+    assert {"KEEP_LANE", "SLOW_DOWN", "STOP"}.issubset(allowed)
+
+
+def test_var_b05_oracle_excludes_local_fast_emergency_stop() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "variants" / "VAR_B05_emergency_stop_25kph.json")
+        .read_text(encoding="utf-8")
+    )
+
+    assert scenario["extensions"]["oracle"]["expected_behaviors"] == ["SET_SPEED"]
+
+
+def test_var_a02_accepts_proactive_stop_before_emergency_is_needed() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "variants" / "VAR_A02_low_ttc_stationary_lead.json")
+        .read_text(encoding="utf-8")
+    )
+    expected = scenario["expected"]
+
+    assert expected["must_stop_after_last_command"] is True
+    assert expected["stop_within_s"] == 2.0
+    assert "must_emergency_brake" not in expected
+    assert "expected_safety_override" not in expected
+
+
 def test_yellow_to_red_scenario_must_approach_before_signal_transition() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "supplemental" / "advanced" / "SUP_A06_yellow_to_red.json")
@@ -119,3 +171,51 @@ def test_yellow_to_red_scenario_must_approach_before_signal_transition() -> None
     assert acceptance["pre_red_max_speed_min_mps"] == 0.5
     assert acceptance["minimum_red_stop_line_clearance_m"] == 0.0
     assert acceptance["must_stop_on_red_before_stop_line"] is True
+
+
+def test_var_c05_oracle_separates_prefault_motion_from_fail_closed_response() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "variants" / "VAR_C05_rgb_lidar_blackout.json")
+        .read_text(encoding="utf-8")
+    )
+
+    assert scenario["commands"][0]["intent"] == "KEEP_LANE"
+    assert "KEEP_LANE" in scenario["extensions"]["oracle"]["expected_behaviors"]
+    assert scenario["extensions"]["proposed_acceptance"]["max_fault_response_s"] == 1.0
+
+
+def test_var_c06_uses_early_route_deviation_stop_threshold() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "variants" / "VAR_C06_large_route_deviation.json")
+        .read_text(encoding="utf-8")
+    )
+
+    assert scenario["expected"]["route_deviation_trigger_m"] == 1.4
+    assert scenario["expected"]["expected_route_deviation_event"] is True
+    assert "expected_safety_override_allowed" not in scenario["expected"]
+    assert "KEEP_LANE" in scenario["extensions"]["oracle"]["expected_behaviors"]
+    assert scenario["extensions"]["proposed_acceptance"]["max_fault_response_s"] == 1.0
+
+
+def test_cx04_ambiguous_multi_target_requires_confirmation_not_target_guess() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "complex" / "CX04_heavy_rain_ambiguous_multi_target.json")
+        .read_text(encoding="utf-8")
+    )
+
+    assert scenario["commands"][0]["confirm_required"] is True
+    assert scenario["extensions"]["proposed_acceptance"]["requires_confirmation"] is True
+    assert "expected_target_actor_id" not in scenario["extensions"]["oracle"]
+
+
+def test_cx05_keep_lane_route_and_recovery_contract_are_consistent() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "complex" / "CX05_sensor_dropout_route_recovery.json")
+        .read_text(encoding="utf-8")
+    )
+
+    assert max(abs(point[1]) for point in scenario["route"]["points_xy_m"]) <= 1.5
+    proposed = scenario["extensions"]["proposed_acceptance"]
+    assert proposed["must_recover_after_fault"] is True
+    assert proposed["recovery_deadline_s"] == 1.0
+    assert "max_fault_response_s" not in proposed

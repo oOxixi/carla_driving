@@ -125,6 +125,7 @@
     },
     "oracle": {
       "expected_behaviors": [
+        "KEEP_LANE",
         "STOP",
         "HOLD"
       ]

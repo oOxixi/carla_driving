@@ -15,6 +15,9 @@ from typing import Any
 from .scenario_execution import scenario_trigger_satisfied
 
 
+TIME_COMPARISON_EPSILON_S = 1e-6
+
+
 IMPLEMENTED_RUNTIME_REQUIREMENTS = frozenset({
     "adjacent_lane_occupancy_acceptance", "actor_distance_trigger",
     "actor_state_timeline", "all_voice_qwen", "command_queue_policy",
@@ -546,6 +549,11 @@ class ScenarioExtensionRuntime:
             "lead_brake_trigger_distance_m": self._lead_brake_trigger_distance_m,
             "actor_trigger_ids": sorted(self._actor_trigger_ids),
             "scenario_event_count": self._actor_event_count,
+            "runtime_event_count": (
+                self._actor_event_count
+                + len(self._fault_started_s)
+                + len(self._fault_recovered_s)
+            ),
             "first_brake_s": self._first_brake_s,
             "first_qwen_plan_s": self._first_qwen_plan_s,
             "safety_reasons": sorted(self._safety_reasons),
@@ -614,7 +622,13 @@ class ScenarioExtensionRuntime:
             elif key == "max_fault_response_s":
                 samples = list(evidence["fault_response_s"].values())
                 actual = max(samples) if samples else None
-                add(key, actual is not None and actual <= float(required), actual, required)
+                add(
+                    key,
+                    actual is not None
+                    and actual <= float(required) + TIME_COMPARISON_EPSILON_S,
+                    actual,
+                    required,
+                )
             elif key == "recovery_deadline_s":
                 samples = list(evidence["fault_recovery_response_s"].values())
                 actual = max(samples) if samples else None
@@ -846,9 +860,15 @@ class ScenarioExtensionRuntime:
             ):
                 raise TypeError("extensions.oracle.expected_behaviors must be a list")
             allowed = {str(item).upper() for item in expected_behaviors}
+            requires_full_coverage = (
+                expected_command_count > 1
+                and len(allowed) == expected_command_count
+            )
             add(
                 "oracle_expected_behaviors",
-                bool(behaviors) and behaviors.issubset(allowed),
+                bool(behaviors)
+                and behaviors.issubset(allowed)
+                and (not requires_full_coverage or allowed.issubset(behaviors)),
                 sorted(behaviors),
                 sorted(allowed),
             )

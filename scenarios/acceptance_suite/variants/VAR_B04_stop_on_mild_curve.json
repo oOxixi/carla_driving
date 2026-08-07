@@ -142,6 +142,7 @@
     "oracle": {
       "expected_behaviors": [
         "KEEP_LANE",
+        "SLOW_DOWN",
         "STOP"
       ]
     },

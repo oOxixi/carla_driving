@@ -81,6 +81,15 @@ def test_metric_violation_and_unknown_key_fail_closed() -> None:
     assert report["unsupported_keys"] == ["future_rule"]
 
 
+def test_target_speed_tolerance_allows_only_float32_scale_boundary_jitter() -> None:
+    expected = {"target_speed_kph": 20.0, "speed_tolerance_kph": 2.0}
+    boundary_jitter = evaluate_expected(expected, {"final_speed_mps": 17.98 / 3.6})
+    material_miss = evaluate_expected(expected, {"final_speed_mps": 17.94 / 3.6})
+
+    assert boundary_jitter["passed"] is True
+    assert material_miss["passed"] is False
+
+
 def test_required_real_actor_types_rejects_a_false_positive_scene() -> None:
     report = evaluate_expected(
         {"required_real_actor_types": ["walker.pedestrian", "static.prop"]},

@@ -266,6 +266,64 @@ def test_vllm_choice_constraint_excludes_disallowed_lane_changes() -> None:
     assert "H=CHANGE_LANE_RIGHT" not in prompt
 
 
+def test_vllm_choice_constraint_narrows_explicit_right_avoid_to_whole_maneuver() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "AVOID_OBSTACLE", "direction": "RIGHT",
+        "target_speed_mps": None, "target": None,
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "CHANGE_LANE", "TURN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "STOP",
+    ]
+
+    codes = backend._choice_codes(request)
+
+    assert codes == ["D", "K"]
+
+
+def test_vllm_avoid_step_preserves_explicit_right_target_lane() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "AVOID_OBSTACLE", "direction": "RIGHT",
+        "target_speed_mps": None, "target": None,
+    }
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT", "RIGHT_ADJACENT"],
+        "right_lane_exists": True, "right_gap_safe": True,
+    }
+
+    step = backend._step(request, "AVOID_OBSTACLE", index=1)
+
+    assert step["target"]["target_lane"] == "RIGHT_ADJACENT"
+    assert step["target"]["target_speed_mps"] == pytest.approx(3.0)
+
+
+def test_vllm_lane_change_without_requested_speed_uses_safe_maneuver_default() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "CHANGE_LANE", "direction": "RIGHT",
+        "target_speed_mps": None, "target": None,
+    }
+
+    step = backend._step(request, "CHANGE_LANE_RIGHT", index=1)
+
+    assert step["target"]["target_speed_mps"] == pytest.approx(3.0)
+
+
+def test_vllm_set_speed_is_clamped_to_runtime_limit() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {"intent": "SET_SPEED", "target_speed_mps": 33.3}
+    request["constraints"]["max_target_speed_mps"] = 8.0
+
+    step = backend._step(request, "SET_SPEED", index=1)
+
+    assert step["target"]["target_speed_mps"] == 8.0
+
+
 def test_vllm_reuses_already_normalized_jpeg_without_reencoding(tmp_path) -> None:
     path = tmp_path / "normalized.jpg"
     Image.new("RGB", (224, 224), (32, 64, 96)).save(path, format="JPEG", quality=75)
@@ -294,6 +352,21 @@ def test_vllm_follow_binds_center_ahead_not_nearest_distractor() -> None:
     assert step["completion"]["value"] == 2.0
 
 
+def test_vllm_visual_slow_down_binds_target_and_reduces_hinted_speed() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["scene_capabilities"] = {}
+    request["command_hint"] = {"intent": "KEEP_LANE", "target_speed_mps": 5.0}
+    request["targets"] = [{
+        "target_id": "blocker-001", "distance_m": 26.0, "relation": "center_ahead",
+    }]
+
+    step = backend._step(request, "SLOW_DOWN", index=1)
+
+    assert step["target"]["target_id"] == "blocker-001"
+    assert step["target"]["target_speed_mps"] == pytest.approx(3.0)
+
+
 def test_vllm_keep_lane_without_speed_has_valid_hold_completion() -> None:
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
     request = _request()
@@ -302,6 +375,21 @@ def test_vllm_keep_lane_without_speed_has_valid_hold_completion() -> None:
     step = backend._step(request, "KEEP_LANE", index=1)
     assert step["completion"]["type"] == "HOLD_FRAMES"
     assert step["completion"]["value"] is None
+
+
+def test_vllm_pull_over_uses_validator_compatible_completion() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["scene_capabilities"] = {"available_lanes": ["CURRENT", "SHOULDER"]}
+    request["command_hint"] = {
+        "intent": "PULL_OVER", "target_speed_mps": 2.0, "target": None,
+    }
+
+    step = backend._step(request, "PULL_OVER", index=1)
+
+    assert step["target"]["target_lane"] == "SHOULDER"
+    assert step["target"]["target_speed_mps"] == 0.0
+    assert step["completion"]["type"] == "STOPPED"
 
 
 def test_vllm_ambiguous_route_is_forced_to_hold_after_model_choice() -> None:

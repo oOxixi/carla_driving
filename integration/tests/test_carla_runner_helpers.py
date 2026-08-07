@@ -12,6 +12,7 @@ from integration.carla_perception import EventLedger, PerceptionTimeoutError
 from integration.carla_runner import (
     _acceptance_lateral_controller,
     _apply_compiled_plan_route,
+    _apply_scenario_speed_limit,
     _bind_scenario_actor_ids,
     _load_command,
     _lead_vehicle_travel_m,
@@ -33,6 +34,7 @@ from integration.carla_runner import (
     _route_contract_completed,
     _route_stop_trigger_m,
     _runtime_health_completed,
+    _declared_scenario_runtime_completed,
     _scene_from_world,
     _scenario_actor,
     _scenario_actors,
@@ -42,13 +44,17 @@ from integration.carla_runner import (
     _scenario_traffic_light_observation,
     _scenario_traffic_light_distance_to_stop_line_m,
     _scenario_target_lane_occupied_count,
+    _single_sensor_fault_speed_cap_mps,
     _scenario_vehicle_speed_mps,
+    _update_scenario_walker,
+    _update_scenario_vehicle,
     _select_scene_facts,
     _select_scenario_lead,
     _scenario_completed,
     _signed_forward_speed_mps,
     _speed_mps,
     _warm_up_sensor_bridge,
+    _warm_up_loaded_map,
 )
 from integration.contracts import DetectedObject, PerceptionFrame
 from integration.scenario_execution import ScenarioSpec
@@ -57,6 +63,79 @@ from integration.voice_adapter import VoiceCommandAdapter
 
 def _args(scenario):
     return Namespace(scenario=scenario, frames=100)
+
+
+def test_scenario_speed_limit_caps_model_perception_constraint() -> None:
+    scene = PerceptionFrame(1, 0.05, speed_limit_mps=30.0 / 3.6)
+    sources: dict[str, str] = {}
+
+    capped = _apply_scenario_speed_limit(scene, 20.0 / 3.6, sources)
+
+    assert capped.speed_limit_mps == pytest.approx(20.0 / 3.6)
+    assert sources["speed_limit_mps"] == "SCENARIO_SPEED_POLICY"
+
+
+def test_completed_walker_may_be_reclaimed_but_early_death_still_fails() -> None:
+    class DeadWalker:
+        is_alive = False
+
+    actor_spec = {
+        "spawn": {"x": 22.0, "y": -3.4},
+        "behavior": {
+            "target_xy_m": [22.0, 3.4],
+            "start_time_s": 4.0,
+            "speed_mps": 1.5,
+        },
+    }
+
+    _update_scenario_walker(DeadWalker(), actor_spec, 16.0, None, None)
+    with pytest.raises(RuntimeError, match="not alive"):
+        _update_scenario_walker(DeadWalker(), actor_spec, 5.0, None, None)
+
+
+def test_scenario_vehicle_applies_updated_timeline_speed() -> None:
+    class Vector:
+        x = 0.0
+        y = 0.0
+        z = 0.0
+
+    class Transform:
+        @staticmethod
+        def get_forward_vector():
+            return Vector()
+
+    class Vehicle:
+        is_alive = True
+        applied = None
+
+        @staticmethod
+        def get_velocity():
+            return Vector()
+
+        @staticmethod
+        def get_transform():
+            return Transform()
+
+        def apply_control(self, control):
+            self.applied = control
+
+    class CarlaApi:
+        @staticmethod
+        def VehicleControl(**values):
+            return values
+
+    vehicle = Vehicle()
+    _update_scenario_vehicle(
+        vehicle,
+        {"behavior": {"initial_speed_mps": 0.3}},
+        elapsed_s=10.0,
+        carla_api=CarlaApi(),
+        desired_speed_mps=3.0,
+    )
+
+    assert vehicle.applied is not None
+    assert vehicle.applied["throttle"] > 0.0
+    assert vehicle.applied["brake"] == 0.0
 
 
 def test_voice_load_failure_becomes_rejected_no_op() -> None:
@@ -91,6 +170,13 @@ def test_c_vru_speed_cap_is_temporary_and_requires_a_valid_slow_down_summary() -
     assert _c_speed_cap_control_override(5.0, 2.0) == {
         "throttle": 0.0, "brake": 1.0, "steer": 0.0,
     }
+
+
+def test_single_sensor_fault_applies_degraded_speed_cap_only_while_partially_available() -> None:
+    assert _single_sensor_fault_speed_cap_mps({"front_rgb"}, 4.2) == pytest.approx(2.0)
+    assert _single_sensor_fault_speed_cap_mps({"lidar"}, 1.5) == pytest.approx(1.5)
+    assert _single_sensor_fault_speed_cap_mps(set(), 4.2) is None
+    assert _single_sensor_fault_speed_cap_mps({"front_rgb", "lidar"}, 4.2) is None
 
 
 def test_compiled_maneuver_reuses_the_topology_validated_route() -> None:
@@ -807,6 +893,32 @@ def test_intentional_invalid_qwen_probe_completes_on_safe_fail_closed_stop() -> 
     assert _intentional_qwen_failure_completed(
         spec, frames=spec.frame_count, final_speed_mps=1.0, collision_seen=False,
     ) is False
+
+
+def test_declared_stop_from_rest_does_not_require_artificial_motion() -> None:
+    path = (
+        Path(__file__).resolve().parents[2]
+        / "scenarios" / "acceptance_suite" / "supplemental" / "advanced"
+        / "SUP_A12_double_static_obstacle_stop.json"
+    )
+    spec = ScenarioSpec.load(path)
+
+    assert _declared_scenario_runtime_completed(
+        spec,
+        frames=spec.frame_count,
+        final_speed_mps=0.0,
+        collision_seen=False,
+        command_finished=True,
+        safety_reasons=set(),
+    ) is True
+    assert _declared_scenario_runtime_completed(
+        spec,
+        frames=spec.frame_count,
+        final_speed_mps=0.0,
+        collision_seen=False,
+        command_finished=True,
+        safety_reasons={"WATCHDOG_ALERT"},
+    ) is False
     assert _intentional_qwen_failure_completed(
         None, frames=1, final_speed_mps=0.0, collision_seen=False,
     ) is None
@@ -951,6 +1063,30 @@ def test_acceptance_lateral_tuning_limits_steer_and_rate() -> None:
     assert controller.params.min_lookahead_m >= 2.5
 
 
+def test_map_warmup_restores_async_mode_left_by_interrupted_run() -> None:
+    settings = Namespace(synchronous_mode=True, fixed_delta_seconds=0.05)
+
+    class World:
+        applied = None
+        waited = None
+
+        def get_settings(self):
+            return settings
+
+        def apply_settings(self, value):
+            self.applied = value
+
+        def wait_for_tick(self, timeout_s):
+            self.waited = timeout_s
+
+    world = World()
+    _warm_up_loaded_map(world, 2.0)
+
+    assert world.applied.synchronous_mode is False
+    assert world.applied.fixed_delta_seconds is None
+    assert world.waited == pytest.approx(2.0)
+
+
 @pytest.mark.parametrize(
     ("relative_path", "expected"),
     [
@@ -961,6 +1097,7 @@ def test_acceptance_lateral_tuning_limits_steer_and_rate() -> None:
         ("qwen_fullchain/QWF_01_turn_then_speed.json", "TURN_RIGHT"),
         ("qwen_fullchain/QWF_02_lane_change_then_speed.json", "CHANGE_LANE_LEFT"),
         ("qwen_faults/QWX_06_pedestrian_safety_override.json", "CHANGE_LANE_LEFT"),
+        ("acceptance_suite/supplemental/advanced/SUP_A16_detour_right_static_vehicle.json", "CHANGE_LANE_RIGHT"),
     ],
 )
 def test_scenario_maneuver_preserves_declared_curve_direction(relative_path, expected):
@@ -968,6 +1105,94 @@ def test_scenario_maneuver_preserves_declared_curve_direction(relative_path, exp
 
     root = Path(__file__).resolve().parents[2] / "scenarios"
     assert _scenario_maneuver(ScenarioSpec.load(root / relative_path)) == expected
+
+
+def test_sup_a16_detour_reaches_adjacent_lane_before_static_vehicle() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    spec = ScenarioSpec.load(
+        root / "acceptance_suite/supplemental/advanced/SUP_A16_detour_right_static_vehicle.json"
+    )
+    full_offset_x = next(x for x, y in spec.local_route_xy_m if abs(y) >= 3.0)
+    static_vehicle_x = float(spec.actors[0]["spawn"]["x"])
+
+    assert full_offset_x <= static_vehicle_x - 15.0
+    assert spec.extensions["route_anchor_spawn_index"] == 134
+    assert max(y for _, y in spec.local_route_xy_m) > 3.0
+
+
+def test_acc_a05_uses_verified_clear_lane_change_anchor() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    spec = ScenarioSpec.load(
+        root / "acceptance_suite/advanced/ACC_A05_lane_change_left.json"
+    )
+
+    assert spec.extensions["route_anchor_spawn_index"] == 135
+
+
+def test_acc_a06_declares_left_avoidance_on_verified_multilane_anchor() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    spec = ScenarioSpec.load(
+        root / "acceptance_suite/advanced/ACC_A06_obstacle_detour_return.json"
+    )
+
+    assert spec.commands[0].envelope["intent"] == "AVOID_OBSTACLE"
+    assert spec.commands[0].envelope["parameters"]["direction"] == "LEFT"
+    assert spec.extensions["route_anchor_spawn_index"] == 135
+    assert spec.expected["must_finish_route"] is True
+    assert _scenario_maneuver(spec) == "CHANGE_LANE_LEFT"
+    full_offset_x = next(x for x, y in spec.local_route_xy_m if y <= -3.0)
+    static_vehicle_x = float(spec.actors[0]["spawn"]["x"])
+    assert full_offset_x <= static_vehicle_x - 15.0
+    assert min(y for _, y in spec.local_route_xy_m) < -3.0
+
+
+def test_cx03_detour_uses_verified_lane_and_clears_bicycle_before_passing() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    spec = ScenarioSpec.load(
+        root / "acceptance_suite/complex/CX03_construction_bicycle_detour.json"
+    )
+
+    assert spec.commands[0].envelope["intent"] == "AVOID_OBSTACLE"
+    assert spec.commands[0].envelope["parameters"]["direction"] == "LEFT"
+    assert spec.extensions["route_anchor_spawn_index"] == 135
+    assert spec.expected["must_finish_route"] is True
+    assert _scenario_maneuver(spec) == "CHANGE_LANE_LEFT"
+    full_offset_x = next(x for x, y in spec.local_route_xy_m if y <= -3.0)
+    bicycle_x = float(next(
+        actor["spawn"]["x"] for actor in spec.actors
+        if actor["actor_id"] == "bicycle_lead"
+    ))
+    assert full_offset_x <= bicycle_x - 10.0
+
+
+def test_acc_c01_keep_lane_route_stays_in_same_town03_lane_corridor() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    spec = ScenarioSpec.load(
+        root / "acceptance_suite/challenge/ACC_C01_heavy_rain_fog.json"
+    )
+
+    assert spec.commands[0].envelope["intent"] == "KEEP_LANE"
+    assert max(abs(y) for _, y in spec.local_route_xy_m) <= 1.5
+    assert spec.local_route_xy_m[-1][1] == pytest.approx(1.27, abs=0.05)
+
+
+def test_var_c01_keep_lane_route_stays_in_same_town03_lane_corridor() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    spec = ScenarioSpec.load(
+        root / "acceptance_suite/variants/VAR_C01_night_rain.json"
+    )
+
+    assert spec.commands[0].envelope["intent"] == "KEEP_LANE"
+    assert max(abs(y) for _, y in spec.local_route_xy_m) <= 1.5
+    assert spec.local_route_xy_m[-1][1] == pytest.approx(1.27, abs=0.05)
+
+
+def test_acc_b03_oracle_matches_its_two_declared_set_speed_commands() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    spec = ScenarioSpec.load(root / "acceptance_suite/basic/ACC_B03_slow_to_10.json")
+
+    assert [item.envelope["intent"] for item in spec.commands] == ["SET_SPEED", "SET_SPEED"]
+    assert spec.extensions["oracle"] == {"expected_behaviors": ["SET_SPEED"]}
 
 
 def test_carla_left_handed_closed_loop_converges_to_straight_route() -> None:

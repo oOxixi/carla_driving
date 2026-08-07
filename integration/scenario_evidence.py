@@ -407,7 +407,11 @@ class ScenarioEvidenceRecorder:
             self._final_control_overlap_count += 1
         if safety_override:
             self._safety_reasons.add(safety_reason)
-        if finite_final and safety_override and float(final_values[1]) >= 0.99:
+        if (
+            finite_final
+            and float(final_values[0]) <= 0.03
+            and float(final_values[1]) >= 0.99
+        ):
             self._emergency_brake_seen = True
 
         risk = _field(longitudinal, "risk")
@@ -692,16 +696,32 @@ class ScenarioEvidenceRecorder:
             for record in self._commands.values()
             if type(record.get("stop_latency_s")) in (int, float)
         ]
-        command_ids = list(self._commands)
-        expected_count = int(context.get("expected_command_count", len(command_ids)))
-        expected_ids = [f"scenario_cmd_{index:03d}" for index in range(expected_count)]
+        all_command_ids = list(self._commands)
+        configured_count = context.get("expected_command_count")
+        expected_count = int(configured_count) if configured_count is not None else len(all_command_ids)
+        expected_ids = (
+            [f"scenario_cmd_{index:03d}" for index in range(expected_count)]
+            if configured_count is not None
+            else all_command_ids
+        )
+        command_ids = [command_id for command_id in all_command_ids if command_id in expected_ids]
+        command_records = [self._commands[command_id] for command_id in command_ids]
         submitted_times = [
-            record.get("submitted_sim_time_s") for record in self._commands.values()
+            record.get("submitted_sim_time_s") for record in command_records
         ]
         accepted_and_applied = all(
-            str(record.get("disposition", "")).startswith("ACCEPTED")
-            and "first_control_applied_ns" in record
-            for record in self._commands.values()
+            (
+                str(record.get("disposition", "")).startswith("ACCEPTED")
+                or str(record.get("disposition", "")) in {
+                    "SCENARIO_SLOW_PENDING", "SCENARIO_FAST", "SCENARIO_CONFIRM_SAFE",
+                }
+            )
+            and (
+                "first_control_applied_ns" in record
+                or self._terminal_statuses.get(str(record.get("command_id", "")))
+                in {"SUCCEEDED", "SAFETY_OVERRIDE"}
+            )
+            for record in command_records
         )
         monotonic_submission = all(
             type(stamp) in (int, float) for stamp in submitted_times
@@ -755,7 +775,8 @@ class ScenarioEvidenceRecorder:
                 "ROUTE_DEVIATION" in reason for reason in self._safety_reasons
             ),
             "event_count": (
-                self._safety_override_episodes + self._collisions + self._red_violations + self._route_deviations
+                self._safety_override_episodes + self._feedback_safety_event_count
+                + self._collisions + self._red_violations + self._route_deviations
             ),
             "emergency_brake_seen": self._emergency_brake_seen,
             "final_control_all_finite": self._final_controls_finite,

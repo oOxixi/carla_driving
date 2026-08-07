@@ -359,7 +359,7 @@ def front_lidar_distance_m(
     min_range_m: float = 1.0,
     max_range_m: float = 60.0,
     half_width_m: float = 1.35,
-    min_height_m: float = -2.2,
+    min_height_m: float = -1.8,
     max_height_m: float = 1.0,
     minimum_points: int = 3,
 ) -> float | None:
@@ -393,6 +393,7 @@ def front_radar_target(
     min_range_m: float = 1.0,
     max_range_m: float = 80.0,
     half_width_m: float = 1.75,
+    min_altitude_deg: float = -3.0,
 ) -> FrontRadarTarget | None:
     """Select the nearest finite radar return inside the ego corridor.
 
@@ -416,7 +417,11 @@ def front_radar_target(
         depth, azimuth, altitude, velocity = values
         forward = depth * math.cos(altitude) * math.cos(azimuth) + sensor_x_offset_m
         lateral = depth * math.cos(altitude) * math.sin(azimuth)
-        if min_range_m <= forward <= max_range_m and abs(lateral) <= half_width_m:
+        if (
+            min_range_m <= forward <= max_range_m
+            and abs(lateral) <= half_width_m
+            and math.degrees(altitude) >= min_altitude_deg
+        ):
             candidates.append(FrontRadarTarget(forward, velocity))
     if not candidates:
         return None

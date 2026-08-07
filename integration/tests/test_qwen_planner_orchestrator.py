@@ -178,6 +178,20 @@ def test_forced_qwen_set_speed_is_an_allowed_model_behavior():
     assert "SET_SPEED" in queued.model_request["constraints"]["allowed_behaviors"]
 
 
+def test_emergency_stop_bypasses_forced_qwen_and_returns_immediate_fast_control():
+    command = _example("driving_command")
+    command.update({"intent": "EMERGENCY_STOP", "parameters": {}})
+    scene = _example("perception_state")
+    with PipelineOrchestrator(
+        infer=lambda _request: (_ for _ in ()).throw(AssertionError("Qwen must not run")),
+        config=OrchestratorConfig(force_qwen_all_voice=True),
+    ) as runtime:
+        result = runtime.submit_command(command, scene, now_ns=1_100_000_000)
+
+    assert result.disposition == "FAST"
+    assert result.control_command["behavior"] == "EMERGENCY_STOP"
+
+
 def test_non_maneuver_keep_lane_request_cannot_hallucinate_lane_change():
     command = _example("driving_command")
     command.update({
@@ -201,6 +215,83 @@ def test_non_maneuver_keep_lane_request_cannot_hallucinate_lane_change():
     assert queued.model_request["constraints"]["allowed_behaviors"] == ["KEEP_LANE"]
 
 
+def test_conditional_keep_lane_request_cannot_hallucinate_yield():
+    command = _example("driving_command")
+    command.update({
+        "intent": "KEEP_LANE",
+        "source_text": "保持车道，感知异常时降低速度",
+        "parameters": {"target_speed_mps": 4.0},
+    })
+    scene = _example("perception_state")
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(
+            command,
+            scene,
+            now_ns=1_100_000_000,
+            runtime_state={"route_available": True, "intersection_ahead": True},
+        )
+
+    assert queued.disposition == "SLOW_PENDING"
+    assert queued.model_request["constraints"]["allowed_behaviors"] == [
+        "KEEP_LANE", "SLOW_DOWN", "STOP",
+    ]
+
+
+def test_visual_target_keep_lane_request_allows_slow_or_stop_response():
+    command = _example("driving_command")
+    command.update({
+        "intent": "KEEP_LANE",
+        "source_text": "前方有障碍物，安全处理",
+        "parameters": {"target_speed_mps": 5.0},
+    })
+    scene = _example("perception_state")
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(
+            command,
+            scene,
+            now_ns=1_100_000_000,
+            runtime_state={"target_candidate_count": 1},
+        )
+
+    assert queued.model_request["constraints"]["allowed_behaviors"] == [
+        "KEEP_LANE", "SLOW_DOWN", "STOP",
+    ]
+
+
+def test_explicit_right_avoid_request_excludes_unrelated_complex_behaviors():
+    command = _example("driving_command")
+    command.update({
+        "intent": "AVOID_OBSTACLE",
+        "source_text": "从右侧安全绕过前方静止车辆",
+        "parameters": {"direction": "RIGHT"},
+    })
+    scene = _example("perception_state")
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(
+            command,
+            scene,
+            now_ns=1_100_000_000,
+            runtime_state={
+                "right_lane_exists": True, "right_gap_safe": True,
+                "available_lanes": ["CURRENT", "RIGHT_ADJACENT"],
+            },
+        )
+
+    assert queued.disposition == "SLOW_PENDING"
+    assert queued.model_request["constraints"]["allowed_behaviors"] == [
+        "SLOW_DOWN", "STOP", "CHANGE_LANE", "AVOID_OBSTACLE", "RETURN_TO_LANE",
+    ]
+
+
 def test_forced_qwen_safety_scene_is_audited_while_waiting_stopped():
     command = _example("driving_command")
     command["intent"] = "KEEP_LANE"
@@ -218,3 +309,120 @@ def test_forced_qwen_safety_scene_is_audited_while_waiting_stopped():
     assert queued.model_request["constraints"]["must_stop"] is True
     assert queued.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
     assert queued.feedback["safety_event"]["reason_code"] == "TRAFFIC_LIGHT_STOP"
+
+
+def test_close_center_lead_forces_targeted_stop_plan() -> None:
+    command = _example("driving_command")
+    command["intent"] = "KEEP_LANE"
+    command["parameters"] = {"target_speed_mps": 20.0 / 3.6}
+    scene = _example("perception_state")
+    lead = scene["objects"][0]
+    lead.update({
+        "track_id": "stationary_lead",
+        "position_m": [12.0, 0.0, 0.0],
+        "velocity_mps": [0.0, 0.0, 0.0],
+        "distance_m": 12.0,
+    })
+    scene["min_gap_m"] = 12.0
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
+
+    assert queued.model_request["constraints"]["must_stop"] is True
+    assert queued.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
+    assert queued.model_request["targets"][0]["target_id"] == "stationary_lead"
+    assert queued.feedback["safety_event"]["reason_code"] == "FRONT_OBJECT_STOP"
+
+
+def test_occlusion_warning_forces_proactive_stop_plan() -> None:
+    command = _example("driving_command")
+    command["intent"] = "KEEP_LANE"
+    command["source_text"] = "保持车道并注意遮挡区域"
+    command["parameters"] = {"target_speed_mps": 18.0 / 3.6}
+    scene = _example("perception_state")
+    scene["objects"] = []
+    scene["min_gap_m"] = None
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
+
+    assert queued.model_request["constraints"]["must_stop"] is True
+    assert queued.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
+    assert queued.feedback["safety_event"]["reason_code"] == "COMMAND_OCCLUSION_STOP"
+
+
+def test_partially_occluded_follow_target_does_not_force_stop() -> None:
+    command = _example("driving_command")
+    command["intent"] = "KEEP_LANE"
+    command["source_text"] = "跟随正前方被部分遮挡的车辆"
+    command["parameters"] = {"target_speed_mps": 16.0 / 3.6}
+    scene = _example("perception_state")
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
+
+    assert queued.model_request["constraints"]["must_stop"] is False
+    assert queued.model_request["constraints"]["allowed_behaviors"] != ["STOP"]
+
+
+def test_blocked_maneuver_without_safe_adjacent_lane_forces_stop() -> None:
+    command = _example("driving_command")
+    command["intent"] = "KEEP_LANE"
+    command["source_text"] = "绕过前方障碍，确认旁边车道安全"
+    command["parameters"] = {"target_speed_mps": 16.0 / 3.6}
+    scene = _example("perception_state")
+    obstacle = scene["objects"][0]
+    obstacle.update({
+        "track_id": "lane_blocker",
+        "class": "obstacle",
+        "position_m": [22.5, 0.0, 0.0],
+        "distance_m": 22.5,
+    })
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(
+            command,
+            scene,
+            now_ns=1_100_000_000,
+            runtime_state={
+                "available_lanes": ["CURRENT"],
+                "left_lane_exists": False,
+                "right_lane_exists": False,
+                "left_gap_safe": False,
+                "right_gap_safe": False,
+            },
+        )
+
+    assert queued.model_request["constraints"]["must_stop"] is True
+    assert queued.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
+    assert queued.feedback["safety_event"]["reason_code"] == "NO_SAFE_ADJACENT_LANE"
+
+
+def test_ambiguous_voice_command_is_constrained_to_audited_hold() -> None:
+    command = _example("driving_command")
+    command.update({
+        "intent": "UNKNOWN",
+        "source_text": "主识别：左转；备选识别：右转",
+        "parameters": {},
+        "confidence": 0.55,
+        "ambiguity": "AMBIGUOUS",
+        "requires_confirmation": True,
+    })
+    scene = _example("perception_state")
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
+
+    assert queued.disposition == "SLOW_PENDING"
+    assert queued.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
+    assert queued.model_request["routing"]["disposition"] == "CONFIRM_SAFE"

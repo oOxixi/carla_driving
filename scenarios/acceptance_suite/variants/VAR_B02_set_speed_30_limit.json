@@ -139,6 +139,9 @@
       "declared_requirements": [
         "map_speed_limit_acceptance"
       ]
+    },
+    "speed_policy": {
+      "scenario_limit_kph": 30
     }
   },
   "notes": [

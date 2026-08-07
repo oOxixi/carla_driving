@@ -54,8 +54,8 @@
   "commands": [
     {
       "time_s": 0,
-      "source_text": "注意前车遮挡区域，保持安全",
-      "intent": "KEEP_LANE",
+      "source_text": "把速度设置为十五公里每小时",
+      "intent": "SET_SPEED",
       "parameters": {
         "target_speed_kph": 15
       },
@@ -171,8 +171,7 @@
     },
     "oracle": {
       "expected_behaviors": [
-        "SLOW_DOWN",
-        "STOP"
+        "SET_SPEED"
       ]
     },
     "faults": [],

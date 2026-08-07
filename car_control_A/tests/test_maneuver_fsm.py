@@ -79,6 +79,25 @@ def test_lane_change_waits_for_gap_and_times_out_to_safe_stop():
     assert timeout.safe_behavior == "STOP"
 
 
+def test_speed_completion_accepts_closed_loop_ripple_near_30_kph():
+    speed = _step(
+        behavior="SET_SPEED",
+        completion={
+            "type": "SPEED_REACHED", "value": 8.333333333333334,
+            "lane": None, "hold_frames": 3,
+        },
+        timeout_s=8.0,
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(speed), now_s=0.0)
+
+    assert not fsm.update(_snapshot(speed_mps=8.04), now_s=7.7).terminal
+    assert not fsm.update(_snapshot(speed_mps=8.02), now_s=7.75).terminal
+    terminal = fsm.update(_snapshot(speed_mps=8.04), now_s=7.8)
+
+    assert terminal.state == "SUCCEEDED"
+
+
 def test_lane_change_entry_preconditions_are_latched_during_transition():
     lane = _step(
         behavior="CHANGE_LANE_LEFT",

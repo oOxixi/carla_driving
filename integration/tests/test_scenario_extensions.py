@@ -120,6 +120,19 @@ def test_oracle_fails_unexpected_qwen_behavior() -> None:
     assert result["failed_keys"] == ["oracle_expected_behaviors"]
 
 
+def test_multi_command_oracle_requires_each_declared_behavior() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_qwen_plan({"steps": [{"behavior": "STOP"}]})
+
+    result = runtime.evaluate(
+        {}, expected_command_count=2,
+        oracle={"expected_behaviors": ["SET_SPEED", "STOP"]},
+    )
+
+    assert result["passed"] is False
+    assert result["failed_keys"] == ["oracle_expected_behaviors"]
+
+
 def _frame(runtime: ScenarioExtensionRuntime, *, elapsed_s: float, progress_m: float,
            speed_mps: float, lateral_offset_m: float = 0.0,
            distance_to_stop_line_m: float | None = None) -> None:
@@ -190,6 +203,33 @@ def test_actor_event_records_real_lead_brake_trigger_distance() -> None:
     assert result["checks"][0]["actual"] == 11.8
     assert runtime.evidence()["completed_phase_ids"] == ["P4_LEAD_BRAKE"]
     assert runtime.evidence()["scenario_event_count"] == 1
+
+
+def test_runtime_event_count_includes_fault_start_and_recovery() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "faults": [{
+            "fault_id": "steer_bias",
+            "type": "steer_bias",
+            "trigger": {"type": "time", "time_s": 1.0},
+            "duration_s": 0.5,
+            "value": 0.3,
+        }],
+    })
+    common = {
+        "route_progress_m": 0.0,
+        "ego_speed_mps": 1.0,
+        "ego_standstill_duration_s": 0.0,
+        "actor_distances_m": {},
+        "traffic_light_state": "UNKNOWN",
+        "distance_to_stop_line_m": None,
+        "lane_id": "1",
+    }
+    runtime.update_frame(elapsed_s=1.0, **common)
+    runtime.update_frame(elapsed_s=1.5, **common)
+
+    evidence = runtime.evidence()
+    assert evidence["scenario_event_count"] == 0
+    assert evidence["runtime_event_count"] == 2
 
 
 def test_yellow_to_red_contract_requires_approach_and_never_crosses_stop_line() -> None:
@@ -290,6 +330,34 @@ def test_fault_and_speed_deadlines_use_observed_control_frames() -> None:
     actual = {item["key"]: item["actual"] for item in result["checks"]}
     assert actual["max_fault_response_s"] == pytest.approx(0.2)
     assert actual["speed_drop_deadline_s"] == pytest.approx(1.2)
+
+
+def test_fault_deadline_ignores_sub_microsecond_float_drift_only() -> None:
+    def evaluate(response_s: float) -> bool:
+        runtime = ScenarioExtensionRuntime({
+            "faults": [{
+                "fault_id": "steer",
+                "type": "steer_bias",
+                "trigger": {"type": "time", "time_s": 0.0},
+                "duration_s": 2.0,
+            }],
+        })
+        _frame(runtime, elapsed_s=0.0, progress_m=0.0, speed_mps=4.0)
+        runtime.note_control_observation(
+            elapsed_s=response_s,
+            speed_mps=3.0,
+            route_progress_m=3.0,
+            brake=1.0,
+            safety_override=True,
+            safety_reason="ROUTE_DEVIATION_RECOVERY_STOP",
+            route_deviation_m=1.4,
+        )
+        return runtime.evaluate(
+            {"max_fault_response_s": 1.0}, expected_command_count=0,
+        )["passed"]
+
+    assert evaluate(1.00000001) is True
+    assert evaluate(1.0001) is False
 
 
 def test_phase_and_vehicle_advance_counts_use_observed_events() -> None:

@@ -32,32 +32,28 @@
         0
       ],
       [
-        15,
-        0
+        8,
+        -1.0
       ],
       [
-        24,
-        0.5
+        14,
+        -3.5
       ],
       [
         32,
-        2.0
-      ],
-      [
-        40,
-        3.5
+        -3.5
       ],
       [
         55,
-        3.5
+        -3.5
       ],
       [
         65,
-        2.0
+        -2.0
       ],
       [
         75,
-        0.5
+        -0.5
       ],
       [
         85,
@@ -71,8 +67,9 @@
     {
       "time_s": 0,
       "source_text": "从左侧安全绕过施工区域和慢速自行车",
-      "intent": "KEEP_LANE",
+      "intent": "AVOID_OBSTACLE",
       "parameters": {
+        "direction": "LEFT",
         "target_speed_kph": 14
       },
       "intent_confidence": 0.95,
@@ -155,6 +152,7 @@
   "expected": {
     "must_no_collision": true,
     "must_generate_logs": true,
+    "must_finish_route": true,
     "final_control_no_throttle_brake_overlap": true,
     "required_real_actor_types": [
       "vehicle",
@@ -166,6 +164,7 @@
   "extensions": {
     "suite_version": "acceptance-suite-2026.08-v2",
     "priority": "P2",
+    "route_anchor_spawn_index": 135,
     "primary_capability": "construction_bicycle_detour",
     "input_mode": "raw_text_qwen",
     "qwen_policy": {

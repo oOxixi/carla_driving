@@ -221,6 +221,42 @@ def test_command_order_accepts_applied_command_that_is_later_superseded(tmp_path
     assert summary["acceptance"]["passed"] is True
 
 
+def test_command_order_ignores_internal_qwen_commands(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "ordered-qwen.jsonl", clock_ns=lambda: 1_000)
+    recorder.start_run(scenario_id="SUP_B03")
+    for index, command_id in enumerate((
+        "scenario_cmd_000",
+        "qwen-step-scenario_cmd_000-step-1",
+    ), start=1):
+        recorder.record_command(
+            {"command_id": command_id, "intent": "SET_SPEED"},
+            disposition="SCENARIO_SLOW_PENDING" if index == 1 else "ACCEPTED_QWEN_PLAN",
+            submitted_sim_time_s=(index - 1) * 0.1,
+        )
+        if index > 1:
+            recorder.record_frame(
+                vehicle=_vehicle(index, 1.0), scene=PerceptionFrame(index, index * 0.05),
+                raw_control=ControlOutput(0.1, 0.0, 0.0),
+                final_control=ControlOutput(0.1, 0.0, 0.0),
+                safety_reason="NONE", safety_override=False, timing=_timing(index * 100),
+                command_id=command_id,
+            )
+    recorder.record_feedback(ExecutionFeedback(
+        "qwen-step-scenario_cmd_000-step-1", ExecutionStatus.FAILED, 0.1, "internal",
+    ))
+    recorder.record_feedback(ExecutionFeedback(
+        "scenario_cmd_000", ExecutionStatus.SUCCEEDED, 0.1, "done",
+    ))
+
+    summary = recorder.complete(
+        completion=True,
+        expected={"must_execute_commands_in_order": True},
+        acceptance_context={"expected_command_count": 1},
+    )
+
+    assert summary["acceptance"]["passed"] is True
+
+
 def test_invalid_timing_and_non_finite_evidence_are_rejected(tmp_path):
     with pytest.raises(ValueError, match="monotonic"):
         FrameTiming(20, 10, 30)
@@ -302,6 +338,7 @@ def test_feedback_safety_event_is_included_in_acceptance_reasons(tmp_path):
             "expected_reason_contains": ["stop"],
             "expected_safety_override": True,
             "safety_priority_over_command": True,
+            "must_generate_event": True,
         },
     )
 
@@ -342,3 +379,22 @@ def test_carla_left_handed_pose_metrics_use_scenario_left_positive_convention(
     assert metrics["final_lateral_shift_m"]["status"] == "PASS"
     assert metrics["turn_direction"]["status"] == "PASS"
     assert metrics["max_lane_center_offset_m"]["actual"] == pytest.approx(abs(end_y) / 2.0)
+
+
+def test_commanded_full_brake_is_emergency_evidence_without_safety_override(tmp_path) -> None:
+    recorder = ScenarioEvidenceRecorder(tmp_path / "commanded-emergency.jsonl")
+    recorder.start_run(scenario_id="commanded-emergency")
+    recorder.record_frame(
+        vehicle=RuntimeVehicleState(1, 0.05, 2.0, 0.0, 0.0, 0.0, 0.0, "1"),
+        scene=PerceptionFrame(1, 0.05),
+        raw_control=ControlOutput(0.0, 1.0, 0.0),
+        final_control=ControlOutput(0.0, 1.0, 0.0),
+        safety_reason="NONE",
+        safety_override=False,
+        timing=_timing(100),
+        lateral={"cross_track_error_m": 0.0, "steer": 0.0},
+    )
+
+    summary = recorder.complete(completion=True, expected={"must_emergency_brake": True})
+
+    assert summary["acceptance"]["passed"] is True

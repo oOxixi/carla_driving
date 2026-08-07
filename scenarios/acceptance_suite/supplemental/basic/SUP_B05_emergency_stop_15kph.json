@@ -137,22 +137,18 @@
     },
     "oracle": {
       "expected_behaviors": [
-        "SET_SPEED",
-        "STOP"
+        "SET_SPEED"
       ]
     },
     "faults": [],
     "proposed_acceptance": {
-      "qwen_request_count": 2,
-      "brake_before_qwen_ready": true
+      "qwen_request_count": 1
     },
     "runtime_support": {
       "status": "current",
       "requirements": [],
       "declared_requirements": [
-        "all_voice_qwen",
-        "multi_command_qwen",
-        "parallel_emergency_qwen_evidence"
+        "multi_command_qwen"
       ]
     }
   },

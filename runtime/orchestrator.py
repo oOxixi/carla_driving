@@ -209,12 +209,17 @@ class PipelineOrchestrator:
 
         routing = self.complexity_router.decide(canonical, scene, runtime_snapshot)
         self._publish_routing_event(command_id, scene, routing)
-        emergency_reason = self._perception_stop_reason(scene)
+        emergency_reason = (
+            self._perception_stop_reason(scene)
+            or self._command_stop_reason(canonical)
+            or self._blocked_maneuver_stop_reason(canonical, scene, runtime_snapshot)
+        )
         intent = canonical["intent"]
+        force_model = self.config.force_qwen_all_voice and intent != "EMERGENCY_STOP"
         if (
             emergency_reason is not None
             and intent not in {"STOP", "EMERGENCY_STOP"}
-            and not self.config.force_qwen_all_voice
+            and not force_model
         ):
             control = self._safety_stop(canonical, scene, now, emergency_reason)
             return OrchestrationResult(
@@ -227,7 +232,7 @@ class PipelineOrchestrator:
                 **self._routing_fields(routing),
             )
 
-        if routing.disposition == FAST_LOCAL and not self.config.force_qwen_all_voice:
+        if routing.disposition == FAST_LOCAL and not force_model:
             try:
                 control = self._fast_control(canonical, scene, now)
             except (ValueError, InterfaceValidationError) as error:
@@ -239,7 +244,7 @@ class PipelineOrchestrator:
                 **self._routing_fields(routing),
             )
 
-        if routing.disposition == CONFIRM_SAFE and not self.config.force_qwen_all_voice:
+        if routing.disposition == CONFIRM_SAFE and not force_model:
             reason = routing.reasons[0] if routing.reasons else "CONFIRMATION_REQUIRED"
             return self._feedback_result(
                 command_id, now, "REJECTED", reason,
@@ -713,7 +718,11 @@ class PipelineOrchestrator:
             }
             for item in objects
         ]
-        must_stop = self._perception_stop_reason(scene) is not None
+        must_stop = (
+            self._perception_stop_reason(scene)
+            or self._command_stop_reason(command)
+            or self._blocked_maneuver_stop_reason(command, scene, runtime_state)
+        ) is not None
         allowed = self._allowed_model_behaviors(command, routing, must_stop=must_stop)
         deadline = min(
             int(command["deadline_ns"]),
@@ -752,8 +761,14 @@ class PipelineOrchestrator:
         if self.config.qwen_mode == "planner_v2":
             if routing is None:
                 raise ValueError("planner_v2 model requests require routing metadata")
+            confirmation_required = (
+                command.get("requires_confirmation") is True
+                or str(command.get("ambiguity", "NONE")) != "NONE"
+            )
+            if confirmation_required and not must_stop:
+                payload["constraints"]["allowed_behaviors"] = ["STOP"]
             payload["routing"] = {
-                "disposition": routing.disposition,
+                "disposition": "CONFIRM_SAFE" if confirmation_required else routing.disposition,
                 "score": routing.score,
                 "reasons": list(routing.reasons),
                 "safe_wait_behavior": routing.safe_wait_behavior,
@@ -782,7 +797,7 @@ class PipelineOrchestrator:
         if must_stop:
             return ["STOP"]
         configured = list(self.config.allowed_slow_behaviors)
-        if routing is None or routing.features.requires_maneuver:
+        if routing is None:
             return configured
         atomic_by_intent = {
             "START": {"KEEP_LANE", "SET_SPEED"},
@@ -791,10 +806,28 @@ class PipelineOrchestrator:
             "SLOW_DOWN": {"SLOW_DOWN"},
         }
         intent = str(command.get("intent", "")).upper()
+        maneuver_by_intent = {
+            "FOLLOW": {"FOLLOW", "STOP"},
+            "CHANGE_LANE": {"CHANGE_LANE", "STOP"},
+            "TURN": {"TURN", "STOP"},
+            "PULL_OVER": {"PULL_OVER", "STOP"},
+            "AVOID_OBSTACLE": {
+                "SLOW_DOWN", "AVOID_OBSTACLE", "CHANGE_LANE", "RETURN_TO_LANE", "STOP",
+            },
+        }
+        if routing.features.requires_maneuver and intent in maneuver_by_intent:
+            narrowed = [
+                behavior for behavior in configured
+                if behavior in maneuver_by_intent[intent]
+            ]
+            return narrowed or ["STOP"]
+        if routing.features.requires_maneuver:
+            return configured
         if (
             routing.features.atomic_action_count <= 1
             and not routing.features.has_sequence
             and not routing.features.has_condition
+            and not routing.features.has_visual_reference
             and intent in atomic_by_intent
         ):
             narrowed = [
@@ -804,9 +837,10 @@ class PipelineOrchestrator:
             return narrowed or ["STOP"]
         non_maneuver_by_intent = {
             "START": {"KEEP_LANE", "SET_SPEED", "STOP"},
-            "KEEP_LANE": {"KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD"},
+            "KEEP_LANE": {"KEEP_LANE", "SLOW_DOWN", "STOP"},
             "SET_SPEED": {"SET_SPEED", "SLOW_DOWN", "STOP"},
             "SLOW_DOWN": {"SLOW_DOWN", "STOP"},
+            "YIELD": {"YIELD", "SLOW_DOWN", "STOP"},
         }
         permitted = non_maneuver_by_intent.get(intent)
         if permitted is None:
@@ -848,9 +882,86 @@ class PipelineOrchestrator:
             return "VEHICLE_STATE_INVALID"
         if scene["risk_level"] == "EMERGENCY":
             return "PERCEPTION_EMERGENCY"
+        for item in scene.get("objects", ()):
+            if not isinstance(item, Mapping):
+                continue
+            position = item.get("position_m")
+            if not isinstance(position, (list, tuple)) or len(position) < 2:
+                continue
+            distance = item.get("distance_m")
+            confidence = item.get("confidence", 0.0)
+            if type(distance) not in (int, float) or type(confidence) not in (int, float):
+                continue
+            if (
+                float(position[0]) >= 0.0
+                and abs(float(position[1])) <= 1.5
+                and float(distance) <= 12.5
+                and float(confidence) >= 0.5
+            ):
+                return "FRONT_OBJECT_STOP"
         if scene["traffic_light"] in {"RED", "YELLOW"} and scene.get("distance_to_stop_line_m") is not None:
             return "TRAFFIC_LIGHT_STOP"
         return None
+
+    @staticmethod
+    def _command_stop_reason(command: Mapping[str, Any]) -> str | None:
+        source_text = str(command.get("source_text", "")).upper()
+        if any(
+            keyword in source_text
+            for keyword in (
+                "遮挡区域", "盲区", "OCCLUDED AREA", "BLIND SPOT", "BLIND-SPOT",
+            )
+        ):
+            return "COMMAND_OCCLUSION_STOP"
+        return None
+
+    @staticmethod
+    def _blocked_maneuver_stop_reason(
+        command: Mapping[str, Any],
+        scene: Mapping[str, Any],
+        runtime_state: Mapping[str, Any] | None,
+    ) -> str | None:
+        source_text = str(command.get("source_text", "")).upper()
+        if not any(
+            keyword in source_text
+            for keyword in ("绕过", "避让", "换道", "变道", "AVOID", "LANE CHANGE")
+        ):
+            return None
+        state = dict(runtime_state or {})
+        capability_keys = {
+            "available_lanes", "left_lane_exists", "right_lane_exists",
+            "left_gap_safe", "right_gap_safe",
+        }
+        if not capability_keys.intersection(state):
+            return None
+        front_obstacle = False
+        for item in scene.get("objects", ()):
+            if not isinstance(item, Mapping):
+                continue
+            position = item.get("position_m")
+            distance = item.get("distance_m")
+            confidence = item.get("confidence", 0.0)
+            if (
+                isinstance(position, (list, tuple))
+                and len(position) >= 2
+                and type(distance) in (int, float)
+                and type(confidence) in (int, float)
+                and 0.0 <= float(position[0])
+                and abs(float(position[1])) <= 1.8
+                and float(distance) <= 30.0
+                and float(confidence) >= 0.5
+            ):
+                front_obstacle = True
+                break
+        if not front_obstacle:
+            return None
+        available = set(state.get("available_lanes") or ())
+        left_safe = bool(state.get("left_lane_exists")) and bool(state.get("left_gap_safe"))
+        right_safe = bool(state.get("right_lane_exists")) and bool(state.get("right_gap_safe"))
+        if available:
+            left_safe = left_safe and "LEFT_ADJACENT" in available
+            right_safe = right_safe and "RIGHT_ADJACENT" in available
+        return None if left_safe or right_safe else "NO_SAFE_ADJACENT_LANE"
 
     @staticmethod
     def _target_relation(item: Mapping[str, Any]) -> str:

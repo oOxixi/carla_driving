@@ -152,17 +152,40 @@ def warm_qwen_service(
         raise ValueError("warmup count must be non-negative")
     if count == 0:
         return distribution([])
-    image = project / "artifacts" / "acceptance84" / "warmup_224.ppm"
-    image.parent.mkdir(parents=True, exist_ok=True)
-    if not image.is_file():
-        image.write_bytes(b"P6\n224 224\n255\n" + bytes((48, 64, 80)) * (224 * 224))
-    rgb_ref = image.relative_to(project).as_posix()
+    image_root = project / "artifacts" / "acceptance84" / "warmup_frames"
+    image_root.mkdir(parents=True, exist_ok=True)
+    profiles = (
+        ("keep the current lane", "KEEP_LANE", None, ("KEEP_LANE",)),
+        ("set speed to twenty kilometres per hour", "SET_SPEED", None, ("SET_SPEED",)),
+        ("slow down", "SLOW_DOWN", None, ("SLOW_DOWN",)),
+        ("stop", "STOP", None, ("STOP",)),
+        ("keep lane, slow or stop if unsafe", "KEEP_LANE", None, ("KEEP_LANE", "SLOW_DOWN", "STOP")),
+        ("follow the vehicle directly ahead", "FOLLOW", None, ("FOLLOW",)),
+        ("avoid the obstacle on the left", "AVOID_OBSTACLE", "LEFT", ("AVOID_OBSTACLE",)),
+        ("avoid the obstacle on the right", "AVOID_OBSTACLE", "RIGHT", ("AVOID_OBSTACLE",)),
+        ("change lane left", "CHANGE_LANE", "LEFT", ("CHANGE_LANE",)),
+        ("change lane right", "CHANGE_LANE", "RIGHT", ("CHANGE_LANE",)),
+        ("turn left", "TURN", "LEFT", ("TURN",)),
+        ("turn right", "TURN", "RIGHT", ("TURN",)),
+        ("pull over safely", "PULL_OVER", "RIGHT", ("PULL_OVER",)),
+        ("return to the original lane", "RETURN_TO_LANE", "LEFT", ("RETURN_TO_LANE",)),
+    )
     # The first visual request can compile the multimodal CUDA graph.  Warm-up
     # must be allowed to finish that one-time work; the CARLA orchestrator still
     # enforces the official 300 ms decision deadline during measured scenarios.
     client = QwenServiceClient(base_url, timeout_s=30.0)
     latencies: list[float] = []
     for index in range(count):
+        source_text, intent, direction, allowed = profiles[index % len(profiles)]
+        image = image_root / f"warmup_{index:02d}_224.ppm"
+        if not image.is_file():
+            color = (
+                (48 + index * 17) % 256,
+                (64 + index * 29) % 256,
+                (80 + index * 43) % 256,
+            )
+            image.write_bytes(b"P6\n224 224\n255\n" + bytes(color) * (224 * 224))
+        rgb_ref = image.relative_to(project).as_posix()
         now = time.monotonic_ns()
         request = {
             "schema_version": "1.0", "request_id": f"warmup-{index}-{now}",
@@ -170,21 +193,39 @@ def warm_qwen_service(
             # Warm-up owns no vehicle control and may trigger one-time CUDA
             # compilation.  Measured CARLA requests retain their 300 ms limit.
             "deadline_ns": now + 30_000_000_000, "source_text": "保持当前车道安全行驶",
-            "command_hint": {"intent": "KEEP_LANE", "target_speed_mps": None,
-                             "direction": None, "target": None},
+            "command_hint": {
+                "intent": intent,
+                "target_speed_mps": 5.56 if intent not in {"STOP", "SLOW_DOWN"} else None,
+                "direction": direction,
+                "target": "target_front" if intent == "FOLLOW" else None,
+            },
             "rgb_ref": rgb_ref,
             "routing": {"disposition": "QWEN_PLAN", "score": 3,
                         "reasons": ["WARMUP"], "safe_wait_behavior": "SLOW_DOWN"},
-            "scene_capabilities": {"available_lanes": ["CURRENT"],
-                                   "route_available": True},
+            "scene_capabilities": {
+                "available_lanes": [
+                    "CURRENT", "LEFT_ADJACENT", "RIGHT_ADJACENT", "SHOULDER",
+                ],
+                "left_lane_exists": True, "right_lane_exists": True,
+                "left_gap_safe": True, "right_gap_safe": True,
+                "route_available": True, "intersection_ahead": True,
+                "return_direction": direction,
+            },
             "scene_summary": {"frame_id": index, "sim_time_s": index * 0.05,
                               "traffic_light": "GREEN", "risk_level": "LOW",
                               "min_gap_m": None, "ttc_s": None},
-            "targets": [],
+            "targets": [{
+                "target_id": "target_front", "class": "vehicle", "distance_m": 20.0,
+                "relative_speed_mps": 0.0, "confidence": 1.0,
+                "relation": "center_ahead",
+            }],
             "constraints": {"speed_limit_mps": 8.33,
-                            "allowed_behaviors": ["KEEP_LANE", "SLOW_DOWN", "STOP"],
-                            "must_stop": False, "max_target_speed_mps": 8.33},
+                            "allowed_behaviors": list(allowed),
+                            "must_stop": intent == "STOP", "max_target_speed_mps": 8.33},
         }
+        request["source_text"] = source_text
+        if direction is None:
+            request["scene_capabilities"].pop("return_direction", None)
         started = time.perf_counter_ns()
         client.infer(request)
         latencies.append((time.perf_counter_ns() - started) / 1e6)
@@ -233,6 +274,10 @@ def write_report(path: Path, metadata: dict[str, object], records: list[dict[str
     path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def should_stop_after_record(status: object, *, fail_fast: bool) -> bool:
+    return bool(fail_fast and str(status) != "SUCCEEDED")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", type=Path, required=True)
@@ -243,8 +288,16 @@ def main() -> int:
     parser.add_argument("--carla-port", type=int, default=2000)
     parser.add_argument("--warmup-requests", type=int, default=20)
     parser.add_argument(
+        "--fail-fast", action="store_true",
+        help="stop after writing the first non-SUCCEEDED scenario result",
+    )
+    parser.add_argument(
         "--skip-summary-root", action="append", type=Path, default=[],
         help="skip scenarios that already have a terminal *.summary.json below this root",
+    )
+    parser.add_argument(
+        "--exclude-scenario-id", action="append", default=[],
+        help="exclude a scenario from a diagnostic/resume run without marking it complete",
     )
     parser.add_argument(
         "--suite-revision",
@@ -268,7 +321,11 @@ def main() -> int:
         [path.resolve() for path in args.skip_summary_root],
         {item["scenario_id"] for item in all_scenarios},
     )
-    scenarios = [item for item in all_scenarios if item["scenario_id"] not in seen]
+    excluded = set(args.exclude_scenario_id)
+    scenarios = [
+        item for item in all_scenarios
+        if item["scenario_id"] not in seen and item["scenario_id"] not in excluded
+    ]
     health = fetch_json(args.qwen_service_url.rstrip("/") + "/health")
     if not health or health.get("production_ready") is not True:
         raise RuntimeError(f"production Qwen service is not ready: {health}")
@@ -370,13 +427,17 @@ def main() -> int:
             f"wall={wall_time_s:.1f}s",
             flush=True,
         )
+        if should_stop_after_record(record["status"], fail_fast=args.fail_fast):
+            metadata["stopped_early"] = True
+            metadata["stopped_after_scenario_id"] = scenario_id
+            break
 
     metadata["qwen_service_metrics_end"] = fetch_json(
         args.qwen_service_url.rstrip("/") + "/metrics"
     )
     write_report(output / "scenario_results.json", metadata, records)
     print(f"REPORT {output / 'scenario_results.json'}", flush=True)
-    return 0
+    return 1 if metadata.get("stopped_early") is True else 0
 
 
 if __name__ == "__main__":

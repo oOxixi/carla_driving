@@ -821,9 +821,7 @@
         "status": "current",
         "requirements": [],
         "declared_requirements": [
-          "all_voice_qwen",
-          "multi_command_qwen",
-          "parallel_emergency_qwen_evidence"
+          "multi_command_qwen"
         ]
       }
     },

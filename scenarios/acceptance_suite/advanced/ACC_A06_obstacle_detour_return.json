@@ -32,35 +32,35 @@
         0
       ],
       [
-        15,
+        5,
         0
       ],
       [
-        24,
-        0.5
+        10,
+        -0.5
       ],
       [
-        32,
-        2.0
+        14,
+        -2.0
       ],
       [
-        40,
-        3.5
+        18,
+        -3.5
       ],
       [
-        55,
-        3.5
+        50,
+        -3.5
       ],
       [
-        65,
-        2.0
+        60,
+        -2.0
       ],
       [
-        75,
-        0.5
+        70,
+        -0.5
       ],
       [
-        85,
+        80,
         0
       ]
     ],
@@ -71,8 +71,9 @@
     {
       "time_s": 0,
       "source_text": "从左侧安全绕过前方障碍并回到原车道",
-      "intent": "KEEP_LANE",
+      "intent": "AVOID_OBSTACLE",
       "parameters": {
+        "direction": "LEFT",
         "target_speed_kph": 15
       },
       "intent_confidence": 0.95,
@@ -164,6 +165,7 @@
   },
   "extensions": {
     "suite_version": "acceptance-suite-2026.08-v2",
+    "route_anchor_spawn_index": 135,
     "priority": "P0",
     "primary_capability": "detour_return",
     "input_mode": "raw_text_qwen",

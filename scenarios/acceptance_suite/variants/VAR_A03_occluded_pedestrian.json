@@ -149,6 +149,7 @@
     ],
     "expected_safety_override": true,
     "expected_reason_contains": [
+      "occlusion",
       "ttc",
       "front",
       "pedestrian"

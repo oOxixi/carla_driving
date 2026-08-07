@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 
 import numpy as np
 import pytest
@@ -318,6 +319,16 @@ def test_front_radar_target_rejects_off_corridor_and_nonfinite_returns() -> None
     assert target.closing_speed_mps == pytest.approx(1.5)
 
 
+def test_front_radar_target_rejects_low_ground_return() -> None:
+    target = front_radar_target(RadarMeasurement(1, (
+        RadarDetection(12.5, altitude=math.radians(-5.0), velocity=-0.2),
+        RadarDetection(20.0, altitude=math.radians(-1.0), velocity=0.5),
+    )))
+
+    assert target.distance_m == pytest.approx(21.5, abs=0.02)
+    assert target.closing_speed_mps == pytest.approx(0.5)
+
+
 def test_route_deviation_uses_polyline_segments_not_only_sparse_points() -> None:
     ego, session = Actor(1, x=5.0, y=0.6), Session()
     session.frame_buffer.push(RGB_SENSOR_ID, 43, Measurement(43))
@@ -494,3 +505,12 @@ def test_payload_frame_mismatch_is_rejected() -> None:
 def test_front_lidar_requires_a_cluster_in_lane_corridor() -> None:
     isolated = Measurement(1, [[5.0, 0.0, 0.0], [4.0, 5.0, 0.0], [3.0, 0.0, 3.0]])
     assert front_lidar_distance_m(isolated) is None
+
+
+def test_front_lidar_rejects_road_surface_cluster_but_keeps_vehicle_height() -> None:
+    points = Measurement(1, [
+        [13.0, -0.2, -2.0], [13.1, 0.0, -2.0], [13.2, 0.2, -2.0],
+        [20.0, -0.5, -1.2], [20.1, 0.0, -1.1], [20.2, 0.5, -1.0],
+    ])
+
+    assert front_lidar_distance_m(points) == pytest.approx(20.02, abs=0.05)
