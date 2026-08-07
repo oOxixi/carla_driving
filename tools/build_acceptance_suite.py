@@ -1039,16 +1039,25 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         description="车辆接近时真实交通灯由黄切红。",
         commands=[command(0, "接近路口，按信号灯安全行驶", "KEEP_LANE", speed_kph=15)],
         actors=[{
-            **red_light(20), "state": "yellow",
+            **red_light(20), "state": "green",
             "behavior": {"mode": "event_timeline", "states": [{
                 "trigger": {"type": "time", "time_s": 3},
+                "state": "yellow",
+            }, {
+                "trigger": {"type": "time", "time_s": 3.05},
                 "state": "red",
             }]},
         }], duration_s=35, seed=416,
         expected={"must_stop_before_stop_line": True, "expected_safety_override_allowed": True,
                   "must_generate_event": True},
         oracle_behaviors=["KEEP_LANE", "STOP"],
-        proposed_acceptance={"traffic_light_transition_seen": ["YELLOW", "RED"], "qwen_request_count": 1},
+        proposed_acceptance={
+            "traffic_light_transition_seen": ["YELLOW", "RED"],
+            "pre_red_max_speed_min_mps": 0.5,
+            "minimum_red_stop_line_clearance_m": 0.0,
+            "must_stop_on_red_before_stop_line": True,
+            "qwen_request_count": 1,
+        },
         extension_requirements=["all_voice_qwen", "event_triggers", "actor_state_timeline"],
     ))
     add(scenario(

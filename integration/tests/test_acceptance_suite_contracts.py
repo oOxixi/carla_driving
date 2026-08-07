@@ -103,3 +103,19 @@ def test_acceptance_suite_passes_repository_json_schema() -> None:
     validator = validator_cls(schema)
     for path in _scenario_files():
         validator.validate(json.loads(path.read_text(encoding="utf-8")))
+
+
+def test_yellow_to_red_scenario_must_approach_before_signal_transition() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "supplemental" / "advanced" / "SUP_A06_yellow_to_red.json")
+        .read_text(encoding="utf-8")
+    )
+    signal = scenario["actors"][0]
+    states = signal["behavior"]["states"]
+    acceptance = scenario["extensions"]["proposed_acceptance"]
+
+    assert signal["state"] == "green"
+    assert [item["state"] for item in states] == ["yellow", "red"]
+    assert acceptance["pre_red_max_speed_min_mps"] == 0.5
+    assert acceptance["minimum_red_stop_line_clearance_m"] == 0.0
+    assert acceptance["must_stop_on_red_before_stop_line"] is True

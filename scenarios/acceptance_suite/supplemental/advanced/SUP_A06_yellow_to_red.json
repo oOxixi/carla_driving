@@ -68,7 +68,7 @@
     {
       "actor_id": "signal_001",
       "type": "traffic_light",
-      "state": "yellow",
+      "state": "green",
       "distance_to_stop_line_m": 20,
       "behavior": {
         "mode": "event_timeline",
@@ -77,6 +77,13 @@
             "trigger": {
               "type": "time",
               "time_s": 3
+            },
+            "state": "yellow"
+          },
+          {
+            "trigger": {
+              "type": "time",
+              "time_s": 3.05
             },
             "state": "red"
           }
