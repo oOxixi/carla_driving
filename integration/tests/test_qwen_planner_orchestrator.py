@@ -178,6 +178,31 @@ def test_forced_qwen_set_speed_is_an_allowed_model_behavior():
     assert "SET_SPEED" in queued.model_request["constraints"]["allowed_behaviors"]
 
 
+def test_non_maneuver_keep_lane_request_cannot_hallucinate_lane_change():
+    command = _example("driving_command")
+    command.update({
+        "intent": "KEEP_LANE",
+        "source_text": "keep the lane at the intersection",
+        "parameters": {"target_speed_mps": 4.0},
+    })
+    scene = _example("perception_state")
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(
+            command,
+            scene,
+            now_ns=1_100_000_000,
+            runtime_state={"route_available": True, "intersection_ahead": True},
+        )
+
+    assert queued.disposition == "SLOW_PENDING"
+    assert queued.model_request["constraints"]["allowed_behaviors"] == [
+        "KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD",
+    ]
+
+
 def test_forced_qwen_safety_scene_is_audited_while_waiting_stopped():
     command = _example("driving_command")
     command["intent"] = "KEEP_LANE"

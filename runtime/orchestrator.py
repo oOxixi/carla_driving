@@ -714,7 +714,7 @@ class PipelineOrchestrator:
             for item in objects
         ]
         must_stop = self._perception_stop_reason(scene) is not None
-        allowed = ["STOP"] if must_stop else list(self.config.allowed_slow_behaviors)
+        allowed = self._allowed_model_behaviors(command, routing, must_stop=must_stop)
         deadline = min(
             int(command["deadline_ns"]),
             now + int(self.config.model_timeout_ms * 1e6),
@@ -771,6 +771,30 @@ class PipelineOrchestrator:
             }
             payload["scene_capabilities"] = capabilities
         return self.registry.validate("model_request", payload)
+
+    def _allowed_model_behaviors(
+        self,
+        command: Mapping[str, Any],
+        routing: QwenRoutingDecision | None,
+        *,
+        must_stop: bool,
+    ) -> list[str]:
+        if must_stop:
+            return ["STOP"]
+        configured = list(self.config.allowed_slow_behaviors)
+        if routing is None or routing.features.requires_maneuver:
+            return configured
+        non_maneuver_by_intent = {
+            "START": {"KEEP_LANE", "SET_SPEED", "STOP"},
+            "KEEP_LANE": {"KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD"},
+            "SET_SPEED": {"SET_SPEED", "SLOW_DOWN", "STOP"},
+            "SLOW_DOWN": {"SLOW_DOWN", "STOP"},
+        }
+        permitted = non_maneuver_by_intent.get(str(command.get("intent", "")).upper())
+        if permitted is None:
+            return configured
+        narrowed = [behavior for behavior in configured if behavior in permitted]
+        return narrowed or ["STOP"]
 
     def _safety_stop(self, command: Mapping[str, Any], scene: Mapping[str, Any], now: int, reason: str) -> dict[str, Any]:
         return self.registry.validate("control_command", {

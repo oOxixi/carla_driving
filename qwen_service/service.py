@@ -399,7 +399,8 @@ class VllmQwenPlannerBackend:
         return True, f"vLLM planner endpoint configured: {self.model_id}"
 
     def infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]:
-        prompt = self._choice_prompt(request)
+        choice_codes = self._choice_codes(request)
+        prompt = self._choice_prompt(request, choice_codes=choice_codes)
         content: list[dict[str, Any]] = []
         image_path = self._resolve_image(request.get("rgb_ref"))
         if image_path is not None:
@@ -414,7 +415,7 @@ class VllmQwenPlannerBackend:
             temperature=0.0,
             max_tokens=self.max_new_tokens,
             extra_body={
-                "structured_outputs": {"choice": list(self._CHOICES)},
+                "structured_outputs": {"choice": choice_codes},
                 "chat_template_kwargs": {"enable_thinking": False},
             },
         )
@@ -454,7 +455,22 @@ class VllmQwenPlannerBackend:
             "model_id": self.model_id,
         }
 
-    def _choice_prompt(self, request: Mapping[str, Any]) -> str:
+    def _choice_codes(self, request: Mapping[str, Any]) -> list[str]:
+        allowed = set(request["constraints"]["allowed_behaviors"])
+        codes = [
+            code
+            for code, behavior in self._CHOICES.items()
+            if behavior in allowed
+            or behavior.removesuffix("_LEFT").removesuffix("_RIGHT") in allowed
+        ]
+        return codes or ["D"]
+
+    def _choice_prompt(
+        self,
+        request: Mapping[str, Any],
+        *,
+        choice_codes: list[str] | None = None,
+    ) -> str:
         source_text = str(request["source_text"])[:320]
         scene = request["scene_summary"]
         compact_scene = {
@@ -488,7 +504,8 @@ class VllmQwenPlannerBackend:
             "lanes": compact_lanes,
             "route": request.get("routing", {}),
         }
-        legend = " ".join(f"{code}={behavior}" for code, behavior in self._CHOICES.items())
+        codes = list(self._CHOICES) if choice_codes is None else choice_codes
+        legend = " ".join(f"{code}={self._CHOICES[code]}" for code in codes)
         return (
             "Choose exactly one safe high-level driving action code. "
             "Traffic rules and emergency safety override voice. No explanation.\n"

@@ -251,6 +251,21 @@ def test_vllm_prompt_does_not_leak_hint_and_is_bounded() -> None:
     assert len(prompt) < 3000
 
 
+def test_vllm_choice_constraint_excludes_disallowed_lane_changes() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["constraints"]["allowed_behaviors"] = [
+        "KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD",
+    ]
+
+    codes = backend._choice_codes(request)
+    prompt = backend._choice_prompt(request, choice_codes=codes)
+
+    assert codes == ["A", "C", "D", "E"]
+    assert "G=CHANGE_LANE_LEFT" not in prompt
+    assert "H=CHANGE_LANE_RIGHT" not in prompt
+
+
 def test_vllm_reuses_already_normalized_jpeg_without_reencoding(tmp_path) -> None:
     path = tmp_path / "normalized.jpg"
     Image.new("RGB", (224, 224), (32, 64, 96)).save(path, format="JPEG", quality=75)
