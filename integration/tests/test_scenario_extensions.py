@@ -141,6 +141,48 @@ def test_timeout_is_accepted_as_a_discarded_stale_rebind_result() -> None:
     assert result["passed"] is True
 
 
+def test_qwen_safety_stop_guard_is_scoped_to_transient_fault_window() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "faults": [
+            {
+                "fault_id": "rgb", "type": "sensor_blackout",
+                "sensor": "front_rgb", "trigger": {"type": "time", "time_s": 0},
+                "duration_s": 1,
+            },
+            {
+                "fault_id": "lidar", "type": "sensor_blackout",
+                "sensor": "lidar", "trigger": {"type": "time", "time_s": 0},
+                "duration_s": 1,
+            },
+        ],
+    })
+    frame = dict(
+        route_progress_m=0.0, ego_speed_mps=3.0,
+        ego_standstill_duration_s=0.0, actor_distances_m={},
+        traffic_light_state="UNKNOWN", distance_to_stop_line_m=None, lane_id="1",
+    )
+    runtime.update_frame(elapsed_s=0.0, **frame)
+    runtime.note_qwen_resolution(
+        disposition="SLOW_READY", reason_code="KEEP_LANE", applied=True,
+    )
+    runtime.note_control_observation(
+        elapsed_s=0.1, speed_mps=3.0, route_progress_m=0.0, brake=1.0,
+        safety_override=True, safety_reason="SCENARIO_PERCEPTION_INSUFFICIENT",
+        route_deviation_m=0.0,
+    )
+    runtime.update_frame(elapsed_s=1.0, **frame)
+    runtime.note_control_observation(
+        elapsed_s=1.0, speed_mps=2.0, route_progress_m=1.0, brake=0.0,
+        safety_override=False, safety_reason="NONE", route_deviation_m=0.0,
+    )
+
+    result = runtime.evaluate(
+        {"qwen_must_not_override_safety_stop": True}, expected_command_count=1,
+    )
+
+    assert result["passed"] is True
+
+
 def test_oracle_checks_observed_behavior_and_target_binding() -> None:
     runtime = ScenarioExtensionRuntime({})
     runtime.note_qwen_plan({

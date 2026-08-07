@@ -297,6 +297,21 @@ def test_sup_c08_exercises_stale_rejection_then_fresh_rebind() -> None:
     assert "STOP" in scenario["extensions"]["oracle"]["expected_behaviors"]
 
 
+def test_sup_c10_scopes_safety_stop_to_blackout_window() -> None:
+    scenario = json.loads(
+        (
+            SUITE_ROOT / "supplemental" / "challenge"
+            / "SUP_C10_rgb_lidar_blackout.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    proposed = scenario["extensions"]["proposed_acceptance"]
+    assert proposed["max_fault_response_s"] == 1.0
+    assert proposed["qwen_must_not_override_safety_stop"] is True
+    assert proposed["must_recover_after_fault"] is True
+    assert "KEEP_LANE" in scenario["extensions"]["oracle"]["expected_behaviors"]
+
+
 def test_cx05_keep_lane_route_and_recovery_contract_are_consistent() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "complex" / "CX05_sensor_dropout_route_recovery.json")

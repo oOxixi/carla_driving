@@ -803,9 +803,19 @@ class ScenarioExtensionRuntime:
                     actual = final_speed <= 0.3 and any("PERCEPTION" in item for item in reasons)
                 elif key == "qwen_must_not_override_safety_stop":
                     safety_first = evidence["safety_first_s"]
-                    actual = bool(reasons) and final_speed <= 0.3 and not any(
-                        safety_first is not None and float(item) > float(safety_first)
-                        for item in evidence["qwen_applied_s"]
+                    recovered_at = max(self._fault_recovered_s.values(), default=None)
+                    actual = (
+                        bool(reasons)
+                        and safety_first is not None
+                        and first_brake is not None
+                        and not any(
+                            float(item) >= float(safety_first)
+                            and (
+                                recovered_at is None
+                                or float(item) < float(recovered_at)
+                            )
+                            for item in evidence["qwen_applied_s"]
+                        )
                     )
                 elif key == "rebind_requires_fresh_perception":
                     actual = int(evidence["qwen_stale_result_applied_count"]) == 0 and any(
