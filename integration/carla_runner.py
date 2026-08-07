@@ -124,7 +124,7 @@ def _maneuver_target_visible(
         return False
     target_id = str(step.target.get("target_id") or "")
     if not target_id.startswith("legacy-"):
-        return bool(scene.detected_objects) if target_id else False
+        return any(item.track_id == target_id for item in scene.detected_objects)
     target_class = target_id.removeprefix("legacy-").rsplit("-", 1)[0]
     aliases = {
         "vehicle": {"car", "truck", "bus", "vehicle"},
@@ -134,6 +134,28 @@ def _maneuver_target_visible(
     }
     accepted = aliases.get(target_class, {target_class})
     return any(item.class_name.lower() in accepted for item in scene.detected_objects)
+
+
+def _maneuver_target_gap_s(
+    step: CompiledPlanStep | None,
+    scene: PerceptionFrame,
+    ego_speed_mps: float,
+) -> float | None:
+    """Return time gap to the exact actor bound into the current plan."""
+    if step is None:
+        return None
+    target_id = str(step.target.get("target_id") or "")
+    distance_m = next(
+        (
+            float(item.distance_m)
+            for item in scene.detected_objects
+            if item.track_id == target_id and item.distance_m is not None
+        ),
+        None,
+    )
+    if distance_m is None:
+        return None
+    return distance_m / max(0.1, float(ego_speed_mps))
 
 
 def _record_maneuver_update(
@@ -3264,6 +3286,12 @@ def run(args: argparse.Namespace) -> None:
                             ),
                             "target_visible": target_visible,
                             "target_seen": maneuver_target_seen,
+                            "target_gap_s": (
+                                _maneuver_target_gap_s(
+                                    maneuver_fsm.current_step, scene, state.speed_mps,
+                                )
+                                or -math.inf
+                            ),
                             "target_passed": (
                                 maneuver_target_seen
                                 and (

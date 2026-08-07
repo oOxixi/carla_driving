@@ -17,6 +17,7 @@ from integration.carla_runner import (
     _lead_vehicle_travel_m,
     _map_contract_name,
     _maneuver_target_visible,
+    _maneuver_target_gap_s,
     _minimum_gap_contract_completed,
     _note_safety_feedback,
     _build_qwen_context,
@@ -126,6 +127,17 @@ def test_maneuver_target_visibility_does_not_confuse_generic_lidar_obstacles() -
     assert not _maneuver_target_visible(
         vehicle_step, PerceptionFrame(2, 0.10, detected_objects=(generic,)),
     )
+
+
+def test_maneuver_target_gap_uses_bound_actor_distance() -> None:
+    step = Namespace(target={"target_id": "lead_001"})
+    scene = PerceptionFrame(1, 0.05, detected_objects=(
+        DetectedObject(2, "car", 0.9, (0.4, 0.2, 0.6, 0.8), 12.0, "lead_001"),
+        DetectedObject(0, "obstacle", 1.0, (0.4, 0.2, 0.6, 0.8), 3.0, "other"),
+    ))
+
+    assert _maneuver_target_visible(step, scene)
+    assert _maneuver_target_gap_s(step, scene, 4.0) == pytest.approx(3.0)
 
 
 def test_scenario_actor_binding_uses_image_position_when_only_one_range_is_known() -> None:
