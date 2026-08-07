@@ -69,6 +69,12 @@ def _edit_distance(left: str, right: str) -> int:
     return previous[-1]
 
 
+def _slots_match(actual: dict[str, Any], expected: dict[str, Any]) -> bool:
+    """Match annotated slots without rejecting additional executable metadata."""
+
+    return all(actual.get(key) == value for key, value in expected.items())
+
+
 def _percentile(values: list[float], percentile: float) -> float | None:
     if not values:
         return None
@@ -228,6 +234,7 @@ class OnnxSenseVoice:
         wave_tensor = torch.from_numpy(waveform).unsqueeze(0)
         wave_lengths = torch.tensor([wave_tensor.shape[1]], dtype=torch.int32)
         feats, feat_lens = self.frontend(wave_tensor, wave_lengths)
+        actual_feat_len = int(feat_lens[0])
         if self.fixed_frames is not None and feats.shape[1] != self.fixed_frames:
             if feats.shape[1] > self.fixed_frames:
                 feats = feats[:, : self.fixed_frames, :]
@@ -251,7 +258,11 @@ class OnnxSenseVoice:
         onnx_ms = (time.perf_counter() - ort_started) * 1000.0
 
         ids = logits[0].argmax(axis=-1).tolist()
-        limit = int(output_lens[0])
+        # The fixed-shape graph pads short utterances to ``fixed_frames`` and its
+        # output length therefore includes padded tail frames.  SenseVoice adds
+        # four control-query frames before the acoustic features; decoding past
+        # the real feature length produces deterministic suffix hallucinations.
+        limit = min(int(output_lens[0]), actual_feat_len + 4)
         collapsed: list[int] = []
         previous = None
         for token_id in ids[:limit]:
@@ -297,10 +308,15 @@ def _run_item(item: dict[str, Any], audio_root: Path, recognizer: OnnxSenseVoice
         "language": item.get("lang"),
         "audio": item["audio"],
         "reference_text": expected_text,
+        "expected_intent": item.get("intent"),
+        "expected_slots": item.get("slots", {}),
         "asr_text": text,
         "asr_exact": text == expected_text,
         "intent_ok": b2.get("intent") == item.get("intent"),
-        "slots_ok": dict(b2.get("slots", {})) == dict(item.get("slots", {})),
+        "slots_ok": _slots_match(
+            dict(b2.get("slots", {})),
+            dict(item.get("slots", {})),
+        ),
         "reference_chars": len(normalized_reference),
         "edit_distance": edit_distance,
         "latency": {

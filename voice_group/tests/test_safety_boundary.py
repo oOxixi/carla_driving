@@ -61,6 +61,34 @@ def test_observed_asr_variants_remain_safe_and_executable(
     assert result["status"] == "valid"
 
 
+@pytest.mark.parametrize(
+    ("text", "intent", "expected_slots"),
+    [
+        ("在这庭，", "STOP", {}),
+        ("麻烦换左遍车道，", "CHANGE_LANE", {"direction": "LEFT"}),
+        ("马上杀，", "EMERGENCY_STOP", {}),
+        ("降降素", "SLOW_DOWN", {}),
+        ("麻烦停车停车，", "EMERGENCY_STOP", {}),
+    ],
+)
+def test_current_sensevoice_errors_keep_the_expected_control_semantics(
+    text: str,
+    intent: str,
+    expected_slots: dict[str, object],
+) -> None:
+    result = parse_command(
+        process_asr_text(
+            request_id="sensevoice-error-tolerance",
+            text=text,
+            asr_confidence=1.0,
+        )
+    )
+
+    assert result["intent"] == intent
+    assert result["status"] == "valid"
+    assert all(result["slots"].get(key) == value for key, value in expected_slots.items())
+
+
 def test_missing_action_is_not_inferred_from_urgency_word_alone() -> None:
     result = parse_command(
         process_asr_text(

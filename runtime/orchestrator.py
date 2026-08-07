@@ -890,13 +890,21 @@ class PipelineOrchestrator:
                 continue
             distance = item.get("distance_m")
             confidence = item.get("confidence", 0.0)
+            velocity = item.get("velocity_mps")
             if type(distance) not in (int, float) or type(confidence) not in (int, float):
                 continue
+            stationary = (
+                isinstance(velocity, (list, tuple))
+                and len(velocity) >= 1
+                and type(velocity[0]) in (int, float)
+                and abs(float(velocity[0])) <= 0.3
+            )
             if (
                 float(position[0]) >= 0.0
                 and abs(float(position[1])) <= 1.5
                 and float(distance) <= 12.5
                 and float(confidence) >= 0.5
+                and stationary
             ):
                 return "FRONT_OBJECT_STOP"
         if scene["traffic_light"] in {"RED", "YELLOW"} and scene.get("distance_to_stop_line_m") is not None:

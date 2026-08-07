@@ -244,6 +244,10 @@ def classify_intent(text: str) -> dict:
             r"(紧急|快).*(刹|停)",
             r"(急刹|刹车踩到底)$",
 
+            # Repeating the stop action is an urgency signal even when ASR
+            # strips the original exclamation mark.
+            r"^(停车|停下|停住|刹车|制动)\1$",
+
             r"^踩死车$",
 
             r"^刹$",

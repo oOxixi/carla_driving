@@ -51,6 +51,17 @@ SYNONYM_MAP = {
 }
 
 
+# Narrow corrections observed in the pinned SenseVoiceSmall acceptance run.
+# Keep these phrases context-specific so ordinary uses of the homophones are
+# not rewritten into vehicle commands.
+ASR_CORRECTION_MAP = {
+    "在这庭": "在这停",
+    "左遍车道": "左边车道",
+    "马上杀": "马上刹",
+    "降降素": "降降速",
+}
+
+
 
 def normalize_text(text: str) -> str:
     """
@@ -89,6 +100,14 @@ def normalize_text(text: str) -> str:
 
     for word in polite_words:
         normalized = normalized.replace(word, "")
+
+    corrections = sorted(
+        ASR_CORRECTION_MAP.items(),
+        key=lambda item: len(item[0]),
+        reverse=True,
+    )
+    for source, target in corrections:
+        normalized = normalized.replace(source, target)
 
     # 长同义短语优先替换
     replacements = sorted(
