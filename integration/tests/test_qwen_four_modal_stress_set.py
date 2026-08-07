@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 
 import numpy as np
@@ -8,7 +9,75 @@ from PIL import Image
 
 from tools.build_qwen_four_modal_stress_set import VARIANTS, build
 from tools.build_four_modal_cases_v2 import _canonical_command
-from tools.four_modal_metrics import summarize_records
+from tools.four_modal_metrics import (
+    evaluate_official_verdict,
+    evaluate_official_gates,
+    summarize_latency,
+    summarize_records,
+)
+
+
+def test_latency_summary_has_required_percentiles() -> None:
+    result = summarize_latency([10.0, 20.0, 30.0, 40.0, 50.0])
+
+    assert set(result) == {"count", "mean", "p50", "p95", "p99", "max"}
+    assert result["p50"] == 30.0
+    assert result["max"] == 50.0
+
+
+def test_over_300ms_stops_before_accuracy() -> None:
+    gate = evaluate_official_gates({"end_to_end_ms": {"p95": 301.0}})
+
+    assert gate == {
+        "status": "EARLY_STOP",
+        "reason": "end_to_end_p95_over_300ms",
+        "run_accuracy": False,
+        "run_stability": False,
+    }
+
+
+def test_official_verdict_reports_parse_and_accuracy_failures() -> None:
+    verdict = evaluate_official_verdict(
+        {
+            "instruction_parse_ms": {"p95": 51.0},
+            "end_to_end_ms": {"p95": 149.0},
+        },
+        {
+            "asr": {"intent_accuracy": 0.94},
+            "multimodal": {"action_target_contract_accuracy": 0.97},
+        },
+        scenario_completion=0.91,
+    )
+
+    assert verdict["status"] == "FAIL"
+    assert verdict["gates"] == {
+        "instruction_parse_p95_le_50ms": False,
+        "end_to_end_p95_le_150ms": True,
+        "asr_intent_accuracy_ge_95pct": False,
+        "multimodal_action_target_accuracy_ge_98pct": False,
+        "scenario_completion_ge_90pct": True,
+    }
+
+
+def test_full_chain_latency_manifest_is_frozen_and_uses_unique_frames() -> None:
+    root = Path(__file__).resolve().parents[2]
+    manifest = json.loads(
+        (root / "datasets/repro/full_chain_latency_v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    samples = manifest["samples"]
+
+    assert len(samples) == 10
+    assert len({sample["frame_sha256"] for sample in samples}) == 10
+    for sample in samples:
+        for ref_key, hash_key in (
+            ("audio_ref", "audio_sha256"),
+            ("frame_ref", "frame_sha256"),
+        ):
+            path = root / sample[ref_key]
+            assert path.is_file()
+            assert hashlib.sha256(path.read_bytes()).hexdigest() == sample[hash_key]
 
 
 def _jsonl(path: Path, rows: list[dict]) -> None:
@@ -142,6 +211,9 @@ def test_summary_separates_unanswerable_safety_faults() -> None:
     assert metrics["raw_qwen_target_association_accuracy"] == 1.0
     assert metrics["safety_fault_fail_closed_accuracy"] == 1.0
     assert metrics["full_chain_contract_accuracy"] == 1.0
+    assert set(metrics["latency"]["voice"]) == {
+        "mean_ms", "p50_ms", "p95_ms", "p99_ms", "max_ms"
+    }
 
 
 def test_canonical_command_uses_observed_relation_and_distance() -> None:

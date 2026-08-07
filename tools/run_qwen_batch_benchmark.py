@@ -122,7 +122,12 @@ def main() -> int:
         help="root for each case's relative rgb_ref",
     )
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--max-new-tokens", type=int, default=64)
+    parser.add_argument("--max-new-tokens", type=int, default=48)
+    parser.add_argument(
+        "--awq-backend",
+        choices=("auto", "torch_awq", "gemm", "gemm_triton"),
+        default="auto",
+    )
     args = parser.parse_args()
 
     cases = _load_cases(args.cases)
@@ -143,6 +148,7 @@ def main() -> int:
         args.model_path,
         image_root=image_root,
         max_new_tokens=args.max_new_tokens,
+        awq_backend=args.awq_backend,
     )
     records: list[dict[str, Any]] = []
     for index, case in enumerate(cases):

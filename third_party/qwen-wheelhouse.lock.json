@@ -1,0 +1,2322 @@
+{
+  "files": [
+    {
+      "path": "aiohappyeyeballs-2.7.1-py3-none-any.whl",
+      "bytes": 15038,
+      "sha256": "9243213661e29250eb41368e5daa826fc017156c3b8a11440826b2e3ed376472"
+    },
+    {
+      "path": "aiohttp-3.14.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 1792122,
+      "sha256": "543906c127fb1d929b95076db19b83fa2d46751006ff1e23b093aa5ac4d8db42"
+    },
+    {
+      "path": "aiosignal-1.4.0-py3-none-any.whl",
+      "bytes": 7490,
+      "sha256": "053243f8b92b990551949e63930a839ff0cf0b0ebbe0597b0f3fb19e1a0fe82e"
+    },
+    {
+      "path": "annotated_doc-0.0.5-py3-none-any.whl",
+      "bytes": 5302,
+      "sha256": "117bac03a25ede5df5440e855b32d556049ca169ead221505badf432fed4b101"
+    },
+    {
+      "path": "annotated_types-0.8.0-py3-none-any.whl",
+      "bytes": 13427,
+      "sha256": "f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0"
+    },
+    {
+      "path": "anthropic-0.120.2-py3-none-any.whl",
+      "bytes": 1022851,
+      "sha256": "0f0bc2b381dc0eb41c8d886b815d79c2041cd2374f83aed36f574b6dc9c579c1"
+    },
+    {
+      "path": "anyio-4.14.2-py3-none-any.whl",
+      "bytes": 125813,
+      "sha256": "9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494"
+    },
+    {
+      "path": "apache_tvm_ffi-0.1.10-cp312-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 2571084,
+      "sha256": "96b69030c722572e13e30182733adfa2d604258e988b3f6630a16f397c7f9288"
+    },
+    {
+      "path": "astor-0.8.1-py2.py3-none-any.whl",
+      "bytes": 27488,
+      "sha256": "070a54e890cefb5b3739d19f30f5a5ec840ffc9c50ffa7d23cc9fc1a38ebbfc5"
+    },
+    {
+      "path": "attrs-26.1.0-py3-none-any.whl",
+      "bytes": 67548,
+      "sha256": "c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309"
+    },
+    {
+      "path": "blake3-1.0.9-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 383851,
+      "sha256": "bcd56a7a972c4185070f7042ccc20166927eec3c0f98b8405f375d007b604a0b"
+    },
+    {
+      "path": "cachetools-7.1.7-py3-none-any.whl",
+      "bytes": 16830,
+      "sha256": "ef98ef375ad188819ef2f9b3645e3987f4b8c5b7550e436ad998c2de78296df0"
+    },
+    {
+      "path": "cbor2-6.1.4-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 461193,
+      "sha256": "310f3dfb296ba48fe9b63c5cf26e691e3548a1eae6901d2f0c18e941d151f220"
+    },
+    {
+      "path": "certifi-2026.7.22-py3-none-any.whl",
+      "bytes": 136983,
+      "sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775"
+    },
+    {
+      "path": "cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 221822,
+      "sha256": "c1453022f490d2459a11819d83ad1d586e9ff65a12ac3e705ffebd46d3685dcf"
+    },
+    {
+      "path": "charset_normalizer-3.4.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 224256,
+      "sha256": "5e226f6218febc71f6c1fc2fafb91c226f75bdc1d8fb12d66823716e891608fd"
+    },
+    {
+      "path": "click-8.4.2-py3-none-any.whl",
+      "bytes": 119243,
+      "sha256": "e6f9f66136c816745b9d65817da91d61d957fb16e02e4dcd0552553c5a197b76"
+    },
+    {
+      "path": "cloudpickle-3.1.2-py3-none-any.whl",
+      "bytes": 22228,
+      "sha256": "9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a"
+    },
+    {
+      "path": "compressed_tensors-0.17.0-py3-none-any.whl",
+      "bytes": 211714,
+      "sha256": "4a1b89b508f7efb8ffb4eee8a6e69e0452d9b080cae130146025c64fbe9fa9aa"
+    },
+    {
+      "path": "cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl",
+      "bytes": 4734462,
+      "sha256": "82148ec5bddac30b51a5b3c1945075f896fa022cb93f8e4a01e9f6ee95292c5f"
+    },
+    {
+      "path": "cuda_bindings-13.3.1-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 6657965,
+      "sha256": "e32d08f71ebcdf00f0f41eab2eb37e8da94c8ed411cc9f7f7a019ce6b34abe3a"
+    },
+    {
+      "path": "cuda_core-1.0.1-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 5106023,
+      "sha256": "be7b65311bf78964b7905adbf3c0f8f717d432f2854dc45169277729bf60f1e2"
+    },
+    {
+      "path": "cuda_pathfinder-1.6.0-py3-none-any.whl",
+      "bytes": 54591,
+      "sha256": "1503af579d8379c24bdd65528379bc57039b0455be9f5f9686cf8e473a1fce51"
+    },
+    {
+      "path": "cuda_python-13.3.1-py3-none-any.whl",
+      "bytes": 8295,
+      "sha256": "280b014139ab447b6dd70a377db1596f310d6e887d9d342e6651b919ec145fb3"
+    },
+    {
+      "path": "cuda_tile-1.5.0-cp312-cp312-manylinux2014_x86_64.whl",
+      "bytes": 324990,
+      "sha256": "cef6d30acc37557643ece0de3770fc4c33497c4af40209e424f72fbfcbe6ea5a"
+    },
+    {
+      "path": "cuda_toolkit-13.2.1-py2.py3-none-any.whl",
+      "bytes": 2612,
+      "sha256": "646d0e3668ce6f78f2312bb9cc0f668b9cbfcbef187eaa6a39eb2ea6dbec2a31"
+    },
+    {
+      "path": "depyf-0.20.0-py3-none-any.whl",
+      "bytes": 39381,
+      "sha256": "d31effad4261cebecb58955d832e448ace88f432328f95f82fd99c30fd9308d4"
+    },
+    {
+      "path": "detect_installer-0.1.0-py3-none-any.whl",
+      "bytes": 4539,
+      "sha256": "034fb20fd665c36e6ba52b8821525ea07fb4f7f938cac459df889fb33801528a"
+    },
+    {
+      "path": "dill-0.4.1-py3-none-any.whl",
+      "bytes": 120019,
+      "sha256": "1e1ce33e978ae97fcfcff5638477032b801c46c7c65cf717f95fbc2248f79a9d"
+    },
+    {
+      "path": "distro-1.9.0-py3-none-any.whl",
+      "bytes": 20277,
+      "sha256": "7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2"
+    },
+    {
+      "path": "dnspython-2.8.0-py3-none-any.whl",
+      "bytes": 331094,
+      "sha256": "01d9bbc4a2d76bf0db7c1f729812ded6d912bd318d3b1cf81d30c0f845dbf3af"
+    },
+    {
+      "path": "docstring_parser-0.18.0-py3-none-any.whl",
+      "bytes": 22484,
+      "sha256": "b3fcbed555c47d8479be0796ef7e19c2670d428d72e96da63f3a40122860374b"
+    },
+    {
+      "path": "einops-0.8.2-py3-none-any.whl",
+      "bytes": 65638,
+      "sha256": "54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193"
+    },
+    {
+      "path": "email_validator-2.3.0-py3-none-any.whl",
+      "bytes": 35604,
+      "sha256": "80f13f623413e6b197ae73bb10bf4eb0908faf509ad8362c5edeb0be7fd450b4"
+    },
+    {
+      "path": "fastapi-0.136.3-py3-none-any.whl",
+      "bytes": 117481,
+      "sha256": "3d2a69bdf04b7e9f3afa292c3bc7a98816bbfafa10bc9b45f3f3700d2f761620"
+    },
+    {
+      "path": "fastapi_cli-0.0.32-py3-none-any.whl",
+      "bytes": 14670,
+      "sha256": "8dcc286fa32f01bbd3f65dd09cfd5a2540ed5f2230b77db7fd30978d6165f3c4"
+    },
+    {
+      "path": "fastapi_cloud_cli-0.23.0-py3-none-any.whl",
+      "bytes": 78058,
+      "sha256": "1cd2ffa56e92e92c1fc63acc426c214dd928cbeed2a4c7c6a9a5fc85ea73de16"
+    },
+    {
+      "path": "fastar-0.11.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 819382,
+      "sha256": "ef5a6071121e05d8287fc75bccb054bcbac8bb0501200a0c0a8feeace5303ea4"
+    },
+    {
+      "path": "fastsafetensors-0.3.3-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 1915478,
+      "sha256": "3587bc66b8dec560ad903becf9540889013d4d47f0e10cf45f19bedc7b7bffa7"
+    },
+    {
+      "path": "filelock-3.32.2-py3-none-any.whl",
+      "bytes": 98830,
+      "sha256": "87dd94cf281e586d135fa51132b8e3d9a598b316e90377a288663c9321036c82"
+    },
+    {
+      "path": "flashinfer_python-0.6.14-py3-none-any.whl",
+      "bytes": 14574383,
+      "sha256": "d124369346a3d48eac67e31c42f7a3c813bcc0abc10e2e36db413b7b3dfd97df"
+    },
+    {
+      "path": "frozenlist-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "bytes": 242411,
+      "sha256": "494a5952b1c597ba44e0e78113a7266e656b9794eec897b19ead706bd7074383"
+    },
+    {
+      "path": "fsspec-2026.7.0-py3-none-any.whl",
+      "bytes": 206583,
+      "sha256": "b57ddbafedfaef7018c1ecab32aa200a9d7ca26b77965f64e48b70061249d279"
+    },
+    {
+      "path": "googleapis_common_protos-1.75.0-py3-none-any.whl",
+      "bytes": 300631,
+      "sha256": "961ed60399c457ceb0ee8f285a84c870aabc9c6a832b9d37bb281b5bebde43ed"
+    },
+    {
+      "path": "grpcio-1.83.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 7040616,
+      "sha256": "aeb339838db07600481ef869507279b75326c75eac6d10f7afa62a0da1d2bcdd"
+    },
+    {
+      "path": "h11-0.16.0-py3-none-any.whl",
+      "bytes": 37515,
+      "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86"
+    },
+    {
+      "path": "hf_xet-1.6.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 4464663,
+      "sha256": "d62671bb130879cef0ee4c9ebe47a14af6c66ec53e6d84dc15936e5ffdfac82f"
+    },
+    {
+      "path": "httpcore-1.0.9-py3-none-any.whl",
+      "bytes": 78784,
+      "sha256": "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55"
+    },
+    {
+      "path": "httpcore2-2.9.1-py3-none-any.whl",
+      "bytes": 82809,
+      "sha256": "6182472379e855fe4221246a2bb7ecede403bc61c6798062ae1787d051ccde26"
+    },
+    {
+      "path": "httptools-0.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "bytes": 523851,
+      "sha256": "b15fc622b0f869d19207c4089a501d9bcc63ca5e071ffdd2f03f922df882dcb2"
+    },
+    {
+      "path": "httpx-0.28.1-py3-none-any.whl",
+      "bytes": 73517,
+      "sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad"
+    },
+    {
+      "path": "httpx2-2.9.1-py3-none-any.whl",
+      "bytes": 91191,
+      "sha256": "1820fe14a9ab1107bfeff39259987429450b070ec0ff38cc87eb0d8c97fdc71a"
+    },
+    {
+      "path": "huggingface_hub-1.26.0-py3-none-any.whl",
+      "bytes": 780357,
+      "sha256": "e8cca670caa5d8dfa7e45bf45e86b466698198cd8150c021bcdb4a86b9252364"
+    },
+    {
+      "path": "humming_kernels-0.1.10-py3-none-any.whl",
+      "bytes": 184889,
+      "sha256": "4ded0998ff085afeddde70baf93f97c2929969ec3d4a63a52cfec5072bc972b4"
+    },
+    {
+      "path": "idna-3.18-py3-none-any.whl",
+      "bytes": 65455,
+      "sha256": "7f952cbe720b688055e3f87de14f5c3e5fdaa8bc3928985c4077ca689de849a2"
+    },
+    {
+      "path": "ijson-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 149848,
+      "sha256": "e4fcebfe1685bb7ba06a8255a5d428ea6b4b895d7acf979cb637d8bbc9db2f47"
+    },
+    {
+      "path": "interegular-0.3.3-py37-none-any.whl",
+      "bytes": 23635,
+      "sha256": "b0c07007d48c89d6d19f7204972d369b2a77222722e126b6aa63aa721dc3b19c"
+    },
+    {
+      "path": "jinja2-3.1.6-py3-none-any.whl",
+      "bytes": 134899,
+      "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
+    },
+    {
+      "path": "jiter-0.16.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 343805,
+      "sha256": "46add52f4ad47a08bfb1219f3e673da972191489a33016edefdb5ea55bfa8c48"
+    },
+    {
+      "path": "jmespath-1.1.0-py3-none-any.whl",
+      "bytes": 20419,
+      "sha256": "a5663118de4908c91729bea0acadca56526eb2698e83de10cd116ae0f4e97c64"
+    },
+    {
+      "path": "jsonschema-4.26.0-py3-none-any.whl",
+      "bytes": 90630,
+      "sha256": "d489f15263b8d200f8387e64b4c3a75f06629559fb73deb8fdfb525f2dab50ce"
+    },
+    {
+      "path": "jsonschema_specifications-2025.9.1-py3-none-any.whl",
+      "bytes": 18437,
+      "sha256": "98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe"
+    },
+    {
+      "path": "lark-1.2.2-py3-none-any.whl",
+      "bytes": 111036,
+      "sha256": "c2276486b02f0f1b90be155f2c8ba4a8e194d42775786db622faccd652d8e80c"
+    },
+    {
+      "path": "llguidance-1.7.6-cp39-abi3-manylinux_2_31_x86_64.whl",
+      "bytes": 3074809,
+      "sha256": "ceec951d29a74309984e3be0fe7f5f56c1362434cd937abd517b259a60908b1e"
+    },
+    {
+      "path": "llvmlite-0.47.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 56275178,
+      "sha256": "5853bf26160857c0c2573415ff4efe01c4c651e59e2c55c2a088740acfee51cd"
+    },
+    {
+      "path": "lm_format_enforcer-0.11.3-py3-none-any.whl",
+      "bytes": 45418,
+      "sha256": "cf586350875def1ae7a8fba84fcbbfc8371424b6c9d05c1fcba70aa233fbf06f"
+    },
+    {
+      "path": "loguru-0.7.3-py3-none-any.whl",
+      "bytes": 61595,
+      "sha256": "31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c"
+    },
+    {
+      "path": "markdown_it_py-4.2.0-py3-none-any.whl",
+      "bytes": 91687,
+      "sha256": "9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a"
+    },
+    {
+      "path": "markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 22947,
+      "sha256": "d6dd0be5b5b189d31db7cda48b91d7e0a9795f31430b7f271219ab30f1d3ac9d"
+    },
+    {
+      "path": "mcp-2.0.0-py3-none-any.whl",
+      "bytes": 349980,
+      "sha256": "1cb4c75d2d2c7b8c1d756355e5d82a39f2822cc7f13e22a2051d7ca3592349d6"
+    },
+    {
+      "path": "mcp_types-2.0.0-py3-none-any.whl",
+      "bytes": 69649,
+      "sha256": "6b2de797ca2797f568b79529e1b25948e34de511bcc0bd82fef1039a6d1b8eb0"
+    },
+    {
+      "path": "mdurl-0.1.2-py3-none-any.whl",
+      "bytes": 9979,
+      "sha256": "84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"
+    },
+    {
+      "path": "mistral_common-1.11.7-py3-none-any.whl",
+      "bytes": 6553583,
+      "sha256": "a9511b88eacacbe7dacddd9d3498c1739f56847b7fdddbd5a22e7844fd9def95"
+    },
+    {
+      "path": "ml_dtypes-0.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 5009002,
+      "sha256": "9ad459e99793fa6e13bd5b7e6792c8f9190b4e5a1b45c63aba14a4d0a7f1d5ff"
+    },
+    {
+      "path": "model_hosting_container_standards-0.1.16-py3-none-any.whl",
+      "bytes": 125666,
+      "sha256": "47f4f65713120bc3a69feb022981a38db9e557aedf88dbd72077f20588caa12b"
+    },
+    {
+      "path": "mpmath-1.3.0-py3-none-any.whl",
+      "bytes": 536198,
+      "sha256": "a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"
+    },
+    {
+      "path": "msgspec-0.21.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 225025,
+      "sha256": "21995e74b5c598c2e004110ad66ec7f1b8c20bf2bcf3b2de8fd9a3094422d3ff"
+    },
+    {
+      "path": "multidict-6.7.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 256322,
+      "sha256": "bfde23ef6ed9db7eaee6c37dcec08524cb43903c60b285b172b6c094711b3961"
+    },
+    {
+      "path": "networkx-3.6.1-py3-none-any.whl",
+      "bytes": 2068504,
+      "sha256": "d47fbf302e7d9cbbb9e2555a0d267983d2aa476bac30e90dfbe5669bd57f3762"
+    },
+    {
+      "path": "ninja-1.13.0-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 180716,
+      "sha256": "fb46acf6b93b8dd0322adc3a4945452a4e774b75b91293bafcc7b7f8e6517dfa"
+    },
+    {
+      "path": "numba-0.65.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 3801411,
+      "sha256": "a52d92ffd297c10364bce60cd1fcb88f99284ab5df085f2c6bcd1cb33b529a6f"
+    },
+    {
+      "path": "numpy-2.3.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 16606086,
+      "sha256": "0d8163f43acde9a73c2a33605353a4f1bc4798745a8b1d73183b28e5b435ae28"
+    },
+    {
+      "path": "nvidia_cublas-13.4.0.1-py3-none-manylinux_2_27_x86_64.whl",
+      "bytes": 404872465,
+      "sha256": "53bf22e2ccbf644db74b6cc21cea7f5efb1a52aa64515438b430abbd05af4106"
+    },
+    {
+      "path": "nvidia_cuda_cccl-13.3.3.4.1-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 3454034,
+      "sha256": "cc0adc188d570b09f4d606c7dc05a42aa3d8aa082e0d60f7bbfc5b6435f627c6"
+    },
+    {
+      "path": "nvidia_cuda_crt-13.3.73-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 157352,
+      "sha256": "df14a17ae1c5c3171265411212246654d780f89344ea85344466c6b955247543"
+    },
+    {
+      "path": "nvidia_cuda_cupti-13.2.75-py3-none-manylinux_2_25_x86_64.whl",
+      "bytes": 11986992,
+      "sha256": "f75aca6bef89c625a4076a820302bb06764daa1d21595286f6bee5e237d3a187"
+    },
+    {
+      "path": "nvidia_cuda_nvcc-13.3.73-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 44942138,
+      "sha256": "f483af83166c4fa356a21606076d553b0b4ceaebbd9912e537545080db695bdd"
+    },
+    {
+      "path": "nvidia_cuda_nvdisasm-13.3.73-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 4782824,
+      "sha256": "fa17084b07c0dca68a42892f771b4b1b40fbe9b91660209623e61cea611cae8c"
+    },
+    {
+      "path": "nvidia_cuda_nvrtc-13.2.78-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl",
+      "bytes": 47019062,
+      "sha256": "a9049031da08cbedd0c20e3470e5a978dc330af0e0326b3b05774718c665dc3e"
+    },
+    {
+      "path": "nvidia_cuda_runtime-13.2.75-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 2321965,
+      "sha256": "72bf454902da594e0b833cadeddc8b7100ce1c7cf7ed9023943931be1aa913b7"
+    },
+    {
+      "path": "nvidia_cudnn_cu13-9.20.0.48-py3-none-manylinux_2_27_x86_64.whl",
+      "bytes": 366173588,
+      "sha256": "0c45dd8eeb50b603f07995b1b300c62ffe6a1980482b82b3bcf94a4ca9d49304"
+    },
+    {
+      "path": "nvidia_cudnn_frontend-1.26.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 3627033,
+      "sha256": "1a1223c4e2e8bbe6f620148d6848f4eb773dd94bef534d5b748e91232b5be618"
+    },
+    {
+      "path": "nvidia_cufft-12.2.0.46-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 218258098,
+      "sha256": "a9667ae4d81b9e54ddbbad24a9e72334f89d4fc184566d05ef028e2760c820eb"
+    },
+    {
+      "path": "nvidia_cufile-1.17.1.22-py3-none-manylinux_2_27_x86_64.whl",
+      "bytes": 1387670,
+      "sha256": "87feaf8c3ad20d3d03a01933181801ff6892bace5c8f0b1e4b48f319d3e62d36"
+    },
+    {
+      "path": "nvidia_curand-10.4.2.55-py3-none-manylinux_2_27_x86_64.whl",
+      "bytes": 59920450,
+      "sha256": "b4080cab49d4939f8e46b2c195c76c698d2289835c36ede558836daa40000e70"
+    },
+    {
+      "path": "nvidia_cusolver-12.2.0.1-py3-none-manylinux_2_27_x86_64.whl",
+      "bytes": 227391570,
+      "sha256": "4693ea3c2a5d20369da7b5a4970a41df9b40f1b6f2ef9909c95f7c8c8c5ffb4d"
+    },
+    {
+      "path": "nvidia_cusparse-12.7.10.1-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 150855566,
+      "sha256": "f0d110640aa63e7182fa787cc245afa07c5fb84ac30f1c4029e4fa3012353172"
+    },
+    {
+      "path": "nvidia_cusparselt_cu13-0.8.1-py3-none-manylinux2014_x86_64.whl",
+      "bytes": 170148586,
+      "sha256": "786ce87568c303fadb5afcc7102d454cd3040d75f6f8626f5db460d1871f4dd0"
+    },
+    {
+      "path": "nvidia_cutlass_dsl-4.6.0-py3-none-any.whl",
+      "bytes": 10459,
+      "sha256": "e3e0e4d8df20d82c8401fa013f4d82021f41daa5fca3d24b55d4a677f2308ca8"
+    },
+    {
+      "path": "nvidia_cutlass_dsl_libs_base-4.6.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 2824817,
+      "sha256": "e41cd5db4de4b535c30ae9ca4412b957800a62560019ae91fa51cf3ea89bf254"
+    },
+    {
+      "path": "nvidia_cutlass_dsl_libs_core-4.6.0-py3-none-any.whl",
+      "bytes": 767713,
+      "sha256": "f9ea6d313a03cb11fa177da32e8747ad0cac51358850810f36aa6c4736192c27"
+    },
+    {
+      "path": "nvidia_cutlass_dsl_libs_cu12-4.6.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 88436835,
+      "sha256": "abc341ff0fce40ed0bdadf160f6afac07fb9d01768d4daebd1628c330b3e4210"
+    },
+    {
+      "path": "nvidia_cutlass_dsl_libs_cu13-4.6.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 88026053,
+      "sha256": "4799fabc4bd1f7825ff00101ae0054c5cfb6769aefd6d9694f6da8c0f07e12c3"
+    },
+    {
+      "path": "nvidia_ml_py-13.610.43-py3-none-any.whl",
+      "bytes": 53163,
+      "sha256": "f13c72698edef492f985cc225f14faafe68ae065a2e407f45bdf6f4b9b43fde8"
+    },
+    {
+      "path": "nvidia_nccl_cu13-2.29.7-py3-none-manylinux_2_18_x86_64.whl",
+      "bytes": 205976000,
+      "sha256": "edd81538446786ec3b73972543e53bb43bcaf0bfc8ef76cb679fcc390ffe136d"
+    },
+    {
+      "path": "nvidia_nvjitlink-13.3.33-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl",
+      "bytes": 40742423,
+      "sha256": "26a6de7fb4c8fdaa7703d3dad720d6d427ddfea5c48a528fd97c11733ad830e5"
+    },
+    {
+      "path": "nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 60412546,
+      "sha256": "290f0a2ee94c9f3687a02502f3b9299a9f9fe826e6d0287ee18482e78d495b80"
+    },
+    {
+      "path": "nvidia_nvtx-13.2.75-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl",
+      "bytes": 153460,
+      "sha256": "2d7c24fc582d841493c6dc2cf017c25e4428cf583a3bd9e9325a65f0ecc65f73"
+    },
+    {
+      "path": "nvidia_nvvm-13.3.73-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl",
+      "bytes": 69250424,
+      "sha256": "0e28e0858a3475e11ac67d35301cd5bf82666a1c0dc4ec4e80ceaf3a5fd1dea8"
+    },
+    {
+      "path": "nvtx-0.2.15-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 806187,
+      "sha256": "3ca8030a6d197952318013dd1c12c22da1d4b9feb76ba72e0fcd449961183c2c"
+    },
+    {
+      "path": "openai-2.52.0-py3-none-any.whl",
+      "bytes": 1659569,
+      "sha256": "f97e231d9a8fa69ab55897df1080f02d99913fb0a30e3ee56ea16a1eb6c2d434"
+    },
+    {
+      "path": "openai_harmony-0.0.8-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 2953260,
+      "sha256": "c007d277218a50db8839e599ed78e0fffe5130f614c3f6d93ae257f282071a29"
+    },
+    {
+      "path": "opencv_python_headless-5.0.0.93-cp37-abi3-manylinux_2_28_x86_64.whl",
+      "bytes": 61204038,
+      "sha256": "ed709fdf9aa0bd1f2ed8549e71d19449b03a675bb581eb292285f6861953be37"
+    },
+    {
+      "path": "opentelemetry_api-1.44.0-py3-none-any.whl",
+      "bytes": 60018,
+      "sha256": "94b98c893a91b88657eaac1e3ba89618cdb85be6918196705354f34728b2cdef"
+    },
+    {
+      "path": "opentelemetry_exporter_otlp-1.44.0-py3-none-any.whl",
+      "bytes": 6727,
+      "sha256": "4a498fa8d8fd8be9e8e2d175fe5524a3fe581ccffadd8509db86526a5fb97051"
+    },
+    {
+      "path": "opentelemetry_exporter_otlp_proto_common-1.44.0-py3-none-any.whl",
+      "bytes": 17045,
+      "sha256": "9a9fe61bba73d802904bc989f1d6b4a7b1ee40f06c40e98d6f85af65aaebb694"
+    },
+    {
+      "path": "opentelemetry_exporter_otlp_proto_grpc-1.44.0-py3-none-any.whl",
+      "bytes": 19624,
+      "sha256": "6a1a645ea182a2f59440c51fa8301d309f3324a8f9d65f8395584b064b67ee4e"
+    },
+    {
+      "path": "opentelemetry_exporter_otlp_proto_http-1.44.0-py3-none-any.whl",
+      "bytes": 21850,
+      "sha256": "838592fce774c1c8bb7b9a0a7facbfa82e17be5a8a4e94cef10cb84ae026bae3"
+    },
+    {
+      "path": "opentelemetry_proto-1.44.0-py3-none-any.whl",
+      "bytes": 72483,
+      "sha256": "898b155a0e1557afd867478fb6158e8122a46329ca0bb8dc53cc55e98f017f56"
+    },
+    {
+      "path": "opentelemetry_sdk-1.44.0-py3-none-any.whl",
+      "bytes": 137221,
+      "sha256": "df081c4c6bcfdb1211e3e86140376792643128a25f8d72d1d27675936e7e96ad"
+    },
+    {
+      "path": "opentelemetry_semantic_conventions-0.65b0-py3-none-any.whl",
+      "bytes": 204645,
+      "sha256": "1cacde7b0ad306f84c5ef08c3dbe1bbaf20165bba6f8bff43b670e555a086bcb"
+    },
+    {
+      "path": "opentelemetry_semantic_conventions_ai-0.5.1-py3-none-any.whl",
+      "bytes": 11250,
+      "sha256": "25aeb22bd261543b4898a73824026d96770e5351209c7d07a0b1314762b1f6e4"
+    },
+    {
+      "path": "outlines_core-0.2.14-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 2341426,
+      "sha256": "3bb2060c240c4507f334965a8948dbeeb22007560d797f6debd92346c0b620cb"
+    },
+    {
+      "path": "packaging-26.3-py3-none-any.whl",
+      "bytes": 129956,
+      "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c"
+    },
+    {
+      "path": "partial_json_parser-0.2.1.1.post7-py3-none-any.whl",
+      "bytes": 10877,
+      "sha256": "145119e5eabcf80cbb13844a6b50a85c68bf99d376f8ed771e2a3c3b03e653ae"
+    },
+    {
+      "path": "pillow-12.2.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 7087215,
+      "sha256": "62f5409336adb0663b7caa0da5c7d9e7bdbaae9ce761d34669420c2a801b2780"
+    },
+    {
+      "path": "prometheus_client-0.26.0-py3-none-any.whl",
+      "bytes": 64494,
+      "sha256": "fa93d06737aa02bacd05794768508bb97d2fbee28cb3bca04eaae92f0ca953d6"
+    },
+    {
+      "path": "prometheus_fastapi_instrumentator-8.1.0-py3-none-any.whl",
+      "bytes": 19649,
+      "sha256": "b9f40b2cff3f7891ca0610b3ae4fc6ec723fd326b04bb659819aaeb821a0fc7d"
+    },
+    {
+      "path": "propcache-0.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 61639,
+      "sha256": "6f328175a2cde1f0ff2c4ed8ce968b9dcfb55f3a7153f39e2957ed994da13476"
+    },
+    {
+      "path": "protobuf-6.33.6-cp39-abi3-manylinux2014_x86_64.whl",
+      "bytes": 323436,
+      "sha256": "e9db7e292e0ab79dd108d7f1a94fe31601ce1ee3f7b79e0692043423020b0593"
+    },
+    {
+      "path": "psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 155560,
+      "sha256": "076a2d2f923fd4821644f5ba89f059523da90dc9014e85f8e45a5774ca5bc6f9"
+    },
+    {
+      "path": "py_cpuinfo-9.0.0-py3-none-any.whl",
+      "bytes": 22335,
+      "sha256": "859625bc251f64e21f077d099d4162689c762b5d6a4c3c97553d56241c9674d5"
+    },
+    {
+      "path": "pybase64-1.4.3-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl",
+      "bytes": 71599,
+      "sha256": "bb632edfd132b3eaf90c39c89aa314beec4e946e210099b57d40311f704e11d4"
+    },
+    {
+      "path": "pycountry-26.2.16-py3-none-any.whl",
+      "bytes": 8044600,
+      "sha256": "115c4baf7cceaa30f59a4694d79483c9167dbce7a9de4d3d571c5f3ea77c305a"
+    },
+    {
+      "path": "pycparser-3.0-py3-none-any.whl",
+      "bytes": 48172,
+      "sha256": "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992"
+    },
+    {
+      "path": "pydantic-2.13.4-py3-none-any.whl",
+      "bytes": 472262,
+      "sha256": "45a282cde31d808236fd7ea9d919b128653c8b38b393d1c4ab335c62924d9aba"
+    },
+    {
+      "path": "pydantic_core-2.46.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 2094516,
+      "sha256": "926c9541b14b12b1681dca8a0b75feb510b06c6341b70a8e500c2fdcff837cce"
+    },
+    {
+      "path": "pydantic_extra_types-2.11.1-py3-none-any.whl",
+      "bytes": 79526,
+      "sha256": "1722ea2bddae5628ace25f2aa685b69978ef533123e5638cfbddb999e0100ec1"
+    },
+    {
+      "path": "pydantic_settings-2.14.2-py3-none-any.whl",
+      "bytes": 61715,
+      "sha256": "a20c97b37910b6550d5ea50fbcc2d4187defe58cd57070b73863d069419c9440"
+    },
+    {
+      "path": "pyelftools-0.33-py3-none-any.whl",
+      "bytes": 201178,
+      "sha256": "f215ad5f47d3f1373a21496a6c9e0707c622840d0622f23ff7ce08678b020036"
+    },
+    {
+      "path": "pygments-2.20.0-py3-none-any.whl",
+      "bytes": 1231151,
+      "sha256": "81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176"
+    },
+    {
+      "path": "pyjwt-2.13.0-py3-none-any.whl",
+      "bytes": 31274,
+      "sha256": "66adcc2aff09b3f1bbd95fc1e1577df8ac8723c978552fd43304c8a290ac5728"
+    },
+    {
+      "path": "pynvvideocodec-2.0.4-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 43176147,
+      "sha256": "b59cec7a1a3f78fad13fead78cad8b6d9686827f9ff4477080245457675a01d0"
+    },
+    {
+      "path": "python_dotenv-1.2.2-py3-none-any.whl",
+      "bytes": 22101,
+      "sha256": "1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a"
+    },
+    {
+      "path": "python_json_logger-4.1.0-py3-none-any.whl",
+      "bytes": 15021,
+      "sha256": "132994765cf75bf44554be9aa49b06ef2345d23661a96720262716438141b6b2"
+    },
+    {
+      "path": "python_multipart-0.0.32-py3-none-any.whl",
+      "bytes": 30042,
+      "sha256": "ff6d3f776f16878c894e52e107296ffc890e913c611b1a4ec6c44e2821fe2e23"
+    },
+    {
+      "path": "pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 807870,
+      "sha256": "ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc"
+    },
+    {
+      "path": "pyzmq-27.1.0-cp312-abi3-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 840995,
+      "sha256": "43ad9a73e3da1fab5b0e7e13402f0b2fb934ae1c876c51d0afff0e7c052eca31"
+    },
+    {
+      "path": "quack_kernels-0.6.1-py3-none-any.whl",
+      "bytes": 358439,
+      "sha256": "266705ea82117e9b1c8a9e44d68a458519f2498d966c0efffd6812120c3995ad"
+    },
+    {
+      "path": "referencing-0.37.0-py3-none-any.whl",
+      "bytes": 26766,
+      "sha256": "381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231"
+    },
+    {
+      "path": "regex-2026.7.19-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 801798,
+      "sha256": "9dce8ec9695f531a1b8a6f314fd4b393adcccf2ea861db480cdf97a301d01a68"
+    },
+    {
+      "path": "requests-2.34.2-py3-none-any.whl",
+      "bytes": 73075,
+      "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0"
+    },
+    {
+      "path": "rich-15.0.0-py3-none-any.whl",
+      "bytes": 310654,
+      "sha256": "33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb"
+    },
+    {
+      "path": "rich_toolkit-0.20.3-py3-none-any.whl",
+      "bytes": 36195,
+      "sha256": "419aa87516d5f3849cca553c6dcf707c02a36d508fcf996946606725d34a3002"
+    },
+    {
+      "path": "rignore-0.8.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 927835,
+      "sha256": "2e68cfc4ee0a2909952af2aebd608d1cd22f7d1cdce332cb0b5ea3762939865d"
+    },
+    {
+      "path": "rpds_py-2026.6.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 366189,
+      "sha256": "ecabd69db66de867690f9797f2f8fa27ba501bbc24540cbdbdc649cd15888ba6"
+    },
+    {
+      "path": "safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 516040,
+      "sha256": "fd6f3f93c9a0a7cc2788ee63fb763353d4bd2e89b0751bc78fcf7dda00bea774"
+    },
+    {
+      "path": "sentencepiece-0.2.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 1397736,
+      "sha256": "c8a168b040bc61681293f79a949b5d911c8e25086f4260285b8d97ab5f1195da"
+    },
+    {
+      "path": "sentry_sdk-2.66.1-py3-none-any.whl",
+      "bytes": 505555,
+      "sha256": "86002793161d9a95ef04bdd8d442e9bfece5d989b755f05d6360215094a7aff6"
+    },
+    {
+      "path": "setproctitle-1.3.7-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "bytes": 32932,
+      "sha256": "2906b6c7959cdb75f46159bf0acd8cc9906cf1361c9e1ded0d065fe8f9039629"
+    },
+    {
+      "path": "setuptools-80.10.2-py3-none-any.whl",
+      "bytes": 1064234,
+      "sha256": "95b30ddfb717250edb492926c92b5221f7ef3fbcc2b07579bcd4a27da21d0173"
+    },
+    {
+      "path": "shellingham-1.5.4-py2.py3-none-any.whl",
+      "bytes": 9755,
+      "sha256": "7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686"
+    },
+    {
+      "path": "six-1.17.0-py2.py3-none-any.whl",
+      "bytes": 11050,
+      "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"
+    },
+    {
+      "path": "sniffio-1.3.1-py3-none-any.whl",
+      "bytes": 10235,
+      "sha256": "2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2"
+    },
+    {
+      "path": "sse_starlette-3.4.6-py3-none-any.whl",
+      "bytes": 16516,
+      "sha256": "56217ab4c9a9f9c5db7b21e08732d3e7c2b807f45231ad23de0551a24c4a41f6"
+    },
+    {
+      "path": "starlette-1.3.1-py3-none-any.whl",
+      "bytes": 73632,
+      "sha256": "c7372aae11c3c3f26a42df7bd626cec2f47d03483d261d369516a615a53714c6"
+    },
+    {
+      "path": "supervisor-4.3.0-py2.py3-none-any.whl",
+      "bytes": 320736,
+      "sha256": "0bcb763fddafba410f35cbde226aa7f8514b9fb82eb05a0c85f6588d1c13f8db"
+    },
+    {
+      "path": "sympy-1.14.0-py3-none-any.whl",
+      "bytes": 6299353,
+      "sha256": "e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5"
+    },
+    {
+      "path": "tabulate-0.10.0-py3-none-any.whl",
+      "bytes": 39814,
+      "sha256": "f0b0622e567335c8fabaaa659f1b33bcb6ddfe2e496071b743aa113f8774f2d3"
+    },
+    {
+      "path": "tiktoken-0.13.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 1136523,
+      "sha256": "a116178fa7e1b4065bff05214360373a65cac22f965be7b3f73d00a0dbfe7649"
+    },
+    {
+      "path": "tilelang-0.1.9-cp38-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 45419374,
+      "sha256": "4bbccfe9035aed775ffafb6dc25a5994504b24e2c5d95d0f39643edfafa7bf12"
+    },
+    {
+      "path": "tokenizers-0.22.2-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 3274982,
+      "sha256": "369cc9fc8cc10cb24143873a0d95438bb8ee257bb80c71989e3ee290e8d72c67"
+    },
+    {
+      "path": "tokenspeed_mla-0.1.8-py3-none-manylinux_2_28_x86_64.whl",
+      "bytes": 755827,
+      "sha256": "6a7526d7327746893f8c20d24aa63ba5b8a123d0dfd6e66388e13b768b6452c6"
+    },
+    {
+      "path": "tokenspeed_triton-3.8.10.post20260721-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 87210295,
+      "sha256": "66cba8d32a1539afd0ff3eec1782b082d01b4db6824d68017d1d789a03d0be37"
+    },
+    {
+      "path": "torch-2.12.1+cu132-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 539257531,
+      "sha256": "b18be7b089e85324b18d26aba82d0e6de896d884568349e1d6832498fbdffdb3"
+    },
+    {
+      "path": "torch_c_dlpack_ext-0.1.5-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 897846,
+      "sha256": "e6f9da4bb9af70e27facc777458be62e10dbbbddda7672d16138db0553c5a524"
+    },
+    {
+      "path": "torchvision-0.27.1+cu132-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 7802004,
+      "sha256": "679aedb2c3c3c72fdbbd8bb716cac3abc023da972e435e4cebaa7c9cb92074f4"
+    },
+    {
+      "path": "tqdm-4.70.0-py3-none-any.whl",
+      "bytes": 80184,
+      "sha256": "7f585706bfddbdebf89daac705b2dfcc16890130727d3197ca62c732b4310953"
+    },
+    {
+      "path": "transformers-5.14.1-py3-none-any.whl",
+      "bytes": 11625234,
+      "sha256": "9db974c4079ede2d1a3ea7ca5a240df33f2cc26fc2b36ba64c5f2a4f43b6e725"
+    },
+    {
+      "path": "triton-3.7.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 197149381,
+      "sha256": "225910e79149807de74a0ca63160aa285956a8d64a2951d558997c57e2584ae1"
+    },
+    {
+      "path": "truststore-0.10.4-py3-none-any.whl",
+      "bytes": 18660,
+      "sha256": "adaeaecf1cbb5f4de3b1959b42d41f6fab57b2b1666adb59e89cb0b53361d981"
+    },
+    {
+      "path": "typer-0.27.1-py3-none-any.whl",
+      "bytes": 122874,
+      "sha256": "53150287edd11baeb4e4722c8e394fcdf8181c0ae89485cba8d25c778d5edd56"
+    },
+    {
+      "path": "typing_extensions-4.16.0-py3-none-any.whl",
+      "bytes": 45571,
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+    },
+    {
+      "path": "typing_inspection-0.4.2-py3-none-any.whl",
+      "bytes": 14611,
+      "sha256": "4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7"
+    },
+    {
+      "path": "urllib3-2.7.0-py3-none-any.whl",
+      "bytes": 131087,
+      "sha256": "9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897"
+    },
+    {
+      "path": "uvicorn-0.52.1-py3-none-any.whl",
+      "bytes": 79859,
+      "sha256": "e4403f9d93188cf9d1088e9f40e3acd12630e2df8675316704379a7fc20fff6a"
+    },
+    {
+      "path": "uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 4426307,
+      "sha256": "7b5b1ac819a3f946d3b2ee07f09149578ae76066d70b44df3fa990add49a82e4"
+    },
+    {
+      "path": "vllm-0.26.1.dev0+g568afb3a1.d20260802.cu132-cp312-cp312-linux_x86_64.whl",
+      "bytes": 496719721,
+      "sha256": "a46b0359fb53686c44a9b9485ee857493d90a014320cfdee46134a96e45779d5"
+    },
+    {
+      "path": "watchfiles-1.2.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 456398,
+      "sha256": "e53a384f76b631c3ae5334ce6a52f0baa3a911eb94a4eac7f160079868b716d5"
+    },
+    {
+      "path": "websockets-17.0.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "bytes": 220150,
+      "sha256": "f47b0815af3948ec6a440b3afa02f05b18cc0939549e91b5c677b5d9c2c8472a"
+    },
+    {
+      "path": "xgrammar-0.2.3-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 44855110,
+      "sha256": "fdf081fab29694302d41d61dcf52fad7d253879a718bc6afc68db0a0dabd7f19"
+    },
+    {
+      "path": "yarl-1.24.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 109835,
+      "sha256": "f08c7513ecef5aad65687bfdf6bc601ae9fccd04a42904501f8f7141abad9eb9"
+    },
+    {
+      "path": "z3_solver-4.15.4.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 29268352,
+      "sha256": "7e103a6f203f505b8b8b8e5c931cc407c95b61556512d4921c1ddc0b3f41b08e"
+    }
+  ],
+  "resolved": [
+    {
+      "name": "torch",
+      "version": "2.12.1+cu132",
+      "path": "torch-2.12.1+cu132-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 539257531,
+      "sha256": "b18be7b089e85324b18d26aba82d0e6de896d884568349e1d6832498fbdffdb3"
+    },
+    {
+      "name": "torchvision",
+      "version": "0.27.1+cu132",
+      "path": "torchvision-0.27.1+cu132-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 7802004,
+      "sha256": "679aedb2c3c3c72fdbbd8bb716cac3abc023da972e435e4cebaa7c9cb92074f4"
+    },
+    {
+      "name": "vllm",
+      "version": "0.26.1.dev0+g568afb3a1.d20260802.cu132",
+      "path": "vllm-0.26.1.dev0+g568afb3a1.d20260802.cu132-cp312-cp312-linux_x86_64.whl",
+      "bytes": 496719721,
+      "sha256": "a46b0359fb53686c44a9b9485ee857493d90a014320cfdee46134a96e45779d5"
+    },
+    {
+      "name": "transformers",
+      "version": "5.14.1",
+      "path": "transformers-5.14.1-py3-none-any.whl",
+      "bytes": 11625234,
+      "sha256": "9db974c4079ede2d1a3ea7ca5a240df33f2cc26fc2b36ba64c5f2a4f43b6e725"
+    },
+    {
+      "name": "openai",
+      "version": "2.52.0",
+      "path": "openai-2.52.0-py3-none-any.whl",
+      "bytes": 1659569,
+      "sha256": "f97e231d9a8fa69ab55897df1080f02d99913fb0a30e3ee56ea16a1eb6c2d434"
+    },
+    {
+      "name": "pillow",
+      "version": "12.2.0",
+      "path": "pillow-12.2.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 7087215,
+      "sha256": "62f5409336adb0663b7caa0da5c7d9e7bdbaae9ce761d34669420c2a801b2780"
+    },
+    {
+      "name": "apache-tvm-ffi",
+      "version": "0.1.10",
+      "path": "apache_tvm_ffi-0.1.10-cp312-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 2571084,
+      "sha256": "96b69030c722572e13e30182733adfa2d604258e988b3f6630a16f397c7f9288"
+    },
+    {
+      "name": "compressed-tensors",
+      "version": "0.17.0",
+      "path": "compressed_tensors-0.17.0-py3-none-any.whl",
+      "bytes": 211714,
+      "sha256": "4a1b89b508f7efb8ffb4eee8a6e69e0452d9b080cae130146025c64fbe9fa9aa"
+    },
+    {
+      "name": "cuda-toolkit",
+      "version": "13.2.1",
+      "path": "cuda_toolkit-13.2.1-py2.py3-none-any.whl",
+      "bytes": 2612,
+      "sha256": "646d0e3668ce6f78f2312bb9cc0f668b9cbfcbef187eaa6a39eb2ea6dbec2a31"
+    },
+    {
+      "name": "depyf",
+      "version": "0.20.0",
+      "path": "depyf-0.20.0-py3-none-any.whl",
+      "bytes": 39381,
+      "sha256": "d31effad4261cebecb58955d832e448ace88f432328f95f82fd99c30fd9308d4"
+    },
+    {
+      "name": "flashinfer-python",
+      "version": "0.6.14",
+      "path": "flashinfer_python-0.6.14-py3-none-any.whl",
+      "bytes": 14574383,
+      "sha256": "d124369346a3d48eac67e31c42f7a3c813bcc0abc10e2e36db413b7b3dfd97df"
+    },
+    {
+      "name": "humming-kernels",
+      "version": "0.1.10",
+      "path": "humming_kernels-0.1.10-py3-none-any.whl",
+      "bytes": 184889,
+      "sha256": "4ded0998ff085afeddde70baf93f97c2929969ec3d4a63a52cfec5072bc972b4"
+    },
+    {
+      "name": "lark",
+      "version": "1.2.2",
+      "path": "lark-1.2.2-py3-none-any.whl",
+      "bytes": 111036,
+      "sha256": "c2276486b02f0f1b90be155f2c8ba4a8e194d42775786db622faccd652d8e80c"
+    },
+    {
+      "name": "lm-format-enforcer",
+      "version": "0.11.3",
+      "path": "lm_format_enforcer-0.11.3-py3-none-any.whl",
+      "bytes": 45418,
+      "sha256": "cf586350875def1ae7a8fba84fcbbfc8371424b6c9d05c1fcba70aa233fbf06f"
+    },
+    {
+      "name": "numba",
+      "version": "0.65.0",
+      "path": "numba-0.65.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 3801411,
+      "sha256": "a52d92ffd297c10364bce60cd1fcb88f99284ab5df085f2c6bcd1cb33b529a6f"
+    },
+    {
+      "name": "nvidia-cudnn-cu13",
+      "version": "9.20.0.48",
+      "path": "nvidia_cudnn_cu13-9.20.0.48-py3-none-manylinux_2_27_x86_64.whl",
+      "bytes": 366173588,
+      "sha256": "0c45dd8eeb50b603f07995b1b300c62ffe6a1980482b82b3bcf94a4ca9d49304"
+    },
+    {
+      "name": "nvidia-cusparselt-cu13",
+      "version": "0.8.1",
+      "path": "nvidia_cusparselt_cu13-0.8.1-py3-none-manylinux2014_x86_64.whl",
+      "bytes": 170148586,
+      "sha256": "786ce87568c303fadb5afcc7102d454cd3040d75f6f8626f5db460d1871f4dd0"
+    },
+    {
+      "name": "nvidia-cutlass-dsl",
+      "version": "4.6.0",
+      "path": "nvidia_cutlass_dsl-4.6.0-py3-none-any.whl",
+      "bytes": 10459,
+      "sha256": "e3e0e4d8df20d82c8401fa013f4d82021f41daa5fca3d24b55d4a677f2308ca8"
+    },
+    {
+      "name": "nvidia-nccl-cu13",
+      "version": "2.29.7",
+      "path": "nvidia_nccl_cu13-2.29.7-py3-none-manylinux_2_18_x86_64.whl",
+      "bytes": 205976000,
+      "sha256": "edd81538446786ec3b73972543e53bb43bcaf0bfc8ef76cb679fcc390ffe136d"
+    },
+    {
+      "name": "nvidia-nvshmem-cu13",
+      "version": "3.4.5",
+      "path": "nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 60412546,
+      "sha256": "290f0a2ee94c9f3687a02502f3b9299a9f9fe826e6d0287ee18482e78d495b80"
+    },
+    {
+      "name": "nvtx",
+      "version": "0.2.15",
+      "path": "nvtx-0.2.15-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 806187,
+      "sha256": "3ca8030a6d197952318013dd1c12c22da1d4b9feb76ba72e0fcd449961183c2c"
+    },
+    {
+      "name": "outlines_core",
+      "version": "0.2.14",
+      "path": "outlines_core-0.2.14-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 2341426,
+      "sha256": "3bb2060c240c4507f334965a8948dbeeb22007560d797f6debd92346c0b620cb"
+    },
+    {
+      "name": "pynvvideocodec",
+      "version": "2.0.4",
+      "path": "pynvvideocodec-2.0.4-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 43176147,
+      "sha256": "b59cec7a1a3f78fad13fead78cad8b6d9686827f9ff4477080245457675a01d0"
+    },
+    {
+      "name": "tilelang",
+      "version": "0.1.9",
+      "path": "tilelang-0.1.9-cp38-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 45419374,
+      "sha256": "4bbccfe9035aed775ffafb6dc25a5994504b24e2c5d95d0f39643edfafa7bf12"
+    },
+    {
+      "name": "tokenspeed-mla",
+      "version": "0.1.8",
+      "path": "tokenspeed_mla-0.1.8-py3-none-manylinux_2_28_x86_64.whl",
+      "bytes": 755827,
+      "sha256": "6a7526d7327746893f8c20d24aa63ba5b8a123d0dfd6e66388e13b768b6452c6"
+    },
+    {
+      "name": "triton",
+      "version": "3.7.1",
+      "path": "triton-3.7.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 197149381,
+      "sha256": "225910e79149807de74a0ca63160aa285956a8d64a2951d558997c57e2584ae1"
+    },
+    {
+      "name": "nvidia-cublas",
+      "version": "13.4.0.1",
+      "path": "nvidia_cublas-13.4.0.1-py3-none-manylinux_2_27_x86_64.whl",
+      "bytes": 404872465,
+      "sha256": "53bf22e2ccbf644db74b6cc21cea7f5efb1a52aa64515438b430abbd05af4106"
+    },
+    {
+      "name": "nvidia-cuda-cupti",
+      "version": "13.2.75",
+      "path": "nvidia_cuda_cupti-13.2.75-py3-none-manylinux_2_25_x86_64.whl",
+      "bytes": 11986992,
+      "sha256": "f75aca6bef89c625a4076a820302bb06764daa1d21595286f6bee5e237d3a187"
+    },
+    {
+      "name": "nvidia-cuda-nvrtc",
+      "version": "13.2.78",
+      "path": "nvidia_cuda_nvrtc-13.2.78-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl",
+      "bytes": 47019062,
+      "sha256": "a9049031da08cbedd0c20e3470e5a978dc330af0e0326b3b05774718c665dc3e"
+    },
+    {
+      "name": "nvidia-cuda-runtime",
+      "version": "13.2.75",
+      "path": "nvidia_cuda_runtime-13.2.75-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 2321965,
+      "sha256": "72bf454902da594e0b833cadeddc8b7100ce1c7cf7ed9023943931be1aa913b7"
+    },
+    {
+      "name": "nvidia-cufft",
+      "version": "12.2.0.46",
+      "path": "nvidia_cufft-12.2.0.46-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 218258098,
+      "sha256": "a9667ae4d81b9e54ddbbad24a9e72334f89d4fc184566d05ef028e2760c820eb"
+    },
+    {
+      "name": "nvidia-cufile",
+      "version": "1.17.1.22",
+      "path": "nvidia_cufile-1.17.1.22-py3-none-manylinux_2_27_x86_64.whl",
+      "bytes": 1387670,
+      "sha256": "87feaf8c3ad20d3d03a01933181801ff6892bace5c8f0b1e4b48f319d3e62d36"
+    },
+    {
+      "name": "nvidia-curand",
+      "version": "10.4.2.55",
+      "path": "nvidia_curand-10.4.2.55-py3-none-manylinux_2_27_x86_64.whl",
+      "bytes": 59920450,
+      "sha256": "b4080cab49d4939f8e46b2c195c76c698d2289835c36ede558836daa40000e70"
+    },
+    {
+      "name": "nvidia-cusolver",
+      "version": "12.2.0.1",
+      "path": "nvidia_cusolver-12.2.0.1-py3-none-manylinux_2_27_x86_64.whl",
+      "bytes": 227391570,
+      "sha256": "4693ea3c2a5d20369da7b5a4970a41df9b40f1b6f2ef9909c95f7c8c8c5ffb4d"
+    },
+    {
+      "name": "nvidia-cusparse",
+      "version": "12.7.10.1",
+      "path": "nvidia_cusparse-12.7.10.1-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 150855566,
+      "sha256": "f0d110640aa63e7182fa787cc245afa07c5fb84ac30f1c4029e4fa3012353172"
+    },
+    {
+      "name": "nvidia-cutlass-dsl-libs-base",
+      "version": "4.6.0",
+      "path": "nvidia_cutlass_dsl_libs_base-4.6.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 2824817,
+      "sha256": "e41cd5db4de4b535c30ae9ca4412b957800a62560019ae91fa51cf3ea89bf254"
+    },
+    {
+      "name": "nvidia-cutlass-dsl-libs-cu12",
+      "version": "4.6.0",
+      "path": "nvidia_cutlass_dsl_libs_cu12-4.6.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 88436835,
+      "sha256": "abc341ff0fce40ed0bdadf160f6afac07fb9d01768d4daebd1628c330b3e4210"
+    },
+    {
+      "name": "nvidia-cutlass-dsl-libs-cu13",
+      "version": "4.6.0",
+      "path": "nvidia_cutlass_dsl_libs_cu13-4.6.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 88026053,
+      "sha256": "4799fabc4bd1f7825ff00101ae0054c5cfb6769aefd6d9694f6da8c0f07e12c3"
+    },
+    {
+      "name": "nvidia-nvtx",
+      "version": "13.2.75",
+      "path": "nvidia_nvtx-13.2.75-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl",
+      "bytes": 153460,
+      "sha256": "2d7c24fc582d841493c6dc2cf017c25e4428cf583a3bd9e9325a65f0ecc65f73"
+    },
+    {
+      "name": "nvidia-cutlass-dsl-libs-core",
+      "version": "4.6.0",
+      "path": "nvidia_cutlass_dsl_libs_core-4.6.0-py3-none-any.whl",
+      "bytes": 767713,
+      "sha256": "f9ea6d313a03cb11fa177da32e8747ad0cac51358850810f36aa6c4736192c27"
+    },
+    {
+      "name": "aiohttp",
+      "version": "3.14.3",
+      "path": "aiohttp-3.14.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 1792122,
+      "sha256": "543906c127fb1d929b95076db19b83fa2d46751006ff1e23b093aa5ac4d8db42"
+    },
+    {
+      "name": "anthropic",
+      "version": "0.120.2",
+      "path": "anthropic-0.120.2-py3-none-any.whl",
+      "bytes": 1022851,
+      "sha256": "0f0bc2b381dc0eb41c8d886b815d79c2041cd2374f83aed36f574b6dc9c579c1"
+    },
+    {
+      "name": "anyio",
+      "version": "4.14.2",
+      "path": "anyio-4.14.2-py3-none-any.whl",
+      "bytes": 125813,
+      "sha256": "9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494"
+    },
+    {
+      "name": "cuda-bindings",
+      "version": "13.3.1",
+      "path": "cuda_bindings-13.3.1-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 6657965,
+      "sha256": "e32d08f71ebcdf00f0f41eab2eb37e8da94c8ed411cc9f7f7a019ce6b34abe3a"
+    },
+    {
+      "name": "distro",
+      "version": "1.9.0",
+      "path": "distro-1.9.0-py3-none-any.whl",
+      "bytes": 20277,
+      "sha256": "7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2"
+    },
+    {
+      "name": "fastapi",
+      "version": "0.136.3",
+      "path": "fastapi-0.136.3-py3-none-any.whl",
+      "bytes": 117481,
+      "sha256": "3d2a69bdf04b7e9f3afa292c3bc7a98816bbfafa10bc9b45f3f3700d2f761620"
+    },
+    {
+      "name": "fastsafetensors",
+      "version": "0.3.3",
+      "path": "fastsafetensors-0.3.3-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 1915478,
+      "sha256": "3587bc66b8dec560ad903becf9540889013d4d47f0e10cf45f19bedc7b7bffa7"
+    },
+    {
+      "name": "filelock",
+      "version": "3.32.2",
+      "path": "filelock-3.32.2-py3-none-any.whl",
+      "bytes": 98830,
+      "sha256": "87dd94cf281e586d135fa51132b8e3d9a598b316e90377a288663c9321036c82"
+    },
+    {
+      "name": "fsspec",
+      "version": "2026.7.0",
+      "path": "fsspec-2026.7.0-py3-none-any.whl",
+      "bytes": 206583,
+      "sha256": "b57ddbafedfaef7018c1ecab32aa200a9d7ca26b77965f64e48b70061249d279"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1",
+      "path": "httpx-0.28.1-py3-none-any.whl",
+      "bytes": 73517,
+      "sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad"
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9",
+      "path": "httpcore-1.0.9-py3-none-any.whl",
+      "bytes": 78784,
+      "sha256": "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55"
+    },
+    {
+      "name": "huggingface_hub",
+      "version": "1.26.0",
+      "path": "huggingface_hub-1.26.0-py3-none-any.whl",
+      "bytes": 780357,
+      "sha256": "e8cca670caa5d8dfa7e45bf45e86b466698198cd8150c021bcdb4a86b9252364"
+    },
+    {
+      "name": "Jinja2",
+      "version": "3.1.6",
+      "path": "jinja2-3.1.6-py3-none-any.whl",
+      "bytes": 134899,
+      "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
+    },
+    {
+      "name": "jiter",
+      "version": "0.16.0",
+      "path": "jiter-0.16.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 343805,
+      "sha256": "46add52f4ad47a08bfb1219f3e673da972191489a33016edefdb5ea55bfa8c48"
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.26.0",
+      "path": "jsonschema-4.26.0-py3-none-any.whl",
+      "bytes": 90630,
+      "sha256": "d489f15263b8d200f8387e64b4c3a75f06629559fb73deb8fdfb525f2dab50ce"
+    },
+    {
+      "name": "llguidance",
+      "version": "1.7.6",
+      "path": "llguidance-1.7.6-cp39-abi3-manylinux_2_31_x86_64.whl",
+      "bytes": 3074809,
+      "sha256": "ceec951d29a74309984e3be0fe7f5f56c1362434cd937abd517b259a60908b1e"
+    },
+    {
+      "name": "mistral_common",
+      "version": "1.11.7",
+      "path": "mistral_common-1.11.7-py3-none-any.whl",
+      "bytes": 6553583,
+      "sha256": "a9511b88eacacbe7dacddd9d3498c1739f56847b7fdddbd5a22e7844fd9def95"
+    },
+    {
+      "name": "model-hosting-container-standards",
+      "version": "0.1.16",
+      "path": "model_hosting_container_standards-0.1.16-py3-none-any.whl",
+      "bytes": 125666,
+      "sha256": "47f4f65713120bc3a69feb022981a38db9e557aedf88dbd72077f20588caa12b"
+    },
+    {
+      "name": "networkx",
+      "version": "3.6.1",
+      "path": "networkx-3.6.1-py3-none-any.whl",
+      "bytes": 2068504,
+      "sha256": "d47fbf302e7d9cbbb9e2555a0d267983d2aa476bac30e90dfbe5669bd57f3762"
+    },
+    {
+      "name": "numpy",
+      "version": "2.3.5",
+      "path": "numpy-2.3.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 16606086,
+      "sha256": "0d8163f43acde9a73c2a33605353a4f1bc4798745a8b1d73183b28e5b435ae28"
+    },
+    {
+      "name": "nvidia-cudnn-frontend",
+      "version": "1.26.0",
+      "path": "nvidia_cudnn_frontend-1.26.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 3627033,
+      "sha256": "1a1223c4e2e8bbe6f620148d6848f4eb773dd94bef534d5b748e91232b5be618"
+    },
+    {
+      "name": "openai-harmony",
+      "version": "0.0.8",
+      "path": "openai_harmony-0.0.8-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 2953260,
+      "sha256": "c007d277218a50db8839e599ed78e0fffe5130f614c3f6d93ae257f282071a29"
+    },
+    {
+      "name": "opencv-python-headless",
+      "version": "5.0.0.93",
+      "path": "opencv_python_headless-5.0.0.93-cp37-abi3-manylinux_2_28_x86_64.whl",
+      "bytes": 61204038,
+      "sha256": "ed709fdf9aa0bd1f2ed8549e71d19449b03a675bb581eb292285f6861953be37"
+    },
+    {
+      "name": "opentelemetry-api",
+      "version": "1.44.0",
+      "path": "opentelemetry_api-1.44.0-py3-none-any.whl",
+      "bytes": 60018,
+      "sha256": "94b98c893a91b88657eaac1e3ba89618cdb85be6918196705354f34728b2cdef"
+    },
+    {
+      "name": "opentelemetry-exporter-otlp",
+      "version": "1.44.0",
+      "path": "opentelemetry_exporter_otlp-1.44.0-py3-none-any.whl",
+      "bytes": 6727,
+      "sha256": "4a498fa8d8fd8be9e8e2d175fe5524a3fe581ccffadd8509db86526a5fb97051"
+    },
+    {
+      "name": "opentelemetry-exporter-otlp-proto-grpc",
+      "version": "1.44.0",
+      "path": "opentelemetry_exporter_otlp_proto_grpc-1.44.0-py3-none-any.whl",
+      "bytes": 19624,
+      "sha256": "6a1a645ea182a2f59440c51fa8301d309f3324a8f9d65f8395584b064b67ee4e"
+    },
+    {
+      "name": "opentelemetry-exporter-otlp-proto-http",
+      "version": "1.44.0",
+      "path": "opentelemetry_exporter_otlp_proto_http-1.44.0-py3-none-any.whl",
+      "bytes": 21850,
+      "sha256": "838592fce774c1c8bb7b9a0a7facbfa82e17be5a8a4e94cef10cb84ae026bae3"
+    },
+    {
+      "name": "opentelemetry-exporter-otlp-proto-common",
+      "version": "1.44.0",
+      "path": "opentelemetry_exporter_otlp_proto_common-1.44.0-py3-none-any.whl",
+      "bytes": 17045,
+      "sha256": "9a9fe61bba73d802904bc989f1d6b4a7b1ee40f06c40e98d6f85af65aaebb694"
+    },
+    {
+      "name": "opentelemetry-proto",
+      "version": "1.44.0",
+      "path": "opentelemetry_proto-1.44.0-py3-none-any.whl",
+      "bytes": 72483,
+      "sha256": "898b155a0e1557afd867478fb6158e8122a46329ca0bb8dc53cc55e98f017f56"
+    },
+    {
+      "name": "opentelemetry-sdk",
+      "version": "1.44.0",
+      "path": "opentelemetry_sdk-1.44.0-py3-none-any.whl",
+      "bytes": 137221,
+      "sha256": "df081c4c6bcfdb1211e3e86140376792643128a25f8d72d1d27675936e7e96ad"
+    },
+    {
+      "name": "opentelemetry-semantic-conventions",
+      "version": "0.65b0",
+      "path": "opentelemetry_semantic_conventions-0.65b0-py3-none-any.whl",
+      "bytes": 204645,
+      "sha256": "1cacde7b0ad306f84c5ef08c3dbe1bbaf20165bba6f8bff43b670e555a086bcb"
+    },
+    {
+      "name": "opentelemetry-semantic-conventions-ai",
+      "version": "0.5.1",
+      "path": "opentelemetry_semantic_conventions_ai-0.5.1-py3-none-any.whl",
+      "bytes": 11250,
+      "sha256": "25aeb22bd261543b4898a73824026d96770e5351209c7d07a0b1314762b1f6e4"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3",
+      "path": "packaging-26.3-py3-none-any.whl",
+      "bytes": 129956,
+      "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c"
+    },
+    {
+      "name": "prometheus_client",
+      "version": "0.26.0",
+      "path": "prometheus_client-0.26.0-py3-none-any.whl",
+      "bytes": 64494,
+      "sha256": "fa93d06737aa02bacd05794768508bb97d2fbee28cb3bca04eaae92f0ca953d6"
+    },
+    {
+      "name": "prometheus-fastapi-instrumentator",
+      "version": "8.1.0",
+      "path": "prometheus_fastapi_instrumentator-8.1.0-py3-none-any.whl",
+      "bytes": 19649,
+      "sha256": "b9f40b2cff3f7891ca0610b3ae4fc6ec723fd326b04bb659819aaeb821a0fc7d"
+    },
+    {
+      "name": "protobuf",
+      "version": "6.33.6",
+      "path": "protobuf-6.33.6-cp39-abi3-manylinux2014_x86_64.whl",
+      "bytes": 323436,
+      "sha256": "e9db7e292e0ab79dd108d7f1a94fe31601ce1ee3f7b79e0692043423020b0593"
+    },
+    {
+      "name": "pydantic",
+      "version": "2.13.4",
+      "path": "pydantic-2.13.4-py3-none-any.whl",
+      "bytes": 472262,
+      "sha256": "45a282cde31d808236fd7ea9d919b128653c8b38b393d1c4ab335c62924d9aba"
+    },
+    {
+      "name": "pydantic_core",
+      "version": "2.46.4",
+      "path": "pydantic_core-2.46.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 2094516,
+      "sha256": "926c9541b14b12b1681dca8a0b75feb510b06c6341b70a8e500c2fdcff837cce"
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "path": "pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 807870,
+      "sha256": "ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc"
+    },
+    {
+      "name": "pyzmq",
+      "version": "27.1.0",
+      "path": "pyzmq-27.1.0-cp312-abi3-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 840995,
+      "sha256": "43ad9a73e3da1fab5b0e7e13402f0b2fb934ae1c876c51d0afff0e7c052eca31"
+    },
+    {
+      "name": "quack-kernels",
+      "version": "0.6.1",
+      "path": "quack_kernels-0.6.1-py3-none-any.whl",
+      "bytes": 358439,
+      "sha256": "266705ea82117e9b1c8a9e44d68a458519f2498d966c0efffd6812120c3995ad"
+    },
+    {
+      "name": "regex",
+      "version": "2026.7.19",
+      "path": "regex-2026.7.19-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 801798,
+      "sha256": "9dce8ec9695f531a1b8a6f314fd4b393adcccf2ea861db480cdf97a301d01a68"
+    },
+    {
+      "name": "requests",
+      "version": "2.34.2",
+      "path": "requests-2.34.2-py3-none-any.whl",
+      "bytes": 73075,
+      "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0"
+    },
+    {
+      "name": "safetensors",
+      "version": "0.8.0",
+      "path": "safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 516040,
+      "sha256": "fd6f3f93c9a0a7cc2788ee63fb763353d4bd2e89b0751bc78fcf7dda00bea774"
+    },
+    {
+      "name": "setuptools",
+      "version": "80.10.2",
+      "path": "setuptools-80.10.2-py3-none-any.whl",
+      "bytes": 1064234,
+      "sha256": "95b30ddfb717250edb492926c92b5221f7ef3fbcc2b07579bcd4a27da21d0173"
+    },
+    {
+      "name": "six",
+      "version": "1.17.0",
+      "path": "six-1.17.0-py2.py3-none-any.whl",
+      "bytes": 11050,
+      "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"
+    },
+    {
+      "name": "starlette",
+      "version": "1.3.1",
+      "path": "starlette-1.3.1-py3-none-any.whl",
+      "bytes": 73632,
+      "sha256": "c7372aae11c3c3f26a42df7bd626cec2f47d03483d261d369516a615a53714c6"
+    },
+    {
+      "name": "sympy",
+      "version": "1.14.0",
+      "path": "sympy-1.14.0-py3-none-any.whl",
+      "bytes": 6299353,
+      "sha256": "e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5"
+    },
+    {
+      "name": "tiktoken",
+      "version": "0.13.0",
+      "path": "tiktoken-0.13.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 1136523,
+      "sha256": "a116178fa7e1b4065bff05214360373a65cac22f965be7b3f73d00a0dbfe7649"
+    },
+    {
+      "name": "tokenizers",
+      "version": "0.22.2",
+      "path": "tokenizers-0.22.2-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 3274982,
+      "sha256": "369cc9fc8cc10cb24143873a0d95438bb8ee257bb80c71989e3ee290e8d72c67"
+    },
+    {
+      "name": "tqdm",
+      "version": "4.70.0",
+      "path": "tqdm-4.70.0-py3-none-any.whl",
+      "bytes": 80184,
+      "sha256": "7f585706bfddbdebf89daac705b2dfcc16890130727d3197ca62c732b4310953"
+    },
+    {
+      "name": "typer",
+      "version": "0.27.1",
+      "path": "typer-0.27.1-py3-none-any.whl",
+      "bytes": 122874,
+      "sha256": "53150287edd11baeb4e4722c8e394fcdf8181c0ae89485cba8d25c778d5edd56"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "path": "typing_extensions-4.16.0-py3-none-any.whl",
+      "bytes": 45571,
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+    },
+    {
+      "name": "xgrammar",
+      "version": "0.2.3",
+      "path": "xgrammar-0.2.3-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 44855110,
+      "sha256": "fdf081fab29694302d41d61dcf52fad7d253879a718bc6afc68db0a0dabd7f19"
+    },
+    {
+      "name": "blake3",
+      "version": "1.0.9",
+      "path": "blake3-1.0.9-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 383851,
+      "sha256": "bcd56a7a972c4185070f7042ccc20166927eec3c0f98b8405f375d007b604a0b"
+    },
+    {
+      "name": "cachetools",
+      "version": "7.1.7",
+      "path": "cachetools-7.1.7-py3-none-any.whl",
+      "bytes": 16830,
+      "sha256": "ef98ef375ad188819ef2f9b3645e3987f4b8c5b7550e436ad998c2de78296df0"
+    },
+    {
+      "name": "cbor2",
+      "version": "6.1.4",
+      "path": "cbor2-6.1.4-cp312-cp312-manylinux_2_28_x86_64.whl",
+      "bytes": 461193,
+      "sha256": "310f3dfb296ba48fe9b63c5cf26e691e3548a1eae6901d2f0c18e941d151f220"
+    },
+    {
+      "name": "cloudpickle",
+      "version": "3.1.2",
+      "path": "cloudpickle-3.1.2-py3-none-any.whl",
+      "bytes": 22228,
+      "sha256": "9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a"
+    },
+    {
+      "name": "einops",
+      "version": "0.8.2",
+      "path": "einops-0.8.2-py3-none-any.whl",
+      "bytes": 65638,
+      "sha256": "54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193"
+    },
+    {
+      "name": "ijson",
+      "version": "3.5.1",
+      "path": "ijson-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 149848,
+      "sha256": "e4fcebfe1685bb7ba06a8255a5d428ea6b4b895d7acf979cb637d8bbc9db2f47"
+    },
+    {
+      "name": "mcp",
+      "version": "2.0.0",
+      "path": "mcp-2.0.0-py3-none-any.whl",
+      "bytes": 349980,
+      "sha256": "1cb4c75d2d2c7b8c1d756355e5d82a39f2822cc7f13e22a2051d7ca3592349d6"
+    },
+    {
+      "name": "mcp-types",
+      "version": "2.0.0",
+      "path": "mcp_types-2.0.0-py3-none-any.whl",
+      "bytes": 69649,
+      "sha256": "6b2de797ca2797f568b79529e1b25948e34de511bcc0bd82fef1039a6d1b8eb0"
+    },
+    {
+      "name": "msgspec",
+      "version": "0.21.1",
+      "path": "msgspec-0.21.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 225025,
+      "sha256": "21995e74b5c598c2e004110ad66ec7f1b8c20bf2bcf3b2de8fd9a3094422d3ff"
+    },
+    {
+      "name": "ninja",
+      "version": "1.13.0",
+      "path": "ninja-1.13.0-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 180716,
+      "sha256": "fb46acf6b93b8dd0322adc3a4945452a4e774b75b91293bafcc7b7f8e6517dfa"
+    },
+    {
+      "name": "partial-json-parser",
+      "version": "0.2.1.1.post7",
+      "path": "partial_json_parser-0.2.1.1.post7-py3-none-any.whl",
+      "bytes": 10877,
+      "sha256": "145119e5eabcf80cbb13844a6b50a85c68bf99d376f8ed771e2a3c3b03e653ae"
+    },
+    {
+      "name": "psutil",
+      "version": "7.2.2",
+      "path": "psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 155560,
+      "sha256": "076a2d2f923fd4821644f5ba89f059523da90dc9014e85f8e45a5774ca5bc6f9"
+    },
+    {
+      "name": "py-cpuinfo",
+      "version": "9.0.0",
+      "path": "py_cpuinfo-9.0.0-py3-none-any.whl",
+      "bytes": 22335,
+      "sha256": "859625bc251f64e21f077d099d4162689c762b5d6a4c3c97553d56241c9674d5"
+    },
+    {
+      "name": "pybase64",
+      "version": "1.4.3",
+      "path": "pybase64-1.4.3-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl",
+      "bytes": 71599,
+      "sha256": "bb632edfd132b3eaf90c39c89aa314beec4e946e210099b57d40311f704e11d4"
+    },
+    {
+      "name": "python-json-logger",
+      "version": "4.1.0",
+      "path": "python_json_logger-4.1.0-py3-none-any.whl",
+      "bytes": 15021,
+      "sha256": "132994765cf75bf44554be9aa49b06ef2345d23661a96720262716438141b6b2"
+    },
+    {
+      "name": "sentencepiece",
+      "version": "0.2.2",
+      "path": "sentencepiece-0.2.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 1397736,
+      "sha256": "c8a168b040bc61681293f79a949b5d911c8e25086f4260285b8d97ab5f1195da"
+    },
+    {
+      "name": "setproctitle",
+      "version": "1.3.7",
+      "path": "setproctitle-1.3.7-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "bytes": 32932,
+      "sha256": "2906b6c7959cdb75f46159bf0acd8cc9906cf1361c9e1ded0d065fe8f9039629"
+    },
+    {
+      "name": "sniffio",
+      "version": "1.3.1",
+      "path": "sniffio-1.3.1-py3-none-any.whl",
+      "bytes": 10235,
+      "sha256": "2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2"
+    },
+    {
+      "name": "watchfiles",
+      "version": "1.2.0",
+      "path": "watchfiles-1.2.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 456398,
+      "sha256": "e53a384f76b631c3ae5334ce6a52f0baa3a911eb94a4eac7f160079868b716d5"
+    },
+    {
+      "name": "aiohappyeyeballs",
+      "version": "2.7.1",
+      "path": "aiohappyeyeballs-2.7.1-py3-none-any.whl",
+      "bytes": 15038,
+      "sha256": "9243213661e29250eb41368e5daa826fc017156c3b8a11440826b2e3ed376472"
+    },
+    {
+      "name": "aiosignal",
+      "version": "1.4.0",
+      "path": "aiosignal-1.4.0-py3-none-any.whl",
+      "bytes": 7490,
+      "sha256": "053243f8b92b990551949e63930a839ff0cf0b0ebbe0597b0f3fb19e1a0fe82e"
+    },
+    {
+      "name": "annotated-doc",
+      "version": "0.0.5",
+      "path": "annotated_doc-0.0.5-py3-none-any.whl",
+      "bytes": 5302,
+      "sha256": "117bac03a25ede5df5440e855b32d556049ca169ead221505badf432fed4b101"
+    },
+    {
+      "name": "annotated-types",
+      "version": "0.8.0",
+      "path": "annotated_types-0.8.0-py3-none-any.whl",
+      "bytes": 13427,
+      "sha256": "f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0"
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0",
+      "path": "attrs-26.1.0-py3-none-any.whl",
+      "bytes": 67548,
+      "sha256": "c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309"
+    },
+    {
+      "name": "certifi",
+      "version": "2026.7.22",
+      "path": "certifi-2026.7.22-py3-none-any.whl",
+      "bytes": 136983,
+      "sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775"
+    },
+    {
+      "name": "charset-normalizer",
+      "version": "3.4.9",
+      "path": "charset_normalizer-3.4.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 224256,
+      "sha256": "5e226f6218febc71f6c1fc2fafb91c226f75bdc1d8fb12d66823716e891608fd"
+    },
+    {
+      "name": "click",
+      "version": "8.4.2",
+      "path": "click-8.4.2-py3-none-any.whl",
+      "bytes": 119243,
+      "sha256": "e6f9f66136c816745b9d65817da91d61d957fb16e02e4dcd0552553c5a197b76"
+    },
+    {
+      "name": "cuda-pathfinder",
+      "version": "1.6.0",
+      "path": "cuda_pathfinder-1.6.0-py3-none-any.whl",
+      "bytes": 54591,
+      "sha256": "1503af579d8379c24bdd65528379bc57039b0455be9f5f9686cf8e473a1fce51"
+    },
+    {
+      "name": "cuda-tile",
+      "version": "1.5.0",
+      "path": "cuda_tile-1.5.0-cp312-cp312-manylinux2014_x86_64.whl",
+      "bytes": 324990,
+      "sha256": "cef6d30acc37557643ece0de3770fc4c33497c4af40209e424f72fbfcbe6ea5a"
+    },
+    {
+      "name": "docstring_parser",
+      "version": "0.18.0",
+      "path": "docstring_parser-0.18.0-py3-none-any.whl",
+      "bytes": 22484,
+      "sha256": "b3fcbed555c47d8479be0796ef7e19c2670d428d72e96da63f3a40122860374b"
+    },
+    {
+      "name": "email-validator",
+      "version": "2.3.0",
+      "path": "email_validator-2.3.0-py3-none-any.whl",
+      "bytes": 35604,
+      "sha256": "80f13f623413e6b197ae73bb10bf4eb0908faf509ad8362c5edeb0be7fd450b4"
+    },
+    {
+      "name": "fastapi-cli",
+      "version": "0.0.32",
+      "path": "fastapi_cli-0.0.32-py3-none-any.whl",
+      "bytes": 14670,
+      "sha256": "8dcc286fa32f01bbd3f65dd09cfd5a2540ed5f2230b77db7fd30978d6165f3c4"
+    },
+    {
+      "name": "fastar",
+      "version": "0.11.0",
+      "path": "fastar-0.11.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 819382,
+      "sha256": "ef5a6071121e05d8287fc75bccb054bcbac8bb0501200a0c0a8feeace5303ea4"
+    },
+    {
+      "name": "frozenlist",
+      "version": "1.8.0",
+      "path": "frozenlist-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "bytes": 242411,
+      "sha256": "494a5952b1c597ba44e0e78113a7266e656b9794eec897b19ead706bd7074383"
+    },
+    {
+      "name": "hf-xet",
+      "version": "1.6.0",
+      "path": "hf_xet-1.6.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 4464663,
+      "sha256": "d62671bb130879cef0ee4c9ebe47a14af6c66ec53e6d84dc15936e5ffdfac82f"
+    },
+    {
+      "name": "httpx2",
+      "version": "2.9.1",
+      "path": "httpx2-2.9.1-py3-none-any.whl",
+      "bytes": 91191,
+      "sha256": "1820fe14a9ab1107bfeff39259987429450b070ec0ff38cc87eb0d8c97fdc71a"
+    },
+    {
+      "name": "httpcore2",
+      "version": "2.9.1",
+      "path": "httpcore2-2.9.1-py3-none-any.whl",
+      "bytes": 82809,
+      "sha256": "6182472379e855fe4221246a2bb7ecede403bc61c6798062ae1787d051ccde26"
+    },
+    {
+      "name": "idna",
+      "version": "3.18",
+      "path": "idna-3.18-py3-none-any.whl",
+      "bytes": 65455,
+      "sha256": "7f952cbe720b688055e3f87de14f5c3e5fdaa8bc3928985c4077ca689de849a2"
+    },
+    {
+      "name": "interegular",
+      "version": "0.3.3",
+      "path": "interegular-0.3.3-py37-none-any.whl",
+      "bytes": 23635,
+      "sha256": "b0c07007d48c89d6d19f7204972d369b2a77222722e126b6aa63aa721dc3b19c"
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1",
+      "path": "jsonschema_specifications-2025.9.1-py3-none-any.whl",
+      "bytes": 18437,
+      "sha256": "98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe"
+    },
+    {
+      "name": "llvmlite",
+      "version": "0.47.0",
+      "path": "llvmlite-0.47.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 56275178,
+      "sha256": "5853bf26160857c0c2573415ff4efe01c4c651e59e2c55c2a088740acfee51cd"
+    },
+    {
+      "name": "MarkupSafe",
+      "version": "3.0.3",
+      "path": "markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 22947,
+      "sha256": "d6dd0be5b5b189d31db7cda48b91d7e0a9795f31430b7f271219ab30f1d3ac9d"
+    },
+    {
+      "name": "mpmath",
+      "version": "1.3.0",
+      "path": "mpmath-1.3.0-py3-none-any.whl",
+      "bytes": 536198,
+      "sha256": "a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"
+    },
+    {
+      "name": "multidict",
+      "version": "6.7.1",
+      "path": "multidict-6.7.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 256322,
+      "sha256": "bfde23ef6ed9db7eaee6c37dcec08524cb43903c60b285b172b6c094711b3961"
+    },
+    {
+      "name": "nvidia-nvjitlink",
+      "version": "13.3.33",
+      "path": "nvidia_nvjitlink-13.3.33-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl",
+      "bytes": 40742423,
+      "sha256": "26a6de7fb4c8fdaa7703d3dad720d6d427ddfea5c48a528fd97c11733ad830e5"
+    },
+    {
+      "name": "propcache",
+      "version": "0.5.2",
+      "path": "propcache-0.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 61639,
+      "sha256": "6f328175a2cde1f0ff2c4ed8ce968b9dcfb55f3a7153f39e2957ed994da13476"
+    },
+    {
+      "name": "pydantic-extra-types",
+      "version": "2.11.1",
+      "path": "pydantic_extra_types-2.11.1-py3-none-any.whl",
+      "bytes": 79526,
+      "sha256": "1722ea2bddae5628ace25f2aa685b69978ef533123e5638cfbddb999e0100ec1"
+    },
+    {
+      "name": "pydantic-settings",
+      "version": "2.14.2",
+      "path": "pydantic_settings-2.14.2-py3-none-any.whl",
+      "bytes": 61715,
+      "sha256": "a20c97b37910b6550d5ea50fbcc2d4187defe58cd57070b73863d069419c9440"
+    },
+    {
+      "name": "PyJWT",
+      "version": "2.13.0",
+      "path": "pyjwt-2.13.0-py3-none-any.whl",
+      "bytes": 31274,
+      "sha256": "66adcc2aff09b3f1bbd95fc1e1577df8ac8723c978552fd43304c8a290ac5728"
+    },
+    {
+      "name": "python-multipart",
+      "version": "0.0.32",
+      "path": "python_multipart-0.0.32-py3-none-any.whl",
+      "bytes": 30042,
+      "sha256": "ff6d3f776f16878c894e52e107296ffc890e913c611b1a4ec6c44e2821fe2e23"
+    },
+    {
+      "name": "referencing",
+      "version": "0.37.0",
+      "path": "referencing-0.37.0-py3-none-any.whl",
+      "bytes": 26766,
+      "sha256": "381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231"
+    },
+    {
+      "name": "rich",
+      "version": "15.0.0",
+      "path": "rich-15.0.0-py3-none-any.whl",
+      "bytes": 310654,
+      "sha256": "33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb"
+    },
+    {
+      "name": "rpds-py",
+      "version": "2026.6.3",
+      "path": "rpds_py-2026.6.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 366189,
+      "sha256": "ecabd69db66de867690f9797f2f8fa27ba501bbc24540cbdbdc649cd15888ba6"
+    },
+    {
+      "name": "shellingham",
+      "version": "1.5.4",
+      "path": "shellingham-1.5.4-py2.py3-none-any.whl",
+      "bytes": 9755,
+      "sha256": "7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686"
+    },
+    {
+      "name": "sse-starlette",
+      "version": "3.4.6",
+      "path": "sse_starlette-3.4.6-py3-none-any.whl",
+      "bytes": 16516,
+      "sha256": "56217ab4c9a9f9c5db7b21e08732d3e7c2b807f45231ad23de0551a24c4a41f6"
+    },
+    {
+      "name": "supervisor",
+      "version": "4.3.0",
+      "path": "supervisor-4.3.0-py2.py3-none-any.whl",
+      "bytes": 320736,
+      "sha256": "0bcb763fddafba410f35cbde226aa7f8514b9fb82eb05a0c85f6588d1c13f8db"
+    },
+    {
+      "name": "tokenspeed-triton",
+      "version": "3.8.10.post20260721",
+      "path": "tokenspeed_triton-3.8.10.post20260721-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 87210295,
+      "sha256": "66cba8d32a1539afd0ff3eec1782b082d01b4db6824d68017d1d789a03d0be37"
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.2",
+      "path": "typing_inspection-0.4.2-py3-none-any.whl",
+      "bytes": 14611,
+      "sha256": "4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7"
+    },
+    {
+      "name": "urllib3",
+      "version": "2.7.0",
+      "path": "urllib3-2.7.0-py3-none-any.whl",
+      "bytes": 131087,
+      "sha256": "9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897"
+    },
+    {
+      "name": "uvicorn",
+      "version": "0.52.1",
+      "path": "uvicorn-0.52.1-py3-none-any.whl",
+      "bytes": 79859,
+      "sha256": "e4403f9d93188cf9d1088e9f40e3acd12630e2df8675316704379a7fc20fff6a"
+    },
+    {
+      "name": "yarl",
+      "version": "1.24.5",
+      "path": "yarl-1.24.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 109835,
+      "sha256": "f08c7513ecef5aad65687bfdf6bc601ae9fccd04a42904501f8f7141abad9eb9"
+    },
+    {
+      "name": "z3-solver",
+      "version": "4.15.4.0",
+      "path": "z3_solver-4.15.4.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 29268352,
+      "sha256": "7e103a6f203f505b8b8b8e5c931cc407c95b61556512d4921c1ddc0b3f41b08e"
+    },
+    {
+      "name": "astor",
+      "version": "0.8.1",
+      "path": "astor-0.8.1-py2.py3-none-any.whl",
+      "bytes": 27488,
+      "sha256": "070a54e890cefb5b3739d19f30f5a5ec840ffc9c50ffa7d23cc9fc1a38ebbfc5"
+    },
+    {
+      "name": "dill",
+      "version": "0.4.1",
+      "path": "dill-0.4.1-py3-none-any.whl",
+      "bytes": 120019,
+      "sha256": "1e1ce33e978ae97fcfcff5638477032b801c46c7c65cf717f95fbc2248f79a9d"
+    },
+    {
+      "name": "jmespath",
+      "version": "1.1.0",
+      "path": "jmespath-1.1.0-py3-none-any.whl",
+      "bytes": 20419,
+      "sha256": "a5663118de4908c91729bea0acadca56526eb2698e83de10cd116ae0f4e97c64"
+    },
+    {
+      "name": "loguru",
+      "version": "0.7.3",
+      "path": "loguru-0.7.3-py3-none-any.whl",
+      "bytes": 61595,
+      "sha256": "31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c"
+    },
+    {
+      "name": "ml_dtypes",
+      "version": "0.5.4",
+      "path": "ml_dtypes-0.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 5009002,
+      "sha256": "9ad459e99793fa6e13bd5b7e6792c8f9190b4e5a1b45c63aba14a4d0a7f1d5ff"
+    },
+    {
+      "name": "nvidia-cuda-cccl",
+      "version": "13.3.3.4.1",
+      "path": "nvidia_cuda_cccl-13.3.3.4.1-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 3454034,
+      "sha256": "cc0adc188d570b09f4d606c7dc05a42aa3d8aa082e0d60f7bbfc5b6435f627c6"
+    },
+    {
+      "name": "nvidia-cuda-nvcc",
+      "version": "13.3.73",
+      "path": "nvidia_cuda_nvcc-13.3.73-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 44942138,
+      "sha256": "f483af83166c4fa356a21606076d553b0b4ceaebbd9912e537545080db695bdd"
+    },
+    {
+      "name": "nvidia-ml-py",
+      "version": "13.610.43",
+      "path": "nvidia_ml_py-13.610.43-py3-none-any.whl",
+      "bytes": 53163,
+      "sha256": "f13c72698edef492f985cc225f14faafe68ae065a2e407f45bdf6f4b9b43fde8"
+    },
+    {
+      "name": "pyelftools",
+      "version": "0.33",
+      "path": "pyelftools-0.33-py3-none-any.whl",
+      "bytes": 201178,
+      "sha256": "f215ad5f47d3f1373a21496a6c9e0707c622840d0622f23ff7ce08678b020036"
+    },
+    {
+      "name": "tabulate",
+      "version": "0.10.0",
+      "path": "tabulate-0.10.0-py3-none-any.whl",
+      "bytes": 39814,
+      "sha256": "f0b0622e567335c8fabaaa659f1b33bcb6ddfe2e496071b743aa113f8774f2d3"
+    },
+    {
+      "name": "torch_c_dlpack_ext",
+      "version": "0.1.5",
+      "path": "torch_c_dlpack_ext-0.1.5-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 897846,
+      "sha256": "e6f9da4bb9af70e27facc777458be62e10dbbbddda7672d16138db0553c5a524"
+    },
+    {
+      "name": "cryptography",
+      "version": "50.0.0",
+      "path": "cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl",
+      "bytes": 4734462,
+      "sha256": "82148ec5bddac30b51a5b3c1945075f896fa022cb93f8e4a01e9f6ee95292c5f"
+    },
+    {
+      "name": "cuda-python",
+      "version": "13.3.1",
+      "path": "cuda_python-13.3.1-py3-none-any.whl",
+      "bytes": 8295,
+      "sha256": "280b014139ab447b6dd70a377db1596f310d6e887d9d342e6651b919ec145fb3"
+    },
+    {
+      "name": "dnspython",
+      "version": "2.8.0",
+      "path": "dnspython-2.8.0-py3-none-any.whl",
+      "bytes": 331094,
+      "sha256": "01d9bbc4a2d76bf0db7c1f729812ded6d912bd318d3b1cf81d30c0f845dbf3af"
+    },
+    {
+      "name": "fastapi-cloud-cli",
+      "version": "0.23.0",
+      "path": "fastapi_cloud_cli-0.23.0-py3-none-any.whl",
+      "bytes": 78058,
+      "sha256": "1cd2ffa56e92e92c1fc63acc426c214dd928cbeed2a4c7c6a9a5fc85ea73de16"
+    },
+    {
+      "name": "googleapis-common-protos",
+      "version": "1.75.0",
+      "path": "googleapis_common_protos-1.75.0-py3-none-any.whl",
+      "bytes": 300631,
+      "sha256": "961ed60399c457ceb0ee8f285a84c870aabc9c6a832b9d37bb281b5bebde43ed"
+    },
+    {
+      "name": "grpcio",
+      "version": "1.83.0",
+      "path": "grpcio-1.83.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 7040616,
+      "sha256": "aeb339838db07600481ef869507279b75326c75eac6d10f7afa62a0da1d2bcdd"
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0",
+      "path": "h11-0.16.0-py3-none-any.whl",
+      "bytes": 37515,
+      "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86"
+    },
+    {
+      "name": "httptools",
+      "version": "0.8.0",
+      "path": "httptools-0.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "bytes": 523851,
+      "sha256": "b15fc622b0f869d19207c4089a501d9bcc63ca5e071ffdd2f03f922df882dcb2"
+    },
+    {
+      "name": "markdown-it-py",
+      "version": "4.2.0",
+      "path": "markdown_it_py-4.2.0-py3-none-any.whl",
+      "bytes": 91687,
+      "sha256": "9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a"
+    },
+    {
+      "name": "nvidia-cuda-nvdisasm",
+      "version": "13.3.73",
+      "path": "nvidia_cuda_nvdisasm-13.3.73-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 4782824,
+      "sha256": "fa17084b07c0dca68a42892f771b4b1b40fbe9b91660209623e61cea611cae8c"
+    },
+    {
+      "name": "pycountry",
+      "version": "26.2.16",
+      "path": "pycountry-26.2.16-py3-none-any.whl",
+      "bytes": 8044600,
+      "sha256": "115c4baf7cceaa30f59a4694d79483c9167dbce7a9de4d3d571c5f3ea77c305a"
+    },
+    {
+      "name": "Pygments",
+      "version": "2.20.0",
+      "path": "pygments-2.20.0-py3-none-any.whl",
+      "bytes": 1231151,
+      "sha256": "81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176"
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.2",
+      "path": "python_dotenv-1.2.2-py3-none-any.whl",
+      "bytes": 22101,
+      "sha256": "1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a"
+    },
+    {
+      "name": "rich-toolkit",
+      "version": "0.20.3",
+      "path": "rich_toolkit-0.20.3-py3-none-any.whl",
+      "bytes": 36195,
+      "sha256": "419aa87516d5f3849cca553c6dcf707c02a36d508fcf996946606725d34a3002"
+    },
+    {
+      "name": "truststore",
+      "version": "0.10.4",
+      "path": "truststore-0.10.4-py3-none-any.whl",
+      "bytes": 18660,
+      "sha256": "adaeaecf1cbb5f4de3b1959b42d41f6fab57b2b1666adb59e89cb0b53361d981"
+    },
+    {
+      "name": "uvloop",
+      "version": "0.22.1",
+      "path": "uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 4426307,
+      "sha256": "7b5b1ac819a3f946d3b2ee07f09149578ae76066d70b44df3fa990add49a82e4"
+    },
+    {
+      "name": "websockets",
+      "version": "17.0.1",
+      "path": "websockets-17.0.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "bytes": 220150,
+      "sha256": "f47b0815af3948ec6a440b3afa02f05b18cc0939549e91b5c677b5d9c2c8472a"
+    },
+    {
+      "name": "nvidia-cuda-crt",
+      "version": "13.3.73",
+      "path": "nvidia_cuda_crt-13.3.73-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 157352,
+      "sha256": "df14a17ae1c5c3171265411212246654d780f89344ea85344466c6b955247543"
+    },
+    {
+      "name": "nvidia-nvvm",
+      "version": "13.3.73",
+      "path": "nvidia_nvvm-13.3.73-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl",
+      "bytes": 69250424,
+      "sha256": "0e28e0858a3475e11ac67d35301cd5bf82666a1c0dc4ec4e80ceaf3a5fd1dea8"
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1",
+      "path": "cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 221822,
+      "sha256": "c1453022f490d2459a11819d83ad1d586e9ff65a12ac3e705ffebd46d3685dcf"
+    },
+    {
+      "name": "cuda-core",
+      "version": "1.0.1",
+      "path": "cuda_core-1.0.1-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 5106023,
+      "sha256": "be7b65311bf78964b7905adbf3c0f8f717d432f2854dc45169277729bf60f1e2"
+    },
+    {
+      "name": "detect-installer",
+      "version": "0.1.0",
+      "path": "detect_installer-0.1.0-py3-none-any.whl",
+      "bytes": 4539,
+      "sha256": "034fb20fd665c36e6ba52b8821525ea07fb4f7f938cac459df889fb33801528a"
+    },
+    {
+      "name": "mdurl",
+      "version": "0.1.2",
+      "path": "mdurl-0.1.2-py3-none-any.whl",
+      "bytes": 9979,
+      "sha256": "84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"
+    },
+    {
+      "name": "rignore",
+      "version": "0.8.1",
+      "path": "rignore-0.8.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 927835,
+      "sha256": "2e68cfc4ee0a2909952af2aebd608d1cd22f7d1cdce332cb0b5ea3762939865d"
+    },
+    {
+      "name": "sentry-sdk",
+      "version": "2.66.1",
+      "path": "sentry_sdk-2.66.1-py3-none-any.whl",
+      "bytes": 505555,
+      "sha256": "86002793161d9a95ef04bdd8d442e9bfece5d989b755f05d6360215094a7aff6"
+    },
+    {
+      "name": "pycparser",
+      "version": "3.0",
+      "path": "pycparser-3.0-py3-none-any.whl",
+      "bytes": 48172,
+      "sha256": "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992"
+    }
+  ]
+}

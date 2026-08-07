@@ -1,0 +1,21 @@
+FROM nvidia/cuda:13.2.0-cudnn-runtime-ubuntu24.04@sha256:7a31e9bfb2086e4b1ac08aa8e4718d7860730ecc6a9882d2f1e5ed6239f8ef5b
+ENV DEBIAN_FRONTEND=noninteractive HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 VLLM_NO_USAGE_STATS=1
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates python3 python3-pip curl libnuma1 && rm -rf /var/lib/apt/lists/*
+WORKDIR /srv/qwen
+COPY release_assets/wheelhouse/ /wheelhouse/
+COPY third_party/vllm.lock.json /locks/vllm.lock.json
+COPY third_party/qwen-wheelhouse.lock.json /locks/qwen-wheelhouse.lock.json
+COPY tools/verify_release_lock.py /app/tools/verify_release_lock.py
+COPY tools/generate_wheelhouse_lock.py tools/verify_wheelhouse_lock.py /app/tools/
+COPY docker/requirements-qwen.lock.txt /tmp/requirements-qwen.lock.txt
+RUN python3 /app/tools/verify_release_lock.py --lock /locks/vllm.lock.json --root /wheelhouse --key output_wheel \
+ && python3 /app/tools/verify_wheelhouse_lock.py --lock /locks/qwen-wheelhouse.lock.json --wheelhouse /wheelhouse \
+ && python3 -m pip install --break-system-packages --no-index --find-links=/wheelhouse --require-hashes -r /tmp/requirements-qwen.lock.txt
+COPY release_assets/weights/qwen3vl-2b-int4/ /models/qwen/
+COPY weights/model_manifest.json /models/model_manifest.json
+COPY tools/verify_model_manifest.py /app/tools/verify_model_manifest.py
+COPY tools/create_qwen_launch_logs.py /app/tools/create_qwen_launch_logs.py
+COPY docker/entrypoints/qwen.sh /usr/local/bin/qwen-entrypoint
+RUN chmod 0555 /usr/local/bin/qwen-entrypoint
+EXPOSE 8001
+ENTRYPOINT ["/usr/local/bin/qwen-entrypoint"]

@@ -1,0 +1,8 @@
+{
+  "image": "carlasim/carla:0.9.16",
+  "python_api": {
+    "filename": "carla-0.9.16-cp312-cp312-manylinux_2_31_x86_64.whl",
+    "bytes": 34230073,
+    "sha256": "c497edf1b8747194c55b4a24b65b5010d91a4c03baf72c06d11e7cff2b961528"
+  }
+}

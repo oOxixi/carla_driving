@@ -48,7 +48,7 @@ context JSON 使用 `QwenInputContext` 字段：
 运行：
 
 ```powershell
-python tools/run_qwen_vl_decision.py context.json `
+python -m tools.run_qwen_vl_decision context.json `
   --model-path D:/models/Qwen2.5-VL `
   --image-root D:/capture `
   --output artifacts/qwen/req_000001.json

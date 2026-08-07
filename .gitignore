@@ -4,6 +4,8 @@ __pycache__/
 .venv-voice/
 venv/
 logs/
+!/metrics/reference_5070/logs/
+!/metrics/reference_5070/logs/**
 data/
 *.egg-info/
 .vscode/
@@ -37,6 +39,15 @@ artifacts/pytest-c-role-*/
 # Local large models
 models/*
 !models/README.md
+
+# Generated release payloads and downloaded weights stay outside Git.
+/release_assets/
+/dist/
+/weights/qwen3vl-2b-int4/
+/weights/SenseVoiceSmall/
+/weights/.partial*/
+*.tar
+*.tar.sha256
 
 # Backup files
 *.bak

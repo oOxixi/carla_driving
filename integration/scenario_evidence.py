@@ -552,7 +552,10 @@ class ScenarioEvidenceRecorder:
             basis = "explicit"
         if expected is not None:
             metrics = self._acceptance_metrics(expected, acceptance_context or {})
-            self._acceptance_report = evaluate_expected(expected, metrics)
+            self._acceptance_report = {
+                **evaluate_expected(expected, metrics),
+                "metrics": metrics,
+            }
             completion = bool(completion and self._acceptance_report["passed"])
             basis = "explicit_expected_contracts"
         status = "SUCCEEDED" if completion else "FAILED"

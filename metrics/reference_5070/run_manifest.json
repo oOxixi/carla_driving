@@ -1,0 +1,19 @@
+{
+  "run_id": "rtx5070-int4-diagnostic-20260802",
+  "status": "PARTIAL_REFERENCE",
+  "claim_scope": "Qwen service diagnostic plus 10-case local proxy contract",
+  "formal_full_chain": "NOT_RUN",
+  "scenario_completion": "NOT_RUN",
+  "a800": "NOT_RUN",
+  "files": {
+    "environment.json": "db66b5e4bace5a8db306793e6d0021044dec1ee4bc42d7a54cd878a6e37cc335",
+    "logs/qwen3vl_2b_gptq_int4_marlin_cu132_kernel_evidence.txt": "05b41102da666aa9f564713ee24c5adf446962d771ba2a6432e1dd85b9b515ad",
+    "metrics/accuracy.json": "ac8478ac946e88664b3bd9f45ee088e47c16f18089f53a342d375d68a518474b",
+    "metrics/latency.json": "9513ced43f79c03497fb637b9fdc634be3e20bb613d9671142bf702fc638e1fc",
+    "metrics/scenarios.json": "faacd0cd281d0a00c5bde7f3272765411b851c3b49a758db5dca94d5850b55cd",
+    "metrics/stability.json": "d326762667efb2759832da9e6e26135f73ec4a7e8c8d308bf46111375c361160",
+    "model_manifest.json": "557c44f11318ead6e6434a582c8d9f1ddb765e6c0b92be76868da87dec8b963c",
+    "raw/qwen3vl_2b_gptq_int4_marlin_vllm_cu132_latency_gate_prompt_v3.json": "789488b08d63e0a77e03d3891ffb68048fb67126c3e9ab81a940ff6c23c4c2ba",
+    "raw/qwen3vl_2b_gptq_int4_marlin_vllm_cu132_target10_prompt_v3.json": "b28815ae8138c912cd5bfeb1b42d53bb84be7e3152581112713b30c020d539c0"
+  }
+}

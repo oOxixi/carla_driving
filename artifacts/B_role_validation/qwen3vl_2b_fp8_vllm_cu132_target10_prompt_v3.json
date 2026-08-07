@@ -1,0 +1,304 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-02T23:06:28.619355+00:00",
+  "dataset_kind": "frozen_local_proxy_not_official_remote_vllm",
+  "prompt_revision": "safety_voice_visual_priority_v3",
+  "model": "Qwen/Qwen3-VL-2B-Instruct-FP8",
+  "model_revision": "local-cu132",
+  "total": 10,
+  "ready": 10,
+  "metrics": {
+    "strict_parse_rate": 1.0,
+    "action_accuracy": 0.8,
+    "confirmation_accuracy": 0.8,
+    "target_association_accuracy": 1.0,
+    "all_contract_accuracy": 0.8
+  },
+  "latency_ms": {
+    "mean": 111.5142696,
+    "p95": 282.7634963499999,
+    "max": 332.202799
+  },
+  "records": [
+    {
+      "case_id": "town03opt_multi_target_seed_00_center",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_00"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.8409659861400854,
+        "requires_confirmation": false,
+        "decision_source": "QWEN35_CHOICE",
+        "target_track_id": "vehicle_center_seed_00"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 332.202799,
+      "raw_output": "C"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_00_second",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_right_adjacent_seed_00"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.8089693767563738,
+        "requires_confirmation": false,
+        "decision_source": "QWEN35_CHOICE",
+        "target_track_id": "vehicle_right_adjacent_seed_00"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 62.962125,
+      "raw_output": "C"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_01_center",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_01"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9414395882451556,
+        "requires_confirmation": false,
+        "decision_source": "QWEN35_CHOICE",
+        "target_track_id": "vehicle_center_seed_01"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 73.094423,
+      "raw_output": "C"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_01_second",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_left_adjacent_seed_01"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.964202162831967,
+        "requires_confirmation": false,
+        "decision_source": "QWEN35_CHOICE",
+        "target_track_id": "vehicle_left_adjacent_seed_01"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 222.337682,
+      "raw_output": "C"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_02_center",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_02"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9481409692483492,
+        "requires_confirmation": false,
+        "decision_source": "QWEN35_CHOICE",
+        "target_track_id": "vehicle_center_seed_02"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 77.984219,
+      "raw_output": "C"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_02_second",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_left_adjacent_seed_02"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9509431435357073,
+        "requires_confirmation": false,
+        "decision_source": "QWEN35_CHOICE",
+        "target_track_id": "vehicle_left_adjacent_seed_02"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 64.491674,
+      "raw_output": "C"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_03_center",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_03"
+      },
+      "decision": {
+        "action": "STOP",
+        "confidence": 0.545672003836086,
+        "requires_confirmation": true,
+        "decision_source": "QWEN35_LOW_CONFIDENCE",
+        "target_track_id": "vehicle_center_seed_03"
+      },
+      "checks": {
+        "action": false,
+        "confirmation": false,
+        "target_speed": true,
+        "target_association": true,
+        "all": false
+      },
+      "latency_ms": 74.969586,
+      "raw_output": "B"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_03_second",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_right_adjacent_seed_03"
+      },
+      "decision": {
+        "action": "STOP",
+        "confidence": 0.5973305002074019,
+        "requires_confirmation": true,
+        "decision_source": "QWEN35_LOW_CONFIDENCE",
+        "target_track_id": "vehicle_right_adjacent_seed_03"
+      },
+      "checks": {
+        "action": false,
+        "confirmation": false,
+        "target_speed": true,
+        "target_association": true,
+        "all": false
+      },
+      "latency_ms": 63.544877,
+      "raw_output": "B"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_04_center",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_center_seed_04"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.997032889253844,
+        "requires_confirmation": false,
+        "decision_source": "QWEN35_CHOICE",
+        "target_track_id": "vehicle_center_seed_04"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 74.132315,
+      "raw_output": "C"
+    },
+    {
+      "case_id": "town03opt_multi_target_seed_04_second",
+      "status": "READY",
+      "expected": {
+        "actions": [
+          "SLOW_DOWN",
+          "FOLLOW_VEHICLE"
+        ],
+        "requires_confirmation": false,
+        "target_track_id": "vehicle_left_adjacent_seed_04"
+      },
+      "decision": {
+        "action": "SLOW_DOWN",
+        "confidence": 0.9969273144085983,
+        "requires_confirmation": false,
+        "decision_source": "QWEN35_CHOICE",
+        "target_track_id": "vehicle_left_adjacent_seed_04"
+      },
+      "checks": {
+        "action": true,
+        "confirmation": true,
+        "target_speed": true,
+        "target_association": true,
+        "all": true
+      },
+      "latency_ms": 69.422996,
+      "raw_output": "C"
+    }
+  ]
+}

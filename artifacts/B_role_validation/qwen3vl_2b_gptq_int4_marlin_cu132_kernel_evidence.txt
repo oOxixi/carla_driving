@@ -1,0 +1,12 @@
+source_log=qwen3vl_2b_gptq_int4_vllm_cu132_server_attempt2.stdout.log
+model=h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4
+model_revision=f91db2369bd00e7ec20bf09b6a0080cdb26aefa5
+vllm=0.26.1.dev0+g568afb3a1.d20260802
+torch=2.12.1+cu132
+cuda_runtime=13.2
+quantization=auto_gptq
+linear_kernel=MarlinLinearKernel for AutoGPTQLinearMethod
+text_attention=TRITON_ATTN
+visual_attention=TORCH_SDPA
+cudagraph_mode=NONE
+gpu_model_weight_memory_gib=2.29

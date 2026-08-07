@@ -1,0 +1,12 @@
+{
+  "hardware_label": "RTX 5070 reference",
+  "gpu": {
+    "available": true,
+    "name": "NVIDIA GeForce RTX 5070 Laptop GPU",
+    "compute_capability": "12.0",
+    "memory_mib": 8151.0,
+    "driver_version": "581.57"
+  },
+  "cuda_userspace": "13.2",
+  "source_created_at_utc": "2026-08-02T23:10:41.693642+00:00"
+}
