@@ -124,16 +124,19 @@
     "oracle": {
       "expected_behaviors": [
         "SLOW_DOWN",
-        "SET_SPEED"
+        "SET_SPEED",
+        "HOLD"
       ]
     },
     "faults": [],
     "proposed_acceptance": {
       "allowed_qwen_actions": [
         "SLOW_DOWN",
-        "SET_SPEED"
+        "SET_SPEED",
+        "HOLD"
       ],
-      "conservative_speed_required": true
+      "conservative_speed_required": true,
+      "requires_confirmation": true
     },
     "runtime_support": {
       "status": "current",

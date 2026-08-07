@@ -259,6 +259,19 @@ def test_cx04_ambiguous_multi_target_requires_confirmation_not_target_guess() ->
     assert "expected_target_actor_id" not in scenario["extensions"]["oracle"]
 
 
+def test_sup_c03_vague_slow_allows_safe_hold_and_requires_confirmation() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "supplemental" / "challenge" / "SUP_C03_vague_slow.json")
+        .read_text(encoding="utf-8")
+    )
+
+    proposed = scenario["extensions"]["proposed_acceptance"]
+    assert scenario["commands"][0]["confirm_required"] is True
+    assert proposed["requires_confirmation"] is True
+    assert "HOLD" in proposed["allowed_qwen_actions"]
+    assert "HOLD" in scenario["extensions"]["oracle"]["expected_behaviors"]
+
+
 def test_cx05_keep_lane_route_and_recovery_contract_are_consistent() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "complex" / "CX05_sensor_dropout_route_recovery.json")

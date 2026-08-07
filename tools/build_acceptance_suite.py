@@ -1263,9 +1263,10 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         commands=[command(0, "别太快，安全一点。", "SLOW_DOWN",
                           status="ambiguous", confirm_required=True)],
         seed=433, expected={"max_speed_mps": 4.2},
-        oracle_behaviors=["SLOW_DOWN", "SET_SPEED"],
-        proposed_acceptance={"allowed_qwen_actions": ["SLOW_DOWN", "SET_SPEED"],
-                             "conservative_speed_required": True},
+        oracle_behaviors=["SLOW_DOWN", "SET_SPEED", "HOLD"],
+        proposed_acceptance={"allowed_qwen_actions": ["SLOW_DOWN", "SET_SPEED", "HOLD"],
+                             "conservative_speed_required": True,
+                             "requires_confirmation": True},
         extension_requirements=["all_voice_qwen", "raw_text_qwen_routing", "qwen_action_acceptance"],
     ))
     add(scenario(
