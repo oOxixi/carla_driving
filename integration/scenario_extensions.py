@@ -110,6 +110,9 @@ class ScenarioExtensionRuntime:
         self._last_speed_mps = 0.0
         self._requested_speed_kph: float | None = None
         self._traffic_light_states: list[str] = []
+        self._pre_red_max_speed_mps = 0.0
+        self._minimum_red_stop_line_clearance_m: float | None = None
+        self._stopped_on_red_before_stop_line = False
         self._last_elapsed_s = 0.0
         self._last_route_progress_m = 0.0
         self._restart_route_progress_m: float | None = None
@@ -330,6 +333,19 @@ class ScenarioExtensionRuntime:
             not self._traffic_light_states or self._traffic_light_states[-1] != normalized_light
         ):
             self._traffic_light_states.append(normalized_light)
+        if normalized_light != "RED":
+            self._pre_red_max_speed_mps = max(
+                self._pre_red_max_speed_mps, float(ego_speed_mps),
+            )
+        elif distance_to_stop_line_m is not None:
+            clearance = float(distance_to_stop_line_m)
+            self._minimum_red_stop_line_clearance_m = (
+                clearance
+                if self._minimum_red_stop_line_clearance_m is None
+                else min(self._minimum_red_stop_line_clearance_m, clearance)
+            )
+            if clearance >= 0.0 and float(ego_speed_mps) <= 0.15:
+                self._stopped_on_red_before_stop_line = True
 
         active: list[dict[str, Any]] = []
         newly_active: list[str] = []
@@ -520,6 +536,9 @@ class ScenarioExtensionRuntime:
             "final_speed_mps": self._last_speed_mps,
             "requested_speed_kph": self._requested_speed_kph,
             "traffic_light_states": list(self._traffic_light_states),
+            "pre_red_max_speed_mps": self._pre_red_max_speed_mps,
+            "minimum_red_stop_line_clearance_m": self._minimum_red_stop_line_clearance_m,
+            "stopped_on_red_before_stop_line": self._stopped_on_red_before_stop_line,
             "completed_phase_ids": sorted(self._completed_phase_ids),
             "target_lane_occupied_count": self._target_lane_occupied_count,
             "restart_displacement_m": self._restart_displacement_m,
@@ -638,6 +657,29 @@ class ScenarioExtensionRuntime:
                 required_states = [str(item).upper() for item in required]
                 actual_states = list(evidence["traffic_light_states"])
                 add(key, all(item in actual_states for item in required_states), actual_states, required_states)
+            elif key == "pre_red_max_speed_min_mps":
+                actual = float(evidence["pre_red_max_speed_mps"])
+                add(key, actual >= float(required), actual, required)
+            elif key == "minimum_red_stop_line_clearance_m":
+                actual = evidence["minimum_red_stop_line_clearance_m"]
+                add(
+                    key,
+                    actual is not None and float(actual) >= float(required),
+                    actual,
+                    required,
+                )
+            elif key == "must_stop_on_red_before_stop_line":
+                actual = bool(evidence["stopped_on_red_before_stop_line"])
+                clearance = evidence["minimum_red_stop_line_clearance_m"]
+                passed = (
+                    required is not True
+                    or (
+                        actual
+                        and clearance is not None
+                        and float(clearance) >= 0.0
+                    )
+                )
+                add(key, passed, actual, True)
             elif key == "qwen_target_speed_max_kph":
                 speeds = list(evidence["qwen_target_speeds_kph"])
                 actual = max(speeds) if speeds else None

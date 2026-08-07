@@ -724,6 +724,38 @@ def test_real_traffic_light_observation_replaces_config_fallback_provenance() ->
     assert _scenario_traffic_light_distance_to_stop_line_m(ego, light) == pytest.approx(12.0)
 
 
+def test_real_traffic_light_observation_marks_front_bumper_crossing_on_red() -> None:
+    class Location:
+        def __init__(self, x, y, z=0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Transform:
+        def __init__(self, location):
+            self.location = location
+
+        def get_forward_vector(self):
+            return Namespace(x=1.0, y=0.0, z=0.0)
+
+    ego = Namespace(
+        bounding_box=Namespace(extent=Namespace(x=2.0)),
+        get_location=lambda: Location(10.1, 0.0),
+        get_transform=lambda: Transform(Location(10.1, 0.0)),
+    )
+    light = Namespace(
+        get_state=lambda: "TrafficLightState.Red",
+        get_stop_waypoints=lambda: (
+            Namespace(transform=Transform(Location(12.0, 0.0))),
+        ),
+    )
+
+    observed, _ = _scenario_traffic_light_observation(
+        PerceptionFrame(10, 0.5), ego, light,
+    )
+
+    assert observed.distance_to_stop_line_m == 0.0
+    assert observed.red_light_violation is True
+
+
 def test_target_lane_occupancy_uses_real_actor_lane_ids() -> None:
     left = Namespace(road_id=7, lane_id=2)
     ego_waypoint = Namespace(

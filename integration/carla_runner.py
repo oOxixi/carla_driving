@@ -1162,14 +1162,18 @@ def _scenario_traffic_light_observation(
     state = str(light.get_state()).split(".")[-1].upper()
     if state not in {"RED", "YELLOW", "GREEN"}:
         raise RuntimeError(f"selected CARLA traffic light has unsupported state {state!r}")
-    distance_to_stop_line_m = _scenario_traffic_light_distance_to_stop_line_m(
-        ego, light,
+    signed_clearance_m = _scenario_traffic_light_signed_clearance_m(ego, light)
+    distance_to_stop_line_m = max(0.0, signed_clearance_m)
+    red_light_violation = (
+        scene.red_light_violation
+        or (state == "RED" and signed_clearance_m < 0.0)
     )
     source = "CARLA_SCENARIO_TRAFFIC_LIGHT_ACTOR_STOP_WAYPOINT"
     return replace(
         scene,
         traffic_light=state,
         distance_to_stop_line_m=distance_to_stop_line_m,
+        red_light_violation=red_light_violation,
     ), {
         "traffic_light": source,
         "distance_to_stop_line_m": source,
@@ -1177,23 +1181,41 @@ def _scenario_traffic_light_observation(
 
 
 def _scenario_traffic_light_distance_to_stop_line_m(ego: Any, light: Any) -> float:
-    """Measure the selected signal's forward stop-line distance from CARLA truth."""
+    """Measure non-negative front-bumper distance for perception/control."""
+    return max(0.0, _scenario_traffic_light_signed_clearance_m(ego, light))
+
+
+def _scenario_traffic_light_signed_clearance_m(ego: Any, light: Any) -> float:
+    """Measure signed front-bumper clearance to the selected CARLA stop line.
+
+    Positive is before the line and negative is crossed.  The perception
+    contract remains non-negative, while this signed value is retained for
+    acceptance evidence so crossing then stopping cannot look successful.
+    """
     ego_location = ego.get_location()
     forward = ego.get_transform().get_forward_vector()
-    distances: list[float] = []
+    extent = getattr(getattr(ego, "bounding_box", None), "extent", None)
+    front_offset_m = max(0.0, float(getattr(extent, "x", 0.0)))
+    candidates: list[tuple[float, float, float]] = []
     getter = getattr(light, "get_stop_waypoints", None)
     if callable(getter):
         for waypoint in getter() or ():
             location = waypoint.transform.location
+            dx = float(location.x) - float(ego_location.x)
+            dy = float(location.y) - float(ego_location.y)
             along = (
-                (float(location.x) - float(ego_location.x)) * float(forward.x)
-                + (float(location.y) - float(ego_location.y)) * float(forward.y)
+                dx * float(forward.x)
+                + dy * float(forward.y)
             )
-            if along >= -0.5:
-                distances.append(max(0.0, along))
-    if not distances:
-        raise RuntimeError("selected CARLA traffic light has no forward stop waypoint")
-    return min(distances)
+            lateral = abs(-dx * float(forward.y) + dy * float(forward.x))
+            candidates.append((lateral, abs(along), along - front_offset_m))
+    if not candidates:
+        raise RuntimeError("selected CARLA traffic light has no stop waypoint")
+    # Prefer the stop waypoint in the ego lane, then the longitudinally nearest
+    # one.  This remains stable for a few frames after the line is crossed.
+    lane_candidates = [item for item in candidates if item[0] <= 4.5]
+    selected = min(lane_candidates or candidates, key=lambda item: (item[0], item[1]))
+    return selected[2]
 
 
 def _apply_virtual_scenario(scene: PerceptionFrame, ego: Any, origin: tuple[float, float, float], args: argparse.Namespace) -> PerceptionFrame:
@@ -2377,7 +2399,7 @@ def run(args: argparse.Namespace) -> None:
                     if scenario_traffic_light is not None else "UNKNOWN"
                 )
                 extension_stop_line_m = (
-                    _scenario_traffic_light_distance_to_stop_line_m(
+                    _scenario_traffic_light_signed_clearance_m(
                         ego, scenario_traffic_light,
                     )
                     if scenario_traffic_light is not None else None

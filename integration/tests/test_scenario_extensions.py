@@ -192,6 +192,77 @@ def test_actor_event_records_real_lead_brake_trigger_distance() -> None:
     assert runtime.evidence()["scenario_event_count"] == 1
 
 
+def test_yellow_to_red_contract_requires_approach_and_never_crosses_stop_line() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.update_frame(
+        elapsed_s=0.0, route_progress_m=0.0, ego_speed_mps=0.0,
+        ego_standstill_duration_s=0.0, actor_distances_m={},
+        traffic_light_state="YELLOW", distance_to_stop_line_m=17.5, lane_id="1",
+    )
+    runtime.update_frame(
+        elapsed_s=2.0, route_progress_m=3.0, ego_speed_mps=2.0,
+        ego_standstill_duration_s=0.0, actor_distances_m={},
+        traffic_light_state="YELLOW", distance_to_stop_line_m=14.5, lane_id="1",
+    )
+    runtime.update_frame(
+        elapsed_s=3.0, route_progress_m=5.0, ego_speed_mps=1.5,
+        ego_standstill_duration_s=0.0, actor_distances_m={},
+        traffic_light_state="RED", distance_to_stop_line_m=12.5, lane_id="1",
+    )
+    runtime.update_frame(
+        elapsed_s=6.0, route_progress_m=15.0, ego_speed_mps=0.0,
+        ego_standstill_duration_s=1.0, actor_distances_m={},
+        traffic_light_state="RED", distance_to_stop_line_m=2.5, lane_id="1",
+    )
+
+    result = runtime.evaluate(
+        {
+            "pre_red_max_speed_min_mps": 0.5,
+            "minimum_red_stop_line_clearance_m": 0.0,
+            "must_stop_on_red_before_stop_line": True,
+        },
+        expected_command_count=1,
+    )
+
+    assert result["passed"] is True
+    actual = {item["key"]: item["actual"] for item in result["checks"]}
+    assert actual == {
+        "pre_red_max_speed_min_mps": 2.0,
+        "minimum_red_stop_line_clearance_m": 2.5,
+        "must_stop_on_red_before_stop_line": True,
+    }
+
+
+def test_yellow_to_red_contract_rejects_crossing_then_stopping() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    for elapsed_s, speed_mps, light, clearance_m in (
+        (0.0, 0.0, "YELLOW", 17.5),
+        (2.0, 2.0, "YELLOW", 14.5),
+        (3.0, 1.5, "RED", 12.5),
+        (6.0, 0.0, "RED", -0.2),
+    ):
+        runtime.update_frame(
+            elapsed_s=elapsed_s, route_progress_m=0.0, ego_speed_mps=speed_mps,
+            ego_standstill_duration_s=0.0, actor_distances_m={},
+            traffic_light_state=light, distance_to_stop_line_m=clearance_m, lane_id="1",
+        )
+
+    result = runtime.evaluate(
+        {
+            "pre_red_max_speed_min_mps": 0.5,
+            "minimum_red_stop_line_clearance_m": 0.0,
+            "must_stop_on_red_before_stop_line": True,
+        },
+        expected_command_count=1,
+    )
+
+    assert result["passed"] is False
+    assert result["failed_keys"] == [
+        "minimum_red_stop_line_clearance_m",
+        "must_stop_on_red_before_stop_line",
+    ]
+
+
 def test_fault_and_speed_deadlines_use_observed_control_frames() -> None:
     runtime = ScenarioExtensionRuntime({
         "faults": [{

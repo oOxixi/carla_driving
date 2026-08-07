@@ -156,6 +156,9 @@
         "YELLOW",
         "RED"
       ],
+      "pre_red_max_speed_min_mps": 0.5,
+      "minimum_red_stop_line_clearance_m": 0.0,
+      "must_stop_on_red_before_stop_line": true,
       "qwen_request_count": 1
     },
     "runtime_support": {
