@@ -825,15 +825,20 @@ class ScenarioExtensionRuntime:
                 else:
                     actual = False
                 add(key, required is not True or actual, actual, True)
-            elif key in {"target_lane_occupied_count", "restart_displacement_m", "final_lateral_offset_abs_max_m", "lead_brake_trigger_distance_m"}:
+            elif key in {
+                "target_lane_occupied_count", "target_lane_occupied_min_count",
+                "restart_displacement_m", "final_lateral_offset_abs_max_m",
+                "lead_brake_trigger_distance_m",
+            }:
                 evidence_key = {
                     "target_lane_occupied_count": "target_lane_occupied_count",
+                    "target_lane_occupied_min_count": "target_lane_occupied_count",
                     "restart_displacement_m": "restart_displacement_m",
                     "final_lateral_offset_abs_max_m": "final_lateral_offset_abs_m",
                     "lead_brake_trigger_distance_m": "lead_brake_trigger_distance_m",
                 }[key]
                 actual = evidence[evidence_key]
-                if key == "restart_displacement_m":
+                if key in {"restart_displacement_m", "target_lane_occupied_min_count"}:
                     passed = actual is not None and float(actual) >= float(required)
                 else:
                     passed = actual is not None and float(actual) <= float(required)
@@ -850,9 +855,18 @@ class ScenarioExtensionRuntime:
                         actual_set.add("CLIP_TO_LIMIT")
                 add(key, bool(actual_set) and actual_set.issubset(allowed), sorted(actual_set), sorted(allowed))
             elif key == "lane_change_rejection_reason_required":
+                explicit_tokens = (
+                    "NO_SAFE_ADJACENT_LANE",
+                    "TARGET_LANE_OCCUPIED",
+                    "ADJACENT_LANE_OCCUPIED",
+                    "LANE_CHANGE_REJECT",
+                    "UNSAFE_LANE_CHANGE",
+                    "LANE_GAP_UNSAFE",
+                )
                 actual = [
-                    item for item in evidence["qwen_resolution_reasons"]
-                    if "LANE" in str(item).upper() or "OCCUP" in str(item).upper()
+                    str(item).upper()
+                    for item in (*evidence["qwen_resolution_reasons"], *safety_reasons)
+                    if any(token in str(item).upper() for token in explicit_tokens)
                 ]
                 add(key, bool(actual), actual, required)
             else:

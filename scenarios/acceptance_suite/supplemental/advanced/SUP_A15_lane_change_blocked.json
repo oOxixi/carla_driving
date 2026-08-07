@@ -87,14 +87,14 @@
       "blueprint_id": "vehicle.tesla.model3",
       "spawn": {
         "x": 16,
-        "y": 3.5,
+        "y": -3.5,
         "z": 0.5,
         "yaw_deg": 0.0
       },
       "behavior": {
         "mode": "lead_vehicle",
-        "initial_speed_mps": 3.0,
-        "target_speed_mps": 3.0
+        "initial_speed_mps": 0.0,
+        "target_speed_mps": 0.0
       }
     }
   ],
@@ -170,6 +170,7 @@
     "faults": [],
     "proposed_acceptance": {
       "must_not_change_lane": true,
+      "target_lane_occupied_min_count": 1,
       "lane_change_rejection_reason_required": true
     },
     "runtime_support": {

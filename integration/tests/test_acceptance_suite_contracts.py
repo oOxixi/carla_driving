@@ -173,6 +173,24 @@ def test_yellow_to_red_scenario_must_approach_before_signal_transition() -> None
     assert acceptance["must_stop_on_red_before_stop_line"] is True
 
 
+def test_sup_a15_places_a_real_actor_in_the_commanded_left_lane() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "supplemental" / "advanced" / "SUP_A15_lane_change_blocked.json")
+        .read_text(encoding="utf-8")
+    )
+    occupant = next(
+        item for item in scenario["actors"] if item["actor_id"] == "left_lane_occupant"
+    )
+    acceptance = scenario["extensions"]["proposed_acceptance"]
+
+    # The CARLA road selected for this scenario points west. In the scenario's
+    # conventional positive-left coordinates, physical left is local -Y.
+    assert occupant["spawn"]["y"] == -3.5
+    assert occupant["behavior"]["initial_speed_mps"] == 0.0
+    assert occupant["behavior"]["target_speed_mps"] == 0.0
+    assert acceptance["target_lane_occupied_min_count"] == 1
+
+
 def test_var_c05_oracle_separates_prefault_motion_from_fail_closed_response() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "variants" / "VAR_C05_rgb_lidar_blackout.json")

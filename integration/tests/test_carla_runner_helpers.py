@@ -22,6 +22,7 @@ from integration.carla_runner import (
     _minimum_gap_contract_completed,
     _intentional_qwen_failure_completed,
     _note_safety_feedback,
+    _planner_runtime_state,
     _build_qwen_context,
     _c_safety_speed_cap_mps,
     _c_speed_cap_control_override,
@@ -39,11 +40,13 @@ from integration.carla_runner import (
     _scenario_actor,
     _scenario_actors,
     _scenario_raw_control_fault,
+    _scenario_requires_adjacent_lane_anchor,
     _scenario_maneuver,
     _scenario_local_transform,
     _scenario_traffic_light_observation,
     _scenario_traffic_light_distance_to_stop_line_m,
     _scenario_target_lane_occupied_count,
+    _cleanup_stale_scenario_actors,
     _single_sensor_fault_speed_cap_mps,
     _scenario_vehicle_speed_mps,
     _update_scenario_walker,
@@ -63,6 +66,14 @@ from integration.voice_adapter import VoiceCommandAdapter
 
 def _args(scenario):
     return Namespace(scenario=scenario, frames=100)
+
+
+def test_blocked_lane_change_requires_real_adjacent_lane_anchor() -> None:
+    spec = ScenarioSpec.load(
+        Path("scenarios/acceptance_suite/supplemental/advanced/SUP_A15_lane_change_blocked.json")
+    )
+
+    assert _scenario_requires_adjacent_lane_anchor(spec) is True
 
 
 def test_scenario_speed_limit_caps_model_perception_constraint() -> None:
@@ -869,6 +880,80 @@ def test_target_lane_occupancy_uses_real_actor_lane_ids() -> None:
     assert _scenario_target_lane_occupied_count(
         world_map, ego, vehicles, "CHANGE_LANE_LEFT",
     ) == 1
+
+
+def test_target_lane_occupancy_follows_adjacent_lane_across_road_segments() -> None:
+    continuation = Namespace(road_id=6, lane_id=-1, next=lambda _distance: ())
+    left = Namespace(road_id=5, lane_id=-1, next=lambda _distance: (continuation,))
+    ego_waypoint = Namespace(
+        road_id=5,
+        lane_id=-2,
+        get_left_lane=lambda: left,
+        get_right_lane=lambda: None,
+    )
+    ego_location = object()
+    actor_location = object()
+    actor_waypoint = Namespace(road_id=6, lane_id=-1)
+    world_map = Namespace(get_waypoint=lambda location, project_to_road=True: (
+        ego_waypoint if location is ego_location else actor_waypoint
+    ))
+
+    assert _scenario_target_lane_occupied_count(
+        world_map,
+        Namespace(get_location=lambda: ego_location),
+        ((Namespace(get_location=lambda: actor_location), {}),),
+        "CHANGE_LANE_LEFT",
+    ) == 1
+
+
+def test_stale_acceptance_actors_are_removed_without_touching_external_vehicles() -> None:
+    destroyed: list[str] = []
+
+    def actor(role_name: str) -> Namespace:
+        return Namespace(
+            attributes={"role_name": role_name},
+            destroy=lambda: destroyed.append(role_name),
+        )
+
+    actors = (
+        actor("acceptance84:old_blocker"),
+        actor("front_blocker"),
+        actor("hero"),
+        actor("autopilot"),
+    )
+    world = Namespace(get_actors=lambda: actors)
+    spec = Namespace(actors=({"actor_id": "front_blocker"},))
+
+    assert _cleanup_stale_scenario_actors(world, spec) == 2
+    assert destroyed == ["acceptance84:old_blocker", "front_blocker"]
+
+
+def test_planner_closes_only_the_lidar_observed_adjacent_gap() -> None:
+    left_lane = Namespace(lane_type="Driving")
+    right_lane = Namespace(lane_type="Driving")
+    waypoint = Namespace(
+        lane_id=-2,
+        lane_type="Driving",
+        is_junction=False,
+        get_left_lane=lambda: left_lane,
+        get_right_lane=lambda: right_lane,
+        next=lambda _distance: (),
+    )
+    world_map = Namespace(get_waypoint=lambda *_args, **_kwargs: waypoint)
+    ego = Namespace(get_location=lambda: object())
+    left_obstacle = DetectedObject(
+        0, "obstacle", 1.0, (0.10, 0.30, 0.30, 0.80), 16.0,
+    )
+
+    state = _planner_runtime_state(
+        world_map,
+        ego,
+        PerceptionFrame(1, 0.05, detected_objects=(left_obstacle,)),
+        Namespace(points_xy_m=((0.0, 0.0), (20.0, 0.0))),
+    )
+
+    assert state["left_gap_safe"] is False
+    assert state["right_gap_safe"] is True
 
 
 def test_front_gap_expected_value_is_a_hard_completion_contract() -> None:

@@ -176,6 +176,51 @@ def test_observed_geometry_metrics_replace_fail_closed_placeholders() -> None:
     }
 
 
+def test_blocked_lane_requires_observed_target_lane_occupancy() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_target_lane_occupancy(0)
+
+    failed = runtime.evaluate(
+        {"target_lane_occupied_min_count": 1}, expected_command_count=1,
+    )
+
+    assert failed["passed"] is False
+    assert failed["checks"][0] == {
+        "key": "target_lane_occupied_min_count",
+        "status": "FAIL",
+        "actual": 0,
+        "required": 1,
+    }
+
+    runtime.note_target_lane_occupancy(1)
+    passed = runtime.evaluate(
+        {"target_lane_occupied_min_count": 1}, expected_command_count=1,
+    )
+    assert passed["passed"] is True
+
+
+def test_lane_change_rejection_requires_explicit_safety_reason() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_qwen_resolution(
+        disposition="SLOW_READY",
+        reason_code="QWEN_VLLM_CHOICE_G_CHANGE_LANE_LEFT:STEP-1",
+        applied=True,
+    )
+
+    false_positive = runtime.evaluate(
+        {"lane_change_rejection_reason_required": True},
+        expected_command_count=1,
+    )
+    assert false_positive["passed"] is False
+
+    rejected = runtime.evaluate(
+        {"lane_change_rejection_reason_required": True},
+        expected_command_count=1,
+        safety_reasons=("NO_SAFE_ADJACENT_LANE",),
+    )
+    assert rejected["passed"] is True
+
+
 def test_actor_event_records_real_lead_brake_trigger_distance() -> None:
     runtime = ScenarioExtensionRuntime({})
     actor = {

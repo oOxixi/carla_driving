@@ -313,6 +313,18 @@ def _scenario_route_distance_m(spec: ScenarioSpec) -> float:
     )
 
 
+def _scenario_requires_adjacent_lane_anchor(spec: ScenarioSpec) -> bool:
+    runtime_support = spec.extensions.get("runtime_support", {})
+    if not isinstance(runtime_support, Mapping):
+        return False
+    declared = runtime_support.get("declared_requirements", ())
+    return (
+        isinstance(declared, Sequence)
+        and not isinstance(declared, (str, bytes))
+        and "adjacent_lane_occupancy_acceptance" in declared
+    )
+
+
 def _traffic_light_stop_points(world: Any) -> tuple[tuple[float, float], ...]:
     """Collect signal stop locations so deterministic routes can avoid them."""
     actors = world.get_actors()
@@ -358,8 +370,16 @@ def _planner_runtime_state(
         available.append("LEFT_ADJACENT")
     if right_exists:
         available.append("RIGHT_ADJACENT")
-    close_visual_object = any(
-        item.distance_m is not None and item.distance_m < 12.0
+    left_gap_blocked = any(
+        item.distance_m is not None
+        and item.distance_m < 25.0
+        and (item.bbox_xyxy_norm[0] + item.bbox_xyxy_norm[2]) / 2.0 < 0.4
+        for item in scene.detected_objects
+    )
+    right_gap_blocked = any(
+        item.distance_m is not None
+        and item.distance_m < 25.0
+        and (item.bbox_xyxy_norm[0] + item.bbox_xyxy_norm[2]) / 2.0 > 0.6
         for item in scene.detected_objects
     )
     intersection_ahead = bool(getattr(waypoint, "is_junction", False))
@@ -380,11 +400,8 @@ def _planner_runtime_state(
         "available_lanes": available,
         "left_lane_exists": left_exists,
         "right_lane_exists": right_exists,
-        # The legacy detector has no side-specific tracker.  A nearby object
-        # therefore closes both gaps; this is conservative and never grants a
-        # lane change based on missing lateral evidence.
-        "left_gap_safe": left_exists and not close_visual_object,
-        "right_gap_safe": right_exists and not close_visual_object,
+        "left_gap_safe": left_exists and not left_gap_blocked,
+        "right_gap_safe": right_exists and not right_gap_blocked,
         "route_available": len(route.points_xy_m) >= 2,
         "intersection_ahead": intersection_ahead,
         "stop_line_clear": (
@@ -745,6 +762,29 @@ def _scenario_static_props(spec: ScenarioSpec | None) -> tuple[dict[str, object]
     )
 
 
+def _cleanup_stale_scenario_actors(world: Any, spec: ScenarioSpec | None) -> int:
+    """Remove only acceptance-runner actors left by an interrupted prior run."""
+    current_actor_ids = {
+        str(actor.get("actor_id", "")).strip()
+        for actor in (() if spec is None else spec.actors)
+        if str(actor.get("actor_id", "")).strip()
+    }
+    removed = 0
+    for actor in tuple(world.get_actors()):
+        attributes = getattr(actor, "attributes", {})
+        role_name = str(attributes.get("role_name", "")) if isinstance(attributes, Mapping) else ""
+        if not (
+            role_name.startswith("acceptance84:")
+            or role_name in current_actor_ids
+        ):
+            continue
+        destroy = getattr(actor, "destroy", None)
+        if callable(destroy):
+            destroy()
+            removed += 1
+    return removed
+
+
 def _scenario_local_transform(
     carla_api: Any,
     anchor_transform: Any,
@@ -822,7 +862,7 @@ def _spawn_scenario_vehicle(
     if callable(getattr(blueprint, "has_attribute", None)) and blueprint.has_attribute("role_name"):
         blueprint.set_attribute(
             "role_name",
-            str(actor_spec.get("actor_id", "scenario_lead")),
+            f"acceptance84:{actor_spec.get('actor_id', 'scenario_lead')}",
         )
 
     ego_transform = ego.get_transform()
@@ -935,8 +975,24 @@ def _scenario_target_lane_occupied_count(
         if normalized.endswith("LEFT") or normalized.endswith("RIGHT"):
             raise RuntimeError("scenario target lane is unavailable for occupancy acceptance")
         return 0
-    target_road = getattr(target, "road_id", None)
-    target_lane = getattr(target, "lane_id", None)
+    target_segments: set[tuple[object, object]] = set()
+    frontier = (target,)
+    for _ in range(30):
+        next_frontier = []
+        for waypoint in frontier:
+            key = (
+                getattr(waypoint, "road_id", None),
+                getattr(waypoint, "lane_id", None),
+            )
+            if key in target_segments:
+                continue
+            target_segments.add(key)
+            next_waypoints = getattr(waypoint, "next", None)
+            if callable(next_waypoints):
+                next_frontier.extend(next_waypoints(2.0) or ())
+        if not next_frontier:
+            break
+        frontier = tuple(next_frontier)
     occupied = 0
     for vehicle, _spec in scenario_vehicles:
         waypoint = world_map.get_waypoint(
@@ -945,9 +1001,9 @@ def _scenario_target_lane_occupied_count(
         if waypoint is None:
             continue
         if (
-            getattr(waypoint, "road_id", None) == target_road
-            and getattr(waypoint, "lane_id", None) == target_lane
-        ):
+            getattr(waypoint, "road_id", None),
+            getattr(waypoint, "lane_id", None),
+        ) in target_segments:
             occupied += 1
     return occupied
 
@@ -2073,6 +2129,12 @@ def run(args: argparse.Namespace) -> None:
                     setattr(weather, name, value)
             world.set_weather(weather)
         world_map = world.get_map()
+        stale_actor_count = _cleanup_stale_scenario_actors(world, spec)
+        if stale_actor_count:
+            print(
+                f"scenario cleanup: removed {stale_actor_count} stale owned actor(s)",
+                flush=True,
+            )
         blueprints = world.get_blueprint_library().filter("vehicle.*model3*")
         if not blueprints:
             raise RuntimeError("no Tesla Model 3 vehicle blueprint is available")
@@ -2164,12 +2226,15 @@ def run(args: argparse.Namespace) -> None:
             spec is not None
             and (spec.category == "lateral_B" or spec.expected.get("must_finish_route") is True)
         )
+        adjacent_lane_anchor_required = (
+            spec is not None and _scenario_requires_adjacent_lane_anchor(spec)
+        )
         seeded_route_anchor = (
             spec is not None
             and args.seed is not None
             and _scenario_traffic_light_distance(spec) is None
         )
-        if road_fit_required or seeded_route_anchor:
+        if road_fit_required or seeded_route_anchor or adjacent_lane_anchor_required:
             maneuver = _scenario_maneuver(spec)
             anchor_index, topology_route, anchor_score = select_topology_route_anchor(
                 world_map,
@@ -2205,6 +2270,16 @@ def run(args: argparse.Namespace) -> None:
                     advanced_transform = advanced[0].transform
                     advanced_transform.location.z = route_anchor.location.z
                     route_anchor = advanced_transform
+            if adjacent_lane_anchor_required:
+                # The adjacent lane is needed only as a real occupancy target;
+                # keep ego's reference route in its original lane so a rejected
+                # lane-change request cannot move the vehicle implicitly.
+                topology_route = build_route_reference(
+                    world_map,
+                    route_anchor.location,
+                    args.default_speed_mps,
+                    distance_m=_scenario_route_distance_m(spec),
+                )
             if any(
                 str(item.envelope.get("intent", "")).upper() == "AVOID_OBSTACLE"
                 for item in spec.commands
@@ -2326,6 +2401,10 @@ def run(args: argparse.Namespace) -> None:
                 spawned_scenario_actor_types.append(
                     str(prop_spec.get("type", "static.prop")).lower()
                 )
+            if scenario_vehicles or scenario_walkers or scenario_props:
+                # CARLA may return a default transform until the first world
+                # tick after spawn. Occupancy evidence must use settled poses.
+                session.tick(args.timeout_s)
             scenario_lead = _select_scenario_lead(
                 ego, [vehicle for vehicle, _ in scenario_vehicles],
             )

@@ -40,7 +40,11 @@ def voice_envelope_to_driving_command(
         "SLOW_DOWN": "SLOW_DOWN",
         "KEEP_LANE": "KEEP_LANE",
         "CHANGE_LANE": "CHANGE_LANE",
+        "CHANGE_LANE_LEFT": "CHANGE_LANE",
+        "CHANGE_LANE_RIGHT": "CHANGE_LANE",
         "TURN": "TURN",
+        "TURN_LEFT": "TURN",
+        "TURN_RIGHT": "TURN",
         "PULL_OVER": "PULL_OVER",
         "AVOID_OBSTACLE": "AVOID_OBSTACLE",
     }.get(intent, "UNKNOWN")
@@ -55,6 +59,11 @@ def voice_envelope_to_driving_command(
         if math.isfinite(target) and target >= 0.0:
             canonical_parameters["target_speed_mps"] = target
     direction = str(parameters.get("direction", "")).upper()
+    if direction not in {"LEFT", "RIGHT", "STRAIGHT"}:
+        if intent.endswith("_LEFT"):
+            direction = "LEFT"
+        elif intent.endswith("_RIGHT"):
+            direction = "RIGHT"
     if direction in {"LEFT", "RIGHT", "STRAIGHT"}:
         canonical_parameters["direction"] = direction
     target_id = parameters.get("target_id")

@@ -31,6 +31,21 @@ def test_voice_complex_intent_becomes_canonical_deadline_request() -> None:
     assert command["requires_confirmation"] is True
 
 
+def test_directional_lane_change_keeps_declared_intent_and_direction() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "lane-left",
+        "source_text": "向左变道",
+        "intent": "CHANGE_LANE_LEFT",
+        "parameters": {"speed": 12, "unit": "km/h"},
+        "confidence": 0.95,
+        "valid_duration_s": 30.0,
+    }, received_at_ns=100)
+
+    assert command["intent"] == "CHANGE_LANE"
+    assert command["parameters"]["direction"] == "LEFT"
+    assert command["parameters"]["target_speed_mps"] == pytest.approx(12 / 3.6)
+
+
 def test_legacy_perception_becomes_schema_valid_state_with_explicit_missing_radar() -> None:
     scene = PerceptionFrame(
         10, 0.5, lead_distance_m=10.0, lead_speed_mps=1.0,

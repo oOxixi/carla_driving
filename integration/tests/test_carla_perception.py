@@ -25,6 +25,7 @@ from integration.carla_perception import (
     PerceptionTimeoutError,
     attach_default_sensors,
     attach_event_sensors,
+    adjacent_lidar_distances_m,
     front_lidar_distance_m,
     front_radar_target,
 )
@@ -309,6 +310,31 @@ def test_exact_frame_radar_velocity_overrides_static_rgb_assumption() -> None:
     assert sample.source_by_field["radar_modality"] == "CARLA_RADAR_FRAME_ALIGNED"
     assert sample.source_by_field["radar_observation"] == "RADAR_FRONT_CORRIDOR_ASSOCIATED"
     assert sample.source_by_field["lead_speed_mps"] == "RADAR_LIDAR_ASSOCIATED_RADIAL_VELOCITY"
+
+
+def test_lidar_exposes_adjacent_lane_obstacles_without_polluting_front_gap() -> None:
+    points = [
+        [11.8, -0.2, -0.4], [12.0, 0.0, -0.5], [12.2, 0.2, -0.4],
+        [15.8, -3.3, -0.4], [16.0, -3.5, -0.5], [16.2, -3.7, -0.3],
+    ]
+    measurement = Measurement(45, points)
+
+    left, right = adjacent_lidar_distances_m(measurement)
+
+    assert left == pytest.approx(16.20, abs=0.08)
+    assert right is None
+
+    ego, session = Actor(1), Session()
+    session.frame_buffer.push(RGB_SENSOR_ID, 45, Measurement(45))
+    session.frame_buffer.push(LIDAR_SENSOR_ID, 45, measurement)
+    bridge = CarlaPerceptionBridge(World((ego,)), WorldMap(), ego, session, _suite(session))
+    sample = bridge.acquire(45, 2.25, timeout_s=0.01)
+
+    assert len(sample.frame.detected_objects) == 2
+    adjacent = sample.frame.detected_objects[1]
+    assert adjacent.distance_m == pytest.approx(left)
+    assert (adjacent.bbox_xyxy_norm[0] + adjacent.bbox_xyxy_norm[2]) / 2.0 < 0.4
+    assert sample.frame.lead_distance_m == pytest.approx(11.84, abs=0.02)
 
 
 def test_front_radar_target_rejects_off_corridor_and_nonfinite_returns() -> None:

@@ -380,6 +380,45 @@ def front_lidar_distance_m(
     return float(np.percentile(forward, 10.0))
 
 
+def adjacent_lidar_distances_m(
+    measurement: Any,
+    *,
+    min_forward_m: float = 1.0,
+    max_forward_m: float = 25.0,
+    inner_lateral_m: float = 1.75,
+    outer_lateral_m: float = 5.25,
+    min_height_m: float = -1.8,
+    max_height_m: float = 1.0,
+    minimum_points: int = 3,
+) -> tuple[float | None, float | None]:
+    """Return LiDAR-grounded left/right adjacent-lane obstacle ranges."""
+    points = _lidar_xyz(measurement)
+    if not len(points):
+        return None, None
+    common = (
+        (points[:, 0] >= min_forward_m) & (points[:, 0] <= max_forward_m)
+        & (points[:, 2] >= min_height_m) & (points[:, 2] <= max_height_m)
+    )
+
+    def distance(mask: np.ndarray) -> float | None:
+        selected = points[common & mask]
+        if selected.shape[0] < minimum_points:
+            return None
+        ranges = np.hypot(selected[:, 0], selected[:, 1])
+        return float(np.percentile(ranges, 10.0))
+
+    # CARLA sensor Y points right, so physical left is negative Y.
+    left = distance(
+        (points[:, 1] <= -inner_lateral_m)
+        & (points[:, 1] >= -outer_lateral_m)
+    )
+    right = distance(
+        (points[:, 1] >= inner_lateral_m)
+        & (points[:, 1] <= outer_lateral_m)
+    )
+    return left, right
+
+
 @dataclass(frozen=True, slots=True)
 class FrontRadarTarget:
     distance_m: float
@@ -658,6 +697,7 @@ class CarlaPerceptionBridge:
 
         try:
             lead_distance = front_lidar_distance_m(lidar)
+            adjacent_distances = adjacent_lidar_distances_m(lidar)
         except (TypeError, ValueError) as error:
             raise PerceptionDataError(
                 f"LiDAR frame {frame} is unusable; normal control must be suppressed"
@@ -729,6 +769,26 @@ class CarlaPerceptionBridge:
             detected_objects = tuple(
                 replace(item, distance_m=lead_distance) if item is selected else item
                 for item in detected_objects
+            )
+        adjacent_objects = []
+        for side, distance_m in zip(("LEFT", "RIGHT"), adjacent_distances):
+            if distance_m is None:
+                continue
+            center_x = 0.22 if side == "LEFT" else 0.78
+            adjacent_objects.append(DetectedObject(
+                0,
+                "obstacle",
+                1.0,
+                (center_x - 0.10, 0.30, center_x + 0.10, 0.80),
+                distance_m,
+            ))
+        if adjacent_objects:
+            detected_objects = tuple(detected_objects) + tuple(adjacent_objects)
+            previous_source = sources.get("detected_objects")
+            sources["detected_objects"] = (
+                "LIDAR_ADJACENT_LANE_OBJECT"
+                if previous_source is None
+                else f"{previous_source}+LIDAR_ADJACENT_LANE_OBJECT"
             )
         safety_summary = self._fusion.update(
             frame=frame,
