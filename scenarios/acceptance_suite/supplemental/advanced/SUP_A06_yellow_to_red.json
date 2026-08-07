@@ -75,8 +75,8 @@
         "states": [
           {
             "trigger": {
-              "type": "ego_distance_to_stop_line_less_than_m",
-              "value": 14
+              "type": "time",
+              "time_s": 3
             },
             "state": "red"
           }

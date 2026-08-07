@@ -189,6 +189,7 @@ def test_actor_event_records_real_lead_brake_trigger_distance() -> None:
     assert result["passed"] is True
     assert result["checks"][0]["actual"] == 11.8
     assert runtime.evidence()["completed_phase_ids"] == ["P4_LEAD_BRAKE"]
+    assert runtime.evidence()["scenario_event_count"] == 1
 
 
 def test_fault_and_speed_deadlines_use_observed_control_frames() -> None:
@@ -323,3 +324,19 @@ def test_specific_safety_contract_does_not_pass_on_unrelated_reason() -> None:
         {"must_enter_degraded_mode": True}, expected_command_count=1,
     )
     assert result["passed"] is False
+
+
+def test_intentional_invalid_result_does_not_require_a_valid_behavior_oracle() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "faults": [{"type": "qwen_invalid_token"}],
+    })
+    runtime.note_qwen_resolution(
+        disposition="REJECTED", reason_code="QWEN_PLAN_REJECTED", applied=False,
+    )
+    result = runtime.evaluate(
+        {"qwen_invalid_result_count": 1, "vehicle_advance_command_count": 0},
+        expected_command_count=1,
+        oracle={"expected_behaviors": ["STOP", "HOLD"]},
+    )
+    assert result["passed"] is True
+    assert all(item["key"] != "oracle_expected_behaviors" for item in result["checks"])

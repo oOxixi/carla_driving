@@ -78,6 +78,7 @@ class ScenarioExtensionRuntime:
         self._command_phase_by_id: dict[str, str] = {}
         self._command_intent_by_id: dict[str, str] = {}
         self._actor_event_index: dict[str, int] = {}
+        self._actor_event_count = 0
         self._actor_event_time_s: dict[str, float] = {}
         self._actor_speed_mps: dict[str, float] = {}
         self._traffic_light_state: dict[str, str] = {}
@@ -467,6 +468,7 @@ class ScenarioExtensionRuntime:
                 if "state" in event:
                     self._traffic_light_state[actor_id] = str(event["state"]).upper()
                 self._actor_event_index[actor_id] = index + 1
+                self._actor_event_count += 1
                 self._actor_event_time_s[actor_id] = float(elapsed_s)
                 phase_id = str(event.get("phase_id", ""))
                 if phase_id:
@@ -524,6 +526,7 @@ class ScenarioExtensionRuntime:
             "final_lateral_offset_abs_m": self._last_lateral_offset_m,
             "lead_brake_trigger_distance_m": self._lead_brake_trigger_distance_m,
             "actor_trigger_ids": sorted(self._actor_trigger_ids),
+            "scenario_event_count": self._actor_event_count,
             "first_brake_s": self._first_brake_s,
             "first_qwen_plan_s": self._first_qwen_plan_s,
             "safety_reasons": sorted(self._safety_reasons),
@@ -791,7 +794,11 @@ class ScenarioExtensionRuntime:
                 add(key, False, None, required)
 
         expected_behaviors = oracle_contract.get("expected_behaviors")
-        if expected_behaviors is not None:
+        valid_model_output_expected = not any(
+            int(proposed.get(key, 0) or 0) > 0
+            for key in ("qwen_timeout_count", "qwen_invalid_result_count")
+        )
+        if expected_behaviors is not None and valid_model_output_expected:
             if not isinstance(expected_behaviors, Sequence) or isinstance(
                 expected_behaviors, (str, bytes),
             ):
@@ -804,7 +811,11 @@ class ScenarioExtensionRuntime:
                 sorted(allowed),
             )
         expected_target = oracle_contract.get("expected_target_actor_id")
-        if expected_target is not None and "expected_target_actor_id" not in proposed:
+        if (
+            expected_target is not None
+            and valid_model_output_expected
+            and "expected_target_actor_id" not in proposed
+        ):
             add(
                 "oracle_expected_target_actor_id",
                 str(expected_target) in target_ids,

@@ -1041,7 +1041,7 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         actors=[{
             **red_light(20), "state": "yellow",
             "behavior": {"mode": "event_timeline", "states": [{
-                "trigger": {"type": "ego_distance_to_stop_line_less_than_m", "value": 14},
+                "trigger": {"type": "time", "time_s": 3},
                 "state": "red",
             }]},
         }], duration_s=35, seed=416,

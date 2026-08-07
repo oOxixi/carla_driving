@@ -3678,21 +3678,28 @@ def run(args: argparse.Namespace) -> None:
                 # itself leaves the road. Bound distance to CARLA's nearest
                 # driving-lane centre as an independent acceptance check.
                 expected_contract.setdefault("max_lane_center_offset_m", 2.2)
+            acceptance_context = {} if spec is None else {
+                "route_finished": (
+                    final_route_end_distance_m is not None
+                    and final_route_end_distance_m <= spec.finish_radius_m
+                ),
+                "route_end_distance_m": final_route_end_distance_m,
+                "expected_command_count": len(spec.commands),
+                "configured_route_deviation_trigger_m": route_deviation_trigger_m,
+                "spawned_scenario_actor_types": sorted(set(spawned_scenario_actor_types)),
+                "extension_acceptance": extension_report,
+            }
+            if extension_runtime is not None:
+                extension_event_count = int(
+                    extension_runtime.evidence()["scenario_event_count"]
+                )
+                if extension_event_count > 0:
+                    acceptance_context["event_count"] = extension_event_count
             summary = recorder.complete(
                 completion=completion,
                 detail="scenario acceptance criteria evaluated",
                 expected=expected_contract,
-                acceptance_context={} if spec is None else {
-                    "route_finished": (
-                        final_route_end_distance_m is not None
-                        and final_route_end_distance_m <= spec.finish_radius_m
-                    ),
-                    "route_end_distance_m": final_route_end_distance_m,
-                    "expected_command_count": len(spec.commands),
-                    "configured_route_deviation_trigger_m": route_deviation_trigger_m,
-                    "spawned_scenario_actor_types": sorted(set(spawned_scenario_actor_types)),
-                    "extension_acceptance": extension_report,
-                },
+                acceptance_context=acceptance_context,
             )
             acceptance = summary.get("acceptance")
             print(json.dumps({
