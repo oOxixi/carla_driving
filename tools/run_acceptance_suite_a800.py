@@ -139,7 +139,10 @@ def warm_qwen_service(
     if not image.is_file():
         image.write_bytes(b"P6\n224 224\n255\n" + bytes((48, 64, 80)) * (224 * 224))
     rgb_ref = image.relative_to(project).as_posix()
-    client = QwenServiceClient(base_url, timeout_s=1.0)
+    # The first visual request can compile the multimodal CUDA graph.  Warm-up
+    # must be allowed to finish that one-time work; the CARLA orchestrator still
+    # enforces the official 300 ms decision deadline during measured scenarios.
+    client = QwenServiceClient(base_url, timeout_s=30.0)
     latencies: list[float] = []
     for index in range(count):
         now = time.monotonic_ns()
