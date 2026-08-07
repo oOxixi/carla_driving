@@ -236,6 +236,23 @@ def _note_safety_feedback(
             safety_reasons.add(reason)
 
 
+def _qwen_resolution_reason(orchestration: object | None) -> str | None:
+    if orchestration is None:
+        return None
+    reason = getattr(orchestration, "reason_code", None)
+    feedback = getattr(orchestration, "feedback", None)
+    if isinstance(feedback, Mapping):
+        detail = feedback.get("detail") or feedback.get("action_summary")
+    else:
+        detail = (
+            getattr(feedback, "detail", None)
+            or getattr(feedback, "action_summary", None)
+        )
+    if isinstance(detail, str) and detail:
+        return f"{reason or ''} {detail}".strip()
+    return None if reason is None else str(reason)
+
+
 def _speed_mps(vector: Any) -> float:
     # Longitudinal control consumes ground speed. Including vertical spawn
     # settling makes a stationary vehicle appear to accelerate under gravity.
@@ -3298,13 +3315,7 @@ def run(args: argparse.Namespace) -> None:
                             qwen_image_stager.discard(resolution.command_id)
                         orchestration = resolution.orchestration
                         if extension_runtime is not None:
-                            resolution_reason = None
-                            if orchestration is not None:
-                                resolution_reason = orchestration.reason_code
-                                if isinstance(orchestration.feedback, Mapping):
-                                    detail = orchestration.feedback.get("detail")
-                                    if isinstance(detail, str) and detail:
-                                        resolution_reason = f"{resolution_reason} {detail}"
+                            resolution_reason = _qwen_resolution_reason(orchestration)
                             extension_runtime.note_qwen_resolution(
                                 disposition=resolution.disposition,
                                 reason_code=resolution_reason,

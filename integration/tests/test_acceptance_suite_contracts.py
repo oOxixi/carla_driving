@@ -344,6 +344,23 @@ def test_sys03_releases_single_worker_before_replacement_command() -> None:
     assert scenario["extensions"]["oracle"]["expected_behaviors"] == ["STOP"]
 
 
+def test_sys04_disconnect_contract_expects_failed_middle_command() -> None:
+    scenario = json.loads(
+        (
+            SUITE_ROOT / "supplemental" / "system"
+            / "SYS_04_qwen_disconnect_recovery.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert "must_execute_commands_in_order" not in scenario["expected"]
+    proposed = scenario["extensions"]["proposed_acceptance"]
+    assert proposed["disconnect_fail_closed"] is True
+    assert proposed["post_recovery_command_succeeds"] is True
+    assert proposed["qwen_request_count"] == 3
+    assert proposed["current_plan_command_index"] == 2
+    assert "SET_SPEED" not in scenario["extensions"]["oracle"]["expected_behaviors"]
+
+
 def test_cx05_keep_lane_route_and_recovery_contract_are_consistent() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "complex" / "CX05_sensor_dropout_route_recovery.json")

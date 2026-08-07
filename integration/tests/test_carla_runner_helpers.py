@@ -27,6 +27,7 @@ from integration.carla_runner import (
     _c_safety_speed_cap_mps,
     _c_speed_cap_control_override,
     _qwen_desired_speed_mps,
+    _qwen_resolution_reason,
     _qwen_voice_command,
     _save_qwen_rgb_image,
     _select_load_map,
@@ -74,6 +75,21 @@ def test_blocked_lane_change_requires_real_adjacent_lane_anchor() -> None:
     )
 
     assert _scenario_requires_adjacent_lane_anchor(spec) is True
+
+
+def test_qwen_resolution_reason_preserves_object_feedback_detail() -> None:
+    orchestration = Namespace(
+        reason_code="QWEN_ERROR",
+        feedback=Namespace(
+            action_summary="ConnectionError: scenario-injected Qwen service disconnect",
+        ),
+    )
+
+    reason = _qwen_resolution_reason(orchestration)
+
+    assert reason is not None
+    assert "QWEN_ERROR" in reason
+    assert "disconnect" in reason
 
 
 def test_scenario_speed_limit_caps_model_perception_constraint() -> None:

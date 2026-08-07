@@ -133,7 +133,6 @@
     "must_no_collision": true,
     "must_generate_logs": true,
     "final_control_no_throttle_brake_overlap": true,
-    "must_execute_commands_in_order": true,
     "max_speed_mps": 3.0
   },
   "extensions": {
@@ -149,8 +148,7 @@
     "oracle": {
       "expected_behaviors": [
         "KEEP_LANE",
-        "SET_SPEED",
-        "HOLD"
+        "SLOW_DOWN"
       ]
     },
     "faults": [
@@ -166,7 +164,9 @@
     ],
     "proposed_acceptance": {
       "disconnect_fail_closed": true,
-      "post_recovery_command_succeeds": true
+      "post_recovery_command_succeeds": true,
+      "qwen_request_count": 3,
+      "current_plan_command_index": 2
     },
     "runtime_support": {
       "status": "current",
