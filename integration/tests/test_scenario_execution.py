@@ -146,3 +146,19 @@ def test_qwen_scenario_preserves_visual_follow_for_complexity_routing() -> None:
     )
     assert resolved["intent"] == "FOLLOW_ROUTE"
     assert resolved["parameters"] == {}
+
+
+def test_acceptance_v2_qwen_policy_preserves_high_level_command_contract() -> None:
+    spec = ScenarioSpec.load(
+        SCENARIO_ROOT / "acceptance_suite" / "challenge" / "ACC_C02_ambiguous_instruction.json"
+    )
+
+    assert spec.requires_qwen_semantics is True
+    resolved = resolve_scenario_command(
+        spec.commands[0].envelope,
+        requested_speed_mps=5.0,
+        preserve_high_level=spec.requires_qwen_semantics,
+    )
+
+    assert resolved["intent"] == "SLOW_DOWN"
+    assert resolved["confirm_required"] is True

@@ -94,13 +94,14 @@ def parse_run(log_dir: Path, console: str) -> dict[str, object]:
             if check.get("key") in {
                 "expected_target_actor_id", "pedestrian_trigger_actor_id",
                 "target_binding_correct", "allowed_qwen_actions",
+                "oracle_expected_behaviors", "oracle_expected_target_actor_id",
             }:
                 alignment_checks.append({
                     "key": check["key"], "passed": check.get("status") == "PASS",
                 })
     alignment_passed = (
-        bool(alignment_checks)
-        and all(check["passed"] is True for check in alignment_checks)
+        None if not alignment_checks
+        else all(check["passed"] is True for check in alignment_checks)
     )
     return {
         "status": summary.get("status", "NO_RUN_COMPLETE"),

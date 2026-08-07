@@ -192,6 +192,17 @@ class ScenarioSpec:
     def frame_count(self) -> int:
         return max(1, math.ceil(self.duration_s / self.fixed_delta_s))
 
+    @property
+    def requires_qwen_semantics(self) -> bool:
+        """Whether scenario commands must reach Qwen without local rewriting."""
+        if self.qwen_expected is not None:
+            return True
+        policy = self.extensions.get("qwen_policy", {})
+        return (
+            isinstance(policy, Mapping)
+            and policy.get("required_for_every_voice_event") is True
+        )
+
     def world_route(self, origin_x_m: float, origin_y_m: float, yaw_deg: float) -> tuple[tuple[float, float], ...]:
         """Rotate, anchor and contract-resample the local scenario route."""
         origin_x = _finite_number(origin_x_m, "origin_x_m")
@@ -365,9 +376,9 @@ def resolve_scenario_command(
         raise TypeError("scenario command parameters must be an object")
 
     target_speed_mps: float | None = None
-    if intent == "SLOW_DOWN":
+    if intent == "SLOW_DOWN" and not preserve_high_level:
         target_speed_mps = max(0.0, current_speed - step)
-    elif intent == "SPEED_UP":
+    elif intent == "SPEED_UP" and not preserve_high_level:
         target_speed_mps = current_speed + step
     elif intent in ROUTE_FOLLOWING_INTENTS and not preserve_high_level:
         if "target_speed_mps" in parameters:

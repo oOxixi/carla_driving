@@ -39,3 +39,36 @@ def test_parse_run_reads_frame_latency_field(tmp_path) -> None:
 
 def test_zero_warmup_does_not_touch_service(tmp_path) -> None:
     assert warm_qwen_service(project=tmp_path, base_url="http://invalid", count=0)["count"] == 0
+
+
+def test_parse_run_uses_v2_oracle_for_alignment(tmp_path) -> None:
+    (tmp_path / "run.jsonl").write_text(
+        json.dumps({"record_type": "run_complete", "summary": {"status": "SUCCEEDED"}}),
+        encoding="utf-8",
+    )
+    console = json.dumps({
+        "record_type": "scenario_extension_acceptance",
+        "passed": True,
+        "failed_keys": [],
+        "checks": [
+            {"key": "oracle_expected_behaviors", "status": "PASS"},
+            {"key": "oracle_expected_target_actor_id", "status": "PASS"},
+        ],
+    })
+
+    parsed = parse_run(tmp_path, console)
+
+    assert parsed["alignment_checks"] == [
+        {"key": "oracle_expected_behaviors", "passed": True},
+        {"key": "oracle_expected_target_actor_id", "passed": True},
+    ]
+    assert parsed["alignment_passed"] is True
+
+
+def test_parse_run_reports_missing_alignment_as_unmeasured(tmp_path) -> None:
+    (tmp_path / "run.jsonl").write_text(
+        json.dumps({"record_type": "run_complete", "summary": {"status": "SUCCEEDED"}}),
+        encoding="utf-8",
+    )
+
+    assert parse_run(tmp_path, "")["alignment_passed"] is None

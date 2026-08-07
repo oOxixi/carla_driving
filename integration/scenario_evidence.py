@@ -506,6 +506,14 @@ class ScenarioEvidenceRecorder:
             return
         self._feedback_keys.add(key)
         self._terminal_statuses[command_id] = status
+        safety_event = _field(feedback, "safety_event")
+        if isinstance(safety_event, Mapping):
+            reason_code = safety_event.get("reason_code")
+            if isinstance(reason_code, str) and reason_code:
+                self._safety_reasons.add(reason_code)
+        terminal_reason = _field(feedback, "terminal_reason")
+        if status == "SAFETY_OVERRIDE" and isinstance(terminal_reason, str) and terminal_reason:
+            self._safety_reasons.add(terminal_reason)
         self._write("feedback", feedback=_jsonable(feedback))
 
     def record_canonical_routing(self, *, phase: str, command_id: str,
@@ -588,6 +596,7 @@ class ScenarioEvidenceRecorder:
             "unfinished_task_count": 0 if completion else 1,
             "safety_override_frames": self._safety_override_frames,
             "safety_override_episodes": self._safety_override_episodes,
+            "safety_reasons": sorted(self._safety_reasons),
             "latency": {
                 "simulator_tick_avg_ms": self._average(self._frame_simulator_tick_ms),
                 "simulator_tick_p95_ms": self._percentile(self._frame_simulator_tick_ms, 0.95),

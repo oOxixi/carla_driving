@@ -82,3 +82,37 @@ def test_speed_overshoot_is_measured_from_submitted_target() -> None:
     result = runtime.evaluate({"max_speed_overshoot_kph": 2.0}, expected_command_count=1)
     assert result["passed"] is True
     assert abs(result["checks"][0]["actual"] - 0.88) < 1e-9
+
+
+def test_oracle_checks_observed_behavior_and_target_binding() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_qwen_plan({
+        "steps": [{"behavior": "FOLLOW", "target": {"target_id": "lead-target"}}],
+    })
+
+    result = runtime.evaluate(
+        {},
+        expected_command_count=1,
+        oracle={
+            "expected_behaviors": ["FOLLOW", "SLOW_DOWN", "STOP"],
+            "expected_target_actor_id": "lead-target",
+        },
+    )
+
+    assert result["passed"] is True
+    assert [(item["key"], item["status"]) for item in result["checks"]] == [
+        ("oracle_expected_behaviors", "PASS"),
+        ("oracle_expected_target_actor_id", "PASS"),
+    ]
+
+
+def test_oracle_fails_unexpected_qwen_behavior() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_qwen_plan({"steps": [{"behavior": "YIELD"}]})
+
+    result = runtime.evaluate(
+        {}, expected_command_count=1, oracle={"expected_behaviors": ["STOP"]},
+    )
+
+    assert result["passed"] is False
+    assert result["failed_keys"] == ["oracle_expected_behaviors"]

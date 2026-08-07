@@ -159,6 +159,47 @@ def test_scenario_actor_binding_uses_image_position_when_only_one_range_is_known
     assert [item.track_id for item in bound.detected_objects] == ["left-car", "right-car"]
 
 
+def test_generic_lidar_obstacle_binds_nearest_geometric_scenario_actor() -> None:
+    class Location:
+        def __init__(self, x, y):
+            self.x, self.y, self.z = x, y, 0.0
+
+        def distance(self, other):
+            return math.hypot(self.x - other.x, self.y - other.y)
+
+    class Transform:
+        location = Location(0.0, 0.0)
+
+        @staticmethod
+        def get_forward_vector():
+            return Namespace(x=1.0, y=0.0)
+
+    class Actor:
+        is_alive = True
+
+        def __init__(self, x, y):
+            self.location = Location(x, y)
+
+        def get_location(self):
+            return self.location
+
+    ego = Namespace(get_transform=lambda: Transform())
+    scene = PerceptionFrame(1, 0.05, detected_objects=(
+        DetectedObject(0, "obstacle", 1.0, (0.45, 0.2, 0.55, 0.8), 20.0),
+    ))
+
+    bound = _bind_scenario_actor_ids(
+        scene,
+        ego,
+        (
+            (Actor(20.0, 0.0), {"actor_id": "lead-car", "type": "vehicle"}),
+            (Actor(20.0, 5.0), {"actor_id": "warning-prop", "type": "static.prop"}),
+        ),
+    )
+
+    assert bound.detected_objects[0].track_id == "lead-car"
+
+
 def test_scenario_facts_can_override_or_only_fill_missing_perception() -> None:
     perceived = PerceptionFrame(1, 0.05, lead_distance_m=8.0, traffic_light="UNKNOWN")
     configured = PerceptionFrame(
@@ -477,6 +518,16 @@ def test_d_fault_contracts_create_one_shot_raw_control_payloads() -> None:
     assert _scenario_raw_control_fault(d06, 5.0) == {
         "throttle": 0.5, "brake": 0.5, "steer": 0.0, "fault_injected": True,
     }
+
+
+def test_normal_acceptance_safety_assertion_does_not_inject_a_control_fault() -> None:
+    spec = ScenarioSpec.load(
+        Path(__file__).resolve().parents[2]
+        / "scenarios" / "acceptance_suite" / "basic" / "ACC_B01_start_keep_lane.json"
+    )
+
+    assert spec.expected["final_control_no_throttle_brake_overlap"] is True
+    assert _scenario_raw_control_fault(spec, 5.0) is None
 
 
 def test_regression_finish_route_is_a_hard_completion_contract() -> None:

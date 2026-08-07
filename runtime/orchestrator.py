@@ -49,7 +49,7 @@ class OrchestratorConfig:
     qwen_mode: str = "atomic_v1"
     force_qwen_all_voice: bool = False
     allowed_slow_behaviors: tuple[str, ...] = (
-        "KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
+        "KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
         "CHANGE_LANE", "TURN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "PULL_OVER",
     )
 
@@ -69,7 +69,7 @@ class OrchestratorConfig:
         if type(self.force_qwen_all_voice) is not bool:
             raise TypeError("force_qwen_all_voice must be bool")
         allowed_values = {
-            "KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
+            "KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
             "CHANGE_LANE", "TURN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "PULL_OVER",
         }
         if (
@@ -211,11 +211,18 @@ class PipelineOrchestrator:
         self._publish_routing_event(command_id, scene, routing)
         emergency_reason = self._perception_stop_reason(scene)
         intent = canonical["intent"]
-        if emergency_reason is not None and intent not in {"STOP", "EMERGENCY_STOP"}:
+        if (
+            emergency_reason is not None
+            and intent not in {"STOP", "EMERGENCY_STOP"}
+            and not self.config.force_qwen_all_voice
+        ):
             control = self._safety_stop(canonical, scene, now, emergency_reason)
             return OrchestrationResult(
                 "FAST", command_id, control_command=control,
-                feedback=self._feedback(command_id, now, "SAFETY_OVERRIDE", "safety stop issued", emergency_reason),
+                feedback=self._feedback(
+                    command_id, now, "SAFETY_OVERRIDE", "safety stop issued",
+                    emergency_reason, safety_event_reason=emergency_reason,
+                ),
                 reason_code=emergency_reason, queues=self.queue_snapshot(),
                 **self._routing_fields(routing),
             )
@@ -266,7 +273,10 @@ class PipelineOrchestrator:
             )
         return OrchestrationResult(
             "SLOW_PENDING", command_id, model_request=request,
-            feedback=self._feedback(command_id, now, "RECEIVED", "slow request queued", None),
+            feedback=self._feedback(
+                command_id, now, "RECEIVED", "slow request queued", None,
+                safety_event_reason=emergency_reason,
+            ),
             reason_code="QWEN_QUEUED", queues=self.queue_snapshot(),
             **self._routing_fields(routing),
         )
@@ -863,7 +873,24 @@ class PipelineOrchestrator:
             "routing_features": routing.features.to_dict(),
         })
 
-    def _feedback(self, command_id: str, now: int, status: str, detail: str, reason: str | None) -> dict[str, Any]:
+    def _feedback(
+        self,
+        command_id: str,
+        now: int,
+        status: str,
+        detail: str,
+        reason: str | None,
+        *,
+        safety_event_reason: str | None = None,
+    ) -> dict[str, Any]:
+        safety_event = None
+        if safety_event_reason is not None:
+            stopped = {"throttle": 0.0, "brake": 1.0, "steer": 0.0}
+            safety_event = {
+                "reason_code": safety_event_reason,
+                "raw_control": dict(stopped),
+                "final_control": dict(stopped),
+            }
         return self.registry.validate("execution_feedback", {
             "schema_version": "1.0",
             "command_id": command_id,
@@ -872,7 +899,7 @@ class PipelineOrchestrator:
             "emitted_at_ns": now,
             "t_action_apply_ns": None,
             "latency_ms": None,
-            "safety_event": None,
+            "safety_event": safety_event,
             "terminal_reason": reason if status in TERMINAL_STATUSES else None,
         })
 

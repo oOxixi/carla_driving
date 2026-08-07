@@ -582,7 +582,9 @@ def _bind_scenario_actor_ids(
         )
         choices = [
             item for item in candidates
-            if item[2] not in used and (item[3] == family or family == "unknown")
+            if item[2] not in used and (
+                item[3] == family or family in {"unknown", "obstacle"}
+            )
         ]
         if not choices:
             bound.append(detection)
@@ -1572,9 +1574,19 @@ def _scenario_raw_control_fault(spec: ScenarioSpec | None, elapsed_s: float) -> 
     if spec is None or elapsed_s < 5.0:
         return None
     expected = spec.expected
-    if expected.get("final_control_must_be_finite") is True:
+    reason_tokens = {
+        str(token).strip().lower()
+        for token in expected.get("expected_reason_contains", ())
+    }
+    if (
+        expected.get("final_control_must_be_finite") is True
+        and reason_tokens.intersection({"invalid", "nan"})
+    ):
         return {"throttle": 0.0, "brake": 0.0, "steer": "NaN", "fault_injected": True}
-    if expected.get("final_control_no_throttle_brake_overlap") is True:
+    if (
+        expected.get("final_control_no_throttle_brake_overlap") is True
+        and reason_tokens.intersection({"throttle", "brake", "conflict"})
+    ):
         return {"throttle": 0.5, "brake": 0.5, "steer": 0.0, "fault_injected": True}
     return None
 
@@ -2329,7 +2341,7 @@ def run(args: argparse.Namespace) -> None:
                             scheduled,
                             requested_speed_mps=runtime.requested_speed_mps,
                             preserve_high_level=(
-                                spec is not None and spec.qwen_expected is not None
+                                spec is not None and spec.requires_qwen_semantics
                             ),
                         )
                         received_ns = time.monotonic_ns()
@@ -3494,6 +3506,7 @@ def run(args: argparse.Namespace) -> None:
                 proposed,
                 expected_command_count=len(spec.commands),
                 safety_reasons=tuple(sorted(safety_reasons)),
+                oracle=spec.extensions.get("oracle", {}),
             )
             completion = completion and bool(extension_report["passed"])
             print(json.dumps({

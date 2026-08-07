@@ -163,3 +163,35 @@ def test_planner_v2_low_level_fault_is_rejected_not_dispatched():
     assert rejected[0].feedback["status"] == "REJECTED"
     assert rejected[0].reason_code == "QWEN_PLAN_REJECTED"
     assert rejected[0].control_command is None
+
+
+def test_forced_qwen_set_speed_is_an_allowed_model_behavior():
+    command = _example("driving_command")
+    scene = _example("perception_state")
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True),
+    ) as runtime:
+        queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
+
+    assert queued.disposition == "SLOW_PENDING"
+    assert "SET_SPEED" in queued.model_request["constraints"]["allowed_behaviors"]
+
+
+def test_forced_qwen_safety_scene_is_audited_while_waiting_stopped():
+    command = _example("driving_command")
+    command["intent"] = "KEEP_LANE"
+    command["parameters"] = {}
+    scene = _example("perception_state")
+    scene["traffic_light"] = "RED"
+    scene["distance_to_stop_line_m"] = 8.0
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True),
+    ) as runtime:
+        queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
+
+    assert queued.disposition == "SLOW_PENDING"
+    assert queued.model_request["constraints"]["must_stop"] is True
+    assert queued.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
+    assert queued.feedback["safety_event"]["reason_code"] == "TRAFFIC_LIGHT_STOP"

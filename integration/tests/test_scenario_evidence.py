@@ -266,6 +266,34 @@ def test_qwen_request_and_result_are_recorded_without_credentials(tmp_path):
     assert "api_key" not in path.read_text(encoding="utf-8").lower()
 
 
+def test_feedback_safety_event_is_included_in_acceptance_reasons(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "safety-feedback.jsonl")
+    recorder.start_run(scenario_id="ACC_C03")
+    recorder.record_feedback({
+        "schema_version": "1.0",
+        "command_id": "cmd-red",
+        "status": "RECEIVED",
+        "action_summary": "slow request queued behind deterministic safety stop",
+        "emitted_at_ns": 1,
+        "t_action_apply_ns": None,
+        "latency_ms": None,
+        "safety_event": {
+            "reason_code": "TRAFFIC_LIGHT_STOP",
+            "raw_control": {"throttle": 0.0, "brake": 1.0, "steer": 0.0},
+            "final_control": {"throttle": 0.0, "brake": 1.0, "steer": 0.0},
+        },
+        "terminal_reason": None,
+    })
+
+    summary = recorder.complete(
+        completion=True,
+        expected={"expected_reason_contains": ["stop"]},
+    )
+
+    assert "TRAFFIC_LIGHT_STOP" in summary["safety_reasons"]
+    assert summary["acceptance"]["passed"] is True
+
+
 @pytest.mark.parametrize(
     ("end_y", "end_yaw", "expected_shift", "expected_turn"),
     [(-3.5, -45.0, 3.5, "LEFT"), (3.5, 45.0, -3.5, "RIGHT")],

@@ -301,6 +301,7 @@ class ScenarioExtensionRuntime:
         *,
         expected_command_count: int,
         safety_reasons: Sequence[str] = (),
+        oracle: Mapping[str, Any] | None = None,
     ) -> dict[str, object]:
         """Evaluate every v2 proposed-acceptance field with auditable evidence."""
         evidence = self.evidence()
@@ -409,6 +410,31 @@ class ScenarioExtensionRuntime:
                 add(key, bool(actual), actual, required)
             else:
                 add(key, False, None, required)
+
+        oracle_contract = {} if oracle is None else oracle
+        if not isinstance(oracle_contract, Mapping):
+            raise TypeError("extensions.oracle must be an object")
+        expected_behaviors = oracle_contract.get("expected_behaviors")
+        if expected_behaviors is not None:
+            if not isinstance(expected_behaviors, Sequence) or isinstance(
+                expected_behaviors, (str, bytes),
+            ):
+                raise TypeError("extensions.oracle.expected_behaviors must be a list")
+            allowed = {str(item).upper() for item in expected_behaviors}
+            add(
+                "oracle_expected_behaviors",
+                bool(behaviors) and behaviors.issubset(allowed),
+                sorted(behaviors),
+                sorted(allowed),
+            )
+        expected_target = oracle_contract.get("expected_target_actor_id")
+        if expected_target is not None and "expected_target_actor_id" not in proposed:
+            add(
+                "oracle_expected_target_actor_id",
+                str(expected_target) in target_ids,
+                sorted(target_ids),
+                expected_target,
+            )
         failed = [item["key"] for item in checks if item["status"] == "FAIL"]
         return {"passed": not failed, "checks": checks, "failed_keys": failed, "evidence": evidence}
 
