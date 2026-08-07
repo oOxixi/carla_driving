@@ -210,6 +210,20 @@ def test_prevalidated_left_detour_routes_use_physical_left(filename: str) -> Non
     assert max(lateral_offsets) == 0
 
 
+def test_low_visibility_contract_accepts_bounded_slowdown_or_stop() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "supplemental" / "challenge" / "SUP_C02_low_visibility_rain_fog.json")
+        .read_text(encoding="utf-8")
+    )
+    acceptance = scenario["extensions"]["proposed_acceptance"]
+
+    assert acceptance == {"conservative_speed_required": True}
+    assert scenario["expected"]["max_speed_mps"] == 3.5
+    assert set(scenario["extensions"]["oracle"]["expected_behaviors"]) == {
+        "SLOW_DOWN", "STOP",
+    }
+
+
 def test_var_c05_oracle_separates_prefault_motion_from_fail_closed_response() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "variants" / "VAR_C05_rgb_lidar_blackout.json")

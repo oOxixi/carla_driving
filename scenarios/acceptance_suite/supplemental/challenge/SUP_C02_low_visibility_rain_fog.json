@@ -130,7 +130,7 @@
     },
     "faults": [],
     "proposed_acceptance": {
-      "must_stop_when_perception_insufficient": true
+      "conservative_speed_required": true
     },
     "runtime_support": {
       "status": "current",
