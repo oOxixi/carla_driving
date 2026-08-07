@@ -850,9 +850,30 @@ class ScenarioExtensionRuntime:
                     normalized = str(item).upper()
                     if "REJECT" in normalized or "ERROR" in normalized:
                         actual_set.add("REJECT")
+                clipped_to_limit = False
                 for item in evidence["qwen_resolution_reasons"]:
                     if "CLIP" in str(item).upper() or "SPEED_LIMIT" in str(item).upper():
-                        actual_set.add("CLIP_TO_LIMIT")
+                        clipped_to_limit = True
+                speed_policy = self.extensions.get("speed_policy", {})
+                limit_kph = (
+                    speed_policy.get("scenario_limit_kph")
+                    if isinstance(speed_policy, Mapping)
+                    else None
+                )
+                requested_kph = evidence["requested_speed_kph"]
+                target_speeds = list(evidence["qwen_target_speeds_kph"])
+                if (
+                    type(limit_kph) in (int, float)
+                    and not isinstance(limit_kph, bool)
+                    and requested_kph is not None
+                    and float(requested_kph) > float(limit_kph) + 0.5
+                    and bool(target_speeds)
+                    and max(float(item) for item in target_speeds) <= float(limit_kph) + 0.5
+                ):
+                    clipped_to_limit = True
+                if clipped_to_limit:
+                    actual_set.discard("SET_SPEED")
+                    actual_set.add("CLIP_TO_LIMIT")
                 add(key, bool(actual_set) and actual_set.issubset(allowed), sorted(actual_set), sorted(allowed))
             elif key == "lane_change_rejection_reason_required":
                 explicit_tokens = (
