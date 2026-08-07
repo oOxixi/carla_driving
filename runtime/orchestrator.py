@@ -784,13 +784,31 @@ class PipelineOrchestrator:
         configured = list(self.config.allowed_slow_behaviors)
         if routing is None or routing.features.requires_maneuver:
             return configured
+        atomic_by_intent = {
+            "START": {"KEEP_LANE", "SET_SPEED"},
+            "KEEP_LANE": {"KEEP_LANE"},
+            "SET_SPEED": {"SET_SPEED"},
+            "SLOW_DOWN": {"SLOW_DOWN"},
+        }
+        intent = str(command.get("intent", "")).upper()
+        if (
+            routing.features.atomic_action_count <= 1
+            and not routing.features.has_sequence
+            and not routing.features.has_condition
+            and intent in atomic_by_intent
+        ):
+            narrowed = [
+                behavior for behavior in configured
+                if behavior in atomic_by_intent[intent]
+            ]
+            return narrowed or ["STOP"]
         non_maneuver_by_intent = {
             "START": {"KEEP_LANE", "SET_SPEED", "STOP"},
             "KEEP_LANE": {"KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD"},
             "SET_SPEED": {"SET_SPEED", "SLOW_DOWN", "STOP"},
             "SLOW_DOWN": {"SLOW_DOWN", "STOP"},
         }
-        permitted = non_maneuver_by_intent.get(str(command.get("intent", "")).upper())
+        permitted = non_maneuver_by_intent.get(intent)
         if permitted is None:
             return configured
         narrowed = [behavior for behavior in configured if behavior in permitted]

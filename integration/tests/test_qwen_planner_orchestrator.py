@@ -198,9 +198,7 @@ def test_non_maneuver_keep_lane_request_cannot_hallucinate_lane_change():
         )
 
     assert queued.disposition == "SLOW_PENDING"
-    assert queued.model_request["constraints"]["allowed_behaviors"] == [
-        "KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD",
-    ]
+    assert queued.model_request["constraints"]["allowed_behaviors"] == ["KEEP_LANE"]
 
 
 def test_forced_qwen_safety_scene_is_audited_while_waiting_stopped():
