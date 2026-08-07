@@ -591,6 +591,9 @@ class VllmQwenPlannerBackend:
         except ImportError as error:
             raise RuntimeError("vLLM image encoding requires Pillow") from error
         with Image.open(path) as image:
+            if image.size == (self.image_max_side, self.image_max_side) and image.format == "JPEG":
+                encoded = path.read_bytes()
+                return "data:image/jpeg;base64," + base64.b64encode(encoded).decode("ascii")
             image = ImageOps.pad(
                 image.convert("RGB"),
                 (self.image_max_side, self.image_max_side),

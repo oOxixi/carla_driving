@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
+from PIL import Image
 
 from integration.qwen_image_stager import QwenImageStager
 
@@ -23,6 +24,10 @@ def test_stager_writes_rgb_only_when_slow_worker_prepares_request(tmp_path) -> N
 
     assert prepared["rgb_ref"] == reference
     assert target.is_file()
+    assert target.suffix == ".jpg"
+    with Image.open(target) as image:
+        assert image.size == (224, 224)
+        assert image.format == "JPEG"
 
 
 def test_stager_rejects_path_escape_and_discard_skips_write(tmp_path) -> None:

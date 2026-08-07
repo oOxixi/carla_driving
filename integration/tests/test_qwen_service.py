@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import copy
 import json
 from pathlib import Path
@@ -7,6 +8,7 @@ import threading
 import time
 
 import pytest
+from PIL import Image
 
 from integration.qwen_plan_adapter import QwenPlanParseError
 from qwen_service import (
@@ -247,6 +249,19 @@ def test_vllm_prompt_does_not_leak_hint_and_is_bounded() -> None:
     assert '"hint"' not in prompt
     assert "KEEP_LANE\",\"target_speed_mps" not in prompt
     assert len(prompt) < 3000
+
+
+def test_vllm_reuses_already_normalized_jpeg_without_reencoding(tmp_path) -> None:
+    path = tmp_path / "normalized.jpg"
+    Image.new("RGB", (224, 224), (32, 64, 96)).save(path, format="JPEG", quality=75)
+    original = path.read_bytes()
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    backend.image_max_side = 224
+    backend.jpeg_quality = 75
+
+    data_url = backend._image_data_url(path)
+
+    assert base64.b64decode(data_url.split(",", 1)[1]) == original
 
 
 def test_vllm_follow_binds_center_ahead_not_nearest_distractor() -> None:

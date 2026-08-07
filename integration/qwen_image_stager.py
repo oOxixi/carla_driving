@@ -27,7 +27,7 @@ class QwenImageStager:
         if type(frame_id) is not int or frame_id < 0:
             raise ValueError("frame_id must be a non-negative integer")
         digest = hashlib.sha256(command_id.encode("utf-8")).hexdigest()[:16]
-        reference = str(self.ref_prefix / f"frame_{frame_id:08d}_{digest}.png")
+        reference = str(self.ref_prefix / f"frame_{frame_id:08d}_{digest}.jpg")
         with self._lock:
             self._captures[command_id] = (measurement, reference)
         return reference
@@ -50,10 +50,16 @@ class QwenImageStager:
             raise ValueError("staged Qwen image escapes image_root") from error
         target.parent.mkdir(parents=True, exist_ok=True)
         try:
-            from PIL import Image
+            from PIL import Image, ImageOps
         except ImportError as error:  # pragma: no cover - deployment dependency
             raise RuntimeError("Pillow is required to stage Qwen RGB images") from error
-        Image.fromarray(carla_rgb_array(measurement), mode="RGB").save(target, format="PNG")
+        image = ImageOps.pad(
+            Image.fromarray(carla_rgb_array(measurement), mode="RGB"),
+            (224, 224),
+            method=Image.Resampling.LANCZOS,
+            color=(0, 0, 0),
+        )
+        image.save(target, format="JPEG", quality=75)
         payload = dict(request)
         payload["rgb_ref"] = reference
         return payload
