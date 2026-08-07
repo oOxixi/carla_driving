@@ -18,6 +18,7 @@ from integration.carla_runner import (
     _map_contract_name,
     _maneuver_target_visible,
     _minimum_gap_contract_completed,
+    _note_safety_feedback,
     _build_qwen_context,
     _c_safety_speed_cap_mps,
     _c_speed_cap_control_override,
@@ -60,6 +61,16 @@ def test_voice_load_failure_becomes_rejected_no_op() -> None:
     assert not adapted.control_authorized
     assert adapted.command.action == "NO_OP"
     assert adapted.feedback is not None
+
+
+def test_canonical_safety_feedback_is_available_to_scenario_completion() -> None:
+    reasons: set[str] = set()
+
+    _note_safety_feedback(reasons, {
+        "safety_event": {"reason_code": "TRAFFIC_LIGHT_STOP"},
+    })
+
+    assert reasons == {"TRAFFIC_LIGHT_STOP"}
 
 
 def test_c_vru_speed_cap_is_temporary_and_requires_a_valid_slow_down_summary() -> None:

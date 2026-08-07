@@ -198,6 +198,21 @@ def _note_extension_terminal(
     runtime.note_terminal(str(command_id), status)
 
 
+def _note_safety_feedback(
+    safety_reasons: set[str],
+    feedback: Mapping[str, object] | object,
+) -> None:
+    """Promote canonical safety events into scenario completion evidence."""
+    safety_event = (
+        feedback.get("safety_event") if isinstance(feedback, Mapping)
+        else getattr(feedback, "safety_event", None)
+    )
+    if isinstance(safety_event, Mapping):
+        reason = safety_event.get("reason_code")
+        if isinstance(reason, str) and reason:
+            safety_reasons.add(reason)
+
+
 def _speed_mps(vector: Any) -> float:
     # Longitudinal control consumes ground speed. Including vertical spawn
     # settling makes a stationary vehicle appear to accelerate under gravity.
@@ -2800,6 +2815,8 @@ def run(args: argparse.Namespace) -> None:
                                 _note_extension_terminal(
                                     extension_runtime, submission.orchestration.feedback,
                                 )
+                        for feedback in submission.feedbacks:
+                            _note_safety_feedback(safety_reasons, feedback)
                         if qwen_scenario_monitor is not None:
                             observed_route = (
                                 "FAST_LOCAL"
@@ -2931,6 +2948,7 @@ def run(args: argparse.Namespace) -> None:
                             for feedback in resolution.feedbacks:
                                 recorder.record_feedback(feedback)
                                 _note_extension_terminal(extension_runtime, feedback)
+                                _note_safety_feedback(safety_reasons, feedback)
                             if resolution.vehicle_feedback is not None:
                                 recorder.record_feedback(resolution.vehicle_feedback)
                         if qwen_scenario_monitor is not None:
