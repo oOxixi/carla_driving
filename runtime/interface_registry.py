@@ -50,6 +50,14 @@ class InterfaceRegistry:
         except (TypeError, ValueError) as error:
             raise InterfaceValidationError(f"{name} is not strict JSON: {error}") from error
 
+    def warm(self, names: tuple[str, ...] | None = None) -> None:
+        """Compile validators before an official latency window begins."""
+        selected = tuple(sorted(INTERFACE_NAMES)) if names is None else names
+        if any(name not in INTERFACE_NAMES for name in selected):
+            raise ValueError("warm names must be known interfaces")
+        for name in selected:
+            self._validator(name)
+
     def _validator(self, name: str) -> Any:
         with self._lock:
             cached = self._validators.get(name)

@@ -27,6 +27,7 @@ from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
 from car_control_C import ConservativeSensorFusion, SafetyStateParameters
 from car_control_D import SafetyConfig, SafetySupervisor
 from qwen_service.client import QwenServiceClient
+from runtime.interface_registry import InterfaceRegistry
 from runtime import (
     CompiledManeuverPlan,
     CompiledPlanStep,
@@ -1891,6 +1892,12 @@ def run(args: argparse.Namespace) -> None:
                 and isinstance(spec.extensions.get("qwen_policy"), Mapping)
                 and spec.extensions["qwen_policy"].get("required_for_every_voice_event") is True
             )
+            # JSON Schema compilation is deterministic runtime initialization,
+            # not decision work.  Compile once and share the registry so the
+            # first scored voice command does not pay Python/jsonschema import
+            # and schema compilation costs.
+            canonical_registry = InterfaceRegistry()
+            canonical_registry.warm()
             canonical_orchestrator = PipelineOrchestrator(
                 infer=qwen_infer,
                 config=OrchestratorConfig(
@@ -1899,8 +1906,11 @@ def run(args: argparse.Namespace) -> None:
                     qwen_mode=args.qwen_mode,
                     force_qwen_all_voice=force_all_voice_qwen,
                 ),
+                registry=canonical_registry,
             )
-            canonical_bridge = CanonicalRuntimeBridge(runtime, canonical_orchestrator)
+            canonical_bridge = CanonicalRuntimeBridge(
+                runtime, canonical_orchestrator, registry=canonical_registry,
+            )
             print(json.dumps({
                 "record_type": "canonical_routing_ready",
                 "qwen_service_url": args.qwen_service_url,
