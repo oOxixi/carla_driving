@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 import math
 import threading
+import time
 from types import MappingProxyType
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
@@ -215,6 +216,7 @@ class PerceptionSample:
     rgb: Any
     lidar: Any
     safety_summary: SafetyStateSummary
+    sensors_ready_ns: int
 
 
 def _make_transform(carla_api: Any, mount: SensorMount) -> Any:
@@ -528,6 +530,10 @@ class CarlaPerceptionBridge:
                 f"required RGB/LiDAR frame {frame} unavailable; pending sensor frames={pending}; "
                 "normal control must be suppressed"
             ) from error
+        # Official latency starts only after every continuous input for this
+        # frame is present. Capture that boundary before validation/fusion so
+        # the interval includes all downstream perception work.
+        sensors_ready_ns = time.monotonic_ns()
         rgb, lidar = aligned[RGB_SENSOR_ID], aligned[LIDAR_SENSOR_ID]
         for sensor_id, payload in aligned.items():
             payload_frame = getattr(payload, "frame", None)
@@ -659,4 +665,11 @@ class CarlaPerceptionBridge:
             lane_invasion=lane_invasion,
             detected_objects=detected_objects,
         )
-        return PerceptionSample(perception, MappingProxyType(sources), rgb, lidar, safety_summary)
+        return PerceptionSample(
+            perception,
+            MappingProxyType(sources),
+            rgb,
+            lidar,
+            safety_summary,
+            sensors_ready_ns,
+        )

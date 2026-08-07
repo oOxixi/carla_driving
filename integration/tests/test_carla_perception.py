@@ -258,6 +258,8 @@ def test_bridge_combines_aligned_lidar_events_map_and_associated_actor_truth() -
     assert sample.safety_summary.front_distance_m == pytest.approx(11.84, abs=0.02)
     assert sample.safety_summary.ttc_s == pytest.approx(5.92, abs=0.02)
     assert not sample.safety_summary.visual_valid
+    assert type(sample.sensors_ready_ns) is int
+    assert sample.sensors_ready_ns > 0
 
 
 def test_route_deviation_uses_polyline_segments_not_only_sparse_points() -> None:
