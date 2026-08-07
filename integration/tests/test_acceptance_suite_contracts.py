@@ -361,6 +361,21 @@ def test_sys04_disconnect_contract_expects_failed_middle_command() -> None:
     assert "SET_SPEED" not in scenario["extensions"]["oracle"]["expected_behaviors"]
 
 
+def test_sys05_keeps_emergency_stop_off_qwen_queue() -> None:
+    scenario = json.loads(
+        (
+            SUITE_ROOT / "supplemental" / "system"
+            / "SYS_05_voice_burst_priority.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert scenario["commands"][-1]["intent"] == "EMERGENCY_STOP"
+    proposed = scenario["extensions"]["proposed_acceptance"]
+    assert proposed["qwen_request_count"] == len(scenario["commands"]) - 1
+    assert proposed["qwen_missing_request_count"] == 1
+    assert proposed["emergency_command_preempts_normal_queue"] is True
+
+
 def test_cx05_keep_lane_route_and_recovery_contract_are_consistent() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "complex" / "CX05_sensor_dropout_route_recovery.json")

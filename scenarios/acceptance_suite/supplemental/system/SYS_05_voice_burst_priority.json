@@ -164,7 +164,8 @@
     },
     "faults": [],
     "proposed_acceptance": {
-      "qwen_request_count": 4,
+      "qwen_request_count": 3,
+      "qwen_missing_request_count": 1,
       "all_commands_must_have_terminal_status": true,
       "emergency_command_preempts_normal_queue": true,
       "qwen_stale_result_applied_count": 0
