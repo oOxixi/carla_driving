@@ -93,12 +93,14 @@ def test_qwen_trajectory_records_official_end_to_end_boundary(tmp_path):
         sensor_ready_ns=1_000_000_000,
         model_completed_ns=1_080_000_000,
         trajectory_ready_ns=1_095_000_000,
+        breakdown={"queue_wait_ms": 2.0, "infer_callback_ms": 70.0},
     )
     summary = recorder.complete(completion=True)
     rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
     trajectory = next(row for row in rows if row["record_type"] == "qwen_trajectory")
     assert trajectory["latency"]["model_ms"] == 80.0
     assert trajectory["latency"]["sensor_to_trajectory_ms"] == 95.0
+    assert trajectory["latency"]["breakdown"]["infer_callback_ms"] == 70.0
     assert summary["latency"]["sensor_to_trajectory_p95_ms"] == 95.0
 
 

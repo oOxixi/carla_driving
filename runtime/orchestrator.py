@@ -108,6 +108,7 @@ class OrchestrationResult:
     safe_wait_behavior: str = "STOP"
     compiled_plan: Mapping[str, Any] | None = None
     model_completed_ns: int | None = None
+    model_timing: Mapping[str, float] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,6 +128,8 @@ class _SlowResult:
     plan: dict[str, Any] | None = None
     compiled: CompiledManeuverPlan | None = None
     error: str | None = None
+    worker_started_wall_ns: int | None = None
+    inference_completed_wall_ns: int | None = None
 
 
 class PipelineOrchestrator:
@@ -379,9 +382,12 @@ class PipelineOrchestrator:
                 if self._closed:
                     return
                 self._active_job = job
+            worker_started_wall_ns = self._clock_ns()
+            inference_completed_wall_ns: int | None = None
             try:
                 assert self._infer is not None
                 raw = self._infer(job.request)
+                inference_completed_wall_ns = self._clock_ns()
                 if self.config.qwen_mode == "planner_v2":
                     validation_scene = {**job.perception, **job.runtime_state}
                     plan = self.plan_validator.validate(
@@ -397,16 +403,24 @@ class PipelineOrchestrator:
                     compiled = None
                 result = _SlowResult(
                     job, "READY", self._clock_ns(), plan=plan, compiled=compiled,
+                    worker_started_wall_ns=worker_started_wall_ns,
+                    inference_completed_wall_ns=inference_completed_wall_ns,
                 )
             except (PlanValidationError, InterfaceValidationError) as error:
+                inference_completed_wall_ns = inference_completed_wall_ns or self._clock_ns()
                 result = _SlowResult(
                     job, "REJECTED", self._clock_ns(),
                     error=f"{type(error).__name__}: {error}",
+                    worker_started_wall_ns=worker_started_wall_ns,
+                    inference_completed_wall_ns=inference_completed_wall_ns,
                 )
             except Exception as error:
+                inference_completed_wall_ns = inference_completed_wall_ns or self._clock_ns()
                 result = _SlowResult(
                     job, "ERROR", self._clock_ns(),
                     error=f"{type(error).__name__}: {error}",
+                    worker_started_wall_ns=worker_started_wall_ns,
+                    inference_completed_wall_ns=inference_completed_wall_ns,
                 )
             with self._lock:
                 still_active = self._active_job is job
@@ -437,6 +451,7 @@ class PipelineOrchestrator:
             decision_ns = created_ns + max(
                 0, result.completed_wall_ns - result.job.submitted_wall_ns,
             )
+        model_timing = self._model_timing(result, created_ns, decision_ns)
         with self._lock:
             if request_id in self._revoked_request_ids:
                 self._revoked_request_ids.remove(request_id)
@@ -446,20 +461,21 @@ class PipelineOrchestrator:
                 command_id, decision_ns, "REJECTED", "QUEUE_OVERFLOW",
                 result.error or "queued Qwen request was superseded",
                 model_request=request, routing=result.job.routing,
-                model_completed_ns=decision_ns,
+                model_completed_ns=decision_ns, model_timing=model_timing,
             )
         if result.status == "REJECTED":
             return self._feedback_result(
                 command_id, decision_ns, "REJECTED", "QWEN_PLAN_REJECTED",
                 result.error or "Qwen plan failed the runtime trust boundary",
                 model_request=request, routing=result.job.routing,
-                model_completed_ns=decision_ns,
+                model_completed_ns=decision_ns, model_timing=model_timing,
             )
         if result.status != "READY" or result.plan is None:
             return self._feedback_result(
                 command_id, decision_ns, "FAILED", "QWEN_ERROR",
                 result.error or "Qwen inference failed", model_request=request,
                 routing=result.job.routing, model_completed_ns=decision_ns,
+                model_timing=model_timing,
             )
         plan = result.plan
         if decision_ns >= request["deadline_ns"] or decision_ns >= plan["valid_until_ns"]:
@@ -467,18 +483,21 @@ class PipelineOrchestrator:
                 command_id, decision_ns, "EXPIRED", "QWEN_STALE",
                 "Qwen decision arrived after its validity boundary", model_request=request,
                 routing=result.job.routing, model_completed_ns=decision_ns,
+                model_timing=model_timing,
             )
         if plan["request_id"] != request["request_id"] or plan["command_id"] != command_id:
             return self._feedback_result(
                 command_id, decision_ns, "REJECTED", "QWEN_ID_MISMATCH",
                 "Qwen request_id/command_id mismatch", model_request=request,
                 routing=result.job.routing, model_completed_ns=decision_ns,
+                model_timing=model_timing,
             )
         if float(plan["confidence"]) < self.config.minimum_confidence or plan.get("requires_confirmation"):
             return self._feedback_result(
                 command_id, decision_ns, "REJECTED", "QWEN_LOW_CONFIDENCE",
                 "Qwen plan requires confirmation or has low confidence", model_request=request,
                 routing=result.job.routing, model_completed_ns=decision_ns,
+                model_timing=model_timing,
             )
         target_id = plan.get("target_id")
         if self.config.qwen_mode == "planner_v2":
@@ -498,13 +517,14 @@ class PipelineOrchestrator:
                 command_id, decision_ns, "REJECTED", "QWEN_TARGET_NOT_FOUND",
                 "Qwen target_id is absent from current PerceptionState", model_request=request,
                 routing=result.job.routing, model_completed_ns=decision_ns,
+                model_timing=model_timing,
             )
         if result.job.perception["stale"] or not result.job.perception["sync"]["within_tolerance"]:
             return self._feedback_result(
                 command_id, decision_ns, "REJECTED", "PERCEPTION_STALE",
                 "slow plan cannot execute on stale or unsynchronized perception",
                 model_request=request, routing=result.job.routing,
-                model_completed_ns=decision_ns,
+                model_completed_ns=decision_ns, model_timing=model_timing,
             )
         try:
             if self.config.qwen_mode == "planner_v2":
@@ -519,7 +539,7 @@ class PipelineOrchestrator:
             return self._feedback_result(
                 command_id, decision_ns, "REJECTED", "QWEN_PLAN_INFEASIBLE", str(error),
                 model_request=request, routing=result.job.routing,
-                model_completed_ns=decision_ns,
+                model_completed_ns=decision_ns, model_timing=model_timing,
             )
         return OrchestrationResult(
             "SLOW_READY", command_id, control_command=control, model_request=request,
@@ -528,8 +548,35 @@ class PipelineOrchestrator:
             reason_code=control["reason_code"], queues=self.queue_snapshot(),
             compiled_plan=(None if result.compiled is None else result.compiled.to_dict()),
             model_completed_ns=decision_ns,
+            model_timing=model_timing,
             **self._routing_fields(result.job.routing),
         )
+
+    @staticmethod
+    def _model_timing(
+        result: _SlowResult,
+        created_ns: int,
+        decision_ns: int,
+    ) -> dict[str, float]:
+        """Split the slow path while avoiding comparisons across clock epochs."""
+        submitted_ns = result.job.submitted_wall_ns
+        worker_started_ns = result.worker_started_wall_ns or submitted_ns
+        inference_completed_ns = (
+            result.inference_completed_wall_ns or result.completed_wall_ns
+        )
+        timing = {
+            "queue_wait_ms": max(0, worker_started_ns - submitted_ns) / 1e6,
+            "infer_callback_ms": max(
+                0, inference_completed_ns - worker_started_ns,
+            ) / 1e6,
+            "validate_compile_ms": max(
+                0, result.completed_wall_ns - inference_completed_ns,
+            ) / 1e6,
+            "sensor_to_model_ms": max(0, decision_ns - created_ns) / 1e6,
+        }
+        if abs(submitted_ns - created_ns) <= 60_000_000_000:
+            timing["sensor_to_submit_ms"] = max(0, submitted_ns - created_ns) / 1e6
+        return timing
 
     def _fast_control(self, command: Mapping[str, Any], scene: Mapping[str, Any], now: int) -> dict[str, Any]:
         intent = command["intent"]
@@ -772,12 +819,14 @@ class PipelineOrchestrator:
         disposition: str = "REJECTED",
         routing: QwenRoutingDecision | None = None,
         model_completed_ns: int | None = None,
+        model_timing: Mapping[str, float] | None = None,
     ) -> OrchestrationResult:
         return OrchestrationResult(
             disposition, command_id, model_request=model_request,
             feedback=self._feedback(command_id, now, status, detail, reason),
             reason_code=reason, queues=self.queue_snapshot(),
             model_completed_ns=model_completed_ns,
+            model_timing=model_timing,
             **({} if routing is None else self._routing_fields(routing)),
         )
 

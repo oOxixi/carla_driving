@@ -133,6 +133,9 @@ def test_completed_slow_result_uses_completion_time_not_late_poll_time() -> None
 
     assert len(result) == 1
     assert result[0].disposition == "SLOW_READY"
+    assert result[0].model_timing is not None
+    assert result[0].model_timing["infer_callback_ms"] >= 10.0
+    assert all(value >= 0.0 for value in result[0].model_timing.values())
     assert result[0].model_completed_ns == 1_180_000_000
 
 

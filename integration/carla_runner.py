@@ -2995,6 +2995,7 @@ def run(args: argparse.Namespace) -> None:
                                         sensor_ready_ns=int(orchestration.model_request["created_at_ns"]),
                                         model_completed_ns=orchestration.model_completed_ns,
                                         trajectory_ready_ns=trajectory_ready_ns,
+                                        breakdown=orchestration.model_timing,
                                     )
                                 print(json.dumps({
                                     "record_type": "qwen_plan_route_applied",
@@ -3009,6 +3010,7 @@ def run(args: argparse.Namespace) -> None:
                                         trajectory_ready_ns
                                         - int(orchestration.model_request["created_at_ns"])
                                     ) / 1e6,
+                                    "model_timing": orchestration.model_timing,
                                 }, ensure_ascii=False), flush=True)
                             except (AttributeError, KeyError, TypeError, ValueError, RuntimeError) as error:
                                 watchdog_alerts.append("QWEN_PLAN_ROUTE_INFEASIBLE")

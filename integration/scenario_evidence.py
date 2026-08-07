@@ -299,6 +299,7 @@ class ScenarioEvidenceRecorder:
         sensor_ready_ns: int,
         model_completed_ns: int,
         trajectory_ready_ns: int,
+        breakdown: Mapping[str, float] | None = None,
     ) -> None:
         """Record the official sensor-ready to valid-trajectory boundary."""
         self._ensure_active()
@@ -311,6 +312,22 @@ class ScenarioEvidenceRecorder:
             raise ValueError("Qwen trajectory timestamps must be monotonic")
         model_ms = (model_completed_ns - sensor_ready_ns) / 1e6
         end_to_end_ms = (trajectory_ready_ns - sensor_ready_ns) / 1e6
+        normalized_breakdown: dict[str, float] | None = None
+        if breakdown is not None:
+            normalized_breakdown = {}
+            for key, value in breakdown.items():
+                if type(key) is not str or not key:
+                    raise ValueError("Qwen timing breakdown keys must be non-empty strings")
+                if (
+                    type(value) not in (int, float)
+                    or isinstance(value, bool)
+                    or not math.isfinite(float(value))
+                    or float(value) < 0
+                ):
+                    raise ValueError(
+                        "Qwen timing breakdown values must be finite and non-negative"
+                    )
+                normalized_breakdown[key] = float(value)
         self._qwen_model_ms.append(model_ms)
         self._qwen_sensor_to_trajectory_ms.append(end_to_end_ms)
         self._write(
@@ -321,6 +338,7 @@ class ScenarioEvidenceRecorder:
                 "trajectory_ready_ns": trajectory_ready_ns,
                 "model_ms": model_ms,
                 "sensor_to_trajectory_ms": end_to_end_ms,
+                "breakdown": normalized_breakdown,
             },
         )
 
