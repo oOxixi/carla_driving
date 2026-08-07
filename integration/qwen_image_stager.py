@@ -56,7 +56,10 @@ class QwenImageStager:
         image = ImageOps.pad(
             Image.fromarray(carla_rgb_array(measurement), mode="RGB"),
             (224, 224),
-            method=Image.Resampling.LANCZOS,
+            # The model receives only a 224 px / 64-token visual budget.  A
+            # bilinear downsample preserves that information while avoiding
+            # the unnecessary high-order LANCZOS cost on the latency path.
+            method=Image.Resampling.BILINEAR,
             color=(0, 0, 0),
         )
         image.save(target, format="JPEG", quality=75)
