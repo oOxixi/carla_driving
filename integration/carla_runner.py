@@ -1690,6 +1690,34 @@ def _minimum_gap_contract_completed(spec: ScenarioSpec | None, min_gap_m: float 
     return min_gap_m is not None and min_gap_m >= required_m
 
 
+def _intentional_qwen_failure_completed(
+    spec: ScenarioSpec | None,
+    *,
+    frames: int,
+    final_speed_mps: float | None,
+    collision_seen: bool,
+) -> bool | None:
+    """Accept fail-closed system probes without requiring a valid Qwen plan."""
+    if spec is None:
+        return None
+    proposed = spec.extensions.get("proposed_acceptance", {})
+    if not isinstance(proposed, Mapping):
+        return None
+    expects_failure = any(
+        int(proposed.get(key, 0) or 0) > 0
+        for key in ("qwen_timeout_count", "qwen_invalid_result_count")
+    )
+    if not expects_failure:
+        return None
+    max_speed_mps = float(spec.expected.get("max_speed_mps", 0.5))
+    return (
+        frames == spec.frame_count
+        and final_speed_mps is not None
+        and final_speed_mps <= max_speed_mps
+        and not collision_seen
+    )
+
+
 def _route_stop_trigger_m(speed_mps: float, finish_radius_m: float, decel_mps2: float = 2.0) -> float:
     """Choose an endpoint braking trigger from current speed and a conservative service deceleration."""
     if speed_mps < 0.0 or finish_radius_m < 0.0 or decel_mps2 <= 0.0:
@@ -3639,13 +3667,21 @@ def run(args: argparse.Namespace) -> None:
                 collision_seen=collision_seen, max_speed_mps=max_speed_mps,
             )
         )
+        intentional_qwen_failure_completion = _intentional_qwen_failure_completed(
+            spec,
+            frames=frames_completed,
+            final_speed_mps=final_speed,
+            collision_seen=collision_seen,
+        )
+        if intentional_qwen_failure_completion is not None:
+            completion = intentional_qwen_failure_completion
         route_contract_completion = _route_contract_completed(spec, final_route_end_distance_m)
         if route_contract_completion is not None:
             completion = completion and route_contract_completion
         gap_contract_completion = _minimum_gap_contract_completed(spec, min_gap_m)
         if gap_contract_completion is not None:
             completion = completion and gap_contract_completion
-        if qwen_enabled:
+        if qwen_enabled and intentional_qwen_failure_completion is None:
             completion = completion and qwen_ready and qwen_status == "READY"
         if qwen_scenario_monitor is not None:
             qwen_contract_report = qwen_scenario_monitor.finalize()

@@ -19,6 +19,7 @@ from integration.carla_runner import (
     _maneuver_target_visible,
     _maneuver_target_gap_s,
     _minimum_gap_contract_completed,
+    _intentional_qwen_failure_completed,
     _note_safety_feedback,
     _build_qwen_context,
     _c_safety_speed_cap_mps,
@@ -760,6 +761,23 @@ def test_front_gap_expected_value_is_a_hard_completion_contract() -> None:
     assert _minimum_gap_contract_completed(spec, 2.49) is False
     assert _minimum_gap_contract_completed(spec, 2.5) is True
     assert _minimum_gap_contract_completed(None, 10.0) is None
+
+
+def test_intentional_invalid_qwen_probe_completes_on_safe_fail_closed_stop() -> None:
+    spec = ScenarioSpec.load(
+        Path(__file__).resolve().parents[2]
+        / "scenarios" / "acceptance_suite" / "supplemental" / "system"
+        / "SYS_02_qwen_invalid_token.json"
+    )
+    assert _intentional_qwen_failure_completed(
+        spec, frames=spec.frame_count, final_speed_mps=0.0, collision_seen=False,
+    ) is True
+    assert _intentional_qwen_failure_completed(
+        spec, frames=spec.frame_count, final_speed_mps=1.0, collision_seen=False,
+    ) is False
+    assert _intentional_qwen_failure_completed(
+        None, frames=1, final_speed_mps=0.0, collision_seen=False,
+    ) is None
 
 
 def test_load_command_rejects_non_object_json_before_runtime_logging(tmp_path) -> None:
