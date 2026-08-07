@@ -1760,6 +1760,8 @@ def run(args: argparse.Namespace) -> None:
     canonical_orchestrator: PipelineOrchestrator | None = None
     canonical_bridge: CanonicalRuntimeBridge | None = None
     qwen_image_stager: QwenImageStager | None = None
+    qwen_client: QwenServiceClient | None = None
+    qwen_pre_submit_timing: dict[str, dict[str, float]] = {}
     deferred_commands: list[_DeferredCommand] = []
     traffic_light_original_state: Any | None = None
     traffic_light_original_frozen: bool | None = None
@@ -2561,6 +2563,7 @@ def run(args: argparse.Namespace) -> None:
                     sensor_startup_grace = step_index < args.sensor_startup_grace_frames
                     if not sensor_startup_grace:
                         watchdog_alerts.append(f"PERCEPTION_{type(error).__name__.upper()}")
+                perception_completed_ns = time.monotonic_ns()
 
                 if qwen_bridge is not None:
                     if not qwen_submitted and qwen_rgb_measurement is not None:
@@ -2701,6 +2704,7 @@ def run(args: argparse.Namespace) -> None:
                     )
                     if any(item.track_id for item in scene.detected_objects):
                         perception_sources["target_ids"] = "CARLA_SCENARIO_TRACK_ASSOCIATION"
+                scene_bound_ns = time.monotonic_ns()
                 if sensor_ready_ns is None:
                     raise RuntimeError("sensor-ready timestamp was not captured")
                 if canonical_bridge is not None:
@@ -2718,6 +2722,7 @@ def run(args: argparse.Namespace) -> None:
                     deferred_commands.clear()
                     slow_submitted_now = False
                     for deferred in queued_now:
+                        image_stage_started_ns = time.monotonic_ns()
                         rgb_ref = None
                         staged_command_id = str(
                             deferred.envelope.get("command_id", "")
@@ -2726,6 +2731,11 @@ def run(args: argparse.Namespace) -> None:
                             rgb_ref = qwen_image_stager.stage(
                                 staged_command_id, current_rgb, frame_id=frame,
                             )
+                        image_staged_ns = time.monotonic_ns()
+                        planner_state = _planner_runtime_state(
+                            world_map, ego, scene, route,
+                        )
+                        planner_state_ready_ns = time.monotonic_ns()
                         submission = canonical_bridge.submit(
                             deferred.envelope,
                             scene,
@@ -2735,10 +2745,27 @@ def run(args: argparse.Namespace) -> None:
                             received_at_ns=deferred.received_ns,
                             captured_at_ns=sensor_ready_ns,
                             rgb_ref=rgb_ref,
-                            runtime_state=_planner_runtime_state(
-                                world_map, ego, scene, route,
-                            ),
+                            runtime_state=planner_state,
                         )
+                        submitted_ns = time.monotonic_ns()
+                        if sensor_ready_ns is not None:
+                            qwen_pre_submit_timing[staged_command_id] = {
+                                "perception_pipeline_ms": max(
+                                    0, perception_completed_ns - sensor_ready_ns,
+                                ) / 1e6,
+                                "post_perception_binding_ms": max(
+                                    0, scene_bound_ns - perception_completed_ns,
+                                ) / 1e6,
+                                "image_stage_ms": max(
+                                    0, image_staged_ns - image_stage_started_ns,
+                                ) / 1e6,
+                                "planner_runtime_state_ms": max(
+                                    0, planner_state_ready_ns - image_staged_ns,
+                                ) / 1e6,
+                                "canonical_submit_ms": max(
+                                    0, submitted_ns - planner_state_ready_ns,
+                                ) / 1e6,
+                            }
                         slow_submitted_now = slow_submitted_now or (
                             submission.orchestration.disposition == "SLOW_PENDING"
                         )
@@ -2989,13 +3016,31 @@ def run(args: argparse.Namespace) -> None:
                                     and orchestration.model_request is not None
                                     and orchestration.model_completed_ns is not None
                                 ):
+                                    request_id = str(
+                                        orchestration.model_request["request_id"]
+                                    )
+                                    timing_breakdown = {
+                                        **qwen_pre_submit_timing.pop(
+                                            resolution.command_id, {},
+                                        ),
+                                        **dict(orchestration.model_timing or {}),
+                                        **(
+                                            {}
+                                            if qwen_client is None
+                                            else qwen_client.pop_timing(request_id) or {}
+                                        ),
+                                    }
                                     recorder.record_qwen_trajectory(
                                         command_id=resolution.command_id,
-                                        request_id=str(orchestration.model_request["request_id"]),
+                                        request_id=request_id,
                                         sensor_ready_ns=int(orchestration.model_request["created_at_ns"]),
                                         model_completed_ns=orchestration.model_completed_ns,
                                         trajectory_ready_ns=trajectory_ready_ns,
-                                        breakdown=orchestration.model_timing,
+                                        breakdown=timing_breakdown,
+                                    )
+                                else:
+                                    timing_breakdown = dict(
+                                        orchestration.model_timing or {}
                                     )
                                 print(json.dumps({
                                     "record_type": "qwen_plan_route_applied",
@@ -3010,7 +3055,7 @@ def run(args: argparse.Namespace) -> None:
                                         trajectory_ready_ns
                                         - int(orchestration.model_request["created_at_ns"])
                                     ) / 1e6,
-                                    "model_timing": orchestration.model_timing,
+                                    "model_timing": timing_breakdown,
                                 }, ensure_ascii=False), flush=True)
                             except (AttributeError, KeyError, TypeError, ValueError, RuntimeError) as error:
                                 watchdog_alerts.append("QWEN_PLAN_ROUTE_INFEASIBLE")
