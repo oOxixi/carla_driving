@@ -191,6 +191,19 @@ def test_sup_a15_places_a_real_actor_in_the_commanded_left_lane() -> None:
     assert acceptance["target_lane_occupied_min_count"] == 1
 
 
+def test_sup_a17_prevalidated_route_detours_to_physical_left() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "supplemental" / "advanced" / "SUP_A17_detour_left_construction.json")
+        .read_text(encoding="utf-8")
+    )
+    command = scenario["commands"][0]
+    lateral_offsets = [point[1] for point in scenario["route"]["points_xy_m"]]
+
+    assert command["parameters"]["direction"] == "LEFT"
+    assert min(lateral_offsets) == -3.5
+    assert max(lateral_offsets) == 0
+
+
 def test_var_c05_oracle_separates_prefault_motion_from_fail_closed_response() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "variants" / "VAR_C05_rgb_lidar_blackout.json")
