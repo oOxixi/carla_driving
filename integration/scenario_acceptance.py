@@ -114,9 +114,12 @@ def evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, obje
 
     if "expected_safety_override" in expected:
         supported.add("expected_safety_override")
-        actual = int(metrics.get("safety_override_frames", 0) or 0)
-        add("expected_safety_override", expected["expected_safety_override"] is not True or actual > 0,
-            actual, "> 0 frames", "a safety takeover must be observed")
+        actual = bool(metrics.get(
+            "safety_override_observed",
+            int(metrics.get("safety_override_frames", 0) or 0) > 0,
+        ))
+        add("expected_safety_override", expected["expected_safety_override"] is not True or actual,
+            actual, True, "a frame override or canonical safety event must be observed")
 
     if "required_real_actor_types" in expected:
         supported.add("required_real_actor_types")

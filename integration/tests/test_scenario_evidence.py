@@ -284,10 +284,25 @@ def test_feedback_safety_event_is_included_in_acceptance_reasons(tmp_path):
         },
         "terminal_reason": None,
     })
+    recorder.record_frame(
+        vehicle=_vehicle(1, 0.0),
+        scene=PerceptionFrame(
+            1, 0.05, traffic_light="RED", distance_to_stop_line_m=17.0,
+        ),
+        raw_control=ControlOutput(0.0, 0.55, 0.0),
+        final_control=ControlOutput(0.0, 0.55, 0.0),
+        safety_reason="NONE",
+        safety_override=False,
+        timing=_timing(100),
+    )
 
     summary = recorder.complete(
         completion=True,
-        expected={"expected_reason_contains": ["stop"]},
+        expected={
+            "expected_reason_contains": ["stop"],
+            "expected_safety_override": True,
+            "safety_priority_over_command": True,
+        },
     )
 
     assert "TRAFFIC_LIGHT_STOP" in summary["safety_reasons"]

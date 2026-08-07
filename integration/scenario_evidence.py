@@ -171,6 +171,7 @@ class ScenarioEvidenceRecorder:
         self._last_speed_mps: float | None = None
         self._safety_override_frames = 0
         self._safety_override_episodes = 0
+        self._feedback_safety_event_count = 0
         self._override_active = False
         self._collisions = 0
         self._red_violations = 0
@@ -511,6 +512,7 @@ class ScenarioEvidenceRecorder:
             reason_code = safety_event.get("reason_code")
             if isinstance(reason_code, str) and reason_code:
                 self._safety_reasons.add(reason_code)
+                self._feedback_safety_event_count += 1
         terminal_reason = _field(feedback, "terminal_reason")
         if status == "SAFETY_OVERRIDE" and isinstance(terminal_reason, str) and terminal_reason:
             self._safety_reasons.add(terminal_reason)
@@ -596,6 +598,7 @@ class ScenarioEvidenceRecorder:
             "unfinished_task_count": 0 if completion else 1,
             "safety_override_frames": self._safety_override_frames,
             "safety_override_episodes": self._safety_override_episodes,
+            "feedback_safety_event_count": self._feedback_safety_event_count,
             "safety_reasons": sorted(self._safety_reasons),
             "latency": {
                 "simulator_tick_avg_ms": self._average(self._frame_simulator_tick_ms),
@@ -742,6 +745,11 @@ class ScenarioEvidenceRecorder:
             "yaw_change_deg": yaw_change,
             "turn_direction": turn_direction,
             "safety_override_frames": self._safety_override_frames,
+            "safety_event_count": self._feedback_safety_event_count,
+            "safety_override_observed": (
+                self._safety_override_frames > 0
+                or self._feedback_safety_event_count > 0
+            ),
             "safety_reasons": sorted(self._safety_reasons),
             "route_deviation_event_seen": any(
                 "ROUTE_DEVIATION" in reason for reason in self._safety_reasons
@@ -762,7 +770,11 @@ class ScenarioEvidenceRecorder:
             "stop_error_m": self._stationary_stop_error_m,
             "stopped_before_stop_line": stopped_before_line,
             "safety_priority_observed": (
-                self._safety_override_frames > 0 and stopped_before_line
+                (
+                    self._safety_override_frames > 0
+                    or self._feedback_safety_event_count > 0
+                )
+                and stopped_before_line
             ),
             **dict(context),
         }
