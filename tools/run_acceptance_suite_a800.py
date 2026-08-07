@@ -128,6 +128,23 @@ def fetch_json(url: str) -> dict[str, object] | None:
         return None
 
 
+def completed_scenario_ids(roots: list[Path], valid_ids: set[str]) -> set[str]:
+    """Return suite IDs that already own a readable terminal summary."""
+    completed: set[str] = set()
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in root.rglob("*.summary.json"):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            scenario_id = payload.get("scenario_id")
+            if scenario_id in valid_ids and payload.get("status") in {"SUCCEEDED", "FAILED"}:
+                completed.add(str(scenario_id))
+    return completed
+
+
 def warm_qwen_service(
     *, project: Path, base_url: str, count: int,
 ) -> dict[str, float | int | None]:
@@ -226,6 +243,10 @@ def main() -> int:
     parser.add_argument("--carla-port", type=int, default=2000)
     parser.add_argument("--warmup-requests", type=int, default=20)
     parser.add_argument(
+        "--skip-summary-root", action="append", type=Path, default=[],
+        help="skip scenarios that already have a terminal *.summary.json below this root",
+    )
+    parser.add_argument(
         "--suite-revision",
         default="4238023+server-carla-perception-e2e",
         help="deployment revision used when the server copy has no .git directory",
@@ -237,12 +258,17 @@ def main() -> int:
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     matrix = json.loads((suite / "matrix.json").read_text(encoding="utf-8"))
-    scenarios = [
+    all_scenarios = [
         item for item in matrix["scenarios"]
         if item["runtime_support"]["status"] == "current"
     ]
-    if len(scenarios) != 84 or matrix["counts"].get("extension_required") != 0:
+    if len(all_scenarios) != 84 or matrix["counts"].get("extension_required") != 0:
         raise RuntimeError("one-shot total run requires exactly 84 current scenarios and zero extensions")
+    seen = completed_scenario_ids(
+        [path.resolve() for path in args.skip_summary_root],
+        {item["scenario_id"] for item in all_scenarios},
+    )
+    scenarios = [item for item in all_scenarios if item["scenario_id"] not in seen]
     health = fetch_json(args.qwen_service_url.rstrip("/") + "/health")
     if not health or health.get("production_ready") is not True:
         raise RuntimeError(f"production Qwen service is not ready: {health}")
@@ -259,8 +285,11 @@ def main() -> int:
         "suite_revision": revision,
         "hardware": "NVIDIA A800-SXM4-80GB",
         "cuda": "13.2",
-        "selection": "84/84 matrix runtime_support.status=current",
-        "scenario_count_expected": 84,
+        "selection": "unseen scenarios from 84/84 matrix runtime_support.status=current",
+        "matrix_scenario_count": 84,
+        "skipped_existing_scenario_count": len(seen),
+        "skipped_existing_scenario_ids": sorted(seen),
+        "scenario_count_expected": len(scenarios),
         "qwen_service_health_start": health,
         "qwen_visual_warmup": warm_qwen_service(
             project=project, base_url=args.qwen_service_url,
@@ -271,6 +300,7 @@ def main() -> int:
     records: list[dict[str, object]] = []
     env = os.environ.copy()
     env.update({"PYTHONPATH": str(project), "QWEN_API_KEY": "unused"})
+    total = len(scenarios)
     for index, item in enumerate(scenarios, 1):
         scenario_id = item["scenario_id"]
         root = output / "scenarios" / scenario_id
@@ -289,7 +319,7 @@ def main() -> int:
             "--sensor-warmup-frames", "20", "--sensor-timeout-s", "1.0",
             "--print-every", "500", "--log-dir", str(log_dir),
         ]
-        print(f"[{index:02d}/84] START {scenario_id}", flush=True)
+        print(f"[{index:02d}/{total:02d}] START {scenario_id}", flush=True)
         started = time.perf_counter()
         scenario_data = json.loads((suite / item["path"]).read_text(encoding="utf-8"))
         timeout_s = max(300.0, float(scenario_data["runtime"]["duration_s"]) + 300.0)
@@ -336,7 +366,7 @@ def main() -> int:
         records.append(record)
         write_report(output / "scenario_results.json", metadata, records)
         print(
-            f"[{index:02d}/84] END {scenario_id} status={record['status']} "
+            f"[{index:02d}/{total:02d}] END {scenario_id} status={record['status']} "
             f"wall={wall_time_s:.1f}s",
             flush=True,
         )

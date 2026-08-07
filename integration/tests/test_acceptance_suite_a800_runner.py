@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from tools.run_acceptance_suite_a800 import parse_run, warm_qwen_service
+from tools.run_acceptance_suite_a800 import completed_scenario_ids, parse_run, warm_qwen_service
 
 
 def test_parse_run_reads_frame_latency_field(tmp_path) -> None:
@@ -72,3 +72,20 @@ def test_parse_run_reports_missing_alignment_as_unmeasured(tmp_path) -> None:
     )
 
     assert parse_run(tmp_path, "")["alignment_passed"] is None
+
+
+def test_completed_scenario_ids_only_accepts_terminal_suite_summaries(tmp_path) -> None:
+    (tmp_path / "good.summary.json").write_text(
+        json.dumps({"scenario_id": "A", "status": "SUCCEEDED"}), encoding="utf-8",
+    )
+    (tmp_path / "failed.summary.json").write_text(
+        json.dumps({"scenario_id": "B", "status": "FAILED"}), encoding="utf-8",
+    )
+    (tmp_path / "partial.summary.json").write_text(
+        json.dumps({"scenario_id": "C", "status": "RUNNING"}), encoding="utf-8",
+    )
+    (tmp_path / "foreign.summary.json").write_text(
+        json.dumps({"scenario_id": "OTHER", "status": "SUCCEEDED"}), encoding="utf-8",
+    )
+
+    assert completed_scenario_ids([tmp_path], {"A", "B", "C"}) == {"A", "B"}
