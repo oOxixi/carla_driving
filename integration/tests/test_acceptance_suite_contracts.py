@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from integration.scenario_acceptance import evaluate_expected
 from integration.scenario_execution import ScenarioSpec
 
@@ -191,9 +193,13 @@ def test_sup_a15_places_a_real_actor_in_the_commanded_left_lane() -> None:
     assert acceptance["target_lane_occupied_min_count"] == 1
 
 
-def test_sup_a17_prevalidated_route_detours_to_physical_left() -> None:
+@pytest.mark.parametrize("filename", [
+    "SUP_A17_detour_left_construction.json",
+    "SUP_A18_detour_return_original_lane.json",
+])
+def test_prevalidated_left_detour_routes_use_physical_left(filename: str) -> None:
     scenario = json.loads(
-        (SUITE_ROOT / "supplemental" / "advanced" / "SUP_A17_detour_left_construction.json")
+        (SUITE_ROOT / "supplemental" / "advanced" / filename)
         .read_text(encoding="utf-8")
     )
     command = scenario["commands"][0]
