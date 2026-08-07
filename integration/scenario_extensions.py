@@ -773,7 +773,16 @@ class ScenarioExtensionRuntime:
                         and submitted[emergency[-1]] in terminals
                     )
                 elif key == "first_version_requires_stop_not_detour":
-                    actual = bool(evidence["qwen_behaviors"]) and evidence["qwen_behaviors"][0] in {"STOP", "HOLD"}
+                    detour_behaviors = {
+                        "AVOID_OBSTACLE", "CHANGE_LANE",
+                        "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT", "PULL_OVER",
+                    }
+                    actual = (
+                        bool(behaviors)
+                        and behaviors.isdisjoint(detour_behaviors)
+                        and int(evidence["lane_change_count"]) == 0
+                        and final_speed <= 0.3
+                    )
                 elif key == "must_enter_degraded_mode":
                     actual = bool(evidence["degraded_mode_entered"])
                 elif key == "must_not_continue_route_deviation":

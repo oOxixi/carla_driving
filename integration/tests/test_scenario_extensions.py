@@ -395,6 +395,27 @@ def test_pedestrian_trigger_actor_is_trigger_evidence_not_qwen_target() -> None:
     assert result["passed"] is True
 
 
+def test_stop_not_detour_contract_accepts_qwen_slow_then_safety_stop() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_qwen_plan({"steps": [{"behavior": "SLOW_DOWN"}]})
+    runtime.note_control_observation(
+        elapsed_s=8.7,
+        speed_mps=0.0,
+        route_progress_m=24.0,
+        brake=1.0,
+        safety_override=True,
+        safety_reason="EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE",
+        route_deviation_m=0.0,
+    )
+
+    result = runtime.evaluate(
+        {"first_version_requires_stop_not_detour": True},
+        expected_command_count=1,
+    )
+
+    assert result["passed"] is True
+
+
 def test_current_plan_index_tracks_the_applied_command_not_submission_count() -> None:
     runtime = ScenarioExtensionRuntime({})
     runtime.note_command_submitted({"command_id": "delayed", "intent": "SET_SPEED"}, qwen=True)

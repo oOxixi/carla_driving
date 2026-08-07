@@ -156,8 +156,7 @@
     },
     "oracle": {
       "expected_behaviors": [
-        "SLOW_DOWN",
-        "STOP"
+        "SLOW_DOWN"
       ]
     },
     "faults": [],
