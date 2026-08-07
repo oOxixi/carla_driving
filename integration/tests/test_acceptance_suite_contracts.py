@@ -327,6 +327,23 @@ def test_sup_c12_uses_reachable_large_deviation_stop_threshold() -> None:
     assert proposed["max_fault_response_s"] <= 1.5
 
 
+def test_sys03_releases_single_worker_before_replacement_command() -> None:
+    scenario = json.loads(
+        (
+            SUITE_ROOT / "supplemental" / "system"
+            / "SYS_03_qwen_stale_result.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    delay = scenario["extensions"]["faults"][0]["delay_ms"]
+    assert 300 < delay < scenario["commands"][1]["time_s"] * 1000
+    proposed = scenario["extensions"]["proposed_acceptance"]
+    assert proposed["qwen_timeout_count"] == 1
+    assert proposed["qwen_stale_result_applied_count"] == 0
+    assert proposed["current_plan_command_index"] == 1
+    assert scenario["extensions"]["oracle"]["expected_behaviors"] == ["STOP"]
+
+
 def test_cx05_keep_lane_route_and_recovery_contract_are_consistent() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "complex" / "CX05_sensor_dropout_route_recovery.json")

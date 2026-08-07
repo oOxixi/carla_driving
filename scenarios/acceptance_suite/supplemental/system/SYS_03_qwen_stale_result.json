@@ -3,7 +3,7 @@
   "scenario_id": "SYS_03_qwen_stale_result",
   "category": "regression",
   "official_level": "challenge",
-  "description": "命令 B 抢占命令 A 后，A 的迟到结果必须标记 STALE。",
+  "description": "命令 A 超时后迟到结果不得应用，命令 B 必须成为当前计划。",
   "tags": [
     "acceptance_suite",
     "p3",
@@ -135,7 +135,6 @@
     },
     "oracle": {
       "expected_behaviors": [
-        "SET_SPEED",
         "STOP"
       ]
     },
@@ -149,11 +148,12 @@
         },
         "duration_s": 6,
         "command_index": 0,
-        "delay_ms": 4000
+        "delay_ms": 450
       }
     ],
     "proposed_acceptance": {
       "qwen_stale_result_applied_count": 0,
+      "qwen_timeout_count": 1,
       "current_plan_command_index": 1
     },
     "runtime_support": {
