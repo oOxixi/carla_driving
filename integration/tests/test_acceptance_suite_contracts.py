@@ -312,6 +312,21 @@ def test_sup_c10_scopes_safety_stop_to_blackout_window() -> None:
     assert "KEEP_LANE" in scenario["extensions"]["oracle"]["expected_behaviors"]
 
 
+def test_sup_c12_uses_reachable_large_deviation_stop_threshold() -> None:
+    scenario = json.loads(
+        (
+            SUITE_ROOT / "supplemental" / "challenge"
+            / "SUP_C12_large_deviation_stop.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert scenario["expected"]["route_deviation_trigger_m"] == 1.0
+    proposed = scenario["extensions"]["proposed_acceptance"]
+    assert proposed["must_stop_if_recovery_fails"] is True
+    assert proposed["must_not_continue_route_deviation"] is True
+    assert proposed["max_fault_response_s"] <= 1.5
+
+
 def test_cx05_keep_lane_route_and_recovery_contract_are_consistent() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "complex" / "CX05_sensor_dropout_route_recovery.json")

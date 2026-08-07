@@ -1402,10 +1402,12 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         faults=[fault("large_steer_bias", "steer_bias", 7, 1.2, value=0.30)],
         duration_s=35, seed=442,
         expected={"max_allowed_cross_track_error_m": 3.5,
-                  "expected_safety_override_allowed": True, "must_generate_event": True},
+                  "expected_safety_override_allowed": True, "must_generate_event": True,
+                  "route_deviation_trigger_m": 1.0},
         oracle_behaviors=["KEEP_LANE", "SLOW_DOWN", "STOP"],
         proposed_acceptance={"must_stop_if_recovery_fails": True,
-                             "must_not_continue_route_deviation": True},
+                             "must_not_continue_route_deviation": True,
+                             "max_fault_response_s": 1.5},
         extension_requirements=["all_voice_qwen", "fault_injection", "fault_recovery_acceptance"],
     ))
 
