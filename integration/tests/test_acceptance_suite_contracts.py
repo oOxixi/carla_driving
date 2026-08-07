@@ -272,6 +272,31 @@ def test_sup_c03_vague_slow_allows_safe_hold_and_requires_confirmation() -> None
     assert "HOLD" in scenario["extensions"]["oracle"]["expected_behaviors"]
 
 
+def test_sup_c08_exercises_stale_rejection_then_fresh_rebind() -> None:
+    scenario = json.loads(
+        (
+            SUITE_ROOT / "supplemental" / "challenge"
+            / "SUP_C08_target_occluded_stale_rejection.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert len(scenario["commands"]) == 3
+    assert scenario["commands"][0]["time_s"] >= 1
+    assert scenario["commands"][-1]["time_s"] > 13
+    delay_fault = next(
+        item for item in scenario["extensions"]["faults"]
+        if item["type"] == "qwen_response_delay"
+    )
+    assert delay_fault["trigger"]["time_s"] == 12
+    assert delay_fault["delay_ms"] > 300
+    proposed = scenario["extensions"]["proposed_acceptance"]
+    assert proposed["qwen_stale_result_applied_count"] == 0
+    assert proposed["rebind_requires_fresh_perception"] is True
+    assert proposed["post_recovery_command_succeeds"] is True
+    assert proposed["target_binding_correct"] is True
+    assert "STOP" in scenario["extensions"]["oracle"]["expected_behaviors"]
+
+
 def test_cx05_keep_lane_route_and_recovery_contract_are_consistent() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "complex" / "CX05_sensor_dropout_route_recovery.json")

@@ -321,6 +321,8 @@ def test_generic_lidar_obstacle_binds_nearest_geometric_scenario_actor() -> None
     )
 
     assert bound.detected_objects[0].track_id == "lead-car"
+    assert bound.detected_objects[0].class_id == 2
+    assert bound.detected_objects[0].class_name == "car"
 
 
 def test_scenario_facts_can_override_or_only_fill_missing_perception() -> None:

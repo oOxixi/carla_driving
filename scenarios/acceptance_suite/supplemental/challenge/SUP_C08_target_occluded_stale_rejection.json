@@ -3,7 +3,7 @@
   "scenario_id": "SUP_C08_target_occluded_stale_rejection",
   "category": "regression",
   "official_level": "challenge",
-  "description": "目标短时遮挡时拒绝陈旧 Qwen 结果，重新感知后再绑定。",
+  "description": "目标短时遮挡时拒绝超时或陈旧 Qwen 结果，恢复感知后安全决策并确保跟随目标绑定正确。",
   "tags": [
     "acceptance_suite",
     "p1",
@@ -53,7 +53,7 @@
   },
   "commands": [
     {
-      "time_s": 0,
+      "time_s": 1,
       "source_text": "跟随正前方车辆",
       "intent": "KEEP_LANE",
       "parameters": {
@@ -68,6 +68,17 @@
       "source_text": "目标看不清时先保持安全",
       "intent": "HOLD",
       "parameters": {},
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    },
+    {
+      "time_s": 14,
+      "source_text": "重新看清正前方车辆后继续跟随",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 15
+      },
       "intent_confidence": 0.95,
       "status": "valid",
       "confirm_required": false
@@ -168,7 +179,6 @@
     "oracle": {
       "expected_behaviors": [
         "FOLLOW",
-        "HOLD",
         "STOP"
       ],
       "expected_target_actor_id": "target_front"
@@ -184,11 +194,24 @@
         "duration_s": 5,
         "actor_id": "target_front",
         "visible": false
+      },
+      {
+        "fault_id": "stale_qwen_during_occlusion",
+        "type": "qwen_response_delay",
+        "trigger": {
+          "type": "time",
+          "time_s": 12
+        },
+        "duration_s": 1,
+        "delay_ms": 350
       }
     ],
     "proposed_acceptance": {
       "qwen_stale_result_applied_count": 0,
-      "rebind_requires_fresh_perception": true
+      "rebind_requires_fresh_perception": true,
+      "must_recover_after_fault": true,
+      "post_recovery_command_succeeds": true,
+      "target_binding_correct": true
     },
     "runtime_support": {
       "status": "current",
@@ -198,7 +221,9 @@
         "multi_command_qwen",
         "fault_injection",
         "qwen_target_binding",
-        "stale_result_acceptance"
+        "stale_result_acceptance",
+        "qwen_stale_result_injection",
+        "fault_recovery_acceptance"
       ]
     }
   },

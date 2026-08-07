@@ -551,8 +551,21 @@ class VllmQwenPlannerBackend:
                 item for item in targets
                 if str(item.get("relation", "")).lower() in preferred_relations
             ]
-            selected = candidates[0] if candidates else targets[0]
-            target_id = selected["target_id"]
+            if behavior == "FOLLOW":
+                typed_targets = [
+                    item for item in candidates
+                    if str(item.get("class", "")).lower() in {
+                        "vehicle", "car", "truck", "bus", "cyclist",
+                    }
+                ]
+                has_class_metadata = any(
+                    str(item.get("class", "")).strip() for item in targets
+                )
+                candidates = typed_targets if has_class_metadata else candidates
+            if candidates:
+                target_id = candidates[0]["target_id"]
+            elif behavior != "FOLLOW":
+                target_id = targets[0]["target_id"]
         lane = "CURRENT"
         direction = None
         if behavior.endswith("_LEFT"):

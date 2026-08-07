@@ -352,6 +352,27 @@ def test_vllm_follow_binds_center_ahead_not_nearest_distractor() -> None:
     assert step["completion"]["value"] == 2.0
 
 
+def test_vllm_follow_prefers_vehicle_over_nearer_center_obstacle() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "跟随正前方车辆"
+    request["scene_capabilities"] = {}
+    request["targets"] = [
+        {
+            "target_id": "temporary_occluder", "class": "obstacle",
+            "distance_m": 22.0, "relation": "center_ahead",
+        },
+        {
+            "target_id": "target_front", "class": "vehicle",
+            "distance_m": 28.0, "relation": "center_ahead",
+        },
+    ]
+
+    step = backend._step(request, "FOLLOW", index=1)
+
+    assert step["target"]["target_id"] == "target_front"
+
+
 def test_vllm_visual_slow_down_binds_target_and_reduces_hinted_speed() -> None:
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
     request = _request()

@@ -809,7 +809,8 @@ class ScenarioExtensionRuntime:
                     )
                 elif key == "rebind_requires_fresh_perception":
                     actual = int(evidence["qwen_stale_result_applied_count"]) == 0 and any(
-                        "STALE" in item for item in resolution_reasons
+                        "STALE" in item or "TIMEOUT" in item
+                        for item in resolution_reasons
                     )
                 elif key == "unsafe_qwen_result_must_be_overridden":
                     actual = bool(reasons) and final_speed <= 0.3

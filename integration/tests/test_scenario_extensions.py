@@ -128,6 +128,19 @@ def test_allowed_outcomes_rejects_set_speed_above_scenario_limit() -> None:
     assert result["checks"][0]["actual"] == ["SET_SPEED"]
 
 
+def test_timeout_is_accepted_as_a_discarded_stale_rebind_result() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_qwen_resolution(
+        disposition="REJECTED", reason_code="QWEN_TIMEOUT", applied=False,
+    )
+
+    result = runtime.evaluate(
+        {"rebind_requires_fresh_perception": True}, expected_command_count=1,
+    )
+
+    assert result["passed"] is True
+
+
 def test_oracle_checks_observed_behavior_and_target_binding() -> None:
     runtime = ScenarioExtensionRuntime({})
     runtime.note_qwen_plan({

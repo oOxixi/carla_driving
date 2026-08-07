@@ -654,7 +654,7 @@ def _bind_scenario_actor_ids(
         x1, _y1, x2, _y2 = detection.bbox_xyxy_norm
         detection_center_x = (x1 + x2) / 2.0
         distance_scale = max(4.0, float(detection.distance_m or 20.0))
-        distance, projected_x, actor_id, _family = min(
+        distance, projected_x, actor_id, actor_family = min(
             choices,
             key=lambda item: (
                 abs(item[1] - detection_center_x)
@@ -673,7 +673,12 @@ def _bind_scenario_actor_ids(
             bound.append(detection)
             continue
         used.add(actor_id)
-        bound.append(replace(detection, track_id=actor_id))
+        semantic_updates: dict[str, object] = {"track_id": actor_id}
+        if actor_family == "vehicle":
+            semantic_updates.update(class_id=2, class_name="car")
+        elif actor_family == "pedestrian":
+            semantic_updates.update(class_id=0, class_name="person")
+        bound.append(replace(detection, **semantic_updates))
     return replace(scene, detected_objects=tuple(bound))
 
 
