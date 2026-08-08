@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "status": "STOPPED_BY_USER_AFTER_SUFFICIENT_SAMPLE",
+  "created_at_utc": "2026-08-07T20:10:54.003043+00:00",
+  "completed_scenarios": 29,
+  "succeeded_scenarios": 29,
+  "scenario_accuracy_percent": 100.0,
+  "multimodal_semantic_alignment": {
+    "unit": "scenario",
+    "count": 29,
+    "correct": 29,
+    "accuracy_percent": 100.0
+  },
+  "sensor_to_trajectory_ms": {
+    "count": 34,
+    "mean": 110.15211773529413,
+    "p50": 108.884306,
+    "p95": 131.597837,
+    "max": 132.954643,
+    "over_150": 0
+  },
+  "first_50_sensor_to_trajectory_ms": {
+    "count": 34,
+    "mean": 110.15211773529413,
+    "p50": 108.884306,
+    "p95": 131.597837,
+    "max": 132.954643,
+    "over_150": 0
+  },
+  "breakdown": {
+    "client_http_roundtrip_ms": {
+      "count": 34,
+      "mean": 99.18612405882354,
+      "p50": 97.798535,
+      "p95": 117.36617,
+      "max": 119.908365,
+      "over_150": 0
+    },
+    "client_image_transform_ms": {
+      "count": 34,
+      "mean": 3.4914005294117647,
+      "p50": 3.539716,
+      "p95": 4.084557,
+      "max": 4.517944,
+      "over_150": 0
+    },
+    "queue_wait_ms": {
+      "count": 34,
+      "mean": 0.5862132647058823,
+      "p50": 0.422278,
+      "p95": 1.327635,
+      "max": 2.151035,
+      "over_150": 0
+    },
+    "validate_compile_ms": {
+      "count": 34,
+      "mean": 0.6257016764705883,
+      "p50": 0.613411,
+      "p95": 0.72378,
+      "max": 0.809303,
+      "over_150": 0
+    },
+    "sensor_to_submit_ms": {
+      "count": 34,
+      "mean": 4.435203588235294,
+      "p50": 4.323175,
+      "p95": 5.657905,
+      "max": 6.856588,
+      "over_150": 0
+    }
+  },
+  "pre_optimization_baseline": "baseline_first50_summary.json",
+  "note": "Scenario 30 was interrupted and is excluded from terminal scenario counts."
+}
