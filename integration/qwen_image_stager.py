@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 import hashlib
+import io
 from pathlib import Path, PurePosixPath
 from threading import Lock
 from typing import Any
@@ -13,11 +14,23 @@ from .rgb_detector import carla_rgb_array
 
 class QwenImageStager:
     def __init__(self, image_root: str | Path, *, ref_prefix: str = "artifacts/qwen_live") -> None:
+        try:
+            from PIL import Image, ImageOps
+        except ImportError as error:  # pragma: no cover - deployment dependency
+            raise RuntimeError("Pillow is required to stage Qwen RGB images") from error
         self.image_root = Path(image_root).expanduser().resolve()
         prefix = PurePosixPath(str(ref_prefix).replace("\\", "/"))
         if prefix.is_absolute() or ".." in prefix.parts:
             raise ValueError("ref_prefix must be a safe relative path")
         self.ref_prefix = prefix
+        # Import and initialize Pillow before the first measured request.  The
+        # acceptance suite starts one process per scenario; leaving this import
+        # on the request path adds an otherwise repeatable ~18 ms cold start.
+        self._image_module = Image
+        self._image_ops = ImageOps
+        Image.init()
+        jpeg_probe = io.BytesIO()
+        Image.new("RGB", (1, 1)).save(jpeg_probe, format="JPEG", quality=75)
         self._lock = Lock()
         self._captures: dict[str, tuple[Any, str]] = {}
 
@@ -49,12 +62,26 @@ class QwenImageStager:
         except ValueError as error:
             raise ValueError("staged Qwen image escapes image_root") from error
         target.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            from PIL import Image, ImageOps
-        except ImportError as error:  # pragma: no cover - deployment dependency
-            raise RuntimeError("Pillow is required to stage Qwen RGB images") from error
+        Image = self._image_module
+        ImageOps = self._image_ops
+        raw = getattr(measurement, "raw_data", None)
+        width = getattr(measurement, "width", None)
+        height = getattr(measurement, "height", None)
+        if (
+            raw is not None
+            and type(width) is int and width > 0
+            and type(height) is int and height > 0
+        ):
+            # Decode CARLA's native BGRA buffer directly.  Building a full-size
+            # RGB NumPy copy first costs several milliseconds and carries no
+            # information into the fixed 224 px model input.
+            image = Image.frombuffer(
+                "RGBA", (width, height), raw, "raw", "BGRA", 0, 1,
+            ).convert("RGB")
+        else:
+            image = Image.fromarray(carla_rgb_array(measurement), mode="RGB")
         image = ImageOps.pad(
-            Image.fromarray(carla_rgb_array(measurement), mode="RGB"),
+            image,
             (224, 224),
             # The model receives only a 224 px / 64-token visual budget.  A
             # bilinear downsample preserves that information while avoiding

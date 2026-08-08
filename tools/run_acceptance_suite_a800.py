@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run all 84 current acceptance scenarios once on the prepared A800 host."""
+"""Run all 83 scored acceptance scenarios once on the prepared A800 host."""
 from __future__ import annotations
 
 import argparse
@@ -244,10 +244,10 @@ def write_report(path: Path, metadata: dict[str, object], records: list[dict[str
         for record in records
         for value in record.get("raw_sensor_to_trajectory_ms", [])
     ]
-    alignment_samples = [
-        record.get("alignment_passed") for record in records
-        if record.get("alignment_passed") is not None
-    ]
+    # Every finished scored scenario belongs in the denominator. Missing
+    # alignment evidence is a failed measurement, never a reason to shrink the
+    # denominator and inflate accuracy.
+    alignment_samples = [record.get("alignment_passed") for record in records]
     alignment_correct = sum(value is True for value in alignment_samples)
     report = {
         **metadata,
@@ -284,6 +284,10 @@ def main() -> int:
     parser.add_argument("--python", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--qwen-service-url", default="http://127.0.0.1:8765")
+    parser.add_argument(
+        "--qwen-image-root", type=Path,
+        help="shared Qwen image root; use a tmpfs such as /dev/shm to avoid per-process cold disk writes",
+    )
     parser.add_argument("--carla-host", default="127.0.0.1")
     parser.add_argument("--carla-port", type=int, default=2000)
     parser.add_argument("--warmup-requests", type=int, default=20)
@@ -300,6 +304,10 @@ def main() -> int:
         help="exclude a scenario from a diagnostic/resume run without marking it complete",
     )
     parser.add_argument(
+        "--include-scenario-id", action="append", default=[],
+        help="run only these scenario IDs for a targeted diagnostic rerun",
+    )
+    parser.add_argument(
         "--suite-revision",
         default="4238023+server-carla-perception-e2e",
         help="deployment revision used when the server copy has no .git directory",
@@ -307,6 +315,10 @@ def main() -> int:
     args = parser.parse_args()
 
     project = args.project.resolve()
+    qwen_image_root = (
+        project if args.qwen_image_root is None else args.qwen_image_root.resolve()
+    )
+    qwen_image_root.mkdir(parents=True, exist_ok=True)
     suite = project / "scenarios" / "acceptance_suite"
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -315,16 +327,26 @@ def main() -> int:
         item for item in matrix["scenarios"]
         if item["runtime_support"]["status"] == "current"
     ]
-    if len(all_scenarios) != 84 or matrix["counts"].get("extension_required") != 0:
-        raise RuntimeError("one-shot total run requires exactly 84 current scenarios and zero extensions")
+    expected_total = 83
+    if len(all_scenarios) != expected_total or matrix["counts"].get("extension_required") != 0:
+        raise RuntimeError(
+            f"one-shot total run requires exactly {expected_total} current scenarios and zero extensions"
+        )
     seen = completed_scenario_ids(
         [path.resolve() for path in args.skip_summary_root],
         {item["scenario_id"] for item in all_scenarios},
     )
     excluded = set(args.exclude_scenario_id)
+    included = set(args.include_scenario_id)
+    known_ids = {item["scenario_id"] for item in all_scenarios}
+    unknown_included = included - known_ids
+    if unknown_included:
+        raise ValueError(f"unknown included scenario IDs: {sorted(unknown_included)}")
     scenarios = [
         item for item in all_scenarios
-        if item["scenario_id"] not in seen and item["scenario_id"] not in excluded
+        if item["scenario_id"] not in seen
+        and item["scenario_id"] not in excluded
+        and (not included or item["scenario_id"] in included)
     ]
     health = fetch_json(args.qwen_service_url.rstrip("/") + "/health")
     if not health or health.get("production_ready") is not True:
@@ -342,16 +364,20 @@ def main() -> int:
         "suite_revision": revision,
         "hardware": "NVIDIA A800-SXM4-80GB",
         "cuda": "13.2",
-        "selection": "unseen scenarios from 84/84 matrix runtime_support.status=current",
-        "matrix_scenario_count": 84,
+        "selection": (
+            "targeted diagnostic subset" if included
+            else "all 83 scored scenarios with runtime_support.status=current; long stability excluded"
+        ),
+        "matrix_scenario_count": expected_total,
         "skipped_existing_scenario_count": len(seen),
         "skipped_existing_scenario_ids": sorted(seen),
         "scenario_count_expected": len(scenarios),
         "qwen_service_health_start": health,
         "qwen_visual_warmup": warm_qwen_service(
-            project=project, base_url=args.qwen_service_url,
+            project=qwen_image_root, base_url=args.qwen_service_url,
             count=args.warmup_requests,
         ),
+        "qwen_image_root": str(qwen_image_root),
         "official_measurement_window": "first 50 successful sensor-to-trajectory samples",
     }
     records: list[dict[str, object]] = []
@@ -371,7 +397,7 @@ def main() -> int:
             "--sensor-profile", "low", "--realtime",
             "--qwen-service-url", args.qwen_service_url,
             "--qwen-mode", "planner_v2", "--qwen-timeout-ms", "300",
-            "--qwen-queue-size", "8", "--qwen-image-root", str(project),
+            "--qwen-queue-size", "8", "--qwen-image-root", str(qwen_image_root),
             "--qwen-image-prefix", f"artifacts/acceptance84/qwen_images/{scenario_id}",
             "--sensor-warmup-frames", "20", "--sensor-timeout-s", "1.0",
             "--print-every", "500", "--log-dir", str(log_dir),

@@ -60,6 +60,7 @@ class StaticSenseVoiceExport(nn.Module):
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL)
+    parser.add_argument("--lora-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--frames", type=int, default=51)
@@ -76,6 +77,19 @@ def main() -> int:
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     auto_model = AutoModel(model=str(args.model), device=args.device, disable_update=True)
+    if args.lora_dir is not None:
+        if not args.lora_dir.is_dir():
+            raise FileNotFoundError(f"LoRA directory not found: {args.lora_dir}")
+        from peft import PeftModel
+        from peft.tuners.lora import awq as peft_lora_awq
+        from peft.tuners.lora import model as peft_lora_model
+
+        # SenseVoice is not quantized.  Ignore unrelated GPTQ/AWQ packages
+        # inherited from a shared Qwen deployment environment.
+        peft_lora_model.is_gptqmodel_available = lambda: False
+        peft_lora_awq.is_gptqmodel_available = lambda: False
+        peft_model = PeftModel.from_pretrained(auto_model.model, str(args.lora_dir))
+        auto_model.model = peft_model.merge_and_unload().to(args.device)
     export_model = auto_model.model.export(device=args.device, max_seq_len=512)
     export_model = export_model.to(device=args.device)
     export_model.eval()

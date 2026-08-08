@@ -3,14 +3,15 @@ from tools.build_basic_track_scorecard import build_scorecard
 
 def test_scorecard_requires_all_four_promotion_metrics_and_parse_latency() -> None:
     carla = {
-        "scenario_count_expected": 84,
-        "scenario_count_finished": 84,
+        "scenario_count_expected": 83,
+        "scenario_count_finished": 83,
         "scenario_accuracy_percent": 92.0,
-        "multimodal_semantic_alignment": {"accuracy_percent": 99.0, "count": 84},
+        "multimodal_semantic_alignment": {"accuracy_percent": 99.0, "count": 83},
         "official_first_50_sensor_to_trajectory_ms": {"p95": 140.0, "count": 50},
     }
     voice = {"overall": {
         "asr_character_accuracy": 0.96,
+        "intent_accuracy": 0.97,
         "latency": {"nlu_ms": {"p95_ms": 12.0}},
     }}
     result = build_scorecard(carla, voice)
@@ -26,7 +27,7 @@ def test_scorecard_does_not_treat_missing_evidence_as_pass() -> None:
 
 def test_scorecard_rejects_partial_run_even_when_observed_values_pass() -> None:
     carla = {
-        "scenario_count_expected": 84,
+        "scenario_count_expected": 83,
         "scenario_count_finished": 1,
         "scenario_accuracy_percent": 100.0,
         "multimodal_semantic_alignment": {"accuracy_percent": 100.0, "count": 1},
@@ -34,6 +35,7 @@ def test_scorecard_rejects_partial_run_even_when_observed_values_pass() -> None:
     }
     voice = {"overall": {
         "asr_character_accuracy": 1.0,
+        "intent_accuracy": 1.0,
         "latency": {"nlu_ms": {"p95_ms": 10.0}},
     }}
     result = build_scorecard(carla, voice)
@@ -41,3 +43,25 @@ def test_scorecard_rejects_partial_run_even_when_observed_values_pass() -> None:
     assert result["gates"]["scenario_task_completion_ge_90"] is False
     assert result["gates"]["multimodal_alignment_ge_98"] is False
     assert result["gates"]["sensor_to_trajectory_p95_le_150_ms"] is False
+
+
+def test_scorecard_uses_organizer_semantic_definition_for_voice_gate() -> None:
+    carla = {
+        "scenario_count_expected": 83,
+        "scenario_count_finished": 83,
+        "scenario_accuracy_percent": 100.0,
+        "multimodal_semantic_alignment": {"accuracy_percent": 100.0, "count": 83},
+        "official_first_50_sensor_to_trajectory_ms": {"p95": 100.0, "count": 50},
+    }
+    voice = {"overall": {
+        "asr_character_accuracy": 0.99,
+        "intent_accuracy": 0.94,
+        "latency": {"nlu_ms": {"p95_ms": 10.0}},
+    }}
+
+    result = build_scorecard(carla, voice)
+
+    assert result["metrics"]["asr_character_accuracy_percent"] == 99.0
+    assert result["metrics"]["voice_semantic_accuracy_percent"] == 94.0
+    assert result["gates"]["voice_semantic_accuracy_ge_95"] is False
+    assert result["promotion_ready"] is False

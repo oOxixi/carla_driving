@@ -7,6 +7,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
+import socket
 from typing import Any
 
 from .service import (
@@ -22,6 +23,10 @@ from .service import (
 )
 
 
+def _configure_low_latency_socket(connection: Any) -> None:
+    connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+
 class QwenHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
 
@@ -33,6 +38,13 @@ class QwenHTTPServer(ThreadingHTTPServer):
 class QwenRequestHandler(BaseHTTPRequestHandler):
     server: QwenHTTPServer
     protocol_version = "HTTP/1.1"
+
+    def setup(self) -> None:
+        super().setup()
+        # Headers and the small JSON body are separate writes.  Without
+        # TCP_NODELAY Linux may hold the body for a delayed ACK (~40 ms), which
+        # is material inside the 150 ms sensor-to-trajectory budget.
+        _configure_low_latency_socket(self.connection)
 
     def do_GET(self) -> None:  # noqa: N802 - stdlib handler API
         if self.path == "/health":

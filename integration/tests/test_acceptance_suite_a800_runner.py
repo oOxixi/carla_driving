@@ -109,6 +109,38 @@ def test_parse_run_reports_missing_alignment_as_unmeasured(tmp_path) -> None:
     assert parse_run(tmp_path, "")["alignment_passed"] is None
 
 
+def test_suite_report_counts_missing_alignment_evidence_as_incorrect(tmp_path) -> None:
+    output = tmp_path / "report.json"
+    records = [
+        {
+            "scenario_id": "A",
+            "status": "SUCCEEDED",
+            "alignment_passed": True,
+            "wall_time_s": 1.0,
+            "raw_sensor_to_control_ms": [],
+            "raw_sensor_to_trajectory_ms": [],
+        },
+        {
+            "scenario_id": "B",
+            "status": "SUCCEEDED",
+            "alignment_passed": None,
+            "wall_time_s": 1.0,
+            "raw_sensor_to_control_ms": [],
+            "raw_sensor_to_trajectory_ms": [],
+        },
+    ]
+
+    runner.write_report(output, {"scenario_count_expected": 2}, records)
+    report = json.loads(output.read_text(encoding="utf-8"))
+
+    assert report["multimodal_semantic_alignment"] == {
+        "unit": "scenario",
+        "count": 2,
+        "correct": 1,
+        "accuracy_percent": 50.0,
+    }
+
+
 def test_completed_scenario_ids_only_accepts_terminal_suite_summaries(tmp_path) -> None:
     (tmp_path / "good.summary.json").write_text(
         json.dumps({"scenario_id": "A", "status": "SUCCEEDED"}), encoding="utf-8",

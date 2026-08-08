@@ -88,11 +88,21 @@ class ASR:
         if use_lora:
             try:
                 from peft import PeftModel
+                from peft.tuners.lora import model as peft_lora_model
+                from peft.tuners.lora import awq as peft_lora_awq
             except ImportError as error:
                 raise RuntimeError(
                     "peft is required when VOICE_USE_LORA=1; set VOICE_USE_LORA=0 "
                     "to run the base SenseVoice model in environments without peft"
                 ) from error
+            # This process can share a Python installation with the quantized
+            # Qwen service.  PEFT otherwise probes an unrelated GPTQModel/AWQ
+            # installation and imports quantizer internals even though
+            # SenseVoice is a regular fp32 model.  GPTQ dispatch is both
+            # unnecessary here and version-fragile, so disable only that
+            # optional dispatcher before injecting the ASR adapter.
+            peft_lora_model.is_gptqmodel_available = lambda: False
+            peft_lora_awq.is_gptqmodel_available = lambda: False
             lora_path = Path(lora_dir)
             if not lora_path.is_dir():
                 raise FileNotFoundError(f"local LoRA directory not found: {lora_path}")

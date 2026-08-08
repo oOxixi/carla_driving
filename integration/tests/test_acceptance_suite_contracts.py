@@ -17,9 +17,9 @@ def _scenario_files() -> list[Path]:
     return sorted(path for path in SUITE_ROOT.rglob("*.json") if path.name != "matrix.json")
 
 
-def test_acceptance_suite_has_exactly_84_loadable_scenarios() -> None:
+def test_acceptance_suite_has_exactly_83_loadable_scenarios() -> None:
     files = _scenario_files()
-    assert len(files) == 84
+    assert len(files) == 83
     ids: set[str] = set()
     for path in files:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -33,18 +33,20 @@ def test_acceptance_suite_has_exactly_84_loadable_scenarios() -> None:
         ids.add(spec.scenario_id)
     assert "CX_MAIN_01_safe_urban_mission" in ids
     assert "CX06_multi_command_full_trip" not in ids
+    assert "STB01_60min_mixed_cycle" not in ids
+    assert max(ScenarioSpec.load(path).duration_s for path in files) < 3600
 
 
 def test_acceptance_matrix_matches_files_and_required_counts() -> None:
     matrix = json.loads((SUITE_ROOT / "matrix.json").read_text(encoding="utf-8"))
     entries = matrix["scenarios"]
     counts = matrix["counts"]
-    assert counts["total"] == 84
+    assert counts["total"] == 83
     assert {key: counts[key] for key in ("P0", "P1", "P2", "P3")} == {
         "P0": 18,
         "P1": 54,
         "P2": 6,
-        "P3": 6,
+        "P3": 5,
     }
     assert {
         key: counts[key]
@@ -57,9 +59,9 @@ def test_acceptance_matrix_matches_files_and_required_counts() -> None:
         "advanced_scoring": 30,
         "challenge_scoring": 24,
         "complex_regression": 6,
-        "system_stability": 6,
+        "system_stability": 5,
     }
-    assert counts["current_runtime"] + counts["extension_required"] == 84
+    assert counts["current_runtime"] + counts["extension_required"] == 83
     matrix_paths = {item["path"] for item in entries}
     actual_paths = {path.relative_to(SUITE_ROOT).as_posix() for path in _scenario_files()}
     assert matrix_paths == actual_paths
@@ -67,7 +69,7 @@ def test_acceptance_matrix_matches_files_and_required_counts() -> None:
 
 def test_repository_index_includes_acceptance_suite_without_changing_categories() -> None:
     index = json.loads((SCENARIOS_ROOT / "index.json").read_text(encoding="utf-8"))
-    assert index["counts"]["acceptance_suite"] == 84
+    assert index["counts"]["acceptance_suite"] == 83
     assert index["counts"]["total"] == sum(
         count for name, count in index["counts"].items() if name != "total"
     )
@@ -125,6 +127,15 @@ def test_var_b02_declares_the_speed_limit_used_by_its_oracle() -> None:
     )
 
     assert scenario["extensions"]["speed_policy"]["scenario_limit_kph"] == 30
+
+
+def test_basic_keep_lane_allows_recovered_map_junction_transient() -> None:
+    scenario = json.loads(
+        (SUITE_ROOT / "basic" / "ACC_B01_start_keep_lane.json")
+        .read_text(encoding="utf-8")
+    )
+
+    assert scenario["expected"]["max_cross_track_error_m"] == 1.0
 
 
 def test_var_b04_oracle_allows_safe_slowdown_before_stop() -> None:

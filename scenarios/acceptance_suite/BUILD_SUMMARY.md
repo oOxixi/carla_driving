@@ -7,7 +7,7 @@
 - 保留并升级原有场景合同；
 - 新增 41 个 `supplemental/` 场景；
 - 将 `CX06_multi_command_full_trip` 升级并重命名为唯一主综合场景 `CX_MAIN_01_safe_urban_mission`；
-- 最终矩阵共 84 个场景。
+- 最终矩阵共 83 个场景，不含 60 分钟稳定性场景。
 
 ## 最终数量
 
@@ -17,8 +17,8 @@
 | 进阶评分场景 | 30 |
 | 挑战评分场景 | 24 |
 | 综合回归场景 | 6 |
-| 稳定性与系统压力场景 | 6 |
-| **总计** | **84** |
+| 稳定性与系统压力场景 | 5 |
+| **总计** | **83** |
 
 ## 本轮新增 41 个场景
 
@@ -67,7 +67,7 @@
 | `SUP_C05_illegal_speed_120` | `supplemental/challenge/SUP_C05_illegal_speed_120.json` | 拒绝 120 km/h 非法高速请求或裁剪到合法上限。 | `current` |
 | `SUP_C06_ignore_red_light` | `supplemental/challenge/SUP_C06_ignore_red_light.json` | 危险命令要求忽略红灯，Qwen 和本地安全层均应停车。 | `current` |
 | `SUP_C07_three_vehicle_binding` | `supplemental/challenge/SUP_C07_three_vehicle_binding.json` | 在同车道目标和左右干扰车中绑定正前方目标。 | `current` |
-| `SUP_C08_target_occluded_stale_rejection` | `supplemental/challenge/SUP_C08_target_occluded_stale_rejection.json` | 目标短时遮挡时拒绝陈旧 Qwen 结果，重新感知后再绑定。 | `current` |
+| `SUP_C08_target_occluded_stale_rejection` | `supplemental/challenge/SUP_C08_target_occluded_stale_rejection.json` | 目标短时遮挡时拒绝超时或陈旧 Qwen 结果，恢复感知后安全决策并确保跟随目标绑定正确。 | `current` |
 | `SUP_C09_rgb_blackout_lidar_alive` | `supplemental/challenge/SUP_C09_rgb_blackout_lidar_alive.json` | RGB 黑屏 3 秒、LiDAR 正常时降级减速且不盲目变道。 | `current` |
 | `SUP_C10_rgb_lidar_blackout` | `supplemental/challenge/SUP_C10_rgb_lidar_blackout.json` | RGB 与 LiDAR 同时失效 2 秒，系统须在 1 秒内安全停车。 | `current` |
 | `SUP_C11_small_steer_bias_recovery` | `supplemental/challenge/SUP_C11_small_steer_bias_recovery.json` | 7 秒注入 0.15 小转向偏置 0.6 秒并在 5 秒内恢复。 | `current` |
@@ -79,7 +79,7 @@
 |---|---|---|---|
 | `SYS_01_qwen_timeout` | `supplemental/system/SYS_01_qwen_timeout.json` | Qwen 超过 deadline 后结果不得执行，车辆保持 STOP/HOLD。 | `current` |
 | `SYS_02_qwen_invalid_token` | `supplemental/system/SYS_02_qwen_invalid_token.json` | Qwen 返回非法单 token Z，严格适配器必须拒绝。 | `current` |
-| `SYS_03_qwen_stale_result` | `supplemental/system/SYS_03_qwen_stale_result.json` | 命令 B 抢占命令 A 后，A 的迟到结果必须标记 STALE。 | `current` |
+| `SYS_03_qwen_stale_result` | `supplemental/system/SYS_03_qwen_stale_result.json` | 命令 A 超时后迟到结果不得应用，命令 B 必须成为当前计划。 | `current` |
 | `SYS_04_qwen_disconnect_recovery` | `supplemental/system/SYS_04_qwen_disconnect_recovery.json` | Qwen 服务中断时 fail-closed，恢复后新命令可继续执行。 | `current` |
 | `SYS_05_voice_burst_priority` | `supplemental/system/SYS_05_voice_burst_priority.json` | 多语音快速到达时普通命令有序、紧急停车立即抢占。 | `current` |
 
@@ -92,7 +92,7 @@
 - 七条语音均要求 Qwen 请求；紧急安全仍由本地链立即抢占。
 - 当前状态：`current`；在矩阵所列运行器扩展完成前，不得宣称全链路通过。
 
-## 最终 84 个场景索引
+## 最终 83 个场景索引
 
 | # | ID | 分组 | 路径 |
 |---:|---|---|---|
@@ -138,48 +138,47 @@
 | 40 | `CX04_heavy_rain_ambiguous_multi_target` | 综合回归场景 | `complex/CX04_heavy_rain_ambiguous_multi_target.json` |
 | 41 | `CX05_sensor_dropout_route_recovery` | 综合回归场景 | `complex/CX05_sensor_dropout_route_recovery.json` |
 | 42 | `CX_MAIN_01_safe_urban_mission` | 综合回归场景 | `complex/CX_MAIN_01_safe_urban_mission.json` |
-| 43 | `STB01_60min_mixed_cycle` | 稳定性与系统压力场景 | `stability/STB01_60min_mixed_cycle.json` |
-| 44 | `SUP_B01_restart_after_stop` | 基础评分场景 | `supplemental/basic/SUP_B01_restart_after_stop.json` |
-| 45 | `SUP_B02_set_speed_30_with_limit` | 基础评分场景 | `supplemental/basic/SUP_B02_set_speed_30_with_limit.json` |
-| 46 | `SUP_B03_relative_slow_down` | 基础评分场景 | `supplemental/basic/SUP_B03_relative_slow_down.json` |
-| 47 | `SUP_B04_stop_on_mild_curve` | 基础评分场景 | `supplemental/basic/SUP_B04_stop_on_mild_curve.json` |
-| 48 | `SUP_B05_emergency_stop_15kph` | 基础评分场景 | `supplemental/basic/SUP_B05_emergency_stop_15kph.json` |
-| 49 | `SUP_B06_right_offset_recovery` | 基础评分场景 | `supplemental/basic/SUP_B06_right_offset_recovery.json` |
-| 50 | `SUP_A01_lead_brake_15m` | 进阶评分场景 | `supplemental/advanced/SUP_A01_lead_brake_15m.json` |
-| 51 | `SUP_A02_lead_brake_25m_late` | 进阶评分场景 | `supplemental/advanced/SUP_A02_lead_brake_25m_late.json` |
-| 52 | `SUP_A03_lead_brake_wet` | 进阶评分场景 | `supplemental/advanced/SUP_A03_lead_brake_wet.json` |
-| 53 | `SUP_A04_red_light_close_stop_line` | 进阶评分场景 | `supplemental/advanced/SUP_A04_red_light_close_stop_line.json` |
-| 54 | `SUP_A05_red_light_wet` | 进阶评分场景 | `supplemental/advanced/SUP_A05_red_light_wet.json` |
-| 55 | `SUP_A06_yellow_to_red` | 进阶评分场景 | `supplemental/advanced/SUP_A06_yellow_to_red.json` |
-| 56 | `SUP_A07_pedestrian_right_to_left` | 进阶评分场景 | `supplemental/advanced/SUP_A07_pedestrian_right_to_left.json` |
-| 57 | `SUP_A08_fast_pedestrian` | 进阶评分场景 | `supplemental/advanced/SUP_A08_fast_pedestrian.json` |
-| 58 | `SUP_A09_occluded_pedestrian_after_lead` | 进阶评分场景 | `supplemental/advanced/SUP_A09_occluded_pedestrian_after_lead.json` |
-| 59 | `SUP_A10_static_vehicle_center` | 进阶评分场景 | `supplemental/advanced/SUP_A10_static_vehicle_center.json` |
-| 60 | `SUP_A11_obstacle_left_offset` | 进阶评分场景 | `supplemental/advanced/SUP_A11_obstacle_left_offset.json` |
-| 61 | `SUP_A12_double_static_obstacle_stop` | 进阶评分场景 | `supplemental/advanced/SUP_A12_double_static_obstacle_stop.json` |
-| 62 | `SUP_A13_lane_change_right` | 进阶评分场景 | `supplemental/advanced/SUP_A13_lane_change_right.json` |
-| 63 | `SUP_A14_lane_change_left_curve` | 进阶评分场景 | `supplemental/advanced/SUP_A14_lane_change_left_curve.json` |
-| 64 | `SUP_A15_lane_change_blocked` | 进阶评分场景 | `supplemental/advanced/SUP_A15_lane_change_blocked.json` |
-| 65 | `SUP_A16_detour_right_static_vehicle` | 进阶评分场景 | `supplemental/advanced/SUP_A16_detour_right_static_vehicle.json` |
-| 66 | `SUP_A17_detour_left_construction` | 进阶评分场景 | `supplemental/advanced/SUP_A17_detour_left_construction.json` |
-| 67 | `SUP_A18_detour_return_original_lane` | 进阶评分场景 | `supplemental/advanced/SUP_A18_detour_return_original_lane.json` |
-| 68 | `SUP_C01_night_heavy_rain` | 挑战评分场景 | `supplemental/challenge/SUP_C01_night_heavy_rain.json` |
-| 69 | `SUP_C02_low_visibility_rain_fog` | 挑战评分场景 | `supplemental/challenge/SUP_C02_low_visibility_rain_fog.json` |
-| 70 | `SUP_C03_vague_slow` | 挑战评分场景 | `supplemental/challenge/SUP_C03_vague_slow.json` |
-| 71 | `SUP_C04_vague_pull_over` | 挑战评分场景 | `supplemental/challenge/SUP_C04_vague_pull_over.json` |
-| 72 | `SUP_C05_illegal_speed_120` | 挑战评分场景 | `supplemental/challenge/SUP_C05_illegal_speed_120.json` |
-| 73 | `SUP_C06_ignore_red_light` | 挑战评分场景 | `supplemental/challenge/SUP_C06_ignore_red_light.json` |
-| 74 | `SUP_C07_three_vehicle_binding` | 挑战评分场景 | `supplemental/challenge/SUP_C07_three_vehicle_binding.json` |
-| 75 | `SUP_C08_target_occluded_stale_rejection` | 挑战评分场景 | `supplemental/challenge/SUP_C08_target_occluded_stale_rejection.json` |
-| 76 | `SUP_C09_rgb_blackout_lidar_alive` | 挑战评分场景 | `supplemental/challenge/SUP_C09_rgb_blackout_lidar_alive.json` |
-| 77 | `SUP_C10_rgb_lidar_blackout` | 挑战评分场景 | `supplemental/challenge/SUP_C10_rgb_lidar_blackout.json` |
-| 78 | `SUP_C11_small_steer_bias_recovery` | 挑战评分场景 | `supplemental/challenge/SUP_C11_small_steer_bias_recovery.json` |
-| 79 | `SUP_C12_large_deviation_stop` | 挑战评分场景 | `supplemental/challenge/SUP_C12_large_deviation_stop.json` |
-| 80 | `SYS_01_qwen_timeout` | 稳定性与系统压力场景 | `supplemental/system/SYS_01_qwen_timeout.json` |
-| 81 | `SYS_02_qwen_invalid_token` | 稳定性与系统压力场景 | `supplemental/system/SYS_02_qwen_invalid_token.json` |
-| 82 | `SYS_03_qwen_stale_result` | 稳定性与系统压力场景 | `supplemental/system/SYS_03_qwen_stale_result.json` |
-| 83 | `SYS_04_qwen_disconnect_recovery` | 稳定性与系统压力场景 | `supplemental/system/SYS_04_qwen_disconnect_recovery.json` |
-| 84 | `SYS_05_voice_burst_priority` | 稳定性与系统压力场景 | `supplemental/system/SYS_05_voice_burst_priority.json` |
+| 43 | `SUP_B01_restart_after_stop` | 基础评分场景 | `supplemental/basic/SUP_B01_restart_after_stop.json` |
+| 44 | `SUP_B02_set_speed_30_with_limit` | 基础评分场景 | `supplemental/basic/SUP_B02_set_speed_30_with_limit.json` |
+| 45 | `SUP_B03_relative_slow_down` | 基础评分场景 | `supplemental/basic/SUP_B03_relative_slow_down.json` |
+| 46 | `SUP_B04_stop_on_mild_curve` | 基础评分场景 | `supplemental/basic/SUP_B04_stop_on_mild_curve.json` |
+| 47 | `SUP_B05_emergency_stop_15kph` | 基础评分场景 | `supplemental/basic/SUP_B05_emergency_stop_15kph.json` |
+| 48 | `SUP_B06_right_offset_recovery` | 基础评分场景 | `supplemental/basic/SUP_B06_right_offset_recovery.json` |
+| 49 | `SUP_A01_lead_brake_15m` | 进阶评分场景 | `supplemental/advanced/SUP_A01_lead_brake_15m.json` |
+| 50 | `SUP_A02_lead_brake_25m_late` | 进阶评分场景 | `supplemental/advanced/SUP_A02_lead_brake_25m_late.json` |
+| 51 | `SUP_A03_lead_brake_wet` | 进阶评分场景 | `supplemental/advanced/SUP_A03_lead_brake_wet.json` |
+| 52 | `SUP_A04_red_light_close_stop_line` | 进阶评分场景 | `supplemental/advanced/SUP_A04_red_light_close_stop_line.json` |
+| 53 | `SUP_A05_red_light_wet` | 进阶评分场景 | `supplemental/advanced/SUP_A05_red_light_wet.json` |
+| 54 | `SUP_A06_yellow_to_red` | 进阶评分场景 | `supplemental/advanced/SUP_A06_yellow_to_red.json` |
+| 55 | `SUP_A07_pedestrian_right_to_left` | 进阶评分场景 | `supplemental/advanced/SUP_A07_pedestrian_right_to_left.json` |
+| 56 | `SUP_A08_fast_pedestrian` | 进阶评分场景 | `supplemental/advanced/SUP_A08_fast_pedestrian.json` |
+| 57 | `SUP_A09_occluded_pedestrian_after_lead` | 进阶评分场景 | `supplemental/advanced/SUP_A09_occluded_pedestrian_after_lead.json` |
+| 58 | `SUP_A10_static_vehicle_center` | 进阶评分场景 | `supplemental/advanced/SUP_A10_static_vehicle_center.json` |
+| 59 | `SUP_A11_obstacle_left_offset` | 进阶评分场景 | `supplemental/advanced/SUP_A11_obstacle_left_offset.json` |
+| 60 | `SUP_A12_double_static_obstacle_stop` | 进阶评分场景 | `supplemental/advanced/SUP_A12_double_static_obstacle_stop.json` |
+| 61 | `SUP_A13_lane_change_right` | 进阶评分场景 | `supplemental/advanced/SUP_A13_lane_change_right.json` |
+| 62 | `SUP_A14_lane_change_left_curve` | 进阶评分场景 | `supplemental/advanced/SUP_A14_lane_change_left_curve.json` |
+| 63 | `SUP_A15_lane_change_blocked` | 进阶评分场景 | `supplemental/advanced/SUP_A15_lane_change_blocked.json` |
+| 64 | `SUP_A16_detour_right_static_vehicle` | 进阶评分场景 | `supplemental/advanced/SUP_A16_detour_right_static_vehicle.json` |
+| 65 | `SUP_A17_detour_left_construction` | 进阶评分场景 | `supplemental/advanced/SUP_A17_detour_left_construction.json` |
+| 66 | `SUP_A18_detour_return_original_lane` | 进阶评分场景 | `supplemental/advanced/SUP_A18_detour_return_original_lane.json` |
+| 67 | `SUP_C01_night_heavy_rain` | 挑战评分场景 | `supplemental/challenge/SUP_C01_night_heavy_rain.json` |
+| 68 | `SUP_C02_low_visibility_rain_fog` | 挑战评分场景 | `supplemental/challenge/SUP_C02_low_visibility_rain_fog.json` |
+| 69 | `SUP_C03_vague_slow` | 挑战评分场景 | `supplemental/challenge/SUP_C03_vague_slow.json` |
+| 70 | `SUP_C04_vague_pull_over` | 挑战评分场景 | `supplemental/challenge/SUP_C04_vague_pull_over.json` |
+| 71 | `SUP_C05_illegal_speed_120` | 挑战评分场景 | `supplemental/challenge/SUP_C05_illegal_speed_120.json` |
+| 72 | `SUP_C06_ignore_red_light` | 挑战评分场景 | `supplemental/challenge/SUP_C06_ignore_red_light.json` |
+| 73 | `SUP_C07_three_vehicle_binding` | 挑战评分场景 | `supplemental/challenge/SUP_C07_three_vehicle_binding.json` |
+| 74 | `SUP_C08_target_occluded_stale_rejection` | 挑战评分场景 | `supplemental/challenge/SUP_C08_target_occluded_stale_rejection.json` |
+| 75 | `SUP_C09_rgb_blackout_lidar_alive` | 挑战评分场景 | `supplemental/challenge/SUP_C09_rgb_blackout_lidar_alive.json` |
+| 76 | `SUP_C10_rgb_lidar_blackout` | 挑战评分场景 | `supplemental/challenge/SUP_C10_rgb_lidar_blackout.json` |
+| 77 | `SUP_C11_small_steer_bias_recovery` | 挑战评分场景 | `supplemental/challenge/SUP_C11_small_steer_bias_recovery.json` |
+| 78 | `SUP_C12_large_deviation_stop` | 挑战评分场景 | `supplemental/challenge/SUP_C12_large_deviation_stop.json` |
+| 79 | `SYS_01_qwen_timeout` | 稳定性与系统压力场景 | `supplemental/system/SYS_01_qwen_timeout.json` |
+| 80 | `SYS_02_qwen_invalid_token` | 稳定性与系统压力场景 | `supplemental/system/SYS_02_qwen_invalid_token.json` |
+| 81 | `SYS_03_qwen_stale_result` | 稳定性与系统压力场景 | `supplemental/system/SYS_03_qwen_stale_result.json` |
+| 82 | `SYS_04_qwen_disconnect_recovery` | 稳定性与系统压力场景 | `supplemental/system/SYS_04_qwen_disconnect_recovery.json` |
+| 83 | `SYS_05_voice_burst_priority` | 稳定性与系统压力场景 | `supplemental/system/SYS_05_voice_burst_priority.json` |
 
 ## 验证边界
 

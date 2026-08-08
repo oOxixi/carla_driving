@@ -40,3 +40,20 @@ def test_stager_rejects_path_escape_and_discard_skips_write(tmp_path) -> None:
     prepared = stager.prepare_request({"command_id": "voice-2", "rgb_ref": reference})
     assert prepared["rgb_ref"] == reference
     assert not (tmp_path / reference).exists()
+
+
+def test_stager_decodes_native_carla_bgra_without_swapping_colors(tmp_path) -> None:
+    stager = QwenImageStager(tmp_path, ref_prefix="frames")
+    # Opaque red in CARLA's native BGRA byte order.
+    pixel = bytes((0, 0, 255, 255))
+    measurement = SimpleNamespace(raw_data=pixel * 24, width=6, height=4)
+    reference = stager.stage("voice-bgra", measurement, frame_id=13)
+
+    prepared = stager.prepare_request({"command_id": "voice-bgra"})
+
+    assert prepared["rgb_ref"] == reference
+    with Image.open(tmp_path / reference) as image:
+        red, green, blue = image.convert("RGB").getpixel((112, 112))
+    assert red > 240
+    assert green < 15
+    assert blue < 15

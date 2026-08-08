@@ -10,7 +10,7 @@
     "qwen_routing": "Qwen 调用策略：FAST_LOCAL、QWEN_PLAN、CONFIRM_SAFE。",
     "qwen_fullchain": "复杂指令到 ManeuverPlan、车辆动作和终态的正常闭环。",
     "qwen_faults": "模型超时、非法输出与执行中安全抢占。",
-    "acceptance_suite": "东风赛道高质量验收套件 v2：基础、进阶、挑战、综合和系统稳定性共 84 个场景。"
+    "acceptance_suite": "东风赛道高质量验收套件 v2：83 个计分场景，不含 60 分钟长稳场景。"
   },
   "official_level_mapping": {
     "basic": "基础场景：直道、控速、停车、保持车道、普通转向。",
@@ -69,7 +69,7 @@
     "qwen_routing": 4,
     "qwen_fullchain": 2,
     "qwen_faults": 3,
-    "acceptance_suite": 84,
-    "total": 130
+    "acceptance_suite": 83,
+    "total": 129
   }
 }

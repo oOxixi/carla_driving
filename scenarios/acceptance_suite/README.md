@@ -2,7 +2,7 @@
 
 版本：`acceptance-suite-2026.08-v2`
 
-本目录按《acceptance_suite 补充场景与统一复杂场景实施方案》构建 84 个场景，继续使用
+本目录按《acceptance_suite 补充场景与统一复杂场景实施方案》构建 83 个计分场景，继续使用
 `schema_version=1.0`、`scenario_local_xy_m` 路线和仓库既有 `category`。v2 在原 43 个场景
 基础上新增 41 个补充场景，并将 `CX06_multi_command_full_trip` 升级、重命名为唯一主综合
 场景 `CX_MAIN_01_safe_urban_mission`。
@@ -20,10 +20,10 @@
 | `supplemental/challenge/` | 12 | v2 新增挑战评分场景 |
 | `supplemental/system/` | 5 | v2 新增 Qwen 与系统压力场景 |
 | `complex/` | 6 | 5 个组合回归 + 1 个唯一主综合场景 |
-| `stability/` | 1 | 60 分钟稳定性场景 |
-| **总计** | **84** | 18 基础 + 30 进阶 + 24 挑战 + 6 综合 + 6 系统/稳定性 |
+| `stability/` | 0 | 已按本轮要求移除 60 分钟稳定性场景 |
+| **总计** | **83** | 18 基础 + 30 进阶 + 23 挑战 + 6 综合 + 5 系统压力 |
 
-完整路径、能力标签、分组和运行支持状态见 `matrix.json`；本次具体构建内容及最终 84 个
+完整路径、能力标签、分组和运行支持状态见 `matrix.json`；本次具体构建内容及最终 83 个
 场景索引见 [BUILD_SUMMARY.md](BUILD_SUMMARY.md)。
 
 ## 唯一主综合场景
@@ -41,7 +41,7 @@
 
 ## 运行支持边界
 
-所有 84 个 JSON 都能被 `ScenarioSpec.load()` 加载。`matrix.json` 使用两种状态：
+所有 83 个 JSON 都能被 `ScenarioSpec.load()` 加载。`matrix.json` 使用两种状态：
 
 - `current`：当前运行器具备该 JSON 声明的必要 Actor、路线、命令和验收能力；
 - `extension_required`：JSON 可加载，但完整语义仍依赖 `runtime_support.requirements` 中的扩展。

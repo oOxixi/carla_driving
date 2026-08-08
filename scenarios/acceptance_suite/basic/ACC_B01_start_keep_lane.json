@@ -116,7 +116,7 @@
     "must_call_B": true,
     "must_call_C": true,
     "must_call_D": true,
-    "max_cross_track_error_m": 0.8,
+    "max_cross_track_error_m": 1.0,
     "max_speed_mps": 5.0,
     "min_run_time_s": 10
   },

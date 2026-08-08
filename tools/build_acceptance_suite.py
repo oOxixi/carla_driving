@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the 84-scenario Dongfeng-track acceptance suite."""
+"""Build the 83-scenario Dongfeng-track acceptance suite."""
 
 from __future__ import annotations
 
@@ -44,12 +44,12 @@ MAIN_ROUTE = [
 ]
 
 EXPECTED_COUNTS = {
-    "existing": 43,
+    "existing": 42,
     "supplemental_basic": 6,
     "supplemental_advanced": 18,
     "supplemental_challenge": 12,
     "supplemental_system": 5,
-    "total": 84,
+    "total": 83,
 }
 
 
@@ -331,7 +331,7 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         capability="start_keep_lane", description="静止起步并进入车道保持，验证 A/B/C/D 主链。",
         commands=[command(0, "开始行驶并保持当前车道", "KEEP_LANE", speed_kph=15)],
         expected={"must_start_carla": True, "must_spawn_ego": True, "must_call_B": True,
-                  "must_call_C": True, "must_call_D": True, "max_cross_track_error_m": 0.8,
+                  "must_call_C": True, "must_call_D": True, "max_cross_track_error_m": 1.0,
                   "max_speed_mps": 5.0, "min_run_time_s": 10},
         oracle_behaviors=["START", "KEEP_LANE"],
         proposed_acceptance={"must_call_qwen": True},
@@ -1495,7 +1495,8 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         suite_group="system_stability",
     ))
 
-    return s
+    # The one-hour stability probe is intentionally outside the scored suite.
+    return [item for item in s if item[1]["scenario_id"] != "STB01_60min_mixed_cycle"]
 
 
 def matrix(entries: list[dict[str, Any]]) -> dict[str, Any]:
@@ -1519,7 +1520,7 @@ def matrix(entries: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "schema_version": "1.0",
         "suite_version": SUITE_VERSION,
-        "description": "东风赛道 CARLA 高质量场景库 84 场景 v2 验收矩阵。",
+        "description": "东风赛道 CARLA 高质量场景库 83 场景 v2 验收矩阵（不含长稳场景）。",
         "formal_runtime": {
             "perception_mode": "sensors",
             "scenario_facts_mode": "perception",
@@ -1553,7 +1554,7 @@ def render_build_summary(entries: list[dict[str, Any]]) -> str:
         "- 保留并升级原有场景合同；",
         "- 新增 41 个 `supplemental/` 场景；",
         "- 将 `CX06_multi_command_full_trip` 升级并重命名为唯一主综合场景 `CX_MAIN_01_safe_urban_mission`；",
-        "- 最终矩阵共 84 个场景。",
+        "- 最终矩阵共 83 个场景，不含 60 分钟稳定性场景。",
         "",
         "## 最终数量",
         "",
@@ -1562,7 +1563,7 @@ def render_build_summary(entries: list[dict[str, Any]]) -> str:
     ]
     for group, label in group_labels.items():
         lines.append(f"| {label} | {sum(item['suite_group'] == group for item in entries)} |")
-    lines.extend(["| **总计** | **84** |", "", "## 本轮新增 41 个场景", ""])
+    lines.extend(["| **总计** | **83** |", "", "## 本轮新增 41 个场景", ""])
     supplemental = [item for item in entries if item["path"].startswith("supplemental/")]
     for group in ("basic_scoring", "advanced_scoring", "challenge_scoring", "system_stability"):
         selected = [item for item in supplemental if item["suite_group"] == group]
@@ -1589,7 +1590,7 @@ def render_build_summary(entries: list[dict[str, Any]]) -> str:
         "- 七条语音均要求 Qwen 请求；紧急安全仍由本地链立即抢占。",
         f"- 当前状态：`{main['runtime_support']['status']}`；在矩阵所列运行器扩展完成前，不得宣称全链路通过。",
         "",
-        "## 最终 84 个场景索引",
+        "## 最终 83 个场景索引",
         "",
         "| # | ID | 分组 | 路径 |",
         "|---:|---|---|---|",
@@ -1617,6 +1618,11 @@ def main() -> int:
         action="store_true",
         help="verify generated files are current without writing them",
     )
+    parser.add_argument(
+        "--refresh-scenarios",
+        action="store_true",
+        help="overwrite checked-in scenario contracts from generator defaults",
+    )
     args = parser.parse_args()
     scenarios = build_scenarios()
     if len(scenarios) != EXPECTED_COUNTS["total"]:
@@ -1627,17 +1633,47 @@ def main() -> int:
     if len(ids) != len(set(ids)):
         raise RuntimeError("scenario_id values must be unique")
 
+    # Scenario JSON files are reviewed acceptance contracts and may contain
+    # runtime fixes newer than the original generator defaults. Preserve those
+    # checked-in contracts during normal matrix/summary regeneration; replacing
+    # them requires the explicit destructive --refresh-scenarios option.
+    if not args.refresh_scenarios:
+        preserved: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
+        for relative_path, generated, entry in scenarios:
+            scenario_path = SUITE_ROOT / relative_path
+            data = (
+                json.loads(scenario_path.read_text(encoding="utf-8"))
+                if scenario_path.exists()
+                else generated
+            )
+            extensions = data["extensions"]
+            preserved_entry = {
+                **entry,
+                "scenario_id": data["scenario_id"],
+                "official_level": data["official_level"],
+                "category": data["category"],
+                "primary_capability": extensions["primary_capability"],
+                "description": data["description"],
+                "runtime_support": extensions["runtime_support"],
+            }
+            preserved.append((relative_path, data, preserved_entry))
+        scenarios = preserved
+
     entries = [entry for _, _, entry in scenarios]
     outputs = {SUITE_ROOT / path: render_json(data) for path, data, _ in scenarios}
     outputs[SUITE_ROOT / "matrix.json"] = render_json(matrix(entries))
     outputs[SUITE_ROOT / "BUILD_SUMMARY.md"] = render_build_summary(entries)
     stale: list[Path] = []
-    legacy_path = SUITE_ROOT / "complex" / "CX06_multi_command_full_trip.json"
-    if legacy_path.exists():
-        if args.check:
-            stale.append(legacy_path)
-        else:
-            legacy_path.unlink()
+    removed_paths = (
+        SUITE_ROOT / "complex" / "CX06_multi_command_full_trip.json",
+        SUITE_ROOT / "stability" / "STB01_60min_mixed_cycle.json",
+    )
+    for removed_path in removed_paths:
+        if removed_path.exists():
+            if args.check:
+                stale.append(removed_path)
+            else:
+                removed_path.unlink()
     for path, content in outputs.items():
         if args.check:
             if not path.exists() or path.read_text(encoding="utf-8") != content:

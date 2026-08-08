@@ -4,6 +4,7 @@ import base64
 import copy
 import json
 from pathlib import Path
+import socket
 import threading
 import time
 
@@ -20,9 +21,22 @@ from qwen_service import (
     UnavailableBackend,
     VllmQwenPlannerBackend,
 )
+from qwen_service.server import _configure_low_latency_socket
 
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_qwen_http_socket_disables_nagle_delay() -> None:
+    calls: list[tuple[int, int, int]] = []
+
+    class Connection:
+        def setsockopt(self, level: int, option: int, value: int) -> None:
+            calls.append((level, option, value))
+
+    _configure_low_latency_socket(Connection())
+
+    assert calls == [(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)]
 
 
 def _request() -> dict:

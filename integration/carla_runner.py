@@ -2161,6 +2161,12 @@ def run(args: argparse.Namespace) -> None:
         if not blueprints:
             raise RuntimeError("no Tesla Model 3 vehicle blueprint is available")
         bp = blueprints[0]
+        # Give the ego the same ownership prefix as every other actor created
+        # by this runner.  If a suite process is interrupted before
+        # CarlaSession.__exit__ can clean up, the next scenario can then remove
+        # the orphan instead of colliding with an unowned ``autopilot`` ego.
+        if callable(getattr(bp, "has_attribute", None)) and bp.has_attribute("role_name"):
+            bp.set_attribute("role_name", "acceptance84:ego")
         spawn_points = world_map.get_spawn_points()
         if not spawn_points:
             raise RuntimeError("map has no vehicle spawn points")

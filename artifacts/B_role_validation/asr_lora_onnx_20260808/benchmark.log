@@ -1,0 +1,13 @@
+2026-08-08 02:54:59,935 [INFO] download models from model hub: ms
+2026-08-08 02:54:59,954 [WARNING] trust_remote_code: False
+2026-08-08 02:55:01,291 [INFO] Loading pretrained params from /workspace/modelscope_voice_cache/models/iic--SenseVoiceSmall/snapshots/7bf452403abd7353a300cd760f7adae7701c92c1/model.pt
+2026-08-08 02:55:01,295 [INFO] ckpt: /workspace/modelscope_voice_cache/models/iic--SenseVoiceSmall/snapshots/7bf452403abd7353a300cd760f7adae7701c92c1/model.pt
+2026-08-08 02:55:02,003 [INFO] scope_map: ['module.', 'None']
+2026-08-08 02:55:02,003 [INFO] excludes: None
+2026-08-08 02:55:02,066 [INFO] Loading ckpt: /workspace/modelscope_voice_cache/models/iic--SenseVoiceSmall/snapshots/7bf452403abd7353a300cd760f7adae7701c92c1/model.pt, status: <All keys matched successfully>
+Notice: ffmpeg is not installed. torchaudio is used to load audio
+If you want to use ffmpeg backend to load audio, please install it by:
+	sudo apt install ffmpeg # ubuntu
+	# brew install ffmpeg # mac
+funasr version: 1.4.1.
+/workspace/results/asr_lora_onnx_20260808/lora_merged_250_20w_50lat.json

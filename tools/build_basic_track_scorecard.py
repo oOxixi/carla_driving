@@ -16,6 +16,7 @@ def _load(path: Path) -> dict[str, Any]:
 
 
 def build_scorecard(carla: dict[str, Any], voice: dict[str, Any]) -> dict[str, Any]:
+    formal_scenario_count = 83
     overall = voice.get("overall", {})
     latency = overall.get("latency", {}) if isinstance(overall, dict) else {}
     nlu = latency.get("nlu_ms", {}) if isinstance(latency, dict) else {}
@@ -25,6 +26,7 @@ def build_scorecard(carla: dict[str, Any], voice: dict[str, Any]) -> dict[str, A
     scenario_count = carla.get("scenario_count_finished")
     expected_scenarios = carla.get("scenario_count_expected")
     asr = overall.get("asr_character_accuracy") if isinstance(overall, dict) else None
+    voice_semantic = overall.get("intent_accuracy") if isinstance(overall, dict) else None
     align = alignment.get("accuracy_percent") if isinstance(alignment, dict) else None
     e2e = official.get("p95") if isinstance(official, dict) else None
     e2e_count = official.get("count") if isinstance(official, dict) else None
@@ -39,13 +41,17 @@ def build_scorecard(carla: dict[str, Any], voice: dict[str, Any]) -> dict[str, A
     gates = {
         "scenario_task_completion_ge_90": (
             gate(task, 90.0)
-            and scenario_count == expected_scenarios == 84
+            and scenario_count == expected_scenarios == formal_scenario_count
         ),
-        "asr_character_accuracy_ge_95": gate(
-            None if asr is None else float(asr) * 100.0, 95.0,
+        # The organizer FAQ defines this nominal "speech recognition" score as
+        # command semantic understanding. Keep character accuracy as a separate
+        # ASR diagnostic, but do not substitute it for the promotion gate.
+        "voice_semantic_accuracy_ge_95": gate(
+            None if voice_semantic is None else float(voice_semantic) * 100.0, 95.0,
         ),
         "multimodal_alignment_ge_98": (
-            gate(align, 98.0) and alignment_count == expected_scenarios == 84
+            gate(align, 98.0)
+            and alignment_count == expected_scenarios == formal_scenario_count
         ),
         "sensor_to_trajectory_p95_le_150_ms": (
             gate(e2e, 150.0, maximum=True) and e2e_count == 50
@@ -64,6 +70,9 @@ def build_scorecard(carla: dict[str, Any], voice: dict[str, Any]) -> dict[str, A
             "scenario_task_completion_percent": task,
             "scenario_count": scenario_count,
             "asr_character_accuracy_percent": None if asr is None else float(asr) * 100.0,
+            "voice_semantic_accuracy_percent": (
+                None if voice_semantic is None else float(voice_semantic) * 100.0
+            ),
             "multimodal_semantic_alignment_percent": align,
             "multimodal_alignment_scenario_count": alignment_count,
             "sensor_to_trajectory_p95_ms": e2e,

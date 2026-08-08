@@ -176,10 +176,12 @@ def _write_markdown(path: Path, report: dict[str, Any]) -> None:
 
 
 class OnnxSenseVoice:
-    def __init__(self, model_path: Path, provider: str, language: str, use_itn: bool) -> None:
-        self.tokens = json.loads(TOKENS_PATH.read_text(encoding="utf-8"))
+    def __init__(
+        self, model_path: Path, base_model: Path, provider: str, language: str, use_itn: bool,
+    ) -> None:
+        self.tokens = json.loads((base_model / "tokens.json").read_text(encoding="utf-8"))
         auto_model = AutoModel(
-            model=str(SENSEVOICE_PATH),
+            model=str(base_model),
             device="cuda" if provider != "CPUExecutionProvider" else "cpu",
             disable_update=True,
         )
@@ -290,7 +292,7 @@ def _run_item(item: dict[str, Any], audio_root: Path, recognizer: OnnxSenseVoice
 
     nlu_started = time.perf_counter()
     b1 = process_asr_text(
-        request_id=item["id"],
+        request_id=str(item.get("id") or item["audio"]),
         text=text,
         asr_confidence=1.0,
     )
@@ -303,7 +305,7 @@ def _run_item(item: dict[str, Any], audio_root: Path, recognizer: OnnxSenseVoice
     edit_distance = _edit_distance(normalized_reference, normalized_hypothesis)
 
     return {
-        "id": item["id"],
+        "id": str(item.get("id") or item["audio"]),
         "source_id": item.get("source_id"),
         "language": item.get("lang"),
         "audio": item["audio"],
@@ -311,7 +313,7 @@ def _run_item(item: dict[str, Any], audio_root: Path, recognizer: OnnxSenseVoice
         "expected_intent": item.get("intent"),
         "expected_slots": item.get("slots", {}),
         "asr_text": text,
-        "asr_exact": text == expected_text,
+        "asr_exact": normalized_hypothesis == normalized_reference,
         "intent_ok": b2.get("intent") == item.get("intent"),
         "slots_ok": _slots_match(
             dict(b2.get("slots", {})),
@@ -332,18 +334,20 @@ def _run_item(item: dict[str, Any], audio_root: Path, recognizer: OnnxSenseVoice
     }
 
 
-def _summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
+def _summarize(records: list[dict[str, Any]], latency_samples: int) -> dict[str, Any]:
     total = len(records)
     reference_chars = sum(record["reference_chars"] for record in records)
     edit_errors = sum(record["edit_distance"] for record in records)
+    latency_records = records[:latency_samples]
     return {
         "total": total,
         "asr_exact_accuracy": round(sum(record["asr_exact"] for record in records) / total, 6) if total else 0.0,
         "asr_character_accuracy": round(max(0.0, 1.0 - edit_errors / reference_chars), 6) if reference_chars else 0.0,
         "intent_accuracy": round(sum(record["intent_ok"] for record in records) / total, 6) if total else 0.0,
         "slot_accuracy": round(sum(record["slots_ok"] for record in records) / total, 6) if total else 0.0,
+        "latency_sample_count": len(latency_records),
         "latency": {
-            key: _latency_stats([float(record["latency"][key]) for record in records])
+            key: _latency_stats([float(record["latency"][key]) for record in latency_records])
             for key in ("frontend_ms", "onnx_ms", "nlu_ms", "model_nlu_ms", "total_ms")
         },
     }
@@ -354,12 +358,14 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--audio-root", type=Path, default=DEFAULT_AUDIO_ROOT)
     parser.add_argument("--onnx-model", type=Path, default=DEFAULT_MODEL)
+    parser.add_argument("--base-model", type=Path, default=SENSEVOICE_PATH)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--provider", default="CUDAExecutionProvider")
     parser.add_argument("--language", choices=sorted(_LANGUAGE_IDS), default="zh")
     parser.add_argument("--use-itn", action="store_true")
     parser.add_argument("--limit", type=int, default=50)
     parser.add_argument("--warmup", type=int, default=3)
+    parser.add_argument("--latency-samples", type=int, default=50)
     args = parser.parse_args()
 
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
@@ -368,6 +374,7 @@ def main() -> int:
 
     recognizer = OnnxSenseVoice(
         model_path=args.onnx_model,
+        base_model=args.base_model,
         provider=args.provider,
         language=args.language,
         use_itn=args.use_itn,
@@ -388,7 +395,7 @@ def main() -> int:
         "sample_limit": args.limit,
         "warmup": args.warmup,
         "git": _git_state(),
-        "overall": _summarize(records),
+        "overall": _summarize(records, args.latency_samples),
         "records": records,
     }
     _write_json(args.output, report)

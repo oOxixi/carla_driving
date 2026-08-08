@@ -98,6 +98,25 @@ def test_speed_completion_accepts_closed_loop_ripple_near_30_kph():
     assert terminal.state == "SUCCEEDED"
 
 
+def test_set_speed_20_completes_within_acceptance_tolerance_before_timeout():
+    speed = _step(
+        behavior="SET_SPEED",
+        completion={
+            "type": "SPEED_REACHED", "value": 20.0 / 3.6,
+            "lane": None, "hold_frames": 3,
+        },
+        timeout_s=8.0,
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(speed), now_s=0.0)
+
+    assert not fsm.update(_snapshot(speed_mps=5.00), now_s=7.90).terminal
+    assert not fsm.update(_snapshot(speed_mps=5.05), now_s=7.95).terminal
+    terminal = fsm.update(_snapshot(speed_mps=5.16), now_s=8.00)
+
+    assert terminal.state == "SUCCEEDED"
+
+
 def test_lane_change_entry_preconditions_are_latched_during_transition():
     lane = _step(
         behavior="CHANGE_LANE_LEFT",

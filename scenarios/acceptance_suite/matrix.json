@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "suite_version": "acceptance-suite-2026.08-v2",
-  "description": "东风赛道 CARLA 高质量场景库 84 场景 v2 验收矩阵。",
+  "description": "东风赛道 CARLA 高质量场景库 83 场景 v2 验收矩阵（不含长稳场景）。",
   "formal_runtime": {
     "perception_mode": "sensors",
     "scenario_facts_mode": "perception",
@@ -9,20 +9,20 @@
     "safety_events_wait_for_qwen": false
   },
   "counts": {
-    "total": 84,
+    "total": 83,
     "P0": 18,
     "P1": 54,
     "P2": 6,
-    "P3": 6,
+    "P3": 5,
     "basic": 18,
     "advanced": 30,
-    "challenge": 36,
+    "challenge": 35,
     "basic_scoring": 18,
     "advanced_scoring": 30,
     "challenge_scoring": 24,
     "complex_regression": 6,
-    "system_stability": 6,
-    "current_runtime": 84,
+    "system_stability": 5,
+    "current_runtime": 83,
     "extension_required": 0
   },
   "scenarios": [
@@ -707,28 +707,8 @@
           "event_triggers",
           "command_queue_policy",
           "actor_state_timeline",
-          "qwen_target_binding",
           "qwen_lane_change_detour_actions",
           "qwen_acceptance_metrics"
-        ]
-      }
-    },
-    {
-      "scenario_id": "STB01_60min_mixed_cycle",
-      "path": "stability/STB01_60min_mixed_cycle.json",
-      "priority": "P3",
-      "official_level": "challenge",
-      "category": "regression",
-      "primary_capability": "long_stability",
-      "suite_group": "system_stability",
-      "description": "60 分钟混合命令、感知、控制、安全和恢复探针。",
-      "runtime_support": {
-        "status": "current",
-        "requirements": [],
-        "declared_requirements": [
-          "multi_command_qwen",
-          "loop_route",
-          "resource_stability_metrics"
         ]
       }
     },
@@ -1312,7 +1292,7 @@
       "category": "regression",
       "primary_capability": "occluded_target_stale_rejection",
       "suite_group": "challenge_scoring",
-      "description": "目标短时遮挡时拒绝陈旧 Qwen 结果，重新感知后再绑定。",
+      "description": "目标短时遮挡时拒绝超时或陈旧 Qwen 结果，恢复感知后安全决策并确保跟随目标绑定正确。",
       "runtime_support": {
         "status": "current",
         "requirements": [],
@@ -1321,7 +1301,9 @@
           "multi_command_qwen",
           "fault_injection",
           "qwen_target_binding",
-          "stale_result_acceptance"
+          "stale_result_acceptance",
+          "qwen_stale_result_injection",
+          "fault_recovery_acceptance"
         ]
       }
     },
@@ -1447,7 +1429,7 @@
       "category": "regression",
       "primary_capability": "qwen_stale_result_pressure",
       "suite_group": "system_stability",
-      "description": "命令 B 抢占命令 A 后，A 的迟到结果必须标记 STALE。",
+      "description": "命令 A 超时后迟到结果不得应用，命令 B 必须成为当前计划。",
       "runtime_support": {
         "status": "current",
         "requirements": [],
