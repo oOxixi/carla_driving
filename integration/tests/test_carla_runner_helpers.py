@@ -21,6 +21,7 @@ from integration.carla_runner import (
     _maneuver_target_gap_s,
     _minimum_gap_contract_completed,
     _intentional_qwen_failure_completed,
+    _initial_runtime_speed_mps,
     _note_safety_feedback,
     _planner_runtime_state,
     _build_qwen_context,
@@ -72,6 +73,15 @@ from integration.voice_adapter import VoiceCommandAdapter
 
 def _args(scenario):
     return Namespace(scenario=scenario, frames=100)
+
+
+def test_live_scenario_waits_stationary_for_first_microphone_command() -> None:
+    assert _initial_runtime_speed_mps(
+        5.0, qwen_enabled=False, live_scenario=True,
+    ) == 0.0
+    assert _initial_runtime_speed_mps(
+        5.0, qwen_enabled=False, live_scenario=False,
+    ) == 5.0
 
 
 def test_blocked_lane_change_requires_real_adjacent_lane_anchor() -> None:

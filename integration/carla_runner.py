@@ -1786,6 +1786,18 @@ def _qwen_desired_speed_mps(args: argparse.Namespace, spec: ScenarioSpec | None)
     raise ValueError(f"unsupported Qwen desired-speed unit: {unit!r}")
 
 
+def _initial_runtime_speed_mps(
+    default_speed_mps: float,
+    *,
+    qwen_enabled: bool,
+    live_scenario: bool,
+) -> float:
+    """Return a fail-closed initial speed for externally commanded runs."""
+    if qwen_enabled or live_scenario:
+        return 0.0
+    return float(default_speed_mps)
+
+
 def _save_qwen_rgb_image(
     measurement: Any,
     image_root: str | Path,
@@ -2456,8 +2468,16 @@ def run(args: argparse.Namespace) -> None:
             max_lane_offset_m=min(1.8, route_deviation_trigger_m),
             severe_route_deviation_m=route_deviation_trigger_m,
         ))
+        # A scenario driven by the live microphone must remain stationary
+        # until its first spoken phase command is actually recognized.  Using
+        # the normal cruise default here would let the ego roll away while
+        # the UI is still showing the initial voice prompt.
         runtime = ControlRuntime(_acceptance_lateral_controller(),
-                                 default_speed_mps=0.0 if qwen_enabled else args.default_speed_mps,
+                                 default_speed_mps=_initial_runtime_speed_mps(
+                                     args.default_speed_mps,
+                                     qwen_enabled=qwen_enabled,
+                                     live_scenario=(live_voice is not None and spec is not None),
+                                 ),
                                  command_timeout_s=fsm_timeout_s, safety=scenario_safety)
         if args.qwen_service_url:
             qwen_image_stager = QwenImageStager(

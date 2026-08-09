@@ -50,6 +50,7 @@ PYTHONUNBUFFERED=1 conda run --no-capture-output -n carla312 \
     --qwen-image-prefix "${output_dir#$repo_dir/}/qwen_images" \
     --perception-mode sensors \
     --scenario-facts-mode perception \
+    --default-speed-mps 0 \
     --sensor-profile demo \
     --realtime \
     --ui-mode demo \
