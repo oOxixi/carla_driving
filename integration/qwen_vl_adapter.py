@@ -23,7 +23,7 @@ from .qwen_boundary import QwenInputContext, validate_qwen_response
 class QwenVLGenerationBackend(Protocol):
     """Minimal generation interface used by the strict adapter and tests."""
 
-    def generate(self, *, prompt: str, image_path: Path | None) -> str:
+    def generate(self, *, prompt: str, image_path: Path | str | None) -> str:
         ...
 
 

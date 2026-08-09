@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from integration.carla_perception import (
+    DEMO_SENSOR_SPECS,
     LIDAR_SENSOR_ID,
     LOW_RESOURCE_SENSOR_SPECS,
     RADAR_SENSOR_ID,
@@ -30,6 +31,17 @@ def test_low_profile_reduces_gpu_and_lidar_load() -> None:
     assert int(by_id[RGB_SENSOR_ID].attributes["image_size_y"]) == 225
     assert int(by_id[LIDAR_SENSOR_ID].attributes["channels"]) == 16
     assert int(by_id[LIDAR_SENSOR_ID].attributes["points_per_second"]) == 112000
+    assert int(by_id[RADAR_SENSOR_ID].attributes["points_per_second"]) == 1500
+
+
+def test_demo_profile_uses_hd_rgb_and_low_load_ranging_sensors() -> None:
+    specs = sensor_specs_for_profile("demo")
+    by_id = {item.sensor_id: item for item in specs}
+
+    assert specs is DEMO_SENSOR_SPECS
+    assert int(by_id[RGB_SENSOR_ID].attributes["image_size_x"]) == 1280
+    assert int(by_id[RGB_SENSOR_ID].attributes["image_size_y"]) == 720
+    assert int(by_id[LIDAR_SENSOR_ID].attributes["channels"]) == 16
     assert int(by_id[RADAR_SENSOR_ID].attributes["points_per_second"]) == 1500
 
 

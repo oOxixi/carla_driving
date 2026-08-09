@@ -739,7 +739,12 @@ class PipelineOrchestrator:
                 "intent": command["intent"],
                 "target_speed_mps": command["parameters"].get("target_speed_mps"),
                 "direction": command["parameters"].get("direction"),
-                "target": command["parameters"].get("target"),
+                # Preserve stable actor grounding across the model boundary so
+                # avoidance cannot silently retarget a nearer unrelated car.
+                "target": (
+                    command["parameters"].get("target_id")
+                    or command["parameters"].get("target")
+                ),
             },
             "rgb_ref": rgb_ref,
             "scene_summary": {

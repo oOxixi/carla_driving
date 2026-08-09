@@ -26,7 +26,7 @@
         "target": {"type": ["string", "null"], "maxLength": 128}
       }
     },
-    "rgb_ref": {"type": ["string", "null"], "maxLength": 4096},
+    "rgb_ref": {"type": ["string", "null"], "maxLength": 262144},
     "routing": {
       "type": "object",
       "additionalProperties": false,

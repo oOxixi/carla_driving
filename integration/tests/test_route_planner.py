@@ -7,6 +7,7 @@ from integration.route_planner import (
     build_lane_change_route_reference,
     build_route_reference,
     command_turn_direction,
+    lane_change_rejection_reason,
     select_heading_compatible_waypoint,
     select_topology_route_anchor,
     warm_heading_waypoint_cache,
@@ -198,6 +199,34 @@ def test_lane_change_rejects_opposite_direction_adjacent_lane():
             Map(center[0]), SimpleNamespace(x=0.0, y=0.0), 4.0,
             direction="LEFT", distance_m=60.0,
         )
+
+
+def test_lane_change_rejects_solid_boundary_before_route_generation():
+    center, _, _ = _parallel_lanes()
+    for waypoint in center:
+        waypoint.lane_change = "Both"
+        waypoint.left_lane_marking = SimpleNamespace(type="Solid")
+    with pytest.raises(ValueError, match="SOLID_LANE_MARKING_FORBIDS_CHANGE"):
+        build_lane_change_route_reference(
+            Map(center[0]), SimpleNamespace(x=0.0, y=0.0), 4.0,
+            direction="LEFT", distance_m=60.0,
+        )
+
+
+def test_lane_change_rejects_carla_direction_permission_mismatch():
+    waypoint = Waypoint(0.0, 0.0, 0.0)
+    waypoint.lane_change = "Right"
+    waypoint.left_lane_marking = SimpleNamespace(type="Broken")
+    assert lane_change_rejection_reason(waypoint, "LEFT") == (
+        "LANE_CHANGE_PERMISSION_FORBIDS_CHANGE"
+    )
+
+
+def test_lane_change_accepts_broken_boundary_with_matching_permission():
+    waypoint = Waypoint(0.0, 0.0, 0.0)
+    waypoint.lane_change = "Left"
+    waypoint.left_lane_marking = SimpleNamespace(type="Broken")
+    assert lane_change_rejection_reason(waypoint, "LEFT") is None
 
 
 def test_topology_anchor_selection_avoids_signal_stop_points():

@@ -382,6 +382,31 @@ def test_actor_event_records_real_lead_brake_trigger_distance() -> None:
     assert runtime.evidence()["scenario_event_count"] == 1
 
 
+def test_actor_despawn_event_marks_traffic_inactive() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    actor = {
+        "actor_id": "lead",
+        "behavior": {
+            "initial_speed_mps": 6.0,
+            "events": [{
+                "trigger": {"type": "route_progress_greater_than_m", "value": 150.0},
+                "action": {"type": "despawn"},
+            }],
+        },
+    }
+
+    before = runtime.actor_state(
+        actor, elapsed_s=20.0, trigger_context={"route_progress_m": 149.0},
+    )
+    after = runtime.actor_state(
+        actor, elapsed_s=21.0, trigger_context={"route_progress_m": 150.0},
+    )
+
+    assert before["active"] is True
+    assert after["active"] is False
+    assert after["target_speed_mps"] == 0.0
+
+
 def test_runtime_event_count_includes_fault_start_and_recovery() -> None:
     runtime = ScenarioExtensionRuntime({
         "faults": [{

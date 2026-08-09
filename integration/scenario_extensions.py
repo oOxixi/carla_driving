@@ -84,6 +84,7 @@ class ScenarioExtensionRuntime:
         self._actor_event_count = 0
         self._actor_event_time_s: dict[str, float] = {}
         self._actor_speed_mps: dict[str, float] = {}
+        self._actor_active: dict[str, bool] = {}
         self._traffic_light_state: dict[str, str] = {}
         self._initial_lane_id: str | None = None
         self._last_lane_id: str | None = None
@@ -464,6 +465,8 @@ class ScenarioExtensionRuntime:
             return {}
         if actor_id not in self._actor_speed_mps:
             self._actor_speed_mps[actor_id] = max(0.0, float(behavior.get("initial_speed_mps", 0.0)))
+        if actor_id not in self._actor_active:
+            self._actor_active[actor_id] = True
         if actor_id not in self._traffic_light_state:
             self._traffic_light_state[actor_id] = str(actor_spec.get("state", "UNKNOWN")).upper()
         events = behavior.get("events", behavior.get("states", ()))
@@ -482,8 +485,17 @@ class ScenarioExtensionRuntime:
             ):
                 action = event.get("action", {})
                 previous_speed = self._actor_speed_mps.get(actor_id, math.inf)
-                if isinstance(action, Mapping) and str(action.get("type", "")).lower() == "set_speed":
-                    self._actor_speed_mps[actor_id] = max(0.0, float(action.get("target_speed_mps", 0.0)))
+                action_type = (
+                    str(action.get("type", "")).lower()
+                    if isinstance(action, Mapping) else ""
+                )
+                if action_type == "set_speed":
+                    self._actor_speed_mps[actor_id] = max(
+                        0.0, float(action.get("target_speed_mps", 0.0)),
+                    )
+                elif action_type == "despawn":
+                    self._actor_speed_mps[actor_id] = 0.0
+                    self._actor_active[actor_id] = False
                 if "state" in event:
                     self._traffic_light_state[actor_id] = str(event["state"]).upper()
                 self._actor_event_index[actor_id] = index + 1
@@ -501,6 +513,7 @@ class ScenarioExtensionRuntime:
                         self._lead_brake_trigger_distance_m = float(distances[actor_id])
         return {
             "target_speed_mps": self._actor_speed_mps[actor_id],
+            "active": self._actor_active[actor_id],
             "traffic_light_state": self._traffic_light_state[actor_id],
             "event_index": self._actor_event_index.get(actor_id, 0),
         }

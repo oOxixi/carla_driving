@@ -242,6 +242,77 @@ def _adjacent_driving_lane(waypoint: Any, direction: str) -> Any | None:
     return candidate
 
 
+def _enum_token(value: Any) -> str:
+    """Return a stable token for CARLA enums and lightweight test doubles."""
+    return str(value).rsplit(".", 1)[-1].replace("_", "").upper()
+
+
+def _lane_change_permission_allows(waypoint: Any, direction: str) -> bool:
+    permission = getattr(waypoint, "lane_change", None)
+    if permission is None:
+        # Old map/test doubles do not expose the CARLA 0.9.x field.  Real
+        # CARLA waypoints always do, and are checked below.
+        return True
+    token = _enum_token(permission)
+    if token in {"BOTH", direction}:
+        return True
+    if token in {"NONE", "LEFT", "RIGHT"}:
+        return False
+    try:
+        bits = int(permission)
+    except (TypeError, ValueError):
+        return False
+    required_bit = 2 if direction == "LEFT" else 1
+    return bool(bits & required_bit)
+
+
+def lane_change_rejection_reason(waypoint: Any, direction: str) -> str | None:
+    """Explain why crossing the requested boundary is illegal at a waypoint.
+
+    Lane-invasion sensors are necessarily retrospective.  Route generation
+    must reject a prohibited boundary before lateral control receives it.
+    """
+    side = str(direction).strip().upper()
+    if side not in {"LEFT", "RIGHT"}:
+        raise ValueError("lane-change direction must be LEFT or RIGHT")
+    if bool(getattr(waypoint, "is_junction", False)):
+        return "JUNCTION_FORBIDS_LANE_CHANGE"
+    marking = getattr(
+        waypoint,
+        "left_lane_marking" if side == "LEFT" else "right_lane_marking",
+        None,
+    )
+    marking_type = getattr(marking, "type", None)
+    if marking_type is not None:
+        token = _enum_token(marking_type)
+        if "SOLID" in token:
+            return "SOLID_LANE_MARKING_FORBIDS_CHANGE"
+        if token in {"CURB", "GRASS", "NONE", "OTHER"}:
+            return "NON_CROSSABLE_LANE_BOUNDARY"
+    if not _lane_change_permission_allows(waypoint, side):
+        return "LANE_CHANGE_PERMISSION_FORBIDS_CHANGE"
+    return None
+
+
+def _validate_lane_change_corridor(
+    start: Any,
+    *,
+    direction: str,
+    distance_m: float,
+    step_m: float,
+) -> None:
+    """Validate the origin-lane boundary for the whole crossover corridor."""
+    current = start
+    for _ in range(max(1, int(math.ceil(distance_m / step_m))) + 1):
+        reason = lane_change_rejection_reason(current, direction)
+        if reason is not None:
+            raise ValueError(reason)
+        next_waypoint = _next_straight(current, step_m)
+        if next_waypoint is None:
+            raise ValueError("LANE_CHANGE_CORRIDOR_DEAD_END")
+        current = next_waypoint
+
+
 def _hermite_lane_change(
     start: Any,
     end: Any,
@@ -303,6 +374,12 @@ def build_lane_change_route_reference(
     adjacent = _adjacent_driving_lane(current, side)
     if adjacent is None or bool(getattr(adjacent, "is_junction", False)):
         raise ValueError(f"no same-direction driving lane on the {side.lower()}")
+    _validate_lane_change_corridor(
+        current,
+        direction=side,
+        distance_m=transition_length_m,
+        step_m=step_m,
+    )
     target_end = _advance_waypoint(adjacent, transition_length_m, step_m)
     if target_end is None or bool(getattr(target_end, "is_junction", False)):
         raise ValueError("adjacent lane cannot support the full transition")
@@ -492,6 +569,7 @@ __all__ = [
     "build_lane_change_route_reference",
     "build_route_reference",
     "build_scenario_route_reference",
+    "lane_change_rejection_reason",
     "command_turn_direction",
     "select_heading_compatible_waypoint",
     "select_topology_route_anchor",

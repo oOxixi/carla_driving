@@ -157,8 +157,28 @@ LOW_RESOURCE_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
     DEFAULT_SENSOR_SPECS[4],
 )
 
+# Presentation profile: keep the proven low-load LiDAR/Radar settings used by
+# the acceptance scenario, but capture the front camera near the UI's native
+# 1380 px width so the 1920x1080 demo does not upscale a 400x225 image.
+DEMO_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
+    CarlaSensorSpec(
+        RGB_SENSOR_ID,
+        "sensor.camera.rgb",
+        SensorMount(1.5, 0.0, 2.2, pitch_deg=-8.0),
+        MappingProxyType({
+            "image_size_x": "1280", "image_size_y": "720", "fov": "100",
+            "sensor_tick": "0.05",
+        }),
+    ),
+    LOW_RESOURCE_SENSOR_SPECS[1],
+    LOW_RESOURCE_SENSOR_SPECS[2],
+    LOW_RESOURCE_SENSOR_SPECS[3],
+    LOW_RESOURCE_SENSOR_SPECS[4],
+)
+
 SENSOR_PROFILES: Mapping[str, tuple[CarlaSensorSpec, ...]] = MappingProxyType({
     "default": DEFAULT_SENSOR_SPECS,
+    "demo": DEMO_SENSOR_SPECS,
     "low": LOW_RESOURCE_SENSOR_SPECS,
 })
 

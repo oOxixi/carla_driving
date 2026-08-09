@@ -336,6 +336,34 @@ def test_close_center_lead_forces_targeted_stop_plan() -> None:
     assert queued.feedback["safety_event"]["reason_code"] == "FRONT_OBJECT_STOP"
 
 
+def test_model_request_preserves_grounded_command_target_id() -> None:
+    command = _example("driving_command")
+    command.update({
+        "command_id": "avoid-grounded",
+        "source_text": "从右侧绕过前方施工障碍",
+        "intent": "AVOID_OBSTACLE",
+        "parameters": {
+            "direction": "RIGHT", "target_id": "construction_blocker",
+        },
+    })
+    scene = _example("perception_state")
+    scene["objects"] = [{
+        "track_id": "construction_blocker", "class": "obstacle",
+        "confidence": 1.0, "bbox_xyxy_norm": [0.4, 0.3, 0.6, 0.8],
+        "distance_m": 18.0, "position_m": [18.0, 0.0, 0.0],
+        "velocity_mps": [0.0, 0.0, 0.0], "sources": ["LIDAR"],
+        "ttc_s": None,
+    }]
+    scene["min_gap_m"] = 18.0
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
+
+    assert queued.model_request["command_hint"]["target"] == "construction_blocker"
+
+
 def test_occlusion_warning_forces_proactive_stop_plan() -> None:
     command = _example("driving_command")
     command["intent"] = "KEEP_LANE"

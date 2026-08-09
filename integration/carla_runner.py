@@ -74,6 +74,7 @@ from .scenario_execution import (
 from .scenario_evidence import FrameTiming, ScenarioEvidenceRecorder
 from .scenario_extensions import ScenarioExtensionRuntime
 from .second_group_runtime import CanonicalRuntimeBridge
+from .demo_visualization import AsyncDemoVisualizer, DemoStatePresenter
 
 
 @dataclass(frozen=True, slots=True)
@@ -607,6 +608,7 @@ def _bind_scenario_actor_ids(
     scene: PerceptionFrame,
     ego: Any,
     actors: Sequence[tuple[Any, Mapping[str, object]]],
+    world_map: Any | None = None,
 ) -> PerceptionFrame:
     """Attach stable scenario IDs to sensor detections by nearest range.
 
@@ -620,7 +622,7 @@ def _bind_scenario_actor_ids(
     ego_transform = ego.get_transform()
     origin = ego_transform.location
     forward = ego_transform.get_forward_vector()
-    candidates: list[tuple[float, float, str, str]] = []
+    candidates: list[tuple[float, float, str, str, bool | None]] = []
     for actor, actor_spec in actors:
         if not getattr(actor, "is_alive", False):
             continue
@@ -644,8 +646,14 @@ def _bind_scenario_actor_ids(
         image_center_x = 0.5 + math.atan2(lateral, longitudinal) / math.radians(90.0)
         if not 0.0 <= image_center_x <= 1.0:
             continue
+        occupies_current_lane = (
+            _scenario_actor_occupies_ego_lane(world_map, ego, actor)
+            if world_map is not None and family == "obstacle"
+            else None
+        )
         candidates.append((
-            float(origin.distance(actor_location)), image_center_x, actor_id, family,
+            float(origin.distance(actor_location)), image_center_x, actor_id,
+            family, occupies_current_lane,
         ))
     if not candidates:
         return scene
@@ -665,13 +673,18 @@ def _bind_scenario_actor_ids(
                 item[3] == family or family in {"unknown", "obstacle"}
             )
         ]
+        x1, _y1, x2, _y2 = detection.bbox_xyxy_norm
+        detection_center_x = (x1 + x2) / 2.0
+        if family in {"unknown", "obstacle"} and 0.35 <= detection_center_x <= 0.65:
+            # A centre-corridor LiDAR/RGB obstacle may only acquire the stable
+            # ID of a prop that actually occupies ego's forward lane.  This
+            # prevents a roadside warning board from becoming center_ahead.
+            choices = [item for item in choices if item[4] is not False]
         if not choices:
             bound.append(detection)
             continue
-        x1, _y1, x2, _y2 = detection.bbox_xyxy_norm
-        detection_center_x = (x1 + x2) / 2.0
         distance_scale = max(4.0, float(detection.distance_m or 20.0))
-        distance, projected_x, actor_id, actor_family = min(
+        distance, projected_x, actor_id, actor_family, _occupies_current_lane = min(
             choices,
             key=lambda item: (
                 abs(item[1] - detection_center_x)
@@ -836,6 +849,191 @@ def _scenario_local_transform(
     )
 
 
+def _scenario_straight_successor(waypoint: Any, distance_m: float) -> Any | None:
+    """Choose the forward topology branch with the smallest heading change."""
+    candidates = tuple(waypoint.next(float(distance_m)) or ())
+    if not candidates:
+        return None
+    current_yaw = float(waypoint.transform.rotation.yaw)
+
+    def heading_error(candidate: Any) -> float:
+        candidate_yaw = float(candidate.transform.rotation.yaw)
+        return abs((candidate_yaw - current_yaw + 180.0) % 360.0 - 180.0)
+
+    return min(candidates, key=heading_error)
+
+
+def _scenario_topology_transform(
+    carla_api: Any,
+    world_map: Any,
+    anchor_transform: Any,
+    spawn: Mapping[str, object],
+    *,
+    forward_offset_m: float = 0.0,
+    step_m: float = 1.0,
+) -> Any:
+    """Place a scenario pose by road distance instead of the initial tangent.
+
+    ``scenario_local_xy_m`` uses X as distance along the selected CARLA lane
+    topology and Y as the established lateral offset from its centre.  The old
+    implementation rotated the complete X/Y vector by the initial ego yaw;
+    after a bend, an actor declared at X=220 therefore remained on the initial
+    tangent and could land on a median or another lane.
+    """
+    longitudinal_m = float(spawn.get("x", 0.0)) + float(forward_offset_m)
+    if longitudinal_m < 0.0:
+        # Backward topology traversal is not needed by acceptance scenarios;
+        # preserve the well-defined legacy transform for such declarations.
+        return _scenario_local_transform(
+            carla_api, anchor_transform, spawn,
+            forward_offset_m=forward_offset_m,
+        )
+    if not math.isfinite(float(step_m)) or step_m <= 0.0:
+        raise ValueError("scenario topology step_m must be finite and positive")
+    waypoint = world_map.get_waypoint(
+        anchor_transform.location, project_to_road=True,
+    )
+    if waypoint is None:
+        raise RuntimeError("cannot place scenario actor without a road waypoint")
+    remaining_m = longitudinal_m
+    while remaining_m > 1e-6:
+        advance_m = min(float(step_m), remaining_m)
+        successor = _scenario_straight_successor(waypoint, advance_m)
+        if successor is None:
+            raise RuntimeError(
+                f"scenario actor road placement reached a dead end after "
+                f"{longitudinal_m - remaining_m:.1f} m"
+            )
+        waypoint = successor
+        remaining_m -= advance_m
+
+    lane_transform = waypoint.transform
+    lane_yaw_deg = float(lane_transform.rotation.yaw)
+    lane_yaw_rad = math.radians(lane_yaw_deg)
+    lateral_m = float(spawn.get("y", 0.0))
+    local_z = float(spawn.get("z", 0.5))
+    local_yaw = float(spawn.get("yaw_deg", 0.0))
+    lane_location = lane_transform.location
+    return carla_api.Transform(
+        carla_api.Location(
+            x=float(lane_location.x) - lateral_m * math.sin(lane_yaw_rad),
+            y=float(lane_location.y) + lateral_m * math.cos(lane_yaw_rad),
+            z=float(lane_location.z) + max(0.0, local_z - 0.5),
+        ),
+        carla_api.Rotation(
+            pitch=float(getattr(lane_transform.rotation, "pitch", 0.0)),
+            yaw=lane_yaw_deg + local_yaw,
+            roll=float(getattr(lane_transform.rotation, "roll", 0.0)),
+        ),
+    )
+
+
+def _scenario_actor_occupies_ego_lane(
+    world_map: Any,
+    ego: Any,
+    actor: Any,
+    *,
+    horizon_m: float = 80.0,
+    step_m: float = 2.0,
+) -> bool:
+    """Return whether an actor physically occupies ego's forward lane path."""
+    ego_waypoint = world_map.get_waypoint(
+        ego.get_location(), project_to_road=True,
+    )
+    actor_waypoint = world_map.get_waypoint(
+        actor.get_location(), project_to_road=True,
+    )
+    if ego_waypoint is None or actor_waypoint is None:
+        return False
+    actor_location = actor.get_location()
+    projected = actor_waypoint.transform.location
+    lane_width_m = max(1.0, float(getattr(actor_waypoint, "lane_width", 3.5)))
+    projection_error_m = math.hypot(
+        float(actor_location.x) - float(projected.x),
+        float(actor_location.y) - float(projected.y),
+    )
+    # A nearest-waypoint lane ID is insufficient for a prop outside the road.
+    if projection_error_m > lane_width_m * 0.45 + 0.25:
+        return False
+    actor_segment = (
+        getattr(actor_waypoint, "road_id", None),
+        getattr(actor_waypoint, "lane_id", None),
+    )
+    current = ego_waypoint
+    for _ in range(max(1, int(math.ceil(float(horizon_m) / float(step_m)))) + 1):
+        current_segment = (
+            getattr(current, "road_id", None),
+            getattr(current, "lane_id", None),
+        )
+        if current_segment == actor_segment:
+            return True
+        current = _scenario_straight_successor(current, step_m)
+        if current is None:
+            break
+    return False
+
+
+def _ground_scenario_avoidance_command(
+    command: Mapping[str, object],
+    world_map: Any,
+    ego: Any,
+    scenario_props: Sequence[tuple[Any, Mapping[str, object]]],
+    *,
+    horizon_m: float = 80.0,
+) -> tuple[dict[str, object] | None, str]:
+    """Bind AVOID_OBSTACLE only to a physical prop in ego's forward lane."""
+    grounded = dict(command)
+    if str(grounded.get("intent", "")).upper() != "AVOID_OBSTACLE":
+        return grounded, "NOT_AN_AVOIDANCE_COMMAND"
+    if not scenario_props:
+        return grounded, "NO_DECLARED_SCENARIO_PROPS"
+    transform = ego.get_transform()
+    origin = ego.get_location()
+    forward = transform.get_forward_vector()
+    candidates: list[tuple[float, Any, Mapping[str, object]]] = []
+    for actor, actor_spec in scenario_props:
+        if not getattr(actor, "is_alive", False):
+            continue
+        location = actor.get_location()
+        dx = float(location.x) - float(origin.x)
+        dy = float(location.y) - float(origin.y)
+        longitudinal_m = dx * float(forward.x) + dy * float(forward.y)
+        if longitudinal_m < 0.0 or origin.distance(location) > float(horizon_m):
+            continue
+        if not _scenario_actor_occupies_ego_lane(
+            world_map, ego, actor, horizon_m=horizon_m,
+        ):
+            continue
+        candidates.append((float(origin.distance(location)), actor, actor_spec))
+    if not candidates:
+        return None, "OBSTACLE_NOT_IN_EGO_LANE"
+    _distance_m, _actor, target_spec = min(candidates, key=lambda item: item[0])
+    target_id = str(target_spec.get("actor_id", "")).strip()
+    if not target_id:
+        return None, "OBSTACLE_ACTOR_ID_MISSING"
+    parameters = grounded.get("parameters", {})
+    if not isinstance(parameters, Mapping):
+        parameters = {}
+    grounded["parameters"] = {**dict(parameters), "target_id": target_id}
+    return grounded, "OBSTACLE_IN_EGO_LANE"
+
+
+def _scenario_command_target_visible(
+    scene: PerceptionFrame,
+    command: Mapping[str, object],
+) -> bool:
+    """Require a grounded avoidance actor to be present in current perception."""
+    if str(command.get("intent", "")).upper() != "AVOID_OBSTACLE":
+        return True
+    parameters = command.get("parameters", {})
+    if not isinstance(parameters, Mapping):
+        return False
+    target_id = str(parameters.get("target_id", "")).strip()
+    if not target_id:
+        return False
+    return any(item.track_id == target_id for item in scene.detected_objects)
+
+
 def _scenario_vehicle_speed_mps(
     actor_spec: Mapping[str, object],
     elapsed_s: float,
@@ -858,6 +1056,52 @@ def _signed_forward_speed_mps(actor: Any) -> float:
         + float(velocity.y) * float(forward.y)
         + float(velocity.z) * float(forward.z)
     )
+
+
+def _scenario_vehicle_lane_steer(
+    world_map: Any,
+    actor: Any,
+    speed_mps: float,
+) -> float:
+    """Track CARLA lane centre so scenario traffic does not leave curved roads.
+
+    Scenario vehicles previously received ``steer=0`` forever.  On Town03 the
+    road bends shortly after the follow phase begins, so the nominated lead
+    drove straight out of its lane while ego correctly followed map topology;
+    from the camera this looked like an uncommanded overtake/lane change.
+    """
+    if world_map is None:
+        return 0.0
+    route = build_route_reference(
+        world_map,
+        actor,
+        max(0.0, float(speed_mps)),
+        distance_m=16.0,
+        step_m=1.0,
+    )
+    location = actor.get_location()
+    transform = actor.get_transform()
+    lookahead_m = max(4.0, min(8.0, 3.0 + float(speed_mps)))
+    target = route.points_xy_m[-1]
+    travelled = 0.0
+    previous = route.points_xy_m[0]
+    for point in route.points_xy_m[1:]:
+        travelled += math.dist(previous, point)
+        if travelled >= lookahead_m:
+            target = point
+            break
+        previous = point
+    dx = float(target[0]) - float(location.x)
+    dy = float(target[1]) - float(location.y)
+    yaw_rad = math.radians(float(transform.rotation.yaw))
+    local_x = math.cos(yaw_rad) * dx + math.sin(yaw_rad) * dy
+    local_y = -math.sin(yaw_rad) * dx + math.cos(yaw_rad) * dy
+    if local_x <= 0.1:
+        return 0.0
+    alpha = math.atan2(local_y, local_x)
+    curvature = 2.0 * math.sin(alpha) / max(lookahead_m, 1e-6)
+    steer_angle = math.atan(2.8 * curvature)
+    return max(-0.55, min(0.55, steer_angle / 0.60))
 
 
 def _spawn_scenario_vehicle(
@@ -891,8 +1135,9 @@ def _spawn_scenario_vehicle(
     world_map = world.get_map()
     lead = None
     for offset_m in (0.0, 2.0, 4.0, 6.0):
-        transform = _scenario_local_transform(
-            carla_api, ego_transform, spawn, forward_offset_m=offset_m,
+        transform = _scenario_topology_transform(
+            carla_api, world_map, ego_transform, spawn,
+            forward_offset_m=offset_m,
         )
         # The ego has already settled onto the road before scenario actors are
         # created, so its transform Z is near zero.  Preserve the declarative
@@ -949,8 +1194,9 @@ def _update_scenario_vehicle(
     carla_api: Any,
     *,
     desired_speed_mps: float | None = None,
+    world_map: Any | None = None,
 ) -> None:
-    """Apply a small deterministic speed controller to a scenario vehicle."""
+    """Apply deterministic speed and map-lane tracking to scenario traffic."""
     if lead is None or not getattr(lead, "is_alive", True):
         raise RuntimeError("configured scenario lead vehicle is not alive")
     desired = (
@@ -965,10 +1211,11 @@ def _update_scenario_vehicle(
         throttle, brake = min(0.45, 0.12 + error / 6.0), 0.0
     else:
         throttle, brake = (0.08 if desired > 0.1 else 0.0), 0.0
+    steer = _scenario_vehicle_lane_steer(world_map, lead, max(desired, current))
     lead.apply_control(carla_api.VehicleControl(
         throttle=throttle,
         brake=brake,
-        steer=0.0,
+        steer=steer,
         hand_brake=False,
         reverse=False,
         manual_gear_shift=False,
@@ -1062,7 +1309,10 @@ def _spawn_scenario_walker(
             blueprint.set_attribute("is_invincible", "false")
 
     anchor = ego.get_transform()
-    transform = _scenario_local_transform(carla_api, anchor, spawn)
+    world_map = world.get_map()
+    transform = _scenario_topology_transform(
+        carla_api, world_map, anchor, spawn,
+    )
     walker = world.try_spawn_actor(blueprint, transform)
     if walker is None:
         raise RuntimeError("cannot spawn configured scenario walker")
@@ -1073,8 +1323,9 @@ def _spawn_scenario_walker(
     target_xy = behavior.get("target_xy_m", [spawn.get("x", 0.0), spawn.get("y", 0.0)])
     if not isinstance(target_xy, (list, tuple)) or len(target_xy) != 2:
         raise TypeError("scenario walker target_xy_m must be [x, y]")
-    target = _scenario_local_transform(
+    target = _scenario_topology_transform(
         carla_api,
+        world_map,
         anchor,
         {"x": target_xy[0], "y": target_xy[1], "z": spawn.get("z", 0.5)},
     ).location
@@ -1155,7 +1406,10 @@ def _spawn_scenario_static_prop(
     if blueprint is None:
         raise LookupError(f"scenario static prop blueprint not found: {blueprint_id!r}")
     prop = world.try_spawn_actor(
-        blueprint, _scenario_local_transform(carla_api, ego.get_transform(), spawn),
+        blueprint,
+        _scenario_topology_transform(
+            carla_api, world.get_map(), ego.get_transform(), spawn,
+        ),
     )
     if prop is None:
         raise RuntimeError("cannot spawn configured scenario static prop")
@@ -1996,6 +2250,12 @@ def run(args: argparse.Namespace) -> None:
         }, ensure_ascii=False, indent=2))
         return
 
+    demo_presenter = DemoStatePresenter(
+        spec.scenario_id if spec is not None else args.scenario,
+    )
+    demo_visualizer: AsyncDemoVisualizer | None = None
+    ui_mode = str(getattr(args, "ui_mode", "off"))
+
     if (
         extension_runtime is not None
         and isinstance(spec.extensions.get("qwen_policy"), Mapping)
@@ -2008,6 +2268,8 @@ def run(args: argparse.Namespace) -> None:
 
     qwen_enabled = bool(getattr(args, "qwen_remote", False))
     qwen_voice_text = _qwen_voice_command(args, spec) if qwen_enabled else ""
+    if qwen_enabled and qwen_voice_text:
+        demo_presenter.note_voice({"source_text": qwen_voice_text})
     qwen_desired_speed_mps = (
         _qwen_desired_speed_mps(args, spec) if qwen_enabled else float(args.default_speed_mps)
     )
@@ -2077,6 +2339,7 @@ def run(args: argparse.Namespace) -> None:
     qwen_client: QwenServiceClient | None = None
     qwen_pre_submit_timing: dict[str, dict[str, float]] = {}
     deferred_commands: list[_DeferredCommand] = []
+    scenario_command_waiting_ids: set[str] = set()
     traffic_light_original_state: Any | None = None
     traffic_light_original_frozen: bool | None = None
     qwen_backend: OpenAICompatibleQwenVLBackend | None = None
@@ -2101,6 +2364,13 @@ def run(args: argparse.Namespace) -> None:
     )
     ego_standstill_since_s: float | None = None
     extension_frame: Any | None = None
+    if ui_mode != "off":
+        demo_visualizer = AsyncDemoVisualizer(
+            mode=ui_mode,
+            fps=float(getattr(args, "ui_fps", 10.0)),
+            record_dir=getattr(args, "ui_record_dir", None),
+        )
+        demo_visualizer.start()
     try:
         if qwen_enabled:
             qwen_backend = OpenAICompatibleQwenVLBackend(
@@ -2191,6 +2461,7 @@ def run(args: argparse.Namespace) -> None:
             qwen_image_stager = QwenImageStager(
                 args.qwen_image_root,
                 ref_prefix=args.qwen_image_prefix,
+                transport=args.qwen_image_transport,
             )
             qwen_client = QwenServiceClient(
                 args.qwen_service_url,
@@ -2312,18 +2583,10 @@ def run(args: argparse.Namespace) -> None:
                 str(item.envelope.get("intent", "")).upper() == "AVOID_OBSTACLE"
                 for item in spec.commands
             ):
-                # Avoidance must leave the blocked corridor earlier than a
-                # comfort-oriented ordinary lane change.  The topology anchor
-                # has already proved that the adjacent lane is legal.
-                prevalidated_avoid_route = RouteReference(
-                    spec.world_route(
-                        route_anchor.location.x,
-                        route_anchor.location.y,
-                        route_anchor.rotation.yaw,
-                    ),
-                    0.0,
-                    args.default_speed_mps,
-                )
+                # Keep ego on CARLA's current lane until the avoidance plan is
+                # actually accepted.  The old hand-authored XY detour crossed
+                # boundaries without consulting lane markings and could make
+                # FOLLOW look like an overtake before P8 began.
                 topology_route = build_route_reference(
                     world_map,
                     route_anchor.location,
@@ -2365,6 +2628,26 @@ def run(args: argparse.Namespace) -> None:
                 f"id={getattr(scenario_traffic_light, 'id', 'unknown')} "
                 f"state={configured_state.upper()} "
                 f"stop_distance_m={seeded_stop_distance_m:.2f}",
+                flush=True,
+            )
+        if spec is not None and any(
+            str(item.envelope.get("intent", "")).upper() == "AVOID_OBSTACLE"
+            for item in spec.commands
+        ):
+            # Traffic-light scenarios replace ``route_anchor`` after the
+            # earlier generic anchor-selection stage.  Rebuild from that final
+            # pose so ego, pedestrians and construction props all use the same
+            # CARLA lane topology.  Keeping the old hand-authored tangent here
+            # makes the ego reference drift roughly one lane away by P8 even
+            # when the obstacle itself is correctly on the road.
+            topology_route = build_route_reference(
+                world_map,
+                route_anchor.location,
+                args.default_speed_mps,
+                distance_m=_scenario_route_distance_m(spec),
+            )
+            print(
+                "route anchor: rebuilt topology route from final scenario anchor",
                 flush=True,
             )
         spawn_transform = route_anchor
@@ -2510,6 +2793,7 @@ def run(args: argparse.Namespace) -> None:
                 command = None
             adapted = None
             if command is not None:
+                demo_presenter.note_voice(command)
                 received_ns = time.monotonic_ns()
                 if canonical_bridge is not None:
                     deferred_commands.append(_DeferredCommand(
@@ -2517,6 +2801,7 @@ def run(args: argparse.Namespace) -> None:
                     ))
                 else:
                     adapted = runtime.submit_voice(command, now_s=initial.timestamp.elapsed_seconds)
+                    demo_presenter.note_local_decision(command)
                     if recorder is not None:
                         recorder.record_command(
                             command,
@@ -2548,16 +2833,6 @@ def run(args: argparse.Namespace) -> None:
                     0.0,
                     runtime.requested_speed_mps,
                 )
-            if (
-                spec is not None
-                and prevalidated_avoid_route is None
-                and any(
-                    str(item.envelope.get("intent", "")).upper() == "AVOID_OBSTACLE"
-                    for item in spec.commands
-                )
-            ):
-                prevalidated_avoid_route = route
-
             if spec is None:
                 route_index_started_ns = time.monotonic_ns()
                 indexed_waypoints = warm_heading_waypoint_cache(world_map)
@@ -2604,6 +2879,8 @@ def run(args: argparse.Namespace) -> None:
                     *((walker, walker_spec) for walker, walker_spec, _target in scenario_walkers),
                     *scenario_props,
                 ]:
+                    if not getattr(actor, "is_alive", True):
+                        continue
                     actor_id = str(actor_spec.get("actor_id", ""))
                     if actor_id:
                         actor_distances_m[actor_id] = float(
@@ -2668,9 +2945,19 @@ def run(args: argparse.Namespace) -> None:
                         )
                         if extension_runtime is not None else {}
                     )
+                    if actor_state.get("active") is False:
+                        if getattr(vehicle, "is_alive", False):
+                            vehicle.destroy()
+                            print(
+                                "scenario actor: despawned after phase exit "
+                                f"id={vehicle_spec.get('actor_id', 'scenario_vehicle')}",
+                                flush=True,
+                            )
+                        continue
                     _update_scenario_vehicle(
                         vehicle, vehicle_spec, elapsed_s, carla,
                         desired_speed_mps=actor_state.get("target_speed_mps"),
+                        world_map=world_map,
                     )
                 for walker, walker_spec, walker_target in scenario_walkers:
                     walker_behavior = walker_spec.get("behavior", {})
@@ -2718,6 +3005,24 @@ def run(args: argparse.Namespace) -> None:
                                 spec is not None and spec.requires_qwen_semantics
                             ),
                         )
+                        scenario_command, obstacle_grounding_reason = (
+                            _ground_scenario_avoidance_command(
+                                scenario_command,
+                                world_map,
+                                ego,
+                                scenario_props,
+                            )
+                        )
+                        if scenario_command is None:
+                            print(json.dumps({
+                                "record_type": "scenario_command_suppressed",
+                                "intent": "AVOID_OBSTACLE",
+                                "reason": obstacle_grounding_reason,
+                                "action": "KEEP_CURRENT_LANE",
+                                "elapsed_s": elapsed_s,
+                            }, ensure_ascii=False), flush=True)
+                            continue
+                        demo_presenter.note_voice(scenario_command)
                         received_ns = time.monotonic_ns()
                         if canonical_bridge is not None:
                             deferred_commands.append(_DeferredCommand(
@@ -2727,6 +3032,7 @@ def run(args: argparse.Namespace) -> None:
                             scenario_adapted = runtime.submit_voice(
                                 scenario_command, now_s=state.sim_time_s,
                             )
+                            demo_presenter.note_local_decision(scenario_command)
                             if recorder is not None:
                                 recorder.record_command(
                                     scenario_command,
@@ -2749,6 +3055,7 @@ def run(args: argparse.Namespace) -> None:
                             continue
                         assert live_result.command is not None
                         live_command = dict(live_result.command)
+                        demo_presenter.note_voice(live_command)
                         if args.test_command_ttl_s is not None:
                             live_command["valid_duration_s"] = args.test_command_ttl_s
                         received_ns = time.monotonic_ns()
@@ -2760,6 +3067,7 @@ def run(args: argparse.Namespace) -> None:
                             live_adapted = runtime.submit_voice(
                                 live_command, now_s=state.sim_time_s,
                             )
+                            demo_presenter.note_local_decision(live_command)
                             if recorder is not None:
                                 recorder.record_command(
                                     live_command,
@@ -3009,6 +3317,7 @@ def run(args: argparse.Namespace) -> None:
                         qwen_bridge.submit(qwen_context, now_s=state.sim_time_s)
                         qwen_submitted = True
                         qwen_status = "PENDING"
+                        demo_presenter.note_qwen("PENDING")
                         if recorder is not None:
                             recorder.record_qwen_event(
                                 request_id=qwen_request_id,
@@ -3030,11 +3339,13 @@ def run(args: argparse.Namespace) -> None:
                     )
                     if qwen_result is not None:
                         qwen_status = qwen_result.status
+                        demo_presenter.note_qwen(qwen_result.status)
                         if qwen_result.ready and not qwen_terminal_recorded:
                             runtime.clear_safety_alerts(("QWEN_PENDING",))
                             if qwen_result.runtime_command is None:
                                 raise RuntimeError("ready Qwen result has no runtime command")
                             high_level = dict(qwen_result.high_level_command or {})
+                            demo_presenter.note_qwen("READY", high_level)
                             runtime_command = dict(qwen_result.runtime_command)
                             qwen_action = str(high_level.get("action", "")).strip().upper()
                             qwen_source = str(
@@ -3113,12 +3424,13 @@ def run(args: argparse.Namespace) -> None:
                     perception_sources["qwen_status"] = qwen_status
                 if spec is not None:
                     scene = _bind_scenario_actor_ids(
-                        scene,
-                        ego,
-                        tuple(scenario_vehicles)
-                        + tuple((actor, actor_spec) for actor, actor_spec, _target in scenario_walkers)
-                        + tuple(scenario_props),
-                    )
+                    scene,
+                    ego,
+                    tuple(scenario_vehicles)
+                    + tuple((actor, actor_spec) for actor, actor_spec, _target in scenario_walkers)
+                    + tuple(scenario_props),
+                    world_map,
+                )
                     if any(item.track_id for item in scene.detected_objects):
                         perception_sources["target_ids"] = "CARLA_SCENARIO_TRACK_ASSOCIATION"
                 scene_bound_ns = time.monotonic_ns()
@@ -3139,11 +3451,36 @@ def run(args: argparse.Namespace) -> None:
                     deferred_commands.clear()
                     slow_submitted_now = False
                     for deferred in queued_now:
-                        image_stage_started_ns = time.monotonic_ns()
-                        rgb_ref = None
                         staged_command_id = str(
                             deferred.envelope.get("command_id", "")
                         )
+                        if not _scenario_command_target_visible(
+                            scene, deferred.envelope,
+                        ):
+                            # The distance trigger may fire one frame before
+                            # LiDAR association obtains the stable scenario ID.
+                            # Retain the command and retry against the next
+                            # fresh perception frame instead of retargeting a
+                            # generic obstacle or issuing an unsafe lane change.
+                            deferred_commands.append(deferred)
+                            if staged_command_id not in scenario_command_waiting_ids:
+                                scenario_command_waiting_ids.add(staged_command_id)
+                                print(json.dumps({
+                                    "record_type": "scenario_command_waiting",
+                                    "command_id": staged_command_id,
+                                    "reason": "GROUNDED_TARGET_NOT_YET_VISIBLE",
+                                    "action": "KEEP_CURRENT_LANE",
+                                }, ensure_ascii=False), flush=True)
+                            continue
+                        if staged_command_id in scenario_command_waiting_ids:
+                            scenario_command_waiting_ids.discard(staged_command_id)
+                            print(json.dumps({
+                                "record_type": "scenario_command_target_acquired",
+                                "command_id": staged_command_id,
+                                "action": "SUBMIT_QWEN_PLAN",
+                            }, ensure_ascii=False), flush=True)
+                        image_stage_started_ns = time.monotonic_ns()
+                        rgb_ref = None
                         if current_rgb is not None and qwen_image_stager is not None:
                             rgb_ref = qwen_image_stager.stage(
                                 staged_command_id, current_rgb, frame_id=frame,
@@ -3163,6 +3500,9 @@ def run(args: argparse.Namespace) -> None:
                             captured_at_ns=sensor_ready_ns,
                             rgb_ref=rgb_ref,
                             runtime_state=planner_state,
+                        )
+                        demo_presenter.note_orchestration(
+                            submission.orchestration, now_s=state.sim_time_s,
                         )
                         submitted_ns = time.monotonic_ns()
                         if sensor_ready_ns is not None:
@@ -3320,6 +3660,12 @@ def run(args: argparse.Namespace) -> None:
                         if qwen_image_stager is not None:
                             qwen_image_stager.discard(resolution.command_id)
                         orchestration = resolution.orchestration
+                        if orchestration is not None:
+                            demo_presenter.note_orchestration(
+                                orchestration, now_s=state.sim_time_s,
+                            )
+                        else:
+                            demo_presenter.note_qwen(resolution.disposition)
                         if extension_runtime is not None:
                             resolution_reason = _qwen_resolution_reason(orchestration)
                             extension_runtime.note_qwen_resolution(
@@ -3412,8 +3758,12 @@ def run(args: argparse.Namespace) -> None:
                                     recorder=recorder,
                                     extension_runtime=extension_runtime,
                                 )
+                                initial_plan_payload = dict(orchestration.compiled_plan)
+                                initial_plan_payload["steps"] = list(
+                                    orchestration.compiled_plan.get("steps", ())
+                                )[:1]
                                 route, compiled_speed, route_behavior = _apply_compiled_plan_route(
-                                    orchestration.compiled_plan,
+                                    initial_plan_payload,
                                     world_map=world_map,
                                     ego=ego,
                                     current_route=route,
@@ -3424,7 +3774,16 @@ def run(args: argparse.Namespace) -> None:
                                         else _scenario_route_distance_m(spec)
                                     ),
                                     prevalidated_maneuver_route=(
-                                        prevalidated_avoid_route or topology_route
+                                        prevalidated_avoid_route
+                                        or (
+                                            topology_route
+                                            if spec is None or not any(
+                                                str(item.envelope.get("intent", "")).upper()
+                                                == "AVOID_OBSTACLE"
+                                                for item in spec.commands
+                                            )
+                                            else None
+                                        )
                                     ),
                                 )
                                 runtime.requested_speed_mps = compiled_speed
@@ -3810,6 +4169,34 @@ def run(args: argparse.Namespace) -> None:
                     _follow_ego_spectator(world, ego, carla)
                 control_applied_ns = time.monotonic_ns()
                 watchdog.heartbeat("control", now_s=time.monotonic())
+                if demo_visualizer is not None:
+                    try:
+                        demo_state = demo_presenter.build(
+                            scene=scene,
+                            vehicle=state,
+                            result=result,
+                            target_speed_mps=(
+                                effective_route.target_speed_mps
+                                if result.longitudinal is None
+                                else result.longitudinal.target_speed_mps
+                            ),
+                            perception_sources=perception_sources,
+                            active_faults=(
+                                () if extension_frame is None
+                                else tuple(extension_frame.active_faults)
+                            ),
+                            execution_state=runtime.fsm.state.value,
+                            active_command=runtime.active_command_id is not None,
+                            now_s=state.sim_time_s,
+                            debug=ui_mode == "debug",
+                        )
+                        demo_visualizer.submit(current_rgb, demo_state)
+                    except Exception as error:
+                        print(
+                            "warning: demo UI snapshot skipped without affecting control: "
+                            f"{type(error).__name__}: {error}",
+                            flush=True,
+                        )
                 timing = FrameTiming(
                     sensor_ready_ns=sensor_ready_ns,
                     decision_start_ns=decision_start_ns,
@@ -4048,6 +4435,13 @@ def run(args: argparse.Namespace) -> None:
                 pass
         raise
     finally:
+        if demo_visualizer is not None:
+            demo_visualizer.close()
+            if demo_visualizer.error is not None:
+                print(
+                    f"warning: demo UI disabled: {demo_visualizer.error}",
+                    flush=True,
+                )
         if qwen_bridge is not None:
             qwen_bridge.close()
         if qwen_backend is not None:
@@ -4107,9 +4501,9 @@ def main() -> None:
                         help="maximum ticks used to obtain the first aligned RGB/LiDAR frame")
     parser.add_argument("--sensor-startup-grace-frames", type=int, default=2,
                         help="initial perception misses that brake without permanently latching watchdog")
-    parser.add_argument("--sensor-profile", choices=("default", "low"), default="default",
-                        help="default uses full validation density; low reduces RGB/LiDAR/Radar load "
-                             "for unstable Windows/UE4 hosts")
+    parser.add_argument("--sensor-profile", choices=("default", "demo", "low"), default="default",
+                        help="demo uses 1280x720 RGB with low-load ranging sensors; default uses "
+                             "full validation density; low minimizes RGB/LiDAR/Radar load")
     parser.add_argument("--rgb-detector-model",
                         help="optional Ultralytics-style ONNX model for RGB vehicle/person detection")
     parser.add_argument("--rgb-detector-confidence", type=float, default=0.35,
@@ -4188,8 +4582,24 @@ def main() -> None:
         "--qwen-image-prefix", default="artifacts/second_group_20260731/qwen_images",
         help="safe relative subdirectory for asynchronously staged RGB frames",
     )
+    parser.add_argument(
+        "--qwen-image-transport", choices=("shared", "inline"), default="shared",
+        help="shared uses a common image filesystem; inline embeds JPEG data for a remote host",
+    )
     parser.add_argument("--follow-spectator", action="store_true",
                         help="move the graphical spectator camera behind the ego each frame")
+    parser.add_argument(
+        "--ui-mode", choices=("off", "demo", "debug"), default="off",
+        help="1920x1080 Chinese visualization; demo hides internal fields, debug adds telemetry",
+    )
+    parser.add_argument(
+        "--ui-fps", type=float, default=10.0,
+        help="maximum visualization refresh rate; rendering is asynchronous and may drop frames",
+    )
+    parser.add_argument(
+        "--ui-record-dir",
+        help="optional directory for asynchronously composed 1920x1080 PNG frames",
+    )
     parser.add_argument("--scenario-file",
                         help="run a scenarios/*.json contract; overrides map, fixed delta, frames and scenario id")
     parser.add_argument("--validate-scenario-only", action="store_true",
@@ -4221,6 +4631,8 @@ def main() -> None:
         parser.error("--qwen-timeout-ms must be positive")
     if args.qwen_queue_size < 1:
         parser.error("--qwen-queue-size must be >= 1")
+    if args.ui_fps <= 0.0:
+        parser.error("--ui-fps must be positive")
     if not 0.0 < args.rgb_detector_confidence <= 1.0:
         parser.error("--rgb-detector-confidence must be in (0, 1]")
     if not 0.0 < args.rgb_detector_iou <= 1.0:

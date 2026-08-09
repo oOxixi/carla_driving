@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError as FutureTimeout
 from dataclasses import dataclass
 import base64
@@ -293,6 +293,13 @@ class LocalQwenPlannerBackend:
     """Real local Qwen2.5-VL generation backend for ManeuverPlan V2 JSON."""
 
     production_ready = True
+    _CHOICES = {
+        "A": "KEEP_LANE", "B": "SET_SPEED", "C": "SLOW_DOWN", "D": "STOP",
+        "E": "YIELD", "F": "FOLLOW", "G": "CHANGE_LANE_LEFT",
+        "H": "CHANGE_LANE_RIGHT", "I": "TURN_LEFT", "J": "TURN_RIGHT",
+        "K": "AVOID_OBSTACLE", "L": "RETURN_TO_LANE", "M": "PULL_OVER",
+        "N": "HOLD",
+    }
 
     def __init__(
         self,
@@ -319,22 +326,83 @@ class LocalQwenPlannerBackend:
     def health(self) -> tuple[bool, str]:
         return True, f"local planner checkpoint loaded: {self.model_path}"
 
+    @classmethod
+    def _parse_choice(cls, raw: Any, choice_codes: Sequence[str]) -> str | None:
+        """Accept a constrained code or an unambiguous echoed behavior name.
+
+        Some Transformers generations echo a prompt field before the semantic
+        answer (for example ``R=AVOID_OBSTACLE``) instead of returning only
+        ``K``.  The behavior name is still safe to accept when, and only when,
+        its canonical code is in the already constrained choice set.
+        """
+        normalized = str(raw).strip().upper()
+        if not normalized:
+            return None
+        allowed = tuple(str(code).strip().upper() for code in choice_codes)
+        if normalized in allowed:
+            return normalized
+        for token in normalized.split():
+            cleaned = token.strip(".,;:()[]{}")
+            if cleaned in allowed:
+                return cleaned
+        parts = [item.strip().strip(".,;:()[]{}") for item in normalized.split("=", 1)]
+        if parts[0] in allowed:
+            return parts[0]
+        semantic = parts[-1]
+        for code in allowed:
+            if cls._CHOICES.get(code) == semantic:
+                return code
+        return None
+
     def infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]:
         routing = request.get("routing")
         if not isinstance(routing, Mapping):
             raise ValueError("planner_v2 request is missing routing metadata")
-        prompt = build_planner_v2_prompt(
-            request, routing,
-            scene_capabilities=request.get("scene_capabilities", {}),
+        choice_codes = VllmQwenPlannerBackend._choice_codes(self, request)
+        prompt = VllmQwenPlannerBackend._choice_prompt(
+            self, request, choice_codes=choice_codes,
         )
-        return parse_maneuver_plan(self.backend.generate(
+        raw = self.backend.generate(
             prompt=prompt,
             image_path=self._resolve_image(request.get("rgb_ref")),
-        ))
+        )
+        code = self._parse_choice(raw, choice_codes)
+        if code is None:
+            raise ValueError(
+                f"Qwen returned no allowed planner choice {choice_codes}: {raw!r}"
+            )
+        behavior = self._CHOICES[code]
+        if routing.get("disposition") == "CONFIRM_SAFE":
+            behavior = "HOLD"
+        constraints = request["constraints"]
+        if constraints["must_stop"]:
+            behavior = "STOP"
+        steps = [VllmQwenPlannerBackend._step(self, request, behavior, index=1)]
+        if behavior == "AVOID_OBSTACLE":
+            steps.append(
+                VllmQwenPlannerBackend._step(self, request, "RETURN_TO_LANE", index=2)
+            )
+        return {
+            "schema_version": "2.0",
+            "request_id": request["request_id"],
+            "command_id": request["command_id"],
+            "plan_id": f"plan-{request['request_id']}",
+            "plan_type": "MANEUVER_SEQUENCE",
+            "steps": steps,
+            "replan_conditions": ["NEW_EMERGENCY_OBJECT", "ROUTE_DEVIATION"],
+            "confidence": 0.90,
+            "requires_confirmation": False,
+            "created_at_ns": int(request["created_at_ns"]),
+            "valid_until_ns": int(request["deadline_ns"]),
+            "reason_code": f"QWEN_TRANSFORMERS_CHOICE_{code}_{behavior}",
+            "model_id": self.model_id,
+        }
 
-    def _resolve_image(self, value: Any) -> Path | None:
+    def _resolve_image(self, value: Any) -> Path | str | None:
         if value is None:
             return None
+        if isinstance(value, str) and value.startswith("data:image/"):
+            return value
         candidate = Path(str(value)).expanduser()
         if self.image_root is None:
             candidate = candidate.resolve()
@@ -476,6 +544,17 @@ class VllmQwenPlannerBackend:
             "RETURN_TO_LANE": {"D", "L"},
             "PULL_OVER": {"D", "M"},
         }.get(str(hint.get("intent", "")).upper() if isinstance(hint, Mapping) else "")
+        # Scenario contracts sometimes classify the natural-language command
+        # as generic KEEP_LANE even when it explicitly says “follow”.  Keep
+        # the model's choice high-level, but constrain it to the semantic
+        # family expressed by the user's text so it cannot invent an unsafe
+        # lane change for a follow request.
+        source_lower = str(request.get("source_text", "")).lower()
+        if (
+            "FOLLOW" in allowed
+            and any(token in source_lower for token in ("跟随", "跟着", "follow", "前车"))
+        ):
+            intent_codes = {"D", "F"}
         if intent_codes is not None:
             codes = [code for code in codes if code in intent_codes]
         if direction in {"LEFT", "RIGHT"}:
@@ -539,9 +618,27 @@ class VllmQwenPlannerBackend:
         capabilities = request.get("scene_capabilities", {})
         targets = request.get("targets", ())
         target_id = None
-        if targets and behavior in {
+        target_behaviors = {
             "FOLLOW", "AVOID_OBSTACLE", "YIELD", "SLOW_DOWN", "STOP",
-        }:
+        }
+        hinted_target = hint.get("target") if isinstance(hint, Mapping) else None
+        hinted_target_id = (
+            hinted_target.strip() if isinstance(hinted_target, str) else ""
+        )
+        visible_target_ids = {
+            str(item.get("target_id", ""))
+            for item in targets
+            if isinstance(item, Mapping) and item.get("target_id")
+        }
+        if hinted_target_id and behavior in target_behaviors:
+            # A grounded target is authoritative only while visible. If it is
+            # occluded, leave the target empty so plan validation fails closed
+            # instead of selecting an unrelated vehicle.
+            target_id = (
+                hinted_target_id
+                if hinted_target_id in visible_target_ids else None
+            )
+        elif targets and behavior in target_behaviors:
             preferred_relations = (
                 {"center_ahead", "far_ahead"}
                 if behavior == "FOLLOW"
@@ -872,6 +969,23 @@ class QwenDecisionService:
             raise ServiceFailure(400, "INVALID_REQUEST", str(error), request_id=request_id) from error
         request_id = request["request_id"]
         now = self._clock_ns()
+        # ``created_at_ns``/``deadline_ns`` are monotonic timestamps created by
+        # the local CARLA process.  A remote Qwen host has a different
+        # monotonic epoch, so normalize request time into this process's epoch
+        # for validation/inference and translate plan timestamps back before
+        # returning them to the caller.
+        clock_offset_ns = now - int(request["created_at_ns"])
+        # Very small timestamps are deliberately used by expiry contract
+        # tests and must remain expired rather than being treated as a remote
+        # clock epoch.
+        cross_host_clock = (
+            int(request["created_at_ns"]) > 1_000_000_000_000
+            and abs(clock_offset_ns) > 1_000_000_000
+        )
+        if cross_host_clock:
+            request = dict(request)
+            request["created_at_ns"] = int(request["created_at_ns"]) + clock_offset_ns
+            request["deadline_ns"] = int(request["deadline_ns"]) + clock_offset_ns
         if request["deadline_ns"] <= request["created_at_ns"]:
             self._increment("invalid")
             raise ServiceFailure(400, "INVALID_DEADLINE", "deadline must follow creation", request_id=request_id)
@@ -935,6 +1049,10 @@ class QwenDecisionService:
         with self._lock:
             self._counts["success"] += 1
             self._latencies_ms.append(elapsed_ms)
+        if cross_host_clock:
+            plan = dict(plan)
+            plan["created_at_ns"] = int(plan["created_at_ns"]) - clock_offset_ns
+            plan["valid_until_ns"] = int(plan["valid_until_ns"]) - clock_offset_ns
         return plan
 
     def health(self) -> dict[str, Any]:

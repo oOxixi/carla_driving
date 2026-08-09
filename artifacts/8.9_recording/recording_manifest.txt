@@ -1,0 +1,12 @@
+recording_status=SUCCEEDED
+runner_status=0
+ffmpeg_status=255
+carla_window=0x5c00037
+first_person_window=0x6a00007
+synchronized_frames=3094
+filename=artifacts/8.9_recording/CX_MAIN_01_CARLA_follow_view.mp4
+duration=309.400000
+size=8789928
+filename=artifacts/8.9_recording/CX_MAIN_01_first_person_view.mp4
+duration=309.400000
+size=21300323

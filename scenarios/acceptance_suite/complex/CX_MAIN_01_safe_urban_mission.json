@@ -19,7 +19,7 @@
   "runtime": {
     "sync_mode": true,
     "fixed_delta_seconds": 0.05,
-    "duration_s": 66,
+    "duration_s": 110,
     "max_startup_wait_s": 10
   },
   "ego_spawn": {
@@ -36,47 +36,39 @@
         0
       ],
       [
-        20,
-        0
-      ],
-      [
         40,
         0
       ],
       [
-        60,
-        2
-      ],
-      [
         80,
-        5
-      ],
-      [
-        105,
-        5
-      ],
-      [
-        125,
-        2
-      ],
-      [
-        145,
         0
       ],
       [
-        150,
-        3.5
-      ],
-      [
-        165,
-        3.5
+        120,
+        0
       ],
       [
         185,
+        0
+      ],
+      [
+        200,
         3.5
       ],
       [
-        205,
+        235,
+        3.5
+      ],
+      [
+        260,
+        0
+      ],
+      [
+        290,
+        0
+      ],
+      [
+        320,
         0
       ]
     ],
@@ -136,7 +128,7 @@
       "phase_id": "P3_FOLLOW",
       "trigger": {
         "type": "route_progress_greater_than_m",
-        "value": 35
+        "value": 55
       }
     },
     {
@@ -181,7 +173,7 @@
     },
     {
       "time_s": 0,
-      "source_text": "从右侧安全绕过前方施工障碍",
+      "source_text": "从右侧虚线处安全绕过前方施工障碍",
       "intent": "AVOID_OBSTACLE",
       "parameters": {
         "direction": "RIGHT",
@@ -194,7 +186,7 @@
       "trigger": {
         "type": "ego_distance_to_actor_less_than_m",
         "actor_id": "construction_blocker",
-        "value": 28
+        "value": 35
       }
     },
     {
@@ -214,7 +206,7 @@
           },
           {
             "type": "route_progress_greater_than_m",
-            "value": 195
+            "value": 270
           }
         ]
       }
@@ -239,11 +231,11 @@
           {
             "trigger": {
               "type": "ego_distance_less_than_m",
-              "value": 16
+              "value": 24
             },
             "action": {
               "type": "set_speed",
-              "target_speed_mps": 0.3
+              "target_speed_mps": 1.0
             },
             "phase_id": "P4_LEAD_BRAKE"
           },
@@ -254,7 +246,16 @@
             },
             "action": {
               "type": "set_speed",
-              "target_speed_mps": 3.0
+              "target_speed_mps": 6.0
+            }
+          },
+          {
+            "trigger": {
+              "type": "route_progress_greater_than_m",
+              "value": 150
+            },
+            "action": {
+              "type": "despawn"
             }
           }
         ]
@@ -272,8 +273,19 @@
       },
       "behavior": {
         "mode": "lead_vehicle",
-        "initial_speed_mps": 4.5,
-        "target_speed_mps": 4.5
+        "initial_speed_mps": 7.0,
+        "target_speed_mps": 7.0,
+        "events": [
+          {
+            "trigger": {
+              "type": "route_progress_greater_than_m",
+              "value": 150
+            },
+            "action": {
+              "type": "despawn"
+            }
+          }
+        ]
       }
     },
     {
@@ -288,8 +300,19 @@
       },
       "behavior": {
         "mode": "lead_vehicle",
-        "initial_speed_mps": 3.5,
-        "target_speed_mps": 3.5
+        "initial_speed_mps": 7.0,
+        "target_speed_mps": 7.0,
+        "events": [
+          {
+            "trigger": {
+              "type": "route_progress_greater_than_m",
+              "value": 150
+            },
+            "action": {
+              "type": "despawn"
+            }
+          }
+        ]
       }
     },
     {
@@ -346,7 +369,7 @@
       "type": "static.prop",
       "blueprint_id": "static.prop.warningconstruction",
       "spawn": {
-        "x": 160,
+        "x": 220,
         "y": 0.0,
         "z": 0.5,
         "yaw_deg": 0.0
@@ -357,8 +380,8 @@
       "type": "static.prop",
       "blueprint_id": "static.prop.warningconstruction",
       "spawn": {
-        "x": 157,
-        "y": -2,
+        "x": 217,
+        "y": -7,
         "z": 0.5,
         "yaw_deg": 0.0
       }

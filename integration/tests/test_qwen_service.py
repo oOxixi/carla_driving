@@ -15,6 +15,7 @@ from integration.qwen_plan_adapter import QwenPlanParseError
 from qwen_service import (
     DeterministicPlannerV2Backend,
     DeterministicTestBackend,
+    LocalQwenPlannerBackend,
     QwenDecisionService,
     QwenServiceConfig,
     ServiceFailure,
@@ -280,6 +281,18 @@ def test_vllm_choice_constraint_excludes_disallowed_lane_changes() -> None:
     assert "H=CHANGE_LANE_RIGHT" not in prompt
 
 
+def test_vllm_choice_constraint_uses_follow_text_when_hint_is_generic_keep_lane() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "跟随正前方同车道的车辆并保持安全距离"
+    request["command_hint"] = {"intent": "KEEP_LANE", "target_speed_mps": 5.0}
+    request["constraints"]["allowed_behaviors"] = [
+        "KEEP_LANE", "SLOW_DOWN", "STOP", "FOLLOW", "CHANGE_LANE",
+    ]
+
+    assert backend._choice_codes(request) == ["D", "F"]
+
+
 def test_vllm_choice_constraint_narrows_explicit_right_avoid_to_whole_maneuver() -> None:
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
     request = _request()
@@ -294,6 +307,15 @@ def test_vllm_choice_constraint_narrows_explicit_right_avoid_to_whole_maneuver()
     codes = backend._choice_codes(request)
 
     assert codes == ["D", "K"]
+
+
+def test_local_planner_accepts_semantic_choice_echo_with_unknown_prefix() -> None:
+    assert LocalQwenPlannerBackend._parse_choice(
+        "R=AVOID_OBSTACLE", ["D", "K"],
+    ) == "K"
+    assert LocalQwenPlannerBackend._parse_choice(
+        "R=KEEP_LANE", ["D", "K"],
+    ) is None
 
 
 def test_vllm_avoid_step_preserves_explicit_right_target_lane() -> None:
@@ -385,6 +407,66 @@ def test_vllm_follow_prefers_vehicle_over_nearer_center_obstacle() -> None:
     step = backend._step(request, "FOLLOW", index=1)
 
     assert step["target"]["target_id"] == "target_front"
+
+
+def test_vllm_null_target_hint_still_binds_visible_follow_vehicle() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["scene_capabilities"] = {}
+    request["command_hint"] = {
+        "intent": "KEEP_LANE", "target_speed_mps": 5.0,
+        "direction": None, "target": None,
+    }
+    request["targets"] = [{
+        "target_id": "target_front", "class": "vehicle",
+        "distance_m": 13.0, "relation": "center_ahead",
+    }]
+
+    step = backend._step(request, "FOLLOW", index=1)
+
+    assert step["target"]["target_id"] == "target_front"
+
+
+def test_vllm_avoid_preserves_visible_grounded_command_target() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["scene_capabilities"] = {}
+    request["command_hint"] = {
+        "intent": "AVOID_OBSTACLE", "direction": "RIGHT",
+        "target_speed_mps": None, "target": "construction_blocker",
+    }
+    request["targets"] = [
+        {
+            "target_id": "target_front", "class": "vehicle",
+            "distance_m": 12.0, "relation": "center_ahead",
+        },
+        {
+            "target_id": "construction_blocker", "class": "obstacle",
+            "distance_m": 18.0, "relation": "center_ahead",
+        },
+    ]
+
+    step = backend._step(request, "AVOID_OBSTACLE", index=1)
+
+    assert step["target"]["target_id"] == "construction_blocker"
+
+
+def test_vllm_avoid_does_not_retarget_when_grounded_actor_is_occluded() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["scene_capabilities"] = {}
+    request["command_hint"] = {
+        "intent": "AVOID_OBSTACLE", "direction": "RIGHT",
+        "target_speed_mps": None, "target": "construction_blocker",
+    }
+    request["targets"] = [{
+        "target_id": "target_front", "class": "vehicle",
+        "distance_m": 12.0, "relation": "center_ahead",
+    }]
+
+    step = backend._step(request, "AVOID_OBSTACLE", index=1)
+
+    assert step["target"]["target_id"] is None
 
 
 def test_vllm_visual_slow_down_binds_target_and_reduces_hinted_speed() -> None:

@@ -32,6 +32,8 @@ from integration.carla_runner import (
     _save_qwen_rgb_image,
     _select_load_map,
     _expected_safety_completed,
+    _ground_scenario_avoidance_command,
+    _scenario_command_target_visible,
     _rejected_load_envelope,
     _route_contract_completed,
     _route_stop_trigger_m,
@@ -43,13 +45,16 @@ from integration.carla_runner import (
     _scenario_raw_control_fault,
     _scenario_requires_adjacent_lane_anchor,
     _scenario_maneuver,
+    _scenario_actor_occupies_ego_lane,
     _scenario_local_transform,
+    _scenario_topology_transform,
     _scenario_traffic_light_observation,
     _scenario_traffic_light_distance_to_stop_line_m,
     _scenario_target_lane_occupied_count,
     _cleanup_stale_scenario_actors,
     _single_sensor_fault_speed_cap_mps,
     _scenario_vehicle_speed_mps,
+    _scenario_vehicle_lane_steer,
     _update_scenario_walker,
     _update_scenario_vehicle,
     _select_scene_facts,
@@ -163,6 +168,46 @@ def test_scenario_vehicle_applies_updated_timeline_speed() -> None:
     assert vehicle.applied is not None
     assert vehicle.applied["throttle"] > 0.0
     assert vehicle.applied["brake"] == 0.0
+
+
+def test_scenario_vehicle_steers_with_curved_carla_lane() -> None:
+    class Waypoint:
+        lane_type = "Driving"
+        is_junction = False
+
+        def __init__(self, x: float, y: float, yaw: float):
+            self.transform = Namespace(
+                location=Namespace(x=x, y=y),
+                rotation=Namespace(yaw=yaw),
+            )
+            self.child = None
+
+        def next(self, _step):
+            return () if self.child is None else (self.child,)
+
+    points = [
+        Waypoint(0.0, 0.0, 0.0),
+        Waypoint(2.0, 0.1, 3.0),
+        Waypoint(4.0, 0.4, 7.0),
+        Waypoint(6.0, 0.9, 12.0),
+        Waypoint(8.0, 1.6, 16.0),
+        Waypoint(10.0, 2.5, 20.0),
+        Waypoint(12.0, 3.6, 24.0),
+        Waypoint(14.0, 4.9, 28.0),
+        Waypoint(16.0, 6.4, 32.0),
+    ]
+    for first, second in zip(points, points[1:]):
+        first.child = second
+    actor = Namespace(
+        get_location=lambda: Namespace(x=0.0, y=0.0),
+        get_transform=lambda: Namespace(
+            location=Namespace(x=0.0, y=0.0),
+            rotation=Namespace(yaw=0.0),
+        ),
+    )
+    world_map = Namespace(get_waypoint=lambda *_args, **_kwargs: points[0])
+
+    assert _scenario_vehicle_lane_steer(world_map, actor, 3.0) > 0.05
 
 
 def test_voice_load_failure_becomes_rejected_no_op() -> None:
@@ -339,6 +384,84 @@ def test_generic_lidar_obstacle_binds_nearest_geometric_scenario_actor() -> None
     assert bound.detected_objects[0].track_id == "lead-car"
     assert bound.detected_objects[0].class_id == 2
     assert bound.detected_objects[0].class_name == "car"
+
+
+def test_center_obstacle_binding_rejects_closer_prop_in_adjacent_lane() -> None:
+    class Location:
+        def __init__(self, x, y):
+            self.x, self.y, self.z = x, y, 0.0
+
+        def distance(self, other):
+            return math.hypot(self.x - other.x, self.y - other.y)
+
+    class Transform:
+        def __init__(self, location):
+            self.location = location
+            self.rotation = Namespace(yaw=0.0)
+
+        @staticmethod
+        def get_forward_vector():
+            return Namespace(x=1.0, y=0.0)
+
+    class Actor:
+        is_alive = True
+
+        def __init__(self, location):
+            self.location = location
+
+        def get_location(self):
+            return self.location
+
+    ego_location = Location(0.0, 0.0)
+    blocker_location = Location(22.0, 0.0)
+    warning_location = Location(19.0, -3.5)
+    ego_waypoint = Namespace(
+        road_id=7,
+        lane_id=-1,
+        lane_width=3.5,
+        transform=Namespace(location=ego_location, rotation=Namespace(yaw=0.0)),
+        next=lambda _distance: (),
+    )
+    blocker_waypoint = Namespace(
+        road_id=7,
+        lane_id=-1,
+        lane_width=3.5,
+        transform=Namespace(location=blocker_location, rotation=Namespace(yaw=0.0)),
+    )
+    warning_waypoint = Namespace(
+        road_id=7,
+        lane_id=-2,
+        lane_width=3.5,
+        transform=Namespace(location=warning_location, rotation=Namespace(yaw=0.0)),
+    )
+    world_map = Namespace(get_waypoint=lambda location, project_to_road=True: {
+        id(ego_location): ego_waypoint,
+        id(blocker_location): blocker_waypoint,
+        id(warning_location): warning_waypoint,
+    }[id(location)])
+    ego = Namespace(
+        get_location=lambda: ego_location,
+        get_transform=lambda: Transform(ego_location),
+    )
+    scene = PerceptionFrame(1, 0.05, detected_objects=(
+        DetectedObject(0, "obstacle", 1.0, (0.45, 0.2, 0.55, 0.8), 20.0),
+    ))
+
+    bound = _bind_scenario_actor_ids(
+        scene,
+        ego,
+        (
+            (Actor(warning_location), {
+                "actor_id": "construction_warning", "type": "static.prop",
+            }),
+            (Actor(blocker_location), {
+                "actor_id": "construction_blocker", "type": "static.prop",
+            }),
+        ),
+        world_map,
+    )
+
+    assert bound.detected_objects[0].track_id == "construction_blocker"
 
 
 def test_scenario_facts_can_override_or_only_fill_missing_perception() -> None:
@@ -803,6 +926,175 @@ def test_scenario_local_actor_transform_rotates_with_ego_heading() -> None:
     assert result.location.x == pytest.approx(10.0)
     assert result.location.y == pytest.approx(38.0)
     assert result.rotation.yaw == pytest.approx(90.0)
+
+
+def test_scenario_topology_transform_follows_bend_before_lateral_offset() -> None:
+    class Location:
+        def __init__(self, x=0.0, y=0.0, z=0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Rotation:
+        def __init__(self, pitch=0.0, yaw=0.0, roll=0.0):
+            self.pitch, self.yaw, self.roll = pitch, yaw, roll
+
+    class Transform:
+        def __init__(self, location, rotation):
+            self.location, self.rotation = location, rotation
+
+    class Waypoint:
+        def __init__(self, x, y, yaw):
+            self.transform = Transform(Location(x, y), Rotation(yaw=yaw))
+            self.successor = None
+
+        def next(self, _distance):
+            return () if self.successor is None else (self.successor,)
+
+    first = Waypoint(0.0, 0.0, 0.0)
+    bend = Waypoint(1.0, 0.0, 0.0)
+    target = Waypoint(1.0, 1.0, 90.0)
+    first.successor = bend
+    bend.successor = target
+    carla_api = Namespace(Location=Location, Rotation=Rotation, Transform=Transform)
+    world_map = Namespace(get_waypoint=lambda _location, project_to_road=True: first)
+    anchor = Transform(Location(0.0, 0.0), Rotation(yaw=0.0))
+
+    result = _scenario_topology_transform(
+        carla_api,
+        world_map,
+        anchor,
+        {"x": 2.0, "y": 1.0, "z": 0.5, "yaw_deg": 0.0},
+    )
+
+    # The lateral offset rotates with the new 90-degree lane tangent. The old
+    # initial-yaw transform would incorrectly return (2, 1).
+    assert result.location.x == pytest.approx(0.0)
+    assert result.location.y == pytest.approx(1.0)
+    assert result.rotation.yaw == pytest.approx(90.0)
+
+
+def test_obstacle_lane_occupancy_follows_forward_road_segments() -> None:
+    class Location:
+        def __init__(self, x, y):
+            self.x, self.y, self.z = x, y, 0.0
+
+    class Waypoint:
+        def __init__(self, road_id, lane_id, location):
+            self.road_id = road_id
+            self.lane_id = lane_id
+            self.lane_width = 3.5
+            self.transform = Namespace(
+                location=location,
+                rotation=Namespace(yaw=0.0),
+            )
+            self.successor = None
+
+        def next(self, _distance):
+            return () if self.successor is None else (self.successor,)
+
+    ego_location = Location(0.0, 0.0)
+    in_lane_location = Location(20.0, 0.0)
+    adjacent_location = Location(20.0, 3.5)
+    ego_waypoint = Waypoint(10, -1, ego_location)
+    continuation = Waypoint(11, -1, in_lane_location)
+    adjacent = Waypoint(11, -2, adjacent_location)
+    ego_waypoint.successor = continuation
+    world_map = Namespace(get_waypoint=lambda location, project_to_road=True: {
+        id(ego_location): ego_waypoint,
+        id(in_lane_location): continuation,
+        id(adjacent_location): adjacent,
+    }[id(location)])
+    ego = Namespace(get_location=lambda: ego_location)
+
+    assert _scenario_actor_occupies_ego_lane(
+        world_map, ego, Namespace(get_location=lambda: in_lane_location),
+    ) is True
+    assert _scenario_actor_occupies_ego_lane(
+        world_map, ego, Namespace(get_location=lambda: adjacent_location),
+    ) is False
+
+
+def test_avoidance_command_targets_only_prop_in_ego_lane() -> None:
+    class Location:
+        def __init__(self, x, y):
+            self.x, self.y, self.z = x, y, 0.0
+
+        def distance(self, other):
+            return math.hypot(self.x - other.x, self.y - other.y)
+
+    ego_location = Location(0.0, 0.0)
+    blocker_location = Location(25.0, 0.0)
+    warning_location = Location(20.0, -3.5)
+    ego_waypoint = Namespace(
+        road_id=5, lane_id=-1, lane_width=3.5,
+        transform=Namespace(location=ego_location, rotation=Namespace(yaw=0.0)),
+        next=lambda _distance: (),
+    )
+    blocker_waypoint = Namespace(
+        road_id=5, lane_id=-1, lane_width=3.5,
+        transform=Namespace(location=blocker_location, rotation=Namespace(yaw=0.0)),
+    )
+    warning_waypoint = Namespace(
+        road_id=5, lane_id=-2, lane_width=3.5,
+        transform=Namespace(location=warning_location, rotation=Namespace(yaw=0.0)),
+    )
+    world_map = Namespace(get_waypoint=lambda location, project_to_road=True: {
+        id(ego_location): ego_waypoint,
+        id(blocker_location): blocker_waypoint,
+        id(warning_location): warning_waypoint,
+    }[id(location)])
+    ego = Namespace(
+        get_location=lambda: ego_location,
+        get_transform=lambda: Namespace(
+            get_forward_vector=lambda: Namespace(x=1.0, y=0.0),
+        ),
+    )
+    props = (
+        (Namespace(is_alive=True, get_location=lambda: warning_location), {
+            "actor_id": "construction_warning", "type": "static.prop",
+        }),
+        (Namespace(is_alive=True, get_location=lambda: blocker_location), {
+            "actor_id": "construction_blocker", "type": "static.prop",
+        }),
+    )
+
+    grounded, reason = _ground_scenario_avoidance_command(
+        {"intent": "AVOID_OBSTACLE", "parameters": {"direction": "RIGHT"}},
+        world_map,
+        ego,
+        props,
+    )
+
+    assert reason == "OBSTACLE_IN_EGO_LANE"
+    assert grounded is not None
+    assert grounded["parameters"]["target_id"] == "construction_blocker"
+
+    suppressed, reason = _ground_scenario_avoidance_command(
+        {"intent": "AVOID_OBSTACLE", "parameters": {"direction": "RIGHT"}},
+        world_map,
+        ego,
+        props[:1],
+    )
+    assert suppressed is None
+    assert reason == "OBSTACLE_NOT_IN_EGO_LANE"
+
+
+def test_grounded_avoidance_waits_for_matching_visible_target() -> None:
+    command = {
+        "intent": "AVOID_OBSTACLE",
+        "parameters": {"target_id": "construction_blocker"},
+    }
+    generic = PerceptionFrame(1, 0.05, detected_objects=(
+        DetectedObject(0, "obstacle", 1.0, (0.4, 0.3, 0.6, 0.8), 30.0),
+    ))
+    grounded = PerceptionFrame(2, 0.10, detected_objects=(
+        DetectedObject(
+            0, "obstacle", 1.0, (0.4, 0.3, 0.6, 0.8), 29.0,
+            track_id="construction_blocker",
+        ),
+    ))
+
+    assert _scenario_command_target_visible(generic, command) is False
+    assert _scenario_command_target_visible(grounded, command) is True
 
 
 def test_real_traffic_light_observation_replaces_config_fallback_provenance() -> None:

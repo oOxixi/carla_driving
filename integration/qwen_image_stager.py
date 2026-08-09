@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import base64
 import hashlib
 import io
 from pathlib import Path, PurePosixPath
@@ -13,12 +14,21 @@ from .rgb_detector import carla_rgb_array
 
 
 class QwenImageStager:
-    def __init__(self, image_root: str | Path, *, ref_prefix: str = "artifacts/qwen_live") -> None:
+    def __init__(
+        self,
+        image_root: str | Path,
+        *,
+        ref_prefix: str = "artifacts/qwen_live",
+        transport: str = "shared",
+    ) -> None:
         try:
             from PIL import Image, ImageOps
         except ImportError as error:  # pragma: no cover - deployment dependency
             raise RuntimeError("Pillow is required to stage Qwen RGB images") from error
         self.image_root = Path(image_root).expanduser().resolve()
+        if transport not in {"shared", "inline"}:
+            raise ValueError("transport must be shared or inline")
+        self.transport = transport
         prefix = PurePosixPath(str(ref_prefix).replace("\\", "/"))
         if prefix.is_absolute() or ".." in prefix.parts:
             raise ValueError("ref_prefix must be a safe relative path")
@@ -91,7 +101,11 @@ class QwenImageStager:
         )
         image.save(target, format="JPEG", quality=75)
         payload = dict(request)
-        payload["rgb_ref"] = reference
+        payload["rgb_ref"] = (
+            "data:image/jpeg;base64," + base64.b64encode(target.read_bytes()).decode("ascii")
+            if self.transport == "inline"
+            else reference
+        )
         return payload
 
 
