@@ -68,6 +68,7 @@ from .rgb_detector import OnnxYoloDetector, carla_rgb_array
 from .scenario_execution import (
     CommandTimeline,
     ScenarioSpec,
+    bind_live_voice_command,
     resolve_scenario_command,
     scenario_trigger_satisfied,
 )
@@ -2276,8 +2277,8 @@ def run(args: argparse.Namespace) -> None:
     qwen_image_root = Path(
         getattr(args, "qwen_image_dir", "artifacts/runtime/qwen_live")
     ).expanduser().resolve()
-    if args.live_mic and (args.audio or args.command_json or args.scenario_file):
-        raise ValueError("--live-mic cannot be combined with --audio, --command-json, or --scenario-file")
+    if args.live_mic and (args.audio or args.command_json):
+        raise ValueError("--live-mic cannot be combined with --audio or --command-json")
 
     carla = _import_carla_api()
 
@@ -2339,6 +2340,7 @@ def run(args: argparse.Namespace) -> None:
     qwen_client: QwenServiceClient | None = None
     qwen_pre_submit_timing: dict[str, dict[str, float]] = {}
     deferred_commands: list[_DeferredCommand] = []
+    scenario_voice_templates: list[dict[str, object]] = []
     scenario_command_waiting_ids: set[str] = set()
     traffic_light_original_state: Any | None = None
     traffic_light_original_frozen: bool | None = None
@@ -2998,6 +3000,18 @@ def run(args: argparse.Namespace) -> None:
                         elapsed_s,
                         None if extension_frame is None else extension_frame.trigger_context,
                     ):
+                        if live_voice is not None and spec is not None:
+                            scenario_voice_templates.append(dict(scheduled))
+                            prompt = str(scheduled.get("source_text", "")).strip()
+                            phase_id = str(scheduled.get("phase_id", "")).strip()
+                            demo_presenter.note_voice_prompt(prompt)
+                            print(json.dumps({
+                                "record_type": "scenario_voice_prompt",
+                                "phase_id": phase_id,
+                                "source_text": prompt,
+                                "action": "WAIT_LIVE_MIC",
+                            }, ensure_ascii=False), flush=True)
+                            continue
                         scenario_command = resolve_scenario_command(
                             scheduled,
                             requested_speed_mps=runtime.requested_speed_mps,
@@ -3055,6 +3069,59 @@ def run(args: argparse.Namespace) -> None:
                             continue
                         assert live_result.command is not None
                         live_command = dict(live_result.command)
+                        if spec is not None:
+                            if not scenario_voice_templates:
+                                print(json.dumps({
+                                    "record_type": "live_voice_ignored",
+                                    "reason": "NO_SCENARIO_PHASE_READY",
+                                    "source_text": live_command.get("source_text"),
+                                }, ensure_ascii=False), flush=True)
+                                continue
+                            if str(live_command.get("status", "valid")).lower() != "valid":
+                                demo_presenter.note_voice(live_command)
+                                demo_presenter.note_voice_prompt(
+                                    str(scenario_voice_templates[0].get("source_text", "")),
+                                )
+                                print(json.dumps({
+                                    "record_type": "live_voice_retry",
+                                    "reason": "ASR_COMMAND_INVALID",
+                                    "phase_id": scenario_voice_templates[0].get("phase_id"),
+                                    "source_text": live_command.get("source_text"),
+                                }, ensure_ascii=False), flush=True)
+                                continue
+                            scenario_template = scenario_voice_templates[0]
+                            bound_command = bind_live_voice_command(
+                                live_command, scenario_template,
+                            )
+                            if str(bound_command.get("intent", "")).upper() == "AVOID_OBSTACLE":
+                                grounded_command, grounding_reason = (
+                                    _ground_scenario_avoidance_command(
+                                        bound_command,
+                                        world_map,
+                                        ego,
+                                        scenario_props,
+                                    )
+                                )
+                                if grounded_command is None:
+                                    print(json.dumps({
+                                        "record_type": "live_voice_waiting",
+                                        "reason": grounding_reason,
+                                        "phase_id": scenario_template.get("phase_id"),
+                                        "action": "KEEP_CURRENT_LANE",
+                                    }, ensure_ascii=False), flush=True)
+                                    continue
+                                bound_command = grounded_command
+                            scenario_voice_templates.pop(0)
+                            live_command = bound_command
+                            print(json.dumps({
+                                "record_type": "scenario_live_voice_bound",
+                                "phase_id": live_command.get("phase_id"),
+                                "command_id": live_command.get("command_id"),
+                                "source_text": live_command.get("source_text"),
+                                "expected_source_text": live_command.get(
+                                    "scenario_expected_source_text"
+                                ),
+                            }, ensure_ascii=False), flush=True)
                         demo_presenter.note_voice(live_command)
                         if args.test_command_ttl_s is not None:
                             live_command["valid_duration_s"] = args.test_command_ttl_s
@@ -4560,7 +4627,8 @@ def main() -> None:
     parser.add_argument("--command-json")
     parser.add_argument("--audio")
     parser.add_argument("--live-mic", action="store_true",
-                        help="continuously segment and recognize PulseAudio microphone commands")
+                        help="continuously recognize PulseAudio commands; with --scenario-file, "
+                             "scenario triggers become spoken-command prompts instead of auto input")
     parser.add_argument("--live-mic-source", default="@DEFAULT_SOURCE@",
                         help="PulseAudio source name used by --live-mic")
     parser.add_argument("--qwen-service-url",

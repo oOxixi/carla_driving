@@ -245,10 +245,22 @@ class DemoStatePresenter:
         self._safety_reason: str | None = None
         self._safety_hold_until_s = -1.0
         self._display_speed_kmh: float | None = None
+        self._voice_prompt = ""
+
+    def note_voice_prompt(self, source_text: str) -> None:
+        prompt = str(source_text).strip()
+        if not prompt:
+            return
+        self._voice_prompt = prompt
+        self._voice = {}
+        self._qwen_status = "WAITING"
+        self._decision = {}
+        self._target_id = None
 
     def note_voice(self, envelope: Mapping[str, Any] | None) -> None:
         if not envelope:
             return
+        self._voice_prompt = ""
         self._voice = dict(envelope)
         self._qwen_status = "RECEIVED"
         self._decision = {}
@@ -595,7 +607,10 @@ class DemoStatePresenter:
                 f"safety={safety_reason}",
             )
 
-        source_text = str(self._voice.get("source_text") or "暂无语音").strip()
+        source_text = str(
+            self._voice.get("source_text")
+            or (f"请说：{self._voice_prompt}" if self._voice_prompt else "暂无语音")
+        ).strip()
         asr_text = str(self._voice.get("asr_text") or "").strip()
         if asr_text == source_text:
             asr_text = ""
@@ -608,7 +623,11 @@ class DemoStatePresenter:
             voice_language=self._language(),
             voice_text=source_text,
             asr_text=asr_text,
-            intent_text=self._intent_text(),
+            intent_text=(
+                "麦克风已就绪，等待实时语音输入"
+                if self._voice_prompt and not self._voice
+                else self._intent_text()
+            ),
             qwen_status=qwen_cn,
             qwen_action_cn=action_cn,
             qwen_target_cn=target_cn,

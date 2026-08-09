@@ -405,6 +405,57 @@ def resolve_scenario_command(
     return resolved
 
 
+def bind_live_voice_command(
+    live_envelope: Mapping[str, object],
+    scenario_template: Mapping[str, object],
+) -> dict[str, object]:
+    """Bind a real ASR result to the currently due scenario phase.
+
+    The recognized text, intent and confidence remain authoritative.  The
+    scenario contributes only stable orchestration metadata and parameters
+    that cannot be spoken reliably (for example the grounded construction
+    actor ID used by the detour phase).
+    """
+    if not isinstance(live_envelope, Mapping):
+        raise TypeError("live_envelope must be a mapping")
+    if not isinstance(scenario_template, Mapping):
+        raise TypeError("scenario_template must be a mapping")
+    command_id = _nonempty_text(
+        scenario_template.get("command_id"), "scenario_template.command_id",
+    )
+    source_text = _nonempty_text(
+        live_envelope.get("source_text"), "live_envelope.source_text",
+    )
+    live_parameters = live_envelope.get("parameters", {})
+    template_parameters = scenario_template.get("parameters", {})
+    if not isinstance(live_parameters, Mapping):
+        raise TypeError("live_envelope.parameters must be an object")
+    if not isinstance(template_parameters, Mapping):
+        raise TypeError("scenario_template.parameters must be an object")
+
+    bound = dict(live_envelope)
+    original_command_id = str(bound.get("command_id", "")).strip()
+    if original_command_id:
+        bound["asr_command_id"] = original_command_id
+    bound["command_id"] = command_id
+    bound["source_text"] = source_text
+    bound["parameters"] = {
+        **dict(template_parameters),
+        **dict(live_parameters),
+    }
+    for name in ("phase_id", "valid_duration_s"):
+        if name in scenario_template:
+            bound[name] = scenario_template[name]
+    bound["scenario_live_voice"] = True
+    bound["scenario_expected_source_text"] = str(
+        scenario_template.get("source_text", "")
+    )
+    bound["scenario_expected_intent"] = str(
+        scenario_template.get("intent", "")
+    ).upper()
+    return bound
+
+
 def _parse_command(raw: object, index: int) -> ScheduledCommand:
     if type(raw) is not dict:
         raise TypeError(f"commands[{index}] must be an object")
@@ -459,6 +510,7 @@ __all__ = [
     "DEFAULT_RELATIVE_SPEED_STEP_MPS",
     "ScenarioSpec",
     "ScheduledCommand",
+    "bind_live_voice_command",
     "select_best_route_anchor",
     "resolve_scenario_command",
     "scenario_trigger_satisfied",

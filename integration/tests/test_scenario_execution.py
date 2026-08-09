@@ -9,6 +9,7 @@ import pytest
 from integration.scenario_execution import (
     CommandTimeline,
     ScenarioSpec,
+    bind_live_voice_command,
     resolve_scenario_command,
     select_best_route_anchor,
 )
@@ -44,6 +45,39 @@ def test_scenario_command_ttl_covers_remaining_runtime() -> None:
     command = spec.commands[0]
 
     assert command.envelope["valid_duration_s"] > spec.duration_s - command.time_s
+
+
+def test_live_voice_binding_preserves_asr_text_and_adds_scenario_phase_metadata() -> None:
+    live = {
+        "schema_version": "1.0",
+        "command_id": "asr-123",
+        "source_text": "从右边绕过施工牌",
+        "intent": "AVOID_OBSTACLE",
+        "parameters": {"direction": "RIGHT"},
+        "status": "valid",
+    }
+    template = {
+        "command_id": "scenario_cmd_005",
+        "source_text": "从右侧虚线处安全绕过前方施工障碍",
+        "intent": "AVOID_OBSTACLE",
+        "parameters": {"target": "OBSTACLE", "target_actor_id": "construction_blocker"},
+        "phase_id": "P8_DETOUR",
+        "valid_duration_s": 50.0,
+    }
+
+    bound = bind_live_voice_command(live, template)
+
+    assert bound["source_text"] == live["source_text"]
+    assert bound["intent"] == live["intent"]
+    assert bound["asr_command_id"] == "asr-123"
+    assert bound["command_id"] == "scenario_cmd_005"
+    assert bound["phase_id"] == "P8_DETOUR"
+    assert bound["parameters"] == {
+        "target": "OBSTACLE",
+        "target_actor_id": "construction_blocker",
+        "direction": "RIGHT",
+    }
+    assert bound["scenario_live_voice"] is True
 
 
 def test_world_route_rotates_local_template_around_spawn() -> None:

@@ -165,6 +165,29 @@ def test_internal_qwen_wait_release_is_not_shown_as_user_command_failure() -> No
     assert state.execution_status == "执行中"
 
 
+def test_scenario_voice_prompt_is_visible_until_real_microphone_input_arrives() -> None:
+    presenter = DemoStatePresenter("CX_MAIN_01_safe_urban_mission")
+    presenter.note_voice_prompt("开始行驶并保持当前车道")
+
+    waiting = presenter.build(
+        scene=PerceptionFrame(1, 0.1), vehicle=_vehicle(0.0), result=_result(),
+        target_speed_mps=0.0, perception_sources={}, now_s=0.1,
+    )
+    assert waiting.voice_text == "请说：开始行驶并保持当前车道"
+    assert waiting.intent_text == "麦克风已就绪，等待实时语音输入"
+
+    presenter.note_voice({
+        "source_text": "开始行驶并保持当前车道",
+        "intent": "KEEP_LANE",
+    })
+    received = presenter.build(
+        scene=PerceptionFrame(2, 0.2), vehicle=_vehicle(0.0), result=_result(),
+        target_speed_mps=0.0, perception_sources={}, now_s=0.2,
+    )
+    assert received.voice_text == "开始行驶并保持当前车道"
+    assert not received.voice_text.startswith("请说：")
+
+
 def test_demo_renderer_produces_readable_1080p_composite() -> None:
     presenter = DemoStatePresenter("ACC_A02_red_light_conflict")
     presenter.note_voice({"source_text": "停车", "intent": "STOP"})
