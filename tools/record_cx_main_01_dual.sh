@@ -2,9 +2,26 @@
 set -euo pipefail
 
 repo_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-output_dir=${1:-"$repo_dir/artifacts/8.9_recording"}
+output_arg=${1:-"artifacts/8.9_recording"}
+if [[ "$output_arg" = /* ]]; then
+    output_dir=$output_arg
+else
+    output_dir="$repo_dir/$output_arg"
+fi
+case "$output_dir" in
+    "$repo_dir"/*) output_rel=${output_dir#"$repo_dir"/} ;;
+    *)
+        echo "output directory must be inside $repo_dir" >&2
+        exit 2
+        ;;
+esac
 display_name=${DISPLAY:-:0}
 mkdir -p "$output_dir/logs" "$output_dir/qwen_images"
+
+if ! curl -fsS --max-time 5 http://127.0.0.1:18000/health >/dev/null; then
+    echo "Qwen service is unavailable at http://127.0.0.1:18000" >&2
+    exit 3
+fi
 
 find_window_id() {
     local title=$1
@@ -33,14 +50,14 @@ PYTHONUNBUFFERED=1 conda run --no-capture-output -n carla312 \
     --qwen-service-url http://127.0.0.1:18000 \
     --qwen-mode planner_v2 \
     --qwen-image-transport inline \
-    --qwen-image-prefix artifacts/8.9_recording/qwen_images \
+    --qwen-image-prefix "$output_rel/qwen_images" \
     --perception-mode sensors \
     --scenario-facts-mode perception \
     --sensor-profile demo \
     --realtime \
     --ui-mode demo \
     --ui-fps 10 \
-    --log-dir artifacts/8.9_recording/logs \
+    --log-dir "$output_rel/logs" \
     --follow-spectator \
     --timeout-s 30 \
     --sensor-timeout-s 1 \
