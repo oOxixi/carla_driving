@@ -19,7 +19,6 @@ import numpy as np
 import soundfile as sf
 from funasr import AutoModel
 from funasr.utils.postprocess_utils import rich_transcription_postprocess
-from peft import PeftModel
 
 DEVICE = "cuda:0"
 # Resolve against this source file, not the caller's working directory.  The
@@ -27,6 +26,16 @@ DEVICE = "cuda:0"
 LORA_DIR = Path(__file__).resolve().parent / "lora_dialect"
 
 _EMOJI = re.compile(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\u2190-\u21FF\u2B00-\u2BFF]")
+_TRUTHY = {"1", "true", "yes", "on"}
+
+
+def _env_flag(name, default=True):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in _TRUTHY
+
+
 def _strip(t):
     t = re.sub(r"<\|[^|]*\|>", "", t)
     return _EMOJI.sub("", t).strip()
@@ -61,6 +70,10 @@ def _local_model_or_id(environment_name: str, cache_name: str, model_id: str):
 
 class ASR:
     def __init__(self, device=DEVICE, lora_dir=LORA_DIR):
+        self.use_vad = _env_flag("VOICE_VAD_ENABLED", default=True)
+        self.use_itn = _env_flag("VOICE_USE_ITN", default=True)
+        self.language = os.getenv("VOICE_ASR_LANGUAGE", "auto")
+        use_lora = _env_flag("VOICE_USE_LORA", default=True)
         # 识别模型（微调版）
         sensevoice_model = _local_model_or_id(
             "SENSEVOICE_MODEL_PATH",
@@ -72,25 +85,49 @@ class ASR:
             device=device,
             disable_update=True,
         )
-        lora_path = Path(lora_dir)
-        if not lora_path.is_dir():
-            raise FileNotFoundError(f"local LoRA directory not found: {lora_path}")
-        self.am.model = PeftModel.from_pretrained(self.am.model, str(lora_path)).to(device)
+        if use_lora:
+            try:
+                from peft import PeftModel
+                from peft.tuners.lora import model as peft_lora_model
+                from peft.tuners.lora import awq as peft_lora_awq
+            except ImportError as error:
+                raise RuntimeError(
+                    "peft is required when VOICE_USE_LORA=1; set VOICE_USE_LORA=0 "
+                    "to run the base SenseVoice model in environments without peft"
+                ) from error
+            # This process can share a Python installation with the quantized
+            # Qwen service.  PEFT otherwise probes an unrelated GPTQModel/AWQ
+            # installation and imports quantizer internals even though
+            # SenseVoice is a regular fp32 model.  GPTQ dispatch is both
+            # unnecessary here and version-fragile, so disable only that
+            # optional dispatcher before injecting the ASR adapter.
+            peft_lora_model.is_gptqmodel_available = lambda: False
+            peft_lora_awq.is_gptqmodel_available = lambda: False
+            lora_path = Path(lora_dir)
+            if not lora_path.is_dir():
+                raise FileNotFoundError(f"local LoRA directory not found: {lora_path}")
+            self.am.model = PeftModel.from_pretrained(self.am.model, str(lora_path)).to(device)
         self.am.model.eval()
-        # VAD 模型（FunASR 自带的 FSMN-VAD）
-        vad_model = _local_model_or_id(
-            "FSMN_VAD_MODEL_PATH",
-            "iic--speech_fsmn_vad_zh-cn-16k-common-pytorch",
-            "fsmn-vad",
-        )
-        self.vad = AutoModel(
-            model=vad_model,
-            device=device,
-            disable_update=True,
-        )
+        self.vad = None
+        if self.use_vad:
+            # VAD 模型（FunASR 自带的 FSMN-VAD）
+            vad_model = _local_model_or_id(
+                "FSMN_VAD_MODEL_PATH",
+                "iic--speech_fsmn_vad_zh-cn-16k-common-pytorch",
+                "fsmn-vad",
+            )
+            self.vad = AutoModel(
+                model=vad_model,
+                device=device,
+                disable_update=True,
+            )
         # 预热
         try:
-            self.am.generate(input=np.zeros(16000, dtype="float32"), language="auto", use_itn=True)
+            self.am.generate(
+                input=np.zeros(16000, dtype="float32"),
+                language=self.language,
+                use_itn=self.use_itn,
+            )
         except Exception:
             pass
 
@@ -113,19 +150,27 @@ class ASR:
         wav = self._load(audio)
         t0 = time.monotonic_ns()
 
-        # 1) VAD：找出有效语音段 [[start_ms, end_ms], ...]
-        seg = self.vad.generate(input=wav, fs=16000)
-        spans = seg[0]["value"] if seg and "value" in seg[0] else []
-        if spans:
-            s_ms = spans[0][0]                    # 第一段起点
-            e_ms = spans[-1][1]                   # 最后一段终点
-            s, e = int(s_ms/1000*16000), int(e_ms/1000*16000)
-            clip = wav[max(0,s):e] if e > s else wav
+        spans = []
+        if self.use_vad and self.vad is not None:
+            # 1) VAD：找出有效语音段 [[start_ms, end_ms], ...]
+            seg = self.vad.generate(input=wav, fs=16000)
+            spans = seg[0]["value"] if seg and "value" in seg[0] else []
+            if spans:
+                s_ms = spans[0][0]                    # 第一段起点
+                e_ms = spans[-1][1]                   # 最后一段终点
+                s, e = int(s_ms/1000*16000), int(e_ms/1000*16000)
+                clip = wav[max(0,s):e] if e > s else wav
+            else:
+                clip = wav                            # VAD 没检出就用整段
         else:
-            clip = wav                            # VAD 没检出就用整段
+            clip = wav
 
         # 2) 只识别截出来的有效段
-        res = self.am.generate(input=clip, language="auto", use_itn=True)
+        res = self.am.generate(
+            input=clip,
+            language=self.language,
+            use_itn=self.use_itn,
+        )
         t_asr_end_ns = time.monotonic_ns()
 
         text = _strip(rich_transcription_postprocess(res[0]["text"]))

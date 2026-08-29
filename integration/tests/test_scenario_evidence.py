@@ -21,7 +21,15 @@ def _longitudinal(ttc_s: float | None = None) -> LongitudinalOutput:
 
 
 def _timing(base: int) -> FrameTiming:
-    return FrameTiming(base + 10, base + 20, base + 30, sensor_ready_ns=base)
+    return FrameTiming(
+        base + 10,
+        base + 20,
+        base + 30,
+        sensor_ready_ns=base,
+        simulator_tick_start_ns=base - 20,
+        simulator_tick_end_ns=base - 10,
+        perception_start_ns=base - 5,
+    )
 
 
 def test_unified_evidence_is_auditable_and_scored(tmp_path):
@@ -56,6 +64,9 @@ def test_unified_evidence_is_auditable_and_scored(tmp_path):
     assert frame["safety"] == {"override": True, "reason": "STOP_LINE_GUARD"}
     assert frame["c_safety_state"]["fusion_mode"] == "RGB_LIDAR"
     assert frame["latency"]["decision_ms"] == pytest.approx(0.00001)
+    assert frame["latency"]["simulator_tick_ms"] == pytest.approx(0.00001)
+    assert frame["latency"]["perception_acquire_ms"] == pytest.approx(0.000005)
+    assert frame["latency"]["pipeline_active_ms"] == pytest.approx(0.00004)
     assert records[1]["latency"] == {
         "asr_ms": 0.0002, "intent_ms": 0.0002, "intent_to_submit_ms": 0.0005,
     }
@@ -65,8 +76,32 @@ def test_unified_evidence_is_auditable_and_scored(tmp_path):
     assert summary["min_ttc_s"] == 2.5
     assert summary["safety_override_episodes"] == 1
     assert summary["score"]["scenario_id"] == "S04"
+    assert summary["latency"]["decision_p95_ms"] == pytest.approx(0.00001)
+    assert summary["latency"]["decision_p99_ms"] == pytest.approx(0.00001)
+    assert summary["latency"]["sensor_to_control_p95_ms"] == pytest.approx(0.00003)
+    assert summary["latency"]["sensor_to_control_p99_ms"] == pytest.approx(0.00003)
     assert summary["score_report"]["latency"]["asr_avg_ms"] == pytest.approx(0.0002)
     assert path.with_suffix(".summary.json").is_file()
+
+
+def test_qwen_trajectory_records_official_end_to_end_boundary(tmp_path):
+    path = tmp_path / "qwen-e2e.jsonl"
+    recorder = ScenarioEvidenceRecorder(path)
+    recorder.start_run(scenario_id="ACC_A01")
+    recorder.record_qwen_trajectory(
+        command_id="cmd-1", request_id="req-1",
+        sensor_ready_ns=1_000_000_000,
+        model_completed_ns=1_080_000_000,
+        trajectory_ready_ns=1_095_000_000,
+        breakdown={"queue_wait_ms": 2.0, "infer_callback_ms": 70.0},
+    )
+    summary = recorder.complete(completion=True)
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    trajectory = next(row for row in rows if row["record_type"] == "qwen_trajectory")
+    assert trajectory["latency"]["model_ms"] == 80.0
+    assert trajectory["latency"]["sensor_to_trajectory_ms"] == 95.0
+    assert trajectory["latency"]["breakdown"]["infer_callback_ms"] == 70.0
+    assert summary["latency"]["sensor_to_trajectory_p95_ms"] == 95.0
 
 
 def test_collision_and_override_are_counted_as_episodes(tmp_path):
@@ -186,6 +221,42 @@ def test_command_order_accepts_applied_command_that_is_later_superseded(tmp_path
     assert summary["acceptance"]["passed"] is True
 
 
+def test_command_order_ignores_internal_qwen_commands(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "ordered-qwen.jsonl", clock_ns=lambda: 1_000)
+    recorder.start_run(scenario_id="SUP_B03")
+    for index, command_id in enumerate((
+        "scenario_cmd_000",
+        "qwen-step-scenario_cmd_000-step-1",
+    ), start=1):
+        recorder.record_command(
+            {"command_id": command_id, "intent": "SET_SPEED"},
+            disposition="SCENARIO_SLOW_PENDING" if index == 1 else "ACCEPTED_QWEN_PLAN",
+            submitted_sim_time_s=(index - 1) * 0.1,
+        )
+        if index > 1:
+            recorder.record_frame(
+                vehicle=_vehicle(index, 1.0), scene=PerceptionFrame(index, index * 0.05),
+                raw_control=ControlOutput(0.1, 0.0, 0.0),
+                final_control=ControlOutput(0.1, 0.0, 0.0),
+                safety_reason="NONE", safety_override=False, timing=_timing(index * 100),
+                command_id=command_id,
+            )
+    recorder.record_feedback(ExecutionFeedback(
+        "qwen-step-scenario_cmd_000-step-1", ExecutionStatus.FAILED, 0.1, "internal",
+    ))
+    recorder.record_feedback(ExecutionFeedback(
+        "scenario_cmd_000", ExecutionStatus.SUCCEEDED, 0.1, "done",
+    ))
+
+    summary = recorder.complete(
+        completion=True,
+        expected={"must_execute_commands_in_order": True},
+        acceptance_context={"expected_command_count": 1},
+    )
+
+    assert summary["acceptance"]["passed"] is True
+
+
 def test_invalid_timing_and_non_finite_evidence_are_rejected(tmp_path):
     with pytest.raises(ValueError, match="monotonic"):
         FrameTiming(20, 10, 30)
@@ -194,6 +265,85 @@ def test_invalid_timing_and_non_finite_evidence_are_rejected(tmp_path):
     with pytest.raises(ValueError, match="finite"):
         recorder.record_command({"command_id": "cmd", "confidence": float("nan")}, disposition="REJECTED")
     recorder.fail("invalid command")
+
+
+def test_qwen_request_and_result_are_recorded_without_credentials(tmp_path):
+    path = tmp_path / "qwen.jsonl"
+    recorder = ScenarioEvidenceRecorder(path, clock_ns=lambda: 1_000)
+    recorder.start_run(
+        scenario_id="QWEN_REMOTE",
+        config={"qwen_model": "qwen2.5-vl"},
+    )
+    recorder.record_qwen_event(
+        request_id="qwen-1",
+        status="PENDING",
+        context={"voice_command": "停车", "rgb_ref": "qwen-1.jpg"},
+    )
+    recorder.record_qwen_event(
+        request_id="qwen-1",
+        status="READY",
+        high_level_command={"action": "STOP", "decision_source": "SAFETY_RULE"},
+        runtime_command={"command_id": "qwen_async_00000001", "intent": "STOP"},
+        trace={"latency_ms": 1911.74, "raw_output": '{"action":"STOP"}'},
+    )
+    summary = recorder.complete(
+        completion=True,
+        expected={"expected_reason_contains": ["safety"]},
+    )
+
+    records = [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+    ]
+    qwen_records = [item for item in records if item["record_type"] == "qwen_decision"]
+    assert [item["status"] for item in qwen_records] == ["PENDING", "READY"]
+    assert qwen_records[1]["trace"]["latency_ms"] == 1911.74
+    assert summary["acceptance"]["passed"] is True
+    assert "api_key" not in path.read_text(encoding="utf-8").lower()
+
+
+def test_feedback_safety_event_is_included_in_acceptance_reasons(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "safety-feedback.jsonl")
+    recorder.start_run(scenario_id="ACC_C03")
+    recorder.record_feedback({
+        "schema_version": "1.0",
+        "command_id": "cmd-red",
+        "status": "RECEIVED",
+        "action_summary": "slow request queued behind deterministic safety stop",
+        "emitted_at_ns": 1,
+        "t_action_apply_ns": None,
+        "latency_ms": None,
+        "safety_event": {
+            "reason_code": "TRAFFIC_LIGHT_STOP",
+            "raw_control": {"throttle": 0.0, "brake": 1.0, "steer": 0.0},
+            "final_control": {"throttle": 0.0, "brake": 1.0, "steer": 0.0},
+        },
+        "terminal_reason": None,
+    })
+    recorder.record_frame(
+        vehicle=_vehicle(1, 0.0),
+        scene=PerceptionFrame(
+            1, 0.05, traffic_light="RED", distance_to_stop_line_m=17.0,
+        ),
+        raw_control=ControlOutput(0.0, 0.55, 0.0),
+        final_control=ControlOutput(0.0, 0.55, 0.0),
+        safety_reason="NONE",
+        safety_override=False,
+        timing=_timing(100),
+    )
+
+    summary = recorder.complete(
+        completion=True,
+        expected={
+            "expected_reason_contains": ["stop"],
+            "expected_safety_override": True,
+            "safety_priority_over_command": True,
+            "must_generate_event": True,
+        },
+    )
+
+    assert "TRAFFIC_LIGHT_STOP" in summary["safety_reasons"]
+    assert summary["acceptance"]["passed"] is True
 
 
 @pytest.mark.parametrize(
@@ -229,3 +379,22 @@ def test_carla_left_handed_pose_metrics_use_scenario_left_positive_convention(
     assert metrics["final_lateral_shift_m"]["status"] == "PASS"
     assert metrics["turn_direction"]["status"] == "PASS"
     assert metrics["max_lane_center_offset_m"]["actual"] == pytest.approx(abs(end_y) / 2.0)
+
+
+def test_commanded_full_brake_is_emergency_evidence_without_safety_override(tmp_path) -> None:
+    recorder = ScenarioEvidenceRecorder(tmp_path / "commanded-emergency.jsonl")
+    recorder.start_run(scenario_id="commanded-emergency")
+    recorder.record_frame(
+        vehicle=RuntimeVehicleState(1, 0.05, 2.0, 0.0, 0.0, 0.0, 0.0, "1"),
+        scene=PerceptionFrame(1, 0.05),
+        raw_control=ControlOutput(0.0, 1.0, 0.0),
+        final_control=ControlOutput(0.0, 1.0, 0.0),
+        safety_reason="NONE",
+        safety_override=False,
+        timing=_timing(100),
+        lateral={"cross_track_error_m": 0.0, "steer": 0.0},
+    )
+
+    summary = recorder.complete(completion=True, expected={"must_emergency_brake": True})
+
+    assert summary["acceptance"]["passed"] is True

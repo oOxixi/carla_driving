@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.0",
+  "evidence_type": "D_REAL_SENSOR_SCENARIO_MATRIX",
+  "tested_code_commit": "1c98d70c59374540ca8f75c5bf0d1e2100824030",
+  "environment": {
+    "carla_version": "0.9.16",
+    "map": "Carla/Maps/Town03_Opt",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "gpu_index": 0,
+    "perception_mode": "sensors",
+    "scenario_facts_mode": "perception",
+    "sensor_profile": "low",
+    "seeds": [0, 1, 2, 3, 4],
+    "runs_per_seed": 20
+  },
+  "overall": {
+    "runs": 300,
+    "succeeded": 300,
+    "success_rate": 1.0,
+    "commands_without_terminal": 0,
+    "collision_count": 0,
+    "red_light_violation_count": 0,
+    "serious_route_deviation": 0,
+    "unfinished_task_count": 0
+  },
+  "per_scenario": {
+    "S01_set_speed_20": {
+      "runs": 100,
+      "succeeded": 100,
+      "acceptance_passed": 100,
+      "minimum_score": 25.0,
+      "terminal_status_counts": {
+        "SUCCEEDED": 100
+      },
+      "safety_override_episodes": 0,
+      "maximum_run_sensor_to_control_p95_ms": 3.647185,
+      "maximum_run_sensor_to_control_p99_ms": 3.773691,
+      "maximum_sensor_to_control_ms": 9.175411
+    },
+    "D03_front_vehicle_brake": {
+      "runs": 100,
+      "succeeded": 100,
+      "acceptance_passed": 100,
+      "minimum_score": 25.0,
+      "minimum_gap_m": 4.871918201446533,
+      "terminal_status_counts": {
+        "SAFETY_OVERRIDE": 100
+      },
+      "safety_override_episodes": 100,
+      "maximum_run_sensor_to_control_p95_ms": 2.140257,
+      "maximum_run_sensor_to_control_p99_ms": 3.056013,
+      "maximum_sensor_to_control_ms": 9.170635
+    },
+    "D08_command_conflict_red_light_continue": {
+      "runs": 100,
+      "succeeded": 100,
+      "acceptance_passed": 100,
+      "minimum_score": 25.0,
+      "maximum_stop_error_m": 0.972321311119515,
+      "terminal_status_counts": {
+        "SAFETY_OVERRIDE": 100
+      },
+      "safety_override_episodes": 100,
+      "maximum_run_sensor_to_control_p95_ms": 1.318166,
+      "maximum_run_sensor_to_control_p99_ms": 1.906522,
+      "maximum_sensor_to_control_ms": 13.573491
+    }
+  },
+  "acceptance": {
+    "all_runs_succeeded": true,
+    "all_commands_terminal": true,
+    "severe_safety_events_zero": true,
+    "all_scenario_maximum_run_p95_under_5ms": true,
+    "passed": true
+  },
+  "files": {
+    "scenario_matrix_report.json": {
+      "sha256": "6fa53574eec9eddb10db4169bc988ee2af60fb2177ac0bdde1354f096096e00b"
+    },
+    "scenario_matrix_full.log": {
+      "sha256": "15588d1c497e8b502f5239692a07216b9357d6d1d40c99acc65ad6910fb3859d"
+    },
+    "control_benchmark_ubuntu_0730.json": {
+      "sha256": "2691416f539186fcb973b9e57642c8557b80b94abc6bbf79355d52f01eede72d"
+    },
+    "scenario_matrix_seed_calibration.log": {
+      "purpose": "initial five-seed calibration console evidence",
+      "sha256": "082f2cbea6877a4941596f32f85b9a56ea54c7ae41349362956a878486fbeab5"
+    },
+    "sensor_soak_60min.log": {
+      "purpose": "continuous aligned RGB and LiDAR CARLA sensor soak",
+      "sha256": "e93bf65fd65714efda0a892f59a10e7223aaf720f8c909abfbab9551b736faf9"
+    }
+  },
+  "stability": {
+    "rgb_lidar_60_minute_soak": {
+      "status": "SUCCEEDED",
+      "duration_s": 3607.802,
+      "aligned_frames": 100210,
+      "callback_counts": {
+        "rgb_front": 100213,
+        "lidar_roof": 100213
+      },
+      "invalid_callbacks": {
+        "rgb_front": 0,
+        "lidar_roof": 0
+      },
+      "map": "Carla/Maps/Town03_Opt",
+      "sensor_profile": "low",
+      "reason": "requested aligned frames received"
+    }
+  },
+  "remaining": {}
+}

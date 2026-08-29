@@ -123,7 +123,12 @@ class VoiceCommandAdapter:
                 reason = "; ".join(item.code for item in errors)
             return self._rejected(envelope, now, reason, errors=errors, warnings=warnings)
 
-        action, target_speed_mps, force_confirmation = self._runtime_fields(intent, parameters)
+        compiled_maneuver = _optional_bool(
+            envelope, "compiled_maneuver", default=False,
+        )
+        action, target_speed_mps, force_confirmation = self._runtime_fields(
+            intent, parameters, compiled_maneuver=compiled_maneuver,
+        )
 
         command = DrivingCommand(
             command_id=command_id,
@@ -186,6 +191,8 @@ class VoiceCommandAdapter:
         self,
         intent: str,
         parameters: Mapping[str, object],
+        *,
+        compiled_maneuver: bool = False,
     ) -> tuple[str, float | None, bool]:
         if intent == "EMERGENCY_STOP":
             return "EMERGENCY_BRAKE", None, False
@@ -204,6 +211,13 @@ class VoiceCommandAdapter:
         if intent == "KEEP_LANE":
             return "KEEP_LANE", None, False
         if intent in _COMPLEX_INTENTS:
+            if compiled_maneuver:
+                # PlanValidator/PlanCompiler have already authorised only the
+                # high-level route change.  The deterministic route generator
+                # supplies B's reference; D remains final control authority.
+                if intent == "PULL_OVER":
+                    return "STOP", None, False
+                return "KEEP_LANE", None, False
             return "MULTIMODAL_DECISION", None, True
         # UNKNOWN is handled by the invalid envelope path in adapt().
         return "STOP", None, True

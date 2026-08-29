@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-07-31T00:00:00+08:00",
+  "acceptance_target": {"complex_p95_ms_max": 300.0, "schema_pass_rate": 1.0},
+  "dataset": {
+    "kind": "frozen_local_proxy_not_official",
+    "source": "artifacts/qwen_robustness_0728/collection",
+    "cases": 20,
+    "note": "Historical CARLA proxy set; not the official hidden test set."
+  },
+  "candidates": [
+    {
+      "model": "Qwen2.5-VL-7B-Instruct",
+      "quantization": "historical deployment, exact dtype not evidenced",
+      "availability_on_current_host": false,
+      "evidence": "artifacts/qwen_robustness_0728/qwen_report_round2.json",
+      "schema_pass_rate": 1.0,
+      "action_accuracy": 1.0,
+      "target_association_accuracy": 1.0,
+      "latency_ms": {"mean": 2364.8422095, "p95": 2478.4190806, "p99": 3863.85525292, "max": 4210.214296},
+      "vram_mib": null,
+      "throughput_requests_per_s": null,
+      "acceptance": "FAIL_LATENCY_AND_CURRENT_HOST_AVAILABILITY"
+    },
+    {
+      "model": "Qwen2.5-VL-3B-Instruct",
+      "quantization": "none",
+      "availability_on_current_host": false,
+      "schema_pass_rate": null,
+      "action_accuracy": null,
+      "target_association_accuracy": null,
+      "latency_ms": null,
+      "vram_mib": null,
+      "throughput_requests_per_s": null,
+      "acceptance": "NOT_RUN_MODEL_MISSING"
+    },
+    {
+      "model": "Qwen2.5-VL-7B-Instruct-AWQ",
+      "quantization": "AWQ/INT4",
+      "availability_on_current_host": false,
+      "schema_pass_rate": null,
+      "action_accuracy": null,
+      "target_association_accuracy": null,
+      "latency_ms": null,
+      "vram_mib": null,
+      "throughput_requests_per_s": null,
+      "acceptance": "NOT_RUN_MODEL_MISSING"
+    }
+  ],
+  "selection": {
+    "selected_model": null,
+    "status": "NO_CANDIDATE_MEETS_ACCEPTANCE",
+    "reason": "The only real historical candidate is above 300 ms P95; other required candidates and current-host weights are unavailable."
+  }
+}

@@ -2,9 +2,106 @@
 from __future__ import annotations
 
 from collections import Counter
+import math
 import re
 import statistics
 from typing import Any, Callable
+
+
+def summarize_latency(values: list[float]) -> dict[str, float]:
+    """Return the fixed, nearest-rank timing summary used by gates."""
+    ordered = sorted(values)
+    if not ordered:
+        raise ValueError("latency sample list is empty")
+
+    def percentile(quantile: float) -> float:
+        return ordered[min(len(ordered) - 1, math.ceil(quantile * len(ordered)) - 1)]
+
+    return {
+        "count": len(ordered),
+        "mean": statistics.fmean(ordered),
+        "p50": percentile(0.50),
+        "p95": percentile(0.95),
+        "p99": percentile(0.99),
+        "max": ordered[-1],
+    }
+
+
+def evaluate_official_gates(metrics: dict[str, object]) -> dict[str, object]:
+    """Apply latency gates before the accuracy and stability phases."""
+    end_to_end = metrics["end_to_end_ms"]
+    if not isinstance(end_to_end, dict):
+        raise ValueError("end_to_end_ms must be a timing summary")
+    p95 = float(end_to_end["p95"])
+    if p95 > 300.0:
+        return {
+            "status": "EARLY_STOP",
+            "reason": "end_to_end_p95_over_300ms",
+            "run_accuracy": False,
+            "run_stability": False,
+        }
+    return {
+        "status": "CONTINUE",
+        "reason": None,
+        "run_accuracy": True,
+        "run_stability": p95 <= 150.0,
+    }
+
+
+def evaluate_official_verdict(
+    metrics: dict[str, object],
+    accuracy: dict[str, object],
+    *,
+    scenario_completion: float | None,
+) -> dict[str, object]:
+    """Aggregate only measured official thresholds without inventing scenarios."""
+    instruction = metrics["instruction_parse_ms"]
+    end_to_end = metrics["end_to_end_ms"]
+    if not isinstance(instruction, dict) or not isinstance(end_to_end, dict):
+        raise ValueError("timing summaries must be dictionaries")
+    asr = accuracy.get("asr")
+    multimodal = accuracy.get("multimodal")
+    if not isinstance(asr, dict) or not isinstance(multimodal, dict):
+        raise ValueError("accuracy must include ASR and multimodal summaries")
+    asr_score = asr.get("intent_accuracy")
+    multimodal_score = multimodal.get("action_target_contract_accuracy")
+    gates: dict[str, bool | None] = {
+        "instruction_parse_p95_le_50ms": float(instruction["p95"]) <= 50.0,
+        "end_to_end_p95_le_150ms": float(end_to_end["p95"]) <= 150.0,
+        "asr_intent_accuracy_ge_95pct": (
+            None if asr_score is None else float(asr_score) >= 0.95
+        ),
+        "multimodal_action_target_accuracy_ge_98pct": (
+            None if multimodal_score is None else float(multimodal_score) >= 0.98
+        ),
+        "scenario_completion_ge_90pct": (
+            None if scenario_completion is None else scenario_completion >= 0.90
+        ),
+    }
+    missing = [name for name, passed in gates.items() if passed is None]
+    failures = [name for name, passed in gates.items() if passed is False]
+    if float(end_to_end["p95"]) > 300.0:
+        status = "EARLY_STOP"
+    elif missing:
+        status = "INCOMPLETE"
+    elif failures:
+        status = "FAIL"
+    else:
+        status = "PASS"
+    return {
+        "status": status,
+        "passes": status == "PASS",
+        "gates": gates,
+        "missing": missing,
+        "failures": failures,
+        "thresholds": {
+            "instruction_parse_p95_ms_max": 50.0,
+            "end_to_end_p95_ms_max": 150.0,
+            "asr_intent_accuracy_min": 0.95,
+            "multimodal_action_target_accuracy_min": 0.98,
+            "scenario_completion_min": 0.90,
+        },
+    }
 
 
 def _percentile(values: list[float], quantile: float) -> float | None:
@@ -21,6 +118,7 @@ def _percentile(values: list[float], quantile: float) -> float | None:
 def _latency(values: list[float]) -> dict[str, float | None]:
     return {
         "mean_ms": statistics.fmean(values) if values else None,
+        "p50_ms": _percentile(values, 0.50),
         "p95_ms": _percentile(values, 0.95),
         "p99_ms": _percentile(values, 0.99),
         "max_ms": max(values) if values else None,

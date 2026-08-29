@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "QWF_02_lane_change_then_speed",
+  "category": "qwen_fullchain",
+  "official_level": "advanced",
+  "description": "确认安全间隙后左变道并定速的 Planner V2 闭环。",
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 4202,
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 40},
+  "ego_spawn": {"x": 0, "y": 0, "z": 0.5, "yaw_deg": 0},
+  "route": {"coordinate_type": "scenario_local_xy_m", "points_xy_m": [[0, 0], [20, 0], [35, 3.5], [70, 3.5], [100, 3.5]], "resample_interval_m": 1.0, "finish_radius_m": 3.0},
+  "commands": [{"time_s": 1, "source_text": "确认安全后向左变道并保持二十公里每小时", "intent": "CHANGE_LANE", "parameters": {"direction": "LEFT"}, "intent_confidence": 0.96, "status": "valid", "confirm_required": false}],
+  "actors": [],
+  "qwen_expected": {"route": "QWEN_PLAN", "min_calls": 1, "max_calls": 1, "expected_behaviors": ["CHANGE_LANE_LEFT", "SET_SPEED"], "expected_terminal": "SUCCEEDED", "allowed_replans": 0, "forbidden_low_level_fields": true},
+  "expected": {"must_no_collision": true, "must_no_route_deviation": true, "must_finish_route": true}
+}

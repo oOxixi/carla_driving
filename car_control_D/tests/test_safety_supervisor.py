@@ -1,4 +1,8 @@
-from car_control_D.safety_supervisor import SafetySupervisor
+import math
+
+import pytest
+
+from car_control_D.safety_supervisor import SafetyConfig, SafetySupervisor
 
 
 def test_low_ttc_forces_stop():
@@ -58,7 +62,84 @@ def test_red_light_guard_reason_identifies_red_light() -> None:
     assert decision.reason == "RED_LIGHT_STOP_LINE_GUARD"
 
 
-def test_route_deviation_uses_limited_low_speed_recovery_instead_of_deadlock() -> None:
+def test_red_light_guard_blocks_unbraked_coasting_and_holds_standstill() -> None:
+    supervisor = SafetySupervisor()
+    coasting = supervisor.arbitrate(
+        raw_control={"steer": 0.0, "throttle": 0.0, "brake": 0.0},
+        vehicle_state={"speed_mps": 3.0, "traffic_light": "RED", "distance_to_stop_line_m": 5.0},
+    )
+    assert coasting.reason == "RED_LIGHT_STOP_LINE_GUARD"
+    assert coasting.final_control.brake == 1.0
+
+    stopped_without_hold = supervisor.arbitrate(
+        raw_control={"steer": 0.0, "throttle": 0.0, "brake": 0.0},
+        vehicle_state={"speed_mps": 0.0, "traffic_light": "RED", "distance_to_stop_line_m": 2.0},
+    )
+    assert stopped_without_hold.reason == "RED_LIGHT_STOP_LINE_GUARD"
+
+    held = supervisor.arbitrate(
+        raw_control={"steer": 0.0, "throttle": 0.0, "brake": 0.55},
+        vehicle_state={"speed_mps": 0.0, "traffic_light": "RED", "distance_to_stop_line_m": 2.0},
+    )
+    assert not held.safety_override
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"low_ttc_s": math.nan},
+        {"low_ttc_s": 3.0, "caution_ttc_s": 2.0},
+        {"hold_brake": 1.1},
+        {"max_lane_offset_m": 4.0, "severe_route_deviation_m": 3.0},
+    ],
+)
+def test_safety_config_rejects_unsafe_values(kwargs) -> None:
+    with pytest.raises(ValueError):
+        SafetyConfig(**kwargs)
+
+
+def test_malformed_sensor_and_watchdog_inputs_fail_closed() -> None:
+    supervisor = SafetySupervisor()
+    invalid_state = supervisor.arbitrate(
+        raw_control={"steer": 0.0, "throttle": 0.2, "brake": 0.0},
+        vehicle_state={"speed_mps": float("nan")},
+    )
+    assert invalid_state.reason == "INVALID_VEHICLE_STATE"
+    assert invalid_state.final_control.brake == 1.0
+
+    invalid_watchdog = supervisor.arbitrate(
+        raw_control={"steer": 0.0, "throttle": 0.2, "brake": 0.0},
+        vehicle_state={},
+        watchdog_alerts=(123,),
+    )
+    assert invalid_watchdog.reason == "WATCHDOG_ALERT"
+    assert invalid_watchdog.risk_metrics["watchdog_alerts"] == ["INVALID_WATCHDOG_ALERTS"]
+
+    invalid_signal = supervisor.arbitrate(
+        raw_control={"steer": 0.0, "throttle": 0.2, "brake": 0.0},
+        vehicle_state={"traffic_light": "BROKEN"},
+    )
+    assert invalid_signal.reason == "INVALID_VEHICLE_STATE"
+
+
+def test_collision_and_red_light_violation_are_hard_stops() -> None:
+    supervisor = SafetySupervisor()
+    collision = supervisor.arbitrate(
+        raw_control={"steer": 0.0, "throttle": 0.2, "brake": 0.0},
+        vehicle_state={"collision": True},
+    )
+    assert collision.reason == "COLLISION_DETECTED"
+    assert collision.final_control.brake == 1.0
+
+    violation = supervisor.arbitrate(
+        raw_control={"steer": 0.0, "throttle": 0.2, "brake": 0.0},
+        vehicle_state={"red_light_violation": True},
+    )
+    assert violation.reason == "RED_LIGHT_VIOLATION_DETECTED"
+    assert violation.final_control.brake == 1.0
+
+
+def test_route_deviation_never_applies_low_speed_recovery_throttle() -> None:
     supervisor = SafetySupervisor()
     decision = supervisor.arbitrate(
         raw_control={"steer": -0.8, "throttle": 0.4, "brake": 0.0},
@@ -67,9 +148,9 @@ def test_route_deviation_uses_limited_low_speed_recovery_instead_of_deadlock() -
         risk={},
     )
     assert decision.safety_override
-    assert decision.reason == "ROUTE_DEVIATION_RECOVERY"
-    assert decision.final_control.throttle == supervisor.config.route_recovery_throttle
-    assert decision.final_control.brake == 0.0
+    assert decision.reason == "ROUTE_DEVIATION_RECOVERY_STOP"
+    assert decision.final_control.throttle == 0.0
+    assert decision.final_control.brake >= supervisor.config.route_deviation_brake
     assert decision.final_control.steer == -supervisor.config.route_recovery_steer_limit
 
 
@@ -81,7 +162,7 @@ def test_route_recovery_brakes_above_recovery_speed() -> None:
         command=None,
         risk={},
     )
-    assert decision.reason == "ROUTE_DEVIATION_RECOVERY"
+    assert decision.reason == "ROUTE_DEVIATION_RECOVERY_STOP"
     assert decision.final_control.throttle == 0.0
     assert decision.final_control.brake >= supervisor.config.caution_brake
     assert decision.final_control.steer == 0.2

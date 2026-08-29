@@ -1,0 +1,21 @@
+{
+  "repository": "https://github.com/vllm-project/vllm.git",
+  "commit": "568afb3a13806beb53bb2e6bd518269357b237c0",
+  "source_archive": {
+    "filename": "vllm-568afb3a13806beb53bb2e6bd518269357b237c0.tar.gz",
+    "bytes": 38222709,
+    "sha256": "8b4f8a04c4313d54e42aabb372b8338609b60df1a5888e2146e46a5fc8da7f6a",
+    "generated_from_commit": "568afb3a13806beb53bb2e6bd518269357b237c0"
+  },
+  "expected_version": "0.26.1.dev0+g568afb3a1.d20260802",
+  "expected_wheel_version": "0.26.1.dev0+g568afb3a1.d20260802.cu132",
+  "output_wheel": {
+    "filename": "vllm-0.26.1.dev0+g568afb3a1.d20260802.cu132-cp312-cp312-linux_x86_64.whl",
+    "bytes": 496719721,
+    "sha256": "a46b0359fb53686c44a9b9485ee857493d90a014320cfdee46134a96e45779d5"
+  },
+  "scm_version_strategy": "SETUPTOOLS_SCM_PRETEND_VERSION and SETUPTOOLS_SCM_PRETEND_VERSION_FOR_VLLM are fixed to expected_version because the archive has no .git metadata",
+  "torch": "2.12.1+cu132",
+  "cuda": "13.2",
+  "cuda_arch_list": "8.0;12.0+PTX"
+}

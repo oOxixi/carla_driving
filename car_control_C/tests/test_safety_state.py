@@ -28,6 +28,7 @@ def test_rgb_and_lidar_fuse_class_distance_and_tracker_ttc() -> None:
     assert summary.ttc_s == 2.0
     assert summary.fused_valid
     assert summary.recommended_action == "SLOW_DOWN"
+    assert summary.recommended_speed_cap_mps == pytest.approx(2.0)
     assert summary.to_dict()["schema_version"] == "1.0"
 
 
@@ -41,7 +42,43 @@ def test_temporal_lidar_difference_computes_low_ttc_without_actor_truth() -> Non
     assert summary.closing_speed_mps == pytest.approx(10.0)
     assert summary.ttc_s == pytest.approx(0.9)
     assert summary.recommended_action == "EMERGENCY_BRAKE"
+    assert summary.fail_closed
     assert summary.source_by_field["closing_speed_mps"] == "LIDAR_TEMPORAL_DIFFERENCE"
+
+
+def test_vru_braking_envelope_does_not_apply_to_a_non_vru_vehicle() -> None:
+    summary = ConservativeSensorFusion().update(
+        frame=11,
+        sim_time_s=1.1,
+        ego_speed_mps=5.0,
+        front_distance_m=12.0,
+        lidar_valid=True,
+        lead_speed_mps=5.0,
+        visual=VisualObservation(11, True, "vehicle", 0.95, "RGB_ONNX"),
+    )
+    assert summary.recommended_action == "KEEP_SPEED"
+
+
+def test_vru_caution_speed_cap_persists_through_a_short_visual_miss() -> None:
+    fusion = ConservativeSensorFusion(
+        SafetyStateParameters(vru_caution_hold_s=2.0, vru_caution_speed_cap_mps=1.8)
+    )
+    observed = fusion.update(
+        frame=20, sim_time_s=2.0, ego_speed_mps=4.0,
+        front_distance_m=18.0, lidar_valid=True,
+        visual=VisualObservation(20, True, "person", 0.9, "RGB_ONNX"),
+    )
+    assert observed.recommended_action == "SLOW_DOWN"
+    assert observed.recommended_speed_cap_mps == pytest.approx(1.8)
+
+    held = fusion.update(
+        frame=21, sim_time_s=2.1, ego_speed_mps=3.0,
+        front_distance_m=18.0, lidar_valid=True,
+        visual=VisualObservation.unavailable(21),
+    )
+    assert held.recommended_action == "SLOW_DOWN"
+    assert held.reason == "vru_caution_hold"
+    assert held.recommended_speed_cap_mps == pytest.approx(1.8)
 
 
 def test_missing_visual_semantics_are_explicit_and_not_invented() -> None:

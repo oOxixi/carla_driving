@@ -1,0 +1,17 @@
+probe stage=connect host=127.0.0.1 port=2000
+probe stage=world current_map=Carla/Maps/Town10HD_Opt
+probe stage=spawn_ego
+probe stage=attach sensor=rgb_front blueprint=sensor.camera.rgb
+probe stage=attach sensor=lidar_roof blueprint=sensor.lidar.ray_cast
+probe stage=attach sensor=radar_front blueprint=sensor.other.radar
+probe stage=stream mode=all profile=low requested_frames=100
+probe stage=startup_wait attempt=1/10 frame=18403 aligned=True streak=1/2 counts={'rgb_front': 1, 'lidar_roof': 1, 'radar_front': 1}
+probe stage=startup_wait attempt=2/10 frame=18404 aligned=False streak=0/2 counts={'rgb_front': 1, 'lidar_roof': 1, 'radar_front': 1}
+probe stage=startup_wait attempt=3/10 frame=18405 aligned=True streak=1/2 counts={'rgb_front': 2, 'lidar_roof': 2, 'radar_front': 2}
+probe stage=startup_wait attempt=4/10 frame=18406 aligned=True streak=2/2 counts={'rgb_front': 3, 'lidar_roof': 3, 'radar_front': 3}
+probe progress=1/100 frame=18407 counts={'rgb_front': 4, 'lidar_roof': 4, 'radar_front': 4}
+probe progress=25/100 frame=18431 counts={'rgb_front': 28, 'lidar_roof': 28, 'radar_front': 28}
+probe progress=50/100 frame=18456 counts={'rgb_front': 53, 'lidar_roof': 53, 'radar_front': 53}
+probe progress=75/100 frame=18481 counts={'rgb_front': 78, 'lidar_roof': 78, 'radar_front': 78}
+probe progress=100/100 frame=18506 counts={'rgb_front': 103, 'lidar_roof': 103, 'radar_front': 103}
+probe result={"aligned_frames": 100, "callback_counts": {"lidar_roof": 103, "radar_front": 103, "rgb_front": 103}, "duration_s": 23.791, "frame_bounds": {"lidar_roof": [18403, 18506], "radar_front": [18403, 18506], "rgb_front": [18403, 18506]}, "invalid_callbacks": {"lidar_roof": 0, "radar_front": 0, "rgb_front": 0}, "map_name": "Carla/Maps/Town10HD_Opt", "mode": "all", "profile": "low", "reason": "requested aligned frames received", "requested_frames": 100, "success": true}

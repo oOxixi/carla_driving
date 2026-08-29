@@ -68,6 +68,8 @@ def preload_voice_models() -> dict:
     started = time.monotonic_ns()
     _get_asr()
     primary_loaded = time.monotonic_ns()
+    _text_to_command("保持当前车道。", "warmup-nlu", 1.0)
+    nlu_loaded = time.monotonic_ns()
     config = _get_cascade_config()
     if config.enabled:
         _get_verifier().warmup()
@@ -75,7 +77,8 @@ def preload_voice_models() -> dict:
     return {
         "cascade_enabled": config.enabled,
         "primary_load_ms": round((primary_loaded - started) / 1e6, 1),
-        "verifier_load_ms": round((completed - primary_loaded) / 1e6, 1),
+        "nlu_warmup_ms": round((nlu_loaded - primary_loaded) / 1e6, 1),
+        "verifier_load_ms": round((completed - nlu_loaded) / 1e6, 1),
         "total_load_ms": round((completed - started) / 1e6, 1),
     }
 

@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://carla-driving.local/interfaces/model_request.schema.json",
+  "title": "ModelRequest V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "request_id", "command_id", "created_at_ns",
+    "deadline_ns", "source_text", "scene_summary", "targets", "constraints"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "request_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "command_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "created_at_ns": {"type": "integer", "minimum": 0},
+    "deadline_ns": {"type": "integer", "minimum": 1},
+    "source_text": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "command_hint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent"],
+      "properties": {
+        "intent": {"type": "string", "minLength": 1, "maxLength": 64},
+        "target_speed_mps": {"type": ["number", "null"], "minimum": 0},
+        "direction": {"enum": ["LEFT", "RIGHT", "STRAIGHT", null]},
+        "target": {"type": ["string", "null"], "maxLength": 128}
+      }
+    },
+    "rgb_ref": {"type": ["string", "null"], "maxLength": 4096},
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "score", "reasons", "safe_wait_behavior"],
+      "properties": {
+        "disposition": {"enum": ["FAST_LOCAL", "QWEN_PLAN", "CONFIRM_SAFE"]},
+        "score": {"type": "integer"},
+        "reasons": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 128}
+        },
+        "safe_wait_behavior": {
+          "enum": ["KEEP_LANE_LIMITED", "SLOW_DOWN", "STOP", "EMERGENCY_STOP"]
+        }
+      }
+    },
+    "scene_capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "available_lanes": {
+          "type": "array", "uniqueItems": true,
+          "items": {"enum": ["CURRENT", "LEFT_ADJACENT", "RIGHT_ADJACENT", "SHOULDER"]}
+        },
+        "left_lane_exists": {"type": "boolean"},
+        "right_lane_exists": {"type": "boolean"},
+        "left_gap_safe": {"type": "boolean"},
+        "right_gap_safe": {"type": "boolean"},
+        "route_available": {"type": "boolean"},
+        "intersection_ahead": {"type": "boolean"},
+        "stop_line_clear": {"type": "boolean"},
+        "original_lane": {"type": "string", "minLength": 1, "maxLength": 128},
+        "current_lane": {"type": "string", "minLength": 1, "maxLength": 128},
+        "return_direction": {"enum": ["LEFT", "RIGHT"]}
+      }
+    },
+    "scene_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frame_id", "sim_time_s", "traffic_light", "risk_level"],
+      "properties": {
+        "frame_id": {"type": "integer", "minimum": 0},
+        "sim_time_s": {"type": "number", "minimum": 0},
+        "traffic_light": {"enum": ["RED", "YELLOW", "GREEN", "UNKNOWN"]},
+        "risk_level": {"enum": ["LOW", "CAUTION", "HIGH", "EMERGENCY", "UNKNOWN"]},
+        "min_gap_m": {"type": ["number", "null"], "minimum": 0},
+        "ttc_s": {"type": ["number", "null"], "minimum": 0}
+      }
+    },
+    "targets": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target_id", "class", "distance_m", "confidence", "relation"],
+        "properties": {
+          "target_id": {"type": "string", "minLength": 1, "maxLength": 128},
+          "class": {"enum": ["vehicle", "pedestrian", "cyclist", "obstacle", "unknown"]},
+          "distance_m": {"type": "number", "minimum": 0},
+          "relative_speed_mps": {"type": ["number", "null"]},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "relation": {"type": "string", "minLength": 1, "maxLength": 128}
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["speed_limit_mps", "allowed_behaviors", "must_stop"],
+      "properties": {
+        "speed_limit_mps": {"type": ["number", "null"], "minimum": 0},
+        "allowed_behaviors": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW", "CHANGE_LANE", "TURN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "PULL_OVER"]}
+        },
+        "must_stop": {"type": "boolean"},
+        "max_target_speed_mps": {"type": ["number", "null"], "minimum": 0}
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema_version": "1.0",
+      "request_id": "qwen-0001",
+      "command_id": "voice-0002",
+      "created_at_ns": 2000000000,
+      "deadline_ns": 2300000000,
+      "source_text": "跟随右侧较近的车辆",
+      "rgb_ref": "frames/rgb_000120.png",
+      "scene_summary": {
+        "frame_id": 120,
+        "sim_time_s": 6.0,
+        "traffic_light": "GREEN",
+        "risk_level": "LOW",
+        "min_gap_m": 12.0,
+        "ttc_s": null
+      },
+      "targets": [
+        {
+          "target_id": "vehicle-right-01",
+          "class": "vehicle",
+          "distance_m": 12.0,
+          "relative_speed_mps": -1.0,
+          "confidence": 0.94,
+          "relation": "right_adjacent_near"
+        }
+      ],
+      "constraints": {
+        "speed_limit_mps": 8.3333333333,
+        "allowed_behaviors": ["KEEP_LANE", "SLOW_DOWN", "STOP", "FOLLOW"],
+        "must_stop": false,
+        "max_target_speed_mps": 8.3333333333
+      }
+    }
+  ]
+}

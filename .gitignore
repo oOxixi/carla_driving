@@ -4,6 +4,8 @@ __pycache__/
 .venv-voice/
 venv/
 logs/
+!/metrics/reference_5070/logs/
+!/metrics/reference_5070/logs/**
 data/
 *.egg-info/
 .vscode/
@@ -18,6 +20,8 @@ artifacts/logs/
 artifacts/models/*.onnx
 artifacts/.runtime/
 artifacts/voice/cuda12_wheel_check/
+artifacts/runtime/
+artifacts/qwen_remote_live/
 artifacts/.pytest*/
 artifacts/pytest_*/
 artifacts/sensor_remaining_v1/
@@ -36,7 +40,15 @@ artifacts/pytest-c-role-*/
 models/*
 !models/README.md
 
+# Generated release payloads and downloaded weights stay outside Git.
+/release_assets/
+/dist/
+/weights/qwen3vl-2b-int4/
+/weights/SenseVoiceSmall/
+/weights/.partial*/
+*.tar
+*.tar.sha256
+
 # Backup files
 *.bak
 *.error_backup
-

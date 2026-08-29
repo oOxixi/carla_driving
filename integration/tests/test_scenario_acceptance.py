@@ -12,6 +12,9 @@ SCENARIO_ROOT = Path(__file__).resolve().parents[2] / "scenarios"
 def _passing_metrics(expected: dict[str, object]) -> dict[str, object]:
     initial_offset = float(expected.get("initial_offset_y_m", 0.0))
     final_speed = float(expected.get("target_speed_kph", 0.0)) / 3.6
+    passing_max_speed = max(final_speed, 1.0)
+    if "max_speed_mps" in expected:
+        passing_max_speed = min(passing_max_speed, float(expected["max_speed_mps"]))
     reasons = [str(item) for item in expected.get("expected_reason_contains", ["EXPECTED_EVENT"])]
     return {
         "carla_started": True,
@@ -35,10 +38,10 @@ def _passing_metrics(expected: dict[str, object]) -> dict[str, object]:
         "initial_cross_track_error_m": initial_offset,
         "max_abs_steer": 0.0,
         "max_steer_rate_per_s": 0.0,
-        "max_speed_mps": max(final_speed, 1.0),
+        "max_speed_mps": passing_max_speed,
         "final_speed_mps": final_speed,
         "min_gap_m": 10.0,
-        "duration_s": 120.0,
+        "duration_s": max(120.0, float(expected.get("min_run_time_s", 0.0))),
         "final_lateral_shift_m": float(expected.get("final_lateral_shift_m", 0.0)),
         "turn_direction": str(expected.get("turn_direction", "STRAIGHT")),
         "safety_override_frames": 1,
@@ -48,6 +51,9 @@ def _passing_metrics(expected: dict[str, object]) -> dict[str, object]:
         "final_control_overlap_count": 0,
         "stopped_before_stop_line": True,
         "safety_priority_observed": True,
+        "spawned_scenario_actor_types": list(
+            expected.get("required_real_actor_types", [])
+        ),
         "stop_latency_s": 0.5,
         "speed_before_decrease_marker_mps": 3.0,
         "speed_after_decrease_marker_mps": 1.0,
@@ -56,7 +62,7 @@ def _passing_metrics(expected: dict[str, object]) -> dict[str, object]:
 
 def test_every_repository_expected_key_is_supported() -> None:
     for path in sorted(SCENARIO_ROOT.rglob("*.json")):
-        if path.name in {"index.json", "scenario_schema.json"}:
+        if path.name in {"index.json", "matrix.json", "scenario_schema.json"}:
             continue
         data = json.loads(path.read_text(encoding="utf-8"))
         expected = data.get("expected", {})
@@ -73,3 +79,21 @@ def test_metric_violation_and_unknown_key_fail_closed() -> None:
     assert report["passed"] is False
     assert report["failed_keys"] == ["max_cross_track_error_m", "future_rule"]
     assert report["unsupported_keys"] == ["future_rule"]
+
+
+def test_target_speed_tolerance_allows_only_float32_scale_boundary_jitter() -> None:
+    expected = {"target_speed_kph": 20.0, "speed_tolerance_kph": 2.0}
+    boundary_jitter = evaluate_expected(expected, {"final_speed_mps": 17.98 / 3.6})
+    material_miss = evaluate_expected(expected, {"final_speed_mps": 17.94 / 3.6})
+
+    assert boundary_jitter["passed"] is True
+    assert material_miss["passed"] is False
+
+
+def test_required_real_actor_types_rejects_a_false_positive_scene() -> None:
+    report = evaluate_expected(
+        {"required_real_actor_types": ["walker.pedestrian", "static.prop"]},
+        {"spawned_scenario_actor_types": ["walker.pedestrian"]},
+    )
+    assert report["passed"] is False
+    assert report["failed_keys"] == ["required_real_actor_types"]

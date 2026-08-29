@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "label": "pre_optimization_first_50_complete_latency",
+  "source_root": "/workspace/results/a800_acceptance_83_formal_20260808",
+  "created_at_utc": "2026-08-07T19:43:13.935025+00:00",
+  "sensor_to_trajectory_ms": {
+    "count": 50,
+    "mean": 123.44473684,
+    "p50": 125.377569,
+    "p95": 141.776472,
+    "max": 155.13741,
+    "over_150": 1
+  },
+  "breakdown": {
+    "client_http_roundtrip_ms": {
+      "count": 50,
+      "mean": 97.87220728,
+      "p50": 98.112877,
+      "p95": 113.628,
+      "max": 123.909757,
+      "over_150": 0
+    },
+    "client_image_transform_ms": {
+      "count": 50,
+      "mean": 18.29132344,
+      "p50": 20.264174,
+      "p95": 26.935689,
+      "max": 27.49669,
+      "over_150": 0
+    },
+    "queue_wait_ms": {
+      "count": 50,
+      "mean": 0.47662666000000004,
+      "p50": 0.418063,
+      "p95": 0.730456,
+      "max": 1.28092,
+      "over_150": 0
+    },
+    "validate_compile_ms": {
+      "count": 50,
+      "mean": 0.62310764,
+      "p50": 0.601548,
+      "p95": 0.788437,
+      "max": 1.032487,
+      "over_150": 0
+    },
+    "sensor_to_submit_ms": {
+      "count": 50,
+      "mean": 4.34779966,
+      "p50": 4.240823,
+      "p95": 5.12165,
+      "max": 5.557269,
+      "over_150": 0
+    }
+  }
+}

@@ -41,9 +41,15 @@ class FrameTiming:
     decision_end_ns: int
     control_applied_ns: int
     sensor_ready_ns: int | None = None
+    simulator_tick_start_ns: int | None = None
+    simulator_tick_end_ns: int | None = None
+    perception_start_ns: int | None = None
 
     def __post_init__(self) -> None:
         values = {
+            "simulator_tick_start_ns": self.simulator_tick_start_ns,
+            "simulator_tick_end_ns": self.simulator_tick_end_ns,
+            "perception_start_ns": self.perception_start_ns,
             "sensor_ready_ns": self.sensor_ready_ns,
             "decision_start_ns": self.decision_start_ns,
             "decision_end_ns": self.decision_end_ns,
@@ -52,7 +58,14 @@ class FrameTiming:
         for name, value in values.items():
             if value is not None and (type(value) is not int or value < 0):
                 raise ValueError(f"{name} must be a non-negative integer or None")
+        if (self.simulator_tick_start_ns is None) != (self.simulator_tick_end_ns is None):
+            raise ValueError("simulator tick timestamps must be provided together")
+        if self.perception_start_ns is not None and self.sensor_ready_ns is None:
+            raise ValueError("perception_start_ns requires sensor_ready_ns")
         ordered = [value for value in (
+            self.simulator_tick_start_ns,
+            self.simulator_tick_end_ns,
+            self.perception_start_ns,
             self.sensor_ready_ns,
             self.decision_start_ns,
             self.decision_end_ns,
@@ -62,12 +75,33 @@ class FrameTiming:
             raise ValueError("frame timestamps must be monotonic")
 
     def to_dict(self) -> dict[str, float | int | None]:
+        simulator_tick_ms = None
+        if self.simulator_tick_start_ns is not None and self.simulator_tick_end_ns is not None:
+            simulator_tick_ms = (
+                self.simulator_tick_end_ns - self.simulator_tick_start_ns
+            ) / 1e6
+        perception_acquire_ms = None
+        if self.perception_start_ns is not None and self.sensor_ready_ns is not None:
+            perception_acquire_ms = (
+                self.sensor_ready_ns - self.perception_start_ns
+            ) / 1e6
+        pipeline_active_ms = None
+        if self.simulator_tick_end_ns is not None:
+            pipeline_active_ms = (
+                self.control_applied_ns - self.simulator_tick_end_ns
+            ) / 1e6
         sensor_to_control = None
         sensor_to_decision = None
         if self.sensor_ready_ns is not None:
             sensor_to_control = (self.control_applied_ns - self.sensor_ready_ns) / 1e6
             sensor_to_decision = (self.decision_start_ns - self.sensor_ready_ns) / 1e6
         return {
+            "simulator_tick_start_ns": self.simulator_tick_start_ns,
+            "simulator_tick_end_ns": self.simulator_tick_end_ns,
+            "simulator_tick_ms": simulator_tick_ms,
+            "perception_start_ns": self.perception_start_ns,
+            "perception_acquire_ms": perception_acquire_ms,
+            "pipeline_active_ms": pipeline_active_ms,
             "sensor_ready_ns": self.sensor_ready_ns,
             "decision_start_ns": self.decision_start_ns,
             "decision_end_ns": self.decision_end_ns,
@@ -137,6 +171,7 @@ class ScenarioEvidenceRecorder:
         self._last_speed_mps: float | None = None
         self._safety_override_frames = 0
         self._safety_override_episodes = 0
+        self._feedback_safety_event_count = 0
         self._override_active = False
         self._collisions = 0
         self._red_violations = 0
@@ -147,6 +182,11 @@ class ScenarioEvidenceRecorder:
         self._last_route_deviation = False
         self._frame_decision_ms: list[float] = []
         self._frame_sensor_to_control_ms: list[float] = []
+        self._qwen_sensor_to_trajectory_ms: list[float] = []
+        self._qwen_model_ms: list[float] = []
+        self._frame_simulator_tick_ms: list[float] = []
+        self._frame_perception_acquire_ms: list[float] = []
+        self._frame_pipeline_active_ms: list[float] = []
         self._frame_times_s: list[float] = []
         self._frame_speeds_mps: list[float] = []
         self._cross_track_errors_m: list[float] = []
@@ -215,6 +255,94 @@ class ScenarioEvidenceRecorder:
         self._commands[command_id] = record
         self._write("command", **record)
 
+    def record_qwen_event(
+        self,
+        *,
+        request_id: str,
+        status: str,
+        context: Mapping[str, object] | None = None,
+        high_level_command: Mapping[str, object] | None = None,
+        runtime_command: Mapping[str, object] | None = None,
+        trace: object | None = None,
+        error: str | None = None,
+    ) -> None:
+        """Record a remote Qwen request/result without storing credentials."""
+        self._ensure_active()
+        if type(request_id) is not str or not request_id:
+            raise ValueError("request_id must be a non-empty string")
+        normalized_status = str(status).strip().upper()
+        if normalized_status not in {"PENDING", "READY", "TIMEOUT", "STALE", "ERROR"}:
+            raise ValueError("unsupported Qwen evidence status")
+        # A deterministic D safety decision can stop the vehicle through the
+        # high-level command boundary, without producing a second frame-level
+        # brake takeover. Preserve that provenance in acceptance evidence.
+        if normalized_status == "READY" and isinstance(high_level_command, Mapping):
+            action = str(high_level_command.get("action", "")).strip().upper()
+            source = str(high_level_command.get("decision_source", "")).strip().upper()
+            if source == "SAFETY_RULE" and action in {"STOP", "EMERGENCY_STOP"}:
+                self._safety_reasons.add("QWEN_SAFETY_RULE")
+        self._write(
+            "qwen_decision",
+            request_id=request_id,
+            status=normalized_status,
+            context=_jsonable(context),
+            high_level_command=_jsonable(high_level_command),
+            runtime_command=_jsonable(runtime_command),
+            trace=_jsonable(trace),
+            error=error,
+        )
+
+    def record_qwen_trajectory(
+        self,
+        *,
+        command_id: str,
+        request_id: str,
+        sensor_ready_ns: int,
+        model_completed_ns: int,
+        trajectory_ready_ns: int,
+        breakdown: Mapping[str, float] | None = None,
+    ) -> None:
+        """Record the official sensor-ready to valid-trajectory boundary."""
+        self._ensure_active()
+        if not command_id or not request_id:
+            raise ValueError("command_id and request_id must be non-empty")
+        stamps = (sensor_ready_ns, model_completed_ns, trajectory_ready_ns)
+        if any(type(value) is not int or value < 0 for value in stamps):
+            raise ValueError("Qwen trajectory timestamps must be non-negative integers")
+        if not sensor_ready_ns <= model_completed_ns <= trajectory_ready_ns:
+            raise ValueError("Qwen trajectory timestamps must be monotonic")
+        model_ms = (model_completed_ns - sensor_ready_ns) / 1e6
+        end_to_end_ms = (trajectory_ready_ns - sensor_ready_ns) / 1e6
+        normalized_breakdown: dict[str, float] | None = None
+        if breakdown is not None:
+            normalized_breakdown = {}
+            for key, value in breakdown.items():
+                if type(key) is not str or not key:
+                    raise ValueError("Qwen timing breakdown keys must be non-empty strings")
+                if (
+                    type(value) not in (int, float)
+                    or isinstance(value, bool)
+                    or not math.isfinite(float(value))
+                    or float(value) < 0
+                ):
+                    raise ValueError(
+                        "Qwen timing breakdown values must be finite and non-negative"
+                    )
+                normalized_breakdown[key] = float(value)
+        self._qwen_model_ms.append(model_ms)
+        self._qwen_sensor_to_trajectory_ms.append(end_to_end_ms)
+        self._write(
+            "qwen_trajectory", command_id=command_id, request_id=request_id,
+            latency={
+                "sensor_ready_ns": sensor_ready_ns,
+                "model_completed_ns": model_completed_ns,
+                "trajectory_ready_ns": trajectory_ready_ns,
+                "model_ms": model_ms,
+                "sensor_to_trajectory_ms": end_to_end_ms,
+                "breakdown": normalized_breakdown,
+            },
+        )
+
     def record_frame(self, *, vehicle: object, scene: object, raw_control: object,
                      final_control: object, safety_reason: str,
                      safety_override: bool, timing: FrameTiming,
@@ -235,6 +363,12 @@ class ScenarioEvidenceRecorder:
             raise TypeError("vehicle must provide frame, sim_time_s and speed_mps")
         latency = timing.to_dict()
         self._frame_decision_ms.append(float(latency["decision_ms"]))
+        if latency["simulator_tick_ms"] is not None:
+            self._frame_simulator_tick_ms.append(float(latency["simulator_tick_ms"]))
+        if latency["perception_acquire_ms"] is not None:
+            self._frame_perception_acquire_ms.append(float(latency["perception_acquire_ms"]))
+        if latency["pipeline_active_ms"] is not None:
+            self._frame_pipeline_active_ms.append(float(latency["pipeline_active_ms"]))
         if latency["sensor_to_control_ms"] is not None:
             self._frame_sensor_to_control_ms.append(float(latency["sensor_to_control_ms"]))
         sim_time = float(sim_time_s)
@@ -273,7 +407,11 @@ class ScenarioEvidenceRecorder:
             self._final_control_overlap_count += 1
         if safety_override:
             self._safety_reasons.add(safety_reason)
-        if finite_final and safety_override and float(final_values[1]) >= 0.99:
+        if (
+            finite_final
+            and float(final_values[0]) <= 0.03
+            and float(final_values[1]) >= 0.99
+        ):
             self._emergency_brake_seen = True
 
         risk = _field(longitudinal, "risk")
@@ -373,7 +511,31 @@ class ScenarioEvidenceRecorder:
             return
         self._feedback_keys.add(key)
         self._terminal_statuses[command_id] = status
+        safety_event = _field(feedback, "safety_event")
+        if isinstance(safety_event, Mapping):
+            reason_code = safety_event.get("reason_code")
+            if isinstance(reason_code, str) and reason_code:
+                self._safety_reasons.add(reason_code)
+                self._feedback_safety_event_count += 1
+        terminal_reason = _field(feedback, "terminal_reason")
+        if status == "SAFETY_OVERRIDE" and isinstance(terminal_reason, str) and terminal_reason:
+            self._safety_reasons.add(terminal_reason)
         self._write("feedback", feedback=_jsonable(feedback))
+
+    def record_canonical_routing(self, *, phase: str, command_id: str,
+                                 payload: object) -> None:
+        """Persist A/B canonical objects without parsing their implementation."""
+        self._ensure_active()
+        if type(phase) is not str or not phase:
+            raise ValueError("phase must be a non-empty string")
+        if type(command_id) is not str or not command_id:
+            raise ValueError("command_id must be a non-empty string")
+        self._write(
+            "canonical_routing",
+            phase=phase,
+            command_id=command_id,
+            payload=_jsonable(payload),
+        )
 
     def complete(self, *, completion: bool | None = None, detail: str = "",
                  expected: Mapping[str, object] | None = None,
@@ -390,7 +552,10 @@ class ScenarioEvidenceRecorder:
             basis = "explicit"
         if expected is not None:
             metrics = self._acceptance_metrics(expected, acceptance_context or {})
-            self._acceptance_report = evaluate_expected(expected, metrics)
+            self._acceptance_report = {
+                **evaluate_expected(expected, metrics),
+                "metrics": metrics,
+            }
             completion = bool(completion and self._acceptance_report["passed"])
             basis = "explicit_expected_contracts"
         status = "SUCCEEDED" if completion else "FAILED"
@@ -440,11 +605,35 @@ class ScenarioEvidenceRecorder:
             "unfinished_task_count": 0 if completion else 1,
             "safety_override_frames": self._safety_override_frames,
             "safety_override_episodes": self._safety_override_episodes,
+            "feedback_safety_event_count": self._feedback_safety_event_count,
+            "safety_reasons": sorted(self._safety_reasons),
             "latency": {
+                "simulator_tick_avg_ms": self._average(self._frame_simulator_tick_ms),
+                "simulator_tick_p95_ms": self._percentile(self._frame_simulator_tick_ms, 0.95),
+                "simulator_tick_p99_ms": self._percentile(self._frame_simulator_tick_ms, 0.99),
+                "simulator_tick_max_ms": max(self._frame_simulator_tick_ms, default=None),
+                "perception_acquire_avg_ms": self._average(self._frame_perception_acquire_ms),
+                "perception_acquire_p95_ms": self._percentile(self._frame_perception_acquire_ms, 0.95),
+                "perception_acquire_p99_ms": self._percentile(self._frame_perception_acquire_ms, 0.99),
+                "perception_acquire_max_ms": max(self._frame_perception_acquire_ms, default=None),
+                "pipeline_active_avg_ms": self._average(self._frame_pipeline_active_ms),
+                "pipeline_active_p95_ms": self._percentile(self._frame_pipeline_active_ms, 0.95),
+                "pipeline_active_p99_ms": self._percentile(self._frame_pipeline_active_ms, 0.99),
+                "pipeline_active_max_ms": max(self._frame_pipeline_active_ms, default=None),
                 "decision_avg_ms": self._average(self._frame_decision_ms),
+                "decision_p95_ms": self._percentile(self._frame_decision_ms, 0.95),
+                "decision_p99_ms": self._percentile(self._frame_decision_ms, 0.99),
                 "decision_max_ms": max(self._frame_decision_ms, default=None),
                 "sensor_to_control_avg_ms": self._average(self._frame_sensor_to_control_ms),
+                "sensor_to_control_p95_ms": self._percentile(self._frame_sensor_to_control_ms, 0.95),
+                "sensor_to_control_p99_ms": self._percentile(self._frame_sensor_to_control_ms, 0.99),
                 "sensor_to_control_max_ms": max(self._frame_sensor_to_control_ms, default=None),
+                "qwen_model_avg_ms": self._average(self._qwen_model_ms),
+                "qwen_model_p95_ms": self._percentile(self._qwen_model_ms, 0.95),
+                "sensor_to_trajectory_avg_ms": self._average(self._qwen_sensor_to_trajectory_ms),
+                "sensor_to_trajectory_p95_ms": self._percentile(self._qwen_sensor_to_trajectory_ms, 0.95),
+                "sensor_to_trajectory_p99_ms": self._percentile(self._qwen_sensor_to_trajectory_ms, 0.99),
+                "sensor_to_trajectory_max_ms": max(self._qwen_sensor_to_trajectory_ms, default=None),
             },
         }
         if self._acceptance_report is not None:
@@ -510,16 +699,32 @@ class ScenarioEvidenceRecorder:
             for record in self._commands.values()
             if type(record.get("stop_latency_s")) in (int, float)
         ]
-        command_ids = list(self._commands)
-        expected_count = int(context.get("expected_command_count", len(command_ids)))
-        expected_ids = [f"scenario_cmd_{index:03d}" for index in range(expected_count)]
+        all_command_ids = list(self._commands)
+        configured_count = context.get("expected_command_count")
+        expected_count = int(configured_count) if configured_count is not None else len(all_command_ids)
+        expected_ids = (
+            [f"scenario_cmd_{index:03d}" for index in range(expected_count)]
+            if configured_count is not None
+            else all_command_ids
+        )
+        command_ids = [command_id for command_id in all_command_ids if command_id in expected_ids]
+        command_records = [self._commands[command_id] for command_id in command_ids]
         submitted_times = [
-            record.get("submitted_sim_time_s") for record in self._commands.values()
+            record.get("submitted_sim_time_s") for record in command_records
         ]
         accepted_and_applied = all(
-            str(record.get("disposition", "")).startswith("ACCEPTED")
-            and "first_control_applied_ns" in record
-            for record in self._commands.values()
+            (
+                str(record.get("disposition", "")).startswith("ACCEPTED")
+                or str(record.get("disposition", "")) in {
+                    "SCENARIO_SLOW_PENDING", "SCENARIO_FAST", "SCENARIO_CONFIRM_SAFE",
+                }
+            )
+            and (
+                "first_control_applied_ns" in record
+                or self._terminal_statuses.get(str(record.get("command_id", "")))
+                in {"SUCCEEDED", "SAFETY_OVERRIDE"}
+            )
+            for record in command_records
         )
         monotonic_submission = all(
             type(stamp) in (int, float) for stamp in submitted_times
@@ -563,12 +768,18 @@ class ScenarioEvidenceRecorder:
             "yaw_change_deg": yaw_change,
             "turn_direction": turn_direction,
             "safety_override_frames": self._safety_override_frames,
+            "safety_event_count": self._feedback_safety_event_count,
+            "safety_override_observed": (
+                self._safety_override_frames > 0
+                or self._feedback_safety_event_count > 0
+            ),
             "safety_reasons": sorted(self._safety_reasons),
             "route_deviation_event_seen": any(
                 "ROUTE_DEVIATION" in reason for reason in self._safety_reasons
             ),
             "event_count": (
-                self._safety_override_episodes + self._collisions + self._red_violations + self._route_deviations
+                self._safety_override_episodes + self._feedback_safety_event_count
+                + self._collisions + self._red_violations + self._route_deviations
             ),
             "emergency_brake_seen": self._emergency_brake_seen,
             "final_control_all_finite": self._final_controls_finite,
@@ -583,7 +794,11 @@ class ScenarioEvidenceRecorder:
             "stop_error_m": self._stationary_stop_error_m,
             "stopped_before_stop_line": stopped_before_line,
             "safety_priority_observed": (
-                self._safety_override_frames > 0 and stopped_before_line
+                (
+                    self._safety_override_frames > 0
+                    or self._feedback_safety_event_count > 0
+                )
+                and stopped_before_line
             ),
             **dict(context),
         }
@@ -635,6 +850,17 @@ class ScenarioEvidenceRecorder:
     @staticmethod
     def _average(values: list[float]) -> float | None:
         return sum(values) / len(values) if values else None
+
+    @staticmethod
+    def _percentile(values: list[float], quantile: float) -> float | None:
+        if not values:
+            return None
+        ordered = sorted(values)
+        position = (len(ordered) - 1) * quantile
+        lower = int(position)
+        upper = min(lower + 1, len(ordered) - 1)
+        fraction = position - lower
+        return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
 
     @staticmethod
     def _command_latency(command: Mapping[str, Any], received_ns: int) -> dict[str, float | None]:

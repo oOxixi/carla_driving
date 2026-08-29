@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "request_id": "qwen-0001",
+  "command_id": "voice-0002",
+  "intent": "FOLLOW",
+  "target_id": "vehicle-right-01",
+  "behavior": "FOLLOW",
+  "parameters": {"target_speed_mps": 4.0, "time_gap_s": 2.0},
+  "confidence": 0.93,
+  "reason_code": "UNIQUE_RIGHT_TARGET",
+  "created_at_ns": 2100000000,
+  "valid_until_ns": 2300000000,
+  "requires_confirmation": false,
+  "model_id": "Qwen2.5-VL-7B-Instruct"
+}

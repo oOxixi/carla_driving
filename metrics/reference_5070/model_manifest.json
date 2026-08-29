@@ -1,0 +1,8 @@
+{
+  "profile": "qwen3vl-2b-int4",
+  "model_id": "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
+  "revision": "f91db2369bd00e7ec20bf09b6a0080cdb26aefa5",
+  "quantization": "GPTQ INT4",
+  "required_linear_kernel": "MarlinLinearKernel",
+  "visual_tokens": 64
+}

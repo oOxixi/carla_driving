@@ -1,0 +1,459 @@
+{
+  "schema_version": "1.0",
+  "generated_at_utc": "2026-08-02T04:00:41.348922+00:00",
+  "official_for_group1_tasks": true,
+  "dataset_root": "/home/student/yingzhaohou/carla_driving_upload_merged/data/group1_voice/data_short",
+  "source_zip": {
+    "path": "/home/student/yingzhaohou/carla_driving_upload_merged/data_short.zip",
+    "sha256": "f1bd37827311abfe5d4349d3584f7d79da8442ce26ecb730739b6b92ba4f6656",
+    "size_bytes": 172189439,
+    "mp3_members": 5204,
+    "wav_members": 2
+  },
+  "git": {
+    "commit": "72aaa0e742dd9b1ae68563ab9a62b2a55a1b920a",
+    "dirty": true,
+    "status": [
+      "?? artifacts/group1_voice/",
+      "?? tools/prepare_group1_voice_dataset.py"
+    ]
+  },
+  "raw_records": {
+    "clean_mapping": 1000,
+    "noisy_mapping": 1000,
+    "duplicate_texts": [
+      {
+        "text": "从旁边绕过路障吧。",
+        "ids": [
+          "0139",
+          "0757"
+        ],
+        "count": 2
+      },
+      {
+        "text": "停住！",
+        "ids": [
+          "0422",
+          "0895"
+        ],
+        "count": 2
+      },
+      {
+        "text": "再慢一点吧。",
+        "ids": [
+          "0595",
+          "0970"
+        ],
+        "count": 2
+      },
+      {
+        "text": "刹住车！",
+        "ids": [
+          "0574",
+          "0655"
+        ],
+        "count": 2
+      },
+      {
+        "text": "刹车踩到底！",
+        "ids": [
+          "0648",
+          "0963"
+        ],
+        "count": 2
+      },
+      {
+        "text": "加速吧。",
+        "ids": [
+          "0177",
+          "0742",
+          "0805"
+        ],
+        "count": 3
+      },
+      {
+        "text": "就停这里吧。",
+        "ids": [
+          "0031",
+          "0424"
+        ],
+        "count": 2
+      },
+      {
+        "text": "左边变道吧吧。",
+        "ids": [
+          "0660",
+          "0887"
+        ],
+        "count": 2
+      },
+      {
+        "text": "差不多停了吧。",
+        "ids": [
+          "0465",
+          "0723"
+        ],
+        "count": 2
+      },
+      {
+        "text": "快停住！",
+        "ids": [
+          "0580",
+          "0708"
+        ],
+        "count": 2
+      },
+      {
+        "text": "急停！",
+        "ids": [
+          "0212",
+          "0458",
+          "0996"
+        ],
+        "count": 3
+      },
+      {
+        "text": "提到40吧。",
+        "ids": [
+          "0019",
+          "0876"
+        ],
+        "count": 2
+      },
+      {
+        "text": "绕一下前面的车吧。",
+        "ids": [
+          "0457",
+          "0984"
+        ],
+        "count": 2
+      },
+      {
+        "text": "绕一下前面的障碍物吧。",
+        "ids": [
+          "0299",
+          "0808"
+        ],
+        "count": 2
+      },
+      {
+        "text": "给我变左道吧。",
+        "ids": [
+          "0725",
+          "0946"
+        ],
+        "count": 2
+      },
+      {
+        "text": "速度快点吧。",
+        "ids": [
+          "0297",
+          "0770"
+        ],
+        "count": 2
+      },
+      {
+        "text": "马上停！",
+        "ids": [
+          "0097",
+          "0497"
+        ],
+        "count": 2
+      },
+      {
+        "text": "马上刹停！",
+        "ids": [
+          "0211",
+          "0642"
+        ],
+        "count": 2
+      },
+      {
+        "text": "马上把车停住！",
+        "ids": [
+          "0195",
+          "0391"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦从左边绕开障碍物。",
+        "ids": [
+          "0110",
+          "0478"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦停到右边。",
+        "ids": [
+          "0833",
+          "0952"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦再慢点吧。",
+        "ids": [
+          "0027",
+          "0363"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦刹车刹车！",
+        "ids": [
+          "0586",
+          "0700",
+          "0893"
+        ],
+        "count": 3
+      },
+      {
+        "text": "麻烦右转靠边。",
+        "ids": [
+          "0292",
+          "0972"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦快走。",
+        "ids": [
+          "0083",
+          "0129",
+          "0271"
+        ],
+        "count": 3
+      },
+      {
+        "text": "麻烦急停！",
+        "ids": [
+          "0788",
+          "0902"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦打开收音机。",
+        "ids": [
+          "0128",
+          "0922"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦把车靠到路边安全位置吧。",
+        "ids": [
+          "0243",
+          "0476",
+          "0716"
+        ],
+        "count": 3
+      },
+      {
+        "text": "麻烦立即停车！",
+        "ids": [
+          "0004",
+          "0206"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦紧急制动！",
+        "ids": [
+          "0421",
+          "0538"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦绕一下前面的车吧。",
+        "ids": [
+          "0032",
+          "0347"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦缓一缓。",
+        "ids": [
+          "0151",
+          "0447"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦车速调到100。",
+        "ids": [
+          "0433",
+          "0668"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦车里好热吧。",
+        "ids": [
+          "0253",
+          "0371"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦靠左边停。",
+        "ids": [
+          "0291",
+          "0638"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦马上刹住！",
+        "ids": [
+          "0315",
+          "0857"
+        ],
+        "count": 2
+      },
+      {
+        "text": "麻烦麻烦刹车刹车！",
+        "ids": [
+          "0382",
+          "0453",
+          "0776"
+        ],
+        "count": 3
+      }
+    ],
+    "duplicate_text_count": 37,
+    "label_conflicts": [],
+    "split_stats": {
+      "train": {
+        "records": 800,
+        "unique_texts": 774,
+        "by_intent": {
+          "AVOID_OBSTACLE": 104,
+          "CHANGE_LANE": 65,
+          "EMERGENCY_STOP": 76,
+          "KEEP_LANE": 52,
+          "PULL_OVER": 90,
+          "SET_SPEED": 136,
+          "SLOW_DOWN": 69,
+          "SPEED_UP": 74,
+          "STOP": 62,
+          "UNKNOWN": 72
+        }
+      },
+      "test": {
+        "records": 200,
+        "unique_texts": 199,
+        "by_intent": {
+          "AVOID_OBSTACLE": 26,
+          "CHANGE_LANE": 22,
+          "EMERGENCY_STOP": 18,
+          "KEEP_LANE": 10,
+          "PULL_OVER": 28,
+          "SET_SPEED": 31,
+          "SLOW_DOWN": 16,
+          "SPEED_UP": 20,
+          "STOP": 16,
+          "UNKNOWN": 13
+        }
+      },
+      "train_test_text_overlap": {
+        "count": 16,
+        "examples": [
+          "从旁边绕过路障吧。",
+          "再慢一点吧。",
+          "刹车踩到底！",
+          "就停这里吧。",
+          "左边变道吧吧。",
+          "差不多停了吧。",
+          "快停住！",
+          "提到40吧。",
+          "马上把车停住！",
+          "麻烦快走。",
+          "麻烦急停！",
+          "麻烦紧急制动！",
+          "麻烦绕一下前面的车吧。",
+          "麻烦车里好热吧。",
+          "麻烦马上刹住！",
+          "麻烦麻烦刹车刹车！"
+        ]
+      }
+    }
+  },
+  "manifests": {
+    "clean": {
+      "path": "/home/student/yingzhaohou/carla_driving_upload_merged/artifacts/group1_voice/manifests/data_short_clean_manifest.json",
+      "stats": {
+        "entries": 2598,
+        "unique_texts": 957,
+        "unique_source_ids": 1000,
+        "by_language": {
+          "东北话": 400,
+          "台湾国语": 399,
+          "普通话": 1000,
+          "粤语": 399,
+          "陕西话": 400
+        },
+        "by_intent": {
+          "AVOID_OBSTACLE": 334,
+          "CHANGE_LANE": 238,
+          "EMERGENCY_STOP": 230,
+          "KEEP_LANE": 160,
+          "PULL_OVER": 293,
+          "SET_SPEED": 450,
+          "SLOW_DOWN": 216,
+          "SPEED_UP": 246,
+          "STOP": 200,
+          "UNKNOWN": 231
+        },
+        "by_scene_type": {
+          "basic_control": 1803,
+          "emergency_response": 230,
+          "obstacle_avoidance": 334,
+          "unknown": 231
+        }
+      },
+      "missing_audio_count": 0,
+      "missing_audio_examples": []
+    },
+    "noise_50dba": {
+      "path": "/home/student/yingzhaohou/carla_driving_upload_merged/artifacts/group1_voice/manifests/data_short_noisy_50dba_manifest.json",
+      "stats": {
+        "entries": 2598,
+        "unique_texts": 957,
+        "unique_source_ids": 1000,
+        "by_language": {
+          "东北话": 400,
+          "台湾国语": 399,
+          "普通话": 1000,
+          "粤语": 399,
+          "陕西话": 400
+        },
+        "by_intent": {
+          "AVOID_OBSTACLE": 334,
+          "CHANGE_LANE": 238,
+          "EMERGENCY_STOP": 230,
+          "KEEP_LANE": 160,
+          "PULL_OVER": 293,
+          "SET_SPEED": 450,
+          "SLOW_DOWN": 216,
+          "SPEED_UP": 246,
+          "STOP": 200,
+          "UNKNOWN": 231
+        },
+        "by_scene_type": {
+          "basic_control": 1803,
+          "emergency_response": 230,
+          "obstacle_avoidance": 334,
+          "unknown": 231
+        }
+      },
+      "missing_audio_count": 0,
+      "missing_audio_examples": []
+    }
+  },
+  "calibration_log": "/home/student/yingzhaohou/carla_driving_upload_merged/artifacts/group1_voice/calibration/data_short_50dba_calibration.json"
+}

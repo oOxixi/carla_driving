@@ -1,0 +1,502 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-07-31T05:59:04.590757+00:00",
+  "scope": "current-host CARLA 0.9.16 representative runs; one seed and one accepted run per scenario",
+  "not_formal_matrix": true,
+  "runs": {
+    "S01_set_speed_20": {
+      "scenario_id": "S01_set_speed_20",
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "frames": 600,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": 12.577547654324862,
+      "final_speed_mps": 4.998324769214593,
+      "command_terminal_statuses": {
+        "scenario_cmd_000": "SUCCEEDED"
+      },
+      "safety_reasons": {
+        "NONE": 600
+      },
+      "latency_ms": {
+        "simulator_tick_ms": {
+          "count": 600,
+          "mean": 0.8769614149999999,
+          "p95": 1.2092038,
+          "p99": 1.5989200599999998,
+          "max": 6.347115
+        },
+        "perception_acquire_ms": {
+          "count": 600,
+          "mean": 60.31482912333333,
+          "p95": 70.64977149999999,
+          "p99": 74.09765795,
+          "max": 83.518319
+        },
+        "pipeline_active_ms": {
+          "count": 600,
+          "mean": 60.721771805,
+          "p95": 70.99144129999999,
+          "p99": 74.34452053,
+          "max": 83.849886
+        },
+        "sensor_to_control_ms": {
+          "count": 600,
+          "mean": 0.26946606666666667,
+          "p95": 0.40560915,
+          "p99": 0.4414314399999999,
+          "max": 0.473654
+        },
+        "decision_ms": {
+          "count": 600,
+          "mean": 0.24745958666666668,
+          "p95": 0.37671289999999996,
+          "p99": 0.40942323999999997,
+          "max": 0.44392
+        }
+      },
+      "acceptance": {
+        "check_count": 6,
+        "checks": [
+          {
+            "actual": true,
+            "detail": "requires logs_generated",
+            "key": "must_generate_logs",
+            "required": true,
+            "status": "PASS"
+          },
+          {
+            "actual": 0.0026307784624277756,
+            "detail": "max_abs_cross_track_error_m must be <= expected maximum",
+            "key": "max_cross_track_error_m",
+            "required": 1.0,
+            "status": "PASS"
+          },
+          {
+            "actual": 0,
+            "detail": "collision_count must be zero",
+            "key": "must_no_collision",
+            "required": 0,
+            "status": "PASS"
+          },
+          {
+            "actual": 0,
+            "detail": "route_deviation_count must be zero",
+            "key": "must_no_route_deviation",
+            "required": 0,
+            "status": "PASS"
+          },
+          {
+            "actual": 17.993969169172534,
+            "detail": "final speed must meet target tolerance",
+            "key": "target_speed_kph",
+            "required": {
+              "target": 20.0,
+              "tolerance": 5.0
+            },
+            "status": "PASS"
+          },
+          {
+            "actual": 5,
+            "detail": "evaluated by target_speed_kph check",
+            "key": "speed_tolerance_kph",
+            "required": "paired with target_speed_kph",
+            "status": "PASS"
+          }
+        ],
+        "failed_keys": [],
+        "passed": true,
+        "unsupported_keys": []
+      },
+      "jsonl": "artifacts/second_group_20260731/s01_sensor_rerun_with_full_timing/S01_set_speed_20/seed_0/run_01/S01_set_speed_20_20260731_134119_972553.jsonl",
+      "summary_json": "artifacts/second_group_20260731/s01_sensor_rerun_with_full_timing/S01_set_speed_20/seed_0/run_01/S01_set_speed_20_20260731_134119_972553.summary.json"
+    },
+    "D03_front_vehicle_brake": {
+      "scenario_id": "D03_front_vehicle_brake",
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "frames": 700,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": 2.7586268186569214,
+      "final_speed_mps": 9.38655188156836e-05,
+      "command_terminal_statuses": {
+        "scenario_cmd_000": "SUCCEEDED"
+      },
+      "safety_reasons": {
+        "NONE": 320,
+        "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE": 380
+      },
+      "latency_ms": {
+        "simulator_tick_ms": {
+          "count": 700,
+          "mean": 0.9526846414285713,
+          "p95": 1.2902306,
+          "p99": 1.56106082,
+          "max": 2.457817
+        },
+        "perception_acquire_ms": {
+          "count": 700,
+          "mean": 63.861032037142856,
+          "p95": 68.91771935,
+          "p99": 71.54965783,
+          "max": 75.883212
+        },
+        "pipeline_active_ms": {
+          "count": 700,
+          "mean": 64.21735088142857,
+          "p95": 69.32266125,
+          "p99": 71.94972636,
+          "max": 76.2941
+        },
+        "sensor_to_control_ms": {
+          "count": 700,
+          "mean": 0.2712709185714286,
+          "p95": 0.41547279999999975,
+          "p99": 0.47377965,
+          "max": 0.648159
+        },
+        "decision_ms": {
+          "count": 700,
+          "mean": 0.25335879142857143,
+          "p95": 0.39359249999999996,
+          "p99": 0.45027448999999997,
+          "max": 0.594065
+        }
+      },
+      "acceptance": {
+        "check_count": 4,
+        "checks": [
+          {
+            "actual": 2.7586268186569214,
+            "detail": "min_gap_m must be >= expected minimum",
+            "key": "min_front_gap_m",
+            "required": 2.5,
+            "status": "PASS"
+          },
+          {
+            "actual": 0,
+            "detail": "collision_count must be zero",
+            "key": "must_no_collision",
+            "required": 0,
+            "status": "PASS"
+          },
+          {
+            "actual": 380,
+            "detail": "permission only; takeover is not required",
+            "key": "expected_safety_override_allowed",
+            "required": "allowed",
+            "status": "PASS"
+          },
+          {
+            "actual": [
+              "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE"
+            ],
+            "detail": "at least one expected token must appear",
+            "key": "expected_reason_contains",
+            "required": [
+              "ttc",
+              "front",
+              "gap"
+            ],
+            "status": "PASS"
+          }
+        ],
+        "failed_keys": [],
+        "passed": true,
+        "unsupported_keys": []
+      },
+      "jsonl": "artifacts/second_group_20260731/d03_d08_sensor_rerun_with_full_timing/D03_front_vehicle_brake/seed_0/run_01/D03_front_vehicle_brake_20260731_134256_909531.jsonl",
+      "summary_json": "artifacts/second_group_20260731/d03_d08_sensor_rerun_with_full_timing/D03_front_vehicle_brake/seed_0/run_01/D03_front_vehicle_brake_20260731_134256_909531.summary.json"
+    },
+    "D08_command_conflict_red_light_continue": {
+      "scenario_id": "D08_command_conflict_red_light_continue",
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "frames": 500,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": 12.918579073936073,
+      "final_speed_mps": 0.0,
+      "command_terminal_statuses": {
+        "scenario_cmd_000": "FAILED"
+      },
+      "safety_reasons": {
+        "NONE": 86,
+        "RED_LIGHT_STOP_LINE_GUARD": 414
+      },
+      "latency_ms": {
+        "simulator_tick_ms": {
+          "count": 500,
+          "mean": 0.726701724,
+          "p95": 0.9326299499999999,
+          "p99": 1.1070672999999993,
+          "max": 1.539589
+        },
+        "perception_acquire_ms": {
+          "count": 500,
+          "mean": 38.314850316,
+          "p95": 40.098662999999995,
+          "p99": 40.66944916,
+          "max": 44.704769
+        },
+        "pipeline_active_ms": {
+          "count": 500,
+          "mean": 38.64363622,
+          "p95": 40.38352505,
+          "p99": 40.99425811,
+          "max": 44.967335
+        },
+        "sensor_to_control_ms": {
+          "count": 500,
+          "mean": 0.23650375399999998,
+          "p95": 0.3305597999999998,
+          "p99": 0.38667437,
+          "max": 0.630636
+        },
+        "decision_ms": {
+          "count": 500,
+          "mean": 0.22001632599999998,
+          "p95": 0.30968605,
+          "p99": 0.35827338,
+          "max": 0.61768
+        }
+      },
+      "acceptance": {
+        "check_count": 4,
+        "checks": [
+          {
+            "actual": 414,
+            "detail": "a safety takeover must be observed",
+            "key": "expected_safety_override",
+            "required": "> 0 frames",
+            "status": "PASS"
+          },
+          {
+            "actual": [
+              "RED_LIGHT_STOP_LINE_GUARD"
+            ],
+            "detail": "at least one expected token must appear",
+            "key": "expected_reason_contains",
+            "required": [
+              "red",
+              "safety"
+            ],
+            "status": "PASS"
+          },
+          {
+            "actual": true,
+            "detail": "vehicle must stop without a red-light violation",
+            "key": "must_stop_before_stop_line",
+            "required": true,
+            "status": "PASS"
+          },
+          {
+            "actual": true,
+            "detail": "D must override the conflicting command and stop",
+            "key": "safety_priority_over_command",
+            "required": true,
+            "status": "PASS"
+          }
+        ],
+        "failed_keys": [],
+        "passed": true,
+        "unsupported_keys": []
+      },
+      "jsonl": "artifacts/second_group_20260731/d08_terminal_feedback_rerun/D08_command_conflict_red_light_continue/seed_0/run_01/D08_command_conflict_red_light_continue_20260731_134636_447605.jsonl",
+      "summary_json": "artifacts/second_group_20260731/d08_terminal_feedback_rerun/D08_command_conflict_red_light_continue/seed_0/run_01/D08_command_conflict_red_light_continue_20260731_134636_447605.summary.json"
+    }
+  },
+  "cold_start_failure_retained": {
+    "scenario_id": "S01_set_speed_20",
+    "status": "FAILED",
+    "score": 20.0,
+    "frames": 600,
+    "collision_count": 0,
+    "red_light_violation_count": 0,
+    "route_deviation_count": 0,
+    "min_gap_m": 12.909530587189781,
+    "final_speed_mps": 0.0,
+    "command_terminal_statuses": {
+      "scenario_cmd_000": "FAILED"
+    },
+    "safety_reasons": {
+      "NONE": 48,
+      "WATCHDOG_ALERT": 552
+    },
+    "latency_ms": {
+      "simulator_tick_ms": {
+        "count": 600,
+        "mean": 7.1563207816666665,
+        "p95": 1.0452718999999993,
+        "p99": 2.1982920799999994,
+        "max": 1177.185664
+      },
+      "perception_acquire_ms": {
+        "count": 0,
+        "mean": null,
+        "p95": null,
+        "p99": null,
+        "max": null
+      },
+      "pipeline_active_ms": {
+        "count": 0,
+        "mean": null,
+        "p95": null,
+        "p99": null,
+        "max": null
+      },
+      "sensor_to_control_ms": {
+        "count": 600,
+        "mean": 0.21287836333333335,
+        "p95": 0.28658465,
+        "p99": 0.31546622,
+        "max": 0.432392
+      },
+      "decision_ms": {
+        "count": 600,
+        "mean": 0.19777355333333332,
+        "p95": 0.2660695,
+        "p99": 0.28975987,
+        "max": 0.411998
+      }
+    },
+    "acceptance": {
+      "check_count": 6,
+      "checks": [
+        {
+          "actual": true,
+          "detail": "requires logs_generated",
+          "key": "must_generate_logs",
+          "required": true,
+          "status": "PASS"
+        },
+        {
+          "actual": 0.002466240956153049,
+          "detail": "max_abs_cross_track_error_m must be <= expected maximum",
+          "key": "max_cross_track_error_m",
+          "required": 1.0,
+          "status": "PASS"
+        },
+        {
+          "actual": 0,
+          "detail": "collision_count must be zero",
+          "key": "must_no_collision",
+          "required": 0,
+          "status": "PASS"
+        },
+        {
+          "actual": 0,
+          "detail": "route_deviation_count must be zero",
+          "key": "must_no_route_deviation",
+          "required": 0,
+          "status": "PASS"
+        },
+        {
+          "actual": 0.0,
+          "detail": "final speed must meet target tolerance",
+          "key": "target_speed_kph",
+          "required": {
+            "target": 20.0,
+            "tolerance": 5.0
+          },
+          "status": "FAIL"
+        },
+        {
+          "actual": 5,
+          "detail": "evaluated by target_speed_kph check",
+          "key": "speed_tolerance_kph",
+          "required": "paired with target_speed_kph",
+          "status": "PASS"
+        }
+      ],
+      "failed_keys": [
+        "target_speed_kph"
+      ],
+      "passed": false,
+      "unsupported_keys": []
+    },
+    "jsonl": "artifacts/second_group_20260731/scenario_smoke_after_changes/S01_set_speed_20/seed_0/run_01/S01_set_speed_20_20260731_133446_729088.jsonl",
+    "summary_json": "artifacts/second_group_20260731/scenario_smoke_after_changes/S01_set_speed_20/seed_0/run_01/S01_set_speed_20_20260731_133446_729088.summary.json"
+  },
+  "town10hd_speed20_regression": {
+    "scenario_id": "cruise",
+    "status": "SUCCEEDED",
+    "score": 25.0,
+    "frames": 1600,
+    "collision_count": 0,
+    "red_light_violation_count": 0,
+    "route_deviation_count": 0,
+    "min_gap_m": null,
+    "final_speed_mps": 5.3381364804814595,
+    "command_terminal_statuses": {
+      "town10hd-speed20-route-regression": "SUCCEEDED"
+    },
+    "safety_reasons": {
+      "NONE": 1516,
+      "RED_LIGHT_STOP_LINE_GUARD": 84
+    },
+    "latency_ms": {
+      "simulator_tick_ms": {
+        "count": 1600,
+        "mean": 1.21330858375,
+        "p95": 1.7236664499999999,
+        "p99": 2.8400825199999997,
+        "max": 7.741347
+      },
+      "perception_acquire_ms": {
+        "count": 0,
+        "mean": null,
+        "p95": null,
+        "p99": null,
+        "max": null
+      },
+      "pipeline_active_ms": {
+        "count": 0,
+        "mean": null,
+        "p95": null,
+        "p99": null,
+        "max": null
+      },
+      "sensor_to_control_ms": {
+        "count": 1600,
+        "mean": 23.681527894374998,
+        "p95": 80.07190804999999,
+        "p99": 81.14285928999999,
+        "max": 86.956694
+      },
+      "decision_ms": {
+        "count": 1600,
+        "mean": 0.333552256875,
+        "p95": 0.5018445,
+        "p99": 0.5918603400000001,
+        "max": 0.947844
+      }
+    },
+    "acceptance": null,
+    "jsonl": "artifacts/second_group_20260731/town10hd_speed20_watchdog_fixed/cruise_20260731_132933_143725.jsonl",
+    "summary_json": "artifacts/second_group_20260731/town10hd_speed20_watchdog_fixed/cruise_20260731_132933_143725.summary.json"
+  },
+  "targets": {
+    "real_perception_p95_ms_max": 30.0,
+    "real_perception_p95_by_scenario_ms": {
+      "S01_set_speed_20": 70.64977149999999,
+      "D03_front_vehicle_brake": 68.91771935,
+      "D08_command_conflict_red_light_continue": 40.098662999999995
+    },
+    "real_perception_target_met": false,
+    "pipeline_period_p95_ms_max_for_20hz": 50.0,
+    "pipeline_active_p95_by_scenario_ms": {
+      "S01_set_speed_20": 70.99144129999999,
+      "D03_front_vehicle_brake": 69.32266125,
+      "D08_command_conflict_red_light_continue": 40.38352505
+    },
+    "pipeline_20hz_target_met": false,
+    "decision_p95_ms_max": 5.0,
+    "decision_target_met": true
+  }
+}

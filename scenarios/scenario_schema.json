@@ -28,7 +28,10 @@
         "smoke",
         "lateral_B",
         "safety_D",
-        "regression"
+        "regression",
+        "qwen_routing",
+        "qwen_fullchain",
+        "qwen_faults"
       ]
     },
     "official_level": {
@@ -70,6 +73,74 @@
     },
     "logging": {
       "type": "object"
+    },
+    "extensions": {
+      "type": "object"
+    },
+    "notes": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "qwen_expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "route", "min_calls", "max_calls", "expected_behaviors",
+        "expected_terminal", "allowed_replans", "forbidden_low_level_fields"
+      ],
+      "properties": {
+        "route": {"enum": ["FAST_LOCAL", "QWEN_PLAN", "CONFIRM_SAFE"]},
+        "min_calls": {"type": "integer", "minimum": 0},
+        "max_calls": {"type": "integer", "minimum": 0},
+        "expected_behaviors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
+              "TURN_LEFT", "TURN_RIGHT", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
+              "AVOID_OBSTACLE", "RETURN_TO_LANE", "PULL_OVER", "HOLD"
+            ]
+          }
+        },
+        "expected_terminal": {
+          "enum": [
+            "SUCCEEDED", "FAILED", "REJECTED", "EXPIRED", "TIMED_OUT",
+            "SAFETY_OVERRIDE", "CONFIRMING"
+          ]
+        },
+        "expected_terminal_reason_prefix": {"type": "string", "minLength": 1},
+        "allowed_replans": {"type": "integer", "minimum": 0},
+        "forbidden_low_level_fields": {"const": true}
+      }
+    },
+    "qwen_fault": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "delay_ms"],
+          "properties": {
+            "type": {"const": "TIMEOUT"},
+            "delay_ms": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "field", "value"],
+          "properties": {
+            "type": {"const": "LOW_LEVEL_FIELD"},
+            "field": {
+              "enum": [
+                "throttle", "brake", "steer", "steering_angle",
+                "wheel_angle", "torque"
+              ]
+            },
+            "value": {"type": "number"}
+          }
+        }
+      ]
     },
     "expected": {
       "type": "object"

@@ -63,6 +63,7 @@ class AsyncQwenDecisionBridge:
         source_text: Callable[[Any], str] | None = None,
         ttl_s: float = 3.0,
         max_inference_s: float = 5.0,
+        command_ttl_s: float = 30.0,
     ) -> None:
         if not callable(infer):
             raise TypeError("infer must be callable")
@@ -75,6 +76,13 @@ class AsyncQwenDecisionBridge:
             or max_inference_s <= 0.0
         ):
             raise ValueError("max_inference_s must be finite and positive")
+        if (
+            type(command_ttl_s) not in (int, float)
+            or isinstance(command_ttl_s, bool)
+            or not math.isfinite(float(command_ttl_s))
+            or command_ttl_s <= 0.0
+        ):
+            raise ValueError("command_ttl_s must be finite and positive")
 
         self._infer = infer
         self._source_text = source_text or (
@@ -82,6 +90,7 @@ class AsyncQwenDecisionBridge:
         )
         self._ttl_s = float(ttl_s)
         self._max_inference_s = float(max_inference_s)
+        self._command_ttl_s = float(command_ttl_s)
         self._queue: Queue[_Request | None] = Queue(maxsize=1)
         self._lock = Lock()
         self._latest_submitted = 0
@@ -194,6 +203,7 @@ class AsyncQwenDecisionBridge:
                     decision,
                     self._source_text(request.context),
                     command_id=f"qwen_async_{request.sequence:08d}",
+                    valid_duration_s=self._command_ttl_s,
                 )
                 runtime = adapter.adapt(high_level)
                 if runtime.get("status") != "valid":

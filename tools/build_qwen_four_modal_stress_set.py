@@ -83,6 +83,52 @@ def _target_bbox(case: dict[str, Any]) -> list[float] | None:
     return None
 
 
+def _repair_legacy_target_semantics(
+    case: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """Repair the known adjacent-vs-far pedestrian label bug audibly.
+
+    Older CARLA collections fell back to a far-ahead waypoint when Town03 had
+    no usable adjacent lane, but still described every non-left pedestrian as
+    right-adjacent.  Preserve the captured target and relation, and correct the
+    language label instead of inventing an actor that is absent from the frame.
+    """
+    repaired = json.loads(json.dumps(case))
+    expected = repaired.get("expected", {})
+    target_id = expected.get("target_track_id")
+    target = next(
+        (
+            item
+            for item in repaired.get("perception", {}).get(
+                "detected_objects", []
+            )
+            if item.get("track_id") == target_id
+        ),
+        None,
+    )
+    if not isinstance(target, dict) or target.get("class") != "pedestrian":
+        return repaired, None
+    relation = str(target.get("relation", ""))
+    command = str(repaired.get("voice_command", ""))
+    if "相邻车道" not in command or not relation.startswith("far_ahead"):
+        return repaired, None
+    phrase = (
+        "被前车部分遮挡的较远行人"
+        if "occluded" in relation
+        else "前方较远的行人"
+    )
+    corrected_command = f"减速并避让{phrase}"
+    repaired["voice_command"] = corrected_command
+    repaired.setdefault("expected", {})["actions"] = ["SLOW_DOWN"]
+    return repaired, {
+        "kind": "legacy_adjacent_pedestrian_relation_repair",
+        "original_voice_command": command,
+        "corrected_voice_command": corrected_command,
+        "target_track_id": target_id,
+        "target_relation": relation,
+    }
+
+
 def _transform_image(
     source: Path,
     destination: Path,
@@ -224,8 +270,15 @@ def build(
     output_images.mkdir(parents=True, exist_ok=True)
     output_lidar.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, Any]] = []
+    semantic_repairs: list[dict[str, Any]] = []
 
-    for case in cases:
+    for source_case in cases:
+        case, semantic_repair = _repair_legacy_target_semantics(source_case)
+        if semantic_repair is not None:
+            semantic_repairs.append({
+                "source_case_id": source_case["case_id"],
+                **semantic_repair,
+            })
         source_scene = scenes_by_rgb.get(case.get("rgb_ref"))
         if source_scene is None:
             raise ValueError(f"case has no matching scene: {case['case_id']}")
@@ -320,6 +373,7 @@ def build(
                 "provenance": {
                     "source": "real_carla_0.9.16_capture",
                     "augmentation": augmentation,
+                    "semantic_repair": semantic_repair,
                     "detector_mutation": (
                         variant if variant.startswith("detector_") else "none"
                     ),
@@ -334,6 +388,11 @@ def build(
         "source_scene_count": len(scenes),
         "source_case_count": len(cases),
         "case_count": len(rows),
+        "semantic_source_repairs": semantic_repairs,
+        "semantic_source_repair_count": len(semantic_repairs),
+        "generated_cases_from_repaired_sources": (
+            len(semantic_repairs) * len(VARIANTS)
+        ),
         "variant_counts": dict(Counter(row["category"] for row in rows)),
         "split_counts": dict(Counter(row["split"] for row in rows)),
         "all_cases_have_four_modal_contract": all(

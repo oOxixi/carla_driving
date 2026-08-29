@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from integration.carla_perception import LIDAR_SENSOR_ID, RGB_SENSOR_ID
+from integration.carla_perception import LIDAR_SENSOR_ID, RADAR_SENSOR_ID, RGB_SENSOR_ID
 from integration.sensor_stability import (
     SensorFrameCounter,
     SensorProbeResult,
@@ -30,7 +30,14 @@ def test_both_mode_preserves_rgb_then_lidar_order() -> None:
     assert all(spec.continuous for spec in specs)
 
 
-@pytest.mark.parametrize("mode", ["", "camera", "all"])
+def test_all_mode_includes_frame_aligned_radar() -> None:
+    specs = selected_sensor_specs("all", "low")
+    assert tuple(spec.sensor_id for spec in specs) == (
+        RGB_SENSOR_ID, LIDAR_SENSOR_ID, RADAR_SENSOR_ID,
+    )
+
+
+@pytest.mark.parametrize("mode", ["", "camera", "everything"])
 def test_rejects_unknown_sensor_mode(mode: str) -> None:
     with pytest.raises(ValueError, match="unknown sensor mode"):
         selected_sensor_specs(mode, "low")

@@ -180,6 +180,9 @@
   },
   "expected": {
     "must_no_pedestrian_collision": true,
+    "required_real_actor_types": [
+      "walker.pedestrian"
+    ],
     "expected_safety_override": true,
     "expected_reason_contains": [
       "pedestrian",

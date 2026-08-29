@@ -30,3 +30,13 @@ def test_left_of_path_turns_right_positive_carla_sign():
 def test_output_limited_to_range():
     out = _controller().step(VehiclePose(0.0, 20.0, 0.0, 5.0), _ref())
     assert -1.0 <= out.steer <= 1.0
+
+
+def test_target_behind_ego_is_invalid_instead_of_silent_zero_steer():
+    controller = _controller()
+    vehicle = VehiclePose(10.0, 0.0, 0.0, 5.0)
+    reference = RouteReference(points_xy_m=[(0.0, 0.0), (1.0, 0.0), (2.0, 0.0)])
+    out = controller.step(vehicle, reference)
+    assert out.status == "INVALID"
+    assert out.reason == "TARGET_BEHIND_EGO"
+    assert out.steer == 0.0

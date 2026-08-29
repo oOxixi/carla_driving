@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-02T22:42:36.680072+00:00",
+  "dataset_kind": "latency_gate_only_no_correctness",
+  "model": "Qwen/Qwen3-VL-2B-Instruct-FP8",
+  "model_revision": "local-cu132",
+  "base_url": "http://10.138.79.43:8001/v1",
+  "image": "/mnt/f/carla_driving_rstar/artifacts/qwen_target_assoc_0728/collection/images/town03opt_target_seed_00.png",
+  "warmups": 5,
+  "measurements_requested": 10,
+  "gpu": {
+    "available": true,
+    "name": "NVIDIA GeForce RTX 5070 Laptop GPU",
+    "compute_capability": "12.0",
+    "memory_mib": 8151.0,
+    "driver_version": "581.57"
+  },
+  "latency_ms": {
+    "count": 10,
+    "mean_ms": 70.2871737,
+    "p50_ms": 70.1260035,
+    "p95_ms": 76.97353489999999,
+    "max_ms": 80.982323,
+    "threshold_ms": 300.0,
+    "status": "PASS",
+    "run_correctness_next": true
+  },
+  "status": "PASS"
+}

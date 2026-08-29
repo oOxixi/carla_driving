@@ -42,6 +42,16 @@ def test_runtime_preserves_d_emergency_stop_authority():
     assert result.final_control.brake == 1.0
 
 
+def test_runtime_temporary_speed_cap_does_not_mutate_driver_requested_speed():
+    runtime = ControlRuntime(PurePursuitController(), default_speed_mps=5.0)
+    result = runtime.step(
+        _vehicle(speed=4.0), PerceptionFrame(frame=1, sim_time_s=0.05), _route(),
+        dt_s=0.05, speed_cap_mps=2.0,
+    )
+    assert result.longitudinal.target_speed_mps < 4.0
+    assert runtime.requested_speed_mps == 5.0
+
+
 def test_runtime_executes_slow_down_and_keep_lane_with_terminal_feedback():
     slow = ControlRuntime(PurePursuitController(), default_speed_mps=5.0)
     slow_command = _voice("SLOW_DOWN", {"speed": 2.0, "unit": "m/s"})
@@ -61,6 +71,22 @@ def test_runtime_executes_slow_down_and_keep_lane_with_terminal_feedback():
     assert result is not None
     assert any(item.command_id == "voice-1" and item.status.value == "SUCCEEDED" for item in result.feedback)
     assert keep.active_command_id is None
+
+
+def test_outer_maneuver_can_complete_and_clear_internal_runtime_command():
+    runtime = ControlRuntime(PurePursuitController())
+    command = _voice("SLOW_DOWN", {"speed": 2.0, "unit": "m/s"})
+    command["command_id"] = "qwen-step-user-step-1"
+    command["valid_duration_s"] = 9.0
+    runtime.submit_voice(command, now_s=0.05)
+
+    feedback = runtime.complete_active(
+        now_s=0.15, detail="outer Qwen maneuver plan completed",
+    )
+
+    assert feedback is not None
+    assert feedback.status.value == "SUCCEEDED"
+    assert runtime.active_command_id is None
 
 
 def test_runtime_fault_override_is_checked_by_d_before_apply_control():
@@ -154,10 +180,36 @@ def test_watchdog_stop_is_latched_until_explicit_reset():
     alerted = runtime.step(_vehicle(), PerceptionFrame(frame=1, sim_time_s=0.05), _route(), dt_s=0.05,
                            watchdog_alerts=("SENSOR_TIMEOUT",))
     assert alerted.final_control.brake == 1.0 and runtime.safety_latched
+    assert any(item.status.value == "SAFETY_OVERRIDE" for item in alerted.feedback)
+    assert runtime.active_command_id is None
     still_stopped = runtime.step(_vehicle(frame=2, time=0.10), PerceptionFrame(frame=2, sim_time_s=0.10),
                                  _route(), dt_s=0.05)
     assert still_stopped.final_control.brake == 1.0
     runtime.reset_safety_latch()
+    assert not runtime.safety_latched
+
+
+def test_clear_safety_alerts_releases_only_named_recovered_faults():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.step(
+        _vehicle(),
+        PerceptionFrame(frame=1, sim_time_s=0.05),
+        _route(),
+        dt_s=0.05,
+        watchdog_alerts=("QWEN_PENDING", "SENSOR_TIMEOUT"),
+    )
+
+    runtime.clear_safety_alerts(("QWEN_PENDING",))
+
+    assert runtime.safety_latched
+    still_stopped = runtime.step(
+        _vehicle(frame=2, time=0.10),
+        PerceptionFrame(frame=2, sim_time_s=0.10),
+        _route(),
+        dt_s=0.05,
+    )
+    assert still_stopped.final_control.brake == 1.0
+    runtime.clear_safety_alerts(("SENSOR_TIMEOUT",))
     assert not runtime.safety_latched
 
 
@@ -240,3 +292,74 @@ def test_outer_runtime_can_fail_active_command_explicitly():
     assert feedback is not None and feedback.status.value == "FAILED"
     assert runtime.active_command_id is None
     assert runtime.requested_speed_mps == 0.0
+
+
+def test_external_hazard_emits_safety_override_terminal_feedback():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.submit_voice(_voice(), now_s=0.05)
+    scene = PerceptionFrame(
+        frame=1,
+        sim_time_s=0.05,
+        traffic_light="RED",
+        distance_to_stop_line_m=5.0,
+    )
+    result = runtime.step(_vehicle(speed=3.0), scene, _route(), dt_s=0.05)
+    terminal = [item for item in result.feedback if item.command_id == "voice-1"]
+    assert result.safety_reason == "RED_LIGHT_STOP_LINE_GUARD"
+    assert result.final_control.brake == 1.0
+    assert len(terminal) == 1
+    assert terminal[0].status.value == "SAFETY_OVERRIDE"
+    assert runtime.active_command_id is None
+
+
+def test_c_semantic_brake_becomes_one_d_owned_terminal_override():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.submit_voice(_voice(), now_s=0.05)
+
+    result = runtime.step(
+        _vehicle(speed=3.0),
+        PerceptionFrame(
+            frame=1, sim_time_s=0.05,
+            lead_distance_m=8.0, lead_speed_mps=0.0,
+        ),
+        _route(),
+        dt_s=0.05,
+        raw_control_override={"throttle": 0.0, "brake": 1.0, "steer": 0.0},
+        safety_override_reason="C_FRONT_PEDESTRIAN_VRU_SHORT_FRONT_DISTANCE",
+    )
+
+    terminal = [item for item in result.feedback if item.command_id == "voice-1"]
+    assert result.safety_override is True
+    assert result.safety_reason == "C_FRONT_PEDESTRIAN_VRU_SHORT_FRONT_DISTANCE"
+    assert result.final_control.brake == 1.0
+    assert len(terminal) == 1
+    assert terminal[0].status.value == "SAFETY_OVERRIDE"
+    assert runtime.active_command_id is None
+
+
+def test_transient_route_recovery_does_not_discard_high_level_command():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.submit_voice(_voice(), now_s=0.05)
+    scene = PerceptionFrame(frame=1, sim_time_s=0.05, route_deviation_m=3.5)
+    result = runtime.step(_vehicle(speed=1.0), scene, _route(), dt_s=0.05)
+    assert result.safety_reason == "ROUTE_DEVIATION_RECOVERY_STOP"
+    assert runtime.active_command_id == "voice-1"
+    assert not any(item.status.value == "SAFETY_OVERRIDE" for item in result.feedback)
+
+
+def test_invalid_lateral_reference_is_latched_and_full_braked():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.submit_voice(_voice(), now_s=0.05)
+    behind_route = RouteReference(((-20.0, 0.0), (-10.0, 0.0), (-1.0, 0.0)), 0.0, 5.0)
+    result = runtime.step(
+        _vehicle(speed=5.0),
+        PerceptionFrame(frame=1, sim_time_s=0.05),
+        behind_route,
+        dt_s=0.05,
+    )
+    assert result.lateral is not None and result.lateral.status == "INVALID"
+    assert result.safety_reason == "WATCHDOG_ALERT"
+    assert result.final_control.throttle == 0.0
+    assert result.final_control.brake == 1.0
+    assert runtime.safety_latched
+    assert any(item.status.value == "FAILED" for item in result.feedback)

@@ -1,12 +1,16 @@
 {
   "schema_version": "1.0",
   "package_name": "carla_scenarios_four_types_full",
-  "description": "CARLA智能驾驶项目四类完整测试场景：smoke、lateral_B、safety_D、regression。",
+  "description": "CARLA 智能驾驶基础场景、Qwen V2 全链路与东风赛道 84 场景验收套件。",
   "folders": {
     "smoke": "主链路冒烟测试：A/B/C/D是否接通、日志是否生成。",
     "lateral_B": "B横向控制专项：直道、偏移、缓弯、左右转、变道。",
     "safety_D": "D安全仲裁专项：红灯、行人、前车、路线偏差、非法控制、低TTC。",
-    "regression": "综合回归：基础/进阶/挑战混合，多seed、多天气、多命令。"
+    "regression": "综合回归：基础/进阶/挑战混合，多seed、多天气、多命令。",
+    "qwen_routing": "Qwen 调用策略：FAST_LOCAL、QWEN_PLAN、CONFIRM_SAFE。",
+    "qwen_fullchain": "复杂指令到 ManeuverPlan、车辆动作和终态的正常闭环。",
+    "qwen_faults": "模型超时、非法输出与执行中安全抢占。",
+    "acceptance_suite": "东风赛道高质量验收套件 v2：83 个计分场景，不含 60 分钟长稳场景。"
   },
   "official_level_mapping": {
     "basic": "基础场景：直道、控速、停车、保持车道、普通转向。",
@@ -32,13 +36,40 @@
     "safety_D/D03_front_vehicle_brake.json",
     "safety_D/D07_low_ttc_emergency_brake.json",
     "regression/REG_001_basic_clear_seed0.json",
-    "regression/REG_012_challenge_long_run_stability.json"
+    "regression/REG_012_challenge_long_run_stability.json",
+    "regression/REG_013_multi_vehicle_brake.json",
+    "regression/REG_014_occluded_pedestrian_crossing.json",
+    "regression/REG_015_construction_bicycle_lead.json"
+    ,"qwen_routing/QWR_01_fast_speed_no_qwen.json"
+    ,"qwen_routing/QWR_05_turn_requires_qwen.json"
+    ,"qwen_routing/QWR_07_visual_avoid_return.json"
+    ,"qwen_routing/QWR_09_ambiguous_white_vehicle.json"
+    ,"qwen_fullchain/QWF_01_turn_then_speed.json"
+    ,"qwen_fullchain/QWF_02_lane_change_then_speed.json"
+    ,"qwen_faults/QWX_01_model_timeout.json"
+    ,"qwen_faults/QWX_05_low_level_output_rejected.json"
+    ,"qwen_faults/QWX_06_pedestrian_safety_override.json"
+    ,"acceptance_suite/basic/ACC_B01_start_keep_lane.json"
+    ,"acceptance_suite/basic/ACC_B02_set_speed_20.json"
+    ,"acceptance_suite/basic/ACC_B03_slow_to_10.json"
+    ,"acceptance_suite/basic/ACC_B04_normal_stop.json"
+    ,"acceptance_suite/basic/ACC_B05_emergency_stop.json"
+    ,"acceptance_suite/basic/ACC_B06_offset_recovery.json"
+    ,"acceptance_suite/advanced/ACC_A01_lead_brake.json"
+    ,"acceptance_suite/advanced/ACC_A02_red_light_conflict.json"
+    ,"acceptance_suite/advanced/ACC_A03_pedestrian_crossing.json"
+    ,"acceptance_suite/advanced/ACC_A05_lane_change_left.json"
+    ,"acceptance_suite/complex/CX_MAIN_01_safe_urban_mission.json"
   ],
   "counts": {
     "smoke": 5,
     "lateral_B": 9,
     "safety_D": 8,
-    "regression": 12,
-    "total": 34
+    "regression": 15,
+    "qwen_routing": 4,
+    "qwen_fullchain": 2,
+    "qwen_faults": 3,
+    "acceptance_suite": 83,
+    "total": 129
   }
 }

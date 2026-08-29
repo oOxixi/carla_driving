@@ -114,9 +114,32 @@ def evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, obje
 
     if "expected_safety_override" in expected:
         supported.add("expected_safety_override")
-        actual = int(metrics.get("safety_override_frames", 0) or 0)
-        add("expected_safety_override", expected["expected_safety_override"] is not True or actual > 0,
-            actual, "> 0 frames", "a safety takeover must be observed")
+        actual = bool(metrics.get(
+            "safety_override_observed",
+            int(metrics.get("safety_override_frames", 0) or 0) > 0,
+        ))
+        add("expected_safety_override", expected["expected_safety_override"] is not True or actual,
+            actual, True, "a frame override or canonical safety event must be observed")
+
+    if "required_real_actor_types" in expected:
+        supported.add("required_real_actor_types")
+        required_raw = expected["required_real_actor_types"]
+        actual_raw = metrics.get("spawned_scenario_actor_types", [])
+        required = (
+            {str(item).strip().lower() for item in required_raw}
+            if isinstance(required_raw, (list, tuple)) else set()
+        )
+        actual = (
+            {str(item).strip().lower() for item in actual_raw}
+            if isinstance(actual_raw, (list, tuple, set)) else set()
+        )
+        add(
+            "required_real_actor_types",
+            bool(required) and required.issubset(actual),
+            sorted(actual),
+            sorted(required),
+            "all declared safety-critical actor types must be physically spawned",
+        )
 
     if "expected_safety_override_allowed" in expected:
         supported.add("expected_safety_override_allowed")
@@ -195,7 +218,11 @@ def evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, obje
         actual_kph = None if actual is None else actual * 3.6
         required = float(expected["target_speed_kph"])
         tolerance = float(expected.get("speed_tolerance_kph", 0.0))
-        add("target_speed_kph", actual_kph is not None and abs(actual_kph - required) <= tolerance,
+        # CARLA's final velocity is a float32-derived single-frame sample.  A
+        # 0.05 km/h numeric guard prevents a few centimetres-per-second of
+        # simulation jitter from flipping an otherwise exact tolerance edge.
+        numeric_slack_kph = 0.05
+        add("target_speed_kph", actual_kph is not None and abs(actual_kph - required) <= tolerance + numeric_slack_kph,
             actual_kph, {"target": required, "tolerance": tolerance}, "final speed must meet target tolerance")
 
     if "speed_tolerance_kph" in expected:

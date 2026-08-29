@@ -13,6 +13,8 @@ import time
 from typing import Any
 
 from integration.qwen_boundary import QwenInputContext
+from integration.qwen_profiles import resolve_qwen_profile
+from integration.qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from integration.qwen_vl_adapter import StrictQwenVLAdapter
 from integration.sensor_stability import run_sensor_probe
 
@@ -162,7 +164,9 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=2000)
     parser.add_argument("--gpu-index", type=int, default=0)
     parser.add_argument("--gpu-sample-seconds", type=float, default=5.0)
-    parser.add_argument("--qwen-model", required=True, type=Path)
+    parser.add_argument("--qwen-model", required=True)
+    parser.add_argument("--qwen-base-url")
+    parser.add_argument("--qwen-profile", default="qwen3vl-2b-int4")
     parser.add_argument("--qwen-image-root", required=True, type=Path)
     parser.add_argument("--qwen-image-ref", required=True)
     parser.add_argument("--qwen-interval-seconds", type=float, default=300.0)
@@ -173,10 +177,22 @@ def main() -> int:
 
     import carla
 
-    adapter = StrictQwenVLAdapter.from_local_checkpoint(
-        args.qwen_model,
-        image_root=args.qwen_image_root,
-    )
+    if args.qwen_base_url:
+        profile = resolve_qwen_profile(args.qwen_profile)
+        backend = OpenAICompatibleQwenVLBackend(
+            base_url=args.qwen_base_url,
+            profile=profile,
+            model=args.qwen_model,
+            timeout_s=args.qwen_timeout_budget_seconds,
+        )
+        adapter = StrictQwenVLAdapter(backend, image_root=args.qwen_image_root)
+        qwen_endpoint = args.qwen_base_url
+    else:
+        adapter = StrictQwenVLAdapter.from_local_checkpoint(
+            Path(args.qwen_model),
+            image_root=args.qwen_image_root,
+        )
+        qwen_endpoint = "local_checkpoint"
     stop = threading.Event()
     gpu_records: list[dict[str, Any]] = []
     gpu_errors: list[str] = []
@@ -254,6 +270,7 @@ def main() -> int:
         "environment": {
             "gpu_index": args.gpu_index,
             "qwen_model": str(args.qwen_model),
+            "qwen_endpoint": qwen_endpoint,
             "map": sensor.map_name,
             "sensor_mode": "both",
             "sensor_profile": "low",

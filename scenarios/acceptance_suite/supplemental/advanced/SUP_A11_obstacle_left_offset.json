@@ -1,0 +1,178 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "SUP_A11_obstacle_left_offset",
+  "category": "safety_D",
+  "official_level": "advanced",
+  "description": "障碍物偏左、右侧空间较大；第一版仍以安全停车为成功。",
+  "tags": [
+    "acceptance_suite",
+    "p1",
+    "left_offset_obstacle"
+  ],
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 421,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 35.0,
+    "max_startup_wait_s": 10
+  },
+  "ego_spawn": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5,
+    "yaw_deg": 0.0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0,
+        0
+      ],
+      [
+        20,
+        0
+      ],
+      [
+        40,
+        0
+      ],
+      [
+        60,
+        0
+      ],
+      [
+        80,
+        0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "前方障碍偏左，请安全处理",
+      "intent": "SLOW_DOWN",
+      "parameters": {},
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "offset_blocker",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.audi.tt",
+      "spawn": {
+        "x": 28,
+        "y": 1.2,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      },
+      "behavior": {
+        "mode": "lead_vehicle",
+        "initial_speed_mps": 0.0,
+        "target_speed_mps": 0.0
+      }
+    },
+    {
+      "actor_id": "warning_right_space",
+      "type": "static.prop",
+      "blueprint_id": "static.prop.warningconstruction",
+      "spawn": {
+        "x": 30,
+        "y": -2.5,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      }
+    }
+  ],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 5
+    },
+    "lidar": {
+      "enabled": true
+    },
+    "collision": {
+      "enabled": true
+    },
+    "lane_invasion": {
+      "enabled": true
+    }
+  },
+  "controllers": {
+    "A_runtime": {
+      "only_apply_control_owner": true
+    },
+    "B_lateral": {
+      "enabled": true
+    },
+    "C_longitudinal": {
+      "enabled": true
+    },
+    "D_safety": {
+      "enabled": true,
+      "must_run_before_apply_control": true
+    }
+  },
+  "logging": {
+    "required_files": [
+      "frame_log.jsonl",
+      "event_log.jsonl",
+      "result.json",
+      "score_report.json",
+      "qwen_requests.jsonl"
+    ]
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_generate_logs": true,
+    "final_control_no_throttle_brake_overlap": true,
+    "required_real_actor_types": [
+      "vehicle",
+      "static.prop"
+    ],
+    "min_front_gap_m": 2.5,
+    "expected_safety_override_allowed": true
+  },
+  "extensions": {
+    "suite_version": "acceptance-suite-2026.08-v2",
+    "priority": "P1",
+    "primary_capability": "left_offset_obstacle",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "oracle": {
+      "expected_behaviors": [
+        "SLOW_DOWN"
+      ]
+    },
+    "faults": [],
+    "proposed_acceptance": {
+      "first_version_requires_stop_not_detour": true
+    },
+    "runtime_support": {
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
+        "all_voice_qwen",
+        "obstacle_geometry_acceptance"
+      ]
+    }
+  },
+  "notes": [
+    "正式结果必须使用 perception_mode=sensors 与 scenario_facts_mode=perception。"
+  ]
+}

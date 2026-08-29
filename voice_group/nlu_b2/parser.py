@@ -337,6 +337,8 @@ def _extract_obstacle_target(text: str) -> str:
         return "OBSTACLE"
     if "东西" in text or "那个" in text:
         return "UNKNOWN_TARGET"
+    if "绕过去" in text:
+        return "VEHICLE"
     return "FRONT_OBSTACLE"
 
 

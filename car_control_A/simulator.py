@@ -93,31 +93,66 @@ class SensorFrameBuffer:
         return receive
 
     def pop_aligned(self, sensor_ids: Iterable[str], frame: int, *, timeout_s: float) -> dict[str, Any]:
-        requested = tuple(sensor_ids)
-        if not requested or any(type(sensor_id) is not str or not sensor_id for sensor_id in requested):
-            raise ValueError("sensor_ids must contain non-empty strings")
+        return self.pop_aligned_optional(
+            sensor_ids, (), frame, timeout_s=timeout_s, optional_grace_s=0.0,
+        )
+
+    def pop_aligned_optional(
+        self,
+        required_sensor_ids: Iterable[str],
+        optional_sensor_ids: Iterable[str],
+        frame: int,
+        *,
+        timeout_s: float,
+        optional_grace_s: float = 0.01,
+    ) -> dict[str, Any]:
+        """Return exact-frame required data plus any bounded-wait optional data."""
+        required = tuple(required_sensor_ids)
+        optional = tuple(optional_sensor_ids)
+        requested = required + optional
+        if not required or any(type(sensor_id) is not str or not sensor_id for sensor_id in requested):
+            raise ValueError("sensor_ids must be non-empty and required sensors cannot be empty")
         if len(set(requested)) != len(requested):
-            raise ValueError("sensor_ids must be unique")
+            raise ValueError("required and optional sensor_ids must be unique and disjoint")
         if type(frame) is not int or frame < 0:
             raise ValueError("frame must be a non-negative integer")
         if type(timeout_s) not in (int, float) or timeout_s < 0:
             raise ValueError("timeout_s must be a non-negative number")
+        if type(optional_grace_s) not in (int, float) or optional_grace_s < 0:
+            raise ValueError("optional_grace_s must be a non-negative number")
 
         deadline = time.monotonic() + float(timeout_s)
+        optional_deadline: float | None = None
         with self._condition:
             while True:
                 bucket = self._frames.get(frame)
-                if bucket is not None and all(sensor_id in bucket for sensor_id in requested):
-                    result = {sensor_id: bucket[sensor_id] for sensor_id in requested}
-                    del self._frames[frame]
-                    # Older samples can never form a set for a subsequent frame.
-                    for old_frame in tuple(self._frames):
-                        if old_frame < frame:
-                            del self._frames[old_frame]
-                    self._consumed_through = max(self._consumed_through, frame)
-                    return result
-                remaining = deadline - time.monotonic()
+                required_ready = (
+                    bucket is not None
+                    and all(sensor_id in bucket for sensor_id in required)
+                )
+                now = time.monotonic()
+                if required_ready:
+                    if optional_deadline is None:
+                        optional_deadline = min(deadline, now + float(optional_grace_s))
+                    optional_ready = all(sensor_id in bucket for sensor_id in optional)
+                    if optional_ready or now >= optional_deadline:
+                        result = {
+                            sensor_id: bucket[sensor_id]
+                            for sensor_id in requested
+                            if sensor_id in bucket
+                        }
+                        del self._frames[frame]
+                        # Older samples can never form a set for a subsequent frame.
+                        for old_frame in tuple(self._frames):
+                            if old_frame < frame:
+                                del self._frames[old_frame]
+                        self._consumed_through = max(self._consumed_through, frame)
+                        return result
+                wait_deadline = deadline if optional_deadline is None else optional_deadline
+                remaining = wait_deadline - now
                 if remaining <= 0:
+                    if required_ready:
+                        continue
                     raise TimeoutError(f"timed out waiting for aligned sensors at frame={frame}")
                 self._condition.wait(remaining)
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 
@@ -17,9 +18,14 @@ SCENARIO_ROOT = Path(__file__).resolve().parents[2] / "scenarios"
 
 
 def test_all_repository_scenarios_load() -> None:
-    paths = sorted(SCENARIO_ROOT.glob("*/*.json"))
+    metadata_files = {"index.json", "matrix.json", "scenario_schema.json"}
+    paths = sorted(
+        path for path in SCENARIO_ROOT.rglob("*.json")
+        if path.name not in metadata_files
+    )
     specs = [ScenarioSpec.load(path) for path in paths]
-    assert len(specs) == 34
+    index = json.loads((SCENARIO_ROOT / "index.json").read_text(encoding="utf-8"))
+    assert len(specs) == index["counts"]["total"]
     assert {spec.official_level for spec in specs} == {"basic", "advanced", "challenge"}
     assert all(spec.frame_count > 0 for spec in specs)
 
@@ -127,3 +133,32 @@ def test_trusted_route_manoeuvre_uses_scenario_route_and_concrete_speed(
     assert resolved["intent"] == "SET_SPEED"
     assert resolved["scenario_original_intent"] == expected_original_intent
     assert resolved["parameters"] == {"speed": pytest.approx(expected_speed), "unit": "m/s"}
+
+
+def test_qwen_scenario_preserves_visual_follow_for_complexity_routing() -> None:
+    spec = ScenarioSpec.load(
+        SCENARIO_ROOT / "qwen_routing" / "QWR_09_ambiguous_white_vehicle.json"
+    )
+    resolved = resolve_scenario_command(
+        spec.commands[0].envelope,
+        requested_speed_mps=5.0,
+        preserve_high_level=True,
+    )
+    assert resolved["intent"] == "FOLLOW_ROUTE"
+    assert resolved["parameters"] == {}
+
+
+def test_acceptance_v2_qwen_policy_preserves_high_level_command_contract() -> None:
+    spec = ScenarioSpec.load(
+        SCENARIO_ROOT / "acceptance_suite" / "challenge" / "ACC_C02_ambiguous_instruction.json"
+    )
+
+    assert spec.requires_qwen_semantics is True
+    resolved = resolve_scenario_command(
+        spec.commands[0].envelope,
+        requested_speed_mps=5.0,
+        preserve_high_level=spec.requires_qwen_semantics,
+    )
+
+    assert resolved["intent"] == "SLOW_DOWN"
+    assert resolved["confirm_required"] is True

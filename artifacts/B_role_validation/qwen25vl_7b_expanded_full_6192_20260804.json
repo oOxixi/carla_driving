@@ -1,0 +1,2618 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-04T14:10:35.969519+00:00",
+  "dataset_kind": "language_plus_structured_scene_no_rgb_no_carla_execution",
+  "scope_warning": "This isolated 11-action evaluation does not modify or prove the five-action production adapter, visual grounding, or CARLA control.",
+  "dataset": "/home/abc/projects/carla_driving_8.4-xky-3B_20260804/CARLA-Language-Benchmark/datasets/final_benchmark/CARLA_language_benchmark_v1_normalized.json",
+  "dataset_sha256": "d05feb10cf4019dc26ff98a1821f09d304f4612f44006cedb2a69e91babf5213",
+  "dataset_records": 6192,
+  "selected_records": 6192,
+  "selection": {
+    "categories": [],
+    "sample_per_category": null,
+    "limit": null
+  },
+  "input_integrity_full_dataset": {
+    "source_records": 6192,
+    "unique_model_inputs": 3802,
+    "duplicate_model_input_records": 2390,
+    "conflicting_input_groups": 0,
+    "conflicting_input_records": 0
+  },
+  "prompt_contract": {
+    "input_fields": [
+      "template",
+      "scene_constraints"
+    ],
+    "hidden_evaluation_fields": [
+      "id",
+      "category",
+      "semantic_intent",
+      "expected_action",
+      "expected_parameters",
+      "safety_policy"
+    ],
+    "action_to_code": {
+      "START": "A",
+      "STOP": "B",
+      "KEEP_LANE": "C",
+      "SET_SPEED": "D",
+      "EMERGENCY_STOP": "E",
+      "TURN_LEFT": "F",
+      "TURN_RIGHT": "G",
+      "CHANGE_LANE_LEFT": "H",
+      "CHANGE_LANE_RIGHT": "I",
+      "AVOID_OBJECT": "J",
+      "REQUEST_CONFIRMATION": "K"
+    },
+    "temperature": 0.0,
+    "max_tokens": 1,
+    "structured_choice": true
+  },
+  "model": "qwen2.5-vl",
+  "base_url": "http://127.0.0.1:18000/v1",
+  "inference_hardware": {
+    "name": "NVIDIA GeForce RTX 3090",
+    "memory_mib": 24576,
+    "source": "operator-supplied remote nvidia-smi snapshot"
+  },
+  "concurrency": 8,
+  "timeout_s": 20.0,
+  "retries": 1,
+  "wall_time_s": 125.395686422,
+  "throughput_records_per_s": 49.37968902025682,
+  "metrics": {
+    "total": 6192,
+    "ready": 6192,
+    "errors": 0,
+    "correct": 5721,
+    "action_accuracy": 0.9239341085271318,
+    "strict_parse_rate": 1.0,
+    "macro_category_accuracy": 0.752268697968698,
+    "request_latency_ms_under_configured_concurrency": {
+      "count": 6192,
+      "mean_ms": 160.69555735658915,
+      "p50_ms": 155.58268149999998,
+      "p95_ms": 231.3994731999999,
+      "p99_ms": 272.19503025999995,
+      "max_ms": 501.382408
+    },
+    "queue_wait_ms": {
+      "count": 6192,
+      "mean_ms": 59286.09803170963,
+      "p50_ms": 57597.156543000005,
+      "p95_ms": 117869.7455895,
+      "p99_ms": 123840.6402601,
+      "max_ms": 125057.832025
+    },
+    "end_to_end_latency_ms_including_local_queue": {
+      "count": 6192,
+      "mean_ms": 59446.79358906621,
+      "p50_ms": 57810.019333000004,
+      "p95_ms": 118050.24104054997,
+      "p99_ms": 124001.21948952,
+      "max_ms": 125185.062427
+    },
+    "selected_token_confidence": {
+      "mean": 0.7640655438998264,
+      "p05": 0.36589004537840597,
+      "p50": 0.8957308149632079
+    },
+    "by_category": {
+      "ambiguous_target": {
+        "count": 100,
+        "ready": 100,
+        "correct": 100,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "compound": {
+        "count": 65,
+        "ready": 65,
+        "correct": 23,
+        "accuracy": 0.35384615384615387,
+        "strict_parse_rate": 1.0
+      },
+      "dense_target": {
+        "count": 65,
+        "ready": 65,
+        "correct": 33,
+        "accuracy": 0.5076923076923077,
+        "strict_parse_rate": 1.0
+      },
+      "detector_error": {
+        "count": 72,
+        "ready": 72,
+        "correct": 44,
+        "accuracy": 0.6111111111111112,
+        "strict_parse_rate": 1.0
+      },
+      "emergency": {
+        "count": 750,
+        "ready": 750,
+        "correct": 750,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "exposure": {
+        "count": 80,
+        "ready": 80,
+        "correct": 58,
+        "accuracy": 0.725,
+        "strict_parse_rate": 1.0
+      },
+      "following": {
+        "count": 500,
+        "ready": 500,
+        "correct": 353,
+        "accuracy": 0.706,
+        "strict_parse_rate": 1.0
+      },
+      "lane_change": {
+        "count": 750,
+        "ready": 750,
+        "correct": 750,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "missing_target": {
+        "count": 100,
+        "ready": 100,
+        "correct": 18,
+        "accuracy": 0.18,
+        "strict_parse_rate": 1.0
+      },
+      "navigation_error": {
+        "count": 45,
+        "ready": 45,
+        "correct": 7,
+        "accuracy": 0.15555555555555556,
+        "strict_parse_rate": 1.0
+      },
+      "negation": {
+        "count": 6,
+        "ready": 6,
+        "correct": 6,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "occlusion": {
+        "count": 72,
+        "ready": 72,
+        "correct": 27,
+        "accuracy": 0.375,
+        "strict_parse_rate": 1.0
+      },
+      "ordinary_instruction": {
+        "count": 1500,
+        "ready": 1500,
+        "correct": 1500,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "ordinary_synonym": {
+        "count": 462,
+        "ready": 462,
+        "correct": 461,
+        "accuracy": 0.9978354978354979,
+        "strict_parse_rate": 1.0
+      },
+      "parking": {
+        "count": 250,
+        "ready": 250,
+        "correct": 250,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "safety_conflict": {
+        "count": 60,
+        "ready": 60,
+        "correct": 36,
+        "accuracy": 0.6,
+        "strict_parse_rate": 1.0
+      },
+      "speed_control": {
+        "count": 500,
+        "ready": 500,
+        "correct": 500,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "turning": {
+        "count": 750,
+        "ready": 750,
+        "correct": 750,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "unit_conversion": {
+        "count": 5,
+        "ready": 5,
+        "correct": 5,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "weather_failure": {
+        "count": 60,
+        "ready": 60,
+        "correct": 50,
+        "accuracy": 0.8333333333333334,
+        "strict_parse_rate": 1.0
+      }
+    },
+    "by_expected_action": {
+      "AVOID_OBJECT": {
+        "count": 276,
+        "ready": 276,
+        "correct": 252,
+        "accuracy": 0.9130434782608695,
+        "strict_parse_rate": 1.0
+      },
+      "CHANGE_LANE_LEFT": {
+        "count": 379,
+        "ready": 379,
+        "correct": 377,
+        "accuracy": 0.9947229551451188,
+        "strict_parse_rate": 1.0
+      },
+      "CHANGE_LANE_RIGHT": {
+        "count": 382,
+        "ready": 382,
+        "correct": 380,
+        "accuracy": 0.9947643979057592,
+        "strict_parse_rate": 1.0
+      },
+      "EMERGENCY_STOP": {
+        "count": 527,
+        "ready": 527,
+        "correct": 525,
+        "accuracy": 0.9962049335863378,
+        "strict_parse_rate": 1.0
+      },
+      "KEEP_LANE": {
+        "count": 2623,
+        "ready": 2623,
+        "correct": 2383,
+        "accuracy": 0.9085017155928327,
+        "strict_parse_rate": 1.0
+      },
+      "REQUEST_CONFIRMATION": {
+        "count": 288,
+        "ready": 288,
+        "correct": 161,
+        "accuracy": 0.5590277777777778,
+        "strict_parse_rate": 1.0
+      },
+      "SET_SPEED": {
+        "count": 619,
+        "ready": 619,
+        "correct": 592,
+        "accuracy": 0.9563812600969306,
+        "strict_parse_rate": 1.0
+      },
+      "START": {
+        "count": 2,
+        "ready": 2,
+        "correct": 2,
+        "accuracy": 1.0,
+        "strict_parse_rate": 1.0
+      },
+      "STOP": {
+        "count": 326,
+        "ready": 326,
+        "correct": 292,
+        "accuracy": 0.8957055214723927,
+        "strict_parse_rate": 1.0
+      },
+      "TURN_LEFT": {
+        "count": 387,
+        "ready": 387,
+        "correct": 380,
+        "accuracy": 0.9819121447028424,
+        "strict_parse_rate": 1.0
+      },
+      "TURN_RIGHT": {
+        "count": 383,
+        "ready": 383,
+        "correct": 377,
+        "accuracy": 0.9843342036553525,
+        "strict_parse_rate": 1.0
+      }
+    },
+    "by_safety_policy": {
+      "confirmation": {
+        "count": 343,
+        "ready": 343,
+        "correct": 185,
+        "accuracy": 0.5393586005830904,
+        "strict_parse_rate": 1.0
+      },
+      "normal": {
+        "count": 5289,
+        "ready": 5289,
+        "correct": 5000,
+        "accuracy": 0.9453582907922102,
+        "strict_parse_rate": 1.0
+      },
+      "override": {
+        "count": 560,
+        "ready": 560,
+        "correct": 536,
+        "accuracy": 0.9571428571428572,
+        "strict_parse_rate": 1.0
+      }
+    },
+    "confusion_matrix": {
+      "AVOID_OBJECT": {
+        "AVOID_OBJECT": 252,
+        "CHANGE_LANE_LEFT": 5,
+        "EMERGENCY_STOP": 19
+      },
+      "CHANGE_LANE_LEFT": {
+        "CHANGE_LANE_LEFT": 377,
+        "CHANGE_LANE_RIGHT": 2
+      },
+      "CHANGE_LANE_RIGHT": {
+        "CHANGE_LANE_LEFT": 1,
+        "CHANGE_LANE_RIGHT": 380,
+        "STOP": 1
+      },
+      "EMERGENCY_STOP": {
+        "EMERGENCY_STOP": 525,
+        "REQUEST_CONFIRMATION": 1,
+        "STOP": 1
+      },
+      "KEEP_LANE": {
+        "CHANGE_LANE_LEFT": 4,
+        "CHANGE_LANE_RIGHT": 1,
+        "EMERGENCY_STOP": 26,
+        "KEEP_LANE": 2383,
+        "REQUEST_CONFIRMATION": 8,
+        "SET_SPEED": 169,
+        "STOP": 31,
+        "TURN_RIGHT": 1
+      },
+      "REQUEST_CONFIRMATION": {
+        "AVOID_OBJECT": 9,
+        "CHANGE_LANE_LEFT": 5,
+        "EMERGENCY_STOP": 30,
+        "KEEP_LANE": 22,
+        "REQUEST_CONFIRMATION": 161,
+        "SET_SPEED": 9,
+        "STOP": 50,
+        "TURN_LEFT": 1,
+        "TURN_RIGHT": 1
+      },
+      "SET_SPEED": {
+        "EMERGENCY_STOP": 14,
+        "REQUEST_CONFIRMATION": 10,
+        "SET_SPEED": 592,
+        "STOP": 3
+      },
+      "START": {
+        "START": 2
+      },
+      "STOP": {
+        "EMERGENCY_STOP": 11,
+        "REQUEST_CONFIRMATION": 4,
+        "SET_SPEED": 19,
+        "STOP": 292
+      },
+      "TURN_LEFT": {
+        "EMERGENCY_STOP": 4,
+        "START": 1,
+        "STOP": 2,
+        "TURN_LEFT": 380
+      },
+      "TURN_RIGHT": {
+        "EMERGENCY_STOP": 3,
+        "STOP": 1,
+        "TURN_LEFT": 2,
+        "TURN_RIGHT": 377
+      }
+    }
+  },
+  "incorrect_examples": [
+    {
+      "index": 1002,
+      "id": "carla_language_benchmark_v1_001002",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7364371232198462,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7364371232198462
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2109927621003304
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.025199494864449987
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.00927037387830686
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.004113703471944577
+        }
+      ],
+      "latency_ms": 253.10608,
+      "queue_wait_ms": 18575.141335,
+      "end_to_end_latency_ms": 18828.247415,
+      "attempts": 1
+    },
+    {
+      "index": 1006,
+      "id": "carla_language_benchmark_v1_001006",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7361709915949384,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7361709915949384
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2109165141154705
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.025190388340208227
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009267023776056515
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.00411221687308249
+        }
+      ],
+      "latency_ms": 251.898758,
+      "queue_wait_ms": 18577.132824,
+      "end_to_end_latency_ms": 18829.031582,
+      "attempts": 1
+    },
+    {
+      "index": 1009,
+      "id": "carla_language_benchmark_v1_001009",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "保持与前方车辆的距离继续跟车",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.5055271850843123,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.5055271850843123
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.4461261750092151
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.030359267212288245
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.006774066540003339
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0028238510593023972
+        }
+      ],
+      "latency_ms": 136.300246,
+      "queue_wait_ms": 18691.793676,
+      "end_to_end_latency_ms": 18828.093922,
+      "attempts": 1
+    },
+    {
+      "index": 1010,
+      "id": "carla_language_benchmark_v1_001010",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7388410672528897,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7388410672528897
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21168152250245678
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.023750008605387823
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009300637003492268
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0036421817822460153
+        }
+      ],
+      "latency_ms": 79.369525,
+      "queue_wait_ms": 18789.838117,
+      "end_to_end_latency_ms": 18869.207642,
+      "attempts": 1
+    },
+    {
+      "index": 1014,
+      "id": "carla_language_benchmark_v1_001014",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7374095357322885,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7374095357322885
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2112713566449919
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02523276523384812
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008720212405824093
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.003869570798420103
+        }
+      ],
+      "latency_ms": 163.020328,
+      "queue_wait_ms": 18830.488329,
+      "end_to_end_latency_ms": 18993.508657,
+      "attempts": 1
+    },
+    {
+      "index": 1018,
+      "id": "carla_language_benchmark_v1_001018",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7367392930358243,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7367392930358243
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21107932890884012
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.025209830791329976
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009274180674677807
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.004115392727594211
+        }
+      ],
+      "latency_ms": 124.563005,
+      "queue_wait_ms": 18869.220053,
+      "end_to_end_latency_ms": 18993.783058,
+      "attempts": 1
+    },
+    {
+      "index": 1021,
+      "id": "carla_language_benchmark_v1_001021",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "保持与前方车辆的距离继续跟车",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.5053967614866062,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.5053967614866062
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.4460110765882155
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.03035143647552883
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.006772319266872713
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.003005198457685037
+        }
+      ],
+      "latency_ms": 110.482361,
+      "queue_wait_ms": 18954.671022,
+      "end_to_end_latency_ms": 19065.153383,
+      "attempts": 1
+    },
+    {
+      "index": 1022,
+      "id": "carla_language_benchmark_v1_001022",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7167025640261067,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7167025640261067
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.23267925577313114
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.024524213130119717
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009021951670476636
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.004003466785455512
+        }
+      ],
+      "latency_ms": 114.375927,
+      "queue_wait_ms": 18955.135457,
+      "end_to_end_latency_ms": 19069.511384,
+      "attempts": 1
+    },
+    {
+      "index": 1026,
+      "id": "carla_language_benchmark_v1_001026",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7389023051292489,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7389023051292489
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21169906113970524
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.023751973554495005
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008737864841215569
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.003877404019141451
+        }
+      ],
+      "latency_ms": 108.698717,
+      "queue_wait_ms": 18994.412694,
+      "end_to_end_latency_ms": 19103.111411,
+      "attempts": 1
+    },
+    {
+      "index": 1030,
+      "id": "carla_language_benchmark_v1_001030",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7385386076691576,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7385386076691576
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21159486006967776
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02374028251984271
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008733561866651895
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0038754945857534737
+        }
+      ],
+      "latency_ms": 114.121291,
+      "queue_wait_ms": 19069.672571,
+      "end_to_end_latency_ms": 19183.793862,
+      "attempts": 1
+    },
+    {
+      "index": 1033,
+      "id": "carla_language_benchmark_v1_001033",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "保持与前方车辆的距离继续跟车",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.5068891040968478,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.5068891040968478
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.4473280643193488
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02859672981866813
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.006380792904160799
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.002831459687405796
+        }
+      ],
+      "latency_ms": 117.978016,
+      "queue_wait_ms": 19103.12033,
+      "end_to_end_latency_ms": 19221.098346,
+      "attempts": 1
+    },
+    {
+      "index": 1034,
+      "id": "carla_language_benchmark_v1_001034",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7169445855331771,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7169445855331771
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.23275782171583162
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.024532493919557318
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009025002305396523
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.003762180688630789
+        }
+      ],
+      "latency_ms": 119.175817,
+      "queue_wait_ms": 19103.649048,
+      "end_to_end_latency_ms": 19222.824865,
+      "attempts": 1
+    },
+    {
+      "index": 1038,
+      "id": "carla_language_benchmark_v1_001038",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7394675581854515,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7394675581854515
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21186101517052378
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02377014712461614
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.00821474107511437
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.003880368923311792
+        }
+      ],
+      "latency_ms": 99.934308,
+      "queue_wait_ms": 19183.804845,
+      "end_to_end_latency_ms": 19283.739153,
+      "attempts": 1
+    },
+    {
+      "index": 1042,
+      "id": "carla_language_benchmark_v1_001042",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7142613360527872,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7142613360527872
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.23188670508820877
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.026016967263904994
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009571107378021079
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.004247153153494031
+        }
+      ],
+      "latency_ms": 140.621448,
+      "queue_wait_ms": 19221.784118,
+      "end_to_end_latency_ms": 19362.405566,
+      "attempts": 1
+    },
+    {
+      "index": 1046,
+      "id": "carla_language_benchmark_v1_001046",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7170501230051374,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7170501230051374
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.232792091653226
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02453610301945289
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009026327867321268
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.003762733265051947
+        }
+      ],
+      "latency_ms": 78.33207,
+      "queue_wait_ms": 19283.754197,
+      "end_to_end_latency_ms": 19362.086267,
+      "attempts": 1
+    },
+    {
+      "index": 1050,
+      "id": "carla_language_benchmark_v1_001050",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7386373738860819,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7386373738860819
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2116231381448538
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02374345806200974
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008734732165851904
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0038760139028754673
+        }
+      ],
+      "latency_ms": 97.770637,
+      "queue_wait_ms": 19361.004625,
+      "end_to_end_latency_ms": 19458.775262,
+      "attempts": 1
+    },
+    {
+      "index": 1054,
+      "id": "carla_language_benchmark_v1_001054",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7386373738860819,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7386373738860819
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2116231381448538
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02374345806200974
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008734732165851904
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0038760139028754673
+        }
+      ],
+      "latency_ms": 133.104164,
+      "queue_wait_ms": 19363.337194,
+      "end_to_end_latency_ms": 19496.441358,
+      "attempts": 1
+    },
+    {
+      "index": 1057,
+      "id": "carla_language_benchmark_v1_001057",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "保持与前方车辆的距离继续跟车",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.5068425480867531,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.5068425480867531
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.44728697878464346
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.028594098194971124
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.006380205709543836
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0028311991213740245
+        }
+      ],
+      "latency_ms": 98.039823,
+      "queue_wait_ms": 19437.704425,
+      "end_to_end_latency_ms": 19535.744248,
+      "attempts": 1
+    },
+    {
+      "index": 1058,
+      "id": "carla_language_benchmark_v1_001058",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.717143237090054,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.717143237090054
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.23282231443199422
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.024539291401830747
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009027502959972847
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.003763223116547994
+        }
+      ],
+      "latency_ms": 93.490281,
+      "queue_wait_ms": 19458.78752,
+      "end_to_end_latency_ms": 19552.277801,
+      "attempts": 1
+    },
+    {
+      "index": 1062,
+      "id": "carla_language_benchmark_v1_001062",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7385386076691576,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7385386076691576
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21159486006967776
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02374028251984271
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008733561866651895
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0038754945857534737
+        }
+      ],
+      "latency_ms": 155.378291,
+      "queue_wait_ms": 19498.333341,
+      "end_to_end_latency_ms": 19653.711632,
+      "attempts": 1
+    },
+    {
+      "index": 1066,
+      "id": "carla_language_benchmark_v1_001066",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7389638343780737,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7389638343780737
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21171667694586838
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.023753955656318586
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.00873858984901528
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.0038777257394023604
+        }
+      ],
+      "latency_ms": 101.128655,
+      "queue_wait_ms": 19552.291947,
+      "end_to_end_latency_ms": 19653.420602,
+      "attempts": 1
+    },
+    {
+      "index": 1070,
+      "id": "carla_language_benchmark_v1_001070",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7183592741062443,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7183592741062443
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.23321709688752265
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.023091619651550325
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009042810340601387
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.0037696041821527948
+        }
+      ],
+      "latency_ms": 200.511986,
+      "queue_wait_ms": 19655.175984,
+      "end_to_end_latency_ms": 19855.68797,
+      "attempts": 1
+    },
+    {
+      "index": 1074,
+      "id": "carla_language_benchmark_v1_001074",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7387302750484422,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7387302750484422
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21164978000253587
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.023746447195599353
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008735827641340392
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0038765000171767437
+        }
+      ],
+      "latency_ms": 198.751246,
+      "queue_wait_ms": 19657.10797,
+      "end_to_end_latency_ms": 19855.859216,
+      "attempts": 1
+    },
+    {
+      "index": 1077,
+      "id": "carla_language_benchmark_v1_001077",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "保持与前方车辆的距离继续跟车",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.5070854053881744,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.5070854053881744
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.4475012996009177
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.028607804381024567
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.006383263973032963
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.002660940311939581
+        }
+      ],
+      "latency_ms": 79.032065,
+      "queue_wait_ms": 19816.403809,
+      "end_to_end_latency_ms": 19895.435874,
+      "attempts": 1
+    },
+    {
+      "index": 1078,
+      "id": "carla_language_benchmark_v1_001078",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.739249635960688,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.739249635960688
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2117985667798864
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.023763137776581688
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.00874196984572886
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0036441952058591516
+        }
+      ],
+      "latency_ms": 119.058494,
+      "queue_wait_ms": 19856.0274,
+      "end_to_end_latency_ms": 19975.085894,
+      "attempts": 1
+    },
+    {
+      "index": 1081,
+      "id": "carla_language_benchmark_v1_001081",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "保持与前方车辆的距离继续跟车",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.5053967614866062,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.5053967614866062
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.4460110765882155
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.03035143647552883
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.006772319266872713
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.003005198457685037
+        }
+      ],
+      "latency_ms": 207.662168,
+      "queue_wait_ms": 19857.460272,
+      "end_to_end_latency_ms": 20065.12244,
+      "attempts": 1
+    },
+    {
+      "index": 1082,
+      "id": "carla_language_benchmark_v1_001082",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7390159202264973,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7390159202264973
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2117315934807523
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.023755626413457888
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008739206569660443
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.003877999407529723
+        }
+      ],
+      "latency_ms": 206.605923,
+      "queue_wait_ms": 19857.927744,
+      "end_to_end_latency_ms": 20064.533667,
+      "attempts": 1
+    },
+    {
+      "index": 1086,
+      "id": "carla_language_benchmark_v1_001086",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7386373738860819,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7386373738860819
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2116231381448538
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02374345806200974
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008734732165851904
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0038760139028754673
+        }
+      ],
+      "latency_ms": 129.648531,
+      "queue_wait_ms": 19975.100237,
+      "end_to_end_latency_ms": 20104.748768,
+      "attempts": 1
+    },
+    {
+      "index": 1089,
+      "id": "carla_language_benchmark_v1_001089",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "保持与前方车辆的距离继续跟车",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.5070533984988025,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.5070533984988025
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.4474730536201857
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.028605996970623083
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.006382859163468234
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0026607715622068424
+        }
+      ],
+      "latency_ms": 154.11978,
+      "queue_wait_ms": 20065.650317,
+      "end_to_end_latency_ms": 20219.770097,
+      "attempts": 1
+    },
+    {
+      "index": 1090,
+      "id": "carla_language_benchmark_v1_001090",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7388093823327482,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7388093823327482
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21167243831197669
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.023748989387463063
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008736764944246425
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0038769159428200272
+        }
+      ],
+      "latency_ms": 153.956383,
+      "queue_wait_ms": 20066.093489,
+      "end_to_end_latency_ms": 20220.049872,
+      "attempts": 1
+    },
+    {
+      "index": 1094,
+      "id": "carla_language_benchmark_v1_001094",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7408342848839521,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7408342848839521
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2122525889489807
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.0223712582864707
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008760710620821892
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.003652007523214773
+        }
+      ],
+      "latency_ms": 114.694153,
+      "queue_wait_ms": 20104.922555,
+      "end_to_end_latency_ms": 20219.616708,
+      "attempts": 1
+    },
+    {
+      "index": 1098,
+      "id": "carla_language_benchmark_v1_001098",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7385984997583324,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7385984997583324
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2116120131345022
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.023742207040149482
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008734269858106875
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.003875808755057181
+        }
+      ],
+      "latency_ms": 208.37464,
+      "queue_wait_ms": 20220.874776,
+      "end_to_end_latency_ms": 20429.249416,
+      "attempts": 1
+    },
+    {
+      "index": 1102,
+      "id": "carla_language_benchmark_v1_001102",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7362343778431347,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7362343778431347
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21093469343812288
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02519255654774556
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009267823624464596
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.004112571803662049
+        }
+      ],
+      "latency_ms": 206.841149,
+      "queue_wait_ms": 20222.703699,
+      "end_to_end_latency_ms": 20429.544848,
+      "attempts": 1
+    },
+    {
+      "index": 1106,
+      "id": "carla_language_benchmark_v1_001106",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7172307843324637,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7172307843324637
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2328507368594059
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.024542287103640106
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009028605017343141
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.003763682522409176
+        }
+      ],
+      "latency_ms": 78.647795,
+      "queue_wait_ms": 20388.614138,
+      "end_to_end_latency_ms": 20467.261933,
+      "attempts": 1
+    },
+    {
+      "index": 1110,
+      "id": "carla_language_benchmark_v1_001110",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7374095357322885,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7374095357322885
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2112713566449919
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02523276523384812
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008720212405824093
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.003869570798420103
+        }
+      ],
+      "latency_ms": 207.529526,
+      "queue_wait_ms": 20432.56747,
+      "end_to_end_latency_ms": 20640.096996,
+      "attempts": 1
+    },
+    {
+      "index": 1114,
+      "id": "carla_language_benchmark_v1_001114",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7160616629007436,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7160616629007436
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.23247117871326817
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.024502284890260847
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009013884723774792
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.003999887099556001
+        }
+      ],
+      "latency_ms": 132.582364,
+      "queue_wait_ms": 20467.287419,
+      "end_to_end_latency_ms": 20599.869783,
+      "attempts": 1
+    },
+    {
+      "index": 1118,
+      "id": "carla_language_benchmark_v1_001118",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7408342848839521,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7408342848839521
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2122525889489807
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.0223712582864707
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008760710620821892
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.003652007523214773
+        }
+      ],
+      "latency_ms": 208.84967,
+      "queue_wait_ms": 20638.871187,
+      "end_to_end_latency_ms": 20847.720857,
+      "attempts": 1
+    },
+    {
+      "index": 1122,
+      "id": "carla_language_benchmark_v1_001122",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7386973620443257,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7386973620443257
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2116403439610415
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.023745388501084864
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008735440252177892
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0038763281142779296
+        }
+      ],
+      "latency_ms": 206.799914,
+      "queue_wait_ms": 20641.502341,
+      "end_to_end_latency_ms": 20848.302255,
+      "attempts": 1
+    },
+    {
+      "index": 1126,
+      "id": "carla_language_benchmark_v1_001126",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7363737195162455,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7363737195162455
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21097460292318454
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02519732605976363
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009269578229880464
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.004113350405095594
+        }
+      ],
+      "latency_ms": 78.496951,
+      "queue_wait_ms": 20809.270195,
+      "end_to_end_latency_ms": 20887.767146,
+      "attempts": 1
+    },
+    {
+      "index": 1130,
+      "id": "carla_language_benchmark_v1_001130",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7391212703956013,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7391212703956013
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21176178311874436
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.023759013596966538
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.00874045264483675
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.0038785523500373675
+        }
+      ],
+      "latency_ms": 206.194155,
+      "queue_wait_ms": 20849.966811,
+      "end_to_end_latency_ms": 21056.160966,
+      "attempts": 1
+    },
+    {
+      "index": 1134,
+      "id": "carla_language_benchmark_v1_001134",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7365556494544026,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7365556494544026
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21102672043407256
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.025203550609529682
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009271868113769944
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0041143665349119484
+        }
+      ],
+      "latency_ms": 128.321431,
+      "queue_wait_ms": 20887.763738,
+      "end_to_end_latency_ms": 21016.085169,
+      "attempts": 1
+    },
+    {
+      "index": 1138,
+      "id": "carla_language_benchmark_v1_001138",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7363737195162455,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7363737195162455
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21097460292318454
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02519732605976363
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009269578229880464
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.004113350405095594
+        }
+      ],
+      "latency_ms": 209.073725,
+      "queue_wait_ms": 21054.811358,
+      "end_to_end_latency_ms": 21263.885083,
+      "attempts": 1
+    },
+    {
+      "index": 1141,
+      "id": "carla_language_benchmark_v1_001141",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "保持与前方车辆的距离继续跟车",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.5053475111555482,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.5053475111555482
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.44596761332360557
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.030348476954166873
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.006771660523044187
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.003004906141883096
+        }
+      ],
+      "latency_ms": 206.941534,
+      "queue_wait_ms": 21057.100911,
+      "end_to_end_latency_ms": 21264.042445,
+      "attempts": 1
+    },
+    {
+      "index": 1142,
+      "id": "carla_language_benchmark_v1_001142",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7172909578842314,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7172909578842314
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.23287027929094983
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.024544346860770887
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009029362759826022
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.003763998396470986
+        }
+      ],
+      "latency_ms": 206.96735,
+      "queue_wait_ms": 21057.548228,
+      "end_to_end_latency_ms": 21264.515578,
+      "attempts": 1
+    },
+    {
+      "index": 1146,
+      "id": "carla_language_benchmark_v1_001146",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7388423223471975,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7388423223471975
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2116818757844063
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02375004824252404
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008737152392154831
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.003877087871787179
+        }
+      ],
+      "latency_ms": 75.410258,
+      "queue_wait_ms": 21224.254425,
+      "end_to_end_latency_ms": 21299.664683,
+      "attempts": 1
+    },
+    {
+      "index": 1150,
+      "id": "carla_language_benchmark_v1_001150",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7371535098154429,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7371535098154429
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21119802917283276
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02522400751619266
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008717181662189969
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.0041177050513858645
+        }
+      ],
+      "latency_ms": 210.837598,
+      "queue_wait_ms": 21265.724465,
+      "end_to_end_latency_ms": 21476.562063,
+      "attempts": 1
+    },
+    {
+      "index": 1153,
+      "id": "carla_language_benchmark_v1_001153",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "保持与前方车辆的距离继续跟车",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.5056045392511569,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.5056045392511569
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.44619443982185747
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.0303639145009187
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.006775103490012481
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.002824283324377514
+        }
+      ],
+      "latency_ms": 209.119732,
+      "queue_wait_ms": 21267.149474,
+      "end_to_end_latency_ms": 21476.269206,
+      "attempts": 1
+    },
+    {
+      "index": 1154,
+      "id": "carla_language_benchmark_v1_001154",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7395139052375572,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7395139052375572
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21187427488102667
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.02377163765670363
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008745096776878146
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.003645498704693438
+        }
+      ],
+      "latency_ms": 136.478327,
+      "queue_wait_ms": 21299.679053,
+      "end_to_end_latency_ms": 21436.15738,
+      "attempts": 1
+    },
+    {
+      "index": 1158,
+      "id": "carla_language_benchmark_v1_001158",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7386973620443257,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7386973620443257
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.2116403439610415
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.023745388501084864
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.008735440252177892
+        },
+        {
+          "code": "E",
+          "action": "EMERGENCY_STOP",
+          "probability": 0.0038763281142779296
+        }
+      ],
+      "latency_ms": 211.975828,
+      "queue_wait_ms": 21475.352578,
+      "end_to_end_latency_ms": 21687.328406,
+      "attempts": 1
+    },
+    {
+      "index": 1162,
+      "id": "carla_language_benchmark_v1_001162",
+      "category": "following",
+      "safety_policy": "normal",
+      "instruction": "根据前方车辆速度跟随行驶",
+      "expected_action": "KEEP_LANE",
+      "predicted_action": "SET_SPEED",
+      "predicted_code": "D",
+      "correct": false,
+      "status": "READY",
+      "confidence": 0.7367392930358243,
+      "top_alternatives": [
+        {
+          "code": "D",
+          "action": "SET_SPEED",
+          "probability": 0.7367392930358243
+        },
+        {
+          "code": "C",
+          "action": "KEEP_LANE",
+          "probability": 0.21107932890884012
+        },
+        {
+          "code": "B",
+          "action": "STOP",
+          "probability": 0.025209830791329976
+        },
+        {
+          "code": "A",
+          "action": "START",
+          "probability": 0.009274180674677807
+        },
+        {
+          "code": "F",
+          "action": "TURN_LEFT",
+          "probability": 0.004115392727594211
+        }
+      ],
+      "latency_ms": 209.963488,
+      "queue_wait_ms": 21477.929995,
+      "end_to_end_latency_ms": 21687.893483,
+      "attempts": 1
+    }
+  ],
+  "records_output": "/home/abc/projects/carla_driving_8.4-xky-3B_20260804/artifacts/B_role_validation/qwen25vl_7b_expanded_full_6192_20260804.records.jsonl"
+}

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import replace
+import math
 
 from car_control_A import ControlOutput, DrivingCommand, ExecutionFeedback, ExecutionStatus, RuntimeVehicleState
 from car_control_A.behavior_fsm import BehaviorFSM
@@ -18,6 +19,20 @@ from car_control_D import SafetySupervisor
 from .contracts import FrameResult, PerceptionFrame
 from .perception_bridge import longitudinal_request, safety_vehicle_state
 from .voice_adapter import AdaptedVoiceCommand, VoiceCommandAdapter
+
+
+_TERMINAL_SAFETY_REASONS = {
+    "INVALID_CONTROL_OUTPUT",
+    "INVALID_CONTROL_OUTPUT_THROTTLE_BRAKE_CONFLICT",
+    "INVALID_VEHICLE_STATE",
+    "INVALID_RISK_STATE",
+    "COLLISION_DETECTED",
+    "RED_LIGHT_VIOLATION_DETECTED",
+    "RISK_EMERGENCY_BRAKE_REQUESTED",
+    "LOW_TTC",
+    "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE",
+    "RED_LIGHT_STOP_LINE_GUARD",
+}
 
 
 class ControlRuntime:
@@ -138,6 +153,15 @@ class ControlRuntime:
         """Explicitly release a persistent watchdog/integration stop after recovery."""
         self._latched_alerts.clear()
 
+    def clear_safety_alerts(self, alerts: tuple[str, ...]) -> None:
+        """Clear only explicitly recovered alerts, preserving unrelated faults."""
+        if type(alerts) is not tuple or any(type(alert) is not str or not alert for alert in alerts):
+            raise TypeError("alerts must be a tuple of non-empty strings")
+        recovered = set(alerts)
+        self._latched_alerts = [
+            alert for alert in self._latched_alerts if alert not in recovered
+        ]
+
     def fail_active(self, *, now_s: float, detail: str) -> ExecutionFeedback | None:
         """Terminate the active command when its outer runtime cannot continue."""
         command_id = self._active_command_id
@@ -149,9 +173,30 @@ class ControlRuntime:
         self._clear_active_command()
         return feedback
 
+    def complete_active(self, *, now_s: float, detail: str) -> ExecutionFeedback | None:
+        """Complete an internal command whose outer maneuver contract succeeded."""
+        command_id = self._active_command_id
+        if command_id is None:
+            return None
+        feedback = self.fsm.complete(command_id, now_s=now_s, detail=detail)
+        self._clear_active_command()
+        return feedback
+
     def step(self, vehicle: RuntimeVehicleState, scene: PerceptionFrame, route: RouteReference, *, dt_s: float,
-             watchdog_alerts: tuple[str, ...] = (), raw_control_override: object | None = None) -> FrameResult:
+             watchdog_alerts: tuple[str, ...] = (), raw_control_override: object | None = None,
+             speed_cap_mps: float | None = None,
+             safety_override_reason: str | None = None) -> FrameResult:
         """Compose lateral, longitudinal and final safety arbitration for one aligned frame."""
+        if safety_override_reason is not None and (
+            type(safety_override_reason) is not str or not safety_override_reason.strip()
+        ):
+            raise ValueError("safety_override_reason must be a non-empty string or None")
+        if speed_cap_mps is not None:
+            if type(speed_cap_mps) not in (int, float) or isinstance(speed_cap_mps, bool):
+                raise TypeError("speed_cap_mps must be a finite non-negative number or None")
+            speed_cap_mps = float(speed_cap_mps)
+            if not math.isfinite(speed_cap_mps) or speed_cap_mps < 0.0:
+                raise ValueError("speed_cap_mps must be a finite non-negative number or None")
         feedback = list(self._pending_feedback)
         self._pending_feedback.clear()
         lifecycle_feedback = self.fsm.tick(now_s=vehicle.sim_time_s)
@@ -162,10 +207,13 @@ class ControlRuntime:
                     self._latched_alerts.append(alert)
             self.requested_speed_mps = 0.0
             if self._active_command_id is not None:
-                failed = self.fsm.fail(self._active_command_id, now_s=vehicle.sim_time_s,
-                                       detail="watchdog alert: " + ", ".join(watchdog_alerts))
-                if failed is not None:
-                    feedback.append(failed)
+                overridden = self.fsm.safety_override(
+                    self._active_command_id,
+                    now_s=vehicle.sim_time_s,
+                    detail="watchdog alert: " + ", ".join(watchdog_alerts),
+                )
+                if overridden is not None:
+                    feedback.append(overridden)
                 self._clear_active_command()
         expired_alerts = list(self._latched_alerts)
         # Adapter rejections are audit-only NO_OP results. Even if a faulty
@@ -174,6 +222,7 @@ class ControlRuntime:
         for item in lifecycle_feedback:
             if item.command_id == self._active_command_id and item.status in {
                 ExecutionStatus.EXPIRED, ExecutionStatus.TIMED_OUT, ExecutionStatus.REJECTED, ExecutionStatus.FAILED,
+                ExecutionStatus.SAFETY_OVERRIDE,
             }:
                 # No stale voice command may retain propulsion authority after a
                 # terminal failure/expiry. D receives the alert and becomes the
@@ -183,7 +232,25 @@ class ControlRuntime:
                 self._clear_active_command()
         try:
             lateral = self.lateral.step_any(vehicle, route)
-            request = longitudinal_request(vehicle, scene, requested_speed_mps=self.requested_speed_mps,
+            if lateral.status != "OK":
+                alert = f"LATERAL_{lateral.reason}"
+                if alert not in self._latched_alerts:
+                    self._latched_alerts.append(alert)
+                expired_alerts.append(alert)
+                self.requested_speed_mps = 0.0
+                if self._active_command_id is not None:
+                    failed = self.fsm.fail(
+                        self._active_command_id,
+                        now_s=vehicle.sim_time_s,
+                        detail=f"invalid lateral reference: {lateral.reason}",
+                    )
+                    if failed is not None:
+                        feedback.append(failed)
+                    self._clear_active_command()
+            effective_requested_speed_mps = self.requested_speed_mps
+            if speed_cap_mps is not None:
+                effective_requested_speed_mps = min(effective_requested_speed_mps, speed_cap_mps)
+            request = longitudinal_request(vehicle, scene, requested_speed_mps=effective_requested_speed_mps,
                                            path_curvature_per_m=route.curvature_per_m)
             if self._active_command is not None and self._active_command.requires_confirmation:
                 fuzzy = self.fuzzy_policy.evaluate(self._active_command, request)
@@ -220,10 +287,40 @@ class ControlRuntime:
                 safety_command = None
             safety = self.safety.arbitrate(raw_for_safety, safety_vehicle_state(vehicle, scene), safety_command,
                                            longitudinal.risk, tuple(expired_alerts))
+            if safety_override_reason is not None and not safety.safety_override:
+                # C may request a semantic emergency brake that is already a
+                # valid raw control. D keeps the final control but owns the
+                # override/lifecycle decision so the active command receives
+                # one auditable terminal status.
+                safety = replace(
+                    safety,
+                    safety_override=True,
+                    reason=safety_override_reason,
+                )
             final = ControlOutput(safety.final_control.throttle, safety.final_control.brake, safety.final_control.steer)
-            completed = self._completion_feedback(vehicle)
-            if completed is not None:
-                feedback.append(completed)
+            command_owned_override = (
+                safety.safety_override
+                and (
+                    safety.reason in _TERMINAL_SAFETY_REASONS
+                    or safety_override_reason is not None
+                )
+                and self._active_command_id is not None
+            )
+            if command_owned_override:
+                overridden = self.fsm.safety_override(
+                    self._active_command_id,
+                    now_s=vehicle.sim_time_s,
+                    detail=f"safety supervisor override: {safety.reason}",
+                )
+                if overridden is not None:
+                    feedback.append(overridden)
+                self.requested_speed_mps = 0.0
+                self._stop_hold = True
+                self._clear_active_command()
+            else:
+                completed = self._completion_feedback(vehicle)
+                if completed is not None:
+                    feedback.append(completed)
             return FrameResult(vehicle, final, longitudinal, safety.reason, safety.safety_override,
                                tuple(feedback), raw_for_safety, lateral)
         except Exception:
