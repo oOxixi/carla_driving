@@ -503,6 +503,11 @@ class ScenarioExtensionRuntime:
             "target_speed_mps": self._actor_speed_mps[actor_id],
             "traffic_light_state": self._traffic_light_state[actor_id],
             "event_index": self._actor_event_index.get(actor_id, 0),
+            "elapsed_since_event_s": (
+                None
+                if actor_id not in self._actor_event_time_s
+                else max(0.0, float(elapsed_s) - self._actor_event_time_s[actor_id])
+            ),
         }
 
     def evidence(self) -> dict[str, object]:

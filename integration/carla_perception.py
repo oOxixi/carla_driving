@@ -31,6 +31,9 @@ from .rgb_detector import driving_corridor_detections
 
 
 RGB_SENSOR_ID = "rgb_front"
+LEFT_RGB_SENSOR_ID = "rgb_left"
+RIGHT_RGB_SENSOR_ID = "rgb_right"
+REAR_RGB_SENSOR_ID = "rgb_rear"
 LIDAR_SENSOR_ID = "lidar_roof"
 RADAR_SENSOR_ID = "radar_front"
 COLLISION_SENSOR_ID = "collision"
@@ -38,6 +41,11 @@ LANE_INVASION_SENSOR_ID = "lane_invasion"
 REQUIRED_CONTINUOUS_SENSOR_IDS = (RGB_SENSOR_ID, LIDAR_SENSOR_ID)
 OPTIONAL_CONTINUOUS_SENSOR_IDS = (RADAR_SENSOR_ID,)
 CONTINUOUS_SENSOR_IDS = REQUIRED_CONTINUOUS_SENSOR_IDS + OPTIONAL_CONTINUOUS_SENSOR_IDS
+MULTIVIEW_RGB_SENSOR_IDS = (
+    LEFT_RGB_SENSOR_ID,
+    RIGHT_RGB_SENSOR_ID,
+    REAR_RGB_SENSOR_ID,
+)
 
 
 class PerceptionAcquisitionError(RuntimeError):
@@ -157,9 +165,42 @@ LOW_RESOURCE_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
     DEFAULT_SENSOR_SPECS[4],
 )
 
+COMPETITION_MULTIVIEW_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
+    DEFAULT_SENSOR_SPECS[0],
+    CarlaSensorSpec(
+        LEFT_RGB_SENSOR_ID,
+        "sensor.camera.rgb",
+        SensorMount(0.9, -0.65, 1.65, pitch_deg=-3.0, yaw_deg=-55.0),
+        MappingProxyType({
+            "image_size_x": "800", "image_size_y": "450", "fov": "100",
+            "sensor_tick": "0.05",
+        }),
+    ),
+    CarlaSensorSpec(
+        RIGHT_RGB_SENSOR_ID,
+        "sensor.camera.rgb",
+        SensorMount(0.9, 0.65, 1.65, pitch_deg=-3.0, yaw_deg=55.0),
+        MappingProxyType({
+            "image_size_x": "800", "image_size_y": "450", "fov": "100",
+            "sensor_tick": "0.05",
+        }),
+    ),
+    CarlaSensorSpec(
+        REAR_RGB_SENSOR_ID,
+        "sensor.camera.rgb",
+        SensorMount(-1.8, 0.0, 1.65, pitch_deg=-3.0, yaw_deg=180.0),
+        MappingProxyType({
+            "image_size_x": "800", "image_size_y": "450", "fov": "100",
+            "sensor_tick": "0.05",
+        }),
+    ),
+    *DEFAULT_SENSOR_SPECS[1:],
+)
+
 SENSOR_PROFILES: Mapping[str, tuple[CarlaSensorSpec, ...]] = MappingProxyType({
     "default": DEFAULT_SENSOR_SPECS,
     "low": LOW_RESOURCE_SENSOR_SPECS,
+    "competition_multiview": COMPETITION_MULTIVIEW_SENSOR_SPECS,
 })
 
 
@@ -240,6 +281,7 @@ class PerceptionSample:
     lidar: Any
     radar: Any | None
     safety_summary: SafetyStateSummary
+    multi_view_rgb: Mapping[str, Any] = field(default_factory=dict)
 
 
 def _make_transform(carla_api: Any, mount: SensorMount) -> Any:
@@ -631,8 +673,13 @@ class CarlaPerceptionBridge:
     ) -> PerceptionSample:
         """Acquire a frame or raise a fail-closed ``PerceptionAcquisitionError``."""
         try:
+            multiview_ids = tuple(
+                sensor_id
+                for sensor_id in MULTIVIEW_RGB_SENSOR_IDS
+                if sensor_id in self._sensors.actors
+            )
             aligned = self._session.frame_buffer.pop_aligned_optional(
-                REQUIRED_CONTINUOUS_SENSOR_IDS,
+                REQUIRED_CONTINUOUS_SENSOR_IDS + multiview_ids,
                 OPTIONAL_CONTINUOUS_SENSOR_IDS,
                 frame,
                 timeout_s=timeout_s,
@@ -650,6 +697,10 @@ class CarlaPerceptionBridge:
         sensor_ready_ns = time.monotonic_ns()
         rgb, lidar = aligned[RGB_SENSOR_ID], aligned[LIDAR_SENSOR_ID]
         radar = aligned.get(RADAR_SENSOR_ID)
+        multi_view_rgb = MappingProxyType({
+            sensor_id: aligned[sensor_id]
+            for sensor_id in multiview_ids
+        })
         for sensor_id, payload in aligned.items():
             payload_frame = getattr(payload, "frame", None)
             if payload_frame != frame:
@@ -657,6 +708,8 @@ class CarlaPerceptionBridge:
                     f"{sensor_id} payload frame={payload_frame!r}, expected frame={frame}"
                 )
         sources: dict[str, str] = {}
+        for sensor_id in multiview_ids:
+            sources[f"{sensor_id}_modality"] = "CARLA_RGB_EXACT_FRAME"
         detected_objects = ()
         corridor_objects = ()
         visual: VisualObservation
@@ -843,5 +896,5 @@ class CarlaPerceptionBridge:
         )
         return PerceptionSample(
             perception, sensor_ready_ns, MappingProxyType(sources),
-            rgb, lidar, radar, safety_summary,
+            rgb, lidar, radar, safety_summary, multi_view_rgb,
         )

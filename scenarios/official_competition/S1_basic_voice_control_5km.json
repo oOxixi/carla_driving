@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "OFFICIAL_S1_BASIC_VOICE_CONTROL_5KM",
+  "category": "regression",
+  "official_level": "basic",
+  "description": "官方场景1：晴天白天双向六车道城市主干道，5km连续驾驶与基础语音操控。",
+  "tags": ["official_competition", "scene_1", "basic_voice_control", "5km", "no_dynamic_interference"],
+  "map": "Town05",
+  "weather": "ClearNoon",
+  "seed": 20260101,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 420.0,
+    "max_startup_wait_s": 20.0
+  },
+  "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [[0.0, 0.0], [5000.0, 0.0]],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 4.0,
+    "distance_contract_m": 5000.0,
+    "route_generation": "CARLA waypoint topology; first required junction branch is RIGHT; remaining road follows the lane centre"
+  },
+  "commands": [
+    {
+      "time_s": 0.0,
+      "source_text": "保持当前车道，提速至60公里每小时",
+      "intent": "KEEP_LANE",
+      "parameters": {"target_speed_kph": 60.0},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S1_P1_KEEP_AND_ACCELERATE",
+      "trigger": {"type": "scenario_started"}
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "前方300米路口右转，转弯前减速至25公里每小时",
+      "intent": "TURN_RIGHT",
+      "parameters": {"target_speed_kph": 25.0},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S1_P2_RIGHT_TURN",
+      "trigger": {"type": "route_progress_greater_than_m", "value": 60.0}
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "出弯回正，保持当前车道并提速至50公里每小时",
+      "intent": "KEEP_LANE",
+      "parameters": {"target_speed_kph": 50.0},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S1_P3_EXIT_TURN_RECENTER",
+      "trigger": {
+        "all": [
+          {"type": "previous_command_terminal", "phase_id": "S1_P2_RIGHT_TURN"},
+          {"type": "route_progress_greater_than_m", "value": 110.0}
+        ]
+      }
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "确认左侧安全后，向左变道",
+      "intent": "CHANGE_LANE_LEFT",
+      "parameters": {"target_speed_kph": 45.0},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S1_P4_CHANGE_LEFT",
+      "trigger": {
+        "all": [
+          {"type": "previous_command_terminal", "phase_id": "S1_P3_EXIT_TURN_RECENTER"},
+          {"type": "route_progress_greater_than_m", "value": 160.0}
+        ]
+      }
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "减速至40公里每小时并保持车道",
+      "intent": "KEEP_LANE",
+      "parameters": {"target_speed_kph": 40.0},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S1_P5_DECELERATE_40",
+      "trigger": {
+        "all": [
+          {"type": "previous_command_terminal", "phase_id": "S1_P4_CHANGE_LEFT"},
+          {"type": "route_progress_greater_than_m", "value": 220.0}
+        ]
+      }
+    }
+  ],
+  "actors": [],
+  "sensors": {
+    "front_rgb": {"enabled": true, "width": 800, "height": 450, "fov": 100, "save_every_n_frames": 200},
+    "lidar": {"enabled": true, "channels": 32, "range_m": 80},
+    "radar": {"enabled": true, "range_m": 80},
+    "collision": {"enabled": true},
+    "lane_invasion": {"enabled": true},
+    "vehicle_state": {"speed": true, "steering": true, "position": true, "lane_offset": true, "route_deviation": true}
+  },
+  "controllers": {
+    "A_runtime": {"only_apply_control_owner": true},
+    "B_lateral": {"enabled": true},
+    "C_longitudinal": {"enabled": true},
+    "D_safety": {"enabled": true, "must_run_before_apply_control": true}
+  },
+  "logging": {
+    "required_files": ["frame_log.jsonl", "event_log.jsonl", "result.json", "score_report.json"],
+    "required_identifiers": ["scenario_id", "seed", "code_version", "config_path"],
+    "required_metrics": ["speed_mps", "lane_offset_m", "route_deviation_m", "steer", "collision", "lane_invasion", "red_light_violation", "command_terminal"]
+  },
+  "expected": {
+    "must_start_carla": true,
+    "must_spawn_ego": true,
+    "must_finish_route": true,
+    "must_no_collision": true,
+    "must_no_route_deviation": true,
+    "must_execute_commands_in_order": true,
+    "must_generate_logs": true,
+    "max_cross_track_error_m": 0.8,
+    "max_lane_center_offset_m": 0.25,
+    "max_steer_rate_per_s": 0.8,
+    "final_control_no_throttle_brake_overlap": true,
+    "min_run_time_s": 280.0
+  },
+  "competition_requirements": {
+    "environment": "晴天白天、城市主干道、同向至少3车道且对向至少3车道、无动态干扰",
+    "distance_km": 5.0,
+    "collision_max": 0,
+    "lane_invasion_max": 0,
+    "traffic_violation_max": 0,
+    "turn_lateral_error_max_m": 0.8,
+    "lane_offset_mean_max_m": 0.25,
+    "route_deviation_max_m": 1.0,
+    "end_to_end_p95_max_ms": 120,
+    "end_to_end_absolute_max_ms": 150
+  },
+  "extensions": {
+    "sensor_profile": "default",
+    "competition_scene": "S1",
+    "fixed_random_seed": true,
+    "no_background_traffic": true,
+    "route_policy": {"loop": false},
+    "runtime_support": {"status": "current", "requirements": [], "declared_requirements": []},
+    "phase_plan": ["S1_P1_KEEP_AND_ACCELERATE", "S1_P2_RIGHT_TURN", "S1_P3_EXIT_TURN_RECENTER", "S1_P4_CHANGE_LEFT", "S1_P5_DECELERATE_40"]
+  },
+  "notes": [
+    "正式运行由 CARLA 0.9.16 waypoint 生成真实道路中心线，不把5000m局部直线直接写入世界坐标。",
+    "Town05起点由拓扑选择器确定；另一系统首次验证时需确认所选道路确有双向6车道和约300m内右转路口。",
+    "本场景故意不生成任何背景车辆或行人，以满足无动态干扰。"
+  ]
+}

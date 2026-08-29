@@ -165,6 +165,66 @@ def test_scenario_vehicle_applies_updated_timeline_speed() -> None:
     assert vehicle.applied["brake"] == 0.0
 
 
+def test_event_driven_cut_in_waits_then_steers_and_recenters() -> None:
+    class Vector:
+        x = 0.0
+        y = 0.0
+        z = 0.0
+
+    class Transform:
+        @staticmethod
+        def get_forward_vector():
+            return Vector()
+
+    class Vehicle:
+        is_alive = True
+
+        @staticmethod
+        def get_velocity():
+            return Vector()
+
+        @staticmethod
+        def get_transform():
+            return Transform()
+
+        def apply_control(self, control):
+            self.applied = control
+
+    class CarlaApi:
+        @staticmethod
+        def VehicleControl(**values):
+            return values
+
+    actor = {"behavior": {
+        "mode": "cut_in", "cut_in_on_first_event": True,
+        "cut_in_duration_s": 3.0, "cut_in_steer": 0.18, "direction": "RIGHT",
+    }}
+    vehicle = Vehicle()
+    _update_scenario_vehicle(
+        vehicle, actor, 20.0, CarlaApi(), desired_speed_mps=4.0,
+        behavior_elapsed_s=None,
+    )
+    assert vehicle.applied["steer"] == 0.0
+
+    _update_scenario_vehicle(
+        vehicle, actor, 21.0, CarlaApi(), desired_speed_mps=4.0,
+        behavior_elapsed_s=0.5,
+    )
+    assert vehicle.applied["steer"] > 0.0
+
+    _update_scenario_vehicle(
+        vehicle, actor, 23.0, CarlaApi(), desired_speed_mps=4.0,
+        behavior_elapsed_s=2.0,
+    )
+    assert vehicle.applied["steer"] < 0.0
+
+    _update_scenario_vehicle(
+        vehicle, actor, 25.0, CarlaApi(), desired_speed_mps=4.0,
+        behavior_elapsed_s=4.0,
+    )
+    assert vehicle.applied["steer"] == 0.0
+
+
 def test_voice_load_failure_becomes_rejected_no_op() -> None:
     envelope = _rejected_load_envelope(FileNotFoundError("missing.wav"))
     adapted = VoiceCommandAdapter().adapt(envelope, now_s=1.0)

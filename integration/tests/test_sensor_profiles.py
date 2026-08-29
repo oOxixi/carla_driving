@@ -3,10 +3,14 @@ from __future__ import annotations
 import pytest
 
 from integration.carla_perception import (
+    COMPETITION_MULTIVIEW_SENSOR_SPECS,
     LIDAR_SENSOR_ID,
+    LEFT_RGB_SENSOR_ID,
     LOW_RESOURCE_SENSOR_SPECS,
     RADAR_SENSOR_ID,
+    REAR_RGB_SENSOR_ID,
     RGB_SENSOR_ID,
+    RIGHT_RGB_SENSOR_ID,
     sensor_specs_for_profile,
 )
 
@@ -36,3 +40,15 @@ def test_low_profile_reduces_gpu_and_lidar_load() -> None:
 def test_unknown_sensor_profile_is_rejected() -> None:
     with pytest.raises(ValueError, match="unknown sensor profile"):
         sensor_specs_for_profile("fast-but-undefined")
+
+
+def test_competition_multiview_profile_has_four_aligned_cameras() -> None:
+    specs = sensor_specs_for_profile("competition_multiview")
+    continuous = {item.sensor_id: item for item in specs if item.continuous}
+
+    assert specs is COMPETITION_MULTIVIEW_SENSOR_SPECS
+    assert {RGB_SENSOR_ID, LEFT_RGB_SENSOR_ID, RIGHT_RGB_SENSOR_ID, REAR_RGB_SENSOR_ID}.issubset(continuous)
+    assert {LIDAR_SENSOR_ID, RADAR_SENSOR_ID}.issubset(continuous)
+    assert continuous[LEFT_RGB_SENSOR_ID].mount.yaw_deg == -55.0
+    assert continuous[RIGHT_RGB_SENSOR_ID].mount.yaw_deg == 55.0
+    assert continuous[REAR_RGB_SENSOR_ID].mount.yaw_deg == 180.0

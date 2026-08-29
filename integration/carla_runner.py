@@ -949,6 +949,7 @@ def _update_scenario_vehicle(
     carla_api: Any,
     *,
     desired_speed_mps: float | None = None,
+    behavior_elapsed_s: float | None = None,
 ) -> None:
     """Apply a small deterministic speed controller to a scenario vehicle."""
     if lead is None or not getattr(lead, "is_alive", True):
@@ -964,11 +965,34 @@ def _update_scenario_vehicle(
     elif error > 0.15:
         throttle, brake = min(0.45, 0.12 + error / 6.0), 0.0
     else:
-        throttle, brake = (0.08 if desired > 0.1 else 0.0), 0.0
+        throttle, brake = (0.08 if desired > 0.1 else 0.0), (0.55 if desired <= 0.1 else 0.0)
+
+    behavior = actor_spec.get("behavior", {})
+    mode = str(behavior.get("mode", "")).strip().lower() if isinstance(behavior, Mapping) else ""
+    steer = 0.0
+    if mode == "cut_in":
+        event_driven = bool(behavior.get("cut_in_on_first_event", False))
+        if event_driven and behavior_elapsed_s is None:
+            maneuver_elapsed_s = -1.0
+        elif event_driven:
+            maneuver_elapsed_s = float(behavior_elapsed_s)
+        else:
+            maneuver_elapsed_s = float(elapsed_s) - float(behavior.get("cut_in_start_s", 2.0))
+        duration_s = max(0.5, float(behavior.get("cut_in_duration_s", 3.0)))
+        peak = min(0.35, max(0.05, abs(float(behavior.get("cut_in_steer", 0.18)))))
+        direction = str(behavior.get("direction", "RIGHT")).strip().upper()
+        sign = 1.0 if direction == "RIGHT" else -1.0
+        phase = maneuver_elapsed_s / duration_s
+        if 0.0 <= phase < 0.45:
+            steer = sign * peak
+        elif 0.45 <= phase < 0.90:
+            steer = -sign * peak * 0.70
+        elif 0.90 <= phase < 1.0:
+            steer = -sign * peak * 0.25
     lead.apply_control(carla_api.VehicleControl(
         throttle=throttle,
         brake=brake,
-        steer=0.0,
+        steer=steer,
         hand_brake=False,
         reverse=False,
         manual_gear_shift=False,
@@ -2040,6 +2064,13 @@ def run(args: argparse.Namespace) -> None:
         args.scenario = spec.scenario_id
         args.scenario_difficulty = spec.official_level
         args.evidence_seed = spec.seed if args.seed is None else args.seed
+        declared_sensor_profile = spec.extensions.get("sensor_profile")
+        if declared_sensor_profile is not None:
+            # Scene-owned sensor requirements are authoritative.  Resolving
+            # the profile here also fails before CARLA actor creation if a
+            # contract names an unavailable profile.
+            sensor_specs_for_profile(str(declared_sensor_profile))
+            args.sensor_profile = str(declared_sensor_profile)
         if args.seed is not None:
             args.spawn_index = args.seed
         owns_real_scene_actor = bool(
@@ -2264,14 +2295,6 @@ def run(args: argparse.Namespace) -> None:
         )
         if road_fit_required or seeded_route_anchor or adjacent_lane_anchor_required:
             maneuver = _scenario_maneuver(spec)
-            anchor_index, topology_route, anchor_score = select_topology_route_anchor(
-                world_map,
-                spawn_points,
-                maneuver=maneuver,
-                target_speed_mps=args.default_speed_mps,
-                distance_m=_scenario_route_distance_m(spec),
-                forbidden_points_xy=_traffic_light_stop_points(world),
-            )
             configured_anchor_index = spec.extensions.get("route_anchor_spawn_index")
             if configured_anchor_index is not None:
                 if isinstance(configured_anchor_index, bool) or not isinstance(configured_anchor_index, int):
@@ -2287,6 +2310,15 @@ def run(args: argparse.Namespace) -> None:
                     distance_m=_scenario_route_distance_m(spec),
                 )
                 anchor_score = 0.0
+            else:
+                anchor_index, topology_route, anchor_score = select_topology_route_anchor(
+                    world_map,
+                    spawn_points,
+                    maneuver=maneuver,
+                    target_speed_mps=args.default_speed_mps,
+                    distance_m=_scenario_route_distance_m(spec),
+                    forbidden_points_xy=_traffic_light_stop_points(world),
+                )
             route_anchor = spawn_points[anchor_index]
             seed_offset_m = float(getattr(args, "evidence_seed", 0) % 5) * 2.0
             if seeded_route_anchor and seed_offset_m > 0.0:
@@ -2671,6 +2703,7 @@ def run(args: argparse.Namespace) -> None:
                     _update_scenario_vehicle(
                         vehicle, vehicle_spec, elapsed_s, carla,
                         desired_speed_mps=actor_state.get("target_speed_mps"),
+                        behavior_elapsed_s=actor_state.get("elapsed_since_event_s"),
                     )
                 for walker, walker_spec, walker_target in scenario_walkers:
                     walker_behavior = walker_spec.get("behavior", {})
@@ -4107,7 +4140,7 @@ def main() -> None:
                         help="maximum ticks used to obtain the first aligned RGB/LiDAR frame")
     parser.add_argument("--sensor-startup-grace-frames", type=int, default=2,
                         help="initial perception misses that brake without permanently latching watchdog")
-    parser.add_argument("--sensor-profile", choices=("default", "low"), default="default",
+    parser.add_argument("--sensor-profile", choices=("default", "low", "competition_multiview"), default="default",
                         help="default uses full validation density; low reduces RGB/LiDAR/Radar load "
                              "for unstable Windows/UE4 hosts")
     parser.add_argument("--rgb-detector-model",

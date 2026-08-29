@@ -1,0 +1,195 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "OFFICIAL_S2_COMPLEX_AVOIDANCE_8KM",
+  "category": "regression",
+  "official_level": "advanced",
+  "description": "官方场景2：阴天傍晚城市次干道、十字路口、公交站和混合交通流，完成8km组合避障。",
+  "tags": ["official_competition", "scene_2", "complex_avoidance", "8km", "mixed_traffic", "return_to_route"],
+  "map": "Town03",
+  "weather": "CloudySunset",
+  "seed": 20260202,
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 1100.0, "max_startup_wait_s": 20.0},
+  "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [[0.0, 0.0], [8000.0, 0.0]],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 4.0,
+    "distance_contract_m": 8000.0,
+    "route_generation": "CARLA waypoint topology on urban secondary roads; obstacle manoeuvre uses a legal adjacent lane and returns to the original route"
+  },
+  "commands": [
+    {
+      "time_s": 0.0,
+      "source_text": "开始行驶，保持当前车道，速度30公里每小时",
+      "intent": "KEEP_LANE",
+      "parameters": {"target_speed_kph": 30.0},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S2_P1_START",
+      "trigger": {"type": "scenario_started"}
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "前方公交站有行人上下车，靠边减速至30公里每小时，确认安全后继续行驶",
+      "intent": "KEEP_LANE",
+      "parameters": {"target_speed_kph": 30.0, "target_actor_id": "bus_at_stop"},
+      "intent_confidence": 0.98,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S2_P2_BUS_STOP",
+      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 30.0}
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "看到前方横穿马路的行人，减速避让，确认行人离开后继续",
+      "intent": "SLOW_DOWN",
+      "parameters": {"target_actor_id": "crossing_pedestrian"},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S2_P3_PEDESTRIAN_YIELD",
+      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 42.0}
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "减速避让后向左变道超越前方慢车，超越完成后回归原车道",
+      "intent": "AVOID_OBSTACLE",
+      "parameters": {"direction": "LEFT", "target_actor_id": "slow_vehicle", "target_speed_kph": 28.0},
+      "intent_confidence": 0.98,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S2_P4_OVERTAKE_AND_RETURN",
+      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "slow_vehicle", "value": 48.0}
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "注意右前方非机动车，保持至少3米安全距离，平稳避让后回归路线",
+      "intent": "AVOID_OBSTACLE",
+      "parameters": {"direction": "LEFT", "target_actor_id": "bicycle_right", "target_speed_kph": 24.0},
+      "intent_confidence": 0.98,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S2_P5_BICYCLE_AVOID",
+      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bicycle_right", "value": 45.0}
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "bus_at_stop",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.mitsubishi.fusorosa",
+      "spawn": {"x": 42.0, "y": 3.5, "z": 0.5, "yaw_deg": 0.0},
+      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 0.0, "target_speed_mps": 0.0}
+    },
+    {
+      "actor_id": "bus_passenger_01",
+      "type": "walker.pedestrian",
+      "spawn": {"x": 40.0, "y": 5.5, "z": 0.5, "yaw_deg": -90.0},
+      "behavior": {"mode": "crossing", "target_xy_m": [40.0, 3.8], "start_time_s": 0.0, "speed_mps": 1.0}
+    },
+    {
+      "actor_id": "bus_passenger_02",
+      "type": "walker.pedestrian",
+      "spawn": {"x": 44.0, "y": 5.8, "z": 0.5, "yaw_deg": -90.0},
+      "behavior": {"mode": "crossing", "target_xy_m": [44.0, 4.0], "start_time_s": 1.0, "speed_mps": 1.0}
+    },
+    {
+      "actor_id": "crossing_pedestrian",
+      "type": "walker.pedestrian",
+      "spawn": {"x": 74.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
+      "behavior": {
+        "mode": "crossing",
+        "target_xy_m": [74.0, -6.0],
+        "start_time_s": 0.0,
+        "speed_mps": 1.5,
+        "trigger": {"type": "route_progress_greater_than_m", "value": 36.0},
+        "phase_id": "S2_EVT_PEDESTRIAN_CROSSING"
+      }
+    },
+    {
+      "actor_id": "slow_vehicle",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.audi.tt",
+      "spawn": {"x": 112.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 4.2, "target_speed_mps": 3.0, "brake_at_s": 8.0}
+    },
+    {
+      "actor_id": "private_car_left",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.tesla.model3",
+      "spawn": {"x": 90.0, "y": -3.5, "z": 0.5, "yaw_deg": 0.0},
+      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 6.0, "target_speed_mps": 6.0}
+    },
+    {
+      "actor_id": "bicycle_right",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.bh.crossbike",
+      "spawn": {"x": 148.0, "y": 1.1, "z": 0.5, "yaw_deg": 0.0},
+      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 2.5, "target_speed_mps": 2.0, "brake_at_s": 12.0}
+    }
+  ],
+  "sensors": {
+    "front_rgb": {"enabled": true, "width": 800, "height": 450, "fov": 100, "exact_frame": true},
+    "left_rgb": {"enabled": true, "width": 800, "height": 450, "yaw_deg": -55.0, "exact_frame": true},
+    "right_rgb": {"enabled": true, "width": 800, "height": 450, "yaw_deg": 55.0, "exact_frame": true},
+    "rear_rgb": {"enabled": true, "width": 800, "height": 450, "yaw_deg": 180.0, "exact_frame": true},
+    "lidar": {"enabled": true, "channels": 32, "range_m": 80, "exact_frame": true},
+    "radar": {"enabled": true, "range_m": 80},
+    "collision": {"enabled": true},
+    "lane_invasion": {"enabled": true},
+    "vehicle_state": {"speed": true, "steering": true, "position": true, "lane_offset": true, "route_deviation": true}
+  },
+  "controllers": {
+    "A_runtime": {"only_apply_control_owner": true},
+    "B_lateral": {"enabled": true, "return_to_route_phase": true},
+    "C_longitudinal": {"enabled": true},
+    "D_safety": {"enabled": true, "must_run_before_apply_control": true}
+  },
+  "logging": {
+    "required_files": ["frame_log.jsonl", "event_log.jsonl", "result.json", "score_report.json"],
+    "required_identifiers": ["scenario_id", "seed", "code_version", "config_path"],
+    "required_metrics": ["minimum_distance_m", "ttc_s", "collision", "lane_invasion", "route_deviation_m", "command_step_status", "command_terminal"]
+  },
+  "expected": {
+    "must_start_carla": true,
+    "must_spawn_ego": true,
+    "must_finish_route": true,
+    "must_no_collision": true,
+    "must_no_pedestrian_collision": true,
+    "must_execute_commands_in_order": true,
+    "must_generate_logs": true,
+    "required_real_actor_types": ["vehicle", "walker.pedestrian"],
+    "min_front_gap_m": 2.5,
+    "max_cross_track_error_m": 1.0,
+    "final_control_no_throttle_brake_overlap": true,
+    "expected_safety_override_allowed": true,
+    "min_run_time_s": 850.0
+  },
+  "competition_requirements": {
+    "environment": "阴天傍晚低光、城市次干道、十字路口、公交站、私家车/公交/非机动车/行人混合交通流",
+    "distance_km": 8.0,
+    "collision_max": 0,
+    "traffic_violation_max": 1,
+    "combination_missed_subcommands_max": 0,
+    "voice_accuracy_min": 0.96,
+    "semantic_alignment_min": 0.985,
+    "return_to_route_required": true,
+    "required_dynamic_object_classes": ["bus", "pedestrian", "slow_vehicle", "bicycle"]
+  },
+  "extensions": {
+    "sensor_profile": "competition_multiview",
+    "competition_scene": "S2",
+    "fixed_random_seed": true,
+    "route_anchor_spawn_index": 135,
+    "route_policy": {"loop": false},
+    "runtime_support": {"status": "current", "requirements": ["event_triggers", "actor_distance_trigger"], "declared_requirements": ["event_triggers", "actor_distance_trigger"]},
+    "phase_plan": ["S2_P1_START", "S2_P2_BUS_STOP", "S2_P3_PEDESTRIAN_YIELD", "S2_P4_OVERTAKE_AND_RETURN", "S2_P5_BICYCLE_AVOID"]
+  },
+  "notes": [
+    "公交、乘客、横穿行人、慢车、相邻车与自行车均为真实CARLA Actor，不使用只写在日志里的虚拟对象。",
+    "所有交互对象集中在前150m内以便快速完成场景加载与事件触发证明；之后继续完成8km稳定驾驶。",
+    "正式成绩使用 --perception-mode sensors --scenario-facts-mode perception。"
+  ]
+}

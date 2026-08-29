@@ -11,6 +11,7 @@
     "qwen_fullchain": "复杂指令到 ManeuverPlan、车辆动作和终态的正常闭环。",
     "qwen_faults": "模型超时、非法输出与执行中安全抢占。",
     "acceptance_suite": "东风赛道高质量验收套件 v2：83 个计分场景，不含 60 分钟长稳场景。"
+    ,"official_competition": "比赛文件要求的三类正式长里程场景：基础操控5km、复杂避障8km、极限应急6km。"
   },
   "official_level_mapping": {
     "basic": "基础场景：直道、控速、停车、保持车道、普通转向。",
@@ -70,6 +71,7 @@
     "qwen_fullchain": 2,
     "qwen_faults": 3,
     "acceptance_suite": 83,
-    "total": 129
+    "official_competition": 3,
+    "total": 132
   }
 }
