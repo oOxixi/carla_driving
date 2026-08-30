@@ -174,13 +174,14 @@
     "required_files": ["*.jsonl", "*.summary.json"],
     "required_summary_sections": ["acceptance", "latency", "score", "score_report", "command_terminal_statuses"],
     "required_identifiers": ["scenario_id", "seed", "code_version", "config_path"],
-    "required_metrics": ["minimum_distance_m", "ttc_s", "collision", "lane_invasion", "route_deviation_m", "qwen_route", "qwen_request_id", "qwen_plan", "qwen_latency_ms", "qwen_target_actor_id", "command_step_status", "command_terminal", "missed_subcommands", "sensor_to_control_ms"]
+    "required_metrics": ["minimum_distance_m", "minimum_actor_distances_m", "ttc_s", "collision", "lane_invasion", "lane_invasion_count", "route_deviation_m", "qwen_route", "qwen_request_id", "qwen_plan", "qwen_latency_ms", "qwen_target_actor_id", "command_step_status", "command_terminal", "missed_subcommands", "sensor_to_control_ms"]
   },
   "expected": {
     "must_start_carla": true,
     "must_spawn_ego": true,
     "must_finish_route": true,
     "must_no_collision": true,
+    "must_no_lane_invasion": true,
     "must_no_pedestrian_collision": true,
     "must_execute_commands_in_order": true,
     "must_generate_logs": true,
@@ -195,6 +196,7 @@
     "environment": "阴天傍晚低光、城市次干道、十字路口、公交站、私家车/公交/非机动车/行人混合交通流",
     "distance_km": 8.0,
     "collision_max": 0,
+    "lane_invasion_max": 0,
     "traffic_violation_max": 1,
     "combination_missed_subcommands_max": 0,
     "voice_accuracy_min": 0.96,
@@ -215,6 +217,13 @@
     "oracle": {
       "expected_behaviors": ["KEEP_LANE", "SLOW_DOWN", "AVOID_OBSTACLE", "RETURN_TO_LANE"]
     },
+    "maneuver_route_mode": "dynamic_out_and_back",
+    "lane_change_profile": {
+      "route_distance_m": 72.0,
+      "step_m": 1.0,
+      "transition_start_m": 8.0,
+      "transition_length_m": 30.0
+    },
     "proposed_acceptance": {
       "qwen_request_count": 5,
       "qwen_missing_request_count": 0,
@@ -222,13 +231,15 @@
       "expected_phase_count": 5,
       "all_phases_must_complete": true,
       "must_return_to_original_lane": true,
+      "minimum_actor_distances_m": {"bicycle_right": 3.0},
+      "maximum_route_deviation_m": 1.0,
       "qwen_calls_per_frame": 0,
       "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "YIELD", "AVOID_OBSTACLE", "CHANGE_LANE_LEFT", "RETURN_TO_LANE", "STOP"]
     },
     "fixed_random_seed": true,
     "route_anchor_spawn_index": 135,
     "route_policy": {"loop": false},
-    "runtime_support": {"status": "current", "requirements": ["event_triggers", "actor_distance_trigger"], "declared_requirements": ["event_triggers", "actor_distance_trigger"]},
+    "runtime_support": {"status": "current", "requirements": ["event_triggers", "actor_distance_trigger", "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance"], "declared_requirements": ["event_triggers", "actor_distance_trigger", "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance"]},
     "phase_plan": ["S2_P1_START", "S2_P2_BUS_STOP", "S2_P3_PEDESTRIAN_YIELD", "S2_P4_OVERTAKE_AND_RETURN", "S2_P5_BICYCLE_AVOID"]
   },
   "notes": [
@@ -237,6 +248,7 @@
     "正式成绩使用 --perception-mode sensors --scenario-facts-mode perception。",
     "起步速度为40km/h，公交站目标速度为30km/h，确保该阶段产生可量化的真实减速。",
     "四路严格同帧RGB按前/左、右/后布局拼接为Qwen视觉输入；LiDAR/Radar距离与车辆状态作为结构化感知同时进入计划请求。",
-    "自行车安全距离合同与指令统一为至少3.0m。"
+    "自行车安全距离合同与指令统一为至少3.0m，按双方CARLA碰撞盒的保守车身净空计算，不使用中心点距离冒充安全间距。",
+    "两次避障均动态生成驶出与返回路线；返回步骤完成后恢复原8km任务路线，禁止用直行路线冒充变道。"
   ]
 }

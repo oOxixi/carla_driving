@@ -123,6 +123,53 @@ def test_collision_and_override_are_counted_as_episodes(tmp_path):
     assert summary["score"]["final_score"] == 0.0
 
 
+def test_lane_invasion_is_counted_as_an_episode_and_checked(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "lane-invasion.jsonl")
+    recorder.start_run(scenario_id="OFFICIAL_S2")
+    for frame, active in ((1, True), (2, True), (3, False), (4, True)):
+        recorder.record_frame(
+            vehicle=_vehicle(frame, 2.0),
+            scene=PerceptionFrame(frame, frame * 0.05, lane_invasion=active),
+            raw_control=ControlOutput(0.1, 0.0, 0.0),
+            final_control=ControlOutput(0.1, 0.0, 0.0),
+            safety_reason="NONE", safety_override=False,
+            timing=_timing(frame * 100),
+        )
+
+    summary = recorder.complete(
+        completion=True,
+        expected={"must_no_lane_invasion": True},
+    )
+
+    assert summary["lane_invasion_count"] == 2
+    assert summary["status"] == "FAILED"
+    assert summary["acceptance"]["failed_keys"] == ["must_no_lane_invasion"]
+
+
+def test_expected_lane_change_crossing_is_audited_without_false_violation(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "legal-lane-change.jsonl")
+    recorder.start_run(scenario_id="OFFICIAL_S2")
+    recorder.record_frame(
+        vehicle=_vehicle(1, 4.0),
+        scene=PerceptionFrame(1, 0.05, lane_invasion=True),
+        raw_control=ControlOutput(0.1, 0.0, -0.2),
+        final_control=ControlOutput(0.1, 0.0, -0.2),
+        safety_reason="NONE",
+        safety_override=False,
+        timing=_timing(100),
+        lane_marking_crossing_expected=True,
+    )
+
+    summary = recorder.complete(
+        completion=True,
+        expected={"must_no_lane_invasion": True},
+    )
+
+    assert summary["lane_marking_crossing_count"] == 1
+    assert summary["lane_invasion_count"] == 0
+    assert summary["acceptance"]["passed"] is True
+
+
 def test_failure_always_emits_terminal_record_and_summary(tmp_path):
     path = tmp_path / "failed.jsonl"
     recorder = ScenarioEvidenceRecorder(path)

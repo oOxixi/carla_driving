@@ -97,3 +97,22 @@ powershell -ExecutionPolicy Bypass -File scripts/run_official_scenes.ps1 -Scene 
 
 如出现生成失败，请把控制台最后 100 行、对应场景 JSON、CARLA 服务端版本和生成的
 `.summary.json` 一并带回；这些信息足以定位是地图锚点、蓝图、碰撞盒还是触发阈值问题。
+
+## 第二组成员3：S2 服务器验收
+
+Linux 服务器从仓库根目录执行下列命令。`--smoke` 只验证启动、传感器、Actor 和 Qwen
+请求链路；8km 正式结果必须使用 `--run`。脚本会拒绝非生产 Qwen 后端，正式运行结束后
+自动生成同名 `.member3.json` 验收报告。
+
+```bash
+export QWEN_SERVICE_URL=http://127.0.0.1:18000
+bash scripts/run_official_s2_member3.sh --validate
+bash scripts/run_official_s2_member3.sh --smoke
+bash scripts/run_official_s2_member3.sh --run
+```
+
+成员3报告只有在以下证据同时满足时才通过：5条正常指令全部经 `QWEN_PLAN`；公交站减速、
+行人避让、慢车超越、自行车避让五阶段全部完成；两个避障计划均出现驶出、通过、返回并恢复
+原8km任务路线；自行车观测最小距离不低于3m；路线偏差不超过1m；碰撞和非计划车道侵入
+均为0；Qwen sensor-to-trajectory 最大延迟不超过150ms。原始合法车道线跨越次数另存为
+`lane_marking_crossing_count`，不会混同为违规侵线。

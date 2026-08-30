@@ -1,3 +1,4 @@
+import ast
 from argparse import Namespace
 import math
 from pathlib import Path
@@ -8,15 +9,19 @@ import pytest
 from car_control_A import RuntimeVehicleState
 from car_control_B.schemas import RouteReference, VehiclePose
 
+import integration.carla_runner as carla_runner
 from integration.carla_perception import EventLedger, PerceptionTimeoutError
 from integration.carla_runner import (
     _acceptance_lateral_controller,
+    _actor_bbox_clearance_m,
     _apply_compiled_plan_route,
     _apply_scenario_speed_limit,
     _bind_scenario_actor_ids,
     _load_command,
     _lead_vehicle_travel_m,
+    _lane_change_route_parameters,
     _map_contract_name,
+    _maneuver_target_distance_m,
     _maneuver_target_visible,
     _maneuver_target_gap_s,
     _minimum_gap_contract_completed,
@@ -42,6 +47,7 @@ from integration.carla_runner import (
     _scenario_actors,
     _scenario_raw_control_fault,
     _scenario_requires_adjacent_lane_anchor,
+    _scenario_uses_dynamic_out_and_back,
     _scenario_maneuver,
     _scenario_local_transform,
     _scenario_traffic_light_observation,
@@ -60,6 +66,44 @@ from integration.carla_runner import (
     _warm_up_sensor_bridge,
     _warm_up_loaded_map,
 )
+
+
+def test_scenario_vehicle_spawn_does_not_require_traffic_manager() -> None:
+    source = Path(carla_runner.__file__).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    spawn_body = next(
+        node for node in tree.body
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "_spawn_scenario_vehicle"
+    )
+    assert not any(
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "set_autopilot"
+        for node in ast.walk(spawn_body)
+    )
+
+
+def test_actor_bbox_clearance_is_body_to_body_and_conservative() -> None:
+    class Location:
+        def __init__(self, x: float, y: float) -> None:
+            self.x, self.y = x, y
+
+        def distance(self, other) -> float:
+            return math.hypot(self.x - other.x, self.y - other.y)
+
+    ego = Namespace(
+        get_location=lambda: Location(0.0, 0.0),
+        bounding_box=Namespace(extent=Namespace(x=2.0, y=1.0)),
+    )
+    bicycle = Namespace(
+        get_location=lambda: Location(8.0, 0.0),
+        bounding_box=Namespace(extent=Namespace(x=1.0, y=0.5)),
+    )
+
+    assert _actor_bbox_clearance_m(ego, bicycle) == pytest.approx(
+        8.0 - math.hypot(2.0, 1.0) - math.hypot(1.0, 0.5)
+    )
 from integration.contracts import DetectedObject, PerceptionFrame
 from integration.scenario_execution import ScenarioSpec
 from integration.voice_adapter import VoiceCommandAdapter
@@ -292,6 +336,34 @@ def test_compiled_maneuver_reuses_the_topology_validated_route() -> None:
     assert behavior == "CHANGE_LANE_LEFT"
 
 
+def test_s2_dynamic_lane_change_profile_has_outbound_stabilization_segment() -> None:
+    parameters = _lane_change_route_parameters({
+        "route_distance_m": 72.0,
+        "step_m": 1.0,
+        "transition_start_m": 8.0,
+        "transition_length_m": 30.0,
+    }, mission_distance_m=8000.0)
+
+    assert parameters == {
+        "distance_m": 72.0,
+        "step_m": 1.0,
+        "transition_start_m": 8.0,
+        "transition_length_m": 30.0,
+    }
+    assert _scenario_uses_dynamic_out_and_back(Namespace(
+        extensions={"maneuver_route_mode": "dynamic_out_and_back"},
+    )) is True
+
+
+def test_lane_change_profile_rejects_transition_without_stabilization() -> None:
+    with pytest.raises(ValueError, match="stabilization"):
+        _lane_change_route_parameters({
+            "route_distance_m": 35.0,
+            "transition_start_m": 10.0,
+            "transition_length_m": 25.0,
+        }, mission_distance_m=8000.0)
+
+
 def test_maneuver_target_visibility_does_not_confuse_generic_lidar_obstacles() -> None:
     vehicle_step = Namespace(target={"target_id": "legacy-vehicle-000"})
     vehicle = DetectedObject(2, "car", 0.9, (0.1, 0.2, 0.4, 0.8), 12.0)
@@ -313,6 +385,7 @@ def test_maneuver_target_gap_uses_bound_actor_distance() -> None:
     ))
 
     assert _maneuver_target_visible(step, scene)
+    assert _maneuver_target_distance_m(step, scene) == pytest.approx(12.0)
     assert _maneuver_target_gap_s(step, scene, 4.0) == pytest.approx(3.0)
 
 

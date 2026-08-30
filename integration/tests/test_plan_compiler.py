@@ -57,6 +57,10 @@ def test_return_to_lane_uses_explicit_deterministic_direction():
     compiled = PlanCompiler().compile(plan, scene={"return_direction": "RIGHT"})
     assert compiled.steps[0].behavior == "CHANGE_LANE_RIGHT"
     assert compiled.steps[0].completion["lane"] == "CURRENT"
+    assert compiled.steps[0].preconditions == (
+        "PERCEPTION_FRESH", "RIGHT_GAP_SAFE", "RIGHT_LANE_EXISTS",
+        "NO_EMERGENCY_RISK",
+    )
 
 
 def test_avoid_then_return_derives_opposite_direction_from_avoid_lane():
@@ -95,3 +99,6 @@ def test_avoid_then_return_derives_opposite_direction_from_avoid_lane():
 
     assert compiled.steps[-1].behavior == "CHANGE_LANE_RIGHT"
     assert compiled.steps[-1].target["target_lane"] == "CURRENT"
+    assert "RIGHT_LANE_EXISTS" in compiled.steps[-1].preconditions
+    assert "RIGHT_GAP_SAFE" in compiled.steps[-1].preconditions
+    assert "NO_EMERGENCY_RISK" in compiled.steps[-1].preconditions

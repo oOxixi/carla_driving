@@ -174,10 +174,14 @@ class ScenarioEvidenceRecorder:
         self._feedback_safety_event_count = 0
         self._override_active = False
         self._collisions = 0
+        self._lane_marking_crossings = 0
+        self._lane_invasions = 0
         self._red_violations = 0
         self._route_deviations = 0
         self._expected_route_deviation = False
         self._last_collision = False
+        self._last_lane_marking_crossing = False
+        self._last_lane_invasion = False
         self._last_red_violation = False
         self._last_route_deviation = False
         self._frame_decision_ms: list[float] = []
@@ -351,7 +355,8 @@ class ScenarioEvidenceRecorder:
                       longitudinal: object | None = None,
                       lateral: object | None = None,
                       perception_sources: Mapping[str, str] | None = None,
-                      c_safety_state: object | None = None) -> None:
+                      c_safety_state: object | None = None,
+                      lane_marking_crossing_expected: bool = False) -> None:
         """Record one applied control frame and update scenario aggregates."""
         self._ensure_active()
         if type(safety_override) is not bool:
@@ -425,6 +430,8 @@ class ScenarioEvidenceRecorder:
             self._stationary_stop_error_m = abs(float(stop_distance_m))
 
         collision = bool(_field(scene, "collision", False))
+        lane_marking_crossing = bool(_field(scene, "lane_invasion", False))
+        lane_invasion = lane_marking_crossing and not lane_marking_crossing_expected
         red_violation = bool(_field(scene, "red_light_violation", False))
         route_deviation_m = _field(scene, "route_deviation_m")
         route_deviation = (
@@ -432,9 +439,15 @@ class ScenarioEvidenceRecorder:
             and abs(float(route_deviation_m)) >= SERIOUS_ROUTE_DEVIATION_M
         )
         self._collisions += int(collision and not self._last_collision)
+        self._lane_marking_crossings += int(
+            lane_marking_crossing and not self._last_lane_marking_crossing
+        )
+        self._lane_invasions += int(lane_invasion and not self._last_lane_invasion)
         self._red_violations += int(red_violation and not self._last_red_violation)
         self._route_deviations += int(route_deviation and not self._last_route_deviation)
         self._last_collision = collision
+        self._last_lane_marking_crossing = lane_marking_crossing
+        self._last_lane_invasion = lane_invasion
         self._last_red_violation = red_violation
         self._last_route_deviation = route_deviation
 
@@ -473,6 +486,7 @@ class ScenarioEvidenceRecorder:
             longitudinal=_jsonable(longitudinal), lateral=_jsonable(lateral),
             raw_control=_jsonable(raw_control), final_control=_jsonable(final_control),
             safety={"override": safety_override, "reason": safety_reason},
+            lane_marking_crossing_expected=lane_marking_crossing_expected,
             latency=latency,
         )
 
@@ -480,7 +494,8 @@ class ScenarioEvidenceRecorder:
                              timing: FrameTiming, command_id: str | None = None,
                              fsm_state: str | None = None,
                              perception_sources: Mapping[str, str] | None = None,
-                             c_safety_state: object | None = None) -> None:
+                             c_safety_state: object | None = None,
+                             lane_marking_crossing_expected: bool = False) -> None:
         """Convenience adapter for :class:`integration.contracts.FrameResult`.
 
         ``raw_control`` stays mandatory: silently reconstructing it from the
@@ -495,6 +510,7 @@ class ScenarioEvidenceRecorder:
             timing=timing, command_id=command_id, fsm_state=fsm_state,
             longitudinal=_field(result, "longitudinal"), lateral=_field(result, "lateral"),
             perception_sources=perception_sources, c_safety_state=c_safety_state,
+            lane_marking_crossing_expected=lane_marking_crossing_expected,
         )
         for feedback in _field(result, "feedback", ()):
             self.record_feedback(feedback)
@@ -599,6 +615,8 @@ class ScenarioEvidenceRecorder:
             "min_gap_m": self._min_gap_m,
             "min_ttc_s": self._min_ttc_s,
             "collision_count": self._collisions,
+            "lane_marking_crossing_count": self._lane_marking_crossings,
+            "lane_invasion_count": self._lane_invasions,
             "red_light_violation_count": self._red_violations,
             "route_deviation_count": self._route_deviations,
             "serious_route_deviation": 0 if self._expected_route_deviation else self._route_deviations,
@@ -748,6 +766,8 @@ class ScenarioEvidenceRecorder:
             "logs_generated": self.path.exists(),
             "duration_s": duration_s,
             "collision_count": self._collisions,
+            "lane_marking_crossing_count": self._lane_marking_crossings,
+            "lane_invasion_count": self._lane_invasions,
             "red_light_violation_count": self._red_violations,
             "route_deviation_count": self._route_deviations,
             "max_speed_mps": self._max_speed_mps,
@@ -779,7 +799,8 @@ class ScenarioEvidenceRecorder:
             ),
             "event_count": (
                 self._safety_override_episodes + self._feedback_safety_event_count
-                + self._collisions + self._red_violations + self._route_deviations
+                + self._collisions + self._lane_invasions
+                + self._red_violations + self._route_deviations
             ),
             "emergency_brake_seen": self._emergency_brake_seen,
             "final_control_all_finite": self._final_controls_finite,

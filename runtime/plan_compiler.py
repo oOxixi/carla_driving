@@ -157,9 +157,15 @@ class PlanCompiler:
         target = dict(raw["target"])
         target["target_lane"] = "CURRENT"
         source_id = str(raw["step_id"])
+        lane_exists = f"{direction}_LANE_EXISTS"
+        gap_safe = f"{direction}_GAP_SAFE"
+        preconditions = tuple(dict.fromkeys(
+            tuple(str(item) for item in raw["preconditions"])
+            + ("PERCEPTION_FRESH", lane_exists, gap_safe, "NO_EMERGENCY_RISK")
+        ))
         return CompiledPlanStep(
             source_id, source_id, f"CHANGE_LANE_{direction}", target,
-            tuple(str(item) for item in raw["preconditions"]),
+            preconditions,
             {"type": "LANE_CENTERED", "value": None, "lane": "CURRENT", "hold_frames": int(raw["completion"]["hold_frames"])},
             float(raw["timeout_s"]), str(raw["on_failure"]),
         )

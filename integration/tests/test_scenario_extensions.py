@@ -677,3 +677,67 @@ def test_intentional_invalid_result_does_not_require_a_valid_behavior_oracle() -
     )
     assert result["passed"] is True
     assert all(item["key"] != "oracle_expected_behaviors" for item in result["checks"])
+
+
+def test_s2_actor_clearance_and_route_deviation_use_observed_minima() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "runtime_support": {
+            "requirements": ["per_actor_minimum_distance_acceptance"],
+        },
+    })
+    common = dict(
+        route_progress_m=20.0,
+        ego_speed_mps=6.0,
+        ego_standstill_duration_s=0.0,
+        traffic_light_state="UNKNOWN",
+        distance_to_stop_line_m=None,
+        lane_id="1",
+    )
+    runtime.update_frame(
+        elapsed_s=1.0,
+        actor_distances_m={"bicycle_right": 4.5, "slow_vehicle": 8.0},
+        route_deviation_m=0.4,
+        **common,
+    )
+    runtime.update_frame(
+        elapsed_s=2.0,
+        actor_distances_m={"bicycle_right": 3.2, "slow_vehicle": 6.0},
+        route_deviation_m=0.9,
+        **common,
+    )
+
+    result = runtime.evaluate(
+        {
+            "minimum_actor_distances_m": {"bicycle_right": 3.0},
+            "maximum_route_deviation_m": 1.0,
+        },
+        expected_command_count=0,
+    )
+
+    assert result["passed"] is True
+    actual = {item["key"]: item["actual"] for item in result["checks"]}
+    assert actual["minimum_actor_distances_m"] == {"bicycle_right": 3.2}
+    assert actual["maximum_route_deviation_m"] == 0.9
+
+
+def test_s2_actor_clearance_rejects_missing_or_too_close_bicycle_evidence() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.update_frame(
+        elapsed_s=1.0,
+        route_progress_m=20.0,
+        ego_speed_mps=6.0,
+        ego_standstill_duration_s=0.0,
+        actor_distances_m={"bicycle_right": 2.8},
+        traffic_light_state="UNKNOWN",
+        distance_to_stop_line_m=None,
+        lane_id="1",
+        route_deviation_m=0.2,
+    )
+
+    result = runtime.evaluate(
+        {"minimum_actor_distances_m": {"bicycle_right": 3.0}},
+        expected_command_count=0,
+    )
+
+    assert result["passed"] is False
+    assert result["failed_keys"] == ["minimum_actor_distances_m"]

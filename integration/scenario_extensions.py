@@ -34,6 +34,7 @@ IMPLEMENTED_RUNTIME_REQUIREMENTS = frozenset({
     "qwen_target_binding_acceptance", "qwen_timeout_injection",
     "raw_text_qwen_routing", "relative_speed_acceptance",
     "resource_stability_metrics", "restart_after_stop_acceptance",
+    "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance",
     "scenario_speed_limit", "stale_result_acceptance",
     "target_lane_safety_check", "visibility_acceptance",
 })
@@ -84,6 +85,7 @@ class ScenarioExtensionRuntime:
         self._actor_event_count = 0
         self._actor_event_time_s: dict[str, float] = {}
         self._actor_speed_mps: dict[str, float] = {}
+        self._minimum_actor_distances_m: dict[str, float] = {}
         self._traffic_light_state: dict[str, str] = {}
         self._initial_lane_id: str | None = None
         self._last_lane_id: str | None = None
@@ -304,6 +306,15 @@ class ScenarioExtensionRuntime:
             "ego_standstill_duration_s": float(ego_standstill_duration_s),
             "terminal_phase_ids": tuple(sorted(self._terminal_phase_ids)),
         }
+        for actor_id, distance_m in actor_distances_m.items():
+            distance = float(distance_m)
+            if not math.isfinite(distance) or distance < 0.0:
+                raise ValueError("actor distances must be finite and non-negative")
+            normalized_id = str(actor_id)
+            previous = self._minimum_actor_distances_m.get(normalized_id)
+            self._minimum_actor_distances_m[normalized_id] = (
+                distance if previous is None else min(previous, distance)
+            )
         if self._initial_lane_id is None:
             self._initial_lane_id = lane_id
         if self._last_lane_id is not None and lane_id != self._last_lane_id:
@@ -529,6 +540,7 @@ class ScenarioExtensionRuntime:
             "qwen_behaviors": list(self._qwen_behaviors),
             "qwen_target_actor_ids": sorted(self._qwen_target_ids),
             "qwen_target_speeds_kph": list(self._qwen_target_speeds_kph),
+            "minimum_actor_distances_m": dict(sorted(self._minimum_actor_distances_m.items())),
             "qwen_outcomes": list(self._qwen_outcomes),
             "qwen_resolution_reasons": list(self._qwen_resolution_reasons),
             "qwen_stale_result_count": self._qwen_stale_results,
@@ -650,6 +662,29 @@ class ScenarioExtensionRuntime:
                     and int(evidence["lane_change_count"]) >= 2
                 )
                 add(key, required is not True or actual, actual, True)
+            elif key == "minimum_actor_distances_m":
+                if not isinstance(required, Mapping):
+                    raise TypeError("minimum_actor_distances_m must be an object")
+                actual_distances = evidence["minimum_actor_distances_m"]
+                checks_by_actor = {
+                    str(actor_id): (
+                        actual_distances.get(str(actor_id)) is not None
+                        and float(actual_distances[str(actor_id)]) >= float(minimum_m)
+                    )
+                    for actor_id, minimum_m in required.items()
+                }
+                add(
+                    key,
+                    bool(checks_by_actor) and all(checks_by_actor.values()),
+                    {
+                        actor_id: actual_distances.get(actor_id)
+                        for actor_id in checks_by_actor
+                    },
+                    dict(required),
+                )
+            elif key == "maximum_route_deviation_m":
+                actual = float(evidence["max_route_deviation_m"])
+                add(key, actual <= float(required), actual, required)
             elif key == "must_not_change_lane":
                 actual = int(evidence["lane_change_count"]) == 0
                 add(key, required is not True or actual, actual, True)

@@ -86,6 +86,7 @@ def evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, obje
     simple_no_event = {
         "must_no_collision": "collision_count",
         "must_no_pedestrian_collision": "collision_count",
+        "must_no_lane_invasion": "lane_invasion_count",
         "must_no_route_deviation": "route_deviation_count",
     }
     for key, metric in simple_no_event.items():

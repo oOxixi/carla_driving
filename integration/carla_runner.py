@@ -10,6 +10,7 @@ import importlib
 import json
 import math
 import os
+import subprocess
 import sys
 import time
 import zipfile
@@ -143,10 +144,21 @@ def _maneuver_target_gap_s(
     ego_speed_mps: float,
 ) -> float | None:
     """Return time gap to the exact actor bound into the current plan."""
+    distance_m = _maneuver_target_distance_m(step, scene)
+    if distance_m is None:
+        return None
+    return distance_m / max(0.1, float(ego_speed_mps))
+
+
+def _maneuver_target_distance_m(
+    step: CompiledPlanStep | None,
+    scene: PerceptionFrame,
+) -> float | None:
+    """Return only the range of the actor explicitly bound to this step."""
     if step is None:
         return None
     target_id = str(step.target.get("target_id") or "")
-    distance_m = next(
+    return next(
         (
             float(item.distance_m)
             for item in scene.detected_objects
@@ -154,9 +166,6 @@ def _maneuver_target_gap_s(
         ),
         None,
     )
-    if distance_m is None:
-        return None
-    return distance_m / max(0.1, float(ego_speed_mps))
 
 
 def _record_maneuver_update(
@@ -259,6 +268,25 @@ def _speed_mps(vector: Any) -> float:
     return math.hypot(vector.x, vector.y)
 
 
+def _actor_bbox_clearance_m(ego: Any, actor: Any) -> float:
+    """Return conservative horizontal body-to-body clearance for two actors."""
+    center_distance_m = float(ego.get_location().distance(actor.get_location()))
+
+    def horizontal_radius(item: Any) -> float:
+        extent = getattr(getattr(item, "bounding_box", None), "extent", None)
+        if extent is None:
+            return 0.0
+        x, y = float(getattr(extent, "x", 0.0)), float(getattr(extent, "y", 0.0))
+        if not math.isfinite(x) or not math.isfinite(y) or x < 0.0 or y < 0.0:
+            return 0.0
+        return math.hypot(x, y)
+
+    return max(
+        0.0,
+        center_distance_m - horizontal_radius(ego) - horizontal_radius(actor),
+    )
+
+
 def _acceptance_lateral_controller() -> PurePursuitController:
     """Conservative CARLA tuning that cannot snap directly to full steering."""
     return PurePursuitController(PurePursuitParams(
@@ -340,6 +368,27 @@ def _scenario_requires_adjacent_lane_anchor(spec: ScenarioSpec) -> bool:
         and not isinstance(declared, (str, bytes))
         and "adjacent_lane_occupancy_acceptance" in declared
     )
+
+
+def _scenario_uses_dynamic_out_and_back(spec: ScenarioSpec | None) -> bool:
+    if spec is None:
+        return False
+    return str(spec.extensions.get("maneuver_route_mode", "")).strip().lower() == (
+        "dynamic_out_and_back"
+    )
+
+
+def _scenario_lane_change_profile(
+    spec: ScenarioSpec | None,
+) -> Mapping[str, object] | None:
+    if spec is None:
+        return None
+    profile = spec.extensions.get("lane_change_profile")
+    if profile is None:
+        return None
+    if not isinstance(profile, Mapping):
+        raise TypeError("extensions.lane_change_profile must be an object")
+    return profile
 
 
 def _traffic_light_stop_points(world: Any) -> tuple[tuple[float, float], ...]:
@@ -438,6 +487,7 @@ def _apply_compiled_plan_route(
     requested_speed_mps: float,
     distance_m: float,
     prevalidated_maneuver_route: RouteReference | None = None,
+    lane_change_profile: Mapping[str, object] | None = None,
 ) -> tuple[RouteReference, float, str | None]:
     """Apply validated route semantics; B still generates the actual reference."""
     steps = compiled_plan.get("steps")
@@ -473,14 +523,52 @@ def _apply_compiled_plan_route(
             distance_m=distance_m,
         )
     else:
+        route_parameters = _lane_change_route_parameters(
+            lane_change_profile, mission_distance_m=distance_m,
+        )
         route = build_lane_change_route_reference(
             world_map,
             ego,
             target_speed,
             direction=route_behavior.rsplit("_", 1)[-1],
-            distance_m=min(distance_m, 80.0),
+            **route_parameters,
         )
     return route, target_speed, route_behavior
+
+
+def _lane_change_route_parameters(
+    profile: Mapping[str, object] | None,
+    *,
+    mission_distance_m: float,
+) -> dict[str, float]:
+    """Validate the S2 comfort profile before it reaches CARLA topology code."""
+    raw = {} if profile is None else dict(profile)
+    allowed = {
+        "route_distance_m", "step_m", "transition_start_m", "transition_length_m",
+    }
+    unknown = set(raw) - allowed
+    if unknown:
+        raise ValueError(f"unsupported lane-change profile fields: {sorted(unknown)}")
+    defaults = {
+        "route_distance_m": min(float(mission_distance_m), 80.0),
+        "step_m": 1.0,
+        "transition_start_m": 10.0,
+        "transition_length_m": 30.0,
+    }
+    values = {
+        key: float(raw.get(key, default))
+        for key, default in defaults.items()
+    }
+    if any(not math.isfinite(value) or value <= 0.0 for value in values.values()):
+        raise ValueError("lane-change profile values must be finite and positive")
+    if values["transition_start_m"] + values["transition_length_m"] >= values["route_distance_m"]:
+        raise ValueError("lane-change route must retain a post-transition stabilization segment")
+    return {
+        "distance_m": values["route_distance_m"],
+        "step_m": values["step_m"],
+        "transition_start_m": values["transition_start_m"],
+        "transition_length_m": values["transition_length_m"],
+    }
 
 
 def _scene_from_world(
@@ -916,9 +1004,10 @@ def _spawn_scenario_vehicle(
     set_physics = getattr(lead, "set_simulate_physics", None)
     if callable(set_physics):
         set_physics(True)
-    set_autopilot = getattr(lead, "set_autopilot", None)
-    if callable(set_autopilot):
-        set_autopilot(False)
+    # New CARLA actors already start with autopilot disabled.  Calling
+    # set_autopilot(False) still creates/connects the default Traffic Manager
+    # RPC server (port 8000), which conflicts with the standard 2B vLLM port.
+    # These actors remain runner-owned through explicit target velocities.
     desired_speed = _scenario_vehicle_speed_mps(actor_spec, 0.0)
     set_velocity = getattr(lead, "set_target_velocity", None)
     if callable(set_velocity):
@@ -1646,14 +1735,33 @@ def _evidence_recorder(args: argparse.Namespace, spec: ScenarioSpec | None = Non
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     path = directory / f"{args.scenario}_{stamp}.jsonl"
     recorder = ScenarioEvidenceRecorder(path)
-    recorder.start_run(scenario_id=args.scenario, difficulty=getattr(args, "scenario_difficulty", "basic"), config={
+    config = {
         key: value for key, value in vars(args).items()
         if type(value) in (str, int, float, bool) or value is None
-    }, expected_route_deviation=(
+    }
+    config["seed"] = getattr(args, "evidence_seed", getattr(args, "seed", None))
+    config["config_path"] = getattr(args, "scenario_file", None)
+    config["code_version"] = os.environ.get("CARLA_DRIVING_CODE_VERSION") or _git_code_version()
+    recorder.start_run(scenario_id=args.scenario, difficulty=getattr(args, "scenario_difficulty", "basic"), config=config, expected_route_deviation=(
         spec is not None and spec.expected.get("expected_route_deviation_event") is True
     ))
     print(f"run log: {path}")
     return recorder
+
+
+def _git_code_version() -> str:
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=Path(__file__).resolve().parents[1],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2.0,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "UNKNOWN"
+    return completed.stdout.strip() or "UNKNOWN"
 
 
 def _rejected_load_envelope(error: BaseException) -> dict[str, object]:
@@ -2125,6 +2233,9 @@ def run(args: argparse.Namespace) -> None:
     maneuver_target_seen = False
     maneuver_target_pass_after_m: float | None = None
     maneuver_route_steps_applied: set[str] = set()
+    maneuver_mission_route: RouteReference | None = None
+    dynamic_out_and_back = _scenario_uses_dynamic_out_and_back(spec)
+    lane_change_profile = _scenario_lane_change_profile(spec)
     qwen_status = (
         "NOT_SUBMITTED" if qwen_enabled
         else "CANONICAL_READY" if args.qwen_service_url
@@ -2343,7 +2454,7 @@ def run(args: argparse.Namespace) -> None:
             if any(
                 str(item.envelope.get("intent", "")).upper() == "AVOID_OBSTACLE"
                 for item in spec.commands
-            ):
+            ) and not dynamic_out_and_back:
                 # Avoidance must leave the blocked corridor earlier than a
                 # comfort-oriented ordinary lane change.  The topology anchor
                 # has already proved that the adjacent lane is legal.
@@ -2582,6 +2693,7 @@ def run(args: argparse.Namespace) -> None:
                 )
             if (
                 spec is not None
+                and not dynamic_out_and_back
                 and prevalidated_avoid_route is None
                 and any(
                     str(item.envelope.get("intent", "")).upper() == "AVOID_OBSTACLE"
@@ -2638,8 +2750,8 @@ def run(args: argparse.Namespace) -> None:
                 ]:
                     actor_id = str(actor_spec.get("actor_id", ""))
                     if actor_id:
-                        actor_distances_m[actor_id] = float(
-                            ego.get_location().distance(actor.get_location())
+                        actor_distances_m[actor_id] = _actor_bbox_clearance_m(
+                            ego, actor,
                         )
                 route_progress_m = math.dist(
                     (origin[0], origin[1]), (state.x_m, state.y_m),
@@ -3429,14 +3541,12 @@ def run(args: argparse.Namespace) -> None:
                                 maneuver_target_seen = _maneuver_target_visible(
                                     maneuver_fsm.current_step, scene,
                                 )
-                                grounded_distances = tuple(
-                                    item.distance_m
-                                    for item in scene.detected_objects
-                                    if item.distance_m is not None
+                                grounded_target_distance_m = _maneuver_target_distance_m(
+                                    maneuver_fsm.current_step, scene,
                                 )
                                 maneuver_target_pass_after_m = (
-                                    max(10.0, min(grounded_distances) + 8.0)
-                                    if grounded_distances
+                                    max(10.0, grounded_target_distance_m + 8.0)
+                                    if grounded_target_distance_m is not None
                                     else None
                                 )
                                 maneuver_route_steps_applied.clear()
@@ -3457,6 +3567,17 @@ def run(args: argparse.Namespace) -> None:
                                     recorder=recorder,
                                     extension_runtime=extension_runtime,
                                 )
+                                lane_change_steps = tuple(
+                                    step for step in compiled_contract.steps
+                                    if step.behavior in {
+                                        "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
+                                    }
+                                )
+                                maneuver_mission_route = (
+                                    route
+                                    if dynamic_out_and_back and len(lane_change_steps) >= 2
+                                    else None
+                                )
                                 route, compiled_speed, route_behavior = _apply_compiled_plan_route(
                                     orchestration.compiled_plan,
                                     world_map=world_map,
@@ -3469,8 +3590,11 @@ def run(args: argparse.Namespace) -> None:
                                         else _scenario_route_distance_m(spec)
                                     ),
                                     prevalidated_maneuver_route=(
-                                        prevalidated_avoid_route or topology_route
+                                        None
+                                        if dynamic_out_and_back
+                                        else prevalidated_avoid_route or topology_route
                                     ),
+                                    lane_change_profile=lane_change_profile,
                                 )
                                 runtime.requested_speed_mps = compiled_speed
                                 if route_behavior is not None:
@@ -3635,10 +3759,18 @@ def run(args: argparse.Namespace) -> None:
                         safety_reason=c_perception_override_reason,
                         safety_override=True,
                     )
+                lane_marking_crossing_expected = False
                 if (
                     maneuver_fsm.plan is not None
                     and maneuver_fsm.state not in TERMINAL_STATES
                 ):
+                    maneuver_step_before_update = maneuver_fsm.current_step
+                    lane_marking_crossing_expected = (
+                        maneuver_step_before_update is not None
+                        and maneuver_step_before_update.behavior in {
+                            "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT", "RETURN_TO_LANE",
+                        }
+                    )
                     plan_capabilities = _planner_runtime_state(
                         world_map, ego, scene, route,
                     )
@@ -3744,6 +3876,26 @@ def run(args: argparse.Namespace) -> None:
                         )
                         if step_feedback is not None and recorder is not None:
                             recorder.record_feedback(step_feedback)
+                        if maneuver_mission_route is not None:
+                            route = replace(
+                                maneuver_mission_route,
+                                target_speed_mps=runtime.requested_speed_mps,
+                            )
+                            restore_payload = {
+                                "record_type": "qwen_mission_route_restored",
+                                "command_id": maneuver_fsm.plan.command_id,
+                                "plan_id": maneuver_fsm.plan.plan_id,
+                                "route_points": len(route.points_xy_m),
+                                "target_speed_mps": route.target_speed_mps,
+                            }
+                            print(json.dumps(restore_payload, ensure_ascii=False), flush=True)
+                            if recorder is not None:
+                                recorder.record_canonical_routing(
+                                    phase="MISSION_ROUTE_RESTORED",
+                                    command_id=maneuver_fsm.plan.command_id,
+                                    payload=restore_payload,
+                                )
+                            maneuver_mission_route = None
                     started_route_step = (
                         maneuver_update.current_step
                         if any(
@@ -3766,7 +3918,7 @@ def run(args: argparse.Namespace) -> None:
                             )
                             if step_speed is not None:
                                 runtime.requested_speed_mps = float(step_speed)
-                            if prevalidated_avoid_route is not None:
+                            if prevalidated_avoid_route is not None and not dynamic_out_and_back:
                                 # The acceptance scenario declares one legal
                                 # out-and-back detour. Keep that full route for
                                 # both the outbound and return semantic steps.
@@ -3787,17 +3939,20 @@ def run(args: argparse.Namespace) -> None:
                                     ),
                                 )
                             else:
+                                route_parameters = _lane_change_route_parameters(
+                                    lane_change_profile,
+                                    mission_distance_m=(
+                                        args.route_distance_m
+                                        if spec is None
+                                        else _scenario_route_distance_m(spec)
+                                    ),
+                                )
                                 route = build_lane_change_route_reference(
                                     world_map,
                                     ego,
                                     runtime.requested_speed_mps,
                                     direction=started_route_step.behavior.rsplit("_", 1)[-1],
-                                    distance_m=min(
-                                        80.0,
-                                        args.route_distance_m
-                                        if spec is None
-                                        else _scenario_route_distance_m(spec),
-                                    ),
+                                    **route_parameters,
                                 )
                             maneuver_route_steps_applied.add(started_route_step.step_id)
                             print(json.dumps({
@@ -3873,6 +4028,7 @@ def run(args: argparse.Namespace) -> None:
                         fsm_state=runtime.fsm.state.value,
                         perception_sources=perception_sources,
                         c_safety_state=c_safety_state,
+                        lane_marking_crossing_expected=lane_marking_crossing_expected,
                     )
 
                 frames_completed += 1
@@ -4006,6 +4162,7 @@ def run(args: argparse.Namespace) -> None:
             completion = completion and gap_contract_completion
         if qwen_enabled and intentional_qwen_failure_completion is None:
             completion = completion and qwen_ready and qwen_status == "READY"
+        qwen_contract_report = None
         if qwen_scenario_monitor is not None:
             qwen_contract_report = qwen_scenario_monitor.finalize()
             completion = completion and qwen_contract_report.passed
@@ -4047,6 +4204,10 @@ def run(args: argparse.Namespace) -> None:
                 "configured_route_deviation_trigger_m": route_deviation_trigger_m,
                 "spawned_scenario_actor_types": sorted(set(spawned_scenario_actor_types)),
                 "extension_acceptance": extension_report,
+                "qwen_acceptance": (
+                    None if qwen_contract_report is None
+                    else qwen_contract_report.to_dict()
+                ),
             }
             if extension_runtime is not None:
                 extension_event_count = int(

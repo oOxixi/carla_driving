@@ -119,11 +119,30 @@ def validate_all() -> dict[str, Any]:
     _require(s2["extensions"]["sensor_profile"] == "competition_multiview", "S2: multiview profile required")
     _require({"front_rgb", "left_rgb", "right_rgb", "rear_rgb", "lidar"}.issubset(s2["sensors"]), "S2: sensor set incomplete")
     _require(s2["competition_requirements"]["return_to_route_required"] is True, "S2: return-to-route required")
+    _require(s2["competition_requirements"]["lane_invasion_max"] == 0, "S2: lane invasion must be zero")
+    _require(s2["expected"]["must_no_lane_invasion"] is True, "S2: lane-invasion acceptance is required")
     _require(float(s2["commands"][0]["parameters"]["target_speed_kph"]) > 30.0, "S2: bus-stop phase needs a measurable deceleration")
     _require(float(s2["expected"]["min_front_gap_m"]) >= 3.0, "S2: bicycle clearance must be at least 3m")
     _require(s2["qwen_expected"]["min_calls"] == len(s2["commands"]), "S2: every combination command must call Qwen")
     _require(s2["qwen_expected"]["max_calls"] == len(s2["commands"]), "S2: unexpected Qwen call budget")
-    _require(s2["extensions"]["proposed_acceptance"]["must_return_to_original_lane"] is True, "S2: route return needs executable acceptance")
+    s2_extensions = s2["extensions"]
+    s2_acceptance = s2_extensions["proposed_acceptance"]
+    _require(s2_acceptance["must_return_to_original_lane"] is True, "S2: route return needs executable acceptance")
+    _require(
+        s2_acceptance["minimum_actor_distances_m"] == {"bicycle_right": 3.0},
+        "S2: bicycle-specific 3m clearance acceptance is required",
+    )
+    _require(float(s2_acceptance["maximum_route_deviation_m"]) <= 1.0, "S2: route deviation acceptance is too loose")
+    _require(s2_extensions.get("maneuver_route_mode") == "dynamic_out_and_back", "S2: dynamic out-and-back route required")
+    lane_profile = s2_extensions.get("lane_change_profile", {})
+    _require(float(lane_profile.get("route_distance_m", 0.0)) >= 60.0, "S2: manoeuvre route is too short")
+    _require(float(lane_profile.get("transition_start_m", -1.0)) >= 0.0, "S2: invalid lane transition start")
+    _require(float(lane_profile.get("transition_length_m", 0.0)) >= 20.0, "S2: lane transition is too abrupt")
+    runtime_requirements = set(s2_extensions["runtime_support"]["requirements"])
+    _require(
+        {"dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance"}.issubset(runtime_requirements),
+        "S2: runtime requirements do not declare the member-3 route/distance owners",
+    )
     passenger_triggers = [
         actor.get("behavior", {}).get("trigger")
         for actor in s2["actors"]
