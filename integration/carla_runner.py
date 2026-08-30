@@ -2879,6 +2879,7 @@ def run(args: argparse.Namespace) -> None:
                 sensor_startup_grace = False
                 qwen_rgb_measurement: Any | None = None
                 current_rgb: Any | None = None
+                current_multiview_rgb: Mapping[str, Any] = {}
                 sensor_ready_ns: int | None = None
                 perception_start_ns = time.monotonic_ns()
                 try:
@@ -2890,6 +2891,7 @@ def run(args: argparse.Namespace) -> None:
                         scene = sample.frame
                         qwen_rgb_measurement = sample.rgb
                         current_rgb = sample.rgb
+                        current_multiview_rgb = sample.multi_view_rgb
                         perception_sources = dict(sample.source_by_field)
                         c_safety_state = sample.safety_summary.to_dict()
                         c_speed_cap_mps = _c_safety_speed_cap_mps(c_safety_state)
@@ -3178,9 +3180,19 @@ def run(args: argparse.Namespace) -> None:
                             deferred.envelope.get("command_id", "")
                         )
                         if current_rgb is not None and qwen_image_stager is not None:
-                            rgb_ref = qwen_image_stager.stage(
-                                staged_command_id, current_rgb, frame_id=frame,
-                            )
+                            if current_multiview_rgb:
+                                rgb_ref = qwen_image_stager.stage_multiview(
+                                    staged_command_id,
+                                    {
+                                        "rgb_front": current_rgb,
+                                        **current_multiview_rgb,
+                                    },
+                                    frame_id=frame,
+                                )
+                            else:
+                                rgb_ref = qwen_image_stager.stage(
+                                    staged_command_id, current_rgb, frame_id=frame,
+                                )
                         image_staged_ns = time.monotonic_ns()
                         planner_state = _planner_runtime_state(
                             world_map, ego, scene, route,

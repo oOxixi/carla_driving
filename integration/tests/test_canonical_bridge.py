@@ -46,6 +46,24 @@ def test_directional_lane_change_keeps_declared_intent_and_direction() -> None:
     assert command["parameters"]["target_speed_mps"] == pytest.approx(12 / 3.6)
 
 
+def test_scenario_target_actor_alias_is_preserved_for_qwen_binding() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "avoid-bike",
+        "source_text": "避让右前方非机动车",
+        "intent": "AVOID_OBSTACLE",
+        "parameters": {
+            "target_actor_id": "bicycle_right",
+            "direction": "LEFT",
+        },
+        "confidence": 0.98,
+        "valid_duration_s": 30.0,
+    }, received_at_ns=100)
+
+    assert command["intent"] == "AVOID_OBSTACLE"
+    assert command["parameters"]["target_id"] == "bicycle_right"
+    assert command["parameters"]["direction"] == "LEFT"
+
+
 def test_legacy_perception_becomes_schema_valid_state_with_explicit_missing_radar() -> None:
     scene = PerceptionFrame(
         10, 0.5, lead_distance_m=10.0, lead_speed_mps=1.0,

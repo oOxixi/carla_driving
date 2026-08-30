@@ -11,7 +11,7 @@
   "runtime": {
     "sync_mode": true,
     "fixed_delta_seconds": 0.05,
-    "duration_s": 420.0,
+    "duration_s": 600.0,
     "max_startup_wait_s": 20.0
   },
   "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
@@ -96,6 +96,15 @@
     }
   ],
   "actors": [],
+  "qwen_expected": {
+    "route": "QWEN_PLAN",
+    "min_calls": 5,
+    "max_calls": 5,
+    "expected_behaviors": ["KEEP_LANE", "TURN_RIGHT", "CHANGE_LANE_LEFT"],
+    "expected_terminal": "SUCCEEDED",
+    "allowed_replans": 0,
+    "forbidden_low_level_fields": true
+  },
   "sensors": {
     "front_rgb": {"enabled": true, "width": 800, "height": 450, "fov": 100, "save_every_n_frames": 200},
     "lidar": {"enabled": true, "channels": 32, "range_m": 80},
@@ -111,9 +120,10 @@
     "D_safety": {"enabled": true, "must_run_before_apply_control": true}
   },
   "logging": {
-    "required_files": ["frame_log.jsonl", "event_log.jsonl", "result.json", "score_report.json"],
+    "required_files": ["*.jsonl", "*.summary.json"],
+    "required_summary_sections": ["acceptance", "latency", "score", "score_report", "command_terminal_statuses"],
     "required_identifiers": ["scenario_id", "seed", "code_version", "config_path"],
-    "required_metrics": ["speed_mps", "lane_offset_m", "route_deviation_m", "steer", "collision", "lane_invasion", "red_light_violation", "command_terminal"]
+    "required_metrics": ["speed_mps", "lane_offset_m", "route_deviation_m", "steer", "collision", "lane_invasion", "red_light_violation", "qwen_route", "qwen_request_id", "qwen_plan", "qwen_latency_ms", "command_step_status", "command_terminal", "sensor_to_control_ms"]
   },
   "expected": {
     "must_start_carla": true,
@@ -127,7 +137,7 @@
     "max_lane_center_offset_m": 0.25,
     "max_steer_rate_per_s": 0.8,
     "final_control_no_throttle_brake_overlap": true,
-    "min_run_time_s": 280.0
+    "min_run_time_s": 400.0
   },
   "competition_requirements": {
     "environment": "晴天白天、城市主干道、同向至少3车道且对向至少3车道、无动态干扰",
@@ -144,6 +154,24 @@
   "extensions": {
     "sensor_profile": "default",
     "competition_scene": "S1",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "oracle": {
+      "expected_behaviors": ["KEEP_LANE", "TURN_RIGHT", "CHANGE_LANE_LEFT"]
+    },
+    "proposed_acceptance": {
+      "qwen_request_count": 5,
+      "qwen_missing_request_count": 0,
+      "all_commands_must_have_terminal_status": true,
+      "expected_phase_count": 5,
+      "all_phases_must_complete": true,
+      "qwen_calls_per_frame": 0,
+      "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "TURN_RIGHT", "CHANGE_LANE_LEFT", "STOP"]
+    },
     "fixed_random_seed": true,
     "no_background_traffic": true,
     "route_policy": {"loop": false},
@@ -153,6 +181,7 @@
   "notes": [
     "正式运行由 CARLA 0.9.16 waypoint 生成真实道路中心线，不把5000m局部直线直接写入世界坐标。",
     "Town05起点由拓扑选择器确定；另一系统首次验证时需确认所选道路确有双向6车道和约300m内右转路口。",
-    "本场景故意不生成任何背景车辆或行人，以满足无动态干扰。"
+    "本场景故意不生成任何背景车辆或行人，以满足无动态干扰。",
+    "五条正常业务指令必须逐条进入Qwen Planner V2；缺少Qwen服务时正式启动脚本应拒绝运行。"
   ]
 }

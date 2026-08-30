@@ -59,6 +59,12 @@ def _validate_common(label: str, path: Path, data: dict[str, Any]) -> ScenarioSp
     _require(data["expected"]["must_no_collision"] is True, f"{label}: zero collision required")
     _require(data["expected"]["must_generate_logs"] is True, f"{label}: evidence logs required")
     _require(data["extensions"]["fixed_random_seed"] is True, f"{label}: fixed_random_seed marker required")
+    _require(data["extensions"].get("input_mode") == "raw_text_qwen", f"{label}: raw_text_qwen input required")
+    qwen_policy = data["extensions"].get("qwen_policy", {})
+    _require(isinstance(qwen_policy, dict), f"{label}: qwen_policy must be an object")
+    _require(qwen_policy.get("required_for_every_voice_event") is True, f"{label}: every normal voice event must be Qwen-audited")
+    _require(qwen_policy.get("high_level_only") is True, f"{label}: Qwen must remain high-level only")
+    _require(qwen_policy.get("safety_preemption") is True, f"{label}: local safety preemption required")
     _require(len(data["commands"]) >= 4, f"{label}: command/event sequence is incomplete")
     _require(all(command.get("phase_id") for command in data["commands"]), f"{label}: each command needs phase_id")
     actor_ids = _actor_ids(data)
@@ -67,6 +73,21 @@ def _validate_common(label: str, path: Path, data: dict[str, Any]) -> ScenarioSp
         trigger_actor = trigger.get("actor_id") if isinstance(trigger, dict) else None
         if trigger_actor is not None:
             _require(str(trigger_actor) in actor_ids, f"{label}: trigger references unknown actor {trigger_actor}")
+    required_qwen_metrics = {
+        "qwen_route", "qwen_request_id", "qwen_plan", "qwen_latency_ms",
+        "command_step_status", "command_terminal", "sensor_to_control_ms",
+    }
+    actual_metrics = set(data.get("logging", {}).get("required_metrics", ()))
+    _require(required_qwen_metrics.issubset(actual_metrics), f"{label}: Qwen/e2e evidence metrics incomplete")
+    _require(
+        data["logging"].get("required_files") == ["*.jsonl", "*.summary.json"],
+        f"{label}: evidence filenames must match ScenarioEvidenceRecorder outputs",
+    )
+    required_summary = {
+        "acceptance", "latency", "score", "score_report", "command_terminal_statuses",
+    }
+    actual_summary = set(data["logging"].get("required_summary_sections", ()))
+    _require(required_summary.issubset(actual_summary), f"{label}: summary evidence sections incomplete")
     return spec
 
 
@@ -84,6 +105,9 @@ def validate_all() -> dict[str, Any]:
     s1_intents = {command["intent"] for command in s1["commands"]}
     _require({"KEEP_LANE", "TURN_RIGHT", "CHANGE_LANE_LEFT"}.issubset(s1_intents), "S1: missing base manoeuvres")
     _require(s1["competition_requirements"]["lane_invasion_max"] == 0, "S1: lane invasion must be zero")
+    _require(s1["runtime"]["duration_s"] >= 500.0, "S1: runtime budget is too short for 5km with manoeuvres")
+    _require(s1["qwen_expected"]["min_calls"] == len(s1["commands"]), "S1: every command must call Qwen")
+    _require(s1["qwen_expected"]["max_calls"] == len(s1["commands"]), "S1: unexpected Qwen call budget")
 
     s2 = loaded["S2"]
     _require(s2["map"] == "Town03" and s2["weather"] == "CloudySunset", "S2: map/weather mismatch")
@@ -95,6 +119,17 @@ def validate_all() -> dict[str, Any]:
     _require(s2["extensions"]["sensor_profile"] == "competition_multiview", "S2: multiview profile required")
     _require({"front_rgb", "left_rgb", "right_rgb", "rear_rgb", "lidar"}.issubset(s2["sensors"]), "S2: sensor set incomplete")
     _require(s2["competition_requirements"]["return_to_route_required"] is True, "S2: return-to-route required")
+    _require(float(s2["commands"][0]["parameters"]["target_speed_kph"]) > 30.0, "S2: bus-stop phase needs a measurable deceleration")
+    _require(float(s2["expected"]["min_front_gap_m"]) >= 3.0, "S2: bicycle clearance must be at least 3m")
+    _require(s2["qwen_expected"]["min_calls"] == len(s2["commands"]), "S2: every combination command must call Qwen")
+    _require(s2["qwen_expected"]["max_calls"] == len(s2["commands"]), "S2: unexpected Qwen call budget")
+    _require(s2["extensions"]["proposed_acceptance"]["must_return_to_original_lane"] is True, "S2: route return needs executable acceptance")
+    passenger_triggers = [
+        actor.get("behavior", {}).get("trigger")
+        for actor in s2["actors"]
+        if str(actor.get("actor_id", "")).startswith("bus_passenger_")
+    ]
+    _require(all(isinstance(item, dict) for item in passenger_triggers), "S2: bus passengers must be ego-triggered")
 
     s3 = loaded["S3"]
     _require(s3["map"] == "Town04" and s3["weather"] == "HardRainNight", "S3: map/weather mismatch")
@@ -119,6 +154,16 @@ def validate_all() -> dict[str, Any]:
     weather = s3["extensions"]["weather_parameters"]
     _require(weather["precipitation"] >= 80 and weather["wetness"] == 100, "S3: heavy rain/wet road missing")
     _require(weather["sun_altitude_angle"] < 0 and weather["fog_density"] >= 30, "S3: night/fog conditions missing")
+    _require(s3["runtime"]["duration_s"] >= 800.0, "S3: runtime budget is too short for 6km at safe rain speed")
+    s3_qwen = s3["extensions"]["proposed_acceptance"]
+    _require(s3_qwen["qwen_request_count"] == 2, "S3: two normal semantic commands must call Qwen")
+    _require(s3["qwen_expected"]["route"] == "MIXED", "S3: mixed Qwen/safety routing contract required")
+    _require(
+        s3["qwen_expected"]["route_counts"]
+        == {"QWEN_PLAN": 2, "FAST_LOCAL": 2, "CONFIRM_SAFE": 0},
+        "S3: expected routes must be two Qwen plans and two local emergencies",
+    )
+    _require(s3["extensions"]["qwen_policy"].get("emergency_fast_local") is True, "S3: emergency fast-local exception must be explicit")
 
     ids = [spec.scenario_id for spec in specs.values()]
     _require(len(ids) == len(set(ids)), "scenario_id values must be unique")

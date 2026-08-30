@@ -739,7 +739,9 @@ class PipelineOrchestrator:
                 "intent": command["intent"],
                 "target_speed_mps": command["parameters"].get("target_speed_mps"),
                 "direction": command["parameters"].get("direction"),
-                "target": command["parameters"].get("target"),
+                "target": command["parameters"].get(
+                    "target", command["parameters"].get("target_id"),
+                ),
             },
             "rgb_ref": rgb_ref,
             "scene_summary": {

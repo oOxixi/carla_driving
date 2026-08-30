@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -10,6 +11,7 @@ from runtime.plan_validator import FORBIDDEN_LOW_LEVEL_FIELDS
 
 
 _ROUTES = frozenset({"FAST_LOCAL", "QWEN_PLAN", "CONFIRM_SAFE"})
+_EXPECTED_ROUTES = _ROUTES | {"MIXED"}
 _TERMINALS = frozenset({
     "SUCCEEDED", "FAILED", "REJECTED", "EXPIRED", "TIMED_OUT",
     "SAFETY_OVERRIDE", "CONFIRMING",
@@ -37,8 +39,24 @@ class QwenScenarioMonitor:
         if not isinstance(expected, Mapping):
             raise TypeError("qwen_expected must be a mapping")
         route = str(expected.get("route", ""))
-        if route not in _ROUTES:
+        if route not in _EXPECTED_ROUTES:
             raise ValueError("qwen_expected.route is invalid")
+        route_counts = expected.get("route_counts")
+        if route == "MIXED":
+            if not isinstance(route_counts, Mapping):
+                raise ValueError("mixed qwen_expected route requires route_counts")
+            normalized_counts = {
+                str(key).upper(): value for key, value in route_counts.items()
+            }
+            if (
+                not normalized_counts
+                or any(key not in _ROUTES for key in normalized_counts)
+                or any(
+                    type(value) is not int or isinstance(value, bool) or value < 0
+                    for value in normalized_counts.values()
+                )
+            ):
+                raise ValueError("qwen_expected.route_counts is invalid")
         minimum, maximum = expected.get("min_calls"), expected.get("max_calls")
         if (
             type(minimum) is not int or isinstance(minimum, bool)
@@ -131,10 +149,21 @@ class QwenScenarioMonitor:
         expected_reason_prefix = str(
             self.expected.get("expected_terminal_reason_prefix", "")
         ).upper()
+        expected_route = str(self.expected["route"])
+        route_passed = (
+            bool(self.routes)
+            and (
+                dict(Counter(self.routes)) == {
+                    str(key).upper(): int(value)
+                    for key, value in self.expected.get("route_counts", {}).items()
+                    if int(value) > 0
+                }
+                if expected_route == "MIXED"
+                else all(route == expected_route for route in self.routes)
+            )
+        )
         checks = {
-            "route": bool(self.routes) and all(
-                route == self.expected["route"] for route in self.routes
-            ),
+            "route": route_passed,
             "call_count": (
                 int(self.expected["min_calls"]) <= self.qwen_calls
                 <= int(self.expected["max_calls"])

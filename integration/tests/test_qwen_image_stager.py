@@ -57,3 +57,38 @@ def test_stager_decodes_native_carla_bgra_without_swapping_colors(tmp_path) -> N
     assert red > 240
     assert green < 15
     assert blue < 15
+
+
+def test_stager_builds_exact_frame_four_camera_montage(tmp_path) -> None:
+    stager = QwenImageStager(tmp_path, ref_prefix="frames")
+    colors = {
+        "rgb_front": (255, 0, 0),
+        "rgb_left": (0, 255, 0),
+        "rgb_right": (0, 0, 255),
+        "rgb_rear": (255, 255, 0),
+    }
+    measurements = {
+        sensor_id: SimpleNamespace(
+            rgb_array=np.full((8, 12, 3), color, dtype=np.uint8),
+            frame=42,
+        )
+        for sensor_id, color in colors.items()
+    }
+
+    reference = stager.stage_multiview("voice-multi", measurements, frame_id=42)
+    prepared = stager.prepare_request({"command_id": "voice-multi"})
+
+    assert prepared["rgb_ref"] == reference
+    assert "multiview" in reference
+    with Image.open(tmp_path / reference) as image:
+        image = image.convert("RGB")
+        samples = (
+            image.getpixel((56, 56)),
+            image.getpixel((168, 56)),
+            image.getpixel((56, 168)),
+            image.getpixel((168, 168)),
+        )
+    assert samples[0][0] > 240 and samples[0][1] < 15 and samples[0][2] < 15
+    assert samples[1][1] > 240 and samples[1][0] < 15 and samples[1][2] < 15
+    assert samples[2][2] > 240 and samples[2][0] < 15 and samples[2][1] < 15
+    assert samples[3][0] > 240 and samples[3][1] > 240 and samples[3][2] < 15

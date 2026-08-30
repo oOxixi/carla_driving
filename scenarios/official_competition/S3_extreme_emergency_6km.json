@@ -8,7 +8,7 @@
   "map": "Town04",
   "weather": "HardRainNight",
   "seed": 20260303,
-  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 520.0, "max_startup_wait_s": 20.0},
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 900.0, "max_startup_wait_s": 20.0},
   "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
   "route": {
     "coordinate_type": "scenario_local_xy_m",
@@ -64,6 +64,16 @@
       "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "emergency_pedestrian", "value": 42.0}
     }
   ],
+  "qwen_expected": {
+    "route": "MIXED",
+    "route_counts": {"QWEN_PLAN": 2, "FAST_LOCAL": 2, "CONFIRM_SAFE": 0},
+    "min_calls": 2,
+    "max_calls": 2,
+    "expected_behaviors": ["KEEP_LANE", "AVOID_OBSTACLE", "RETURN_TO_LANE", "EMERGENCY_STOP"],
+    "expected_terminal": "SUCCEEDED",
+    "allowed_replans": 0,
+    "forbidden_low_level_fields": true
+  },
   "actors": [
     {"actor_id": "construction_warning", "type": "static.prop", "blueprint_id": "static.prop.warningconstruction", "spawn": {"x": 48.0, "y": 2.8, "z": 0.5, "yaw_deg": 0.0}},
     {"actor_id": "cone_01", "type": "static.prop", "blueprint_id": "static.prop.trafficcone01", "spawn": {"x": 55.0, "y": 1.4, "z": 0.5, "yaw_deg": 0.0}},
@@ -125,9 +135,10 @@
     "D_safety": {"enabled": true, "must_run_before_apply_control": true, "local_preemption": true, "stop_hold_required": true}
   },
   "logging": {
-    "required_files": ["frame_log.jsonl", "event_log.jsonl", "result.json", "score_report.json"],
+    "required_files": ["*.jsonl", "*.summary.json"],
+    "required_summary_sections": ["acceptance", "latency", "score", "score_report", "command_terminal_statuses"],
     "required_identifiers": ["scenario_id", "seed", "code_version", "config_path"],
-    "required_metrics": ["danger_timestamp", "perception_timestamp", "decision_timestamp", "safety_override_timestamp", "control_effect_timestamp", "ttc_s", "minimum_distance_m", "collision", "traffic_violation", "command_terminal"]
+    "required_metrics": ["danger_timestamp", "perception_timestamp", "decision_timestamp", "safety_override_timestamp", "control_effect_timestamp", "ttc_s", "minimum_distance_m", "collision", "traffic_violation", "qwen_route", "qwen_request_id", "qwen_plan", "qwen_latency_ms", "command_step_status", "command_terminal", "sensor_to_control_ms"]
   },
   "expected": {
     "must_start_carla": true,
@@ -142,7 +153,7 @@
     "must_emergency_brake": true,
     "final_control_no_throttle_brake_overlap": true,
     "max_cross_track_error_m": 1.0,
-    "min_run_time_s": 400.0
+    "min_run_time_s": 700.0
   },
   "competition_requirements": {
     "environment": "雨天夜间、低光、路面反光、雨雾遮挡、城市快速路与施工路段、车道收窄",
@@ -153,6 +164,8 @@
     "emergency_response_p95_max_ms": 100,
     "emergency_response_absolute_max_ms": 120,
     "semantic_alignment_min": 0.97,
+    "normal_voice_qwen_calls": 2,
+    "emergency_fast_local_calls": 2,
     "required_events": ["construction_cones", "lane_narrowing", "vehicle_cut_in", "pedestrian_crossing"],
     "perception_failure_policy": "degraded_or_fail_safe_without_acceleration",
     "stop_hold_required": true
@@ -160,6 +173,24 @@
   "extensions": {
     "sensor_profile": "competition_multiview",
     "competition_scene": "S3",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true,
+      "emergency_fast_local": true
+    },
+    "oracle": {
+      "expected_behaviors": ["KEEP_LANE", "SLOW_DOWN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "EMERGENCY_STOP"]
+    },
+    "proposed_acceptance": {
+      "qwen_request_count": 2,
+      "all_commands_must_have_terminal_status": true,
+      "expected_phase_count": 4,
+      "all_phases_must_complete": true,
+      "qwen_calls_per_frame": 0,
+      "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "AVOID_OBSTACLE", "CHANGE_LANE_LEFT", "RETURN_TO_LANE", "STOP"]
+    },
     "fixed_random_seed": true,
     "weather_parameters": {"cloudiness": 100.0, "precipitation": 85.0, "precipitation_deposits": 100.0, "wetness": 100.0, "fog_density": 35.0, "fog_distance": 35.0, "wind_intensity": 65.0, "sun_altitude_angle": -25.0},
     "route_policy": {"loop": false},
@@ -169,6 +200,9 @@
   "notes": [
     "锥桶沿当前车道右侧逐步收窄，左侧相邻车道作为唯一正常并道路线上下文。",
     "加塞车停在左侧相邻车道，自车接近至32m后才启动确定性S形切入；正steer在CARLA中表示向右。",
-    "正式成绩使用 --perception-mode sensors --scenario-facts-mode perception，并检查五个应急时间戳。"
+    "正式成绩使用 --perception-mode sensors --scenario-facts-mode perception，并检查五个应急时间戳。",
+    "普通雨夜与施工语义指令进入Qwen Planner V2；加塞和行人EMERGENCY_STOP不等待模型，由本地安全链立即抢占并同时保留审计证据。",
+    "四路严格同帧RGB按前/左、右/后布局拼接为Qwen视觉输入；低光时LiDAR/Radar距离、TTC与车辆状态继续作为硬安全约束。",
+    "900秒运行预算按35km/h安全车速覆盖6km并为施工、加塞和停车保持预留时间。"
   ]
 }

@@ -21,9 +21,9 @@
   "commands": [
     {
       "time_s": 0.0,
-      "source_text": "开始行驶，保持当前车道，速度30公里每小时",
+      "source_text": "开始行驶，保持当前车道，速度40公里每小时",
       "intent": "KEEP_LANE",
-      "parameters": {"target_speed_kph": 30.0},
+      "parameters": {"target_speed_kph": 40.0},
       "intent_confidence": 0.99,
       "status": "valid",
       "confirm_required": false,
@@ -87,13 +87,27 @@
       "actor_id": "bus_passenger_01",
       "type": "walker.pedestrian",
       "spawn": {"x": 40.0, "y": 5.5, "z": 0.5, "yaw_deg": -90.0},
-      "behavior": {"mode": "crossing", "target_xy_m": [40.0, 3.8], "start_time_s": 0.0, "speed_mps": 1.0}
+      "behavior": {
+        "mode": "crossing",
+        "target_xy_m": [40.0, 3.8],
+        "start_time_s": 0.0,
+        "speed_mps": 1.0,
+        "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 38.0},
+        "phase_id": "S2_EVT_BUS_PASSENGER_01"
+      }
     },
     {
       "actor_id": "bus_passenger_02",
       "type": "walker.pedestrian",
       "spawn": {"x": 44.0, "y": 5.8, "z": 0.5, "yaw_deg": -90.0},
-      "behavior": {"mode": "crossing", "target_xy_m": [44.0, 4.0], "start_time_s": 1.0, "speed_mps": 1.0}
+      "behavior": {
+        "mode": "crossing",
+        "target_xy_m": [44.0, 4.0],
+        "start_time_s": 0.0,
+        "speed_mps": 1.0,
+        "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 34.0},
+        "phase_id": "S2_EVT_BUS_PASSENGER_02"
+      }
     },
     {
       "actor_id": "crossing_pedestrian",
@@ -130,6 +144,15 @@
       "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 2.5, "target_speed_mps": 2.0, "brake_at_s": 12.0}
     }
   ],
+  "qwen_expected": {
+    "route": "QWEN_PLAN",
+    "min_calls": 5,
+    "max_calls": 5,
+    "expected_behaviors": ["KEEP_LANE", "SLOW_DOWN", "AVOID_OBSTACLE", "RETURN_TO_LANE"],
+    "expected_terminal": "SUCCEEDED",
+    "allowed_replans": 0,
+    "forbidden_low_level_fields": true
+  },
   "sensors": {
     "front_rgb": {"enabled": true, "width": 800, "height": 450, "fov": 100, "exact_frame": true},
     "left_rgb": {"enabled": true, "width": 800, "height": 450, "yaw_deg": -55.0, "exact_frame": true},
@@ -148,9 +171,10 @@
     "D_safety": {"enabled": true, "must_run_before_apply_control": true}
   },
   "logging": {
-    "required_files": ["frame_log.jsonl", "event_log.jsonl", "result.json", "score_report.json"],
+    "required_files": ["*.jsonl", "*.summary.json"],
+    "required_summary_sections": ["acceptance", "latency", "score", "score_report", "command_terminal_statuses"],
     "required_identifiers": ["scenario_id", "seed", "code_version", "config_path"],
-    "required_metrics": ["minimum_distance_m", "ttc_s", "collision", "lane_invasion", "route_deviation_m", "command_step_status", "command_terminal"]
+    "required_metrics": ["minimum_distance_m", "ttc_s", "collision", "lane_invasion", "route_deviation_m", "qwen_route", "qwen_request_id", "qwen_plan", "qwen_latency_ms", "qwen_target_actor_id", "command_step_status", "command_terminal", "missed_subcommands", "sensor_to_control_ms"]
   },
   "expected": {
     "must_start_carla": true,
@@ -161,7 +185,7 @@
     "must_execute_commands_in_order": true,
     "must_generate_logs": true,
     "required_real_actor_types": ["vehicle", "walker.pedestrian"],
-    "min_front_gap_m": 2.5,
+    "min_front_gap_m": 3.0,
     "max_cross_track_error_m": 1.0,
     "final_control_no_throttle_brake_overlap": true,
     "expected_safety_override_allowed": true,
@@ -175,12 +199,32 @@
     "combination_missed_subcommands_max": 0,
     "voice_accuracy_min": 0.96,
     "semantic_alignment_min": 0.985,
+    "end_to_end_absolute_max_ms": 150,
     "return_to_route_required": true,
     "required_dynamic_object_classes": ["bus", "pedestrian", "slow_vehicle", "bicycle"]
   },
   "extensions": {
     "sensor_profile": "competition_multiview",
     "competition_scene": "S2",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "oracle": {
+      "expected_behaviors": ["KEEP_LANE", "SLOW_DOWN", "AVOID_OBSTACLE", "RETURN_TO_LANE"]
+    },
+    "proposed_acceptance": {
+      "qwen_request_count": 5,
+      "qwen_missing_request_count": 0,
+      "all_commands_must_have_terminal_status": true,
+      "expected_phase_count": 5,
+      "all_phases_must_complete": true,
+      "must_return_to_original_lane": true,
+      "qwen_calls_per_frame": 0,
+      "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "YIELD", "AVOID_OBSTACLE", "CHANGE_LANE_LEFT", "RETURN_TO_LANE", "STOP"]
+    },
     "fixed_random_seed": true,
     "route_anchor_spawn_index": 135,
     "route_policy": {"loop": false},
@@ -190,6 +234,9 @@
   "notes": [
     "公交、乘客、横穿行人、慢车、相邻车与自行车均为真实CARLA Actor，不使用只写在日志里的虚拟对象。",
     "所有交互对象集中在前150m内以便快速完成场景加载与事件触发证明；之后继续完成8km稳定驾驶。",
-    "正式成绩使用 --perception-mode sensors --scenario-facts-mode perception。"
+    "正式成绩使用 --perception-mode sensors --scenario-facts-mode perception。",
+    "起步速度为40km/h，公交站目标速度为30km/h，确保该阶段产生可量化的真实减速。",
+    "四路严格同帧RGB按前/左、右/后布局拼接为Qwen视觉输入；LiDAR/Radar距离与车辆状态作为结构化感知同时进入计划请求。",
+    "自行车安全距离合同与指令统一为至少3.0m。"
   ]
 }

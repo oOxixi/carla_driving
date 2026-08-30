@@ -89,7 +89,16 @@
         "expected_terminal", "allowed_replans", "forbidden_low_level_fields"
       ],
       "properties": {
-        "route": {"enum": ["FAST_LOCAL", "QWEN_PLAN", "CONFIRM_SAFE"]},
+        "route": {"enum": ["FAST_LOCAL", "QWEN_PLAN", "CONFIRM_SAFE", "MIXED"]},
+        "route_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "FAST_LOCAL": {"type": "integer", "minimum": 0},
+            "QWEN_PLAN": {"type": "integer", "minimum": 0},
+            "CONFIRM_SAFE": {"type": "integer", "minimum": 0}
+          }
+        },
         "min_calls": {"type": "integer", "minimum": 0},
         "max_calls": {"type": "integer", "minimum": 0},
         "expected_behaviors": {

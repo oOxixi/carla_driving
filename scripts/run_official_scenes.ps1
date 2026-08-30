@@ -6,7 +6,13 @@ param(
     [switch]$Smoke,
     [string]$HostAddress = '127.0.0.1',
     [int]$Port = 2000,
-    [string]$PythonExecutable = 'py'
+    [string]$PythonExecutable = '',
+    [string]$QwenServiceUrl = $env:QWEN_SERVICE_URL,
+    [ValidateSet('planner_v2')]
+    [string]$QwenMode = 'planner_v2',
+    [ValidateRange(1.0, 120.0)]
+    [double]$QwenTimeoutMs = 100.0,
+    [switch]$AllowNonProductionQwen
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,7 +23,37 @@ $scenePaths = [ordered]@{
     S3 = 'scenarios/official_competition/S3_extreme_emergency_6km.json'
 }
 $selected = if ($Scene -eq 'ALL') { @('S1', 'S2', 'S3') } else { @($Scene) }
-$pythonPrefix = if ($PythonExecutable -eq 'py') { @('-3.12') } else { @() }
+if ([string]::IsNullOrWhiteSpace($PythonExecutable)) {
+    if (Get-Command 'py' -ErrorAction SilentlyContinue) {
+        $PythonExecutable = 'py'
+    }
+    elseif (Get-Command 'python' -ErrorAction SilentlyContinue) {
+        $PythonExecutable = 'python'
+    }
+    else {
+        throw 'Python 3.12 was not found; pass -PythonExecutable with an explicit interpreter path.'
+    }
+}
+$pythonPrefix = if ([IO.Path]::GetFileNameWithoutExtension($PythonExecutable) -eq 'py') { @('-3.12') } else { @() }
+
+if (-not $ValidateOnly) {
+    if ([string]::IsNullOrWhiteSpace($QwenServiceUrl)) {
+        throw 'Official scenes require -QwenServiceUrl or QWEN_SERVICE_URL; Qwen bypass is forbidden.'
+    }
+    $qwenBaseUrl = $QwenServiceUrl.TrimEnd('/')
+    try {
+        $qwenHealth = Invoke-RestMethod -Method Get -Uri "$qwenBaseUrl/health" -TimeoutSec 10
+    }
+    catch {
+        throw "Qwen health check failed at $qwenBaseUrl/health`: $($_.Exception.Message)"
+    }
+    if ($qwenHealth.status -ne 'READY') {
+        throw "Qwen service is not READY: $($qwenHealth | ConvertTo-Json -Compress)"
+    }
+    if (-not $AllowNonProductionQwen -and $qwenHealth.production_ready -ne $true) {
+        throw 'Official evidence requires a production Qwen backend; deterministic test backend is forbidden.'
+    }
+}
 
 Push-Location -LiteralPath $projectRoot
 try {
@@ -47,6 +83,12 @@ try {
             '--realtime',
             '--print-every', '20',
             '--log-dir', 'artifacts/logs/official_competition',
+            '--qwen-service-url', $qwenBaseUrl,
+            '--qwen-mode', $QwenMode,
+            '--qwen-timeout-ms', [string]$QwenTimeoutMs,
+            '--qwen-queue-size', '1',
+            '--qwen-image-root', $projectRoot,
+            '--qwen-image-prefix', 'artifacts/runtime/qwen_official',
             '--scenario-file', $scenePaths[$id]
         )
         if ($Smoke) {

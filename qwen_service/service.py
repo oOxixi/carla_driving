@@ -519,6 +519,12 @@ class VllmQwenPlannerBackend:
         }
         compact = {
             "command": source_text,
+            "command_hint": request.get("command_hint", {}),
+            "visual_input": (
+                "2x2 montage: front, left / right, rear"
+                if "multiview" in str(request.get("rgb_ref", "")).lower()
+                else "front camera"
+            ),
             "scene": compact_scene,
             "targets": compact_targets,
             "constraints": request["constraints"],
@@ -542,6 +548,10 @@ class VllmQwenPlannerBackend:
         if targets and behavior in {
             "FOLLOW", "AVOID_OBSTACLE", "YIELD", "SLOW_DOWN", "STOP",
         }:
+            requested_target = (
+                str(hint.get("target", "")).strip()
+                if isinstance(hint, Mapping) else ""
+            )
             preferred_relations = (
                 {"center_ahead", "far_ahead"}
                 if behavior == "FOLLOW"
@@ -551,6 +561,12 @@ class VllmQwenPlannerBackend:
                 item for item in targets
                 if str(item.get("relation", "")).lower() in preferred_relations
             ]
+            explicitly_bound = [
+                item for item in targets
+                if requested_target and str(item.get("target_id", "")) == requested_target
+            ]
+            if explicitly_bound:
+                candidates = explicitly_bound
             if behavior == "FOLLOW":
                 typed_targets = [
                     item for item in candidates

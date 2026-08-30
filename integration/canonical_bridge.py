@@ -66,7 +66,10 @@ def voice_envelope_to_driving_command(
             direction = "RIGHT"
     if direction in {"LEFT", "RIGHT", "STRAIGHT"}:
         canonical_parameters["direction"] = direction
-    target_id = parameters.get("target_id")
+    # Scenario contracts historically used target_actor_id while the frozen
+    # canonical interface calls the same field target_id.  Preserve the
+    # explicit binding instead of forcing Qwen to guess among multiple actors.
+    target_id = parameters.get("target_id", parameters.get("target_actor_id"))
     if type(target_id) is str and target_id:
         canonical_parameters["target_id"] = target_id
     ttl_s = envelope.get("valid_duration_s", 3.0)

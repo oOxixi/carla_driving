@@ -116,3 +116,27 @@ def test_monitor_requires_configured_terminal_reason_prefix():
         reason_code="C_FRONT_PEDESTRIAN_VRU_SHORT_FRONT_DISTANCE",
     )
     assert semantic.finalize().passed is True
+
+
+def test_monitor_accepts_exact_mixed_qwen_and_fast_local_routes():
+    monitor = QwenScenarioMonitor(_expected(
+        route="MIXED",
+        route_counts={"QWEN_PLAN": 2, "FAST_LOCAL": 2, "CONFIRM_SAFE": 0},
+        min_calls=2,
+        max_calls=2,
+        expected_behaviors=["KEEP_LANE", "EMERGENCY_STOP"],
+        allowed_replans=0,
+    ))
+    monitor.record_routing("QWEN_PLAN", qwen_submitted=True, command_id="normal-1")
+    monitor.record_routing("QWEN_PLAN", qwen_submitted=True, command_id="normal-2")
+    monitor.record_routing("FAST_LOCAL", command_id="emergency-1")
+    monitor.record_routing("FAST_LOCAL", command_id="emergency-2")
+    monitor.record_behavior("KEEP_LANE")
+    monitor.record_behavior("EMERGENCY_STOP")
+    for command_id in ("normal-1", "normal-2", "emergency-1", "emergency-2"):
+        monitor.record_terminal("SUCCEEDED", command_id=command_id)
+
+    report = monitor.finalize()
+
+    assert report.passed is True
+    assert report.checks["route"] is True
