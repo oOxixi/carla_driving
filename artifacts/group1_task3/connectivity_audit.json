@@ -1,0 +1,142 @@
+{
+  "dataset_path": "C:\\Users\\bhwl\\carla_driving\\CARLA-Language-Benchmark\\datasets\\final_benchmark\\CARLA_language_benchmark_v1_normalized.json",
+  "record_count": 6192,
+  "template_group_count": 879,
+  "largest_template_group": 375,
+  "scene_group_count": 590,
+  "largest_scene_group": 452,
+  "explicit_seed_paths": {},
+  "connected_component_count": 285,
+  "largest_component_size": 455,
+  "largest_component_ratio": 0.07348191214470284,
+  "largest_components": [
+    {
+      "size": 455,
+      "template_count": 452,
+      "scene_count": 4,
+      "first_record_id": "carla_language_benchmark_v1_005002"
+    },
+    {
+      "size": 375,
+      "template_count": 1,
+      "scene_count": 3,
+      "first_record_id": "carla_language_benchmark_v1_000000"
+    },
+    {
+      "size": 375,
+      "template_count": 1,
+      "scene_count": 3,
+      "first_record_id": "carla_language_benchmark_v1_000001"
+    },
+    {
+      "size": 375,
+      "template_count": 1,
+      "scene_count": 3,
+      "first_record_id": "carla_language_benchmark_v1_000002"
+    },
+    {
+      "size": 375,
+      "template_count": 1,
+      "scene_count": 3,
+      "first_record_id": "carla_language_benchmark_v1_000003"
+    },
+    {
+      "size": 250,
+      "template_count": 1,
+      "scene_count": 6,
+      "first_record_id": "carla_language_benchmark_v1_003750"
+    },
+    {
+      "size": 250,
+      "template_count": 1,
+      "scene_count": 6,
+      "first_record_id": "carla_language_benchmark_v1_003751"
+    },
+    {
+      "size": 188,
+      "template_count": 1,
+      "scene_count": 3,
+      "first_record_id": "carla_language_benchmark_v1_002250"
+    },
+    {
+      "size": 188,
+      "template_count": 1,
+      "scene_count": 3,
+      "first_record_id": "carla_language_benchmark_v1_002251"
+    },
+    {
+      "size": 187,
+      "template_count": 1,
+      "scene_count": 3,
+      "first_record_id": "carla_language_benchmark_v1_002252"
+    },
+    {
+      "size": 187,
+      "template_count": 1,
+      "scene_count": 3,
+      "first_record_id": "carla_language_benchmark_v1_002253"
+    },
+    {
+      "size": 125,
+      "template_count": 1,
+      "scene_count": 3,
+      "first_record_id": "carla_language_benchmark_v1_001000"
+    },
+    {
+      "size": 125,
+      "template_count": 1,
+      "scene_count": 3,
+      "first_record_id": "carla_language_benchmark_v1_001001"
+    },
+    {
+      "size": 125,
+      "template_count": 1,
+      "scene_count": 3,
+      "first_record_id": "carla_language_benchmark_v1_001002"
+    },
+    {
+      "size": 125,
+      "template_count": 1,
+      "scene_count": 3,
+      "first_record_id": "carla_language_benchmark_v1_001003"
+    },
+    {
+      "size": 125,
+      "template_count": 1,
+      "scene_count": 2,
+      "first_record_id": "carla_language_benchmark_v1_001500"
+    },
+    {
+      "size": 125,
+      "template_count": 1,
+      "scene_count": 2,
+      "first_record_id": "carla_language_benchmark_v1_001501"
+    },
+    {
+      "size": 125,
+      "template_count": 1,
+      "scene_count": 2,
+      "first_record_id": "carla_language_benchmark_v1_001502"
+    },
+    {
+      "size": 125,
+      "template_count": 1,
+      "scene_count": 2,
+      "first_record_id": "carla_language_benchmark_v1_001503"
+    },
+    {
+      "size": 125,
+      "template_count": 1,
+      "scene_count": 2,
+      "first_record_id": "carla_language_benchmark_v1_001504"
+    }
+  ],
+  "scene_signature_rules": {
+    "uses_scene_generator": true,
+    "uses_scene_constraints": true,
+    "ignored_keys": [
+      "id",
+      "track_id"
+    ]
+  }
+}

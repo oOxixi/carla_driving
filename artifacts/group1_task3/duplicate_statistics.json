@@ -1,0 +1,15 @@
+{
+  "total_records": 6192,
+  "unique_content_records": 4102,
+  "duplicate_group_count": 997,
+  "records_in_duplicate_groups": 3087,
+  "extra_duplicate_copies": 2090,
+  "largest_duplicate_group": 6,
+  "duplicate_group_size_distribution": {
+    "2": 509,
+    "3": 183,
+    "4": 105,
+    "5": 100,
+    "6": 100
+  }
+}
