@@ -35,6 +35,7 @@ class PurePursuitParams:
     # acceptance smoke test; do not invert it from a screenshot alone.
     steer_sign: float = 1.0
     nearest_search_window: int | None = None
+    route_reacquire_search_window: int | None = None
 
 
 class PurePursuitController(LateralController):
@@ -90,6 +91,18 @@ class PurePursuitController(LateralController):
                 self._last_nearest_index = self._route_progress[
                     self._active_route_slot
                 ][1]
+                if p.route_reacquire_search_window is not None:
+                    # An out-and-back manoeuvre advances longitudinally while
+                    # its mission route is inactive.  Reacquire that bounded
+                    # gap once on restoration; the much smaller ordinary
+                    # frame window below then enforces physical continuity.
+                    self._last_nearest_index = find_nearest_index(
+                        points,
+                        vehicle.x_m,
+                        vehicle.y_m,
+                        start_index=self._last_nearest_index,
+                        search_window=p.route_reacquire_search_window,
+                    )
             self._active_route_points = points
         nearest = find_nearest_index(
             points,

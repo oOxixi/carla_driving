@@ -356,7 +356,8 @@ def _acceptance_lateral_controller() -> PurePursuitController:
         # Long competition routes revisit the same Town coordinates.  Track
         # only a physically reachable neighbourhood after the initial route
         # acquisition instead of choosing a later overlapping lap globally.
-        nearest_search_window=40,
+        nearest_search_window=2,
+        route_reacquire_search_window=50,
         # Calibrated against a CARLA 0.9.16 Model 3 closed-loop route run.
         steer_sign=1.0,
     ))

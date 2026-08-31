@@ -1408,6 +1408,8 @@ def test_acceptance_lateral_tuning_limits_steer_and_rate() -> None:
     assert controller.params.max_steer == pytest.approx(0.60)
     assert controller.params.max_steer_delta_per_step == pytest.approx(0.04)
     assert controller.params.min_lookahead_m >= 2.5
+    assert controller.params.nearest_search_window == 2
+    assert controller.params.route_reacquire_search_window == 50
 
 
 def test_map_warmup_restores_async_mode_left_by_interrupted_run() -> None:

@@ -80,7 +80,8 @@ def test_local_progress_does_not_jump_to_a_later_overlapping_lap() -> None:
 
 def test_route_progress_is_restored_after_temporary_manoeuvre_route() -> None:
     controller = PurePursuitController(PurePursuitParams(
-        nearest_search_window=10,
+        nearest_search_window=2,
+        route_reacquire_search_window=50,
         max_steer_delta_per_step=1.0,
     ))
     mission = RouteReference(
@@ -94,6 +95,30 @@ def test_route_progress_is_restored_after_temporary_manoeuvre_route() -> None:
 
     assert controller.step(VehiclePose(20.0, 0.0, 0.0, 5.0), mission).nearest_index == 20
     controller.step(VehiclePose(20.0, 3.5, 0.0, 4.0), manoeuvre)
-    restored = controller.step(VehiclePose(25.0, 0.0, 0.0, 5.0), mission)
+    restored = controller.step(VehiclePose(60.0, 0.0, 0.0, 5.0), mission)
 
-    assert restored.nearest_index == 25
+    assert restored.nearest_index == 60
+
+
+def test_small_frame_window_prevents_gradual_progress_jump_on_overlap() -> None:
+    controller = PurePursuitController(PurePursuitParams(
+        nearest_search_window=2,
+        route_reacquire_search_window=50,
+        max_steer_delta_per_step=1.0,
+    ))
+    reference = RouteReference(
+        points_xy_m=[
+            *((float(index), 0.0) for index in range(21)),
+            *((float(index), 0.0) for index in range(20, -1, -1)),
+        ],
+        target_speed_mps=5.0,
+    )
+
+    output = None
+    for frame in range(26):
+        output = controller.step(
+            VehiclePose(frame * 0.4, 0.0, 0.0, 5.0), reference,
+        )
+
+    assert output is not None
+    assert output.nearest_index == 10
