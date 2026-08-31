@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "DEMO_05_night_rain",
+  "category": "demo",
+  "official_level": "challenge",
+  "description": "夜间大雨+行人12m横穿：恶劣天气下的感知与安全兜底测试。",
+  "tags": ["demo", "night", "rain", "adverse_weather", "safety"],
+  "map": "Town03",
+  "weather": "HardRainNight",
+  "seed": 5,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 30,
+    "max_startup_wait_s": 10,
+    "sim_ticks_per_round": 20
+  },
+  "ego_spawn": {
+    "use_map_spawn_points": true,
+    "initial_speed_kph": 10
+  },
+  "route": {
+    "coordinate_type": "carla_waypoints",
+    "note": "直行，无固定路线"
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "保持车道以20km/h行驶",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 20
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "ped_001",
+      "type": "walker.pedestrian.0001",
+      "spawn": {
+        "use_relative": true,
+        "rel_x_m": 12,
+        "rel_y_m": -4,
+        "z": 0.5,
+        "yaw_deg": 90
+      },
+      "behavior": {
+        "mode": "crossing",
+        "target_xy_m": [12, 4],
+        "start_time_s": 1,
+        "speed_mps": 1.5
+      }
+    },
+    {
+      "actor_id": "obstacle_car",
+      "type": "vehicle.audi.a2",
+      "spawn": {
+        "use_relative": true,
+        "rel_x_m": 35,
+        "rel_y_m": 0,
+        "z": 0.5,
+        "yaw_deg": 0
+      },
+      "behavior": {
+        "mode": "static"
+      }
+    }
+  ],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 1
+    },
+    "lidar": {
+      "enabled": true,
+      "range": 80,
+      "rotation_frequency": 20,
+      "channels": 32,
+      "points_per_second": 224000
+    },
+    "collision": {
+      "enabled": true
+    }
+  },
+  "expected": {
+    "must_no_pedestrian_collision": true,
+    "expected_safety_override_allowed": true
+  },
+  "notes": [
+    "恶劣天气下RGB可能看不清行人，应主要依赖LiDAR距离+ D安全层兜底",
+    "说“加速”→ 近距离行人强制EMERGENCY_STOP",
+    "若画面过暗，可先用DEMO_01验证视觉链路"
+  ]
+}

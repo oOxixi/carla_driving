@@ -1,0 +1,118 @@
+[
+  {
+    "idx": 1,
+    "timestamp": "2026-08-02T00:01:16.259588",
+    "audio_len_s": 1.7,
+    "asr_text": "加速。",
+    "voice_intent": "SPEED_UP",
+    "voice_confidence": 0.95,
+    "voice_latency": {
+      "voice_total": 5406.0,
+      "voice_asr": 125.0,
+      "voice_nlu": 0.0,
+      "carla_tick": 484.0,
+      "qwen": 0
+    },
+    "perception": {
+      "front_distance_m": 35.0,
+      "ttc_s": 12.8,
+      "ego_speed_mps": 2.7,
+      "collision": false
+    },
+    "d_safety_action": null,
+    "d_safety_reason": null,
+    "qwen_action": null,
+    "qwen_confidence": null,
+    "final_action": "SPEED_UP",
+    "final_source": "VOICE",
+    "final_reason": "",
+    "snap_path": "D:\\nana\\carla_driving-new\\carla_driving-new\\demo_final\\results\\snapshots\\snap_20260802_000116_246205.jpg"
+  },
+  {
+    "idx": 2,
+    "timestamp": "2026-08-02T00:01:27.736500",
+    "audio_len_s": 2.0,
+    "asr_text": "加速。",
+    "voice_intent": "SPEED_UP",
+    "voice_confidence": 0.95,
+    "voice_latency": {
+      "voice_total": 187.0,
+      "voice_asr": 187.0,
+      "voice_nlu": 0.0,
+      "carla_tick": 485.0,
+      "qwen": 0
+    },
+    "perception": {
+      "front_distance_m": null,
+      "ttc_s": null,
+      "ego_speed_mps": 2.8,
+      "collision": false
+    },
+    "d_safety_action": null,
+    "d_safety_reason": null,
+    "qwen_action": null,
+    "qwen_confidence": null,
+    "final_action": "SPEED_UP",
+    "final_source": "VOICE",
+    "final_reason": "",
+    "snap_path": "D:\\nana\\carla_driving-new\\carla_driving-new\\demo_final\\results\\snapshots\\snap_20260802_000127_730970.jpg"
+  },
+  {
+    "idx": 3,
+    "timestamp": "2026-08-02T00:02:11.313641",
+    "audio_len_s": 2.4,
+    "asr_text": "麻。",
+    "voice_intent": "UNKNOWN",
+    "voice_confidence": 0.0,
+    "voice_latency": {
+      "voice_total": 203.0,
+      "voice_asr": 203.0,
+      "voice_nlu": 0.0,
+      "carla_tick": 359.0,
+      "qwen": 4641.0
+    },
+    "perception": {
+      "front_distance_m": null,
+      "ttc_s": null,
+      "ego_speed_mps": 2.8,
+      "collision": false
+    },
+    "d_safety_action": null,
+    "d_safety_reason": null,
+    "qwen_action": "STOP",
+    "qwen_confidence": 0.95,
+    "final_action": "STOP",
+    "final_source": "QWEN-VL",
+    "final_reason": "前方有行人正在横穿马路，视觉安全优先，禁止加速或继续行驶。",
+    "snap_path": "D:\\nana\\carla_driving-new\\carla_driving-new\\demo_final\\results\\snapshots\\snap_20260802_000206_669349.jpg"
+  },
+  {
+    "idx": 4,
+    "timestamp": "2026-08-02T00:02:43.022624",
+    "audio_len_s": 3.7,
+    "asr_text": "减速。",
+    "voice_intent": "SLOW_DOWN",
+    "voice_confidence": 0.95,
+    "voice_latency": {
+      "voice_total": 219.0,
+      "voice_asr": 219.0,
+      "voice_nlu": 0.0,
+      "carla_tick": 406.0,
+      "qwen": 0
+    },
+    "perception": {
+      "front_distance_m": 26.8,
+      "ttc_s": 9.7,
+      "ego_speed_mps": 2.8,
+      "collision": false
+    },
+    "d_safety_action": null,
+    "d_safety_reason": null,
+    "qwen_action": null,
+    "qwen_confidence": null,
+    "final_action": "SLOW_DOWN",
+    "final_source": "VOICE",
+    "final_reason": "",
+    "snap_path": "D:\\nana\\carla_driving-new\\carla_driving-new\\demo_final\\results\\snapshots\\snap_20260802_000243_014890.jpg"
+  }
+]
