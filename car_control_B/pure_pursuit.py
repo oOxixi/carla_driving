@@ -42,14 +42,19 @@ class PurePursuitController(LateralController):
         self.params = params or PurePursuitParams()
         self._last_steer = 0.0
         self._last_nearest_index = 0
-        self._active_route_key: int | None = None
-        self._nearest_index_by_route: dict[int, int] = {}
+        self._active_route_points: object | None = None
+        self._active_route_slot: int | None = None
+        # Retain the actual point containers.  Integer ``id`` keys are unsafe
+        # here because short-lived manoeuvre routes can be collected and a
+        # later route can reuse the same address with unrelated progress.
+        self._route_progress: list[tuple[object, int]] = []
 
     def reset(self) -> None:
         self._last_steer = 0.0
         self._last_nearest_index = 0
-        self._active_route_key = None
-        self._nearest_index_by_route.clear()
+        self._active_route_points = None
+        self._active_route_slot = None
+        self._route_progress.clear()
 
     def _lookahead(self, speed_mps: float, curvature_per_m: float = 0.0) -> float:
         p = self.params
@@ -62,17 +67,30 @@ class PurePursuitController(LateralController):
     def step(self, vehicle: VehiclePose, reference: RouteReference) -> LateralOutput:
         p = self.params
         points = reference.points_xy_m
-        route_key = id(points)
-        if route_key != self._active_route_key:
+        if points is not self._active_route_points:
             # A compiled manoeuvre can temporarily replace a long mission
             # route and later restore the exact same point tuple.  Remember
             # progress per route so the restoration cannot globally snap to a
             # geometrically overlapping occurrence kilometres ahead.
-            self._last_nearest_index = self._nearest_index_by_route.get(
-                route_key,
-                find_nearest_index(points, vehicle.x_m, vehicle.y_m),
+            self._active_route_slot = next(
+                (
+                    index
+                    for index, (known_points, _progress) in enumerate(self._route_progress)
+                    if known_points is points
+                ),
+                None,
             )
-            self._active_route_key = route_key
+            if self._active_route_slot is None:
+                self._last_nearest_index = find_nearest_index(
+                    points, vehicle.x_m, vehicle.y_m,
+                )
+                self._route_progress.append((points, self._last_nearest_index))
+                self._active_route_slot = len(self._route_progress) - 1
+            else:
+                self._last_nearest_index = self._route_progress[
+                    self._active_route_slot
+                ][1]
+            self._active_route_points = points
         nearest = find_nearest_index(
             points,
             vehicle.x_m,
@@ -81,7 +99,8 @@ class PurePursuitController(LateralController):
             search_window=p.nearest_search_window,
         )
         self._last_nearest_index = nearest
-        self._nearest_index_by_route[route_key] = nearest
+        assert self._active_route_slot is not None
+        self._route_progress[self._active_route_slot] = (points, nearest)
 
         local_curvature = max_abs_curvature_ahead(
             points, nearest, horizon_m=max(15.0, vehicle.speed_mps * 4.0),
