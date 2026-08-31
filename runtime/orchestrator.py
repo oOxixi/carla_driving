@@ -966,11 +966,35 @@ class PipelineOrchestrator:
         if not front_obstacle:
             return None
         available = set(state.get("available_lanes") or ())
-        left_safe = bool(state.get("left_lane_exists")) and bool(state.get("left_gap_safe"))
-        right_safe = bool(state.get("right_lane_exists")) and bool(state.get("right_gap_safe"))
+        left_exists = bool(state.get("left_lane_exists"))
+        right_exists = bool(state.get("right_lane_exists"))
         if available:
-            left_safe = left_safe and "LEFT_ADJACENT" in available
-            right_safe = right_safe and "RIGHT_ADJACENT" in available
+            left_exists = left_exists and "LEFT_ADJACENT" in available
+            right_exists = right_exists and "RIGHT_ADJACENT" in available
+
+        # A temporary occupied gap is not the same as a missing legal route.
+        # Explicit maneuver commands are compiled into SLOW/WAIT_SAFE_GAP/
+        # CHANGE/PASS steps, so keep the high-level task when its requested
+        # adjacent lane exists and let the execution FSM wait for that gap.
+        # Commands that were not parsed as maneuvers retain the conservative
+        # immediate-stop rule below, as do maneuvers with no legal lane.
+        intent = str(command.get("intent", "")).upper()
+        parameters = command.get("parameters", {})
+        direction = (
+            str(parameters.get("direction", "")).upper()
+            if isinstance(parameters, Mapping) else ""
+        )
+        if intent in {"AVOID_OBSTACLE", "CHANGE_LANE"}:
+            requested_lane_exists = (
+                left_exists if direction == "LEFT"
+                else right_exists if direction == "RIGHT"
+                else left_exists or right_exists
+            )
+            if requested_lane_exists:
+                return None
+
+        left_safe = left_exists and bool(state.get("left_gap_safe"))
+        right_safe = right_exists and bool(state.get("right_gap_safe"))
         return None if left_safe or right_safe else "NO_SAFE_ADJACENT_LANE"
 
     @staticmethod

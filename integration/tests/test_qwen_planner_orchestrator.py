@@ -406,6 +406,45 @@ def test_blocked_maneuver_without_safe_adjacent_lane_forces_stop() -> None:
     assert queued.feedback["safety_event"]["reason_code"] == "NO_SAFE_ADJACENT_LANE"
 
 
+def test_explicit_maneuver_with_existing_lane_waits_for_safe_gap() -> None:
+    command = _example("driving_command")
+    command["intent"] = "AVOID_OBSTACLE"
+    command["source_text"] = "向左变道绕过前方障碍，完成后回归原车道"
+    command["parameters"] = {
+        "direction": "LEFT",
+        "target_id": "lane_blocker",
+        "target_speed_mps": 16.0 / 3.6,
+    }
+    scene = _example("perception_state")
+    obstacle = scene["objects"][0]
+    obstacle.update({
+        "track_id": "lane_blocker",
+        "class": "obstacle",
+        "position_m": [22.5, 0.0, 0.0],
+        "distance_m": 22.5,
+    })
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(
+            command,
+            scene,
+            now_ns=1_100_000_000,
+            runtime_state={
+                "available_lanes": ["CURRENT", "LEFT_ADJACENT"],
+                "left_lane_exists": True,
+                "right_lane_exists": False,
+                "left_gap_safe": False,
+                "right_gap_safe": False,
+            },
+        )
+
+    assert queued.model_request["constraints"]["must_stop"] is False
+    assert "AVOID_OBSTACLE" in queued.model_request["constraints"]["allowed_behaviors"]
+    assert queued.feedback["safety_event"] is None
+
+
 def test_ambiguous_voice_command_is_constrained_to_audited_hold() -> None:
     command = _example("driving_command")
     command.update({
