@@ -12,6 +12,7 @@ from car_control_B.schemas import RouteReference, VehiclePose
 import integration.carla_runner as carla_runner
 from integration.carla_perception import EventLedger, PerceptionTimeoutError
 from integration.carla_runner import (
+    _DeferredCommand,
     _acceptance_lateral_controller,
     _actor_bbox_clearance_m,
     _apply_compiled_plan_route,
@@ -22,6 +23,7 @@ from integration.carla_runner import (
     _lane_change_route_parameters,
     _map_contract_name,
     _maneuver_target_distance_m,
+    _maneuver_target_passed,
     _maneuver_target_visible,
     _maneuver_target_gap_s,
     _minimum_gap_contract_completed,
@@ -36,6 +38,7 @@ from integration.carla_runner import (
     _qwen_voice_command,
     _save_qwen_rgb_image,
     _select_load_map,
+    _select_deferred_commands,
     _expected_safety_completed,
     _rejected_load_envelope,
     _route_contract_completed,
@@ -66,6 +69,23 @@ from integration.carla_runner import (
     _warm_up_sensor_bridge,
     _warm_up_loaded_map,
 )
+
+
+def test_scenario_commands_are_latched_and_serialized_behind_active_plan() -> None:
+    first = _DeferredCommand({"command_id": "scenario_cmd_003"}, 1, "SCENARIO")
+    second = _DeferredCommand({"command_id": "scenario_cmd_004"}, 2, "SCENARIO")
+
+    selected, retained = _select_deferred_commands(
+        (first, second), scenario_plan_active=True,
+    )
+    assert selected == ()
+    assert retained == [first, second]
+
+    selected, retained = _select_deferred_commands(
+        retained, scenario_plan_active=False,
+    )
+    assert selected == (first,)
+    assert retained == [second]
 
 
 def test_scenario_vehicle_spawn_does_not_require_traffic_manager() -> None:
@@ -310,7 +330,7 @@ def test_single_sensor_fault_applies_degraded_speed_cap_only_while_partially_ava
     assert _single_sensor_fault_speed_cap_mps({"front_rgb", "lidar"}, 4.2) is None
 
 
-def test_compiled_maneuver_reuses_the_topology_validated_route() -> None:
+def test_compiled_maneuver_applies_only_the_first_step_before_fsm_advances() -> None:
     current = RouteReference([(0.0, 0.0), (10.0, 0.0)], target_speed_mps=2.0)
     validated = RouteReference([(0.0, 0.0), (10.0, 3.5)], target_speed_mps=2.0)
     compiled = {
@@ -331,9 +351,32 @@ def test_compiled_maneuver_reuses_the_topology_validated_route() -> None:
     )
 
     assert route.points_xy_m == validated.points_xy_m
-    assert route.target_speed_mps == pytest.approx(5.0)
-    assert speed == pytest.approx(5.0)
+    assert route.target_speed_mps == pytest.approx(2.0)
+    assert speed == pytest.approx(2.0)
     assert behavior == "CHANGE_LANE_LEFT"
+
+
+def test_compiled_longitudinal_sequence_does_not_apply_resume_speed_early() -> None:
+    current = RouteReference([(0.0, 0.0), (10.0, 0.0)], target_speed_mps=8.0)
+    compiled = {
+        "steps": [
+            {"behavior": "SLOW_DOWN", "target": {"target_speed_mps": 3.0}},
+            {"behavior": "KEEP_LANE", "target": {"target_speed_mps": 8.0}},
+        ],
+    }
+
+    route, speed, behavior = _apply_compiled_plan_route(
+        compiled,
+        world_map=None,
+        ego=None,
+        current_route=current,
+        requested_speed_mps=8.0,
+        distance_m=60.0,
+    )
+
+    assert route.target_speed_mps == pytest.approx(3.0)
+    assert speed == pytest.approx(3.0)
+    assert behavior is None
 
 
 def test_s2_dynamic_lane_change_profile_has_outbound_stabilization_segment() -> None:
@@ -387,6 +430,59 @@ def test_maneuver_target_gap_uses_bound_actor_distance() -> None:
     assert _maneuver_target_visible(step, scene)
     assert _maneuver_target_distance_m(step, scene) == pytest.approx(12.0)
     assert _maneuver_target_gap_s(step, scene, 4.0) == pytest.approx(3.0)
+
+
+def test_maneuver_target_distance_falls_back_to_real_scenario_actor() -> None:
+    step = Namespace(target={"target_id": "slow_vehicle"})
+    unrelated = PerceptionFrame(1, 0.05, detected_objects=(
+        DetectedObject(
+            1, "pedestrian", 0.9, (0.4, 0.2, 0.6, 0.8), 10.0,
+            "crossing_pedestrian",
+        ),
+    ))
+
+    assert _maneuver_target_distance_m(
+        step, unrelated, {"slow_vehicle": 34.5},
+    ) == pytest.approx(34.5)
+
+
+def test_maneuver_target_distance_grounds_legacy_id_to_lidar_class() -> None:
+    step = Namespace(target={"target_id": "legacy-obstacle-000"})
+    scene = PerceptionFrame(1, 0.05, detected_objects=(
+        DetectedObject(0, "obstacle", 1.0, (0.4, 0.2, 0.6, 0.8), 21.9),
+    ))
+
+    assert _maneuver_target_distance_m(step, scene) == pytest.approx(21.9)
+
+
+def test_maneuver_target_pass_requires_measured_clearance_when_available() -> None:
+    assert not _maneuver_target_passed(
+        target_seen=True,
+        target_visible=False,
+        distance_from_plan_start_m=20.0,
+        pass_after_m=42.0,
+    )
+    assert _maneuver_target_passed(
+        target_seen=True,
+        target_visible=False,
+        distance_from_plan_start_m=42.0,
+        pass_after_m=42.0,
+    )
+
+
+def test_maneuver_target_pass_fallback_requires_target_to_leave_view() -> None:
+    assert not _maneuver_target_passed(
+        target_seen=True,
+        target_visible=True,
+        distance_from_plan_start_m=25.0,
+        pass_after_m=None,
+    )
+    assert _maneuver_target_passed(
+        target_seen=True,
+        target_visible=False,
+        distance_from_plan_start_m=20.0,
+        pass_after_m=None,
+    )
 
 
 def test_scenario_actor_binding_uses_image_position_when_only_one_range_is_known() -> None:

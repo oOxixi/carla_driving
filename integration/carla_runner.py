@@ -85,6 +85,27 @@ class _DeferredCommand:
     audio_duration_s: float | None = None
 
 
+def _select_deferred_commands(
+    commands: Sequence[_DeferredCommand],
+    *,
+    scenario_plan_active: bool,
+) -> tuple[tuple[_DeferredCommand, ...], list[_DeferredCommand]]:
+    """Submit at most one scenario command without dropping latched triggers."""
+    selected: list[_DeferredCommand] = []
+    retained: list[_DeferredCommand] = []
+    scenario_selected = False
+    for command in commands:
+        if command.origin == "SCENARIO" and (
+            scenario_plan_active or scenario_selected
+        ):
+            retained.append(command)
+            continue
+        selected.append(command)
+        if command.origin == "SCENARIO":
+            scenario_selected = True
+    return tuple(selected), retained
+
+
 def _compiled_plan_from_payload(payload: Mapping[str, Any]) -> CompiledManeuverPlan:
     """Rebuild the typed A/FSM contract from an orchestrator audit payload."""
     if not isinstance(payload, Mapping):
@@ -127,6 +148,11 @@ def _maneuver_target_visible(
     target_id = str(step.target.get("target_id") or "")
     if not target_id.startswith("legacy-"):
         return any(item.track_id == target_id for item in scene.detected_objects)
+    accepted = _legacy_target_classes(target_id)
+    return any(item.class_name.lower() in accepted for item in scene.detected_objects)
+
+
+def _legacy_target_classes(target_id: str) -> set[str]:
     target_class = target_id.removeprefix("legacy-").rsplit("-", 1)[0]
     aliases = {
         "vehicle": {"car", "truck", "bus", "vehicle"},
@@ -134,8 +160,7 @@ def _maneuver_target_visible(
         "cyclist": {"bicycle", "motorcycle", "cyclist"},
         "obstacle": {"obstacle"},
     }
-    accepted = aliases.get(target_class, {target_class})
-    return any(item.class_name.lower() in accepted for item in scene.detected_objects)
+    return aliases.get(target_class, {target_class})
 
 
 def _maneuver_target_gap_s(
@@ -153,19 +178,51 @@ def _maneuver_target_gap_s(
 def _maneuver_target_distance_m(
     step: CompiledPlanStep | None,
     scene: PerceptionFrame,
+    actor_distances_m: Mapping[str, float] | None = None,
 ) -> float | None:
     """Return only the range of the actor explicitly bound to this step."""
     if step is None:
         return None
     target_id = str(step.target.get("target_id") or "")
-    return next(
+    accepted_legacy_classes = (
+        _legacy_target_classes(target_id)
+        if target_id.startswith("legacy-") else None
+    )
+    detected_distance = next(
         (
             float(item.distance_m)
             for item in scene.detected_objects
-            if item.track_id == target_id and item.distance_m is not None
+            if item.distance_m is not None
+            and (
+                item.track_id == target_id
+                or (
+                    accepted_legacy_classes is not None
+                    and item.class_name.lower() in accepted_legacy_classes
+                )
+            )
         ),
         None,
     )
+    if detected_distance is not None:
+        return detected_distance
+    if actor_distances_m is not None and target_id in actor_distances_m:
+        return float(actor_distances_m[target_id])
+    return None
+
+
+def _maneuver_target_passed(
+    *,
+    target_seen: bool,
+    target_visible: bool,
+    distance_from_plan_start_m: float,
+    pass_after_m: float | None,
+) -> bool:
+    """Require the measured pass distance when the target range is known."""
+    if not target_seen:
+        return False
+    if pass_after_m is not None:
+        return distance_from_plan_start_m >= pass_after_m
+    return not target_visible and distance_from_plan_start_m >= 20.0
 
 
 def _record_maneuver_update(
@@ -491,21 +548,21 @@ def _apply_compiled_plan_route(
 ) -> tuple[RouteReference, float, str | None]:
     """Apply validated route semantics; B still generates the actual reference."""
     steps = compiled_plan.get("steps")
-    if not isinstance(steps, list):
-        raise ValueError("compiled plan steps must be a list")
+    if not isinstance(steps, list) or not steps:
+        raise ValueError("compiled plan steps must be a non-empty list")
     target_speed = float(requested_speed_mps)
     route_behavior: str | None = None
-    for step in steps:
-        if not isinstance(step, Mapping):
-            raise ValueError("compiled plan step must be an object")
-        behavior = str(step.get("behavior", "")).upper()
-        target = step.get("target", {})
-        if isinstance(target, Mapping) and target.get("target_speed_mps") is not None:
-            target_speed = float(target["target_speed_mps"])
-        if route_behavior is None and behavior in {
-            "TURN_LEFT", "TURN_RIGHT", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
-        }:
-            route_behavior = behavior
+    step = steps[0]
+    if not isinstance(step, Mapping):
+        raise ValueError("compiled plan step must be an object")
+    behavior = str(step.get("behavior", "")).upper()
+    target = step.get("target", {})
+    if isinstance(target, Mapping) and target.get("target_speed_mps") is not None:
+        target_speed = float(target["target_speed_mps"])
+    if behavior in {
+        "TURN_LEFT", "TURN_RIGHT", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
+    }:
+        route_behavior = behavior
     if route_behavior is None:
         return replace(current_route, target_speed_mps=target_speed), target_speed, None
     if prevalidated_maneuver_route is not None:
@@ -1175,8 +1232,40 @@ def _spawn_scenario_walker(
             blueprint.set_attribute("is_invincible", "false")
 
     anchor = ego.get_transform()
-    transform = _scenario_local_transform(carla_api, anchor, spawn)
-    walker = world.try_spawn_actor(blueprint, transform)
+    lateral_sign = 1.0 if float(spawn.get("y", 0.0)) >= 0.0 else -1.0
+    # A vehicle settles with its transform origin almost on the road surface.
+    # Reusing that Z verbatim can put a pedestrian capsule inside the ground.
+    # Also allow small deterministic offsets away from the carriageway: bus
+    # passengers may otherwise overlap the bus bounding box on a narrow curb.
+    offsets = (
+        (0.0, 0.0),
+        (0.0, 0.75 * lateral_sign),
+        (0.0, 1.5 * lateral_sign),
+        (1.5, 1.5 * lateral_sign),
+        (-1.5, 1.5 * lateral_sign),
+        (2.0, 0.0),
+        (-2.0, 0.0),
+    )
+    walker = None
+    used_offset = (0.0, 0.0)
+    world_map = world.get_map()
+    for forward_offset_m, lateral_offset_m in offsets:
+        candidate_spawn = dict(spawn)
+        candidate_spawn["x"] = float(spawn.get("x", 0.0)) + forward_offset_m
+        candidate_spawn["y"] = float(spawn.get("y", 0.0)) + lateral_offset_m
+        transform = _scenario_local_transform(carla_api, anchor, candidate_spawn)
+        road_waypoint = world_map.get_waypoint(
+            transform.location, project_to_road=True,
+        )
+        if road_waypoint is not None:
+            transform.location.z = max(
+                float(transform.location.z),
+                float(road_waypoint.transform.location.z) + 0.5,
+            )
+        walker = world.try_spawn_actor(blueprint, transform)
+        if walker is not None:
+            used_offset = (forward_offset_m, lateral_offset_m)
+            break
     if walker is None:
         raise RuntimeError("cannot spawn configured scenario walker")
     walker = session.track_actor(walker)
@@ -1193,7 +1282,8 @@ def _spawn_scenario_walker(
     ).location
     print(
         "scenario actor: spawned real walker "
-        f"id={actor_spec.get('actor_id', 'scenario_walker')}",
+        f"id={actor_spec.get('actor_id', 'scenario_walker')} "
+        f"spawn_offset_xy_m={used_offset}",
         flush=True,
     )
     return walker, target
@@ -2441,10 +2531,13 @@ def run(args: argparse.Namespace) -> None:
                     advanced_transform = advanced[0].transform
                     advanced_transform.location.z = route_anchor.location.z
                     route_anchor = advanced_transform
-            if adjacent_lane_anchor_required:
+            if adjacent_lane_anchor_required or dynamic_out_and_back:
                 # The adjacent lane is needed only as a real occupancy target;
                 # keep ego's reference route in its original lane so a rejected
-                # lane-change request cannot move the vehicle implicitly.
+                # lane-change request cannot move the vehicle implicitly.  S2's
+                # out-and-back route is also generated only when the compiled
+                # Qwen lane-change step starts; the startup topology probe must
+                # never become an uncommanded lane change.
                 topology_route = build_route_reference(
                     world_map,
                     route_anchor.location,
@@ -3282,8 +3375,14 @@ def run(args: argparse.Namespace) -> None:
                         == "CARLA_RADAR_FRAME_ALIGNED"
                     ):
                         canonical_mode = "sensors_radar"
-                    queued_now = tuple(deferred_commands)
-                    deferred_commands.clear()
+                    queued_now, retained_commands = _select_deferred_commands(
+                        deferred_commands,
+                        scenario_plan_active=(
+                            maneuver_fsm.plan is not None
+                            and maneuver_fsm.state not in TERMINAL_STATES
+                        ),
+                    )
+                    deferred_commands[:] = retained_commands
                     slow_submitted_now = False
                     for deferred in queued_now:
                         image_stage_started_ns = time.monotonic_ns()
@@ -3542,10 +3641,17 @@ def run(args: argparse.Namespace) -> None:
                                     maneuver_fsm.current_step, scene,
                                 )
                                 grounded_target_distance_m = _maneuver_target_distance_m(
-                                    maneuver_fsm.current_step, scene,
+                                    maneuver_fsm.current_step,
+                                    scene,
+                                    actor_distances_m,
                                 )
                                 maneuver_target_pass_after_m = (
-                                    max(10.0, grounded_target_distance_m + 8.0)
+                                    # Keep a full longitudinal recovery gap
+                                    # before cutting back into the original
+                                    # lane.  Eight metres left the slow actor
+                                    # alongside ego's rear quarter and caused
+                                    # a correct low-TTC safety preemption.
+                                    max(20.0, grounded_target_distance_m + 20.0)
                                     if grounded_target_distance_m is not None
                                     else None
                                 )
@@ -3845,19 +3951,11 @@ def run(args: argparse.Namespace) -> None:
                                 )
                                 or -math.inf
                             ),
-                            "target_passed": (
-                                maneuver_target_seen
-                                and (
-                                    (
-                                        not target_visible
-                                        and distance_from_plan_start_m >= 10.0
-                                    )
-                                    or (
-                                        maneuver_target_pass_after_m is not None
-                                        and distance_from_plan_start_m
-                                        >= maneuver_target_pass_after_m
-                                    )
-                                )
+                            "target_passed": _maneuver_target_passed(
+                                target_seen=maneuver_target_seen,
+                                target_visible=target_visible,
+                                distance_from_plan_start_m=distance_from_plan_start_m,
+                                pass_after_m=maneuver_target_pass_after_m,
                             ),
                             "hold_condition": True,
                         },
@@ -3903,10 +4001,6 @@ def run(args: argparse.Namespace) -> None:
                             for event in maneuver_update.events
                         )
                         and maneuver_update.current_step is not None
-                        and maneuver_update.current_step.behavior in {
-                            "TURN_LEFT", "TURN_RIGHT",
-                            "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
-                        }
                         and maneuver_update.current_step.step_id
                         not in maneuver_route_steps_applied
                         else None
@@ -3918,7 +4012,12 @@ def run(args: argparse.Namespace) -> None:
                             )
                             if step_speed is not None:
                                 runtime.requested_speed_mps = float(step_speed)
-                            if prevalidated_avoid_route is not None and not dynamic_out_and_back:
+                            route_step_applied = False
+                            if (
+                                started_route_step.behavior.startswith("CHANGE_LANE_")
+                                and prevalidated_avoid_route is not None
+                                and not dynamic_out_and_back
+                            ):
                                 # The acceptance scenario declares one legal
                                 # out-and-back detour. Keep that full route for
                                 # both the outbound and return semantic steps.
@@ -3926,6 +4025,7 @@ def run(args: argparse.Namespace) -> None:
                                     prevalidated_avoid_route,
                                     target_speed_mps=runtime.requested_speed_mps,
                                 )
+                                route_step_applied = True
                             elif started_route_step.behavior.startswith("TURN_"):
                                 route = build_route_reference(
                                     world_map,
@@ -3938,7 +4038,8 @@ def run(args: argparse.Namespace) -> None:
                                         else _scenario_route_distance_m(spec)
                                     ),
                                 )
-                            else:
+                                route_step_applied = True
+                            elif started_route_step.behavior.startswith("CHANGE_LANE_"):
                                 route_parameters = _lane_change_route_parameters(
                                     lane_change_profile,
                                     mission_distance_m=(
@@ -3954,13 +4055,24 @@ def run(args: argparse.Namespace) -> None:
                                     direction=started_route_step.behavior.rsplit("_", 1)[-1],
                                     **route_parameters,
                                 )
+                                route_step_applied = True
+                            else:
+                                route = replace(
+                                    route,
+                                    target_speed_mps=runtime.requested_speed_mps,
+                                )
                             maneuver_route_steps_applied.add(started_route_step.step_id)
                             print(json.dumps({
-                                "record_type": "qwen_step_route_applied",
+                                "record_type": (
+                                    "qwen_step_route_applied"
+                                    if route_step_applied
+                                    else "qwen_step_speed_applied"
+                                ),
                                 "command_id": maneuver_fsm.plan.command_id,
                                 "plan_id": maneuver_fsm.plan.plan_id,
                                 "step_id": started_route_step.step_id,
                                 "route_behavior": started_route_step.behavior,
+                                "target_speed_mps": runtime.requested_speed_mps,
                             }, ensure_ascii=False), flush=True)
                         except (AttributeError, RuntimeError, TypeError, ValueError) as error:
                             failed_update = maneuver_fsm.fail(

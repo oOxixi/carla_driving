@@ -296,6 +296,82 @@ def test_vllm_choice_constraint_narrows_explicit_right_avoid_to_whole_maneuver()
     assert codes == ["D", "K"]
 
 
+def test_vllm_choice_constraint_narrows_pedestrian_slow_down_to_longitudinal_actions() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "SLOW_DOWN", "direction": None,
+        "target_speed_mps": None, "target": "crossing_pedestrian",
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
+        "CHANGE_LANE", "TURN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "PULL_OVER",
+    ]
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT", "RIGHT_ADJACENT"],
+        "left_lane_exists": False,
+        "right_lane_exists": True,
+    }
+
+    codes = backend._choice_codes(request)
+
+    assert codes == ["C"]
+
+
+def test_vllm_pedestrian_slow_down_preserves_resume_subcommand() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "看到横穿行人，减速避让，确认行人离开后继续"
+    request["command_hint"] = {
+        "intent": "SLOW_DOWN", "direction": None,
+        "target_speed_mps": None, "target": "crossing_pedestrian",
+    }
+    request["constraints"]["max_target_speed_mps"] = 8.0
+    request["targets"] = [{
+        "target_id": "crossing_pedestrian", "class": "pedestrian",
+        "distance_m": 20.0, "relation": "center_ahead",
+    }]
+
+    steps = backend._expanded_steps(request, "SLOW_DOWN")
+
+    assert [step["behavior"] for step in steps] == ["SLOW_DOWN", "KEEP_LANE"]
+    assert steps[0]["target"]["target_id"] == "crossing_pedestrian"
+    assert steps[0]["target"]["target_speed_mps"] == pytest.approx(3.0)
+    assert steps[1]["target"]["target_id"] is None
+    assert steps[1]["target"]["target_speed_mps"] == pytest.approx(8.0)
+    assert steps[1]["preconditions"] == ["PERCEPTION_FRESH", "NO_EMERGENCY_RISK"]
+
+
+def test_vllm_grounds_unavailable_named_target_to_visible_forward_object() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "AVOID_OBSTACLE", "direction": "LEFT",
+        "target_speed_mps": 7.0, "target": "slow_vehicle",
+    }
+    request["targets"] = [{
+        "target_id": "crossing_pedestrian", "class": "pedestrian",
+        "distance_m": 20.0, "relation": "center_ahead",
+    }]
+
+    step = backend._step(request, "AVOID_OBSTACLE", index=1)
+
+    assert step["target"]["target_id"] == "crossing_pedestrian"
+
+
+def test_vllm_keep_lane_does_not_require_a_named_context_actor() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "KEEP_LANE", "direction": None,
+        "target_speed_mps": 8.0, "target": "bus_at_stop",
+    }
+
+    step = backend._step(request, "KEEP_LANE", index=1)
+
+    assert step["target"]["target_id"] is None
+
+
 def test_vllm_avoid_step_preserves_explicit_right_target_lane() -> None:
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
     request = _request()

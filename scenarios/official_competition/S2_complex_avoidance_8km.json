@@ -61,7 +61,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S2_P4_OVERTAKE_AND_RETURN",
-      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "slow_vehicle", "value": 48.0}
+      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "slow_vehicle", "value": 28.0}
     },
     {
       "time_s": 0.0,
@@ -126,8 +126,8 @@
       "actor_id": "slow_vehicle",
       "type": "vehicle",
       "blueprint_id": "vehicle.audi.tt",
-      "spawn": {"x": 112.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
-      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 4.2, "target_speed_mps": 3.0, "brake_at_s": 8.0}
+      "spawn": {"x": 82.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.5, "target_speed_mps": 1.0, "brake_at_s": 8.0}
     },
     {
       "actor_id": "private_car_left",
@@ -140,8 +140,8 @@
       "actor_id": "bicycle_right",
       "type": "vehicle",
       "blueprint_id": "vehicle.bh.crossbike",
-      "spawn": {"x": 148.0, "y": 1.1, "z": 0.5, "yaw_deg": 0.0},
-      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 2.5, "target_speed_mps": 2.0, "brake_at_s": 12.0}
+      "spawn": {"x": 180.0, "y": 1.1, "z": 0.5, "yaw_deg": 0.0},
+      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.0, "target_speed_mps": 0.8, "brake_at_s": 12.0}
     }
   ],
   "qwen_expected": {
@@ -237,14 +237,14 @@
       "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "YIELD", "AVOID_OBSTACLE", "CHANGE_LANE_LEFT", "RETURN_TO_LANE", "STOP"]
     },
     "fixed_random_seed": true,
-    "route_anchor_spawn_index": 135,
+    "route_anchor_spawn_index": 46,
     "route_policy": {"loop": false},
     "runtime_support": {"status": "current", "requirements": ["event_triggers", "actor_distance_trigger", "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance"], "declared_requirements": ["event_triggers", "actor_distance_trigger", "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance"]},
     "phase_plan": ["S2_P1_START", "S2_P2_BUS_STOP", "S2_P3_PEDESTRIAN_YIELD", "S2_P4_OVERTAKE_AND_RETURN", "S2_P5_BICYCLE_AVOID"]
   },
   "notes": [
     "公交、乘客、横穿行人、慢车、相邻车与自行车均为真实CARLA Actor，不使用只写在日志里的虚拟对象。",
-    "所有交互对象集中在前150m内以便快速完成场景加载与事件触发证明；之后继续完成8km稳定驾驶。",
+    "所有交互对象集中在前200m内以便快速完成场景加载与事件触发证明；之后继续完成8km稳定驾驶。",
     "正式成绩使用 --perception-mode sensors --scenario-facts-mode perception。",
     "起步速度为40km/h，公交站目标速度为30km/h，确保该阶段产生可量化的真实减速。",
     "四路严格同帧RGB按前/左、右/后布局拼接为Qwen视觉输入；LiDAR/Radar距离与车辆状态作为结构化感知同时进入计划请求。",

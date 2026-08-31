@@ -436,9 +436,7 @@ class VllmQwenPlannerBackend:
         normalized = behavior.removesuffix("_LEFT").removesuffix("_RIGHT")
         if behavior not in {"HOLD"} and behavior not in allowed and normalized not in allowed:
             raise ValueError(f"Qwen behavior {behavior} violates allowed_behaviors")
-        steps = [self._step(request, behavior, index=1)]
-        if behavior == "AVOID_OBSTACLE":
-            steps.append(self._step(request, "RETURN_TO_LANE", index=2))
+        steps = self._expanded_steps(request, behavior)
         return {
             "schema_version": "2.0",
             "request_id": request["request_id"],
@@ -455,6 +453,36 @@ class VllmQwenPlannerBackend:
             "model_id": self.model_id,
         }
 
+    def _expanded_steps(
+        self, request: Mapping[str, Any], behavior: str,
+    ) -> list[dict[str, Any]]:
+        steps = [self._step(request, behavior, index=1)]
+        if behavior == "AVOID_OBSTACLE":
+            steps.append(self._step(request, "RETURN_TO_LANE", index=2))
+        elif behavior in {"SLOW_DOWN", "YIELD"} and self._resume_requested(request):
+            # Keep conditional multi-action voice commands complete: slowing
+            # for a pedestrian is only the first subcommand; after D reports
+            # no emergency risk, resume the bounded route speed.  Both steps
+            # remain high-level and are still validated/compiled downstream.
+            resume_request = dict(request)
+            resume_hint = dict(request.get("command_hint", {}))
+            resume_hint["target"] = None
+            resume_hint["target_speed_mps"] = float(
+                request["constraints"].get("max_target_speed_mps") or 3.0
+            )
+            resume_request["command_hint"] = resume_hint
+            resume = self._step(resume_request, "KEEP_LANE", index=2)
+            resume["preconditions"] = ["PERCEPTION_FRESH", "NO_EMERGENCY_RISK"]
+            steps.append(resume)
+        return steps
+
+    @staticmethod
+    def _resume_requested(request: Mapping[str, Any]) -> bool:
+        source = str(request.get("source_text", "")).casefold()
+        return any(token in source for token in (
+            "继续", "恢复", "resume", "continue", "proceed",
+        ))
+
     def _choice_codes(self, request: Mapping[str, Any]) -> list[str]:
         allowed = set(request["constraints"]["allowed_behaviors"])
         hint = request.get("command_hint", {})
@@ -469,6 +497,14 @@ class VllmQwenPlannerBackend:
             or behavior.removesuffix("_LEFT").removesuffix("_RIGHT") in allowed
         ]
         intent_codes = {
+            "KEEP_LANE": {"A", "B", "C", "D"},
+            "SET_SPEED": {"B", "C", "D"},
+            # Preserve an explicit longitudinal instruction.  STOP/YIELD are
+            # separate safety semantics and the deterministic control bridge
+            # must not silently reinterpret them as the requested slow-down.
+            "SLOW_DOWN": {"C"},
+            "STOP": {"D"},
+            "YIELD": {"C", "D", "E"},
             "FOLLOW": {"D", "F"},
             "CHANGE_LANE": {"D", "G", "H"},
             "TURN": {"D", "I", "J"},
@@ -544,14 +580,20 @@ class VllmQwenPlannerBackend:
         hint = request.get("command_hint", {})
         capabilities = request.get("scene_capabilities", {})
         targets = request.get("targets", ())
-        target_id = None
-        if targets and behavior in {
+        raw_requested_target = hint.get("target") if isinstance(hint, Mapping) else None
+        requested_target = (
+            raw_requested_target.strip()
+            if isinstance(raw_requested_target, str) else ""
+        )
+        target_behaviors = {
             "FOLLOW", "AVOID_OBSTACLE", "YIELD", "SLOW_DOWN", "STOP",
-        }:
-            requested_target = (
-                str(hint.get("target", "")).strip()
-                if isinstance(hint, Mapping) else ""
-            )
+        }
+        stable_target_behaviors = {"FOLLOW", "AVOID_OBSTACLE", "YIELD"}
+        target_id = (
+            requested_target or None
+            if behavior in stable_target_behaviors else None
+        )
+        if targets and behavior in target_behaviors:
             preferred_relations = (
                 {"center_ahead", "far_ahead"}
                 if behavior == "FOLLOW"
@@ -580,7 +622,7 @@ class VllmQwenPlannerBackend:
                 candidates = typed_targets if has_class_metadata else candidates
             if candidates:
                 target_id = candidates[0]["target_id"]
-            elif behavior != "FOLLOW":
+            elif not requested_target and behavior != "FOLLOW":
                 target_id = targets[0]["target_id"]
         lane = "CURRENT"
         direction = None
