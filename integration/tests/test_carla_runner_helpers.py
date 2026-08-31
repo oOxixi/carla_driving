@@ -41,6 +41,7 @@ from integration.carla_runner import (
     _select_deferred_commands,
     _expected_safety_completed,
     _rejected_load_envelope,
+    _remaining_route_distances,
     _route_contract_completed,
     _route_stop_trigger_m,
     _runtime_health_completed,
@@ -908,6 +909,20 @@ def test_regression_finish_route_is_a_hard_completion_contract() -> None:
     assert _route_contract_completed(spec, spec.finish_radius_m - 0.01) is True
     assert _route_contract_completed(spec, spec.finish_radius_m + 0.01) is False
     assert _route_contract_completed(None, 0.0) is None
+
+
+def test_route_contract_uses_along_route_progress_for_overlapping_endpoint() -> None:
+    from integration.scenario_execution import ScenarioSpec
+
+    path = Path(__file__).resolve().parents[2] / "scenarios" / "official_competition" / "S2_complex_avoidance_8km.json"
+    spec = ScenarioSpec.load(path)
+    assert _route_contract_completed(spec, 0.0, 100.0) is False
+    assert _route_contract_completed(spec, 100.0, spec.finish_radius_m) is True
+
+
+def test_remaining_route_distance_distinguishes_repeated_coordinates() -> None:
+    remaining = _remaining_route_distances(((0.0, 0.0), (10.0, 0.0), (0.0, 0.0)))
+    assert remaining == pytest.approx((20.0, 10.0, 0.0))
 
 
 def test_route_stop_trigger_scales_with_speed_without_stopping_early() -> None:

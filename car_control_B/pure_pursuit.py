@@ -42,10 +42,14 @@ class PurePursuitController(LateralController):
         self.params = params or PurePursuitParams()
         self._last_steer = 0.0
         self._last_nearest_index = 0
+        self._active_route_key: int | None = None
+        self._nearest_index_by_route: dict[int, int] = {}
 
     def reset(self) -> None:
         self._last_steer = 0.0
         self._last_nearest_index = 0
+        self._active_route_key = None
+        self._nearest_index_by_route.clear()
 
     def _lookahead(self, speed_mps: float, curvature_per_m: float = 0.0) -> float:
         p = self.params
@@ -58,6 +62,17 @@ class PurePursuitController(LateralController):
     def step(self, vehicle: VehiclePose, reference: RouteReference) -> LateralOutput:
         p = self.params
         points = reference.points_xy_m
+        route_key = id(points)
+        if route_key != self._active_route_key:
+            # A compiled manoeuvre can temporarily replace a long mission
+            # route and later restore the exact same point tuple.  Remember
+            # progress per route so the restoration cannot globally snap to a
+            # geometrically overlapping occurrence kilometres ahead.
+            self._last_nearest_index = self._nearest_index_by_route.get(
+                route_key,
+                find_nearest_index(points, vehicle.x_m, vehicle.y_m),
+            )
+            self._active_route_key = route_key
         nearest = find_nearest_index(
             points,
             vehicle.x_m,
@@ -66,6 +81,7 @@ class PurePursuitController(LateralController):
             search_window=p.nearest_search_window,
         )
         self._last_nearest_index = nearest
+        self._nearest_index_by_route[route_key] = nearest
 
         local_curvature = max_abs_curvature_ahead(
             points, nearest, horizon_m=max(15.0, vehicle.speed_mps * 4.0),

@@ -353,6 +353,10 @@ def _acceptance_lateral_controller() -> PurePursuitController:
         speed_gain_s=0.45,
         max_steer=0.60,
         max_steer_delta_per_step=0.04,
+        # Long competition routes revisit the same Town coordinates.  Track
+        # only a physically reachable neighbourhood after the initial route
+        # acquisition instead of choosing a later overlapping lap globally.
+        nearest_search_window=40,
         # Calibrated against a CARLA 0.9.16 Model 3 closed-loop route run.
         steer_sign=1.0,
     ))
@@ -2073,11 +2077,31 @@ def _scenario_raw_control_fault(spec: ScenarioSpec | None, elapsed_s: float) -> 
     return None
 
 
-def _route_contract_completed(spec: ScenarioSpec | None, distance_to_route_end_m: float | None) -> bool | None:
+def _route_contract_completed(
+    spec: ScenarioSpec | None,
+    distance_to_route_end_m: float | None,
+    route_remaining_m: float | None = None,
+) -> bool | None:
     """Evaluate explicit route-finish contracts instead of treating frame exhaustion as success."""
     if spec is None or spec.expected.get("must_finish_route") is not True:
         return None
+    if route_remaining_m is not None:
+        return route_remaining_m <= spec.finish_radius_m
     return distance_to_route_end_m is not None and distance_to_route_end_m <= spec.finish_radius_m
+
+
+def _remaining_route_distances(
+    points: Sequence[tuple[float, float]],
+) -> tuple[float, ...]:
+    """Return distance-to-go at each route point, including repeated coordinates."""
+    if not points:
+        return ()
+    remaining = [0.0] * len(points)
+    for index in range(len(points) - 2, -1, -1):
+        remaining[index] = remaining[index + 1] + math.dist(
+            points[index], points[index + 1],
+        )
+    return tuple(remaining)
 
 
 def _minimum_gap_contract_completed(spec: ScenarioSpec | None, min_gap_m: float | None) -> bool | None:
@@ -2295,6 +2319,7 @@ def run(args: argparse.Namespace) -> None:
     safety_reasons: set[str] = set()
     raw_control_fault_injected = False
     final_route_end_distance_m: float | None = None
+    final_route_remaining_m: float | None = None
     max_speed_mps = 0.0
     runtime: ControlRuntime | None = None
     last_sim_time_s = 0.0
@@ -2795,6 +2820,18 @@ def run(args: argparse.Namespace) -> None:
             ):
                 prevalidated_avoid_route = route
 
+            contract_route_points = (
+                route.points_xy_m
+                if spec is not None and spec.expected.get("must_finish_route") is True
+                else None
+            )
+            contract_route_remaining = (
+                _remaining_route_distances(contract_route_points)
+                if contract_route_points is not None else ()
+            )
+            if contract_route_remaining:
+                final_route_remaining_m = contract_route_remaining[0]
+
             if spec is None:
                 route_index_started_ns = time.monotonic_ns()
                 indexed_waypoints = warm_heading_waypoint_cache(world_map)
@@ -3022,9 +3059,13 @@ def run(args: argparse.Namespace) -> None:
                                 route, target_speed_mps=runtime.requested_speed_mps,
                             )
                 ego_location = ego.get_location()
+                route_end_point = (
+                    contract_route_points[-1]
+                    if contract_route_points is not None else route.points_xy_m[-1]
+                )
                 distance_to_route_end_m = math.hypot(
-                    ego_location.x - route.points_xy_m[-1][0],
-                    ego_location.y - route.points_xy_m[-1][1],
+                    ego_location.x - route_end_point[0],
+                    ego_location.y - route_end_point[1],
                 )
                 final_route_end_distance_m = distance_to_route_end_m
                 finish_contract_route = (
@@ -3033,7 +3074,11 @@ def run(args: argparse.Namespace) -> None:
                         spec.category == "lateral_B"
                         or spec.expected.get("must_finish_route") is True
                     )
-                    and distance_to_route_end_m <= _route_stop_trigger_m(
+                    and (
+                        final_route_remaining_m
+                        if final_route_remaining_m is not None
+                        else distance_to_route_end_m
+                    ) <= _route_stop_trigger_m(
                         state.speed_mps, spec.finish_radius_m,
                     )
                 )
@@ -3846,6 +3891,17 @@ def run(args: argparse.Namespace) -> None:
                     speed_cap_mps=active_speed_cap_mps,
                     safety_override_reason=c_perception_override_reason,
                 )
+                if (
+                    contract_route_points is not None
+                    and route.points_xy_m is contract_route_points
+                    and result.lateral is not None
+                    and contract_route_remaining
+                ):
+                    route_index = min(
+                        max(0, int(result.lateral.nearest_index)),
+                        len(contract_route_remaining) - 1,
+                    )
+                    final_route_remaining_m = contract_route_remaining[route_index]
                 if qwen_scenario_monitor is not None:
                     for feedback in result.feedback:
                         qwen_scenario_monitor.record_terminal(
@@ -4278,7 +4334,9 @@ def run(args: argparse.Namespace) -> None:
         )
         if intentional_qwen_failure_completion is not None:
             completion = intentional_qwen_failure_completion
-        route_contract_completion = _route_contract_completed(spec, final_route_end_distance_m)
+        route_contract_completion = _route_contract_completed(
+            spec, final_route_end_distance_m, final_route_remaining_m,
+        )
         if route_contract_completion is not None:
             completion = completion and route_contract_completion
         gap_contract_completion = _minimum_gap_contract_completed(spec, min_gap_m)
@@ -4320,10 +4378,11 @@ def run(args: argparse.Namespace) -> None:
                 expected_contract.setdefault("max_lane_center_offset_m", 2.2)
             acceptance_context = {} if spec is None else {
                 "route_finished": (
-                    final_route_end_distance_m is not None
-                    and final_route_end_distance_m <= spec.finish_radius_m
+                    final_route_remaining_m is not None
+                    and final_route_remaining_m <= spec.finish_radius_m
                 ),
                 "route_end_distance_m": final_route_end_distance_m,
+                "route_remaining_m": final_route_remaining_m,
                 "expected_command_count": len(spec.commands),
                 "configured_route_deviation_trigger_m": route_deviation_trigger_m,
                 "spawned_scenario_actor_types": sorted(set(spawned_scenario_actor_types)),

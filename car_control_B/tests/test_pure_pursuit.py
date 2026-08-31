@@ -58,3 +58,42 @@ def test_tight_local_curve_shortens_lookahead_without_affecting_straight() -> No
 
     assert curved.lookahead_distance_m < straight.lookahead_distance_m
     assert curved.lookahead_distance_m >= _controller().params.min_lookahead_m
+
+
+def test_local_progress_does_not_jump_to_a_later_overlapping_lap() -> None:
+    controller = PurePursuitController(PurePursuitParams(
+        nearest_search_window=10,
+        max_steer_delta_per_step=1.0,
+    ))
+    first_lap = [(float(index), 0.0) for index in range(21)]
+    overlap = [(float(index), 0.0) for index in range(20, -1, -1)]
+    reference = RouteReference(
+        points_xy_m=[*first_lap, *overlap],
+        target_speed_mps=5.0,
+    )
+
+    controller.step(VehiclePose(0.0, 0.0, 0.0, 5.0), reference)
+    output = controller.step(VehiclePose(5.0, 0.0, 0.0, 5.0), reference)
+
+    assert output.nearest_index == 5
+
+
+def test_route_progress_is_restored_after_temporary_manoeuvre_route() -> None:
+    controller = PurePursuitController(PurePursuitParams(
+        nearest_search_window=10,
+        max_steer_delta_per_step=1.0,
+    ))
+    mission = RouteReference(
+        points_xy_m=[(float(index), 0.0) for index in range(100)],
+        target_speed_mps=5.0,
+    )
+    manoeuvre = RouteReference(
+        points_xy_m=[(20.0 + float(index), 3.5) for index in range(20)],
+        target_speed_mps=4.0,
+    )
+
+    assert controller.step(VehiclePose(20.0, 0.0, 0.0, 5.0), mission).nearest_index == 20
+    controller.step(VehiclePose(20.0, 3.5, 0.0, 4.0), manoeuvre)
+    restored = controller.step(VehiclePose(25.0, 0.0, 0.0, 5.0), mission)
+
+    assert restored.nearest_index == 25
