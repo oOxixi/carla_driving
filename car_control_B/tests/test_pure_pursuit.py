@@ -1,3 +1,5 @@
+import math
+
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
 from car_control_B.schemas import RouteReference, VehiclePose
 
@@ -40,3 +42,19 @@ def test_target_behind_ego_is_invalid_instead_of_silent_zero_steer():
     assert out.status == "INVALID"
     assert out.reason == "TARGET_BEHIND_EGO"
     assert out.steer == 0.0
+
+
+def test_tight_local_curve_shortens_lookahead_without_affecting_straight() -> None:
+    controller = _controller()
+    straight = controller.step(VehiclePose(0.0, 0.0, 0.0, 5.0), _ref())
+    curved_points = [
+        (5.0 * math.sin(index * 0.1), 5.0 * (1.0 - math.cos(index * 0.1)))
+        for index in range(20)
+    ]
+    curved = _controller().step(
+        VehiclePose(0.0, 0.0, 0.0, 5.0),
+        RouteReference(points_xy_m=curved_points, target_speed_mps=5.0),
+    )
+
+    assert curved.lookahead_distance_m < straight.lookahead_distance_m
+    assert curved.lookahead_distance_m >= _controller().params.min_lookahead_m

@@ -137,3 +137,37 @@ def estimate_curvature(points: Sequence[Point2D], index: int, stride: int = 3) -
     signed_area2 = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1)
     curvature = 2.0 * signed_area2 / (a * b * c)
     return curvature
+
+
+def max_abs_curvature_ahead(
+    points: Sequence[Point2D],
+    start_index: int,
+    *,
+    horizon_m: float = 30.0,
+    stride: int = 3,
+) -> float:
+    """Return smoothed peak curvature only over the upcoming local path.
+
+    A route-wide maximum makes one distant junction limit every straight in a
+    long mission.  The local horizon preserves advance slowing for a nearby
+    curve without carrying that constraint across kilometres of road.
+    """
+    if len(points) < 3:
+        return 0.0
+    if not math.isfinite(horizon_m) or horizon_m <= 0.0:
+        raise ValueError("horizon_m must be positive and finite")
+    if type(stride) is not int or stride <= 0:
+        raise ValueError("stride must be a positive integer")
+    start = max(0, min(int(start_index), len(points) - 1))
+    end = start
+    travelled = 0.0
+    while end < len(points) - 1 and travelled < horizon_m:
+        travelled += distance(points[end], points[end + 1])
+        end += 1
+    return max(
+        (
+            abs(estimate_curvature(points, index, stride=stride))
+            for index in range(start, end + 1)
+        ),
+        default=0.0,
+    )

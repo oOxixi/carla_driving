@@ -4,6 +4,7 @@ from car_control_B.path_utils import (
     compute_path_heading,
     find_lookahead_index,
     find_nearest_index,
+    max_abs_curvature_ahead,
     resample_path,
     signed_cross_track_error,
     wrap_angle_rad,
@@ -39,3 +40,21 @@ def test_resample_path_preserves_ends():
 
 def test_heading():
     assert abs(compute_path_heading([(0.0, 0.0), (1.0, 0.0)], 0)) < 1e-9
+
+
+def test_local_curvature_ignores_a_distant_turn_until_it_enters_horizon():
+    points = [(float(x), 0.0) for x in range(101)]
+    points += [(100.0, float(y)) for y in range(1, 31)]
+
+    assert max_abs_curvature_ahead(points, 0, horizon_m=30.0) == 0.0
+    assert max_abs_curvature_ahead(points, 90, horizon_m=30.0) > 0.0
+
+
+def test_local_curvature_rejects_invalid_contract_values():
+    points = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0)]
+    try:
+        max_abs_curvature_ahead(points, 0, horizon_m=0.0)
+    except ValueError as error:
+        assert "horizon_m" in str(error)
+    else:
+        raise AssertionError("zero curvature horizon must be rejected")

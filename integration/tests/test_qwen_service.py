@@ -293,7 +293,22 @@ def test_vllm_choice_constraint_narrows_explicit_right_avoid_to_whole_maneuver()
 
     codes = backend._choice_codes(request)
 
-    assert codes == ["D", "K"]
+    assert codes == ["K"]
+
+
+def test_vllm_explicit_maneuver_allows_stop_only_for_emergency_scene() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "AVOID_OBSTACLE", "direction": "RIGHT",
+        "target_speed_mps": None, "target": None,
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "AVOID_OBSTACLE", "STOP",
+    ]
+    request["scene_summary"]["risk_level"] = "EMERGENCY"
+
+    assert backend._choice_codes(request) == ["D", "K"]
 
 
 def test_vllm_choice_constraint_narrows_pedestrian_slow_down_to_longitudinal_actions() -> None:

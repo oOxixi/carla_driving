@@ -363,3 +363,21 @@ def test_invalid_lateral_reference_is_latched_and_full_braked():
     assert result.final_control.brake == 1.0
     assert runtime.safety_latched
     assert any(item.status.value == "FAILED" for item in result.feedback)
+
+
+def test_long_route_uses_local_not_route_wide_peak_curvature_for_speed() -> None:
+    runtime = ControlRuntime(PurePursuitController(), default_speed_mps=5.0)
+    points = tuple((float(x), 0.0) for x in range(101)) + tuple(
+        (100.0, float(y)) for y in range(1, 31)
+    )
+    # The scalar represents a tight turn somewhere in the complete route. It
+    # must not cap the vehicle while the next 30 m are straight.
+    route = RouteReference(points, curvature_per_m=1.0, target_speed_mps=5.0)
+    result = runtime.step(
+        _vehicle(speed=4.0),
+        PerceptionFrame(frame=1, sim_time_s=0.05),
+        route,
+        dt_s=0.05,
+    )
+
+    assert result.longitudinal.target_speed_mps > 4.0

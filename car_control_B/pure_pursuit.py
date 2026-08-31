@@ -11,6 +11,7 @@ from .path_utils import (
     compute_path_heading,
     find_lookahead_index,
     find_nearest_index,
+    max_abs_curvature_ahead,
     signed_cross_track_error,
     wrap_angle_rad,
 )
@@ -22,6 +23,7 @@ class PurePursuitParams:
     wheel_base_m: float = 2.8
     base_lookahead_m: float = 2.0
     speed_gain_s: float = 0.40
+    curvature_lookahead_gain: float = 4.0
     min_lookahead_m: float = 2.0
     max_lookahead_m: float = 8.0
     max_steer_angle_rad: float = 0.60
@@ -45,9 +47,13 @@ class PurePursuitController(LateralController):
         self._last_steer = 0.0
         self._last_nearest_index = 0
 
-    def _lookahead(self, speed_mps: float) -> float:
+    def _lookahead(self, speed_mps: float, curvature_per_m: float = 0.0) -> float:
         p = self.params
-        return clamp(p.base_lookahead_m + p.speed_gain_s * speed_mps, p.min_lookahead_m, p.max_lookahead_m)
+        nominal = p.base_lookahead_m + p.speed_gain_s * speed_mps
+        adapted = nominal / (
+            1.0 + p.curvature_lookahead_gain * abs(curvature_per_m)
+        )
+        return clamp(adapted, p.min_lookahead_m, p.max_lookahead_m)
 
     def step(self, vehicle: VehiclePose, reference: RouteReference) -> LateralOutput:
         p = self.params
@@ -61,7 +67,10 @@ class PurePursuitController(LateralController):
         )
         self._last_nearest_index = nearest
 
-        lookahead = self._lookahead(vehicle.speed_mps)
+        local_curvature = max_abs_curvature_ahead(
+            points, nearest, horizon_m=max(15.0, vehicle.speed_mps * 4.0),
+        )
+        lookahead = self._lookahead(vehicle.speed_mps, local_curvature)
         target_idx = find_lookahead_index(points, nearest, (vehicle.x_m, vehicle.y_m), lookahead)
         target = points[target_idx]
 

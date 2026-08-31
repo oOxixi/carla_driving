@@ -13,6 +13,7 @@ from car_control_A import ControlOutput, DrivingCommand, ExecutionFeedback, Exec
 from car_control_A.behavior_fsm import BehaviorFSM
 from car_control_A.routing import RouteReference
 from car_control_B.lateral_controller_base import LateralController
+from car_control_B.path_utils import max_abs_curvature_ahead
 from car_control_C import FuzzyCommandPolicy, LongitudinalController
 from car_control_D import SafetySupervisor
 
@@ -250,8 +251,13 @@ class ControlRuntime:
             effective_requested_speed_mps = self.requested_speed_mps
             if speed_cap_mps is not None:
                 effective_requested_speed_mps = min(effective_requested_speed_mps, speed_cap_mps)
+            local_curvature_per_m = max_abs_curvature_ahead(
+                route.points_xy_m,
+                lateral.nearest_index,
+                horizon_m=max(15.0, vehicle.speed_mps * 4.0),
+            )
             request = longitudinal_request(vehicle, scene, requested_speed_mps=effective_requested_speed_mps,
-                                           path_curvature_per_m=route.curvature_per_m)
+                                           path_curvature_per_m=local_curvature_per_m)
             if self._active_command is not None and self._active_command.requires_confirmation:
                 fuzzy = self.fuzzy_policy.evaluate(self._active_command, request)
                 longitudinal = fuzzy.output if fuzzy.intervened else self.longitudinal.step(fuzzy.request, dt_s)

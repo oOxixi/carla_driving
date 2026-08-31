@@ -496,22 +496,35 @@ class VllmQwenPlannerBackend:
             if behavior in allowed
             or behavior.removesuffix("_LEFT").removesuffix("_RIGHT") in allowed
         ]
+        intent = (
+            str(hint.get("intent", "")).upper()
+            if isinstance(hint, Mapping) else ""
+        )
         intent_codes = {
-            "KEEP_LANE": {"A", "B", "C", "D"},
-            "SET_SPEED": {"B", "C", "D"},
-            # Preserve an explicit longitudinal instruction.  STOP/YIELD are
-            # separate safety semantics and the deterministic control bridge
-            # must not silently reinterpret them as the requested slow-down.
+            # A parsed explicit intent is a semantic contract.  Qwen may
+            # select parameters and direction variants, but it must not turn
+            # an ordinary maneuver into an unrelated action.  Emergency STOP
+            # remains available below when the scene or constraints require
+            # it, and the independent safety layer can always pre-empt.
+            "KEEP_LANE": {"A"},
+            "SET_SPEED": {"B"},
             "SLOW_DOWN": {"C"},
             "STOP": {"D"},
-            "YIELD": {"C", "D", "E"},
-            "FOLLOW": {"D", "F"},
-            "CHANGE_LANE": {"D", "G", "H"},
-            "TURN": {"D", "I", "J"},
-            "AVOID_OBSTACLE": {"D", "K"},
-            "RETURN_TO_LANE": {"D", "L"},
-            "PULL_OVER": {"D", "M"},
-        }.get(str(hint.get("intent", "")).upper() if isinstance(hint, Mapping) else "")
+            "YIELD": {"E"},
+            "FOLLOW": {"F"},
+            "CHANGE_LANE": {"G", "H"},
+            "TURN": {"I", "J"},
+            "AVOID_OBSTACLE": {"K"},
+            "RETURN_TO_LANE": {"L"},
+            "PULL_OVER": {"M"},
+        }.get(intent)
+        emergency_stop_allowed = (
+            bool(request["constraints"].get("must_stop"))
+            or str(request.get("scene_summary", {}).get("risk_level", "")).upper()
+            == "EMERGENCY"
+        )
+        if intent_codes is not None and emergency_stop_allowed and intent != "STOP":
+            intent_codes = {*intent_codes, "D"}
         if intent_codes is not None:
             codes = [code for code in codes if code in intent_codes]
         if direction in {"LEFT", "RIGHT"}:
