@@ -1,0 +1,350 @@
+{
+  "overall_status": "passed_with_documented_seed_limitation",
+  "source": {
+    "path": "CARLA-Language-Benchmark/datasets/final_benchmark/CARLA_language_benchmark_v1_with_official_extension_4652.json",
+    "sha256": "4797303fd3b65a484763caa8da57873877ab335a6c017cbbb7483b4c586966bb",
+    "record_count": 4652
+  },
+  "configuration": {
+    "split_seed": 20260728,
+    "target_ratios": {
+      "train": 0.7,
+      "val": 0.15,
+      "test": 0.15
+    },
+    "strategy": "connected-component assignment with official extension family balancing",
+    "scene_signature_ignored_keys": [
+      "id",
+      "track_id"
+    ]
+  },
+  "grouping": {
+    "template_group_count": 1429,
+    "scene_group_count": 705,
+    "source_seed_group_count": 0,
+    "connected_component_count": 400,
+    "largest_component_size": 455
+  },
+  "source_seed": {
+    "status": "missing",
+    "field_paths": {},
+    "explanation": "No source seed was found. Template, scene and duplicate isolation is proven; source-seed isolation cannot be proven."
+  },
+  "splits": {
+    "train": {
+      "count": 3216,
+      "actual_ratio": 0.6913155631986242,
+      "target_ratio": 0.7,
+      "sha256": "2c627fccf77ac21f09c77fee856b1ed754c13daf34c31221fdde794878e7792f"
+    },
+    "val": {
+      "count": 718,
+      "actual_ratio": 0.15434221840068788,
+      "target_ratio": 0.15,
+      "sha256": "08d1d1e87a0c19f408b36d4d232fa596e20f5e4b9a8e2d1eee35f74a63c625ec"
+    },
+    "test": {
+      "count": 718,
+      "actual_ratio": 0.15434221840068788,
+      "target_ratio": 0.15,
+      "sha256": "15fcdfedf1b59e834022ec12ee67a95853e9474fc84e00fe4886183cc2b96e54"
+    }
+  },
+  "extension_family_distribution": {
+    "A4-1 slow_vehicle_speed": {
+      "train": 50,
+      "val": 25,
+      "test": 25
+    },
+    "A4-2a bicycle": {
+      "train": 34,
+      "val": 8,
+      "test": 8
+    },
+    "A4-3 cutin": {
+      "train": 57,
+      "val": 12,
+      "test": 11
+    },
+    "A4-4 pedestrian": {
+      "train": 49,
+      "val": 10,
+      "test": 11
+    },
+    "A4-5a slow_vehicle_compound": {
+      "train": 42,
+      "val": 9,
+      "test": 9
+    },
+    "A4-6 bus_area": {
+      "train": 28,
+      "val": 6,
+      "test": 6
+    },
+    "A4-7 construction": {
+      "train": 35,
+      "val": 8,
+      "test": 7
+    },
+    "A4-8a fuzzy_risk_speed": {
+      "train": 13,
+      "val": 6,
+      "test": 6
+    },
+    "A4-8b high_collision": {
+      "train": 11,
+      "val": 2,
+      "test": 2
+    },
+    "A4-9 s1_alignment": {
+      "train": 34,
+      "val": 13,
+      "test": 13
+    }
+  },
+  "extension_family_coverage_failures": [],
+  "expected_action_distribution": {
+    "AVOID_OBJECT": {
+      "train": 381,
+      "val": 21,
+      "test": 9
+    },
+    "CHANGE_LANE_LEFT": {
+      "train": 57,
+      "val": 54,
+      "test": 53
+    },
+    "CHANGE_LANE_RIGHT": {
+      "train": 60,
+      "val": 53,
+      "test": 54
+    },
+    "EMERGENCY_STOP": {
+      "train": 549,
+      "val": 9,
+      "test": 14
+    },
+    "KEEP_LANE": {
+      "train": 885,
+      "val": 155,
+      "test": 160
+    },
+    "REQUEST_CONFIRMATION": {
+      "train": 248,
+      "val": 9,
+      "test": 11
+    },
+    "SET_SPEED": {
+      "train": 473,
+      "val": 187,
+      "test": 185
+    },
+    "START": {
+      "train": 2,
+      "val": 0,
+      "test": 0
+    },
+    "STOP": {
+      "train": 184,
+      "val": 67,
+      "test": 67
+    },
+    "TURN_LEFT": {
+      "train": 192,
+      "val": 154,
+      "test": 8
+    },
+    "TURN_RIGHT": {
+      "train": 185,
+      "val": 9,
+      "test": 157
+    }
+  },
+  "category_distribution": {
+    "ambiguous_target": {
+      "train": 93,
+      "val": 3,
+      "test": 4
+    },
+    "compound": {
+      "train": 232,
+      "val": 34,
+      "test": 34
+    },
+    "dense_target": {
+      "train": 63,
+      "val": 1,
+      "test": 1
+    },
+    "detector_error": {
+      "train": 66,
+      "val": 3,
+      "test": 3
+    },
+    "emergency": {
+      "train": 807,
+      "val": 12,
+      "test": 11
+    },
+    "exposure": {
+      "train": 15,
+      "val": 5,
+      "test": 5
+    },
+    "following": {
+      "train": 150,
+      "val": 75,
+      "test": 75
+    },
+    "lane_change": {
+      "train": 107,
+      "val": 107,
+      "test": 106
+    },
+    "missing_target": {
+      "train": 98,
+      "val": 1,
+      "test": 1
+    },
+    "navigation_error": {
+      "train": 30,
+      "val": 6,
+      "test": 9
+    },
+    "negation": {
+      "train": 5,
+      "val": 1,
+      "test": 0
+    },
+    "occlusion": {
+      "train": 66,
+      "val": 3,
+      "test": 3
+    },
+    "ordinary_instruction": {
+      "train": 150,
+      "val": 75,
+      "test": 75
+    },
+    "ordinary_synonym": {
+      "train": 460,
+      "val": 1,
+      "test": 1
+    },
+    "parking": {
+      "train": 125,
+      "val": 62,
+      "test": 63
+    },
+    "safety_conflict": {
+      "train": 68,
+      "val": 5,
+      "test": 2
+    },
+    "speed_control": {
+      "train": 353,
+      "val": 166,
+      "test": 166
+    },
+    "turning": {
+      "train": 308,
+      "val": 153,
+      "test": 154
+    },
+    "unit_conversion": {
+      "train": 5,
+      "val": 0,
+      "test": 0
+    },
+    "weather_failure": {
+      "train": 15,
+      "val": 5,
+      "test": 5
+    }
+  },
+  "s1_subtype_distribution": {
+    "S1-A keep_lane+60": {
+      "component_support": 10,
+      "train": 13,
+      "val": 1,
+      "test": 1
+    },
+    "S1-B speed_40": {
+      "component_support": 4,
+      "train": 6,
+      "val": 2,
+      "test": 2
+    },
+    "S1-C lane_left": {
+      "component_support": 3,
+      "train": 3,
+      "val": 4,
+      "test": 3
+    },
+    "S1-D lane_right": {
+      "component_support": 3,
+      "train": 4,
+      "val": 3,
+      "test": 3
+    },
+    "S1-E turn_left": {
+      "component_support": 2,
+      "train": 4,
+      "val": 3,
+      "test": 0
+    },
+    "S1-F turn_right": {
+      "component_support": 2,
+      "train": 4,
+      "val": 0,
+      "test": 4
+    }
+  },
+  "action_coverage_failures": [],
+  "category_coverage_failures": [],
+  "s1_coverage_failures": [],
+  "s1_documented_limitations": [
+    {
+      "subtype": "S1-E turn_left",
+      "component_support": 2,
+      "reason": "Only two connected components exist, so train/val/test three-way coverage is impossible without breaking leakage constraints."
+    },
+    {
+      "subtype": "S1-F turn_right",
+      "component_support": 2,
+      "reason": "Only two connected components exist, so train/val/test three-way coverage is impossible without breaking leakage constraints."
+    }
+  ],
+  "duplicate_check": {
+    "group_count": 0,
+    "extra_record_count": 0,
+    "examples": []
+  },
+  "label_conflict_check": {
+    "group_count": 0,
+    "examples": []
+  },
+  "cross_split_leakage": {
+    "total_group_count": 0,
+    "template": {
+      "group_count": 0,
+      "examples": []
+    },
+    "scene": {
+      "group_count": 0,
+      "examples": []
+    },
+    "source_seed": {
+      "group_count": 0,
+      "examples": []
+    },
+    "duplicate_fingerprint": {
+      "group_count": 0,
+      "examples": []
+    }
+  },
+  "outputs": {
+    "manifest": "CARLA-Language-Benchmark/datasets/splits/group1_task3_official_extension_v1/split_manifest.json",
+    "report": "CARLA-Language-Benchmark/datasets/splits/group1_task3_official_extension_v1/split_audit.json"
+  }
+}

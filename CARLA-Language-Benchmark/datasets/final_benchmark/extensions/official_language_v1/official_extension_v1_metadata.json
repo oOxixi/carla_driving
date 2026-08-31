@@ -1,0 +1,92 @@
+{
+  "name": "CARLA-Language-Benchmark v1 Official Language Alignment Extension",
+  "version": "official_language_v1",
+  "status": "frozen",
+  "schema_version": "CARLA-Language-Benchmark v1 frozen schema",
+  "record_count": 550,
+  "baseline_record_count": 4102,
+  "derived_benchmark_record_count": 4652,
+  "schema": {
+    "top_level_field_count": 10,
+    "top_level_fields": [
+      "id",
+      "category",
+      "template",
+      "variables",
+      "semantic_intent",
+      "scene_generator",
+      "scene_constraints",
+      "expected_action",
+      "expected_parameters",
+      "safety_policy"
+    ]
+  },
+  "action_ontology": [
+    "START",
+    "KEEP_LANE",
+    "TURN_LEFT",
+    "TURN_RIGHT",
+    "CHANGE_LANE_LEFT",
+    "CHANGE_LANE_RIGHT",
+    "SET_SPEED",
+    "STOP",
+    "EMERGENCY_STOP",
+    "AVOID_OBJECT",
+    "REQUEST_CONFIRMATION"
+  ],
+  "extension_category_distribution": {
+    "compound": 235,
+    "emergency": 80,
+    "lane_change": 20,
+    "safety_conflict": 15,
+    "speed_control": 185,
+    "turning": 15
+  },
+  "extension_action_distribution": {
+    "AVOID_OBJECT": 135,
+    "CHANGE_LANE_LEFT": 10,
+    "CHANGE_LANE_RIGHT": 10,
+    "EMERGENCY_STOP": 45,
+    "SET_SPEED": 265,
+    "TURN_LEFT": 42,
+    "TURN_RIGHT": 43
+  },
+  "split": {
+    "strategy": "connected-component, feasibility-aware split; template/scene/source-seed/duplicate grouping inherited from Group 1 Task 3 splitter",
+    "train_count": 3216,
+    "val_count": 718,
+    "test_count": 718,
+    "split_seed": 20260728,
+    "source_seed_status": "missing",
+    "source_seed_limitation": "No source seed field is present in the dataset. Template, scene and duplicate isolation were audited; source-seed isolation cannot be proven."
+  },
+  "known_deferred_gaps": [
+    "explicit motorcycle/e-bike ontology support",
+    "distance-triggered turning such as 前方300米路口右转",
+    "construction slowdown plus explicit merge-left multi-stage plan",
+    "explicit overtake plus return-to-route action chain",
+    "non-numeric 保持安全车速 as deterministic SET_SPEED ground truth"
+  ],
+  "files": {
+    "extension": {
+      "path": "CARLA-Language-Benchmark/datasets/final_benchmark/extensions/official_language_v1/CARLA_language_official_extension_v1_550.json",
+      "sha256": "5714fb49544106e0f2554be2a8dd9150fd4dc7db503c9883c90657d3f5f272d1"
+    },
+    "derived_benchmark": {
+      "path": "CARLA-Language-Benchmark/datasets/final_benchmark/CARLA_language_benchmark_v1_with_official_extension_4652.json",
+      "sha256": "4797303fd3b65a484763caa8da57873877ab335a6c017cbbb7483b4c586966bb"
+    },
+    "train": {
+      "path": "CARLA-Language-Benchmark/datasets/splits/group1_task3_official_extension_v1/train.json",
+      "sha256": "2c627fccf77ac21f09c77fee856b1ed754c13daf34c31221fdde794878e7792f"
+    },
+    "val": {
+      "path": "CARLA-Language-Benchmark/datasets/splits/group1_task3_official_extension_v1/val.json",
+      "sha256": "08d1d1e87a0c19f408b36d4d232fa596e20f5e4b9a8e2d1eee35f74a63c625ec"
+    },
+    "test": {
+      "path": "CARLA-Language-Benchmark/datasets/splits/group1_task3_official_extension_v1/test.json",
+      "sha256": "15fcdfedf1b59e834022ec12ee67a95853e9474fc84e00fe4886183cc2b96e54"
+    }
+  }
+}
