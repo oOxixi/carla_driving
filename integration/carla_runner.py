@@ -3790,6 +3790,14 @@ def run(args: argparse.Namespace) -> None:
                     )
                 if not sensor_startup_grace and watchdog.check(now_s=time.monotonic()) is not None:
                     watchdog_alerts.append("RUNTIME_WATCHDOG_TIMEOUT")
+                if watchdog_alerts:
+                    # Preserve the concrete upstream fault in evidence.  D's
+                    # public safety reason intentionally remains the stable
+                    # WATCHDOG_ALERT category, but that category alone cannot
+                    # distinguish a sensor timeout from a route or Qwen fault.
+                    perception_sources["runtime_alerts"] = ",".join(
+                        sorted(set(watchdog_alerts))
+                    )
 
                 command_id = runtime.active_command_id
                 decision_start_ns = time.monotonic_ns()
@@ -4121,7 +4129,6 @@ def run(args: argparse.Namespace) -> None:
                 if args.follow_spectator or args.live_mic:
                     _follow_ego_spectator(world, ego, carla)
                 control_applied_ns = time.monotonic_ns()
-                watchdog.heartbeat("control", now_s=time.monotonic())
                 timing = FrameTiming(
                     sensor_ready_ns=sensor_ready_ns,
                     decision_start_ns=decision_start_ns,
@@ -4165,6 +4172,11 @@ def run(args: argparse.Namespace) -> None:
                 }
                 if step_index % args.print_every == 0 or step_index == args.frames - 1:
                     print(json.dumps(record, ensure_ascii=False))
+                # The synchronous world is still frozen until the next tick.
+                # Mark the frame healthy after evidence/console I/O so a slow
+                # flush cannot age the previous control heartbeat and create a
+                # permanent false safety latch on the following frame.
+                watchdog.heartbeat("control", now_s=time.monotonic())
                 watchdog.pause(now_s=time.monotonic())
                 if args.realtime:
                     # ``--realtime`` targets one wall-clock period per frame;

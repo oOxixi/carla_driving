@@ -568,7 +568,6 @@ class VllmQwenPlannerBackend:
         }
         compact = {
             "command": source_text,
-            "command_hint": request.get("command_hint", {}),
             "visual_input": (
                 "2x2 montage: front, left / right, rear"
                 if "multiview" in str(request.get("rgb_ref", "")).lower()

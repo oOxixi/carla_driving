@@ -60,12 +60,22 @@ def _extension_check(extension: Mapping[str, Any], key: str) -> Mapping[str, Any
 def validate_evidence(
     summary: Mapping[str, Any],
     records: list[Mapping[str, Any]],
+    *,
+    functional_only: bool = False,
 ) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
 
-    def check(key: str, passed: bool, actual: Any, required: Any) -> None:
+    def check(
+        key: str,
+        passed: bool,
+        actual: Any,
+        required: Any,
+        *,
+        category: str = "functional",
+    ) -> None:
         checks.append({
             "key": key,
+            "category": category,
             "status": "PASS" if passed else "FAIL",
             "actual": actual,
             "required": required,
@@ -162,13 +172,27 @@ def validate_evidence(
         isinstance(max_qwen_latency, (int, float)) and max_qwen_latency <= 150.0,
         max_qwen_latency,
         "<= 150.0",
+        category="performance",
     )
 
-    failed = [item["key"] for item in checks if item["status"] == "FAIL"]
+    functional_failed = [
+        item["key"] for item in checks
+        if item["category"] == "functional" and item["status"] == "FAIL"
+    ]
+    performance_failed = [
+        item["key"] for item in checks
+        if item["category"] == "performance" and item["status"] == "FAIL"
+    ]
+    blocking_failed = functional_failed + ([] if functional_only else performance_failed)
     return {
         "scenario_id": summary.get("scenario_id"),
-        "passed": not failed,
-        "failed_keys": failed,
+        "evaluation_profile": "functional" if functional_only else "competition",
+        "passed": not blocking_failed,
+        "functional_passed": not functional_failed,
+        "performance_passed": not performance_failed,
+        "failed_keys": blocking_failed,
+        "functional_failed_keys": functional_failed,
+        "performance_failed_keys": performance_failed,
         "checks": checks,
     }
 
@@ -178,10 +202,22 @@ def main() -> None:
     parser.add_argument("jsonl", type=Path, help="S2 ScenarioEvidenceRecorder JSONL")
     parser.add_argument("--summary", type=Path, help="Adjacent summary JSON path")
     parser.add_argument("--output", type=Path, help="Optional member-3 report path")
+    parser.add_argument(
+        "--functional-only",
+        action="store_true",
+        help=(
+            "report the 150 ms performance result but do not use it to block "
+            "functional-chain acceptance"
+        ),
+    )
     args = parser.parse_args()
 
     summary_path = args.summary or args.jsonl.with_suffix(".summary.json")
-    report = validate_evidence(_load_json(summary_path), _load_jsonl(args.jsonl))
+    report = validate_evidence(
+        _load_json(summary_path),
+        _load_jsonl(args.jsonl),
+        functional_only=args.functional_only,
+    )
     encoded = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)

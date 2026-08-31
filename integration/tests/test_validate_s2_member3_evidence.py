@@ -88,3 +88,32 @@ def test_member3_evidence_rejects_missing_return_and_close_bicycle():
     assert report["passed"] is False
     assert "mission_route_restored" in report["failed_keys"]
     assert "extension_minimum_actor_distances_m" in report["failed_keys"]
+
+
+def test_member3_functional_profile_reports_but_does_not_block_on_latency():
+    summary, records = _passing_evidence()
+    summary["latency"]["sensor_to_trajectory_max_ms"] = 215.0
+
+    competition = validate_evidence(summary, records)
+    functional = validate_evidence(summary, records, functional_only=True)
+
+    assert competition["passed"] is False
+    assert competition["functional_passed"] is True
+    assert competition["performance_passed"] is False
+    assert competition["failed_keys"] == ["sensor_to_trajectory_max_ms"]
+    assert functional["passed"] is True
+    assert functional["evaluation_profile"] == "functional"
+    assert functional["failed_keys"] == []
+    assert functional["performance_failed_keys"] == ["sensor_to_trajectory_max_ms"]
+
+
+def test_member3_functional_profile_still_blocks_functional_failures():
+    summary, records = _passing_evidence()
+    summary["collision_count"] = 1
+    summary["latency"]["sensor_to_trajectory_max_ms"] = 215.0
+
+    report = validate_evidence(summary, records, functional_only=True)
+
+    assert report["passed"] is False
+    assert report["failed_keys"] == ["collision_count"]
+    assert report["performance_failed_keys"] == ["sensor_to_trajectory_max_ms"]
