@@ -236,15 +236,49 @@ class CommandParser:
         ctx.slots["direction"] = direction
 
     def _handle_relative_speed(self, ctx: ParseContext) -> None:
-        speed = _extract_speed(ctx.normalized_text)
+        text = ctx.normalized_text
+
+        # Relative speed expressions must not be interpreted as
+        # numeric target speed.
+        #
+        # Examples:
+        #   速度降一点
+        #   速度慢一点
+        #   再慢一些
+        #
+        # These mean relative adjustment, not 1 km/h.
+        relative_only_patterns = (
+            r"一点",
+            r"一些",
+            r"一下",
+            r"稍微",
+            r"略微",
+            r"慢一点",
+            r"快一点",
+        )
+
+        is_relative_only = any(
+            re.search(pattern, text)
+            for pattern in relative_only_patterns
+        )
+
+        speed = None if is_relative_only else _extract_speed(text)
+
         if speed is not None:
             ctx.slots["speed"] = speed
             ctx.slots["unit"] = "km/h"
             ctx.slots["mode"] = "TARGET"
         else:
             ctx.slots["mode"] = "RELATIVE"
-            ctx.slots["action"] = "DECELERATE" if ctx.intent == "SLOW_DOWN" else "ACCELERATE"
-            ctx.warning("MISSING_OPTIONAL_SLOT", "未给出目标速度，输出相对速度动作")
+            ctx.slots["action"] = (
+                "DECELERATE"
+                if ctx.intent == "SLOW_DOWN"
+                else "ACCELERATE"
+            )
+            ctx.warning(
+                "MISSING_OPTIONAL_SLOT",
+                "未给出目标速度，输出相对速度动作"
+            )
 
     def _validate_common_safety(self, ctx: ParseContext) -> None:
         speed = ctx.slots.get("speed")

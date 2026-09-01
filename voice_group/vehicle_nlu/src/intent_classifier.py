@@ -64,52 +64,277 @@ def _build_result(
     return asdict(result)
 
 
-def _contains_multiple_actions(text: str) -> bool:
-    """
-    初步检测复合指令。
+# ---------------------------------------------------------------------------
+# Compound-command routing
+# ---------------------------------------------------------------------------
+#
+# B1's deterministic fast path represents one executable intent.  Commands
+# that express multiple independent manoeuvre semantics must therefore be
+# routed to the planner slow path rather than silently dropping one action.
+#
+# Important safety exception:
+#     "cannot avoid / no avoidance space -> emergency stop"
+# is a single terminal emergency action.  The word "avoid" describes an
+# unavailable alternative and must not cause an emergency command to be
+# routed through the slower planner path.
+#
+# These rules operate only on source text.  They do not depend on benchmark
+# IDs, categories, semantic_intent labels, or expected actions.
 
-    示例：
-        先减速到40，然后向左变道
-    """
 
-    has_connector = (
-        _matches(
+_COMPOUND_NUMBER_PATTERN = (
+    r"(?:\d+(?:\.\d+)?|[零〇一二两三四五六七八九十百]+)"
+)
+
+
+_TERMINAL_EMERGENCY_STOP_PATTERNS = (
+    r"(?:紧急停车|立即停车|马上停车|立刻停车|紧急制动|紧急刹车)",
+    r"(?:立即|马上|立刻|紧急).{0,8}(?:停车|停下|制动|刹车)",
+)
+
+
+_AVOIDANCE_UNAVAILABLE_PATTERNS = (
+    r"(?:来不及|无法|不能|没法).{0,8}(?:避让|避开|绕开|绕过)",
+
+    r"(?:没有|无|缺少).{0,8}(?:安全)?避让空间",
+
+    r"(?:避让|绕行).{0,6}(?:空间|方向|通道|路径)"
+    r".{0,8}(?:不足|没有|被占用|被堵住|被阻断)",
+
+    r"(?:安全)?避让.{0,6}"
+    r"(?:空间不足|方向被阻挡|通道被堵住|路径被占用)",
+)
+
+
+_COMPOUND_SIGNAL_PATTERNS = {
+    "speed": (
+        rf"(?:速度|车速).{{0,10}}"
+        rf"(?:调|调整|调到|调至|降到|降至|设|设为|设置|控制|稳定|"
+        rf"限制|保持|提升|提高|降低).{{0,8}}"
+        rf"{_COMPOUND_NUMBER_PATTERN}",
+
+        rf"(?:减速到|降速到|减至|降至|加速到|提速到|提速至|"
+        rf"提升到|提升至|提高到|提高至|加至).{{0,5}}"
+        rf"{_COMPOUND_NUMBER_PATTERN}",
+
+        rf"(?:按|按照|以|采用|改以).{{0,8}}"
+        rf"{_COMPOUND_NUMBER_PATTERN}.{{0,6}}"
+        r"(?:公里每小时|km/h|公里/小时)",
+
+        rf"{_COMPOUND_NUMBER_PATTERN}.{{0,6}}"
+        r"(?:公里每小时|km/h|公里/小时)"
+        r".{0,8}(?:行驶|通过|继续)",
+
+        r"(?:减速|降速|放慢|降低速度|控制车速|控制速度)",
+    ),
+
+    "keep_lane": (
+        r"(?:保持|维持).{0,10}"
+        r"(?:当前|本|这条|现在所在|原有|原来的|原).{0,5}"
+        r"(?:车道|道路|路线)",
+
+        r"(?:继续沿|沿着|沿).{0,10}"
+        r"(?:当前|本|这条|原有|原来的|原).{0,5}"
+        r"(?:车道|道路|路线)",
+
+        r"(?:按|沿).{0,6}"
+        r"(?:当前|原有|原来的|原).{0,5}"
+        r"(?:路线|道路).{0,8}(?:继续|行驶|前进)",
+
+        r"(?:继续|保持).{0,6}"
+        r"(?:当前|原有|原来的|原).{0,5}"
+        r"(?:路线|道路|车道)",
+
+        r"(?:不要|别|禁止).{0,8}"
+        r"(?:改变|变更|离开).{0,6}"
+        r"(?:当前|本|这条)?.{0,4}车道",
+
+        r"(?:保持当前车道|继续当前路线|继续原路线)",
+    ),
+
+    "lane_change": (
+        r"(?:向左|向右|左侧|右侧).{0,5}"
+        r"(?:变道|换道|并道|并线)",
+
+        r"(?:变入|换到|进入|并入|切到).{0,5}"
+        r"(?:左侧|右侧).{0,5}"
+        r"(?:车道|目标车道)",
+    ),
+
+    "turn": (
+        r"(?:左转|右转|向左转|向右转|左侧转向|右侧转向)",
+        r"(?:向左|向右).{0,4}(?:转弯|转向)",
+    ),
+
+    "avoid": (
+        r"(?:避让|避开|避过|绕开|绕过|绕行|躲开)",
+        r"(?:安全通过).{0,8}(?:后|以后|之后)",
+    ),
+
+    "yield_wait": (
+        r"(?:等待|等).{0,14}"
+        r"(?:行人|他们|对方|人|骑行者).{0,10}"
+        r"(?:通过|走完|过去|离开)",
+
+        r"(?:让|礼让).{0,14}"
+        r"(?:正在)?(?:通行|通过|过街|穿行)?.{0,6}"
+        r"(?:的)?(?:行人|人|骑行者).{0,8}"
+        r"(?:通过|走完|先行)?",
+
+        r"(?:让|礼让).{0,10}"
+        r"(?:行人|人|骑行者).{0,8}"
+        r"(?:通过|走完|先行)",
+
+        r"(?:停车等待|先等待|优先避让|先避让)",
+
+        r"(?:先)?等候.{0,10}"
+        r"(?:再|然后|随后).{0,10}"
+        r"(?:执行|完成|继续)?"
+        r"(?:左转|右转|转弯|转向)",
+    ),
+
+    "stop": (
+        r"(?:停车|停下|停止|停住|紧急停车|紧急制动|紧急刹车)",
+    ),
+
+    "resume_route": (
+        r"(?:恢复|回到|返回).{0,10}"
+        r"(?:原有|原来的|原|当前)?.{0,6}"
+        r"(?:行驶)?(?:路线|道路|车道)",
+
+        r"(?:恢复|回到|返回).{0,8}(?:路线|道路|车道)",
+
+        r"(?:通过|避让|避开|绕开|绕过|绕行).{0,10}后"
+        r".{0,10}(?:继续|保持|恢复|回到|返回)",
+
+        r"(?:继续|恢复|回到|返回).{0,8}"
+        r"(?:原有|原来的|原|当前).{0,6}"
+        r"(?:路线|道路|车道)",
+    ),
+}
+
+
+_COMPOUND_SIGNAL_PAIRS = frozenset({
+    frozenset(("speed", "keep_lane")),
+    frozenset(("speed", "lane_change")),
+    frozenset(("speed", "avoid")),
+
+    frozenset(("avoid", "keep_lane")),
+    frozenset(("avoid", "resume_route")),
+
+    frozenset(("turn", "avoid")),
+    frozenset(("turn", "yield_wait")),
+
+    frozenset(("lane_change", "avoid")),
+    frozenset(("lane_change", "resume_route")),
+})
+
+
+_VULNERABLE_CONTEXT_PATTERNS = (
+    r"(?:公交站|公交车|巴士站|巴士)",
+    r"(?:行人|有人|过街的人|路侧的人)",
+)
+
+
+_CONTINUE_AFTER_SPEED_PATTERNS = (
+    r"(?:后|然后|再).{0,8}"
+    r"(?:继续前进|继续行驶|继续沿|按当前路线继续|沿当前道路继续)",
+)
+
+
+def _matches_any_pattern(
+    text: str,
+    patterns: tuple[str, ...],
+) -> bool:
+    return any(
+        re.search(pattern, text)
+        for pattern in patterns
+    )
+
+
+def _is_terminal_emergency_stop(text: str) -> bool:
+    """True when avoidance is explicitly unavailable and STOP is terminal."""
+
+    return (
+        _matches_any_pattern(
             text,
-            [
-                r"然后",
-                r"接着",
-                r"同时",
-                r"并且",
-                r"随后",
-                r"先.*再",
-            ],
+            _TERMINAL_EMERGENCY_STOP_PATTERNS,
+        )
+        and _matches_any_pattern(
+            text,
+            _AVOIDANCE_UNAVAILABLE_PATTERNS,
         )
     )
 
-    if not has_connector:
-        return False
 
-    action_groups = [
-        r"(紧急|立即|马上|立刻).*(停车|刹车|制动)",
-        r"(靠边|路边|道路左侧|道路右侧).*(停|停车)",
-        r"(减速到|加速到|设置为|设为|调整到|控制在)"
-        + rf".*{NUMBER_PATTERN}",
-        r"(绕开|绕过|避开|避让)",
-        r"(变道|换到.*车道|进入.*车道|并入.*车道)",
-        r"(保持|维持).*(当前|本|这条)?.*车道",
-        r"(加速|提速|开快|加快)",
-        r"(减速|降速|开慢|放慢)",
-        r"(停车|停下|停止|停住)",
-    ]
+def _compound_signal_names(text: str) -> set[str]:
+    names: set[str] = set()
 
-    matched_count = sum(
-        1
-        for pattern in action_groups
-        if re.search(pattern, text)
+    for name, patterns in _COMPOUND_SIGNAL_PATTERNS.items():
+        if _matches_any_pattern(text, patterns):
+            names.add(name)
+
+    return names
+
+
+def _has_compound_signal_pair(
+    names: set[str],
+) -> bool:
+    return any(
+        pair.issubset(names)
+        for pair in _COMPOUND_SIGNAL_PAIRS
     )
 
-    return matched_count >= 2
 
+def _has_vulnerable_speed_continuation(
+    text: str,
+    names: set[str],
+) -> bool:
+    """
+    Detect context-dependent speed+continuation commands.
+
+    A generic sentence such as
+        "减到40公里每小时再继续行驶"
+    remains a single speed command.
+
+    When the same construction is conditioned on a pedestrian/bus-stop
+    hazard, preserving the follow-on route semantics requires the planner.
+    """
+
+    return (
+        "speed" in names
+        and _matches_any_pattern(
+            text,
+            _VULNERABLE_CONTEXT_PATTERNS,
+        )
+        and _matches_any_pattern(
+            text,
+            _CONTINUE_AFTER_SPEED_PATTERNS,
+        )
+    )
+
+
+def _contains_multiple_actions(text: str) -> bool:
+    """
+    Return True when one utterance requires multiple high-level semantics.
+
+    Complex commands are routed to the Qwen/planner slow path.  Terminal
+    emergency-stop commands remain on the deterministic fast path even when
+    they describe avoidance as unavailable.
+    """
+
+    if _is_terminal_emergency_stop(text):
+        return False
+
+    names = _compound_signal_names(text)
+
+    if _has_compound_signal_pair(names):
+        return True
+
+    return _has_vulnerable_speed_continuation(
+        text,
+        names,
+    )
 
 def classify_intent(text: str) -> dict:
     """
@@ -307,11 +532,14 @@ def classify_intent(text: str) -> dict:
         normalized_text,
         [
             # 原有表达
-            rf"(减速到|降速到|加速到|降到|降至|提高到|提到|升到|"
-            rf"设置为|设为|调整到|控制在|保持|开到).{{0,10}}{NUMBER_PATTERN}",
+            rf"(减速到|减速至|降速到|降速至|加速到|加速至|"
+            rf"提速到|提速至|降到|降至|提高到|提高至|提升到|提升至|"
+            rf"提到|升到|设置为|设为|调整到|调整至|控制在|"
+            rf"稳定在|限制在|保持|开到).{{0,10}}{NUMBER_PATTERN}",
 
             rf"(速度|车速).{{0,10}}"
-            rf"(到|为|降到|提高到|调整到|控制在)"
+            rf"(到|为|调到|调至|调整到|调整至|降到|降至|减至|"
+            rf"提高到|提高至|提升到|提升至|控制在|稳定在|限制在)"
             rf".{{0,6}}{NUMBER_PATTERN}",
 
             # 新表达：车速调成35、把速度控制到45
@@ -335,6 +563,13 @@ def classify_intent(text: str) -> dict:
             rf"(速度|车速).{{0,6}}(设置成|设成|保持在).{{0,6}}{NUMBER_PATTERN}",
 
             rf"以.{{0,3}}{NUMBER_PATTERN}.{{0,6}}速度行驶",
+
+            # Explicit unit-bearing target speed:
+            # 按/按照/以/采用/改以 35公里每小时 ...
+            rf"(?:按|按照|以|采用|改以).{{0,6}}"
+            rf"{NUMBER_PATTERN}.{{0,6}}"
+            rf"(?:公里每小时|公里/小时|千米每小时|千米/小时|km/h|KM/H)",
+
             rf"提速到.{{0,6}}{NUMBER_PATTERN}",
         ],
     ):
@@ -383,6 +618,9 @@ def classify_intent(text: str) -> dict:
             r"换到.*车道",
             r"进入.*车道",
             r"并入.*车道",
+
+            r"变入(左|右|左侧|右侧)(目标)?车道",
+
             r"并道",
 
             r"(换|并|切|变)(到|入|向|往)?(左|右|左侧|右侧)(车道|道)?(吧+)?$",
