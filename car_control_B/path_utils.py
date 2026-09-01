@@ -109,12 +109,39 @@ def compute_path_heading(points: Sequence[Point2D], index: int) -> float:
 
 
 def signed_cross_track_error(points: Sequence[Point2D], nearest_index: int, x: float, y: float) -> float:
-    """Signed lateral error; in CARLA coordinates positive is path-right."""
-    heading = compute_path_heading(points, nearest_index)
-    px, py = points[nearest_index]
-    dx = x - px
-    dy = y - py
-    return -math.sin(heading) * dx + math.cos(heading) * dy
+    """Signed distance to the nearest adjacent path segment.
+
+    Using the tangent of a single nearest waypoint makes the reported error
+    jump at a polyline corner: the waypoint may be nearest while the vehicle
+    is still closest to the segment entering that waypoint. Projecting onto
+    both adjacent segments keeps the metric geometrically meaningful and
+    gives Stanley-style feedback the correct sign through intersections.
+    Positive remains path-right in CARLA coordinates.
+    """
+    if len(points) < 2:
+        raise ValueError("path must contain at least two points")
+    index = max(0, min(nearest_index, len(points) - 1))
+    segment_starts = range(max(0, index - 1), min(index + 1, len(points) - 1))
+    best_distance_sq = math.inf
+    best_error = 0.0
+    for start in segment_starts:
+        x0, y0 = points[start]
+        x1, y1 = points[start + 1]
+        sx, sy = x1 - x0, y1 - y0
+        length_sq = sx * sx + sy * sy
+        if length_sq <= 1e-12:
+            continue
+        projection = clamp(((x - x0) * sx + (y - y0) * sy) / length_sq, 0.0, 1.0)
+        px, py = x0 + projection * sx, y0 + projection * sy
+        dx, dy = x - px, y - py
+        distance_sq = dx * dx + dy * dy
+        if distance_sq < best_distance_sq:
+            length = math.sqrt(length_sq)
+            best_distance_sq = distance_sq
+            best_error = -(sy / length) * dx + (sx / length) * dy
+    if not math.isfinite(best_distance_sq):
+        raise ValueError("path contains no non-zero segment adjacent to nearest_index")
+    return best_error
 
 
 def estimate_curvature(points: Sequence[Point2D], index: int, stride: int = 3) -> float:

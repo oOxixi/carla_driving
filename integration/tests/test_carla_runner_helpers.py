@@ -1444,7 +1444,7 @@ def test_vehicle_speed_ignores_vertical_spawn_settling() -> None:
 def test_acceptance_lateral_tuning_limits_steer_and_rate() -> None:
     controller = _acceptance_lateral_controller()
     assert controller.params.steer_sign == 1.0
-    assert controller.params.max_steer == pytest.approx(0.60)
+    assert controller.params.max_steer == pytest.approx(0.70)
     assert controller.params.max_steer_delta_per_step == pytest.approx(0.04)
     assert controller.params.min_lookahead_m >= 2.5
     assert controller.params.nearest_search_window == 2

@@ -30,6 +30,14 @@ def test_cross_track_sign():
     assert signed_cross_track_error(points, 0, 1.0, -1.0) < 0
 
 
+def test_cross_track_projects_onto_incoming_segment_at_corner() -> None:
+    points = [(0.0, 0.0), (2.0, 0.0), (2.0, 2.0)]
+
+    error = signed_cross_track_error(points, 1, 1.5, -0.2)
+
+    assert error == -0.2
+
+
 def test_resample_path_preserves_ends():
     points = [(0.0, 0.0), (10.0, 0.0)]
     sampled = resample_path(points, spacing_m=2.0)
