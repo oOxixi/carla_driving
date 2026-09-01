@@ -1,0 +1,34 @@
+{
+  "version": "official_language_v1",
+  "extension_samples": 550,
+  "merged_benchmark_samples": 4652,
+  "schema": {
+    "status": "PASS"
+  },
+  "ontology": {
+    "status": "PASS"
+  },
+  "nlu": {
+    "atomic": {
+      "total": 50,
+      "pass": 50
+    },
+    "compound": {
+      "total": 235,
+      "pass": 235
+    }
+  },
+  "runtime": {
+    "integration_tests": 426,
+    "passed": 426
+  },
+  "split": {
+    "train": 3216,
+    "val": 718,
+    "test": 718
+  },
+  "interface_status": {
+    "vehicle_control_output": false,
+    "high_level_plan_only": true
+  }
+}

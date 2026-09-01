@@ -1,0 +1,66 @@
+{
+  "version": "1.0",
+  "description": "First group RGB semantic object mapping for CARLA driving benchmark.",
+  "objects": [
+    {
+      "category": "person",
+      "aliases": [
+        "pedestrian"
+      ],
+      "usage": "human interaction and emergency risk detection"
+    },
+    {
+      "category": "bus",
+      "aliases": [],
+      "usage": "large vehicle interaction and bus stop scenarios"
+    },
+    {
+      "category": "slow_vehicle",
+      "aliases": [
+        "vehicle"
+      ],
+      "usage": "slow traffic following and overtaking decisions"
+    },
+    {
+      "category": "bicycle_motorcycle",
+      "aliases": [
+        "bicycle",
+        "motorcycle"
+      ],
+      "usage": "vulnerable road user avoidance"
+    },
+    {
+      "category": "traffic_cone",
+      "aliases": [
+        "cone"
+      ],
+      "usage": "construction and lane restriction scenarios"
+    },
+    {
+      "category": "construction_area",
+      "aliases": [],
+      "usage": "road work semantic context"
+    },
+    {
+      "category": "traffic_light",
+      "aliases": [
+        "red",
+        "yellow",
+        "green"
+      ],
+      "usage": "intersection safety reasoning"
+    },
+    {
+      "category": "lane_marker",
+      "aliases": [],
+      "usage": "lane relation and route alignment"
+    }
+  ],
+  "required_fields": [
+    "category",
+    "bbox",
+    "confidence",
+    "driving_corridor_relation",
+    "instruction_relevance"
+  ]
+}
