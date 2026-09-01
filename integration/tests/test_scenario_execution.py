@@ -86,10 +86,12 @@ def test_best_route_anchor_prefers_drivable_shape_not_first_spawn() -> None:
 def test_timeline_emits_each_command_once_and_in_order() -> None:
     spec = ScenarioSpec.load(SCENARIO_ROOT / "regression" / "REG_011_challenge_multi_command.json")
     timeline = CommandTimeline(spec.commands)
+    assert timeline.completed is False
     assert [item["intent"] for item in timeline.due(0.0)] == ["SET_SPEED"]
     assert timeline.due(0.0) == ()
     assert [item["intent"] for item in timeline.due(7.0)] == ["SLOW_DOWN"]
     assert [item["intent"] for item in timeline.due(30.0)] == ["STOP"]
+    assert timeline.completed is True
 
 
 @pytest.mark.parametrize(

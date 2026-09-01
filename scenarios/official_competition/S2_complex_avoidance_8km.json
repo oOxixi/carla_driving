@@ -8,7 +8,7 @@
   "map": "Town03",
   "weather": "CloudySunset",
   "seed": 20260202,
-  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 1100.0, "max_startup_wait_s": 20.0},
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 2400.0, "max_startup_wait_s": 20.0},
   "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
   "route": {
     "coordinate_type": "scenario_local_xy_m",

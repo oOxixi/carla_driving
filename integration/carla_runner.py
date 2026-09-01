@@ -1940,6 +1940,7 @@ def _declared_scenario_runtime_completed(
     collision_seen: bool,
     command_finished: bool,
     safety_reasons: set[str],
+    route_run_ended_early: bool = False,
 ) -> bool:
     """Check runtime health only; declared contracts own task semantics.
 
@@ -1948,7 +1949,7 @@ def _declared_scenario_runtime_completed(
     base, extension, and oracle contract.
     """
     return (
-        frames == spec.frame_count
+        (frames == spec.frame_count or route_run_ended_early)
         and final_speed_mps is not None
         and not collision_seen
         and command_finished
@@ -2025,6 +2026,7 @@ def _expected_safety_completed(
     final_speed_mps: float | None,
     collision_seen: bool,
     safety_reasons: set[str],
+    route_run_ended_early: bool = False,
 ) -> bool | None:
     """Evaluate scenario contracts whose success is an intentional D intervention."""
     expected = spec.expected
@@ -2034,7 +2036,11 @@ def _expected_safety_completed(
     requires_emergency = expected.get("must_emergency_brake") is True
     if not (requires_override or allows_override or requires_route_event or requires_emergency):
         return None
-    if frames != spec.frame_count or final_speed_mps is None or collision_seen:
+    if (
+        (frames != spec.frame_count and not route_run_ended_early)
+        or final_speed_mps is None
+        or collision_seen
+    ):
         return False
     meaningful = {reason for reason in safety_reasons if reason not in {"NONE", "PERCEPTION_STARTUP_GRACE"}}
     if requires_override and not meaningful:
@@ -2089,6 +2095,48 @@ def _route_contract_completed(
     if route_remaining_m is not None:
         return route_remaining_m <= spec.finish_radius_m
     return distance_to_route_end_m is not None and distance_to_route_end_m <= spec.finish_radius_m
+
+
+def _route_run_can_end_early(
+    spec: ScenarioSpec | None,
+    *,
+    elapsed_s: float,
+    speed_mps: float,
+    route_remaining_m: float | None,
+    timeline_completed: bool,
+    command_finished: bool,
+    canonical_pending: bool,
+    deferred_command_count: int,
+    maneuver_active: bool,
+    qwen_contract_completed: bool,
+    extension_contract_completed: bool,
+    collision_seen: bool,
+    safety_reasons: set[str],
+) -> bool:
+    """End a bounded route run once its real completion contracts are terminal.
+
+    ``duration_s`` remains a fail-safe upper bound. Long routes may finish
+    earlier, but only after their declared minimum evidence duration and every
+    command/Qwen/extension lifecycle has completed.
+    """
+    if spec is None or spec.expected.get("must_finish_route") is not True:
+        return False
+    min_run_time_s = float(spec.expected.get("min_run_time_s", 0.0))
+    return (
+        elapsed_s >= min_run_time_s
+        and route_remaining_m is not None
+        and route_remaining_m <= spec.finish_radius_m
+        and speed_mps <= 0.15
+        and timeline_completed
+        and command_finished
+        and not canonical_pending
+        and deferred_command_count == 0
+        and not maneuver_active
+        and qwen_contract_completed
+        and extension_contract_completed
+        and not collision_seen
+        and _runtime_health_completed(safety_reasons)
+    )
 
 
 def _remaining_route_distances(
@@ -2313,6 +2361,7 @@ def run(args: argparse.Namespace) -> None:
     recorder = _evidence_recorder(args, spec)
     ego: Any | None = None
     frames_completed = 0
+    route_run_ended_early = False
     final_state: RuntimeVehicleState | None = None
     final_scene: PerceptionFrame | None = None
     min_gap_m: float | None = None
@@ -4235,6 +4284,58 @@ def run(args: argparse.Namespace) -> None:
                 # permanent false safety latch on the following frame.
                 watchdog.heartbeat("control", now_s=time.monotonic())
                 watchdog.pause(now_s=time.monotonic())
+                maneuver_active = (
+                    maneuver_fsm.plan is not None
+                    and maneuver_fsm.state not in TERMINAL_STATES
+                )
+                early_route_candidate = (
+                    spec is not None
+                    and spec.expected.get("must_finish_route") is True
+                    and elapsed_s >= float(spec.expected.get("min_run_time_s", 0.0))
+                    and final_route_remaining_m is not None
+                    and final_route_remaining_m <= spec.finish_radius_m
+                    and state.speed_mps <= 0.15
+                )
+                qwen_contract_completed = qwen_scenario_monitor is None
+                extension_contract_completed = extension_runtime is None
+                if early_route_candidate and qwen_scenario_monitor is not None:
+                    qwen_contract_completed = qwen_scenario_monitor.finalize().passed
+                if early_route_candidate and extension_runtime is not None and spec is not None:
+                    proposed = spec.extensions.get("proposed_acceptance", {})
+                    if not isinstance(proposed, Mapping):
+                        raise TypeError("extensions.proposed_acceptance must be an object")
+                    extension_contract_completed = bool(extension_runtime.evaluate(
+                        proposed,
+                        expected_command_count=len(spec.commands),
+                        safety_reasons=tuple(sorted(safety_reasons)),
+                        oracle=spec.extensions.get("oracle", {}),
+                    )["passed"])
+                route_run_ended_early = _route_run_can_end_early(
+                    spec,
+                    elapsed_s=elapsed_s,
+                    speed_mps=state.speed_mps,
+                    route_remaining_m=final_route_remaining_m,
+                    timeline_completed=(timeline is None or timeline.completed),
+                    command_finished=runtime.active_command_id is None,
+                    canonical_pending=(
+                        canonical_bridge is not None and canonical_bridge.has_pending
+                    ),
+                    deferred_command_count=len(deferred_commands),
+                    maneuver_active=maneuver_active,
+                    qwen_contract_completed=qwen_contract_completed,
+                    extension_contract_completed=extension_contract_completed,
+                    collision_seen=collision_seen,
+                    safety_reasons=safety_reasons,
+                )
+                if route_run_ended_early:
+                    print(json.dumps({
+                        "record_type": "route_run_completed_early",
+                        "frame": frame,
+                        "elapsed_s": elapsed_s,
+                        "route_remaining_m": final_route_remaining_m,
+                        "frame_budget": args.frames,
+                    }, ensure_ascii=False), flush=True)
+                    break
                 if args.realtime:
                     # ``--realtime`` targets one wall-clock period per frame;
                     # it must not add a full period after tick+control work.
@@ -4291,6 +4392,7 @@ def run(args: argparse.Namespace) -> None:
             final_speed_mps=final_speed,
             collision_seen=collision_seen,
             safety_reasons=safety_reasons,
+            route_run_ended_early=route_run_ended_early,
         )
         command_finished = runtime is None or runtime.active_command_id is None
         if not command_finished and runtime is not None:
@@ -4315,6 +4417,7 @@ def run(args: argparse.Namespace) -> None:
                 collision_seen=collision_seen,
                 command_finished=command_finished,
                 safety_reasons=safety_reasons,
+                route_run_ended_early=route_run_ended_early,
             )
         else:
             completion = (

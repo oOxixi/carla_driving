@@ -77,6 +77,11 @@ class CanonicalRuntimeBridge:
         self._pending: dict[str, _PendingSlow] = {}
         self._latest_command_id: str | None = None
 
+    @property
+    def has_pending(self) -> bool:
+        """Whether a canonical command is still waiting for its Qwen result."""
+        return bool(self._pending)
+
     def submit(
         self,
         envelope: Mapping[str, Any],

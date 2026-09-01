@@ -248,6 +248,11 @@ class CommandTimeline:
         self._commands = tuple(sorted(commands, key=lambda item: item.time_s))
         self._next_index = 0
 
+    @property
+    def completed(self) -> bool:
+        """Whether every declared command has been emitted exactly once."""
+        return self._next_index >= len(self._commands)
+
     def due(
         self,
         elapsed_s: float,

@@ -43,6 +43,7 @@ from integration.carla_runner import (
     _rejected_load_envelope,
     _remaining_route_distances,
     _route_contract_completed,
+    _route_run_can_end_early,
     _route_stop_trigger_m,
     _runtime_health_completed,
     _declared_scenario_runtime_completed,
@@ -929,6 +930,44 @@ def test_route_stop_trigger_scales_with_speed_without_stopping_early() -> None:
     assert _route_stop_trigger_m(0.0, 3.0) == pytest.approx(3.0)
     assert _route_stop_trigger_m(4.0, 3.0) == pytest.approx(5.0)
     assert _route_stop_trigger_m(6.0, 3.0) == pytest.approx(10.0)
+
+
+def test_long_route_ends_after_real_contracts_not_only_frame_exhaustion() -> None:
+    spec = carla_runner.ScenarioSpec.load(
+        Path(__file__).resolve().parents[2]
+        / "scenarios" / "official_competition" / "S2_complex_avoidance_8km.json"
+    )
+    completed = {
+        "elapsed_s": 1900.0,
+        "speed_mps": 0.1,
+        "route_remaining_m": spec.finish_radius_m,
+        "timeline_completed": True,
+        "command_finished": True,
+        "canonical_pending": False,
+        "deferred_command_count": 0,
+        "maneuver_active": False,
+        "qwen_contract_completed": True,
+        "extension_contract_completed": True,
+        "collision_seen": False,
+        "safety_reasons": set(),
+    }
+    assert _route_run_can_end_early(spec, **completed) is True
+    for key, value in {
+        "elapsed_s": 849.9,
+        "speed_mps": 0.2,
+        "route_remaining_m": spec.finish_radius_m + 0.1,
+        "timeline_completed": False,
+        "command_finished": False,
+        "canonical_pending": True,
+        "deferred_command_count": 1,
+        "maneuver_active": True,
+        "qwen_contract_completed": False,
+        "extension_contract_completed": False,
+        "collision_seen": True,
+        "safety_reasons": {"WATCHDOG_ALERT"},
+    }.items():
+        rejected = {**completed, key: value}
+        assert _route_run_can_end_early(spec, **rejected) is False, key
 
 
 def test_lead_vehicle_position_is_continuous_when_it_brakes() -> None:
