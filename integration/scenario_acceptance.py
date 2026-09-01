@@ -61,6 +61,7 @@ def evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, obje
         "max_steer_rate_per_s": "max_steer_rate_per_s",
         "max_speed_mps": "max_speed_mps",
         "stop_within_s": "stop_latency_s",
+        "traffic_violation_max": "red_light_violation_count",
     }
     min_metrics = {
         "min_front_gap_m": "min_gap_m",

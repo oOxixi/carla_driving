@@ -552,13 +552,82 @@ def _normalise_light_state(value: Any) -> str:
     return state if state in {"RED", "YELLOW", "GREEN"} else "UNKNOWN"
 
 
-def traffic_light_and_stop_distance(ego: Any) -> tuple[str, float | None, str]:
+def _upcoming_traffic_light(
+    ego: Any,
+    traffic_lights: Iterable[Any],
+    *,
+    world_map: Any | None = None,
+    max_distance_m: float = 50.0,
+    lateral_gate_m: float = 4.5,
+) -> tuple[str, float] | None:
+    """Find the nearest same-lane stop waypoint before CARLA marks it active."""
+    traffic_lights = tuple(traffic_lights)
+    if not traffic_lights:
+        return None
+    ego_location = ego.get_location()
+    ex, ey, _ = _xyz(ego_location)
+    ego_forward = ego.get_transform().get_forward_vector()
+    fx, fy, _ = _xyz(ego_forward)
+    norm = math.hypot(fx, fy)
+    if norm <= 1e-6:
+        return None
+    fx, fy = fx / norm, fy / norm
+    ego_waypoint = None
+    if world_map is not None:
+        get_waypoint = getattr(world_map, "get_waypoint", None)
+        if callable(get_waypoint):
+            ego_waypoint = get_waypoint(ego_location, project_to_road=True)
+    candidates: list[tuple[float, str]] = []
+    for light in traffic_lights:
+        if not getattr(light, "is_alive", True):
+            continue
+        get_waypoints = getattr(light, "get_stop_waypoints", None)
+        get_state = getattr(light, "get_state", None)
+        if not callable(get_waypoints) or not callable(get_state):
+            continue
+        state = _normalise_light_state(get_state())
+        for waypoint in get_waypoints() or ():
+            ego_road_id = getattr(ego_waypoint, "road_id", None)
+            stop_road_id = getattr(waypoint, "road_id", None)
+            if ego_road_id is not None and stop_road_id is not None and ego_road_id != stop_road_id:
+                continue
+            ego_lane_id = getattr(ego_waypoint, "lane_id", None)
+            stop_lane_id = getattr(waypoint, "lane_id", None)
+            if ego_lane_id is not None and stop_lane_id is not None and ego_lane_id != stop_lane_id:
+                continue
+            wx, wy, _ = _xyz(waypoint.transform.location)
+            dx, dy = wx - ex, wy - ey
+            along = dx * fx + dy * fy
+            lateral = abs(-dx * fy + dy * fx)
+            if not 0.0 <= along <= max_distance_m or lateral > lateral_gate_m:
+                continue
+            waypoint_forward = getattr(waypoint.transform, "get_forward_vector", None)
+            if callable(waypoint_forward):
+                wfx, wfy, _ = _xyz(waypoint_forward())
+                if wfx * fx + wfy * fy < 0.5:
+                    continue
+            candidates.append((along, state))
+    if not candidates:
+        return None
+    distance, state = min(candidates, key=lambda item: item[0])
+    return state, distance
+
+
+def traffic_light_and_stop_distance(
+    ego: Any,
+    traffic_lights: Iterable[Any] = (),
+    *,
+    world_map: Any | None = None,
+) -> tuple[str, float | None, str]:
     light = None
     get_light = getattr(ego, "get_traffic_light", None)
     if callable(get_light):
         light = get_light()
     at_light = bool(getattr(ego, "is_at_traffic_light", lambda: False)())
+    upcoming = _upcoming_traffic_light(ego, traffic_lights, world_map=world_map)
     if light is None and not at_light:
+        if upcoming is not None:
+            return (*upcoming, "CARLA_MAP_UPCOMING_STOP_WAYPOINT")
         return "UNKNOWN", None, "NO_ACTIVE_TRAFFIC_LIGHT"
     if light is not None and callable(getattr(light, "get_state", None)):
         state = _normalise_light_state(light.get_state())
@@ -580,7 +649,10 @@ def traffic_light_and_stop_distance(ego: Any) -> tuple[str, float | None, str]:
             if along >= -0.5:
                 candidates.append(max(0.0, along))
     if candidates:
-        return state, min(candidates), "CARLA_MAP_STOP_WAYPOINT"
+        active = (state, min(candidates))
+        if upcoming is not None and upcoming[1] < active[1]:
+            return (*upcoming, "CARLA_MAP_UPCOMING_STOP_WAYPOINT")
+        return (*active, "CARLA_MAP_STOP_WAYPOINT")
 
     # Some CARLA traffic-light actors expose only a local trigger volume.  It
     # is an approximation, explicitly labelled as such in the provenance map.
@@ -666,6 +738,11 @@ class CarlaPerceptionBridge:
         self._detector = detector
         self._visual_provider = visual_provider
         self._fusion = fusion or ConservativeSensorFusion()
+        self._traffic_lights = tuple(
+            actor
+            for actor in world.get_actors()
+            if str(getattr(actor, "type_id", "")).startswith("traffic.traffic_light")
+        )
 
     def acquire(
         self, frame: int, sim_time_s: float, *, route: RouteReference | None = None,
@@ -857,7 +934,9 @@ class CarlaPerceptionBridge:
         sources["c_fusion_mode"] = safety_summary.fusion_mode
         sources["c_recommended_action"] = safety_summary.recommended_action
 
-        traffic_light, stop_distance, traffic_source = traffic_light_and_stop_distance(self._ego)
+        traffic_light, stop_distance, traffic_source = traffic_light_and_stop_distance(
+            self._ego, self._traffic_lights, world_map=self._map,
+        )
         sources["traffic_light"] = traffic_source
         if stop_distance is not None:
             sources["distance_to_stop_line_m"] = traffic_source

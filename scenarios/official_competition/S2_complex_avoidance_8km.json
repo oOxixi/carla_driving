@@ -190,6 +190,7 @@
     "max_cross_track_error_m": 1.0,
     "final_control_no_throttle_brake_overlap": true,
     "expected_safety_override_allowed": true,
+    "traffic_violation_max": 1,
     "min_run_time_s": 850.0
   },
   "competition_requirements": {

@@ -83,6 +83,18 @@ def test_metric_violation_and_unknown_key_fail_closed() -> None:
     assert report["unsupported_keys"] == ["future_rule"]
 
 
+def test_traffic_violation_limit_is_a_hard_expected_contract() -> None:
+    passing = evaluate_expected(
+        {"traffic_violation_max": 1}, {"red_light_violation_count": 1},
+    )
+    failing = evaluate_expected(
+        {"traffic_violation_max": 1}, {"red_light_violation_count": 2},
+    )
+
+    assert passing["passed"] is True
+    assert failing["failed_keys"] == ["traffic_violation_max"]
+
+
 def test_target_speed_tolerance_allows_only_float32_scale_boundary_jitter() -> None:
     expected = {"target_speed_kph": 20.0, "speed_tolerance_kph": 2.0}
     boundary_jitter = evaluate_expected(expected, {"final_speed_mps": 17.98 / 3.6})

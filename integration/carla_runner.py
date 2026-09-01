@@ -4107,6 +4107,8 @@ def run(args: argparse.Namespace) -> None:
                                     command_id=maneuver_fsm.plan.command_id,
                                     payload=restore_payload,
                                 )
+                            if extension_runtime is not None:
+                                extension_runtime.note_mission_route_restored()
                             maneuver_mission_route = None
                     started_route_step = (
                         maneuver_update.current_step

@@ -267,7 +267,8 @@ def test_multi_command_oracle_requires_each_declared_behavior() -> None:
 
 def _frame(runtime: ScenarioExtensionRuntime, *, elapsed_s: float, progress_m: float,
            speed_mps: float, lateral_offset_m: float = 0.0,
-           distance_to_stop_line_m: float | None = None) -> None:
+           distance_to_stop_line_m: float | None = None,
+           lane_id: str = "1") -> None:
     runtime.update_frame(
         elapsed_s=elapsed_s,
         route_progress_m=progress_m,
@@ -718,6 +719,32 @@ def test_s2_actor_clearance_and_route_deviation_use_observed_minima() -> None:
     actual = {item["key"]: item["actual"] for item in result["checks"]}
     assert actual["minimum_actor_distances_m"] == {"bicycle_right": 3.2}
     assert actual["maximum_route_deviation_m"] == 0.9
+
+
+def test_long_mission_return_uses_route_restoration_not_global_lane_id() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    _frame(runtime, elapsed_s=1.0, progress_m=1.0, speed_mps=3.0, lane_id="3")
+    runtime.note_mission_route_restored()
+    _frame(runtime, elapsed_s=20.0, progress_m=100.0, speed_mps=3.0, lane_id="1")
+
+    result = runtime.evaluate(
+        {"must_return_to_original_lane": True}, expected_command_count=0,
+    )
+
+    assert result["passed"] is True
+    assert result["evidence"]["mission_route_restore_count"] == 1
+
+
+def test_lane_id_change_without_route_restoration_does_not_fake_return() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    _frame(runtime, elapsed_s=1.0, progress_m=1.0, speed_mps=3.0, lane_id="3")
+    _frame(runtime, elapsed_s=2.0, progress_m=2.0, speed_mps=3.0, lane_id="2")
+
+    result = runtime.evaluate(
+        {"must_return_to_original_lane": True}, expected_command_count=0,
+    )
+
+    assert result["passed"] is False
 
 
 def test_s2_actor_clearance_rejects_missing_or_too_close_bicycle_evidence() -> None:

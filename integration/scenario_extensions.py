@@ -135,6 +135,7 @@ class ScenarioExtensionRuntime:
         self._collision_seen = False
         self._degraded_mode_entered = False
         self._target_lane_occupied_count: int | None = None
+        self._mission_route_restore_count = 0
         self._lead_brake_trigger_distance_m: float | None = None
         self._actor_trigger_ids: set[str] = set()
         self._rss_start_mb = self._rss_mb()
@@ -282,6 +283,10 @@ class ScenarioExtensionRuntime:
         if type(count) is not int or count < 0:
             raise ValueError("target lane occupancy must be a non-negative integer")
         self._target_lane_occupied_count = count
+
+    def note_mission_route_restored(self) -> None:
+        """Record a successful manoeuvre return to the saved mission route."""
+        self._mission_route_restore_count += 1
 
     def update_frame(
         self,
@@ -561,6 +566,7 @@ class ScenarioExtensionRuntime:
             "stopped_on_red_before_stop_line": self._stopped_on_red_before_stop_line,
             "completed_phase_ids": sorted(self._completed_phase_ids),
             "target_lane_occupied_count": self._target_lane_occupied_count,
+            "mission_route_restore_count": self._mission_route_restore_count,
             "restart_displacement_m": self._restart_displacement_m,
             "final_lateral_offset_abs_m": self._last_lateral_offset_m,
             "lead_brake_trigger_distance_m": self._lead_brake_trigger_distance_m,
@@ -658,8 +664,11 @@ class ScenarioExtensionRuntime:
                 add(key, actual <= float(required), actual, required)
             elif key == "must_return_to_original_lane":
                 actual = (
-                    evidence["initial_lane_id"] == evidence["final_lane_id"]
-                    and int(evidence["lane_change_count"]) >= 2
+                    int(evidence["mission_route_restore_count"]) > 0
+                    or (
+                        evidence["initial_lane_id"] == evidence["final_lane_id"]
+                        and int(evidence["lane_change_count"]) >= 2
+                    )
                 )
                 add(key, required is not True or actual, actual, True)
             elif key == "minimum_actor_distances_m":

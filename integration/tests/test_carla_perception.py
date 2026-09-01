@@ -28,6 +28,7 @@ from integration.carla_perception import (
     adjacent_lidar_distances_m,
     front_lidar_distance_m,
     front_radar_target,
+    traffic_light_and_stop_distance,
 )
 from integration.contracts import DetectedObject
 
@@ -137,8 +138,10 @@ class World:
 
 
 class Waypoint:
-    def __init__(self, x, y):
+    def __init__(self, x, y, *, road_id=1, lane_id=1):
         self.transform = Transform(Vec(x, y, 0.0))
+        self.road_id = road_id
+        self.lane_id = lane_id
 
 
 class WorldMap:
@@ -147,15 +150,23 @@ class WorldMap:
 
 
 class TrafficLight:
-    def __init__(self, state="Red", stop_x=20.0):
+    type_id = "traffic.traffic_light"
+    is_alive = True
+
+    def __init__(self, state="Red", stop_x=20.0, *, stop_y=0.0, road_id=1, lane_id=1):
         self.state = state
         self.stop_x = stop_x
+        self.stop_y = stop_y
+        self.road_id = road_id
+        self.lane_id = lane_id
 
     def get_state(self):
         return self.state
 
     def get_stop_waypoints(self):
-        return [Waypoint(self.stop_x, 0.0)]
+        return [Waypoint(
+            self.stop_x, self.stop_y, road_id=self.road_id, lane_id=self.lane_id,
+        )]
 
 
 class Actor:
@@ -500,6 +511,33 @@ def test_moving_through_red_stop_waypoint_sets_violation() -> None:
     bridge = CarlaPerceptionBridge(World((ego,)), WorldMap(), ego, session, _suite(session))
     sample = bridge.acquire(4, 0.2, timeout_s=0.01)
     assert sample.frame.red_light_violation
+
+
+def test_upcoming_red_light_is_observed_before_carla_marks_it_active() -> None:
+    light = TrafficLight("Red", 20.0)
+    ego = Actor(1, x=0.0, speed=6.0, traffic_light=None)
+
+    state, distance, source = traffic_light_and_stop_distance(
+        ego, (light,), world_map=WorldMap(),
+    )
+
+    assert state == "RED"
+    assert distance == 20.0
+    assert source == "CARLA_MAP_UPCOMING_STOP_WAYPOINT"
+
+
+def test_upcoming_light_ignores_nearer_stop_waypoint_for_adjacent_lane() -> None:
+    adjacent = TrafficLight("Red", 10.0, stop_y=3.5, lane_id=2)
+    ego_lane = TrafficLight("Green", 20.0, lane_id=1)
+    ego = Actor(1, x=0.0, speed=6.0, traffic_light=None)
+
+    state, distance, source = traffic_light_and_stop_distance(
+        ego, (adjacent, ego_lane), world_map=WorldMap(),
+    )
+
+    assert state == "GREEN"
+    assert distance == 20.0
+    assert source == "CARLA_MAP_UPCOMING_STOP_WAYPOINT"
 
 
 def test_missing_continuous_sensor_times_out_fail_closed() -> None:
