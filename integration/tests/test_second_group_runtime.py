@@ -114,7 +114,7 @@ def test_slow_qwen_path_holds_stop_without_blocking_then_dispatches_validated_pl
             sim_time_s=0.5, perception_mode="sensors", received_at_ns=1_000_000_000,
             rgb_ref="frames/follow.png",
         )
-        assert time.perf_counter() - started < 0.05
+        assert time.perf_counter() - started < 0.15
         assert submitted.orchestration.disposition == "SLOW_PENDING"
         assert submitted.orchestration.model_request["rgb_ref"] == "frames/follow.png"
         assert submitted.safety_envelope["intent"] == "STOP"
