@@ -61,6 +61,24 @@ def test_tight_local_curve_shortens_lookahead_without_affecting_straight() -> No
     assert curved.lookahead_distance_m >= _controller().params.min_lookahead_m
 
 
+def test_cross_track_feedback_reduces_inside_corner_steer() -> None:
+    curved_points = [
+        (5.0 * math.sin(index * 0.1), 5.0 * (1.0 - math.cos(index * 0.1)))
+        for index in range(20)
+    ]
+    reference = RouteReference(points_xy_m=curved_points, target_speed_mps=5.0)
+    vehicle = VehiclePose(0.0, 0.8, 0.0, 3.0)
+    feed_forward_only = PurePursuitController(PurePursuitParams(
+        cross_track_gain=0.0, max_steer_delta_per_step=1.0,
+    )).step(vehicle, reference)
+    with_feedback = PurePursuitController(PurePursuitParams(
+        cross_track_gain=0.8, max_steer_delta_per_step=1.0,
+    )).step(vehicle, reference)
+
+    assert with_feedback.cross_track_error_m > 0.0
+    assert with_feedback.steer < feed_forward_only.steer
+
+
 def test_local_progress_does_not_jump_to_a_later_overlapping_lap() -> None:
     controller = PurePursuitController(PurePursuitParams(
         nearest_search_window=10,

@@ -351,10 +351,7 @@ def _acceptance_lateral_controller() -> PurePursuitController:
         min_lookahead_m=2.5,
         max_lookahead_m=8.0,
         speed_gain_s=0.45,
-        # Keep rate limiting, but retain enough authority for tight urban
-        # intersections. A 0.60 amplitude ceiling saturated for multiple
-        # frames on legal Town curves and caused systematic corner cutting.
-        max_steer=0.70,
+        max_steer=0.60,
         max_steer_delta_per_step=0.04,
         # Long competition routes revisit the same Town coordinates.  Track
         # only a physically reachable neighbourhood after the initial route

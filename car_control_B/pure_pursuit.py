@@ -28,6 +28,8 @@ class PurePursuitParams:
     max_lookahead_m: float = 8.0
     max_steer_angle_rad: float = 0.60
     steer_gain: float = 1.0
+    cross_track_gain: float = 0.8
+    cross_track_softening_speed_mps: float = 1.0
     max_steer: float = 1.0
     max_steer_delta_per_step: float = 0.08
     # On the CARLA 0.9.16 Model 3, positive VehicleControl steering follows
@@ -115,6 +117,10 @@ class PurePursuitController(LateralController):
         assert self._active_route_slot is not None
         self._route_progress[self._active_route_slot] = (points, nearest)
 
+        path_heading = compute_path_heading(points, nearest)
+        heading_error = wrap_angle_rad(path_heading - vehicle.yaw_rad)
+        cte = signed_cross_track_error(points, nearest, vehicle.x_m, vehicle.y_m)
+
         local_curvature = max_abs_curvature_ahead(
             points, nearest, horizon_m=max(15.0, vehicle.speed_mps * 4.0),
         )
@@ -138,16 +144,21 @@ class PurePursuitController(LateralController):
             steer_angle = math.atan(p.wheel_base_m * curvature)
             steer_math = steer_angle / max(p.max_steer_angle_rad, 1e-6)
 
-        steer = p.steer_sign * p.steer_gain * steer_math
+        # Pure Pursuit supplies smooth curve feed-forward, while the signed
+        # segment error prevents systematic corner cutting. A vehicle on the
+        # path-right side receives a map-left (negative) correction and vice
+        # versa. The correction is softened at speed and remains subject to
+        # the same amplitude/rate limits as the feed-forward command.
+        cte_steer_math = 0.0 if target_is_behind else -math.atan2(
+            p.cross_track_gain * cte,
+            vehicle.speed_mps + p.cross_track_softening_speed_mps,
+        ) / max(p.max_steer_angle_rad, 1e-6)
+        steer = p.steer_sign * (p.steer_gain * steer_math + cte_steer_math)
         steer = clamp(steer, -p.max_steer, p.max_steer)
 
         delta = clamp(steer - self._last_steer, -p.max_steer_delta_per_step, p.max_steer_delta_per_step)
         steer = self._last_steer + delta
         self._last_steer = steer
-
-        path_heading = compute_path_heading(points, nearest)
-        heading_error = wrap_angle_rad(path_heading - vehicle.yaw_rad)
-        cte = signed_cross_track_error(points, nearest, vehicle.x_m, vehicle.y_m)
 
         return LateralOutput(
             steer=steer,
