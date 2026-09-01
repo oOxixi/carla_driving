@@ -27,7 +27,7 @@
 4. `integration/tests/test_runtime_loop.py`
    - 同时保留外部危险终态反馈、路径偏差停驶和无效横向参考闭锁测试。
 
-另外为 `car_control_B/tests` 和 `car_control_B2/tests` 增加独立测试包标识，修复
+另外为 `car_control_B/tests` 增加独立测试包标识，修复
 系统 ROS `launch_testing` 插件自动加载时，同名 `test_path_utils.py` 导致的 pytest
 收集冲突。该修复不改变车辆控制业务逻辑。
 
