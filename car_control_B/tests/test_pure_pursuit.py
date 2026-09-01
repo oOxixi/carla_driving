@@ -1,5 +1,6 @@
 import math
 
+from car_control_A.routing import RouteReference as RuntimeRouteReference
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
 from car_control_B.schemas import RouteReference, VehiclePose
 
@@ -122,3 +123,22 @@ def test_small_frame_window_prevents_gradual_progress_jump_on_overlap() -> None:
 
     assert output is not None
     assert output.nearest_index == 10
+
+
+def test_step_any_reuses_adapted_geometry_for_runtime_route() -> None:
+    controller = PurePursuitController(PurePursuitParams(
+        nearest_search_window=2,
+        max_steer_delta_per_step=1.0,
+    ))
+    first_pass = [(float(index), 0.10) for index in range(21)]
+    closer_overlap = [(float(index), 0.0) for index in range(21)]
+    reference = RuntimeRouteReference(
+        points_xy_m=tuple([*first_pass, *closer_overlap]),
+        curvature_per_m=0.0,
+        target_speed_mps=5.0,
+    )
+
+    controller.step_any(VehiclePose(0.0, 0.10, 0.0, 5.0), reference)
+    output = controller.step_any(VehiclePose(1.0, 0.04, 0.0, 5.0), reference)
+
+    assert output.nearest_index == 1
