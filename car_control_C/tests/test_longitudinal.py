@@ -50,6 +50,14 @@ def test_curvature_speed_constraint_limits_target() -> None:
     assert output.target_speed_mps <= math.sqrt(2.0 / 0.5) + 1e-9
 
 
+def test_default_curve_cap_uses_comfort_lateral_acceleration() -> None:
+    controller = LongitudinalController()
+    output = controller.step(request(speed=10.0, requested=10.0, curvature=0.125), 0.1)
+
+    assert controller.parameters.max_lateral_accel_mps2 == 2.0
+    assert output.target_speed_mps <= 4.0
+
+
 def test_hard_curve_cap_is_not_relaxed_by_command_ramp() -> None:
     controller = LongitudinalController(LongitudinalParameters(max_lateral_accel_mps2=2.0))
     output = controller.step(request(speed=20.0, requested=30.0, curvature=0.5), 0.1)

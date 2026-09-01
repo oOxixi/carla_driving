@@ -14,7 +14,7 @@ from .validation import finite
 
 @dataclass(frozen=True, slots=True)
 class SpeedPlannerParameters:
-    max_lateral_accel_mps2: float = 2.5
+    max_lateral_accel_mps2: float = 2.0
     command_accel_mps2: float = 1.5
     command_decel_mps2: float = 3.0
 

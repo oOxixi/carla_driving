@@ -18,7 +18,9 @@ from .validation import finite
 class LongitudinalParameters:
     """Explicit, SI-only tuning for C; final safety arbitration belongs to D."""
 
-    max_lateral_accel_mps2: float = 2.5
+    # A comfort-oriented road following limit.  The former 2.5 m/s^2 default
+    # allowed measurable lane-centre overshoot on ordinary tight urban curves.
+    max_lateral_accel_mps2: float = 2.0
     command_accel_mps2: float = 1.5
     command_decel_mps2: float = 3.0
     max_accel_mps2: float = 2.5
