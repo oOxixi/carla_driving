@@ -573,6 +573,102 @@ def test_pedestrian_trigger_actor_is_trigger_evidence_not_qwen_target() -> None:
     assert result["passed"] is True
 
 
+def test_emergency_event_evidence_covers_trigger_to_control_chain() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_actor_trigger("cut_in_vehicle", elapsed_s=10.00)
+    runtime.note_perception_observation(
+        elapsed_s=10.05, detected_actor_ids=("cut_in_vehicle",),
+    )
+    runtime.note_control_observation(
+        elapsed_s=10.10,
+        speed_mps=7.0,
+        route_progress_m=100.0,
+        throttle=0.0,
+        brake=1.0,
+        safety_override=True,
+        safety_reason="EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE",
+        route_deviation_m=0.0,
+    )
+
+    result = runtime.evaluate(
+        {
+            "required_emergency_event_ids": ["cut_in_vehicle"],
+            "emergency_response_p95_max_ms": 100.0,
+            "emergency_response_absolute_max_ms": 120.0,
+        },
+        expected_command_count=1,
+    )
+
+    assert result["passed"] is True
+    event = result["evidence"]["emergency_events"]["cut_in_vehicle"]
+    assert event == {
+        "danger_timestamp_s": 10.0,
+        "perception_timestamp_s": 10.05,
+        "decision_timestamp_s": 10.1,
+        "safety_override_timestamp_s": 10.1,
+        "control_effect_timestamp_s": 10.1,
+        "recovery_timestamp_s": None,
+        "hold_duration_s": None,
+        "response_ms": pytest.approx(100.0),
+    }
+
+
+def test_emergency_recovery_waits_for_hold_and_records_release() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "emergency_recovery": {
+            "cut_in_vehicle": {"minimum_hold_s": 2.0, "resume_speed_kph": 18.0},
+        },
+    })
+    runtime.note_actor_trigger("cut_in_vehicle", elapsed_s=10.0)
+    runtime.note_control_observation(
+        elapsed_s=10.1, speed_mps=3.0, route_progress_m=100.0,
+        throttle=0.0, brake=1.0, safety_override=True,
+        safety_reason="EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE", route_deviation_m=0.0,
+    )
+
+    assert runtime.ready_emergency_recovery(elapsed_s=12.05) is None
+    actor_id, speed_mps = runtime.ready_emergency_recovery(elapsed_s=12.1)
+    assert actor_id == "cut_in_vehicle"
+    assert speed_mps == pytest.approx(5.0)
+    runtime.note_emergency_recovered(actor_id, elapsed_s=12.1)
+
+    result = runtime.evaluate(
+        {"required_emergency_recovery_ids": ["cut_in_vehicle"]},
+        expected_command_count=1,
+    )
+    assert result["passed"] is True
+    event = result["evidence"]["emergency_events"][actor_id]
+    assert event["hold_duration_s"] == pytest.approx(2.0)
+
+
+def test_emergency_event_contract_rejects_missing_perception_or_late_brake() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_actor_trigger("emergency_pedestrian", elapsed_s=20.0)
+    runtime.note_control_observation(
+        elapsed_s=20.15,
+        speed_mps=4.0,
+        route_progress_m=150.0,
+        throttle=0.0,
+        brake=1.0,
+        safety_override=True,
+        safety_reason="EMERGENCY_PEDESTRIAN",
+        route_deviation_m=0.0,
+    )
+
+    result = runtime.evaluate(
+        {
+            "required_emergency_event_ids": ["emergency_pedestrian"],
+            "emergency_response_absolute_max_ms": 120.0,
+        },
+        expected_command_count=1,
+    )
+
+    assert result["passed"] is False
+    assert result["failed_keys"] == [
+        "required_emergency_event_ids", "emergency_response_absolute_max_ms",
+    ]
+
+
 def test_stop_not_detour_contract_accepts_qwen_slow_then_safety_stop() -> None:
     runtime = ScenarioExtensionRuntime({})
     runtime.note_qwen_plan({"steps": [{"behavior": "SLOW_DOWN"}]})

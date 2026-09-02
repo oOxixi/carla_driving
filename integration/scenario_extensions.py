@@ -138,6 +138,12 @@ class ScenarioExtensionRuntime:
         self._mission_route_restore_count = 0
         self._lead_brake_trigger_distance_m: float | None = None
         self._actor_trigger_ids: set[str] = set()
+        self._actor_trigger_time_s: dict[str, float] = {}
+        self._actor_perception_time_s: dict[str, float] = {}
+        self._actor_decision_time_s: dict[str, float] = {}
+        self._actor_safety_override_time_s: dict[str, float] = {}
+        self._actor_control_effect_time_s: dict[str, float] = {}
+        self._actor_recovery_time_s: dict[str, float] = {}
         self._rss_start_mb = self._rss_mb()
         self._rss_peak_mb = self._rss_start_mb
 
@@ -274,10 +280,54 @@ class ScenarioExtensionRuntime:
         if normalized:
             self._completed_phase_ids.add(normalized)
 
-    def note_actor_trigger(self, actor_id: str) -> None:
+    def note_actor_trigger(self, actor_id: str, *, elapsed_s: float | None = None) -> None:
         normalized = str(actor_id).strip()
         if normalized:
             self._actor_trigger_ids.add(normalized)
+            self._actor_trigger_time_s.setdefault(
+                normalized,
+                self._last_elapsed_s if elapsed_s is None else float(elapsed_s),
+            )
+
+    def note_perception_observation(
+        self,
+        *,
+        elapsed_s: float,
+        detected_actor_ids: Sequence[str],
+    ) -> None:
+        """Record the first sensor-derived observation after an actor hazard starts."""
+        detected = {str(actor_id).strip() for actor_id in detected_actor_ids if str(actor_id).strip()}
+        for actor_id in self._actor_trigger_time_s:
+            if actor_id in detected:
+                self._actor_perception_time_s.setdefault(actor_id, float(elapsed_s))
+
+    def ready_emergency_recovery(self, *, elapsed_s: float) -> tuple[str, float] | None:
+        """Return one configured hazard whose minimum stop hold has elapsed."""
+        recovery = self.extensions.get("emergency_recovery", {})
+        if not isinstance(recovery, Mapping):
+            raise TypeError("extensions.emergency_recovery must be an object")
+        for actor_id, raw_policy in recovery.items():
+            normalized_id = str(actor_id)
+            if normalized_id in self._actor_recovery_time_s:
+                continue
+            control_s = self._actor_control_effect_time_s.get(normalized_id)
+            if control_s is None:
+                continue
+            if not isinstance(raw_policy, Mapping):
+                raise TypeError("emergency recovery policies must be objects")
+            hold_s = float(raw_policy.get("minimum_hold_s", 0.0))
+            resume_speed_kph = float(raw_policy.get("resume_speed_kph", 0.0))
+            if hold_s <= 0.0 or resume_speed_kph <= 0.0:
+                raise ValueError("emergency recovery hold and resume speed must be positive")
+            if float(elapsed_s) + TIME_COMPARISON_EPSILON_S >= control_s + hold_s:
+                return normalized_id, resume_speed_kph / 3.6
+        return None
+
+    def note_emergency_recovered(self, actor_id: str, *, elapsed_s: float) -> None:
+        normalized = str(actor_id).strip()
+        if normalized not in self._actor_control_effect_time_s:
+            raise ValueError("emergency recovery requires prior control-effect evidence")
+        self._actor_recovery_time_s.setdefault(normalized, float(elapsed_s))
 
     def note_target_lane_occupancy(self, count: int) -> None:
         if type(count) is not int or count < 0:
@@ -407,6 +457,7 @@ class ScenarioExtensionRuntime:
         speed_mps: float,
         route_progress_m: float,
         brake: float,
+        throttle: float = 0.0,
         safety_override: bool,
         safety_reason: str,
         route_deviation_m: float | None,
@@ -442,8 +493,17 @@ class ScenarioExtensionRuntime:
             self._safety_reasons.add(normalized_reason)
             if self._safety_first_s is None:
                 self._safety_first_s = now
-        responded = meaningful_safety or float(brake) >= 0.5
+        emergency_brake = float(brake) >= 0.5 and float(throttle) <= 0.03
+        responded = meaningful_safety or emergency_brake
         if responded:
+            # In S3 the FAST_LOCAL emergency command is itself the safety
+            # preemption, even when D need not override the already-safe raw
+            # control a second time.
+            for actor_id in self._actor_trigger_time_s:
+                self._actor_decision_time_s.setdefault(actor_id, now)
+                self._actor_safety_override_time_s.setdefault(actor_id, now)
+                if emergency_brake:
+                    self._actor_control_effect_time_s.setdefault(actor_id, now)
             for fault_id, started_s in self._fault_started_s.items():
                 if fault_id in self._fault_active and fault_id not in self._fault_response_s:
                     self._fault_response_s[fault_id] = max(0.0, now - started_s)
@@ -508,7 +568,7 @@ class ScenarioExtensionRuntime:
                 phase_id = str(event.get("phase_id", ""))
                 if phase_id:
                     self.note_phase_completed(phase_id)
-                self.note_actor_trigger(actor_id)
+                self.note_actor_trigger(actor_id, elapsed_s=elapsed_s)
                 distances = context.get("actor_distances_m", {})
                 if isinstance(distances, Mapping) and actor_id in distances:
                     action = event.get("action", {})
@@ -527,6 +587,30 @@ class ScenarioExtensionRuntime:
         }
 
     def evidence(self) -> dict[str, object]:
+        emergency_events: dict[str, dict[str, float | None]] = {}
+        for actor_id, danger_s in sorted(self._actor_trigger_time_s.items()):
+            control_s = self._actor_control_effect_time_s.get(actor_id)
+            emergency_events[actor_id] = {
+                "danger_timestamp_s": danger_s,
+                "perception_timestamp_s": self._actor_perception_time_s.get(actor_id),
+                "decision_timestamp_s": self._actor_decision_time_s.get(actor_id),
+                "safety_override_timestamp_s": self._actor_safety_override_time_s.get(actor_id),
+                "control_effect_timestamp_s": control_s,
+                "recovery_timestamp_s": self._actor_recovery_time_s.get(actor_id),
+                "hold_duration_s": (
+                    None
+                    if control_s is None or actor_id not in self._actor_recovery_time_s
+                    else max(0.0, self._actor_recovery_time_s[actor_id] - control_s)
+                ),
+                "response_ms": (
+                    None if control_s is None else max(0.0, control_s - danger_s) * 1000.0
+                ),
+            }
+        response_samples_ms = [
+            float(event["response_ms"])
+            for event in emergency_events.values()
+            if event["response_ms"] is not None
+        ]
         return {
             "qwen_request_count": self._qwen_requests,
             "submitted_command_ids": list(self._submitted_command_ids),
@@ -571,6 +655,10 @@ class ScenarioExtensionRuntime:
             "final_lateral_offset_abs_m": self._last_lateral_offset_m,
             "lead_brake_trigger_distance_m": self._lead_brake_trigger_distance_m,
             "actor_trigger_ids": sorted(self._actor_trigger_ids),
+            "emergency_events": emergency_events,
+            "emergency_response_samples_ms": response_samples_ms,
+            "emergency_response_p95_ms": self._percentile(response_samples_ms, 0.95),
+            "emergency_response_max_ms": max(response_samples_ms, default=None),
             "scenario_event_count": self._actor_event_count,
             "runtime_event_count": (
                 self._actor_event_count
@@ -587,6 +675,20 @@ class ScenarioExtensionRuntime:
             "degraded_mode_entered": self._degraded_mode_entered,
             "speed_drop_latency_s": self._speed_drop_latency_s,
         }
+
+    @staticmethod
+    def _percentile(values: Sequence[float], quantile: float) -> float | None:
+        if not values:
+            return None
+        ordered = sorted(float(value) for value in values)
+        if len(ordered) == 1:
+            return ordered[0]
+        position = (len(ordered) - 1) * quantile
+        lower = math.floor(position)
+        upper = math.ceil(position)
+        if lower == upper:
+            return ordered[lower]
+        return ordered[lower] + (ordered[upper] - ordered[lower]) * (position - lower)
 
     def evaluate(
         self,
@@ -702,6 +804,46 @@ class ScenarioExtensionRuntime:
             elif key == "pedestrian_trigger_actor_id":
                 actual_ids = set(evidence["actor_trigger_ids"])
                 add(key, str(required) in actual_ids, sorted(actual_ids), required)
+            elif key == "required_emergency_event_ids":
+                required_ids = {str(item) for item in required}
+                actual_events = evidence["emergency_events"]
+                actual_ids = set(actual_events)
+                complete_ids = {
+                    actor_id for actor_id, event in actual_events.items()
+                    if all(event.get(field) is not None for field in (
+                        "danger_timestamp_s", "perception_timestamp_s",
+                        "decision_timestamp_s", "safety_override_timestamp_s",
+                        "control_effect_timestamp_s", "response_ms",
+                    ))
+                }
+                add(
+                    key,
+                    required_ids.issubset(actual_ids) and required_ids.issubset(complete_ids),
+                    {"observed": sorted(actual_ids), "complete": sorted(complete_ids)},
+                    sorted(required_ids),
+                )
+            elif key == "required_emergency_recovery_ids":
+                required_ids = {str(item) for item in required}
+                actual_ids = set(self._actor_recovery_time_s)
+                add(
+                    key,
+                    required_ids.issubset(actual_ids),
+                    sorted(actual_ids),
+                    sorted(required_ids),
+                )
+            elif key in {"emergency_response_p95_max_ms", "emergency_response_absolute_max_ms"}:
+                evidence_key = (
+                    "emergency_response_p95_ms"
+                    if key == "emergency_response_p95_max_ms"
+                    else "emergency_response_max_ms"
+                )
+                actual = evidence[evidence_key]
+                add(
+                    key,
+                    actual is not None and float(actual) <= float(required),
+                    actual,
+                    required,
+                )
             elif key == "target_binding_correct":
                 expected_target = oracle_contract.get("expected_target_actor_id")
                 actual = (

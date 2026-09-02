@@ -163,6 +163,22 @@ class ControlRuntime:
             alert for alert in self._latched_alerts if alert not in recovered
         ]
 
+    def release_scenario_stop_hold(self, *, requested_speed_mps: float) -> bool:
+        """Release a completed emergency hold only for an explicit scenario recovery.
+
+        A live command or a latched safety fault always wins and keeps the
+        vehicle stopped. The CARLA scenario runner calls this only after its
+        configured hazard-clear hold time has elapsed.
+        """
+        speed = float(requested_speed_mps)
+        if not math.isfinite(speed) or speed <= 0.0:
+            raise ValueError("requested_speed_mps must be finite and positive")
+        if self._active_command_id is not None or self._latched_alerts or not self._stop_hold:
+            return False
+        self.requested_speed_mps = speed
+        self._stop_hold = False
+        return True
+
     def fail_active(self, *, now_s: float, detail: str) -> ExecutionFeedback | None:
         """Terminate the active command when its outer runtime cannot continue."""
         command_id = self._active_command_id

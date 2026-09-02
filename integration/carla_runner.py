@@ -2957,6 +2957,24 @@ def run(args: argparse.Namespace) -> None:
                         distance_to_stop_line_m=extension_stop_line_m,
                         lane_id=state.lane_id,
                     )
+                    emergency_recovery = extension_runtime.ready_emergency_recovery(
+                        elapsed_s=elapsed_s,
+                    )
+                    if emergency_recovery is not None:
+                        recovered_actor_id, recovery_speed_mps = emergency_recovery
+                        if runtime.release_scenario_stop_hold(
+                            requested_speed_mps=recovery_speed_mps,
+                        ):
+                            extension_runtime.note_emergency_recovered(
+                                recovered_actor_id, elapsed_s=elapsed_s,
+                            )
+                            route = replace(route, target_speed_mps=recovery_speed_mps)
+                            print(json.dumps({
+                                "record_type": "scenario_emergency_recovery",
+                                "actor_id": recovered_actor_id,
+                                "elapsed_s": elapsed_s,
+                                "resume_speed_mps": recovery_speed_mps,
+                            }, ensure_ascii=False), flush=True)
                     light_spec = _scenario_actor(spec, "traffic_light")
                     if light_spec is not None and scenario_traffic_light is not None:
                         light_state = extension_runtime.actor_state(
@@ -3018,8 +3036,12 @@ def run(args: argparse.Namespace) -> None:
                         and extension_runtime is not None
                     ):
                         trigger_actor_id = walker_trigger.get("actor_id")
+                        if not isinstance(trigger_actor_id, str):
+                            trigger_actor_id = walker_spec.get("actor_id")
                         if isinstance(trigger_actor_id, str):
-                            extension_runtime.note_actor_trigger(trigger_actor_id)
+                            extension_runtime.note_actor_trigger(
+                                trigger_actor_id, elapsed_s=elapsed_s,
+                            )
                         phase_id = walker_behavior.get("phase_id")
                         if isinstance(phase_id, str):
                             extension_runtime.note_phase_completed(phase_id)
@@ -3456,6 +3478,14 @@ def run(args: argparse.Namespace) -> None:
                     )
                     if any(item.track_id for item in scene.detected_objects):
                         perception_sources["target_ids"] = "CARLA_SCENARIO_TRACK_ASSOCIATION"
+                    if extension_runtime is not None:
+                        extension_runtime.note_perception_observation(
+                            elapsed_s=elapsed_s,
+                            detected_actor_ids=tuple(
+                                item.track_id for item in scene.detected_objects
+                                if item.track_id is not None
+                            ),
+                        )
                 scene_bound_ns = time.monotonic_ns()
                 if sensor_ready_ns is None:
                     raise RuntimeError("sensor-ready timestamp was not captured")
@@ -4221,6 +4251,7 @@ def run(args: argparse.Namespace) -> None:
                         speed_mps=state.speed_mps,
                         route_progress_m=route_progress_m,
                         brake=result.final_control.brake,
+                        throttle=result.final_control.throttle,
                         safety_override=result.safety_override,
                         safety_reason=result.safety_reason,
                         route_deviation_m=scene.route_deviation_m,
@@ -4616,7 +4647,7 @@ def main() -> None:
     parser.add_argument("--c-visual-confidence-threshold", type=float, default=0.60,
                         help="C-side minimum visual confidence accepted by safety fusion")
     parser.add_argument("--qwen-remote", action="store_true",
-                        help="use the OpenAI-compatible remote Qwen 2B high-level planner")
+                        help="use the OpenAI-compatible remote Qwen 7B high-level planner")
     parser.add_argument("--qwen-voice-command",
                         help="Chinese command sent to Qwen; a one-command scenario can supply source_text")
     parser.add_argument("--qwen-base-url",
@@ -4624,9 +4655,9 @@ def main() -> None:
                         help="OpenAI-compatible /v1 endpoint; QWEN_API_KEY is read only from the environment")
     parser.add_argument("--qwen-model",
                         default=os.environ.get(
-                            "QWEN_MODEL", "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
+                            "QWEN_MODEL", "Qwen/Qwen2.5-VL-7B-Instruct"
                         ),
-                        help="exact remote Qwen 2B model id")
+                        help="exact remote Qwen 7B model id")
     parser.add_argument("--qwen-request-timeout-s", type=float, default=15.0,
                         help="OpenAI client wall-clock timeout")
     parser.add_argument("--qwen-max-inference-s", type=float, default=10.0,
