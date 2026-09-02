@@ -7,11 +7,16 @@ from pathlib import Path
 from typing import Any
 
 from .qwen_boundary import QwenInputContext
+from .qwen_profiles import (
+    QwenModelProfile,
+    get_qwen_profile_by_model,
+    resolve_qwen_profile,
+)
 from .qwen_vl_adapter import QwenVLActionChoice
 
 
 class OpenAICompatibleQwenVLBackend:
-    """Ask a vLLM-compatible Qwen-VL endpoint for one action code.
+    """Ask a vLLM-compatible Qwen3-VL endpoint for one action code.
 
     Final Schema assembly, target grounding and safety overrides stay in the
     repository-owned strict adapter rather than autoregressive model output.
@@ -21,26 +26,33 @@ class OpenAICompatibleQwenVLBackend:
         self,
         *,
         base_url: str,
-        api_key: str,
-        model: str = "Qwen/Qwen2.5-VL-7B-Instruct",
-        timeout_s: float = 8.0,
+        profile: QwenModelProfile | None = None,
+        api_key: str = "local-offline",
+        timeout_s: float = 30.0,
         max_tokens: int = 1,
-        image_max_side: int = 256,
+        model: str | None = None,
+        image_max_side: int | None = None,
         jpeg_quality: int = 75,
         client: Any | None = None,
     ) -> None:
         if not base_url.strip():
             raise ValueError("base_url must not be empty")
-        if not model.strip():
-            raise ValueError("model must not be empty")
         if timeout_s <= 0:
             raise ValueError("timeout_s must be positive")
         if max_tokens != 1:
             raise ValueError("max_tokens must be 1 for constrained action choice")
-        if image_max_side <= 0:
-            raise ValueError("image_max_side must be positive")
         if not 1 <= jpeg_quality <= 95:
             raise ValueError("jpeg_quality must be in [1, 95]")
+
+        self.profile = profile or (
+            get_qwen_profile_by_model(model)
+            if model is not None
+            else resolve_qwen_profile(None)
+        )
+        if model is not None and model != self.profile.model:
+            raise ValueError("model must match the selected Qwen profile")
+        if image_max_side is not None and image_max_side != self.profile.image_max_side:
+            raise ValueError("image_max_side must match the selected Qwen profile")
 
         if client is None:
             try:
@@ -57,9 +69,12 @@ class OpenAICompatibleQwenVLBackend:
                 max_retries=0,
             )
         self._client = client
-        self._model = model
+        self.base_url = base_url.rstrip("/")
+        self.timeout_s = timeout_s
+        self.prompt_style = self.profile.prompt_style
+        self._model = self.profile.model
         self._max_tokens = max_tokens
-        self._image_max_side = image_max_side
+        self._image_max_side = self.profile.image_max_side
         self._jpeg_quality = jpeg_quality
         self.last_visual_metadata: dict[str, object] | None = None
 
@@ -113,6 +128,10 @@ class OpenAICompatibleQwenVLBackend:
                     "choice": ["A", "B", "C", "D", "E"],
                 },
                 "chat_template_kwargs": {"enable_thinking": False},
+                "mm_processor_kwargs": {
+                    "min_pixels": self.profile.visual_tokens * 28 * 28,
+                    "max_pixels": self.profile.visual_tokens * 28 * 28,
+                },
             },
         )
 

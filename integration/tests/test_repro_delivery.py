@@ -49,12 +49,12 @@ def test_carla_scenario_uses_remote_vllm_contract() -> None:
 
 
 def test_reference_values_and_raw_files_are_source_backed() -> None:
-    source = ROOT / "artifacts/B_role_validation"
     reference = ROOT / "metrics/reference_5070"
+    manifest = json.loads((reference / "run_manifest.json").read_text(encoding="utf-8"))
     latency_name = "qwen3vl_2b_gptq_int4_marlin_vllm_cu132_latency_gate_prompt_v3.json"
     contract_name = "qwen3vl_2b_gptq_int4_marlin_vllm_cu132_target10_prompt_v3.json"
-    latency_raw = json.loads((source / latency_name).read_text(encoding="utf-8"))
-    contract_raw = json.loads((source / contract_name).read_text(encoding="utf-8"))
+    latency_raw = json.loads((reference / "raw" / latency_name).read_text(encoding="utf-8"))
+    contract_raw = json.loads((reference / "raw" / contract_name).read_text(encoding="utf-8"))
     latency = json.loads((reference / "metrics/latency.json").read_text(encoding="utf-8"))
     accuracy = json.loads((reference / "metrics/accuracy.json").read_text(encoding="utf-8"))
     assert latency["p50_ms"] == latency_raw["latency_ms"]["p50_ms"]
@@ -63,8 +63,8 @@ def test_reference_values_and_raw_files_are_source_backed() -> None:
     assert accuracy["proxy_contract"]["accuracy"] == contract_raw["metrics"]["all_contract_accuracy"]
     assert accuracy["proxy_contract"]["passed"] == 10
     assert accuracy["official_asr"]["status"] == "NOT_RUN"
-    assert _sha256(source / latency_name) == _sha256(reference / "raw" / latency_name)
-    assert _sha256(source / contract_name) == _sha256(reference / "raw" / contract_name)
+    for relative, expected_sha256 in manifest["files"].items():
+        assert _sha256(reference / relative) == expected_sha256
 
 
 def test_docs_notebook_handoff_and_missing_artifacts_are_honest() -> None:
@@ -72,7 +72,7 @@ def test_docs_notebook_handoff_and_missing_artifacts_are_honest() -> None:
     code = "\n".join("".join(cell.get("source", [])) for cell in notebook["cells"] if cell["cell_type"] == "code")
     assert "RUN_DIR" in code
     assert "pip install" not in code and "from_pretrained" not in code
-    handoff = (ROOT / "HANDOFF_B_REPRO_0804.md").read_text(encoding="utf-8")
+    handoff = (ROOT / "docs/reproduction/QWEN2B_REPRODUCTION.md").read_text(encoding="utf-8")
     for section in ("Scope", "Default Route", "RTX 5070 Results", "A800 Status", "Evidence Index", "Reproduction", "Known Limits", "Next Operator"):
         assert f"## {section}" in handoff
     assert "A800" in handoff and "NOT_RUN" in handoff

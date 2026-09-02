@@ -1,6 +1,0 @@
--r requirements-qwen.txt
-
-# Transformers 5.x uses GPTQModel to load Qwen2.5-VL AWQ checkpoints.
-# Install this profile on the Linux GPU host; GPTQModel 7.x is source-only on
-# Windows and was not accepted as a reproducible local dependency here.
-gptqmodel>=7.3,<8

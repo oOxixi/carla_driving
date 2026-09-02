@@ -85,7 +85,7 @@ def test_backend_requests_one_constrained_action_from_vllm(
     backend = OpenAICompatibleQwenVLBackend(
         base_url="http://example.invalid/v1",
         api_key="not-used-by-fake",
-        model="Qwen/Qwen2.5-VL-7B-Instruct",
+        model="Qwen/Qwen3-VL-2B-Instruct-FP8",
         jpeg_quality=70,
         client=client,
     )
@@ -100,7 +100,7 @@ def test_backend_requests_one_constrained_action_from_vllm(
     assert result.action == "STOP"
     assert result.confidence == pytest.approx(0.9)
     call = client.completions.calls[0]
-    assert call["model"] == "Qwen/Qwen2.5-VL-7B-Instruct"
+    assert call["model"] == "Qwen/Qwen3-VL-2B-Instruct-FP8"
     assert call["temperature"] == 0.0
     assert call["max_tokens"] == 1
     assert call["logprobs"] is True
@@ -108,6 +108,7 @@ def test_backend_requests_one_constrained_action_from_vllm(
     assert call["extra_body"] == {
         "structured_outputs": {"choice": ["A", "B", "C", "D", "E"]},
         "chat_template_kwargs": {"enable_thinking": False},
+        "mm_processor_kwargs": {"min_pixels": 50176, "max_pixels": 50176},
     }
     content = call["messages"][0]["content"]  # type: ignore[index]
     assert content[1] == {"type": "text", "text": "choice prompt"}
@@ -131,7 +132,7 @@ def test_backend_requests_one_constrained_action_from_vllm(
     assert client.closed
 
 
-def test_backend_defaults_to_qwen25vl_7b_profile(
+def test_backend_defaults_to_qwen_2b_profile(
     tmp_path: Path,
 ) -> None:
     image_path = tmp_path / "large.png"
@@ -150,7 +151,7 @@ def test_backend_defaults_to_qwen25vl_7b_profile(
     )
 
     call = client.completions.calls[0]
-    assert call["model"] == "Qwen/Qwen2.5-VL-7B-Instruct"
+    assert call["model"] == "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
     assert call["max_tokens"] == 1
     assert result.action == "STOP"
     content = call["messages"][0]["content"]  # type: ignore[index]
@@ -160,8 +161,8 @@ def test_backend_defaults_to_qwen25vl_7b_profile(
         assert encoded.size == (256, 256)
 
 
-def test_backend_preserves_the_configured_7b_model_id() -> None:
-    model = "Qwen/Qwen2.5-VL-7B-Instruct"
+def test_backend_preserves_the_configured_2b_model_id() -> None:
+    model = "Qwen/Qwen3-VL-2B-Instruct-FP8"
     client = FakeClient("D", confidence=0.91)
     backend = OpenAICompatibleQwenVLBackend(
         base_url="http://example.invalid/v1",

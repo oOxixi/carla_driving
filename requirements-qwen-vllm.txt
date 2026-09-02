@@ -1,5 +1,5 @@
 # vLLM API baseline. Strict CUDA 13.2 reproduction uses the source-built
-# environment recorded in docs/QWEN_REMOTE_OPENAI_COMPATIBLE.md; do not install
+# environment recorded in docs/runbooks/QWEN_REMOTE.md; do not install
 # this in CARLA's lightweight controller environment.
 vllm==0.26.0
 openai>=1.54,<3

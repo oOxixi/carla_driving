@@ -30,32 +30,11 @@
 
 ## 使用方式
 
-把整个`scenarios`文件夹复制到：
+从仓库根目录先验证全部 JSON，再通过正式 runner 加载具体场景：
 
-```text
-D:\AppStoreDownload\CARLA_Latest\my_project
-```
-
-最终结构：
-
-```text
-my_project/
-├── car_control_A/
-├── car_control_B/
-├── car_control_C/
-├── car_control_D/
-├── scenarios/
-│   ├── index.json
-│   ├── scenario_schema.json
-│   ├── smoke/
-│   ├── lateral_B/
-│   ├── safety_D/
-│   ├── regression/
-│   ├── qwen_routing/
-│   ├── qwen_fullchain/
-│   ├── qwen_faults/
-│   └── acceptance_suite/
-└── logs/
+```bash
+python tools/validate_scenarios.py
+python -m integration.carla_runner --scenario-file scenarios/smoke/S01_set_speed_20.json
 ```
 
 ## 重要说明
@@ -111,10 +90,10 @@ safety_D/D07_low_ttc_emergency_brake.json
 每次运行一个场景，建议写到：
 
 ```text
-logs/<scenario_id>/frame_log.jsonl
-logs/<scenario_id>/event_log.jsonl
-logs/<scenario_id>/result.json
-logs/<scenario_id>/score_report.json
+artifacts/logs/<scenario_id>/frame_log.jsonl
+artifacts/logs/<scenario_id>/event_log.jsonl
+artifacts/logs/<scenario_id>/result.json
+artifacts/logs/<scenario_id>/score_report.json
 ```
 
 `frame_log.jsonl`至少包含：
@@ -125,12 +104,4 @@ vehicle_state, B_lateral, C_longitudinal,
 raw_control, D_safety, final_control
 ```
 
-## Git上传
-
-```powershell
-cd D:\AppStoreDownload\CARLA_Latest\my_project
-git add scenarios
-git commit -m "add full four-type scenario suite"
-git pull --rebase origin main
-git push origin main
-```
+运行证据不提交到 `scenarios/`；场景 JSON 只在完成 schema、静态合同和实车冒烟验证后修改。

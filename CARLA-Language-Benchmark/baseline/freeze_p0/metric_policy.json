@@ -1,8 +1,15 @@
 {
-  "version": "competition_metric_v1",
+  "version": "language_schema_regression_v1",
   "evaluation": {
-    "split": "fixed_validation_set",
-    "rule": "all future experiments must use identical validation split"
+    "benchmark_role": "language_schema_regression_only",
+    "formal_accuracy": {
+      "status": "not_yet_frozen",
+      "artifacts": {
+        "multimodal_cases": "datasets/frozen_validation/multimodal/cases.jsonl",
+        "asr_manifest": "datasets/frozen_validation/asr/manifest.json"
+      },
+      "accuracy_reporting_permitted": false
+    }
   },
   "metrics": {
     "language_action_accuracy": {

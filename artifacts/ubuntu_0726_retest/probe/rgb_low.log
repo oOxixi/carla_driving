@@ -1,8 +1,0 @@
-ERROR conda.cli.main_run:execute(127): `conda run python tools/check_sensor_stability.py --host 127.0.0.1 --port 2000 --sensor rgb --profile low --frames 100 --expected-map Town03_Opt` failed. (See above for error)
-probe stage=connect host=127.0.0.1 port=2000
-probe stage=world current_map=Carla/Maps/Town03_Opt
-probe stage=spawn_ego
-probe stage=attach sensor=rgb_front blueprint=sensor.camera.rgb
-probe stage=stream mode=rgb profile=low requested_frames=100
-probe progress=1/100 frame=174001 counts={'rgb_front': 1}
-probe result={"aligned_frames": 1, "callback_counts": {"rgb_front": 1}, "duration_s": 6.502, "frame_bounds": {"rgb_front": [174001, 174001]}, "invalid_callbacks": {"rgb_front": 0}, "map_name": "Carla/Maps/Town03_Opt", "mode": "rgb", "profile": "low", "reason": "sensor callback timeout at simulation frame 174002; counts={'rgb_front': 1}", "requested_frames": 100, "success": false}

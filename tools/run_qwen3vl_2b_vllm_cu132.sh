@@ -20,16 +20,8 @@ case "${variant}" in
     expected_revision="46485250d8854c0a9be4f1adbc67ca47e5bb6fa5"
     expected_quant="fp8"
     ;;
-  qwen25vl-7b-awq)
-    default_model_path="${repo_root}/release_assets/weights/optional/qwen25vl-7b-awq"
-    served_model="Qwen/Qwen2.5-VL-7B-Instruct-AWQ"
-    expected_revision="536a35794df8831aa814970ee8f89eff577e7718"
-    expected_quant="awq"
-    quant_args=(--quantization awq_marlin)
-    graph_args=()
-    ;;
   *)
-    echo "QWEN_MODEL_VARIANT must be int4, fp8, or qwen25vl-7b-awq; got: ${variant}" >&2
+    echo "QWEN_MODEL_VARIANT must be int4 or fp8; got: ${variant}" >&2
     exit 2
     ;;
 esac

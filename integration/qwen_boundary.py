@@ -10,7 +10,7 @@ from types import MappingProxyType
 from typing import Any
 
 from car_control_A.high_level_command import FORBIDDEN_LOW_LEVEL_FIELDS
-from .day22.command_adapter import SUPPORTED_INTENTS
+from .qwen_command_adapter import SUPPORTED_INTENTS
 
 
 QWEN_BOUNDARY_SCHEMA_VERSION = "1.0"

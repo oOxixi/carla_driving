@@ -11,5 +11,5 @@
   "created_at_ns": 2100000000,
   "valid_until_ns": 2300000000,
   "requires_confirmation": false,
-  "model_id": "Qwen2.5-VL-7B-Instruct"
+  "model_id": "Qwen3-VL-2B-Instruct"
 }

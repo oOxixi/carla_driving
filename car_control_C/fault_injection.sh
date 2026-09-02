@@ -4,7 +4,7 @@ set -euo pipefail
 # C-role fault injection and degradation evidence runner.
 # Run from the repository root with Git Bash or another POSIX shell.
 
-LOG_DIR="${1:-artifacts/C_role_validation}"
+LOG_DIR="${1:-artifacts/reports/c_role}"
 mkdir -p "$LOG_DIR"
 
 echo "[camera_blackout] detector unavailable must not invent RGB semantics"

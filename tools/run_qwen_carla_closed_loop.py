@@ -21,7 +21,7 @@ from integration.carla_perception import (
     attach_default_sensors,
     sensor_specs_for_profile,
 )
-from integration.day22.command_adapter import build_command
+from integration.qwen_command_adapter import build_command
 from integration.qwen_boundary import QwenInputContext
 from integration.qwen_vl_adapter import StrictQwenVLAdapter
 from integration.route_planner import build_route_reference

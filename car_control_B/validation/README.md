@@ -32,5 +32,6 @@ finally lane changes. A demo candidate should pass at least three repeated runs
 with no collision, red-light violation, serious route deviation, wrong turn,
 or sustained steering oscillation.
 
-Store run `.jsonl` and `.summary.json` files under `artifacts/` and record their
-paths in `lateral_validation_results.csv`.
+Store run `.jsonl` and `.summary.json` files under `artifacts/`. Promote only a
+reviewed, hash-indexed result to `submission/`; generated CSV files do not belong
+in this source directory.

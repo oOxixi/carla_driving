@@ -4616,7 +4616,7 @@ def main() -> None:
     parser.add_argument("--c-visual-confidence-threshold", type=float, default=0.60,
                         help="C-side minimum visual confidence accepted by safety fusion")
     parser.add_argument("--qwen-remote", action="store_true",
-                        help="use an OpenAI-compatible remote Qwen2.5-VL backend for the high-level command")
+                        help="use the OpenAI-compatible remote Qwen 2B high-level planner")
     parser.add_argument("--qwen-voice-command",
                         help="Chinese command sent to Qwen; a one-command scenario can supply source_text")
     parser.add_argument("--qwen-base-url",
@@ -4624,9 +4624,9 @@ def main() -> None:
                         help="OpenAI-compatible /v1 endpoint; QWEN_API_KEY is read only from the environment")
     parser.add_argument("--qwen-model",
                         default=os.environ.get(
-                            "QWEN_MODEL", "Qwen/Qwen2.5-VL-7B-Instruct"
+                            "QWEN_MODEL", "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
                         ),
-                        help="exact remote Qwen2.5-VL-7B model id served by this branch")
+                        help="exact remote Qwen 2B model id")
     parser.add_argument("--qwen-request-timeout-s", type=float, default=15.0,
                         help="OpenAI client wall-clock timeout")
     parser.add_argument("--qwen-max-inference-s", type=float, default=10.0,
@@ -4680,7 +4680,7 @@ def main() -> None:
         help="shared filesystem root configured on the Qwen service",
     )
     parser.add_argument(
-        "--qwen-image-prefix", default="artifacts/second_group_20260731/qwen_images",
+        "--qwen-image-prefix", default="artifacts/runtime/qwen_images",
         help="safe relative subdirectory for asynchronously staged RGB frames",
     )
     parser.add_argument("--follow-spectator", action="store_true",

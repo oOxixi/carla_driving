@@ -1,94 +1,54 @@
-# CARLA 多模态驾驶控制闭环
+# CARLA 多模态智能驾驶闭环
 
-本仓库的正式车辆运行与验收入口是：
+本仓库的正式车辆运行入口是：
 
-```text
+```bash
 python -m integration.carla_runner
 ```
 
-正式控制顺序固定为：状态/感知 → A 命令与 FSM → B 横向 + C 纵向 →
-D 最终安全仲裁 → 唯一 `apply_control()`。Qwen 只输出高层动作，不能输出或绕过
-D 直接下发方向盘、油门和刹车。
+正式主链为：语音/场景指令 + RGB/LiDAR/Radar/车辆状态 → Qwen3.5-2B 高层规划 →
+A 状态机 → B 横向控制 + C 纵向控制 → D 安全仲裁 → 唯一 `apply_control()`。
+Qwen 只能给出高层 `ManeuverPlan`，不能直接下发方向盘、油门或刹车，也不能绕过 D。
 
-## 当前能力
+## 当前正式范围
 
-- CARLA 0.9.16 同步控制与 Actor 生命周期管理；
-- RGB、LiDAR、碰撞、压线和地图状态桥接；
-- YOLO11 ONNX 道路参与者检测；
-- 定速、停车保持、前车跟随、TTC 与紧急制动；
-- Pure Pursuit/Stanley 横向控制；
-- D 对低 TTC、近距离障碍、红灯、路线偏差、异常命令和非法控制进行最终覆盖；
-- JSONL 逐帧日志、场景摘要和 34 个场景契约。
+- 模型：只使用服务器上的 Qwen 2B 生产服务；更大模型不属于当前测试主线。
+- 仿真：CARLA 0.9.16，同步模式，Actor 和传感器完整生命周期管理。
+- 感知：四视角 RGB、LiDAR、Radar、碰撞、压线和地图/车辆状态。
+- 控制：车道保持、转向/变道、定速、跟车、TTC、紧急制动和停车保持。
+- 场景：冒烟、横向、安全、回归、Qwen 路由/故障/全链以及三个正式长里程场景。
+- 证据：逐帧 JSONL、场景摘要、Qwen 路由与计划、传感器来源和评分字段。
 
-## 环境
+## 快速开始
 
-本仓库附带的 CARLA Python wheel 是 CPython 3.12 版本，请使用：
-
-```powershell
-py -3.12 -m pip install -r requirements.txt
+```bash
+python -m pip install -r requirements.txt
+python tools/validate_scenarios.py
+python tools/validate_official_scenes.py
+python -m pytest -q
 ```
 
-YOLO11 权重默认放在 Git 忽略目录：
+正式 S2 8km 全链验证：
 
-```text
-artifacts/models/yolo11n.onnx
+```bash
+export QWEN_SERVICE_URL=http://127.0.0.1:18000
+bash scripts/run_official_s2_member3.sh --validate
+bash scripts/run_official_s2_member3.sh --smoke
+bash scripts/run_official_s2_member3.sh --run
 ```
 
-启动 CARLA：
+运行输出统一写入 `artifacts/`。该目录默认不纳入 Git；需要长期保留的基准必须经过
+脱敏、说明适用范围并迁入 `metrics/` 或 `submission/`。
 
-```powershell
-Start-Process `
-  -FilePath ".\CARLA_0.9.16\CarlaUE4.exe" `
-  -ArgumentList "-quality-level=Low" `
-  -WindowStyle Hidden
-```
+## 文档入口
 
-## 正式运行
+- [完整目录说明](docs/REPOSITORY_STRUCTURE.md)
+- [文档索引](docs/README.md)
+- [正式三场景说明](scenarios/official_competition/README.md)
+- [第二组运行手册](docs/runbooks/SECOND_GROUP.md)
+- [Qwen 远程服务说明](docs/runbooks/QWEN_REMOTE.md)
+- [2B 独立复现说明](docs/reproduction/QWEN2B_REPRODUCTION.md)
+- [接口契约](interfaces/README.md)
 
-world 模式用于控制与地图真值调试：
-
-```powershell
-py -3.12 -m integration.carla_runner `
-  --host 127.0.0.1 --port 2000 `
-  --perception-mode world `
-  --scenario cruise --frames 120
-```
-
-sensors + YOLO11 模式用于真实传感器链验收：
-
-```powershell
-py -3.12 -m integration.carla_runner `
-  --host 127.0.0.1 --port 2000 `
-  --perception-mode sensors `
-  --scenario-facts-mode perception `
-  --rgb-detector-model artifacts/models/yolo11n.onnx `
-  --rgb-detector-confidence 0.25 `
-  --scenario follow --frames 120 `
-  --sensor-warmup-frames 30 --sensor-timeout-s 1.0
-```
-
-`world`、`sensors` 和 `virtual` 的字段来源会写入 `perception_sources`；不得把
-world/virtual 真值描述为真实视觉检测。
-
-## Qwen/Day20 边界
-
-`integration/day20/` 保留第一组的 Qwen-VL 高层决策演示。该目录不是正式场景
-验收入口；其中 Ego 控制适配器也必须经过 D 仲裁。最终演示与批量回归以
-`integration.carla_runner` 生成的证据为准。
-
-## 验证
-
-```powershell
-python -m pytest -q `
-  car_control_A\tests `
-  car_control_B\tests `
-  car_control_C\tests `
-  car_control_D\tests `
-  integration\tests
-
-python tools\validate_scenarios.py
-python tools\validate_c_role.py
-```
-
-角色说明和接口边界见 `integration/HANDOFF.md`、`car_control_C/HANDOFF.md` 和
-`HANDOFF_yqq_0722.md`。
+根目录只保留项目入口、依赖清单、Docker 启停包装器和兼容层；业务代码按职责放入对应
+包，历史交接稿和按日期复制的实现不再作为源码维护。

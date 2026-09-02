@@ -57,5 +57,5 @@
   "created_at_ns": 1200000000,
   "valid_until_ns": 12000000000,
   "reason_code": "MULTI_STEP_LANE_MANEUVER",
-  "model_id": "Qwen2.5-VL-7B-Instruct"
+  "model_id": "Qwen3-VL-2B-Instruct"
 }

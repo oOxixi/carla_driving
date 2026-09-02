@@ -56,7 +56,7 @@ Qwen 的输出只能成为 A 校验后的高层计划。D 独立计算并仲裁�
 ```bash
 python -m qwen_service.server \
   --qwen-mode planner_v2 \
-  --model-path /path/to/Qwen2.5-VL-7B-Instruct \
+  --model-path /path/to/Qwen-2B \
   --image-root /shared/carla_driving \
   --timeout-ms 5000 \
   --max-new-tokens 256

@@ -44,30 +44,6 @@ _PROFILES = {
         prompt_style="compact-v2",
         optional=True,
     ),
-    "qwen25vl-3b-bf16": QwenModelProfile(
-        name="qwen25vl-3b-bf16",
-        model="Qwen/Qwen2.5-VL-3B-Instruct",
-        revision="66285546d2b821cf421d4f5eb2576359d3770cd3",
-        quantization="bf16",
-        required_linear_kernel=None,
-        image_max_side=224,
-        visual_tokens=256,
-        port=8002,
-        prompt_style="compact-v2",
-        optional=True,
-    ),
-    "qwen25vl-7b-awq": QwenModelProfile(
-        name="qwen25vl-7b-awq",
-        model="Qwen/Qwen2.5-VL-7B-Instruct-AWQ",
-        revision="536a35794df8831aa814970ee8f89eff577e7718",
-        quantization="awq_marlin",
-        required_linear_kernel="MarlinLinearKernel",
-        image_max_side=224,
-        visual_tokens=64,
-        port=8001,
-        prompt_style="compact-v2",
-        optional=True,
-    ),
 }
 
 
@@ -78,8 +54,20 @@ def get_qwen_profile(name: str) -> QwenModelProfile:
         raise ValueError(f"unsupported Qwen profile: {name}") from exc
 
 
+def get_qwen_profile_by_model(model: str) -> QwenModelProfile:
+    for profile in _PROFILES.values():
+        if profile.model == model:
+            return profile
+    raise ValueError(f"unsupported Qwen 2B model: {model}")
+
+
 def resolve_qwen_profile(name: str | None) -> QwenModelProfile:
     return get_qwen_profile(name or os.getenv("QWEN_PROFILE", "qwen3vl-2b-int4"))
 
 
-__all__ = ["QwenModelProfile", "get_qwen_profile", "resolve_qwen_profile"]
+__all__ = [
+    "QwenModelProfile",
+    "get_qwen_profile",
+    "get_qwen_profile_by_model",
+    "resolve_qwen_profile",
+]

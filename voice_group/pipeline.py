@@ -12,7 +12,6 @@
 import os, sys, time, json, uuid
 
 if __package__:
-    from .asr_vad import ASR
     from .asr_cascade import (
         CascadeConfig,
         FasterWhisperVerifier,
@@ -26,7 +25,6 @@ else:
     # 兼容直接执行 ``python voice_group/pipeline.py audio.wav``。
     _HERE = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, _HERE)
-    from asr_vad import ASR
     from asr_cascade import (
         CascadeConfig,
         FasterWhisperVerifier,
@@ -45,6 +43,10 @@ _cascade_config = None
 def _get_asr():
     global _asr
     if _asr is None:
+        if __package__:
+            from .asr_vad import ASR
+        else:
+            from asr_vad import ASR
         _asr = ASR()
     return _asr
 

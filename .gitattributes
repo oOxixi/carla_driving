@@ -1,0 +1,10 @@
+*.sh text eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.npy binary
+*.mp3 binary
+*.wav binary
+*.xlsx binary
+*.docx binary

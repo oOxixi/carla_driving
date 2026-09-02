@@ -9,7 +9,7 @@ from integration.qwen_boundary import (
     fail_closed,
     validate_qwen_response,
 )
-from integration.day22.command_adapter import build_high_level_command
+from integration.qwen_command_adapter import build_high_level_command
 
 
 def test_input_context_is_json_safe_and_immutable_at_boundary() -> None:

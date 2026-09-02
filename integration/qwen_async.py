@@ -11,7 +11,7 @@ import time
 from typing import Any
 
 from car_control_A.high_level_command import HighLevelCommandAdapter
-from .day22.command_adapter import build_high_level_command
+from .qwen_command_adapter import build_high_level_command
 from .qwen_boundary import fail_closed, validate_qwen_response
 
 

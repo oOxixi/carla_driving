@@ -1,9 +1,0 @@
-ERROR conda.cli.main_run:execute(127): `conda run python tools/check_sensor_stability.py --host 127.0.0.1 --port 2000 --sensor both --profile low --frames 100 --expected-map Town03_Opt` failed. (See above for error)
-probe stage=connect host=127.0.0.1 port=2000
-probe stage=world current_map=Carla/Maps/Town03_Opt
-probe stage=spawn_ego
-probe stage=attach sensor=rgb_front blueprint=sensor.camera.rgb
-probe stage=attach sensor=lidar_roof blueprint=sensor.lidar.ray_cast
-probe stage=stream mode=both profile=low requested_frames=100
-probe progress=1/100 frame=176599 counts={'rgb_front': 1, 'lidar_roof': 1}
-probe result={"aligned_frames": 1, "callback_counts": {"lidar_roof": 1, "rgb_front": 1}, "duration_s": 6.507, "frame_bounds": {"lidar_roof": [176599, 176599], "rgb_front": [176599, 176599]}, "invalid_callbacks": {"lidar_roof": 0, "rgb_front": 0}, "map_name": "Carla/Maps/Town03_Opt", "mode": "both", "profile": "low", "reason": "sensor callback timeout at simulation frame 176600; counts={'rgb_front': 1, 'lidar_roof': 1}", "requested_frames": 100, "success": false}

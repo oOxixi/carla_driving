@@ -19,7 +19,7 @@ from integration.qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from integration.qwen_vl_adapter import StrictQwenVLAdapter
 
 
-DEFAULT_QWEN_MODEL = "Qwen/Qwen2.5-VL-7B-Instruct"
+DEFAULT_QWEN_MODEL = "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
 DEFAULT_QWEN_REVISION = "unverified-local-snapshot"
 
 

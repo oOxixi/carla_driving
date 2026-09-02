@@ -18,7 +18,7 @@ from car_control_B.pure_pursuit import PurePursuitController
 
 from .carla_perception import front_lidar_distance_m
 from .contracts import DetectedObject, PerceptionFrame
-from .day22.command_adapter import build_high_level_command
+from .qwen_command_adapter import build_high_level_command
 from .perception_bridge import safety_vehicle_state
 from .qwen_boundary import QwenInputContext, fail_closed, validate_qwen_response
 from .rgb_detector import OnnxYoloDetector
