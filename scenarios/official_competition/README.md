@@ -116,3 +116,20 @@ bash scripts/run_official_s2_member3.sh --run
 原8km任务路线；自行车观测最小距离不低于3m；路线偏差不超过1m；碰撞和非计划车道侵入
 均为0；Qwen sensor-to-trajectory 最大延迟不超过150ms。原始合法车道线跨越次数另存为
 `lane_marking_crossing_count`，不会混同为违规侵线。
+
+## 第二组成员4：S3 服务器验收
+
+成员4只运行 S3，继续使用项目现有 7B Qwen Planner V2 服务：
+
+```bash
+export QWEN_SERVICE_URL=http://127.0.0.1:18000
+export QWEN_MODEL=Qwen/Qwen2.5-VL-7B-Instruct-AWQ
+bash scripts/run_official_s3_member4.sh --validate
+bash scripts/run_official_s3_member4.sh --smoke
+bash scripts/run_official_s3_member4.sh --run
+```
+
+正式报告要求四阶段全部完成、2 次 `QWEN_PLAN` 与 2 次 `FAST_LOCAL` 路由正确，加塞和
+行人事件均具备危险、感知、决策、安全接管、控制生效时间戳；应急响应 P95 不超过100ms、
+最大值不超过120ms；碰撞和违规为0，最终停车保持。详细字段与故障复现见
+`docs/member4_s3_acceptance.md`。

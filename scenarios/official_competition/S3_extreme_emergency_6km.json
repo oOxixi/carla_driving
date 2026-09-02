@@ -189,7 +189,15 @@
       "expected_phase_count": 4,
       "all_phases_must_complete": true,
       "qwen_calls_per_frame": 0,
-      "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "AVOID_OBSTACLE", "CHANGE_LANE_LEFT", "RETURN_TO_LANE", "STOP"]
+      "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "AVOID_OBSTACLE", "CHANGE_LANE_LEFT", "RETURN_TO_LANE", "STOP"],
+      "required_emergency_event_ids": ["cut_in_vehicle", "emergency_pedestrian"],
+      "required_emergency_recovery_ids": ["cut_in_vehicle", "emergency_pedestrian"],
+      "emergency_response_p95_max_ms": 100,
+      "emergency_response_absolute_max_ms": 120
+    },
+    "emergency_recovery": {
+      "cut_in_vehicle": {"minimum_hold_s": 2.0, "resume_speed_kph": 18.0},
+      "emergency_pedestrian": {"minimum_hold_s": 6.0, "resume_speed_kph": 18.0}
     },
     "fixed_random_seed": true,
     "weather_parameters": {"cloudiness": 100.0, "precipitation": 85.0, "precipitation_deposits": 100.0, "wetness": 100.0, "fog_density": 35.0, "fog_distance": 35.0, "wind_intensity": 65.0, "sun_altitude_angle": -25.0},

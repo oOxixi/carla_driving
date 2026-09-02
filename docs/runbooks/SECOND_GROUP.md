@@ -3,7 +3,7 @@
 ## 1. 前置条件
 
 - CARLA 0.9.16 已启动，Python 3.12 可导入对应 CARLA API。
-- Qwen 2B 生产服务已启动，`GET /health` 返回 `READY` 和
+- 项目现有 Qwen 7B 生产服务已启动，`GET /health` 返回 `READY` 和
   `production_ready=true`。
 - 从仓库根目录运行命令，运行输出写入 `artifacts/`。
 
@@ -64,5 +64,17 @@ S2 还必须运行：
 ```bash
 python tools/validate_s2_member3_evidence.py artifacts/logs/official_competition/<run>.jsonl
 ```
+
+S3 成员4使用现有 7B Qwen 服务并运行：
+
+```bash
+export QWEN_MODEL=Qwen/Qwen2.5-VL-7B-Instruct-AWQ
+bash scripts/run_official_s3_member4.sh --validate
+bash scripts/run_official_s3_member4.sh --smoke
+bash scripts/run_official_s3_member4.sh --run
+```
+
+S3 会生成同名 `.member4.json`，并硬检查加塞/行人的五阶段应急时间戳、P95 ≤100ms、
+最大值 ≤120ms、2 次 Qwen + 2 次本地快速链、停车保持、零碰撞和零违规。
 
 不要把确定性测试后端、短时冒烟或本地代理集结果写成正式比赛闭环成绩。

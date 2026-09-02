@@ -42,6 +42,29 @@ def test_runtime_preserves_d_emergency_stop_authority():
     assert result.final_control.brake == 1.0
 
 
+def test_scenario_recovery_releases_completed_emergency_hold_without_safety_latch():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.submit_voice(_voice("EMERGENCY_STOP", {}), now_s=0.05)
+    runtime.step(_vehicle(speed=2.0), PerceptionFrame(frame=1, sim_time_s=0.05), _route(), dt_s=0.05)
+    runtime.step(
+        _vehicle(frame=2, time=0.10, speed=0.0),
+        PerceptionFrame(frame=2, sim_time_s=0.10),
+        _route(),
+        dt_s=0.05,
+    )
+
+    assert runtime.release_scenario_stop_hold(requested_speed_mps=5.0) is True
+    assert runtime.requested_speed_mps == 5.0
+    cruising = runtime.step(
+        _vehicle(frame=3, time=0.15, speed=0.0),
+        PerceptionFrame(frame=3, sim_time_s=0.15),
+        _route(),
+        dt_s=0.05,
+    )
+    assert cruising.final_control.throttle > 0.0
+    assert cruising.final_control.brake == 0.0
+
+
 def test_runtime_temporary_speed_cap_does_not_mutate_driver_requested_speed():
     runtime = ControlRuntime(PurePursuitController(), default_speed_mps=5.0)
     result = runtime.step(

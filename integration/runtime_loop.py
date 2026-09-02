@@ -174,6 +174,17 @@ class ControlRuntime:
             self.clear_safety_alerts(cleared)
         return cleared
 
+    def release_scenario_stop_hold(self, *, requested_speed_mps: float) -> bool:
+        """Release a completed scenario emergency hold after its hazard clears."""
+        speed = float(requested_speed_mps)
+        if not math.isfinite(speed) or speed <= 0.0:
+            raise ValueError("requested_speed_mps must be finite and positive")
+        if self._active_command_id is not None or self._latched_alerts or not self._stop_hold:
+            return False
+        self.requested_speed_mps = speed
+        self._stop_hold = False
+        return True
+
     def fail_active(
         self,
         *,
