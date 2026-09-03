@@ -134,6 +134,19 @@ def test_invalid_lidar_and_visual_range_conflict_fail_closed() -> None:
     assert conflict.reason == "visual_hazard_without_range"
 
 
+def test_braking_envelope_expands_with_speed() -> None:
+    low_speed = ConservativeSensorFusion().update(
+        frame=1, sim_time_s=0.1, ego_speed_mps=2.0,
+        front_distance_m=12.0, lidar_valid=True,
+    )
+    high_speed = ConservativeSensorFusion().update(
+        frame=1, sim_time_s=0.1, ego_speed_mps=10.0,
+        front_distance_m=12.0, lidar_valid=True,
+    )
+    assert low_speed.recommended_action == "KEEP_SPEED"
+    assert high_speed.recommended_action == "EMERGENCY_BRAKE"
+
+
 def test_frame_alignment_and_episode_reset_are_strict() -> None:
     fusion = ConservativeSensorFusion()
     fusion.update(frame=1, sim_time_s=1.0, ego_speed_mps=0.0,

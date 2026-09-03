@@ -86,6 +86,11 @@ class SafetyStateParameters:
     caution_ttc_s: float = 2.5
     emergency_ttc_s: float = 1.5
     max_observation_gap_s: float = 0.30
+    reaction_time_s: float = 0.70
+    emergency_reaction_time_s: float = 0.35
+    comfortable_deceleration_mps2: float = 3.5
+    emergency_deceleration_mps2: float = 6.0
+    range_uncertainty_buffer_m: float = 1.0
     full_brake: float = 1.0
 
     def __post_init__(self) -> None:
@@ -93,7 +98,10 @@ class SafetyStateParameters:
                minimum=0.0, maximum=1.0)
         for name in ("caution_distance_m", "emergency_distance_m", "vru_caution_distance_m",
                      "vru_emergency_distance_m", "vru_caution_speed_cap_mps", "vru_caution_hold_s",
-                     "caution_ttc_s", "emergency_ttc_s", "max_observation_gap_s"):
+                     "caution_ttc_s", "emergency_ttc_s", "max_observation_gap_s",
+                     "reaction_time_s", "emergency_reaction_time_s",
+                     "comfortable_deceleration_mps2", "emergency_deceleration_mps2",
+                     "range_uncertainty_buffer_m"):
             finite(name, getattr(self, name), positive=True)
         finite("full_brake", self.full_brake, positive=True, maximum=1.0)
         if self.emergency_distance_m > self.caution_distance_m:
@@ -250,10 +258,13 @@ class ConservativeSensorFusion:
             mode, action, reason = "RGB_ONLY", "FULL_BRAKE", "visual_hazard_without_range"
         elif visual_valid and front_distance_m is not None:
             mode, action, reason = self._range_action(
-                front_distance_m, ttc_s, "RGB_LIDAR", object_class=object_class,
+                front_distance_m, ttc_s, "RGB_LIDAR", ego_speed_mps=ego_speed_mps,
+                object_class=object_class,
             )
         elif front_distance_m is not None:
-            mode, action, reason = self._range_action(front_distance_m, ttc_s, "LIDAR_ONLY")
+            mode, action, reason = self._range_action(
+                front_distance_m, ttc_s, "LIDAR_ONLY", ego_speed_mps=ego_speed_mps,
+            )
         elif visual_valid:
             mode, action, reason = "RGB_ONLY", "KEEP_SPEED", "visual_non_hazard_without_range"
         else:
@@ -302,6 +313,7 @@ class ConservativeSensorFusion:
         ttc_s: float | None,
         mode: str,
         *,
+        ego_speed_mps: float = 0.0,
         object_class: str | None = None,
     ) -> tuple[str, str, str]:
         # A frame-aligned, high-confidence vulnerable-road-user observation
@@ -309,17 +321,35 @@ class ConservativeSensorFusion:
         # limited to semantic RGB+LiDAR fusion: unclassified LiDAR obstacles
         # retain the established 5 m threshold and cannot cause new false
         # positive full brakes merely due to range noise.
+        emergency_distance = max(
+            self.parameters.emergency_distance_m,
+            self.parameters.range_uncertainty_buffer_m
+            + ego_speed_mps * self.parameters.emergency_reaction_time_s
+            + ego_speed_mps * ego_speed_mps
+            / (2.0 * self.parameters.emergency_deceleration_mps2),
+        )
+        caution_distance = max(
+            self.parameters.caution_distance_m,
+            self.parameters.range_uncertainty_buffer_m
+            + ego_speed_mps * self.parameters.reaction_time_s
+            + ego_speed_mps * ego_speed_mps
+            / (2.0 * self.parameters.comfortable_deceleration_mps2),
+        )
+        vru_emergency_distance = max(
+            self.parameters.vru_emergency_distance_m,
+            emergency_distance + 2.0,
+        )
         if (
             object_class in self._VRU_CLASSES
-            and distance_m <= self.parameters.vru_emergency_distance_m
+            and distance_m <= vru_emergency_distance
         ):
             return mode, "EMERGENCY_BRAKE", "vru_short_front_distance"
         if ttc_s is not None and ttc_s <= self.parameters.emergency_ttc_s:
             return mode, "EMERGENCY_BRAKE", "low_ttc"
-        if distance_m <= self.parameters.emergency_distance_m:
+        if distance_m <= emergency_distance:
             return mode, "EMERGENCY_BRAKE", "short_front_distance"
         if ttc_s is not None and ttc_s <= self.parameters.caution_ttc_s:
             return mode, "SLOW_DOWN", "caution_ttc"
-        if distance_m <= self.parameters.caution_distance_m:
+        if distance_m <= caution_distance:
             return mode, "SLOW_DOWN", "caution_front_distance"
         return mode, "KEEP_SPEED", "front_hazard_outside_caution_threshold"

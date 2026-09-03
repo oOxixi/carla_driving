@@ -154,6 +154,21 @@ def test_route_deviation_never_applies_low_speed_recovery_throttle() -> None:
     assert decision.final_control.steer == -supervisor.config.route_recovery_steer_limit
 
 
+def test_front_guard_uses_speed_dependent_braking_distance() -> None:
+    supervisor = SafetySupervisor()
+    low = supervisor.arbitrate(
+        {"throttle": 0.2, "brake": 0.0, "steer": 0.0},
+        {"speed_mps": 2.0, "front_distance_m": 10.0},
+    )
+    high = supervisor.arbitrate(
+        {"throttle": 0.2, "brake": 0.0, "steer": 0.0},
+        {"speed_mps": 10.0, "front_distance_m": 10.0},
+    )
+    assert not low.safety_override
+    assert high.reason == "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE"
+    assert high.risk_metrics["dynamic_front_guard_m"] > low.risk_metrics["dynamic_front_guard_m"]
+
+
 def test_route_recovery_brakes_above_recovery_speed() -> None:
     supervisor = SafetySupervisor()
     decision = supervisor.arbitrate(
