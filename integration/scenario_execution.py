@@ -72,6 +72,7 @@ class ScenarioSpec:
     qwen_expected: dict[str, object] | None
     expected: dict[str, object]
     extensions: dict[str, object]
+    route_contract: dict[str, object]
 
     @classmethod
     def load(cls, path: str | Path) -> "ScenarioSpec":
@@ -186,11 +187,55 @@ class ScenarioSpec:
             qwen_expected=(None if qwen_expected is None else dict(qwen_expected)),
             expected=dict(expected),
             extensions=dict(extensions),
+            route_contract=dict(route),
         )
 
     @property
     def frame_count(self) -> int:
         return max(1, math.ceil(self.duration_s / self.fixed_delta_s))
+
+    @property
+    def route_distance_contract_m(self) -> float:
+        declared = self.route_contract.get("distance_contract_m")
+        if declared is not None:
+            return _finite_number(declared, "route.distance_contract_m", minimum=0.1)
+        return sum(
+            math.dist(first, second)
+            for first, second in zip(self.local_route_xy_m, self.local_route_xy_m[1:])
+        )
+
+    @property
+    def route_planning_mode(self) -> str:
+        explicit = self.route_contract.get("planning_mode")
+        if explicit is None:
+            return "destination" if "destination_xy_m" in self.route_contract else "distance_coverage"
+        mode = _nonempty_text(explicit, "route.planning_mode").lower()
+        if mode not in {"distance_coverage", "destination", "local_polyline"}:
+            raise ValueError(f"unsupported route.planning_mode: {mode}")
+        return mode
+
+    @property
+    def control_policy(self) -> Mapping[str, object]:
+        policy = self.extensions.get("control_policy", {})
+        if not isinstance(policy, Mapping):
+            raise TypeError("extensions.control_policy must be an object")
+        return policy
+
+    def world_destination(
+        self, origin_x_m: float, origin_y_m: float, yaw_deg: float,
+    ) -> tuple[float, float] | None:
+        raw = self.route_contract.get("destination_xy_m")
+        if raw is None:
+            return None
+        if not isinstance(raw, list) or len(raw) != 2:
+            raise TypeError("route.destination_xy_m must be [x, y]")
+        local_x = _finite_number(raw[0], "route.destination_xy_m.x")
+        local_y = _finite_number(raw[1], "route.destination_xy_m.y")
+        yaw = math.radians(_finite_number(yaw_deg, "yaw_deg"))
+        return (
+            _finite_number(origin_x_m, "origin_x_m") + local_x * math.cos(yaw) - local_y * math.sin(yaw),
+            _finite_number(origin_y_m, "origin_y_m") + local_x * math.sin(yaw) + local_y * math.cos(yaw),
+        )
 
     @property
     def requires_qwen_semantics(self) -> bool:

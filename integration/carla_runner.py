@@ -25,8 +25,8 @@ from car_control_A.high_level_command import HighLevelCommandAdapter, is_high_le
 from car_control_A.routing import RouteReference
 from car_control_A.watchdog import RuntimeWatchdog
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
-from car_control_C import ConservativeSensorFusion, SafetyStateParameters
-from car_control_D import SafetyConfig, SafetySupervisor
+from car_control_C import ConservativeSensorFusion
+from car_control_D import SafetySupervisor
 from qwen_service.client import QwenServiceClient
 from runtime.interface_registry import InterfaceRegistry
 from runtime import (
@@ -54,6 +54,7 @@ from .qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from .qwen_vl_adapter import StrictQwenVLAdapter
 from .live_voice import LiveVoiceConfig, LiveVoiceSource
 from .route_planner import (
+    build_destination_route_reference,
     build_lane_change_route_reference,
     build_route_reference,
     build_scenario_route_reference,
@@ -61,7 +62,17 @@ from .route_planner import (
     select_topology_route_anchor,
     warm_heading_waypoint_cache,
 )
+from .scenario_builder import (
+    route_relative_carla_transform,
+    route_relative_target_location,
+)
+from .planning_stage import prepare_scenario_route
+from .execution_stage import RouteProgressTracker
+from .scoring_stage import build_acceptance_context
+from .runtime_diagnostics import diagnose_runtime_failure
 from .qwen_image_stager import QwenImageStager
+from .perception_stage import audit_control_sources
+from .driving_policy import load_driving_policy
 from .qwen_fault_injection import ScenarioQwenFaultInjector
 from .qwen_scenario_monitor import QwenScenarioMonitor
 from .runtime_loop import ControlRuntime
@@ -414,10 +425,7 @@ def _scenario_maneuver(spec: ScenarioSpec) -> str:
 
 
 def _scenario_route_distance_m(spec: ScenarioSpec) -> float:
-    return sum(
-        math.dist(first, second)
-        for first, second in zip(spec.local_route_xy_m, spec.local_route_xy_m[1:])
-    )
+    return spec.route_distance_contract_m
 
 
 def _scenario_requires_adjacent_lane_anchor(spec: ScenarioSpec) -> bool:
@@ -1017,6 +1025,8 @@ def _spawn_scenario_vehicle(
     ego: Any,
     fallback_blueprint: Any,
     actor_spec: Mapping[str, object],
+    *,
+    route: RouteReference | None = None,
 ) -> Any:
     """Spawn a real CARLA lead vehicle from a scenario actor declaration."""
     spawn = actor_spec.get("spawn", {})
@@ -1041,8 +1051,15 @@ def _spawn_scenario_vehicle(
     world_map = world.get_map()
     lead = None
     for offset_m in (0.0, 2.0, 4.0, 6.0):
-        transform = _scenario_local_transform(
-            carla_api, ego_transform, spawn, forward_offset_m=offset_m,
+        transform = (
+            route_relative_carla_transform(
+                carla_api, world_map, route.points_xy_m, actor_spec,
+                forward_offset_m=offset_m,
+            )
+            if route is not None else
+            _scenario_local_transform(
+                carla_api, ego_transform, spawn, forward_offset_m=offset_m,
+            )
         )
         # The ego has already settled onto the road before scenario actors are
         # created, so its transform Z is near zero.  Preserve the declarative
@@ -1211,6 +1228,8 @@ def _spawn_scenario_walker(
     carla_api: Any,
     ego: Any,
     actor_spec: Mapping[str, object],
+    *,
+    route: RouteReference | None = None,
 ) -> tuple[Any, Any]:
     """Spawn a real pedestrian and return it with its world-space target.
 
@@ -1258,7 +1277,14 @@ def _spawn_scenario_walker(
         candidate_spawn = dict(spawn)
         candidate_spawn["x"] = float(spawn.get("x", 0.0)) + forward_offset_m
         candidate_spawn["y"] = float(spawn.get("y", 0.0)) + lateral_offset_m
-        transform = _scenario_local_transform(carla_api, anchor, candidate_spawn)
+        candidate_spec = {**actor_spec, "spawn": candidate_spawn}
+        transform = (
+            route_relative_carla_transform(
+                carla_api, world_map, route.points_xy_m, candidate_spec,
+            )
+            if route is not None else
+            _scenario_local_transform(carla_api, anchor, candidate_spawn)
+        )
         road_waypoint = world_map.get_waypoint(
             transform.location, project_to_road=True,
         )
@@ -1277,14 +1303,19 @@ def _spawn_scenario_walker(
     set_physics = getattr(walker, "set_simulate_physics", None)
     if callable(set_physics):
         set_physics(True)
-    target_xy = behavior.get("target_xy_m", [spawn.get("x", 0.0), spawn.get("y", 0.0)])
-    if not isinstance(target_xy, (list, tuple)) or len(target_xy) != 2:
-        raise TypeError("scenario walker target_xy_m must be [x, y]")
-    target = _scenario_local_transform(
-        carla_api,
-        anchor,
-        {"x": target_xy[0], "y": target_xy[1], "z": spawn.get("z", 0.5)},
-    ).location
+    if route is not None:
+        target = route_relative_target_location(
+            carla_api, world_map, route.points_xy_m, actor_spec,
+        )
+    else:
+        target_xy = behavior.get("target_xy_m", [spawn.get("x", 0.0), spawn.get("y", 0.0)])
+        if not isinstance(target_xy, (list, tuple)) or len(target_xy) != 2:
+            raise TypeError("scenario walker target_xy_m must be [x, y]")
+        target = _scenario_local_transform(
+            carla_api,
+            anchor,
+            {"x": target_xy[0], "y": target_xy[1], "z": spawn.get("z", 0.5)},
+        ).location
     print(
         "scenario actor: spawned real walker "
         f"id={actor_spec.get('actor_id', 'scenario_walker')} "
@@ -1348,6 +1379,8 @@ def _spawn_scenario_static_prop(
     carla_api: Any,
     ego: Any,
     actor_spec: Mapping[str, object],
+    *,
+    route: RouteReference | None = None,
 ) -> Any:
     """Spawn a declared static obstacle for construction/occlusion coverage."""
     spawn = actor_spec.get("spawn", {})
@@ -1362,9 +1395,14 @@ def _spawn_scenario_static_prop(
         raise LookupError(f"scenario static prop blueprint not found: {blueprint_id!r}") from error
     if blueprint is None:
         raise LookupError(f"scenario static prop blueprint not found: {blueprint_id!r}")
-    prop = world.try_spawn_actor(
-        blueprint, _scenario_local_transform(carla_api, ego.get_transform(), spawn),
+    transform = (
+        route_relative_carla_transform(
+            carla_api, world.get_map(), route.points_xy_m, actor_spec,
+        )
+        if route is not None else
+        _scenario_local_transform(carla_api, ego.get_transform(), spawn)
     )
+    prop = world.try_spawn_actor(blueprint, transform)
     if prop is None:
         raise RuntimeError("cannot spawn configured scenario static prop")
     prop = session.track_actor(prop)
@@ -2262,6 +2300,8 @@ def _import_carla_api() -> Any:
 
 
 def run(args: argparse.Namespace) -> None:
+    driving_policy = load_driving_policy(getattr(args, "driving_policy", None))
+    args.driving_policy = str(driving_policy.source_path)
     spec = ScenarioSpec.load(args.scenario_file) if args.scenario_file else None
     extension_runtime = (
         ScenarioExtensionRuntime(spec.extensions)
@@ -2350,10 +2390,13 @@ def run(args: argparse.Namespace) -> None:
             or _scenario_walkers(spec)
             or _scenario_static_props(spec)
         )
-        if owns_real_scene_actor and args.scenario_facts_mode != "perception":
+        requires_sensor_grounded_control = (
+            args.perception_mode == "sensors"
+            and (owns_real_scene_actor or spec.requires_qwen_semantics)
+        )
+        if requires_sensor_grounded_control and args.scenario_facts_mode != "perception":
             print(
-                "scenario facts: forcing perception mode because the scenario "
-                "owns real CARLA actors",
+                "scenario facts: forcing perception mode for sensor-grounded control",
                 flush=True,
             )
             args.scenario_facts_mode = "perception"
@@ -2484,12 +2527,13 @@ def run(args: argparse.Namespace) -> None:
         else:
             fsm_timeout_s = 15.0
         route_deviation_trigger_m = 3.0
-        if spec is not None and "route_deviation_trigger_m" in spec.expected:
-            route_deviation_trigger_m = float(spec.expected["route_deviation_trigger_m"])
-        scenario_safety = SafetySupervisor(SafetyConfig(
-            stop_line_guard_m=args.stop_line_guard_m,
-            max_lane_offset_m=min(1.8, route_deviation_trigger_m),
-            severe_route_deviation_m=route_deviation_trigger_m,
+        if spec is not None and "route_deviation_trigger_m" in spec.control_policy:
+            route_deviation_trigger_m = float(
+                spec.control_policy["route_deviation_trigger_m"]
+            )
+        scenario_safety = SafetySupervisor(driving_policy.safety_config(
+            stop_line_guard_override_m=args.stop_line_guard_m,
+            route_deviation_override_m=route_deviation_trigger_m,
         ))
         runtime = ControlRuntime(_acceptance_lateral_controller(),
                                  default_speed_mps=0.0 if qwen_enabled else args.default_speed_mps,
@@ -2645,6 +2689,20 @@ def run(args: argparse.Namespace) -> None:
                 f"route anchor: spawn_index={anchor_index} maneuver={maneuver} "
                 f"topology_score={anchor_score:.3f} seed_offset_m={seed_offset_m:.1f}"
             )
+        if spec is not None and spec.route_planning_mode == "destination":
+            destination_xy = spec.world_destination(
+                route_anchor.location.x,
+                route_anchor.location.y,
+                route_anchor.rotation.yaw,
+            )
+            assert destination_xy is not None
+            topology_route = build_destination_route_reference(
+                world_map,
+                route_anchor,
+                destination_xy,
+                args.default_speed_mps,
+                step_m=spec.route_resample_interval_m,
+            )
         traffic_light_distance = _scenario_traffic_light_distance(spec)
         if traffic_light_distance is not None:
             seeded_stop_distance_m = traffic_light_distance + (
@@ -2715,6 +2773,20 @@ def run(args: argparse.Namespace) -> None:
             start_location = ego.get_location()
             origin = (start_location.x, start_location.y, start_location.z)
 
+            scenario_spawn_route: RouteReference | None = None
+            if spec is not None:
+                prepared_route = prepare_scenario_route(
+                    spec,
+                    route_anchor,
+                    runtime.requested_speed_mps,
+                    topology_route,
+                )
+                scenario_spawn_route = prepared_route.reference
+                print(json.dumps({
+                    "record_type": "route_quality",
+                    **prepared_route.quality.to_dict(),
+                }, ensure_ascii=False), flush=True)
+
             scenario_lead = None
             scenario_vehicles: list[tuple[Any, Mapping[str, object]]] = []
             scenario_walkers: list[tuple[Any, Mapping[str, object], Any]] = []
@@ -2723,19 +2795,24 @@ def run(args: argparse.Namespace) -> None:
             for vehicle_spec in _scenario_actors(spec, "vehicle"):
                 vehicle = _spawn_scenario_vehicle(
                     session, world, carla, ego, bp, vehicle_spec,
+                    route=scenario_spawn_route,
                 )
                 scenario_vehicles.append((vehicle, vehicle_spec))
                 spawned_scenario_actor_types.append("vehicle")
             for walker_spec in _scenario_walkers(spec):
                 walker, target = _spawn_scenario_walker(
                     session, world, carla, ego, walker_spec,
+                    route=scenario_spawn_route,
                 )
                 scenario_walkers.append((walker, walker_spec, target))
                 spawned_scenario_actor_types.append(
                     str(walker_spec.get("type", "walker.pedestrian")).lower()
                 )
             for prop_spec in _scenario_static_props(spec):
-                prop = _spawn_scenario_static_prop(session, world, carla, ego, prop_spec)
+                prop = _spawn_scenario_static_prop(
+                    session, world, carla, ego, prop_spec,
+                    route=scenario_spawn_route,
+                )
                 scenario_props.append((prop, prop_spec))
                 spawned_scenario_actor_types.append(
                     str(prop_spec.get("type", "static.prop")).lower()
@@ -2770,9 +2847,11 @@ def run(args: argparse.Namespace) -> None:
                     specs=sensor_specs_for_profile(sensor_profile),
                     sensor_tick_s=args.fixed_delta_s,
                 )
-                c_fusion = ConservativeSensorFusion(SafetyStateParameters(
-                    visual_confidence_threshold=args.c_visual_confidence_threshold,
-                ))
+                c_fusion = ConservativeSensorFusion(
+                    driving_policy.perception_parameters(
+                        visual_confidence_override=args.c_visual_confidence_threshold,
+                    )
+                )
                 perception_bridge = CarlaPerceptionBridge(
                     world, world_map, ego, session, sensors,
                     detector=detector, fusion=c_fusion,
@@ -2847,8 +2926,8 @@ def run(args: argparse.Namespace) -> None:
                     world_map, ego, runtime.requested_speed_mps,
                     turn_direction=turn_direction, distance_m=args.route_distance_m,
                 )
-            elif topology_route is not None:
-                route = replace(topology_route, target_speed_mps=runtime.requested_speed_mps)
+            elif scenario_spawn_route is not None:
+                route = scenario_spawn_route
             else:
                 route = RouteReference(
                     spec.world_route(
@@ -2903,6 +2982,10 @@ def run(args: argparse.Namespace) -> None:
             # waiting for UE rendering/physics.  Exclude that external frame
             # source wait (and optional visual pacing) from module-health time.
             watchdog.pause(now_s=time.monotonic())
+            progress_tracker = RouteProgressTracker(
+                scenario_spawn_route.points_xy_m
+                if scenario_spawn_route is not None else route.points_xy_m
+            )
             for step_index in range(args.frames):
                 simulator_tick_start_ns = time.monotonic_ns()
                 frame = session.tick(args.timeout_s)
@@ -2933,8 +3016,11 @@ def run(args: argparse.Namespace) -> None:
                         actor_distances_m[actor_id] = _actor_bbox_clearance_m(
                             ego, actor,
                         )
-                route_progress_m = math.dist(
-                    (origin[0], origin[1]), (state.x_m, state.y_m),
+                route_progress_m = progress_tracker.update(
+                    state.x_m,
+                    state.y_m,
+                    speed_mps=state.speed_mps,
+                    delta_s=args.fixed_delta_s,
                 )
                 traffic_state = (
                     str(scenario_traffic_light.get_state()).rsplit(".", 1)[-1].upper()
@@ -3269,7 +3355,10 @@ def run(args: argparse.Namespace) -> None:
                                 perception_sources["lead_speed_mps"] = "VIRTUAL_ACCEPTANCE_TRUTH"
                         else:
                             perception_sources["scenario"] = "CARLA_WORLD_TRUTH"
-                    if scenario_traffic_light is not None:
+                    if (
+                        scenario_traffic_light is not None
+                        and args.scenario_facts_mode != "perception"
+                    ):
                         scene, traffic_sources = _scenario_traffic_light_observation(
                             scene, ego, scenario_traffic_light,
                         )
@@ -3329,6 +3418,21 @@ def run(args: argparse.Namespace) -> None:
                             extension_frame.speed_limit_mps,
                             perception_sources,
                         )
+                    source_audit = audit_control_sources(
+                        perception_sources,
+                        strict_sensor_mode=(
+                            args.perception_mode == "sensors"
+                            and args.scenario_facts_mode == "perception"
+                        ),
+                    )
+                    if source_audit.control_clean:
+                        perception_sources["control_source_boundary"] = "AUDITED_SENSOR_CONTROL_INPUT"
+                    else:
+                        watchdog_alerts.append("CONTROL_SOURCE_BOUNDARY_VIOLATION")
+                        print(json.dumps({
+                            "record_type": "control_source_boundary_violation",
+                            **source_audit.to_dict(),
+                        }, ensure_ascii=False), flush=True)
                     watchdog.heartbeat("perception", now_s=time.monotonic())
                 except PerceptionAcquisitionError as error:
                     scene = PerceptionFrame(frame, state.sim_time_s)
@@ -3468,7 +3572,10 @@ def run(args: argparse.Namespace) -> None:
                                     flush=True,
                                 )
                     perception_sources["qwen_status"] = qwen_status
-                if spec is not None:
+                if spec is not None and not (
+                    args.perception_mode == "sensors"
+                    and args.scenario_facts_mode == "perception"
+                ):
                     scene = _bind_scenario_actor_ids(
                         scene,
                         ego,
@@ -3478,14 +3585,16 @@ def run(args: argparse.Namespace) -> None:
                     )
                     if any(item.track_id for item in scene.detected_objects):
                         perception_sources["target_ids"] = "CARLA_SCENARIO_TRACK_ASSOCIATION"
-                    if extension_runtime is not None:
-                        extension_runtime.note_perception_observation(
-                            elapsed_s=elapsed_s,
-                            detected_actor_ids=tuple(
-                                item.track_id for item in scene.detected_objects
-                                if item.track_id is not None
-                            ),
-                        )
+                elif any(item.track_id for item in scene.detected_objects):
+                    perception_sources["target_ids"] = "C_SENSOR_TEMPORAL_TRACKER"
+                if extension_runtime is not None:
+                    extension_runtime.note_perception_observation(
+                        elapsed_s=elapsed_s,
+                        detected_actor_ids=tuple(
+                            item.track_id for item in scene.detected_objects
+                            if item.track_id is not None
+                        ),
+                    )
                 scene_bound_ns = time.monotonic_ns()
                 if sensor_ready_ns is None:
                     raise RuntimeError("sensor-ready timestamp was not captured")
@@ -4513,28 +4622,27 @@ def run(args: argparse.Namespace) -> None:
                 # itself leaves the road. Bound distance to CARLA's nearest
                 # driving-lane centre as an independent acceptance check.
                 expected_contract.setdefault("max_lane_center_offset_m", 2.2)
-            acceptance_context = {} if spec is None else {
-                "route_finished": (
-                    final_route_remaining_m is not None
-                    and final_route_remaining_m <= spec.finish_radius_m
-                ),
-                "route_end_distance_m": final_route_end_distance_m,
-                "route_remaining_m": final_route_remaining_m,
-                "expected_command_count": len(spec.commands),
-                "configured_route_deviation_trigger_m": route_deviation_trigger_m,
-                "spawned_scenario_actor_types": sorted(set(spawned_scenario_actor_types)),
-                "extension_acceptance": extension_report,
-                "qwen_acceptance": (
-                    None if qwen_contract_report is None
-                    else qwen_contract_report.to_dict()
-                ),
-            }
-            if extension_runtime is not None:
-                extension_event_count = int(
-                    extension_runtime.evidence()["runtime_event_count"]
+            extension_event_count = (
+                int(extension_runtime.evidence()["runtime_event_count"])
+                if extension_runtime is not None else 0
+            )
+            acceptance_context = (
+                {}
+                if spec is None else
+                build_acceptance_context(
+                    spec,
+                    final_route_end_distance_m=final_route_end_distance_m,
+                    final_route_remaining_m=final_route_remaining_m,
+                    configured_route_deviation_trigger_m=route_deviation_trigger_m,
+                    spawned_scenario_actor_types=spawned_scenario_actor_types,
+                    extension_acceptance=extension_report,
+                    qwen_acceptance=(
+                        None if qwen_contract_report is None
+                        else qwen_contract_report.to_dict()
+                    ),
+                    extension_event_count=extension_event_count,
                 )
-                if extension_event_count > 0:
-                    acceptance_context["event_count"] = extension_event_count
+            )
             summary = recorder.complete(
                 completion=completion,
                 detail="scenario acceptance criteria evaluated",
@@ -4552,6 +4660,10 @@ def run(args: argparse.Namespace) -> None:
                 "unsupported_keys": [] if acceptance is None else acceptance["unsupported_keys"],
             }, ensure_ascii=False))
     except BaseException as error:
+        print(json.dumps({
+            "record_type": "runtime_failure_diagnosis",
+            **diagnose_runtime_failure(error).to_dict(),
+        }, ensure_ascii=False), flush=True)
         if ego is not None and getattr(ego, "is_alive", True):
             try:
                 ego.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0, steer=0.0))
@@ -4625,6 +4737,10 @@ def main() -> None:
                         help="synchronous ticks used to stream a tiled map before spawning ego")
     parser.add_argument("--map", help="optional CARLA map name, e.g. Town05; omit to use current world")
     parser.add_argument("--default-speed-mps", type=float, default=5.0)
+    parser.add_argument(
+        "--driving-policy",
+        help="validated JSON policy shared by C perception and D safety; defaults to config/driving_policy.json",
+    )
     parser.add_argument("--perception-mode", choices=("sensors", "world", "virtual"), default="sensors",
                         help="sensors uses required RGB/LiDAR plus optional aligned Radar; world is a debug truth bridge; virtual is deterministic test-only input")
     parser.add_argument("--sensor-timeout-s", type=float, default=0.5,

@@ -259,7 +259,7 @@ def test_world_mode_event_suite_does_not_attach_rgb_or_lidar() -> None:
     assert len(session.tracked) == 2
 
 
-def test_bridge_combines_aligned_lidar_events_map_and_associated_actor_truth() -> None:
+def test_bridge_combines_aligned_lidar_events_and_map_without_actor_truth() -> None:
     ego = Actor(1, x=0.0, y=0.6, speed=5.0, traffic_light=TrafficLight("Red", 20.0))
     lead = Actor(2, x=12.0, y=0.2, speed=3.0)
     world, session, events = World((ego, lead)), Session(), EventLedger()
@@ -277,7 +277,7 @@ def test_bridge_combines_aligned_lidar_events_map_and_associated_actor_truth() -
     frame = sample.frame
     assert frame.frame == 42
     assert frame.lead_distance_m == pytest.approx(11.84, abs=0.02)
-    assert frame.lead_speed_mps == 3.0
+    assert frame.lead_speed_mps is None
     assert frame.traffic_light == "RED"
     assert frame.distance_to_stop_line_m == 20.0
     assert frame.speed_limit_mps == 10.0
@@ -286,13 +286,13 @@ def test_bridge_combines_aligned_lidar_events_map_and_associated_actor_truth() -
     assert frame.collision and frame.lane_invasion
     assert not frame.red_light_violation
     assert sample.source_by_field["lead_distance_m"] == "LIDAR_FRONT_CORRIDOR"
-    assert sample.source_by_field["lead_speed_mps"] == "CARLA_TRUTH_LIDAR_ASSOCIATED_ACTOR"
+    assert sample.source_by_field["lead_speed_mps"] == "LIDAR_TEMPORAL_ESTIMATE_PENDING"
     assert frame.detected_objects[0].class_name == "obstacle"
     assert frame.detected_objects[0].distance_m == pytest.approx(11.84, abs=0.02)
     assert sample.source_by_field["detected_objects"] == "LIDAR_RADAR_FRONT_CORRIDOR_OBJECT"
     assert sample.source_by_field["distance_to_stop_line_m"] == "CARLA_MAP_STOP_WAYPOINT"
     assert sample.safety_summary.front_distance_m == pytest.approx(11.84, abs=0.02)
-    assert sample.safety_summary.ttc_s == pytest.approx(5.92, abs=0.02)
+    assert sample.safety_summary.ttc_s is None
     assert not sample.safety_summary.visual_valid
     assert type(sample.sensor_ready_ns) is int
     assert sample.sensor_ready_ns > 0
@@ -382,7 +382,7 @@ def test_route_deviation_uses_polyline_segments_not_only_sparse_points() -> None
     assert sample.source_by_field["route_deviation_m"] == "ROUTE_REFERENCE_NEAREST_SEGMENT"
 
 
-def test_lidar_obstacle_without_actor_is_kept_as_stationary_hazard() -> None:
+def test_lidar_obstacle_without_actor_uses_sensor_temporal_speed_estimation() -> None:
     ego, session = Actor(1), Session()
     points = [[6.0, -0.2, 0.0], [6.1, 0.0, 0.0], [6.2, 0.2, 0.0]]
     session.frame_buffer.push(RGB_SENSOR_ID, 3, Measurement(3))
@@ -392,10 +392,10 @@ def test_lidar_obstacle_without_actor_is_kept_as_stationary_hazard() -> None:
     sample = bridge.acquire(3, 0.15, timeout_s=0.01)
 
     assert sample.frame.lead_distance_m == pytest.approx(6.02)
-    assert sample.frame.lead_speed_mps == 0.0
+    assert sample.frame.lead_speed_mps is None
     assert sample.frame.detected_objects[0].class_name == "obstacle"
     assert sample.frame.detected_objects[0].distance_m == pytest.approx(6.02)
-    assert sample.source_by_field["lead_speed_mps"] == "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
+    assert sample.source_by_field["lead_speed_mps"] == "LIDAR_TEMPORAL_ESTIMATE_PENDING"
     assert sample.source_by_field["detected_objects"] == "LIDAR_RADAR_FRONT_CORRIDOR_OBJECT"
 
 

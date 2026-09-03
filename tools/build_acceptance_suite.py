@@ -697,8 +697,10 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         commands=[command(0, "保持车道，严重偏离时停车", "KEEP_LANE", speed_kph=15)],
         faults=[fault("large_steer_bias", "steer_bias", 7, 1.5, value=0.55)],
         expected={"expected_safety_override_allowed": True, "must_generate_event": True,
-                  "max_allowed_cross_track_error_m": 3.5}, oracle_behaviors=["STOP", "HOLD"], seed=126,
+                  "max_allowed_cross_track_error_m": 3.5,
+                  "route_deviation_trigger_m": 1.4}, oracle_behaviors=["STOP", "HOLD"], seed=126,
         proposed_acceptance={"max_fault_response_s": 1.0}, extension_requirements=["fault_injection"],
+        extension_values={"control_policy": {"route_deviation_trigger_m": 1.4}},
     ))
 
     # P2 / integrated scenarios
@@ -1409,6 +1411,7 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
                              "must_not_continue_route_deviation": True,
                              "max_fault_response_s": 1.5},
         extension_requirements=["all_voice_qwen", "fault_injection", "fault_recovery_acceptance"],
+        extension_values={"control_policy": {"route_deviation_trigger_m": 1.0}},
     ))
 
     # v2 supplemental / system pressure (5)

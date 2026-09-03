@@ -1,8 +1,8 @@
 """Small integration-only contracts shared by the runtime adapters.
 
-These contracts deliberately contain no CARLA imports.  A real CARLA bridge can
-populate them from sensors or from simulator ground truth, while tests can use
-the same structures without starting Unreal.
+These contracts deliberately contain no CARLA imports.  Production control is
+populated from sensors and map-derived geometry.  Simulator ground truth belongs
+to the separate scoring/oracle channel; tests may still construct values directly.
 """
 from __future__ import annotations
 
@@ -66,9 +66,9 @@ class DetectedObject:
 class PerceptionFrame:
     """Frame-aligned scene facts consumed by C and D.
 
-    The initial CARLA bridge may populate these values from simulator truth for
-    validation. Replacing that bridge with RGB/LiDAR algorithms must preserve
-    this contract and frame equality, rather than change the controller APIs.
+    The production CARLA bridge populates these values from frame-aligned
+    sensors and map-derived geometry.  Scenario truth must not enter this
+    control contract; it is retained only by the scoring/oracle stage.
     """
     frame: int
     sim_time_s: float

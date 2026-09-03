@@ -33,6 +33,9 @@ class SafetyConfig:
     emergency_brake: float = 1.0
     caution_brake: float = 0.35
     standstill_speed_mps: float = 0.15
+    emergency_reaction_time_s: float = 0.35
+    emergency_deceleration_mps2: float = 6.0
+    range_uncertainty_buffer_m: float = 1.0
 
     def __post_init__(self) -> None:
         values = {
@@ -48,9 +51,12 @@ class SafetyConfig:
             "min_front_distance_m", "low_ttc_s", "caution_ttc_s",
             "stop_line_guard_m", "max_lane_offset_m",
             "severe_route_deviation_m", "route_recovery_max_speed_mps",
-            "standstill_speed_mps",
+            "standstill_speed_mps", "emergency_reaction_time_s",
+            "emergency_deceleration_mps2", "range_uncertainty_buffer_m",
         )):
             raise ValueError("safety distances, times and speeds must be non-negative")
+        if self.emergency_deceleration_mps2 <= 0.0:
+            raise ValueError("emergency_deceleration_mps2 must be positive")
         if self.low_ttc_s > self.caution_ttc_s:
             raise ValueError("low_ttc_s must not exceed caution_ttc_s")
         if self.max_lane_offset_m > self.severe_route_deviation_m:
@@ -183,7 +189,14 @@ class SafetySupervisor:
             return stop("RISK_EMERGENCY_BRAKE_REQUESTED")
         if rv.ttc_s is not None and rv.ttc_s <= cfg.low_ttc_s:
             return stop("LOW_TTC")
-        if vs.front_distance_m is not None and vs.front_distance_m <= cfg.min_front_distance_m:
+        dynamic_front_guard_m = max(
+            cfg.min_front_distance_m,
+            cfg.range_uncertainty_buffer_m
+            + vs.speed_mps * cfg.emergency_reaction_time_s
+            + vs.speed_mps * vs.speed_mps / (2.0 * cfg.emergency_deceleration_mps2),
+        )
+        metrics["dynamic_front_guard_m"] = dynamic_front_guard_m
+        if vs.front_distance_m is not None and vs.front_distance_m <= dynamic_front_guard_m:
             return stop("EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE")
         if vs.distance_to_stop_line_m is not None and vs.distance_to_stop_line_m <= cfg.stop_line_guard_m:
             unsafe_light = vs.traffic_light in {"RED", "YELLOW", "UNKNOWN"}

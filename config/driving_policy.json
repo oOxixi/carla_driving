@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "perception": {
+    "visual_confidence_threshold": 0.60,
+    "caution_distance_floor_m": 10.0,
+    "emergency_distance_floor_m": 5.0,
+    "vru_caution_distance_floor_m": 25.0,
+    "vru_emergency_distance_floor_m": 8.0,
+    "vru_caution_speed_cap_mps": 2.0,
+    "vru_caution_hold_s": 4.0,
+    "caution_ttc_s": 2.5,
+    "emergency_ttc_s": 1.5,
+    "max_observation_gap_s": 0.30,
+    "reaction_time_s": 0.70,
+    "emergency_reaction_time_s": 0.35,
+    "comfortable_deceleration_mps2": 3.5,
+    "emergency_deceleration_mps2": 6.0,
+    "range_uncertainty_buffer_m": 1.0
+  },
+  "safety": {
+    "minimum_front_distance_floor_m": 5.0,
+    "low_ttc_s": 1.5,
+    "caution_ttc_s": 2.5,
+    "stop_line_guard_m": 1.0,
+    "maximum_lane_offset_m": 1.8,
+    "severe_route_deviation_m": 3.0,
+    "route_recovery_max_speed_mps": 1.5,
+    "low_confidence_threshold": 0.80,
+    "emergency_reaction_time_s": 0.35,
+    "emergency_deceleration_mps2": 6.0,
+    "range_uncertainty_buffer_m": 1.0
+  }
+}

@@ -164,5 +164,10 @@
     "expected_safety_override_allowed": true,
     "must_generate_event": true
   },
+  "extensions": {
+    "control_policy": {
+      "route_deviation_trigger_m": 2.0
+    }
+  },
   "notes": []
 }

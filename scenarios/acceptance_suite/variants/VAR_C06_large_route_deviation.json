@@ -117,6 +117,9 @@
     "route_deviation_trigger_m": 1.4
   },
   "extensions": {
+    "control_policy": {
+      "route_deviation_trigger_m": 1.4
+    },
     "suite_version": "acceptance-suite-2026.08-v2",
     "priority": "P1",
     "primary_capability": "large_route_deviation",

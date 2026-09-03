@@ -7,6 +7,8 @@ command.  It does not pretend to be a global navigation service.
 from __future__ import annotations
 
 import math
+import heapq
+import itertools
 from dataclasses import dataclass
 from typing import Any, Iterable, Sequence
 
@@ -61,6 +63,74 @@ def _choose_branch(current: Any, candidates: Iterable[Any], direction: str) -> A
         if matching:
             return min(matching, key=lambda item: abs(item[1] - 90.0))[0]
     return min(deltas, key=lambda item: abs(item[1]))[0]
+
+
+def _waypoint_visit_key(waypoint: Any) -> tuple[object, ...]:
+    """Return a stable lane-position key for coverage-aware long routes."""
+    road_id = getattr(waypoint, "road_id", None)
+    lane_id = getattr(waypoint, "lane_id", None)
+    section_id = getattr(waypoint, "section_id", None)
+    lane_s = getattr(waypoint, "s", None)
+    if road_id is not None and lane_id is not None and lane_s is not None:
+        return (road_id, section_id, lane_id, round(float(lane_s) / 2.0))
+    location = waypoint.transform.location
+    return (
+        round(float(location.x) / 2.0),
+        round(float(location.y) / 2.0),
+        round(_yaw(waypoint) / 10.0),
+    )
+
+
+def _future_route_capacity(
+    waypoint: Any,
+    step_m: float,
+    *,
+    depth: int = 8,
+    seen: frozenset[tuple[object, ...]] = frozenset(),
+) -> int:
+    """Estimate reachable novel topology to avoid choosing immediate dead ends."""
+    if depth <= 0 or waypoint is None:
+        return 0
+    key = _waypoint_visit_key(waypoint)
+    if key in seen:
+        return 0
+    next_seen = seen | {key}
+    successors = tuple(waypoint.next(step_m))
+    if not successors:
+        return 1
+    return 1 + max(
+        _future_route_capacity(candidate, step_m, depth=depth - 1, seen=next_seen)
+        for candidate in successors
+    )
+
+
+def _choose_coverage_branch(
+    current: Any,
+    candidates: Iterable[Any],
+    direction: str,
+    visits: dict[tuple[object, ...], int],
+    step_m: float,
+) -> Any | None:
+    """Choose the requested branch while preferring novel, non-dead-end lanes."""
+    options = tuple(candidates)
+    if not options:
+        return None
+    if len(options) == 1:
+        return options[0]
+    requested = str(direction).upper()
+    scored: list[tuple[float, int, float, Any]] = []
+    for candidate in options:
+        delta = _branch_delta(current, candidate)
+        if requested == "LEFT":
+            direction_penalty = abs(delta + 90.0) if delta < -5.0 else 500.0 + abs(delta)
+        elif requested == "RIGHT":
+            direction_penalty = abs(delta - 90.0) if delta > 5.0 else 500.0 + abs(delta)
+        else:
+            direction_penalty = abs(delta)
+        visit_count = visits.get(_waypoint_visit_key(candidate), 0)
+        capacity = _future_route_capacity(candidate, step_m)
+        scored.append((visit_count * 1_000.0 + direction_penalty, -capacity, abs(delta), candidate))
+    return min(scored, key=lambda item: item[:3])[3]
 
 
 def _route_curvature(points: tuple[tuple[float, float], ...]) -> float:
@@ -182,7 +252,11 @@ def select_heading_compatible_waypoint(
         raise ValueError("max_heading_error_deg must be in (0, 90]")
     if search_radius_m <= 0.0 or search_step_m <= 0.0:
         raise ValueError("search radius and step must be positive")
-    location = ego_or_location.get_location() if hasattr(ego_or_location, "get_location") else ego_or_location
+    location = (
+        ego_or_location.get_location()
+        if hasattr(ego_or_location, "get_location") else
+        getattr(ego_or_location, "location", ego_or_location)
+    )
     nearest = world_map.get_waypoint(location, project_to_road=True)
     if not _is_driving_lane(nearest):
         raise RuntimeError("route anchor is not on a driving lane")
@@ -360,6 +434,91 @@ def build_scenario_route_reference(
     )
 
 
+def build_destination_route_reference(
+    world_map: Any,
+    anchor_or_location: Any,
+    destination_xy_m: tuple[float, float],
+    target_speed_mps: float,
+    *,
+    step_m: float = 2.0,
+    maximum_expansions: int = 50_000,
+) -> RouteReference:
+    """Plan a deterministic map-topology route to a destination with A*.
+
+    This is the destination-based counterpart to distance-coverage routes.
+    It explores CARLA waypoint successors rather than greedily committing to
+    the first visually straight branch.
+    """
+    if len(destination_xy_m) != 2 or any(
+        not math.isfinite(float(value)) for value in destination_xy_m
+    ):
+        raise ValueError("destination_xy_m must contain two finite numbers")
+    if not math.isfinite(float(step_m)) or step_m <= 0.0:
+        raise ValueError("step_m must be finite and positive")
+    if type(maximum_expansions) is not int or maximum_expansions < 1:
+        raise ValueError("maximum_expansions must be a positive integer")
+    start = select_heading_compatible_waypoint(world_map, anchor_or_location)
+    target_x, target_y = map(float, destination_xy_m)
+
+    def heuristic(waypoint: Any) -> float:
+        location = waypoint.transform.location
+        return math.hypot(float(location.x) - target_x, float(location.y) - target_y)
+
+    start_key = _waypoint_visit_key(start)
+    counter = itertools.count()
+    frontier: list[tuple[float, float, int, Any]] = [
+        (heuristic(start), 0.0, next(counter), start),
+    ]
+    costs: dict[tuple[object, ...], float] = {start_key: 0.0}
+    parents: dict[tuple[object, ...], tuple[object, ...] | None] = {start_key: None}
+    nodes: dict[tuple[object, ...], Any] = {start_key: start}
+    goal_key: tuple[object, ...] | None = None
+    tolerance_m = max(2.0, step_m * 1.5)
+
+    for _ in range(maximum_expansions):
+        if not frontier:
+            break
+        _priority, current_cost, _order, current = heapq.heappop(frontier)
+        current_key = _waypoint_visit_key(current)
+        if current_cost > costs.get(current_key, math.inf) + 1e-9:
+            continue
+        if heuristic(current) <= tolerance_m:
+            goal_key = current_key
+            break
+        for candidate in tuple(current.next(step_m)):
+            candidate_key = _waypoint_visit_key(candidate)
+            next_cost = current_cost + _waypoint_distance_m(
+                candidate, current.transform.location,
+            )
+            if next_cost + 1e-9 >= costs.get(candidate_key, math.inf):
+                continue
+            costs[candidate_key] = next_cost
+            parents[candidate_key] = current_key
+            nodes[candidate_key] = candidate
+            heapq.heappush(
+                frontier,
+                (next_cost + heuristic(candidate), next_cost, next(counter), candidate),
+            )
+    if goal_key is None:
+        raise RuntimeError(
+            "no CARLA topology route reaches the requested destination "
+            f"within {maximum_expansions} expansions"
+        )
+    reversed_keys: list[tuple[object, ...]] = []
+    cursor: tuple[object, ...] | None = goal_key
+    while cursor is not None:
+        reversed_keys.append(cursor)
+        cursor = parents[cursor]
+    waypoints = tuple(nodes[key] for key in reversed(reversed_keys))
+    points = tuple(
+        (float(item.transform.location.x), float(item.transform.location.y))
+        for item in waypoints
+    )
+    if len(points) < 2:
+        raise RuntimeError("destination route is too short")
+    return RouteReference(points, _route_curvature(points), float(target_speed_mps))
+
+
 def select_topology_route_anchor(
     world_map: Any,
     spawn_points: Sequence[Any],
@@ -452,12 +611,15 @@ def build_route_reference(
     location = ego_or_location.get_location() if hasattr(ego_or_location, "get_location") else ego_or_location
     waypoint = select_heading_compatible_waypoint(world_map, ego_or_location)
     points: list[tuple[float, float]] = []
+    visits: dict[tuple[object, ...], int] = {}
     branch_consumed = False
     max_steps = max(2, int(math.ceil(distance_m / step_m)) + 1)
     for _ in range(max_steps):
         if waypoint is None:
             break
         loc = waypoint.transform.location
+        key = _waypoint_visit_key(waypoint)
+        visits[key] = visits.get(key, 0) + 1
         point = (float(loc.x), float(loc.y))
         if not points or math.hypot(point[0] - points[-1][0], point[1] - points[-1][1]) > 1e-6:
             points.append(point)
@@ -465,7 +627,9 @@ def build_route_reference(
         requested = direction if not branch_consumed else "STRAIGHT"
         if len(candidates) > 1:
             branch_consumed = True
-        waypoint = _choose_branch(waypoint, candidates, requested)
+        waypoint = _choose_coverage_branch(
+            waypoint, candidates, requested, visits, step_m,
+        )
 
     if len(points) < 2:
         x, y = float(location.x), float(location.y)
@@ -489,6 +653,7 @@ def command_turn_direction(command: dict[str, object] | None) -> str:
 
 
 __all__ = [
+    "build_destination_route_reference",
     "build_lane_change_route_reference",
     "build_route_reference",
     "build_scenario_route_reference",

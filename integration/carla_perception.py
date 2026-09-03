@@ -27,6 +27,7 @@ from car_control_A.routing import RouteReference
 from car_control_C import ConservativeSensorFusion, SafetyStateSummary, VisualObservation
 
 from .contracts import DetectedObject, PerceptionFrame
+from .object_tracker import SensorObjectTracker
 from .rgb_detector import driving_corridor_detections
 
 
@@ -509,44 +510,6 @@ def front_radar_target(
     return min(candidates, key=lambda item: item.distance_m)
 
 
-def _iter_vehicle_actors(world: Any) -> Iterable[Any]:
-    actors = world.get_actors()
-    if hasattr(actors, "filter"):
-        return actors.filter("vehicle.*")
-    return (actor for actor in actors if str(getattr(actor, "type_id", "")).startswith("vehicle."))
-
-
-def _associated_lead_speed(
-    world: Any, ego: Any, lidar_distance_m: float, *, lateral_gate_m: float = 2.5,
-    range_gate_m: float = 4.0,
-) -> float | None:
-    ego_location = ego.get_location()
-    ex, ey, ez = _xyz(ego_location)
-    forward = ego.get_transform().get_forward_vector()
-    fx, fy, _ = _xyz(forward)
-    norm = math.hypot(fx, fy)
-    if norm <= 1e-6:
-        return None
-    fx, fy = fx / norm, fy / norm
-    best: tuple[float, Any] | None = None
-    ego_id = getattr(ego, "id", None)
-    for actor in _iter_vehicle_actors(world):
-        if actor is ego or (ego_id is not None and getattr(actor, "id", None) == ego_id):
-            continue
-        if not getattr(actor, "is_alive", True):
-            continue
-        ax, ay, az = _xyz(actor.get_location())
-        dx, dy = ax - ex, ay - ey
-        longitudinal = dx * fx + dy * fy
-        lateral = abs(-dx * fy + dy * fx)
-        if longitudinal <= 0.0 or lateral > lateral_gate_m:
-            continue
-        mismatch = abs(longitudinal - lidar_distance_m)
-        if mismatch <= range_gate_m and (best is None or mismatch < best[0]):
-            best = mismatch, actor
-    return None if best is None else _speed_mps(best[1])
-
-
 def _normalise_light_state(value: Any) -> str:
     state = str(value).split(".")[-1].upper()
     return state if state in {"RED", "YELLOW", "GREEN"} else "UNKNOWN"
@@ -738,6 +701,7 @@ class CarlaPerceptionBridge:
         self._detector = detector
         self._visual_provider = visual_provider
         self._fusion = fusion or ConservativeSensorFusion()
+        self._object_tracker = SensorObjectTracker()
         self._traffic_lights = tuple(
             actor
             for actor in world.get_actors()
@@ -852,13 +816,12 @@ class CarlaPerceptionBridge:
                 sources["lead_distance_m"] = "LIDAR_UNCLASSIFIED_FRONT_CORRIDOR"
                 sources["lead_speed_mps"] = "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
             else:
-                lead_speed = _associated_lead_speed(self._world, self._ego, lead_distance)
                 sources["lead_distance_m"] = "LIDAR_FRONT_CORRIDOR"
-                if lead_speed is None:
-                    lead_speed = 0.0
-                    sources["lead_speed_mps"] = "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
-                else:
-                    sources["lead_speed_mps"] = "CARLA_TRUTH_LIDAR_ASSOCIATED_ACTOR"
+                # Actor-registry velocity is simulator oracle data.  Leave
+                # speed unset so C estimates closing speed from consecutive
+                # LiDAR frames; an aligned radar observation may replace it
+                # below with a sensor-grounded radial velocity.
+                sources["lead_speed_mps"] = "LIDAR_TEMPORAL_ESTIMATE_PENDING"
         radar_target: FrontRadarTarget | None = None
         if radar is None:
             sources["radar_modality"] = "RADAR_FRAME_MISSING_DEGRADED"
@@ -920,6 +883,9 @@ class CarlaPerceptionBridge:
                 if previous_source is None
                 else f"{previous_source}+LIDAR_ADJACENT_LANE_OBJECT"
             )
+        if detected_objects:
+            detected_objects = self._object_tracker.update(frame, detected_objects)
+            sources["target_ids"] = "C_SENSOR_TEMPORAL_TRACKER"
         safety_summary = self._fusion.update(
             frame=frame,
             sim_time_s=sim_time_s,
