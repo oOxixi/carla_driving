@@ -440,6 +440,21 @@ def test_vllm_lane_change_without_requested_speed_uses_safe_maneuver_default() -
     assert step["target"]["target_speed_mps"] == pytest.approx(3.0)
 
 
+def test_vllm_turn_timeout_allows_approach_and_junction_exit() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "前方300米路口右转，转弯前减速至25公里每小时"
+    request["command_hint"] = {
+        "intent": "TURN", "direction": "RIGHT",
+        "target_speed_mps": 25.0 / 3.6, "target": None,
+    }
+
+    step = backend._step(request, "TURN_RIGHT", index=1)
+
+    assert step["completion"]["type"] == "JUNCTION_EXITED"
+    assert step["timeout_s"] >= 60.0
+
+
 def test_vllm_set_speed_is_clamped_to_runtime_limit() -> None:
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
     request = _request()

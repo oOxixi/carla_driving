@@ -769,7 +769,12 @@ class VllmQwenPlannerBackend:
             "TURN_RIGHT": "JUNCTION_EXITED",
             "KEEP_LANE": "HOLD_FRAMES", "YIELD": "SPEED_BELOW",
         }.get(behavior, "SPEED_REACHED")
-        timeout = 30.0 if behavior.startswith("TURN_") else 20.0 if behavior in {
+        # A turn plan includes the bounded approach to the next junction, not
+        # only steering while already inside it.  At the official 25 km/h
+        # turn speed a 250--300 m approach needs roughly 36--43 seconds, so
+        # the former 30 second timeout falsely failed a correctly progressing
+        # maneuver before the junction could be entered and exited.
+        timeout = 60.0 if behavior.startswith("TURN_") else 20.0 if behavior in {
             "AVOID_OBSTACLE", "RETURN_TO_LANE",
         } else 12.0 if behavior.startswith("CHANGE_LANE_") else 8.0
         completion_value = target_speed
