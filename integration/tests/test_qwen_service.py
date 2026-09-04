@@ -216,6 +216,28 @@ def test_planner_v2_stub_preserves_lane_change_then_speed_sequence():
         service.close()
 
 
+def test_planner_v2_stub_uses_structured_keep_lane_speed_hint():
+    request = _request()
+    request["source_text"] = "保持当前车道，提速至60公里每小时"
+    request["command_hint"] = {
+        "intent": "KEEP_LANE", "direction": None,
+        "target_speed_mps": 16.67, "target": None,
+    }
+    request["constraints"]["max_target_speed_mps"] = 13.88
+    request["constraints"]["speed_limit_mps"] = 13.88
+    service = QwenDecisionService(
+        DeterministicPlannerV2Backend(), qwen_mode="planner_v2",
+    )
+    try:
+        plan = service.infer(request)
+        assert [step["behavior"] for step in plan["steps"]] == ["KEEP_LANE"]
+        assert plan["steps"][0]["target"]["target_speed_mps"] == pytest.approx(13.88)
+        assert plan["steps"][0]["completion"]["type"] == "HOLD_FRAMES"
+        assert plan["steps"][0]["timeout_s"] == 8.0
+    finally:
+        service.close()
+
+
 def test_planner_v2_stub_grounds_avoid_and_return_in_sensor_target():
     request = _request()
     request["source_text"] = "绕过前方障碍物后回到当前车道"

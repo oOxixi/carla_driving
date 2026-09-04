@@ -613,7 +613,11 @@ def build_route_reference(
     points: list[tuple[float, float]] = []
     visits: dict[tuple[object, ...], int] = {}
     branch_consumed = False
-    max_steps = max(2, int(math.ceil(distance_m / step_m)) + 1)
+    # CARLA's ``next(step_m)`` is not guaranteed to advance by exactly
+    # ``step_m`` around junctions and lane transitions.  Stop on measured
+    # geometric length, with bounded headroom for those shorter increments.
+    max_steps = max(2, int(math.ceil(distance_m / step_m) * 2) + 2)
+    accumulated_distance_m = 0.0
     for _ in range(max_steps):
         if waypoint is None:
             break
@@ -621,8 +625,15 @@ def build_route_reference(
         key = _waypoint_visit_key(waypoint)
         visits[key] = visits.get(key, 0) + 1
         point = (float(loc.x), float(loc.y))
-        if not points or math.hypot(point[0] - points[-1][0], point[1] - points[-1][1]) > 1e-6:
+        increment_m = (
+            0.0 if not points
+            else math.hypot(point[0] - points[-1][0], point[1] - points[-1][1])
+        )
+        if not points or increment_m > 1e-6:
             points.append(point)
+            accumulated_distance_m += increment_m
+        if accumulated_distance_m >= distance_m:
+            break
         candidates = tuple(waypoint.next(step_m))
         requested = direction if not branch_consumed else "STRAIGHT"
         if len(candidates) > 1:

@@ -25,7 +25,10 @@ $scenePaths = [ordered]@{
 $selected = if ($Scene -eq 'ALL') { @('S1', 'S2', 'S3') } else { @($Scene) }
 if ([string]::IsNullOrWhiteSpace($PythonExecutable)) {
     if (Get-Command 'py' -ErrorAction SilentlyContinue) {
-        $PythonExecutable = 'py'
+        $PythonExecutable = (& py -3.12 -c 'import sys; print(sys.executable)').Trim()
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($PythonExecutable)) {
+            throw 'Python launcher could not resolve a Python 3.12 interpreter.'
+        }
     }
     elseif (Get-Command 'python' -ErrorAction SilentlyContinue) {
         $PythonExecutable = 'python'
@@ -34,7 +37,7 @@ if ([string]::IsNullOrWhiteSpace($PythonExecutable)) {
         throw 'Python 3.12 was not found; pass -PythonExecutable with an explicit interpreter path.'
     }
 }
-$pythonPrefix = if ([IO.Path]::GetFileNameWithoutExtension($PythonExecutable) -eq 'py') { @('-3.12') } else { @() }
+$pythonPrefix = @()
 
 if (-not $ValidateOnly) {
     if ([string]::IsNullOrWhiteSpace($QwenServiceUrl)) {

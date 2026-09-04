@@ -254,10 +254,14 @@ def _speed_limit(scene: Mapping[str, Any], configured: float) -> float:
 
 
 def _must_stop(scene: Mapping[str, Any]) -> bool:
-    if bool(scene.get("must_stop", False)):
-        return True
     if str(scene.get("risk_level", "UNKNOWN")).upper() == "EMERGENCY":
         return True
+    # The orchestrator owns the distance-aware stop-line gate.  When it
+    # publishes an explicit decision, do not turn every distant red light into
+    # an immediate STOP here; C must retain authority to approach and stop at
+    # the line, and D remains the final close-range guard.
+    if "must_stop" in scene:
+        return bool(scene["must_stop"])
     return (
         str(scene.get("traffic_light", "UNKNOWN")).upper() in {"RED", "YELLOW"}
         and scene.get("distance_to_stop_line_m") is not None

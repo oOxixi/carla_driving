@@ -46,6 +46,25 @@ def test_temporal_lidar_difference_computes_low_ttc_without_actor_truth() -> Non
     assert summary.source_by_field["closing_speed_mps"] == "LIDAR_TEMPORAL_DIFFERENCE"
 
 
+def test_temporal_lidar_target_switch_does_not_create_false_low_ttc() -> None:
+    fusion = ConservativeSensorFusion()
+    fusion.update(
+        frame=1, sim_time_s=0.0, ego_speed_mps=3.0,
+        front_distance_m=30.0, lidar_valid=True,
+    )
+    summary = fusion.update(
+        frame=2, sim_time_s=0.05, ego_speed_mps=3.0,
+        front_distance_m=27.0, lidar_valid=True,
+    )
+
+    assert summary.closing_speed_mps is None
+    assert summary.ttc_s is None
+    assert summary.recommended_action == "KEEP_SPEED"
+    assert summary.source_by_field["closing_speed_rejection"] == (
+        "LIDAR_NEAREST_TARGET_SWITCH_IMPLAUSIBLE_RATE"
+    )
+
+
 def test_vru_braking_envelope_does_not_apply_to_a_non_vru_vehicle() -> None:
     summary = ConservativeSensorFusion().update(
         frame=11,

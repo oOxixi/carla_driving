@@ -21,6 +21,15 @@ def _voice(intent="SET_SPEED", parameters=None):
             "ambiguity_type": "NONE", "confirm_required": False, "errors": [], "warnings": []}
 
 
+def _qwen_stop():
+    envelope = _voice("STOP", {})
+    envelope["warnings"] = [{
+        "code": "QWEN_HIGH_LEVEL_PLAN",
+        "message": "QWEN_VLLM_CHOICE_D_STOP:step-1",
+    }]
+    return envelope
+
+
 def test_runtime_composes_voice_b_c_d_and_keeps_lane_id_safe_for_d():
     runtime = ControlRuntime(PurePursuitController())
     runtime.submit_voice(_voice(), now_s=0.05)
@@ -184,6 +193,119 @@ def test_normal_stop_uses_c_comfort_braking_but_emergency_stop_uses_d_full_brake
                                       _route(), dt_s=0.05)
     assert emergency_result.safety_reason == "COMMAND_EMERGENCY_STOP"
     assert emergency_result.final_control.brake == 1.0
+
+
+def test_qwen_red_light_stop_approaches_then_holds_at_stop_line():
+    runtime = ControlRuntime(PurePursuitController(), default_speed_mps=5.0)
+    runtime.submit_voice(_qwen_stop(), now_s=0.05)
+    approaching = runtime.step(
+        _vehicle(speed=2.0),
+        PerceptionFrame(
+            frame=1, sim_time_s=0.05, traffic_light="RED",
+            distance_to_stop_line_m=12.0,
+        ),
+        _route(),
+        dt_s=0.05,
+    )
+    assert approaching.safety_override is False
+    assert approaching.longitudinal is not None
+    assert approaching.longitudinal.target_speed_mps > 0.0
+    assert approaching.longitudinal.reason == "traffic_stop_constraint"
+
+    at_line = runtime.step(
+        _vehicle(frame=2, time=0.10, speed=0.1),
+        PerceptionFrame(
+            frame=2, sim_time_s=0.10, traffic_light="RED",
+            distance_to_stop_line_m=0.8,
+        ),
+        _route(),
+        dt_s=0.05,
+    )
+    assert at_line.final_control.throttle == 0.0
+    assert at_line.final_control.brake >= 0.55
+    assert at_line.longitudinal is not None
+    assert at_line.longitudinal.state == "HOLD"
+
+
+def test_yellow_dilemma_zone_commits_to_clear_through_red_transition():
+    runtime = ControlRuntime(PurePursuitController(), default_speed_mps=10.0)
+
+    yellow = runtime.step(
+        _vehicle(speed=10.0),
+        PerceptionFrame(
+            frame=1, sim_time_s=0.05, traffic_light="YELLOW",
+            distance_to_stop_line_m=5.0,
+        ),
+        _route(),
+        dt_s=0.05,
+    )
+    assert yellow.safety_override is False
+    assert yellow.final_control.brake == 0.0
+
+    red_before_line = runtime.step(
+        _vehicle(frame=2, time=0.10, speed=9.5),
+        PerceptionFrame(
+            frame=2, sim_time_s=0.10, traffic_light="RED",
+            distance_to_stop_line_m=0.3,
+        ),
+        _route(),
+        dt_s=0.05,
+    )
+    assert red_before_line.safety_override is False
+    assert red_before_line.safety_reason == "NONE"
+
+    runtime.step(
+        _vehicle(frame=3, time=0.15, speed=9.0),
+        PerceptionFrame(
+            frame=3, sim_time_s=0.15, traffic_light="RED",
+            distance_to_stop_line_m=None,
+        ),
+        _route(),
+        dt_s=0.05,
+    )
+    next_red = runtime.step(
+        _vehicle(frame=4, time=0.20, speed=9.0),
+        PerceptionFrame(
+            frame=4, sim_time_s=0.20, traffic_light="RED",
+            distance_to_stop_line_m=5.0,
+        ),
+        _route(),
+        dt_s=0.05,
+    )
+    assert next_red.safety_override is True
+    assert next_red.safety_reason == "RED_LIGHT_STOP_LINE_GUARD"
+
+
+def test_yellow_with_comfortable_stopping_distance_still_brakes():
+    runtime = ControlRuntime(PurePursuitController(), default_speed_mps=10.0)
+    result = runtime.step(
+        _vehicle(speed=10.0),
+        PerceptionFrame(
+            frame=1, sim_time_s=0.05, traffic_light="YELLOW",
+            distance_to_stop_line_m=18.0,
+        ),
+        _route(),
+        dt_s=0.05,
+    )
+    assert result.safety_override is False
+    assert result.longitudinal is not None
+    assert result.longitudinal.state == "DECELERATE"
+
+
+def test_lidar_range_before_temporal_speed_is_conservative_not_integration_failure():
+    runtime = ControlRuntime(PurePursuitController(), default_speed_mps=5.0)
+    result = runtime.step(
+        _vehicle(speed=4.0),
+        PerceptionFrame(
+            frame=1, sim_time_s=0.05,
+            lead_distance_m=20.0, lead_speed_mps=None,
+        ),
+        _route(),
+        dt_s=0.05,
+    )
+    assert result.safety_reason != "INTEGRATION_FAILURE"
+    assert result.longitudinal is not None
+    assert result.longitudinal.risk.ttc_s == 5.0
 
 
 def test_stop_completion_is_reported_and_brake_hold_persists():

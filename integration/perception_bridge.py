@@ -11,9 +11,19 @@ def longitudinal_request(vehicle: RuntimeVehicleState, scene: PerceptionFrame, *
     if scene.frame != vehicle.frame or scene.sim_time_s != vehicle.sim_time_s:
         raise ValueError("scene and vehicle must be from the same CARLA frame")
     traffic = TrafficConstraint(SignalState(scene.traffic_light), scene.distance_to_stop_line_m, scene.speed_limit_mps)
-    if (scene.lead_distance_m is None) != (scene.lead_speed_mps is None):
-        raise ValueError("lead_distance_m and lead_speed_mps must be supplied together")
-    closing = None if scene.lead_speed_mps is None else vehicle.speed_mps - scene.lead_speed_mps
+    if scene.lead_distance_m is None and scene.lead_speed_mps is not None:
+        raise ValueError("lead_speed_mps requires lead_distance_m")
+    # A fresh LiDAR track can provide range one frame before temporal speed is
+    # available.  Treat that short interval conservatively as a stationary
+    # lead instead of turning a valid sensor frame into a latched integration
+    # failure.
+    closing = (
+        None
+        if scene.lead_distance_m is None
+        else vehicle.speed_mps - (
+            0.0 if scene.lead_speed_mps is None else scene.lead_speed_mps
+        )
+    )
     return LongitudinalRequest(vehicle, requested_speed_mps, path_curvature_per_m, traffic,
                                scene.lead_distance_m, closing)
 

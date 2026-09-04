@@ -56,6 +56,12 @@ class ControlRuntime:
         self._pending_feedback: list[ExecutionFeedback] = []
         self._success_frames = 0
         self._stop_hold = False
+        self._traffic_stop_approach_speed_mps: float | None = None
+        # Once ego is inside the yellow-light dilemma zone, braking harder
+        # than the comfort limit is less safe than clearing the junction. Keep
+        # that decision through a yellow-to-red transition until the front
+        # bumper passes the stop waypoint.
+        self._yellow_clear_committed = False
         self._latched_alerts: list[str] = []
 
     def submit_voice(self, envelope: Mapping[str, object], *, now_s: float) -> AdaptedVoiceCommand:
@@ -79,12 +85,17 @@ class ControlRuntime:
         self._active_command_id = adapted.command.command_id
         self._active_command = adapted.command
         self._success_frames = 0
+        self._traffic_stop_approach_speed_mps = None
         if adapted.command.action == "SET_SPEED" and adapted.command.target_speed_mps is not None and not adapted.command.requires_confirmation:
             self.requested_speed_mps = adapted.command.target_speed_mps
             self._stop_hold = False
         elif adapted.command.action == "KEEP_LANE" and not adapted.command.requires_confirmation:
             self._stop_hold = False
-        elif adapted.command.action in {"STOP", "EMERGENCY_BRAKE"}:
+        elif adapted.command.action == "STOP":
+            if self._is_qwen_high_level_plan(envelope):
+                self._traffic_stop_approach_speed_mps = self.requested_speed_mps
+            self.requested_speed_mps = 0.0
+        elif adapted.command.action == "EMERGENCY_BRAKE":
             self.requested_speed_mps = 0.0
         return adapted
 
@@ -264,7 +275,14 @@ class ControlRuntime:
                     if failed is not None:
                         feedback.append(failed)
                     self._clear_active_command()
+            control_scene = self._traffic_scene_for_control(vehicle, scene)
+            traffic_stop_approach = self._traffic_stop_approach_active(control_scene)
             effective_requested_speed_mps = self.requested_speed_mps
+            if traffic_stop_approach:
+                effective_requested_speed_mps = max(
+                    float(self._traffic_stop_approach_speed_mps or 0.0),
+                    vehicle.speed_mps,
+                )
             if speed_cap_mps is not None:
                 effective_requested_speed_mps = min(effective_requested_speed_mps, speed_cap_mps)
             local_curvature_per_m = max_abs_curvature_ahead(
@@ -272,7 +290,7 @@ class ControlRuntime:
                 lateral.nearest_index,
                 horizon_m=max(15.0, vehicle.speed_mps * 4.0),
             )
-            request = longitudinal_request(vehicle, scene, requested_speed_mps=effective_requested_speed_mps,
+            request = longitudinal_request(vehicle, control_scene, requested_speed_mps=effective_requested_speed_mps,
                                            path_curvature_per_m=local_curvature_per_m)
             if self._active_command is not None and self._active_command.requires_confirmation:
                 fuzzy = self.fuzzy_policy.evaluate(self._active_command, request)
@@ -286,7 +304,8 @@ class ControlRuntime:
             should_hold = self._stop_hold or (
                 self._active_command is not None and
                 self._active_command.action in {"STOP", "EMERGENCY_BRAKE"} and
-                vehicle.speed_mps <= self.fuzzy_policy.config.standstill_speed_mps
+                vehicle.speed_mps <= self.fuzzy_policy.config.standstill_speed_mps and
+                not traffic_stop_approach
             )
             if should_hold:
                 hold_brake = self.longitudinal.parameters.hold_brake
@@ -307,7 +326,7 @@ class ControlRuntime:
                 # C owns comfortable STOP/confirmation deceleration. D still
                 # receives vehicle/risk/watchdog facts and remains final arbiter.
                 safety_command = None
-            safety = self.safety.arbitrate(raw_for_safety, safety_vehicle_state(vehicle, scene), safety_command,
+            safety = self.safety.arbitrate(raw_for_safety, safety_vehicle_state(vehicle, control_scene), safety_command,
                                            longitudinal.risk, tuple(expired_alerts))
             if safety_override_reason is not None and not safety.safety_override:
                 # C may request a semantic emergency brake that is already a
@@ -340,7 +359,7 @@ class ControlRuntime:
                 self._stop_hold = True
                 self._clear_active_command()
             else:
-                completed = self._completion_feedback(vehicle)
+                completed = None if traffic_stop_approach else self._completion_feedback(vehicle)
                 if completed is not None:
                     feedback.append(completed)
             return FrameResult(vehicle, final, longitudinal, safety.reason, safety.safety_override,
@@ -391,4 +410,72 @@ class ControlRuntime:
         self._active_command_id = None
         self._active_command = None
         self._active_voice = None
+        self._traffic_stop_approach_speed_mps = None
         self._success_frames = 0
+
+    @staticmethod
+    def _is_qwen_high_level_plan(envelope: Mapping[str, object]) -> bool:
+        warnings = envelope.get("warnings", ())
+        return isinstance(warnings, (list, tuple)) and any(
+            isinstance(item, Mapping) and item.get("code") == "QWEN_HIGH_LEVEL_PLAN"
+            for item in warnings
+        )
+
+    def _traffic_stop_approach_active(self, scene: PerceptionFrame) -> bool:
+        if (
+            self._traffic_stop_approach_speed_mps is None
+            or self._active_command is None
+            or self._active_command.action != "STOP"
+            or scene.traffic_light not in {"RED", "YELLOW"}
+        ):
+            return False
+        constraints = [
+            float(distance)
+            for distance in (scene.distance_to_stop_line_m, scene.lead_distance_m)
+            if distance is not None
+        ]
+        return bool(constraints) and min(constraints) > 1.0
+
+    def _traffic_scene_for_control(
+        self,
+        vehicle: RuntimeVehicleState,
+        scene: PerceptionFrame,
+    ) -> PerceptionFrame:
+        """Resolve the yellow-light dilemma zone before C and D run.
+
+        RED never creates a new permission to proceed. Only a previously seen
+        YELLOW whose stop would exceed comfortable deceleration can commit ego
+        to clear the junction. This prevents a yellow-to-red transition from
+        stopping the vehicle inside the intersection.
+        """
+        signal = scene.traffic_light
+        distance = scene.distance_to_stop_line_m
+        if signal in {"GREEN", "UNKNOWN"}:
+            self._yellow_clear_committed = False
+            return scene
+
+        if self._yellow_clear_committed:
+            if distance is None:
+                self._yellow_clear_committed = False
+            return replace(
+                scene,
+                traffic_light="GREEN",
+                distance_to_stop_line_m=None,
+            )
+
+        if signal != "YELLOW" or distance is None:
+            return scene
+
+        required_decel = self.longitudinal.stop_controller.required_decel_mps2(
+            vehicle.speed_mps,
+            distance,
+        )
+        if required_decel <= self.longitudinal.parameters.comfortable_decel_mps2:
+            return scene
+
+        self._yellow_clear_committed = True
+        return replace(
+            scene,
+            traffic_light="GREEN",
+            distance_to_stop_line_m=None,
+        )

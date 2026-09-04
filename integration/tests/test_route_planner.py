@@ -90,6 +90,23 @@ def test_route_rejects_invalid_parameters():
         build_route_reference(Map(_fork()), location, 5.0, turn_direction="UTURN")
 
 
+def test_route_uses_measured_distance_when_waypoint_steps_are_shorter_than_requested():
+    points = [Waypoint(index * 0.9, 0.0, 0.0) for index in range(20)]
+    for first, second in zip(points, points[1:]):
+        first.children = [second]
+
+    route = build_route_reference(
+        Map(points[0]), SimpleNamespace(x=0.0, y=0.0), 5.0,
+        distance_m=5.0, step_m=1.0,
+    )
+
+    measured = sum(
+        math.dist(first, second)
+        for first, second in zip(route.points_xy_m, route.points_xy_m[1:])
+    )
+    assert measured >= 5.0
+
+
 def test_live_anchor_rejects_nearest_crossing_lane_and_selects_heading_match():
     wrong = Waypoint(-48.9, 15.7, 89.84)
     correct = Waypoint(-49.5, 15.1, -55.3)

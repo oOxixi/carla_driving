@@ -240,6 +240,30 @@ def test_conditional_keep_lane_request_cannot_hallucinate_yield():
     ]
 
 
+def test_turn_sequence_allows_safe_slowdown_and_speed_recovery_steps():
+    command = _example("driving_command")
+    command.update({
+        "intent": "TURN",
+        "source_text": "前方路口右转，转弯前减速至25公里每小时",
+        "parameters": {"direction": "RIGHT", "target_speed_mps": 25.0 / 3.6},
+    })
+    scene = _example("perception_state")
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(
+            command,
+            scene,
+            now_ns=1_100_000_000,
+            runtime_state={"route_available": True, "intersection_ahead": True},
+        )
+
+    assert queued.model_request["constraints"]["allowed_behaviors"] == [
+        "SET_SPEED", "SLOW_DOWN", "STOP", "TURN",
+    ]
+
+
 def test_visual_target_keep_lane_request_allows_slow_or_stop_response():
     command = _example("driving_command")
     command.update({
@@ -309,6 +333,26 @@ def test_forced_qwen_safety_scene_is_audited_while_waiting_stopped():
     assert queued.model_request["constraints"]["must_stop"] is True
     assert queued.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
     assert queued.feedback["safety_event"]["reason_code"] == "TRAFFIC_LIGHT_STOP"
+
+
+def test_distant_red_light_allows_c_to_approach_stop_line():
+    command = _example("driving_command")
+    command["intent"] = "KEEP_LANE"
+    command["parameters"] = {"target_speed_mps": 12.5}
+    scene = _example("perception_state")
+    scene["traffic_light"] = "RED"
+    scene["distance_to_stop_line_m"] = 38.75
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(
+            force_qwen_all_voice=True, qwen_mode="planner_v2",
+            stop_line_guard_m=1.0,
+        ),
+    ) as runtime:
+        queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
+
+    assert queued.model_request["constraints"]["must_stop"] is False
+    assert queued.model_request["constraints"]["allowed_behaviors"] != ["STOP"]
 
 
 def test_close_center_lead_forces_targeted_stop_plan() -> None:

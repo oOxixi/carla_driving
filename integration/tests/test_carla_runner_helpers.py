@@ -168,6 +168,21 @@ def test_scenario_speed_limit_caps_model_perception_constraint() -> None:
     assert sources["speed_limit_mps"] == "SCENARIO_SPEED_POLICY"
 
 
+def test_explicit_scenario_speed_limit_can_replace_stale_carla_map_value() -> None:
+    scene = PerceptionFrame(1, 0.05, speed_limit_mps=30.0 / 3.6)
+    sources: dict[str, str] = {}
+
+    overridden = _apply_scenario_speed_limit(
+        scene,
+        50.0 / 3.6,
+        sources,
+        override_map_limit=True,
+    )
+
+    assert overridden.speed_limit_mps == pytest.approx(50.0 / 3.6)
+    assert sources["speed_limit_mps"] == "SCENARIO_SPEED_POLICY_OVERRIDE"
+
+
 def test_completed_walker_may_be_reclaimed_but_early_death_still_fails() -> None:
     class DeadWalker:
         is_alive = False
@@ -358,6 +373,32 @@ def test_compiled_maneuver_applies_only_the_first_step_before_fsm_advances() -> 
     assert behavior == "CHANGE_LANE_LEFT"
 
 
+def test_stale_prevalidated_maneuver_route_is_rebuilt_from_live_ego(monkeypatch) -> None:
+    current = RouteReference([(0.0, 0.0), (10.0, 0.0)], target_speed_mps=2.0)
+    stale = RouteReference([(100.0, 0.0), (110.0, 3.5)], target_speed_mps=2.0)
+    rebuilt = RouteReference([(0.0, 0.0), (10.0, 3.5)], target_speed_mps=2.0)
+    compiled = {"steps": [{"behavior": "CHANGE_LANE_LEFT", "target": {}}]}
+    ego = Namespace(get_location=lambda: Namespace(x=0.0, y=0.0))
+    monkeypatch.setattr(
+        carla_runner,
+        "build_lane_change_route_reference",
+        lambda *args, **kwargs: rebuilt,
+    )
+
+    route, _, behavior = _apply_compiled_plan_route(
+        compiled,
+        world_map=object(),
+        ego=ego,
+        current_route=current,
+        requested_speed_mps=2.0,
+        distance_m=60.0,
+        prevalidated_maneuver_route=stale,
+    )
+
+    assert route.points_xy_m == rebuilt.points_xy_m
+    assert behavior == "CHANGE_LANE_LEFT"
+
+
 def test_compiled_longitudinal_sequence_does_not_apply_resume_speed_early() -> None:
     current = RouteReference([(0.0, 0.0), (10.0, 0.0)], target_speed_mps=8.0)
     compiled = {
@@ -484,6 +525,18 @@ def test_maneuver_target_pass_fallback_requires_target_to_leave_view() -> None:
         target_visible=False,
         distance_from_plan_start_m=20.0,
         pass_after_m=None,
+    )
+
+
+def test_maneuver_target_pass_distance_is_not_satisfied_by_prior_plan_steps() -> None:
+    # The runner resets this distance when PASS_TARGET starts.  Travel used
+    # for slowing and changing lane must not authorize an immediate return.
+    pass_step_distance_m = 0.0
+    assert not _maneuver_target_passed(
+        target_seen=True,
+        target_visible=False,
+        distance_from_plan_start_m=pass_step_distance_m,
+        pass_after_m=40.0,
     )
 
 

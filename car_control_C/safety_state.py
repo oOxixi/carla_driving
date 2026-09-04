@@ -86,6 +86,9 @@ class SafetyStateParameters:
     caution_ttc_s: float = 2.5
     emergency_ttc_s: float = 1.5
     max_observation_gap_s: float = 0.30
+    # A nearest-point LiDAR corridor has no target identity.  A larger
+    # frame-to-frame range collapse is a target switch, not trustworthy TTC.
+    untracked_approach_speed_margin_mps: float = 5.0
     reaction_time_s: float = 0.70
     emergency_reaction_time_s: float = 0.35
     comfortable_deceleration_mps2: float = 3.5
@@ -99,6 +102,7 @@ class SafetyStateParameters:
         for name in ("caution_distance_m", "emergency_distance_m", "vru_caution_distance_m",
                      "vru_emergency_distance_m", "vru_caution_speed_cap_mps", "vru_caution_hold_s",
                      "caution_ttc_s", "emergency_ttc_s", "max_observation_gap_s",
+                     "untracked_approach_speed_margin_mps",
                      "reaction_time_s", "emergency_reaction_time_s",
                      "comfortable_deceleration_mps2", "emergency_deceleration_mps2",
                      "range_uncertainty_buffer_m"):
@@ -233,8 +237,18 @@ class ConservativeSensorFusion:
             elif self._previous_distance_m is not None and self._previous_time_s is not None:
                 dt_s = sim_time_s - self._previous_time_s
                 if dt_s <= self.parameters.max_observation_gap_s:
-                    closing_speed = (self._previous_distance_m - front_distance_m) / dt_s
-                    sources["closing_speed_mps"] = "LIDAR_TEMPORAL_DIFFERENCE"
+                    candidate = (self._previous_distance_m - front_distance_m) / dt_s
+                    maximum_untracked_closing = (
+                        ego_speed_mps
+                        + self.parameters.untracked_approach_speed_margin_mps
+                    )
+                    if candidate <= maximum_untracked_closing:
+                        closing_speed = candidate
+                        sources["closing_speed_mps"] = "LIDAR_TEMPORAL_DIFFERENCE"
+                    else:
+                        sources["closing_speed_rejection"] = (
+                            "LIDAR_NEAREST_TARGET_SWITCH_IMPLAUSIBLE_RATE"
+                        )
             if closing_speed is not None and closing_speed <= 0.0:
                 closing_speed = None
 

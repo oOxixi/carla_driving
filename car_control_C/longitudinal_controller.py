@@ -28,7 +28,9 @@ class LongitudinalParameters:
     max_control_delta_per_s: float = 2.0
     hold_brake: float = 0.55
     emergency_brake: float = 0.85
-    standstill_gap_m: float = 3.0
+    # Sensor range is bumper-to-obstacle clearance; keep one metre at rest.
+    # The time-gap term still provides a larger dynamic gap while moving.
+    standstill_gap_m: float = 1.0
     time_gap_s: float = 1.5
     emergency_ttc_s: float = 1.5
     comfortable_decel_mps2: float = 3.0

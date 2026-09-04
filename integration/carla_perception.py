@@ -535,6 +535,8 @@ def _upcoming_traffic_light(
     if norm <= 1e-6:
         return None
     fx, fy = fx / norm, fy / norm
+    extent = getattr(getattr(ego, "bounding_box", None), "extent", None)
+    front_offset_m = max(0.0, float(getattr(extent, "x", 0.0)))
     ego_waypoint = None
     if world_map is not None:
         get_waypoint = getattr(world_map, "get_waypoint", None)
@@ -561,15 +563,16 @@ def _upcoming_traffic_light(
             wx, wy, _ = _xyz(waypoint.transform.location)
             dx, dy = wx - ex, wy - ey
             along = dx * fx + dy * fy
+            clearance = along - front_offset_m
             lateral = abs(-dx * fy + dy * fx)
-            if not 0.0 <= along <= max_distance_m or lateral > lateral_gate_m:
+            if not 0.0 <= clearance <= max_distance_m or lateral > lateral_gate_m:
                 continue
             waypoint_forward = getattr(waypoint.transform, "get_forward_vector", None)
             if callable(waypoint_forward):
                 wfx, wfy, _ = _xyz(waypoint_forward())
                 if wfx * fx + wfy * fy < 0.5:
                     continue
-            candidates.append((along, state))
+            candidates.append((clearance, state))
     if not candidates:
         return None
     distance, state = min(candidates, key=lambda item: item[0])
@@ -603,14 +606,16 @@ def traffic_light_and_stop_distance(
     ex, ey, _ = _xyz(ego_location)
     forward = ego.get_transform().get_forward_vector()
     fx, fy, _ = _xyz(forward)
+    extent = getattr(getattr(ego, "bounding_box", None), "extent", None)
+    front_offset_m = max(0.0, float(getattr(extent, "x", 0.0)))
     candidates: list[float] = []
     get_stop_waypoints = getattr(light, "get_stop_waypoints", None)
     if callable(get_stop_waypoints):
         for waypoint in get_stop_waypoints() or ():
             wx, wy, _ = _xyz(waypoint.transform.location)
-            along = (wx - ex) * fx + (wy - ey) * fy
-            if along >= -0.5:
-                candidates.append(max(0.0, along))
+            clearance = (wx - ex) * fx + (wy - ey) * fy - front_offset_m
+            if clearance >= 0.0:
+                candidates.append(clearance)
     if candidates:
         active = (state, min(candidates))
         if upcoming is not None and upcoming[1] < active[1]:
@@ -626,9 +631,13 @@ def traffic_light_and_stop_distance(
         if callable(getattr(transform, "transform", None)):
             location = transform.transform(location)
         tx, ty, _ = _xyz(location)
-        along = (tx - ex) * fx + (ty - ey) * fy
-        return state, max(0.0, along), "CARLA_TRIGGER_VOLUME_APPROXIMATION"
-    return state, None, "CARLA_EGO_TRAFFIC_LIGHT_STATE"
+        clearance = (tx - ex) * fx + (ty - ey) * fy - front_offset_m
+        if clearance >= 0.0:
+            return state, clearance, "CARLA_TRIGGER_VOLUME_APPROXIMATION"
+        return state, None, "CARLA_TRIGGER_VOLUME_PASSED"
+    if upcoming is not None:
+        return (*upcoming, "CARLA_MAP_UPCOMING_STOP_WAYPOINT")
+    return state, None, "CARLA_MAP_STOP_WAYPOINT_PASSED"
 
 
 def actor_speed_limit_mps(ego: Any) -> float | None:

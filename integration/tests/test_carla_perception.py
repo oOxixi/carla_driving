@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -538,6 +539,20 @@ def test_upcoming_light_ignores_nearer_stop_waypoint_for_adjacent_lane() -> None
     assert state == "GREEN"
     assert distance == 20.0
     assert source == "CARLA_MAP_UPCOMING_STOP_WAYPOINT"
+
+
+def test_yellow_after_front_bumper_crosses_stop_line_does_not_request_stop() -> None:
+    light = TrafficLight("Yellow", 20.0)
+    ego = Actor(1, x=19.0, speed=6.0, traffic_light=light)
+    ego.bounding_box = SimpleNamespace(extent=SimpleNamespace(x=2.0))
+
+    state, distance, source = traffic_light_and_stop_distance(
+        ego, (light,), world_map=WorldMap(),
+    )
+
+    assert state == "YELLOW"
+    assert distance is None
+    assert source == "CARLA_MAP_STOP_WAYPOINT_PASSED"
 
 
 def test_missing_continuous_sensor_times_out_fail_closed() -> None:

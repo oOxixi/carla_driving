@@ -45,6 +45,7 @@ class OrchestratorConfig:
     max_speed_mps: float = 13.8888888889
     max_accel_mps2: float = 2.5
     max_decel_mps2: float = 5.0
+    stop_line_guard_m: float = 8.0
     top_k_targets: int = 8
     qwen_mode: str = "atomic_v1"
     force_qwen_all_voice: bool = False
@@ -58,7 +59,10 @@ class OrchestratorConfig:
             value = getattr(self, name)
             if type(value) is not int or value < 1:
                 raise ValueError(f"{name} must be a positive integer")
-        for name in ("model_timeout_ms", "max_speed_mps", "max_accel_mps2", "max_decel_mps2"):
+        for name in (
+            "model_timeout_ms", "max_speed_mps", "max_accel_mps2",
+            "max_decel_mps2", "stop_line_guard_m",
+        ):
             value = getattr(self, name)
             if type(value) not in (int, float) or isinstance(value, bool) or not math.isfinite(float(value)) or value <= 0:
                 raise ValueError(f"{name} must be finite and positive")
@@ -404,7 +408,15 @@ class PipelineOrchestrator:
                 raw = self._infer(job.request)
                 inference_completed_wall_ns = self._clock_ns()
                 if self.config.qwen_mode == "planner_v2":
-                    validation_scene = {**job.perception, **job.runtime_state}
+                    # Validate against the same distance-aware stop decision
+                    # that constrained the model request.  Re-deriving it from
+                    # the raw red-light field would reject legal approach
+                    # plans for a stop line that is still far away.
+                    validation_scene = {
+                        **job.perception,
+                        **job.runtime_state,
+                        "must_stop": job.request["constraints"]["must_stop"],
+                    }
                     plan = self.plan_validator.validate(
                         raw,
                         scene=validation_scene,
@@ -811,7 +823,10 @@ class PipelineOrchestrator:
         maneuver_by_intent = {
             "FOLLOW": {"FOLLOW", "STOP"},
             "CHANGE_LANE": {"CHANGE_LANE", "STOP"},
-            "TURN": {"TURN", "STOP"},
+            # A normal turn plan may safely include deceleration before the
+            # junction and bounded speed recovery after it.  These are part
+            # of the requested manoeuvre, not unrelated model actions.
+            "TURN": {"SET_SPEED", "SLOW_DOWN", "TURN", "STOP"},
             "PULL_OVER": {"PULL_OVER", "STOP"},
             "AVOID_OBSTACLE": {
                 "SLOW_DOWN", "AVOID_OBSTACLE", "CHANGE_LANE", "RETURN_TO_LANE", "STOP",
@@ -876,8 +891,7 @@ class PipelineOrchestrator:
         value = scene.get("speed_limit_mps")
         return self.config.max_speed_mps if value is None else min(float(value), self.config.max_speed_mps)
 
-    @staticmethod
-    def _perception_stop_reason(scene: Mapping[str, Any]) -> str | None:
+    def _perception_stop_reason(self, scene: Mapping[str, Any]) -> str | None:
         if scene["stale"] or not scene["sync"]["within_tolerance"]:
             return "PERCEPTION_STALE"
         if not scene["modality_valid"]["vehicle_state"]:
@@ -909,7 +923,13 @@ class PipelineOrchestrator:
                 and stationary
             ):
                 return "FRONT_OBJECT_STOP"
-        if scene["traffic_light"] in {"RED", "YELLOW"} and scene.get("distance_to_stop_line_m") is not None:
+        stop_line_distance = scene.get("distance_to_stop_line_m")
+        if (
+            scene["traffic_light"] in {"RED", "YELLOW"}
+            and type(stop_line_distance) in (int, float)
+            and not isinstance(stop_line_distance, bool)
+            and float(stop_line_distance) <= self.config.stop_line_guard_m
+        ):
             return "TRAFFIC_LIGHT_STOP"
         return None
 
