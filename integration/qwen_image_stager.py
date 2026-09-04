@@ -95,6 +95,7 @@ class QwenImageStager:
         target.parent.mkdir(parents=True, exist_ok=True)
         Image = self._image_module
         ImageOps = self._image_ops
+        resampling = getattr(Image, "Resampling", Image)
         if multiview:
             assert isinstance(measurement, Mapping)
             image = Image.new("RGB", (224, 224), (0, 0, 0))
@@ -108,7 +109,7 @@ class QwenImageStager:
                 tile = ImageOps.fit(
                     self._measurement_image(measurement[sensor_id]),
                     (112, 112),
-                    method=Image.Resampling.BILINEAR,
+                    method=resampling.BILINEAR,
                 )
                 image.paste(tile, position)
         else:
@@ -118,7 +119,7 @@ class QwenImageStager:
                 # The model receives only a 224 px / 64-token visual budget.  A
                 # bilinear downsample preserves that information while avoiding
                 # the unnecessary high-order LANCZOS cost on the latency path.
-                method=Image.Resampling.BILINEAR,
+                method=resampling.BILINEAR,
                 color=(0, 0, 0),
             )
         image.save(target, format="JPEG", quality=75)
@@ -136,6 +137,12 @@ class QwenImageStager:
             and type(width) is int and width > 0
             and type(height) is int and height > 0
         ):
+            # CARLA's Linux binding exposes ``raw_data`` as a writable
+            # memoryview.  Pillow 9's raw decoder rejects memoryview objects,
+            # so copy only that cross-platform representation to immutable
+            # bytes; the common bytes path remains zero-copy.
+            if not isinstance(raw, bytes):
+                raw = bytes(raw)
             # Decode CARLA's native BGRA buffer directly.  Building a full-size
             # RGB NumPy copy first costs several milliseconds and carries no
             # information into the fixed 224 px model input.

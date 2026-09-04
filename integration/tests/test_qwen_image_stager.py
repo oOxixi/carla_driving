@@ -59,6 +59,28 @@ def test_stager_decodes_native_carla_bgra_without_swapping_colors(tmp_path) -> N
     assert blue < 15
 
 
+def test_stager_accepts_linux_carla_writable_memoryview(tmp_path) -> None:
+    stager = QwenImageStager(tmp_path, ref_prefix="frames")
+    # The Linux CARLA 0.9.16 binding exposes Image.raw_data as a writable
+    # memoryview, while Pillow's raw decoder only accepts a read-only buffer.
+    pixel = bytes((0, 0, 255, 255))
+    measurement = SimpleNamespace(
+        raw_data=memoryview(bytearray(pixel * 24)),
+        width=6,
+        height=4,
+    )
+    reference = stager.stage("voice-linux-bgra", measurement, frame_id=14)
+
+    prepared = stager.prepare_request({"command_id": "voice-linux-bgra"})
+
+    assert prepared["rgb_ref"] == reference
+    with Image.open(tmp_path / reference) as image:
+        red, green, blue = image.convert("RGB").getpixel((112, 112))
+    assert red > 240
+    assert green < 15
+    assert blue < 15
+
+
 def test_stager_builds_exact_frame_four_camera_montage(tmp_path) -> None:
     stager = QwenImageStager(tmp_path, ref_prefix="frames")
     colors = {
