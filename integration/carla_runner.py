@@ -710,7 +710,10 @@ def _apply_compiled_plan_route(
         route_behavior = behavior
     if route_behavior is None:
         return replace(current_route, target_speed_mps=target_speed), target_speed, None
-    if prevalidated_maneuver_route is not None:
+    if (
+        prevalidated_maneuver_route is not None
+        and _route_starts_near_ego(prevalidated_maneuver_route, ego)
+    ):
         return (
             replace(prevalidated_maneuver_route, target_speed_mps=target_speed),
             target_speed,
@@ -736,6 +739,23 @@ def _apply_compiled_plan_route(
             **route_parameters,
         )
     return route, target_speed, route_behavior
+
+
+def _route_starts_near_ego(
+    route: RouteReference,
+    ego: Any,
+    *,
+    maximum_distance_m: float = 15.0,
+) -> bool:
+    """Reject a scenario route whose origin is stale for a live manoeuvre."""
+    if ego is None:
+        return True
+    location = ego.get_location()
+    first_x, first_y = route.points_xy_m[0]
+    return math.hypot(
+        float(location.x) - float(first_x),
+        float(location.y) - float(first_y),
+    ) <= maximum_distance_m
 
 
 def _lane_change_route_parameters(
@@ -3016,8 +3036,10 @@ def run(args: argparse.Namespace) -> None:
     maneuver_fsm = ManeuverFSM()
     maneuver_lane_ids: dict[str, str] = {}
     maneuver_start_xy: tuple[float, float] | None = None
+    maneuver_step_start_xy: tuple[float, float] | None = None
     maneuver_start_yaw_deg: float | None = None
     maneuver_junction_seen = False
+    maneuver_target_id: str | None = None
     maneuver_target_seen = False
     maneuver_target_pass_after_m: float | None = None
     maneuver_route_steps_applied: set[str] = set()
@@ -3165,6 +3187,7 @@ def run(args: argparse.Namespace) -> None:
                 config=OrchestratorConfig(
                     qwen_queue_size=args.qwen_queue_size,
                     model_timeout_ms=args.qwen_timeout_ms,
+                    stop_line_guard_m=args.stop_line_guard_m,
                     qwen_mode=args.qwen_mode,
                     force_qwen_all_voice=force_all_voice_qwen,
                 ),
@@ -3754,6 +3777,13 @@ def run(args: argparse.Namespace) -> None:
                 frame = session.tick(args.timeout_s)
                 simulator_tick_end_ns = time.monotonic_ns()
                 watchdog.resume(now_s=time.monotonic())
+                # Validate the completed previous frame immediately.  A
+                # check after waiting for this frame's sensors/Qwen work
+                # measures in-progress latency as a stale control heartbeat
+                # and can create a false permanent stop.
+                runtime_watchdog_timed_out = (
+                    watchdog.check(now_s=time.monotonic()) is not None
+                )
                 snapshot = world.get_snapshot()
                 state = _vehicle_state(ego, frame, snapshot.timestamp.elapsed_seconds, world_map)
                 max_speed_mps = max(max_speed_mps, state.speed_mps)
@@ -4983,8 +5013,16 @@ def run(args: argparse.Namespace) -> None:
                                     now_s=state.sim_time_s,
                                 )
                                 maneuver_start_xy = (state.x_m, state.y_m)
+                                maneuver_step_start_xy = maneuver_start_xy
                                 maneuver_start_yaw_deg = state.yaw_deg
                                 maneuver_junction_seen = False
+                                maneuver_target_id = str(
+                                    maneuver_fsm.current_step.target.get("target_id")
+                                    or ""
+                                )
+                                maneuver_target_seen = _maneuver_target_visible(
+                                    maneuver_fsm.current_step, scene,
+                                )
                                 grounded_target_distance_m = _maneuver_target_distance_m(
                                     maneuver_fsm.current_step,
                                     scene,
@@ -5139,7 +5177,7 @@ def run(args: argparse.Namespace) -> None:
                     perception_sources["canonical_state"] = (
                         "PERCEPTION_STATE_V1_" + canonical_mode.upper()
                     )
-                if not sensor_startup_grace and watchdog.check(now_s=time.monotonic()) is not None:
+                if not sensor_startup_grace and runtime_watchdog_timed_out:
                     watchdog_alerts.append("RUNTIME_WATCHDOG_TIMEOUT")
                 if watchdog_alerts:
                     # Preserve the concrete upstream fault in evidence.  D's
@@ -5342,9 +5380,9 @@ def run(args: argparse.Namespace) -> None:
                     )
                     distance_from_plan_start_m = (
                         0.0
-                        if maneuver_start_xy is None
+                        if maneuver_step_start_xy is None
                         else math.dist(
-                            maneuver_start_xy,
+                            maneuver_step_start_xy,
                             (state.x_m, state.y_m),
                         )
                     )
@@ -5455,6 +5493,29 @@ def run(args: argparse.Namespace) -> None:
                     )
                     if started_route_step is not None:
                         try:
+                            # Completion distances belong to the step that
+                            # declares them.  Counting SLOW/WAIT/LANE travel
+                            # toward PASS_TARGET can make the vehicle return
+                            # before it has actually cleared the obstacle.
+                            maneuver_step_start_xy = (state.x_m, state.y_m)
+                            started_target_id = str(
+                                started_route_step.target.get("target_id") or ""
+                            )
+                            if started_target_id != maneuver_target_id:
+                                maneuver_target_id = started_target_id
+                                maneuver_target_seen = _maneuver_target_visible(
+                                    started_route_step, scene,
+                                )
+                                grounded_target_distance_m = _maneuver_target_distance_m(
+                                    started_route_step,
+                                    scene,
+                                    actor_distances_m,
+                                )
+                                maneuver_target_pass_after_m = (
+                                    max(20.0, grounded_target_distance_m + 20.0)
+                                    if grounded_target_distance_m is not None
+                                    else None
+                                )
                             step_speed = started_route_step.target.get(
                                 "target_speed_mps",
                             )
@@ -5465,6 +5526,7 @@ def run(args: argparse.Namespace) -> None:
                                 started_route_step.behavior.startswith("CHANGE_LANE_")
                                 and prevalidated_avoid_route is not None
                                 and not dynamic_out_and_back
+                                and _route_starts_near_ego(prevalidated_avoid_route, ego)
                             ):
                                 # The acceptance scenario declares one legal
                                 # out-and-back detour. Keep that full route for
@@ -5621,7 +5683,12 @@ def run(args: argparse.Namespace) -> None:
                 # Mark the frame healthy after evidence/console I/O so a slow
                 # flush cannot age the previous control heartbeat and create a
                 # permanent false safety latch on the following frame.
-                watchdog.heartbeat("control", now_s=time.monotonic())
+                frame_completed_at_s = time.monotonic()
+                # Both stages completed this frame.  Refreshing only control
+                # leaves the earlier perception timestamp to age while the
+                # same healthy frame is being controlled and logged.
+                watchdog.heartbeat("perception", now_s=frame_completed_at_s)
+                watchdog.heartbeat("control", now_s=frame_completed_at_s)
                 watchdog.pause(now_s=time.monotonic())
                 maneuver_active = (
                     maneuver_fsm.plan is not None

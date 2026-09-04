@@ -26,9 +26,9 @@
   "commands": [
     {
       "time_s": 0.0,
-      "source_text": "保持当前车道，提速至60公里每小时",
+      "source_text": "保持当前车道，以45公里每小时正常行驶",
       "intent": "KEEP_LANE",
-      "parameters": {"target_speed_kph": 60.0},
+      "parameters": {"target_speed_kph": 45.0},
       "intent_confidence": 0.99,
       "status": "valid",
       "confirm_required": false,
@@ -44,7 +44,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S1_P2_RIGHT_TURN",
-      "trigger": {"type": "route_progress_greater_than_m", "value": 60.0}
+      "trigger": {"type": "route_progress_greater_than_m", "value": 250.0}
     },
     {
       "time_s": 0.0,
@@ -58,7 +58,7 @@
       "trigger": {
         "all": [
           {"type": "previous_command_terminal", "phase_id": "S1_P2_RIGHT_TURN"},
-          {"type": "route_progress_greater_than_m", "value": 110.0}
+          {"type": "route_progress_greater_than_m", "value": 400.0}
         ]
       }
     },
@@ -74,15 +74,15 @@
       "trigger": {
         "all": [
           {"type": "previous_command_terminal", "phase_id": "S1_P3_EXIT_TURN_RECENTER"},
-          {"type": "route_progress_greater_than_m", "value": 160.0}
+          {"type": "route_progress_greater_than_m", "value": 1600.0}
         ]
       }
     },
     {
       "time_s": 0.0,
-      "source_text": "减速至40公里每小时并保持车道",
+      "source_text": "以45公里每小时正常巡航并保持车道",
       "intent": "KEEP_LANE",
-      "parameters": {"target_speed_kph": 40.0},
+      "parameters": {"target_speed_kph": 45.0},
       "intent_confidence": 0.99,
       "status": "valid",
       "confirm_required": false,
@@ -90,7 +90,7 @@
       "trigger": {
         "all": [
           {"type": "previous_command_terminal", "phase_id": "S1_P4_CHANGE_LEFT"},
-          {"type": "route_progress_greater_than_m", "value": 220.0}
+          {"type": "route_progress_greater_than_m", "value": 3600.0}
         ]
       }
     }
@@ -173,6 +173,7 @@
       "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "TURN_RIGHT", "CHANGE_LANE_LEFT", "STOP"]
     },
     "fixed_random_seed": true,
+    "speed_policy": {"scenario_limit_kph": 50.0, "override_map_limit": true},
     "no_background_traffic": true,
     "route_policy": {"loop": false},
     "runtime_support": {"status": "current", "requirements": [], "declared_requirements": []},

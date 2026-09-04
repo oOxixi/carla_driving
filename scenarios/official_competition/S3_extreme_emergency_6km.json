@@ -23,12 +23,12 @@
       "time_s": 0.0,
       "source_text": "前方路况危险，保持安全车速",
       "intent": "KEEP_LANE",
-      "parameters": {"target_speed_kph": 35.0},
+      "parameters": {"target_speed_kph": 45.0},
       "intent_confidence": 0.92,
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S3_P1_RAIN_NIGHT_SAFE_SPEED",
-      "trigger": {"type": "scenario_started"}
+      "trigger": {"type": "route_progress_greater_than_m", "value": 10.0}
     },
     {
       "time_s": 0.0,
@@ -39,7 +39,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S3_P2_CONSTRUCTION_MERGE",
-      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "construction_warning", "value": 30.0}
+      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 160.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "construction_warning", "value": 80.0}]}
     },
     {
       "time_s": 0.0,
@@ -50,7 +50,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S3_P3_CUT_IN_EMERGENCY",
-      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "cut_in_vehicle", "value": 30.0}
+      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 590.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "cut_in_vehicle", "value": 60.0}]}
     },
     {
       "time_s": 0.0,
@@ -61,7 +61,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S3_P4_PEDESTRIAN_STOP_HOLD",
-      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "emergency_pedestrian", "value": 42.0}
+      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 990.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "emergency_pedestrian", "value": 60.0}]}
     }
   ],
   "qwen_expected": {
@@ -75,17 +75,17 @@
     "forbidden_low_level_fields": true
   },
   "actors": [
-    {"actor_id": "construction_warning", "type": "static.prop", "blueprint_id": "static.prop.warningconstruction", "spawn": {"x": 48.0, "y": 2.8, "z": 0.5, "yaw_deg": 0.0}},
-    {"actor_id": "cone_01", "type": "static.prop", "blueprint_id": "static.prop.trafficcone01", "spawn": {"x": 55.0, "y": 1.4, "z": 0.5, "yaw_deg": 0.0}},
-    {"actor_id": "cone_02", "type": "static.prop", "blueprint_id": "static.prop.trafficcone01", "spawn": {"x": 62.0, "y": 1.2, "z": 0.5, "yaw_deg": 0.0}},
-    {"actor_id": "cone_03", "type": "static.prop", "blueprint_id": "static.prop.trafficcone01", "spawn": {"x": 69.0, "y": 1.0, "z": 0.5, "yaw_deg": 0.0}},
-    {"actor_id": "cone_04", "type": "static.prop", "blueprint_id": "static.prop.trafficcone01", "spawn": {"x": 76.0, "y": 0.8, "z": 0.5, "yaw_deg": 0.0}},
-    {"actor_id": "cone_05", "type": "static.prop", "blueprint_id": "static.prop.trafficcone01", "spawn": {"x": 83.0, "y": 0.6, "z": 0.5, "yaw_deg": 0.0}},
+    {"actor_id": "construction_warning", "type": "static.prop", "blueprint_id": "static.prop.warningconstruction", "spawn": {"x": 250.0, "y": -1.4, "z": 0.5, "yaw_deg": 0.0}},
+    {"actor_id": "cone_01", "type": "static.prop", "blueprint_id": "static.prop.trafficcone01", "spawn": {"x": 255.0, "y": -1.4, "z": 0.5, "yaw_deg": 0.0}},
+    {"actor_id": "cone_02", "type": "static.prop", "blueprint_id": "static.prop.trafficcone01", "spawn": {"x": 259.0, "y": -1.0, "z": 0.5, "yaw_deg": 0.0}},
+    {"actor_id": "cone_03", "type": "static.prop", "blueprint_id": "static.prop.trafficcone01", "spawn": {"x": 263.0, "y": -0.5, "z": 0.5, "yaw_deg": 0.0}},
+    {"actor_id": "cone_04", "type": "static.prop", "blueprint_id": "static.prop.trafficcone01", "spawn": {"x": 267.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0}},
+    {"actor_id": "cone_05", "type": "static.prop", "blueprint_id": "static.prop.trafficcone01", "spawn": {"x": 271.0, "y": 0.5, "z": 0.5, "yaw_deg": 0.0}},
     {
       "actor_id": "cut_in_vehicle",
       "type": "vehicle",
       "blueprint_id": "vehicle.audi.tt",
-      "spawn": {"x": 105.0, "y": -3.5, "z": 0.5, "yaw_deg": 0.0},
+      "spawn": {"x": 650.0, "y": -3.5, "z": 0.5, "yaw_deg": 0.0},
       "behavior": {
         "mode": "cut_in",
         "initial_speed_mps": 0.0,
@@ -106,13 +106,13 @@
     {
       "actor_id": "emergency_pedestrian",
       "type": "walker.pedestrian",
-      "spawn": {"x": 150.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
+      "spawn": {"x": 1050.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
       "behavior": {
         "mode": "crossing",
-        "target_xy_m": [150.0, -6.0],
+        "target_xy_m": [1050.0, -6.0],
         "start_time_s": 0.0,
         "speed_mps": 2.4,
-        "trigger": {"type": "route_progress_greater_than_m", "value": 110.0},
+        "trigger": {"type": "route_progress_greater_than_m", "value": 990.0},
         "phase_id": "S3_EVT_PEDESTRIAN_CROSSING"
       }
     }
@@ -183,6 +183,13 @@
     "oracle": {
       "expected_behaviors": ["KEEP_LANE", "SLOW_DOWN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "EMERGENCY_STOP"]
     },
+    "maneuver_route_mode": "dynamic_out_and_back",
+    "lane_change_profile": {
+      "route_distance_m": 100.0,
+      "step_m": 1.0,
+      "transition_start_m": 5.0,
+      "transition_length_m": 20.0
+    },
     "proposed_acceptance": {
       "qwen_request_count": 2,
       "all_commands_must_have_terminal_status": true,
@@ -196,10 +203,12 @@
       "emergency_response_absolute_max_ms": 120
     },
     "emergency_recovery": {
-      "cut_in_vehicle": {"minimum_hold_s": 2.0, "resume_speed_kph": 18.0},
-      "emergency_pedestrian": {"minimum_hold_s": 6.0, "resume_speed_kph": 18.0}
+      "cut_in_vehicle": {"minimum_hold_s": 2.0, "minimum_clearance_m": 12.0, "resume_speed_kph": 45.0},
+      "emergency_pedestrian": {"minimum_hold_s": 6.0, "minimum_clearance_m": 8.0, "resume_speed_kph": 45.0}
     },
     "fixed_random_seed": true,
+    "speed_policy": {"scenario_limit_kph": 50.0, "override_map_limit": true},
+    "route_anchor_spawn_index": 152,
     "weather_parameters": {"cloudiness": 100.0, "precipitation": 85.0, "precipitation_deposits": 100.0, "wetness": 100.0, "fog_density": 35.0, "fog_distance": 35.0, "wind_intensity": 65.0, "sun_altitude_angle": -25.0},
     "route_policy": {"loop": false},
     "runtime_support": {"status": "current", "requirements": ["custom_weather_parameters", "event_triggers", "actor_distance_trigger"], "declared_requirements": ["custom_weather_parameters", "event_triggers", "actor_distance_trigger", "event_driven_cut_in_vehicle_behavior"]},
@@ -211,6 +220,6 @@
     "正式成绩使用 --perception-mode sensors --scenario-facts-mode perception，并检查五个应急时间戳。",
     "普通雨夜与施工语义指令进入Qwen Planner V2；加塞和行人EMERGENCY_STOP不等待模型，由本地安全链立即抢占并同时保留审计证据。",
     "四路严格同帧RGB按前/左、右/后布局拼接为Qwen视觉输入；低光时LiDAR/Radar距离、TTC与车辆状态继续作为硬安全约束。",
-    "900秒运行预算按35km/h安全车速覆盖6km并为施工、加塞和停车保持预留时间。"
+    "900秒运行预算按45km/h正常巡航覆盖6km，并为施工、加塞和停车保持预留时间。"
   ]
 }

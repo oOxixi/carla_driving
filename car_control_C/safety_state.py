@@ -264,6 +264,9 @@ class ConservativeSensorFusion:
                     elif candidate > self.parameters.max_temporal_closing_speed_mps:
                         self._pending_temporal_closing_speed_mps = None
                         sources["closing_speed_mps"] = "LIDAR_TEMPORAL_OUTLIER_REJECTED"
+                        sources["closing_speed_rejection"] = (
+                            "LIDAR_NEAREST_TARGET_SWITCH_IMPLAUSIBLE_RATE"
+                        )
                     elif (
                         previous_candidate is not None
                         and abs(candidate - previous_candidate)

@@ -90,6 +90,7 @@ class ScenarioExtensionRuntime:
         self._actor_event_time_s: dict[str, float] = {}
         self._actor_speed_mps: dict[str, float] = {}
         self._minimum_actor_distances_m: dict[str, float] = {}
+        self._actor_distances_m: dict[str, float] = {}
         self._traffic_light_state: dict[str, str] = {}
         self._initial_lane_id: str | None = None
         self._last_lane_id: str | None = None
@@ -351,10 +352,24 @@ class ScenarioExtensionRuntime:
             if not isinstance(raw_policy, Mapping):
                 raise TypeError("emergency recovery policies must be objects")
             hold_s = float(raw_policy.get("minimum_hold_s", 0.0))
+            minimum_clearance_m = float(raw_policy.get("minimum_clearance_m", 0.0))
             resume_speed_kph = float(raw_policy.get("resume_speed_kph", 0.0))
-            if hold_s <= 0.0 or resume_speed_kph <= 0.0:
-                raise ValueError("emergency recovery hold and resume speed must be positive")
-            if float(elapsed_s) + TIME_COMPARISON_EPSILON_S >= control_s + hold_s:
+            if hold_s <= 0.0 or minimum_clearance_m < 0.0 or resume_speed_kph <= 0.0:
+                raise ValueError(
+                    "emergency recovery hold/resume speed must be positive and clearance non-negative"
+                )
+            actor_distance_m = self._actor_distances_m.get(normalized_id)
+            hazard_clear = (
+                minimum_clearance_m <= 0.0
+                or (
+                    actor_distance_m is not None
+                    and actor_distance_m >= minimum_clearance_m
+                )
+            )
+            if (
+                hazard_clear
+                and float(elapsed_s) + TIME_COMPARISON_EPSILON_S >= control_s + hold_s
+            ):
                 return normalized_id, resume_speed_kph / 3.6
         return None
 
@@ -404,6 +419,10 @@ class ScenarioExtensionRuntime:
             "ego_speed_mps": float(ego_speed_mps),
             "ego_standstill_duration_s": float(ego_standstill_duration_s),
             "terminal_phase_ids": tuple(sorted(self._terminal_phase_ids)),
+        }
+        self._actor_distances_m = {
+            str(actor_id): float(distance_m)
+            for actor_id, distance_m in actor_distances_m.items()
         }
         for actor_id, distance_m in actor_distances_m.items():
             distance = float(distance_m)
@@ -509,7 +528,11 @@ class ScenarioExtensionRuntime:
         override_map_limit = False
         if isinstance(speed_policy, Mapping) and "scenario_limit_kph" in speed_policy:
             speed_limit = max(0.0, float(speed_policy["scenario_limit_kph"]) / 3.6)
-            mode = str(speed_policy.get("map_limit_handling", "minimum")).strip().lower()
+            default_mode = (
+                "replace" if speed_policy.get("override_map_limit") is True
+                else "minimum"
+            )
+            mode = str(speed_policy.get("map_limit_handling", default_mode)).strip().lower()
             if mode not in {"minimum", "replace"}:
                 raise ValueError("speed_policy.map_limit_handling must be 'minimum' or 'replace'")
             override_map_limit = mode == "replace"

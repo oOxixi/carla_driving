@@ -641,6 +641,41 @@ def test_emergency_recovery_waits_for_hold_and_records_release() -> None:
     assert event["hold_duration_s"] == pytest.approx(2.0)
 
 
+def test_emergency_recovery_also_waits_until_actor_has_safe_clearance() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "emergency_recovery": {
+            "cut_in_vehicle": {
+                "minimum_hold_s": 2.0,
+                "minimum_clearance_m": 12.0,
+                "resume_speed_kph": 45.0,
+            },
+        },
+    })
+    runtime.note_actor_trigger("cut_in_vehicle", elapsed_s=10.0)
+    runtime.note_control_observation(
+        elapsed_s=10.1, speed_mps=3.0, route_progress_m=100.0,
+        throttle=0.0, brake=1.0, safety_override=True,
+        safety_reason="EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE", route_deviation_m=0.0,
+    )
+    runtime.update_frame(
+        elapsed_s=12.2, route_progress_m=100.0, ego_speed_mps=0.0,
+        ego_standstill_duration_s=2.1,
+        actor_distances_m={"cut_in_vehicle": 5.0},
+        traffic_light_state="UNKNOWN", distance_to_stop_line_m=None, lane_id="1",
+    )
+    assert runtime.ready_emergency_recovery(elapsed_s=12.2) is None
+
+    runtime.update_frame(
+        elapsed_s=13.0, route_progress_m=100.0, ego_speed_mps=0.0,
+        ego_standstill_duration_s=2.9,
+        actor_distances_m={"cut_in_vehicle": 12.5},
+        traffic_light_state="UNKNOWN", distance_to_stop_line_m=None, lane_id="1",
+    )
+    actor_id, speed_mps = runtime.ready_emergency_recovery(elapsed_s=13.0)
+    assert actor_id == "cut_in_vehicle"
+    assert speed_mps == pytest.approx(12.5)
+
+
 def test_emergency_event_contract_rejects_missing_perception_or_late_brake() -> None:
     runtime = ScenarioExtensionRuntime({})
     runtime.note_actor_trigger("emergency_pedestrian", elapsed_s=20.0)

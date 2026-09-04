@@ -11,6 +11,7 @@
     "caution_ttc_s": 2.5,
     "emergency_ttc_s": 1.5,
     "max_observation_gap_s": 0.30,
+    "untracked_approach_speed_margin_mps": 5.0,
     "reaction_time_s": 0.70,
     "emergency_reaction_time_s": 0.35,
     "comfortable_deceleration_mps2": 3.5,

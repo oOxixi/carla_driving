@@ -268,7 +268,12 @@ class SafetySupervisor:
             / (2.0 * DEFAULT_STRATEGY.common.comfortable_decel_mps2),
         )
         metrics["dynamic_stop_line_guard_m"] = dynamic_stop_guard_m
-        if vs.distance_to_stop_line_m is not None and vs.distance_to_stop_line_m <= dynamic_stop_guard_m:
+        active_stop_guard_m = (
+            cfg.stop_line_guard_m
+            if vs.traffic_light == "YELLOW" else dynamic_stop_guard_m
+        )
+        metrics["active_stop_line_guard_m"] = active_stop_guard_m
+        if vs.distance_to_stop_line_m is not None and vs.distance_to_stop_line_m <= active_stop_guard_m:
             unsafe_light = vs.traffic_light in {"RED", "YELLOW", "UNKNOWN"}
             brake_hold_missing = raw.brake < cfg.hold_brake
             still_moving = vs.speed_mps > cfg.standstill_speed_mps

@@ -154,9 +154,26 @@ class DeterministicPlannerV2Backend:
         constraints = request["constraints"]
         capabilities = request.get("scene_capabilities", {})
         targets = request["targets"]
+        hint = request.get("command_hint", {})
+        hinted_intent = (
+            str(hint.get("intent", "")).upper()
+            if isinstance(hint, Mapping) else ""
+        )
+        hinted_direction = (
+            str(hint.get("direction", "")).upper()
+            if isinstance(hint, Mapping) else ""
+        )
+        hinted_speed = (
+            hint.get("target_speed_mps")
+            if isinstance(hint, Mapping) else None
+        )
         maximum = float(constraints.get("max_target_speed_mps") or 4.0)
         cruise_speed = min(4.17, maximum)
         slow_speed = min(3.0, maximum)
+        if isinstance(hinted_speed, (int, float)) and not isinstance(hinted_speed, bool):
+            requested_speed = min(float(hinted_speed), maximum)
+        else:
+            requested_speed = cruise_speed
         steps: list[dict[str, Any]] = []
         confirmation = False
         reason = "DETERMINISTIC_PLANNER_V2"
@@ -168,6 +185,74 @@ class DeterministicPlannerV2Backend:
                 timeout_s=5.0, failure="SAFE_STOP",
             ))
             reason = "DETERMINISTIC_SAFETY_STOP"
+        elif hinted_intent in {"KEEP_LANE", "SET_SPEED"}:
+            keep_lane = hinted_intent == "KEEP_LANE"
+            steps.append(_planner_step(
+                "s1", hinted_intent, speed=requested_speed,
+                completion="HOLD_FRAMES" if keep_lane else "SPEED_REACHED",
+                completion_value=None if keep_lane else requested_speed,
+                timeout_s=8.0 if keep_lane else 12.0,
+            ))
+            reason = "DETERMINISTIC_STRUCTURED_COMMAND_HINT"
+        elif hinted_intent == "SLOW_DOWN":
+            steps.append(_planner_step(
+                "s1", "SLOW_DOWN", speed=min(requested_speed, slow_speed),
+            ))
+            reason = "DETERMINISTIC_STRUCTURED_COMMAND_HINT"
+        elif hinted_intent in {"STOP", "EMERGENCY_STOP"}:
+            steps.append(_planner_step(
+                "s1", "STOP", speed=0.0,
+                completion="STOPPED", completion_value=None,
+            ))
+            reason = "DETERMINISTIC_STRUCTURED_COMMAND_HINT"
+        elif hinted_intent in {"CHANGE_LANE", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}:
+            direction = (
+                hinted_direction
+                or hinted_intent.removeprefix("CHANGE_LANE_")
+            )
+            lane = f"{direction}_ADJACENT" if direction in {"LEFT", "RIGHT"} else None
+            lane_exists = capabilities.get(f"{direction.lower()}_lane_exists") is True
+            if lane is not None and lane_exists:
+                steps.append(_planner_step(
+                    "s1", f"CHANGE_LANE_{direction}", speed=requested_speed,
+                    lane=lane, completion="LANE_CENTERED", completion_value=None,
+                    timeout_s=12.0,
+                ))
+                reason = "DETERMINISTIC_STRUCTURED_COMMAND_HINT"
+            else:
+                steps.append(_planner_step(
+                    "s1", "HOLD", speed=None, completion="HOLD_FRAMES",
+                    completion_value=None, failure="CONFIRM",
+                ))
+                confirmation = True
+                reason = "ADJACENT_LANE_UNVERIFIED"
+        elif hinted_intent == "AVOID_OBSTACLE":
+            direction = hinted_direction if hinted_direction in {"LEFT", "RIGHT"} else "LEFT"
+            lane = f"{direction}_ADJACENT"
+            lane_exists = capabilities.get(f"{direction.lower()}_lane_exists") is True
+            target_id = str(targets[0]["target_id"]) if targets else None
+            if lane_exists and target_id is not None:
+                steps.extend((
+                    _planner_step(
+                        "s1", "AVOID_OBSTACLE", speed=min(requested_speed, slow_speed),
+                        target_id=target_id, lane=lane,
+                        completion="TARGET_PASSED", completion_value=None,
+                        timeout_s=20.0,
+                    ),
+                    _planner_step(
+                        "s2", "RETURN_TO_LANE", speed=requested_speed,
+                        lane="CURRENT", completion="LANE_CENTERED",
+                        completion_value=None, timeout_s=20.0,
+                    ),
+                ))
+                reason = "DETERMINISTIC_STRUCTURED_COMMAND_HINT"
+            else:
+                steps.append(_planner_step(
+                    "s1", "HOLD", speed=None, completion="HOLD_FRAMES",
+                    completion_value=None, failure="CONFIRM",
+                ))
+                confirmation = True
+                reason = "OBSTACLE_OR_ADJACENT_LANE_UNVERIFIED"
         elif any(token in lower for token in ("右转", "turn right", "next right")):
             steps.extend((
                 _planner_step("s1", "SLOW_DOWN", speed=slow_speed),
