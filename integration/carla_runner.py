@@ -64,8 +64,12 @@ from .route_planner import (
 )
 from .route_geometry import route_pose_at_s
 from .scenario_builder import (
+    ActorPlacementError,
+    actor_resample_offsets,
+    offset_actor_route_position,
     route_relative_carla_transform,
     route_relative_target_location,
+    validate_actor_transform,
 )
 from .planning_stage import prepare_scenario_route
 from .execution_stage import RouteProgressTracker
@@ -1149,6 +1153,27 @@ def _signed_forward_speed_mps(actor: Any) -> float:
     )
 
 
+def _occupied_actor_locations(world: Any) -> tuple[Any, ...]:
+    """Snapshot physical actor locations for deterministic spawn preflight."""
+    get_actors = getattr(world, "get_actors", None)
+    if not callable(get_actors):
+        return ()
+    locations: list[Any] = []
+    for actor in get_actors():
+        get_location = getattr(actor, "get_location", None)
+        if not callable(get_location):
+            continue
+        if not str(getattr(actor, "type_id", "")).startswith(
+            ("vehicle.", "walker.", "static.prop.")
+        ):
+            continue
+        try:
+            locations.append(get_location())
+        except RuntimeError:
+            continue
+    return tuple(locations)
+
+
 def _spawn_scenario_vehicle(
     session: CarlaSession,
     world: Any,
@@ -1158,6 +1183,7 @@ def _spawn_scenario_vehicle(
     actor_spec: Mapping[str, object],
     *,
     route: RouteReference | None = None,
+    seed: int = 0,
 ) -> Any:
     """Spawn a real CARLA lead vehicle from a scenario actor declaration."""
     spawn = actor_spec.get("spawn", {})
@@ -1181,15 +1207,24 @@ def _spawn_scenario_vehicle(
     ego_transform = ego.get_transform()
     world_map = world.get_map()
     lead = None
-    for offset_m in (0.0, 2.0, 4.0, 6.0):
+    placement_failures: list[str] = []
+    for forward_offset_m, lateral_offset_m in actor_resample_offsets(
+        actor_spec, seed=seed,
+    ):
+        candidate_spec = offset_actor_route_position(
+            actor_spec,
+            longitudinal_m=forward_offset_m,
+            lateral_m=lateral_offset_m,
+        )
         transform = (
             route_relative_carla_transform(
-                carla_api, world_map, route.points_xy_m, actor_spec,
-                forward_offset_m=offset_m,
+                carla_api, world_map, route.points_xy_m, candidate_spec,
             )
             if route is not None else
             _scenario_local_transform(
-                carla_api, ego_transform, spawn, forward_offset_m=offset_m,
+                carla_api,
+                ego_transform,
+                candidate_spec.get("spawn", spawn),
             )
         )
         # The ego has already settled onto the road before scenario actors are
@@ -1204,11 +1239,26 @@ def _spawn_scenario_vehicle(
             transform.location.z = max(
                 float(transform.location.z), float(road_location.z) + 0.5,
             )
+        try:
+            validate_actor_transform(
+                world_map,
+                transform,
+                candidate_spec,
+                occupied_locations=_occupied_actor_locations(world),
+            )
+        except ActorPlacementError as error:
+            placement_failures.append(str(error))
+            continue
         lead = world.try_spawn_actor(blueprint, transform)
         if lead is not None:
             break
+        placement_failures.append("CARLA rejected candidate")
     if lead is None:
-        raise RuntimeError("cannot spawn configured scenario lead vehicle")
+        detail = placement_failures[-1] if placement_failures else "no candidate"
+        raise RuntimeError(
+            "cannot spawn configured scenario lead vehicle after deterministic "
+            f"resampling: {detail}"
+        )
 
     lead = session.track_actor(lead)
     set_physics = getattr(lead, "set_simulate_physics", None)
@@ -1444,6 +1494,7 @@ def _spawn_scenario_walker(
     actor_spec: Mapping[str, object],
     *,
     route: RouteReference | None = None,
+    seed: int = 0,
 ) -> tuple[Any, Any]:
     """Spawn a real pedestrian and return it with its world-space target.
 
@@ -1478,20 +1529,23 @@ def _spawn_scenario_walker(
     offsets = (
         (0.0, 0.0),
         (0.0, 0.75 * lateral_sign),
-        (0.0, 1.5 * lateral_sign),
-        (1.5, 1.5 * lateral_sign),
-        (-1.5, 1.5 * lateral_sign),
-        (2.0, 0.0),
-        (-2.0, 0.0),
+        (0.0, -0.75 * lateral_sign),
+        *tuple(
+            item for item in actor_resample_offsets(actor_spec, seed=seed)
+            if item != (0.0, 0.0)
+        ),
     )
     walker = None
     used_offset = (0.0, 0.0)
     world_map = world.get_map()
+    placement_failures: list[str] = []
     for forward_offset_m, lateral_offset_m in offsets:
-        candidate_spawn = dict(spawn)
-        candidate_spawn["x"] = float(spawn.get("x", 0.0)) + forward_offset_m
-        candidate_spawn["y"] = float(spawn.get("y", 0.0)) + lateral_offset_m
-        candidate_spec = {**actor_spec, "spawn": candidate_spawn}
+        candidate_spec = offset_actor_route_position(
+            actor_spec,
+            longitudinal_m=forward_offset_m,
+            lateral_m=lateral_offset_m,
+        )
+        candidate_spawn = candidate_spec.get("spawn", spawn)
         transform = (
             route_relative_carla_transform(
                 carla_api, world_map, route.points_xy_m, candidate_spec,
@@ -1507,22 +1561,40 @@ def _spawn_scenario_walker(
                 float(transform.location.z),
                 float(road_waypoint.transform.location.z) + 0.5,
             )
+        try:
+            validate_actor_transform(
+                world_map,
+                transform,
+                candidate_spec,
+                occupied_locations=_occupied_actor_locations(world),
+            )
+        except ActorPlacementError as error:
+            placement_failures.append(str(error))
+            continue
         walker = world.try_spawn_actor(blueprint, transform)
         if walker is not None:
             used_offset = (forward_offset_m, lateral_offset_m)
             break
+        placement_failures.append("CARLA rejected candidate")
     if walker is None:
-        raise RuntimeError("cannot spawn configured scenario walker")
+        detail = placement_failures[-1] if placement_failures else "no candidate"
+        raise RuntimeError(
+            f"cannot spawn configured scenario walker {actor_spec.get('actor_id', 'walker')!r} "
+            f"after deterministic resampling: {detail}"
+        )
     walker = session.track_actor(walker)
     set_physics = getattr(walker, "set_simulate_physics", None)
     if callable(set_physics):
         set_physics(True)
     if route is not None:
         target = route_relative_target_location(
-            carla_api, world_map, route.points_xy_m, actor_spec,
+            carla_api, world_map, route.points_xy_m, candidate_spec,
         )
     else:
-        target_xy = behavior.get("target_xy_m", [spawn.get("x", 0.0), spawn.get("y", 0.0)])
+        candidate_behavior = candidate_spec.get("behavior", behavior)
+        target_xy = candidate_behavior.get(
+            "target_xy_m", [spawn.get("x", 0.0), spawn.get("y", 0.0)],
+        )
         if not isinstance(target_xy, (list, tuple)) or len(target_xy) != 2:
             raise TypeError("scenario walker target_xy_m must be [x, y]")
         target = _scenario_local_transform(
@@ -1595,6 +1667,7 @@ def _spawn_scenario_static_prop(
     actor_spec: Mapping[str, object],
     *,
     route: RouteReference | None = None,
+    seed: int = 0,
 ) -> Any:
     """Spawn a declared static obstacle for construction/occlusion coverage."""
     spawn = actor_spec.get("spawn", {})
@@ -1609,16 +1682,48 @@ def _spawn_scenario_static_prop(
         raise LookupError(f"scenario static prop blueprint not found: {blueprint_id!r}") from error
     if blueprint is None:
         raise LookupError(f"scenario static prop blueprint not found: {blueprint_id!r}")
-    transform = (
-        route_relative_carla_transform(
-            carla_api, world.get_map(), route.points_xy_m, actor_spec,
+    world_map = world.get_map()
+    prop = None
+    placement_failures: list[str] = []
+    for forward_offset_m, lateral_offset_m in actor_resample_offsets(
+        actor_spec, seed=seed,
+    ):
+        candidate_spec = offset_actor_route_position(
+            actor_spec,
+            longitudinal_m=forward_offset_m,
+            lateral_m=lateral_offset_m,
         )
-        if route is not None else
-        _scenario_local_transform(carla_api, ego.get_transform(), spawn)
-    )
-    prop = world.try_spawn_actor(blueprint, transform)
+        transform = (
+            route_relative_carla_transform(
+                carla_api, world_map, route.points_xy_m, candidate_spec,
+            )
+            if route is not None else
+            _scenario_local_transform(
+                carla_api,
+                ego.get_transform(),
+                candidate_spec.get("spawn", spawn),
+            )
+        )
+        try:
+            validate_actor_transform(
+                world_map,
+                transform,
+                candidate_spec,
+                occupied_locations=_occupied_actor_locations(world),
+            )
+        except ActorPlacementError as error:
+            placement_failures.append(str(error))
+            continue
+        prop = world.try_spawn_actor(blueprint, transform)
+        if prop is not None:
+            break
+        placement_failures.append("CARLA rejected candidate")
     if prop is None:
-        raise RuntimeError("cannot spawn configured scenario static prop")
+        detail = placement_failures[-1] if placement_failures else "no candidate"
+        raise RuntimeError(
+            "cannot spawn configured scenario static prop after deterministic "
+            f"resampling: {detail}"
+        )
     prop = session.track_actor(prop)
     set_physics = getattr(prop, "set_simulate_physics", None)
     if callable(set_physics):
@@ -3257,34 +3362,46 @@ def run(args: argparse.Namespace) -> None:
             pending_walker_specs: list[Mapping[str, object]] = []
             pending_prop_specs: list[Mapping[str, object]] = []
             for vehicle_spec in _scenario_actors(spec, "vehicle"):
-                if vehicle_spec.get("activation_trigger") is not None:
+                if (
+                    vehicle_spec.get("activation_trigger") is not None
+                    and not getattr(args, "spawn_all_scenario_actors", False)
+                ):
                     pending_vehicle_specs.append(vehicle_spec)
                     continue
                 vehicle = _spawn_scenario_vehicle(
                     session, world, carla, ego, bp, vehicle_spec,
                     route=scenario_spawn_route,
+                    seed=spec.seed if spec is not None else 0,
                 )
                 scenario_vehicles.append((vehicle, vehicle_spec))
                 spawned_scenario_actor_types.append("vehicle")
             for walker_spec in _scenario_walkers(spec):
-                if walker_spec.get("activation_trigger") is not None:
+                if (
+                    walker_spec.get("activation_trigger") is not None
+                    and not getattr(args, "spawn_all_scenario_actors", False)
+                ):
                     pending_walker_specs.append(walker_spec)
                     continue
                 walker, target = _spawn_scenario_walker(
                     session, world, carla, ego, walker_spec,
                     route=scenario_spawn_route,
+                    seed=spec.seed if spec is not None else 0,
                 )
                 scenario_walkers.append((walker, walker_spec, target))
                 spawned_scenario_actor_types.append(
                     str(walker_spec.get("type", "walker.pedestrian")).lower()
                 )
             for prop_spec in _scenario_static_props(spec):
-                if prop_spec.get("activation_trigger") is not None:
+                if (
+                    prop_spec.get("activation_trigger") is not None
+                    and not getattr(args, "spawn_all_scenario_actors", False)
+                ):
                     pending_prop_specs.append(prop_spec)
                     continue
                 prop = _spawn_scenario_static_prop(
                     session, world, carla, ego, prop_spec,
                     route=scenario_spawn_route,
+                    seed=spec.seed if spec is not None else 0,
                 )
                 scenario_props.append((prop, prop_spec))
                 spawned_scenario_actor_types.append(
@@ -3519,6 +3636,7 @@ def run(args: argparse.Namespace) -> None:
                     vehicle = _spawn_scenario_vehicle(
                         session, world, carla, ego, bp, vehicle_spec,
                         route=scenario_spawn_route,
+                        seed=spec.seed if spec is not None else 0,
                     )
                     scenario_vehicles.append((vehicle, vehicle_spec))
                     spawned_scenario_actor_types.append("vehicle")
@@ -3538,6 +3656,7 @@ def run(args: argparse.Namespace) -> None:
                     walker, target = _spawn_scenario_walker(
                         session, world, carla, ego, walker_spec,
                         route=scenario_spawn_route,
+                        seed=spec.seed if spec is not None else 0,
                     )
                     scenario_walkers.append((walker, walker_spec, target))
                     spawned_scenario_actor_types.append(
@@ -3559,6 +3678,7 @@ def run(args: argparse.Namespace) -> None:
                     prop = _spawn_scenario_static_prop(
                         session, world, carla, ego, prop_spec,
                         route=scenario_spawn_route,
+                        seed=spec.seed if spec is not None else 0,
                     )
                     scenario_props.append((prop, prop_spec))
                     spawned_scenario_actor_types.append(
@@ -5477,6 +5597,11 @@ def main() -> None:
                         help="move the graphical spectator camera behind the ego each frame")
     parser.add_argument("--scenario-file",
                         help="run a scenarios/*.json contract; overrides map, fixed delta, frames and scenario id")
+    parser.add_argument(
+        "--spawn-all-scenario-actors",
+        action="store_true",
+        help="placement-only debug: ignore activation triggers and validate all actors at startup",
+    )
     parser.add_argument("--validate-scenario-only", action="store_true",
                         help="load and validate --scenario-file without connecting to CARLA")
     parser.add_argument("--use-current-map", action="store_true",
