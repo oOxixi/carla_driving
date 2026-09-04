@@ -226,6 +226,26 @@ class DeterministicPlannerV2Backend:
                 ))
                 confirmation = True
                 reason = "ADJACENT_LANE_UNVERIFIED"
+        elif hinted_intent in {"TURN", "TURN_LEFT", "TURN_RIGHT"}:
+            direction = hinted_direction or hinted_intent.removeprefix("TURN_")
+            if direction in {"LEFT", "RIGHT"}:
+                steps.append(_planner_step(
+                    "s1", f"TURN_{direction}", speed=requested_speed,
+                    lane="ROUTE_BRANCH", route_direction=direction,
+                    preconditions=(
+                        "PERCEPTION_FRESH", "ROUTE_AVAILABLE",
+                        "NO_EMERGENCY_RISK",
+                    ), completion="JUNCTION_EXITED", completion_value=None,
+                    timeout_s=60.0,
+                ))
+                reason = "DETERMINISTIC_STRUCTURED_COMMAND_HINT"
+            else:
+                steps.append(_planner_step(
+                    "s1", "HOLD", speed=None, completion="HOLD_FRAMES",
+                    completion_value=None, failure="CONFIRM",
+                ))
+                confirmation = True
+                reason = "TURN_DIRECTION_UNVERIFIED"
         elif hinted_intent == "AVOID_OBSTACLE":
             direction = hinted_direction if hinted_direction in {"LEFT", "RIGHT"} else "LEFT"
             lane = f"{direction}_ADJACENT"
@@ -262,7 +282,7 @@ class DeterministicPlannerV2Backend:
                         "PERCEPTION_FRESH", "ROUTE_AVAILABLE",
                         "INTERSECTION_AHEAD", "NO_EMERGENCY_RISK",
                     ), completion="JUNCTION_EXITED", completion_value=None,
-                    timeout_s=30.0,
+                    timeout_s=60.0,
                 ),
             ))
             if any(token in lower for token in ("公里", "km", "速度", "speed")):
@@ -278,7 +298,7 @@ class DeterministicPlannerV2Backend:
                     "PERCEPTION_FRESH", "ROUTE_AVAILABLE",
                     "INTERSECTION_AHEAD", "NO_EMERGENCY_RISK",
                 ), completion="JUNCTION_EXITED", completion_value=None,
-                timeout_s=30.0,
+                timeout_s=60.0,
             ))
             reason = "DETERMINISTIC_TURN_LEFT"
         elif any(token in lower for token in ("左变道", "向左变道", "left lane")):

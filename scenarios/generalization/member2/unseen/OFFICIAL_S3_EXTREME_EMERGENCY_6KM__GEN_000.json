@@ -1,0 +1,561 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "OFFICIAL_S3_EXTREME_EMERGENCY_6KM__GEN_000",
+  "category": "regression",
+  "official_level": "challenge",
+  "description": "官方场景3：雨夜低光快速路与施工路段，包含锥桶收窄、突发加塞和临时横穿行人。",
+  "tags": [
+    "official_competition",
+    "scene_3",
+    "extreme_emergency",
+    "6km",
+    "rain_night",
+    "construction",
+    "cut_in",
+    "pedestrian"
+  ],
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 20260301,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 900.0,
+    "max_startup_wait_s": 20.0
+  },
+  "ego_spawn": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5,
+    "yaw_deg": 0.0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        6000.0,
+        0.0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 4.0,
+    "distance_contract_m": 6000.0,
+    "route_generation": "CARLA waypoint topology on Town04 expressway; construction detour uses a legal left adjacent lane"
+  },
+  "commands": [
+    {
+      "time_s": 0.0,
+      "source_text": "前方路况危险，保持安全车速",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 45.0
+      },
+      "intent_confidence": 0.92,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S3_P1_RAIN_NIGHT_SAFE_SPEED",
+      "trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 10.0
+      }
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "施工路段，减速并道至左侧车道，驶过锥桶后回归路线",
+      "intent": "AVOID_OBSTACLE",
+      "parameters": {
+        "direction": "LEFT",
+        "target_actor_id": "construction_warning",
+        "target_speed_kph": 22.0
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S3_P2_CONSTRUCTION_MERGE",
+      "trigger": {
+        "all": [
+          {
+            "type": "route_progress_greater_than_m",
+            "value": 160.0
+          },
+          {
+            "type": "ego_distance_to_actor_less_than_m",
+            "actor_id": "construction_warning",
+            "value": 80.0
+          }
+        ]
+      }
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "突发车辆加塞，紧急避让",
+      "intent": "EMERGENCY_STOP",
+      "parameters": {
+        "target_actor_id": "cut_in_vehicle"
+      },
+      "intent_confidence": 0.9,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S3_P3_CUT_IN_EMERGENCY",
+      "trigger": {
+        "all": [
+          {
+            "type": "route_progress_greater_than_m",
+            "value": 590.0
+          },
+          {
+            "type": "ego_distance_to_actor_less_than_m",
+            "actor_id": "cut_in_vehicle",
+            "value": 60.0
+          }
+        ]
+      }
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "前方有人横穿，立即停车并保持制动",
+      "intent": "EMERGENCY_STOP",
+      "parameters": {
+        "target_actor_id": "emergency_pedestrian"
+      },
+      "intent_confidence": 0.94,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S3_P4_PEDESTRIAN_STOP_HOLD",
+      "trigger": {
+        "all": [
+          {
+            "type": "route_progress_greater_than_m",
+            "value": 990.0
+          },
+          {
+            "type": "ego_distance_to_actor_less_than_m",
+            "actor_id": "emergency_pedestrian",
+            "value": 60.0
+          }
+        ]
+      }
+    }
+  ],
+  "qwen_expected": {
+    "route": "MIXED",
+    "route_counts": {
+      "QWEN_PLAN": 2,
+      "FAST_LOCAL": 2,
+      "CONFIRM_SAFE": 0
+    },
+    "min_calls": 2,
+    "max_calls": 2,
+    "expected_behaviors": [
+      "KEEP_LANE",
+      "AVOID_OBSTACLE",
+      "RETURN_TO_LANE",
+      "EMERGENCY_STOP"
+    ],
+    "expected_terminal": "SUCCEEDED",
+    "allowed_replans": 0,
+    "forbidden_low_level_fields": true
+  },
+  "actors": [
+    {
+      "actor_id": "construction_warning",
+      "type": "static.prop",
+      "blueprint_id": "static.prop.warningconstruction",
+      "spawn": {
+        "x": 247.0,
+        "y": -1.7,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      }
+    },
+    {
+      "actor_id": "cone_01",
+      "type": "static.prop",
+      "blueprint_id": "static.prop.trafficcone01",
+      "spawn": {
+        "x": 252.0,
+        "y": -1.7,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      }
+    },
+    {
+      "actor_id": "cone_02",
+      "type": "static.prop",
+      "blueprint_id": "static.prop.trafficcone01",
+      "spawn": {
+        "x": 256.0,
+        "y": -1.3,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      }
+    },
+    {
+      "actor_id": "cone_03",
+      "type": "static.prop",
+      "blueprint_id": "static.prop.trafficcone01",
+      "spawn": {
+        "x": 260.0,
+        "y": -0.8,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      }
+    },
+    {
+      "actor_id": "cone_04",
+      "type": "static.prop",
+      "blueprint_id": "static.prop.trafficcone01",
+      "spawn": {
+        "x": 264.0,
+        "y": -0.3,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      }
+    },
+    {
+      "actor_id": "cone_05",
+      "type": "static.prop",
+      "blueprint_id": "static.prop.trafficcone01",
+      "spawn": {
+        "x": 268.0,
+        "y": 0.2,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      }
+    },
+    {
+      "actor_id": "cut_in_vehicle",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.audi.tt",
+      "spawn": {
+        "x": 647.0,
+        "y": -3.8,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      },
+      "behavior": {
+        "mode": "cut_in",
+        "initial_speed_mps": 0.0,
+        "target_speed_mps": 0.0,
+        "cut_in_on_first_event": true,
+        "cut_in_duration_s": 3.0,
+        "cut_in_steer": 0.18,
+        "direction": "RIGHT",
+        "events": [
+          {
+            "trigger": {
+              "type": "ego_distance_to_actor_less_than_m",
+              "actor_id": "cut_in_vehicle",
+              "value": 32.0
+            },
+            "action": {
+              "type": "set_speed",
+              "target_speed_mps": 4.0
+            },
+            "phase_id": "S3_EVT_CUT_IN_START"
+          }
+        ]
+      }
+    },
+    {
+      "actor_id": "emergency_pedestrian",
+      "type": "walker.pedestrian",
+      "spawn": {
+        "x": 1047.0,
+        "y": 5.7,
+        "z": 0.5,
+        "yaw_deg": -90.0
+      },
+      "behavior": {
+        "mode": "crossing",
+        "target_xy_m": [
+          1047.0,
+          -6.3
+        ],
+        "start_time_s": 0.0,
+        "speed_mps": 1.92,
+        "trigger": {
+          "type": "route_progress_greater_than_m",
+          "value": 987.0
+        },
+        "phase_id": "S3_EVT_PEDESTRIAN_CROSSING"
+      }
+    }
+  ],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 450,
+      "fov": 100,
+      "exact_frame": true,
+      "low_snr_expected": true
+    },
+    "left_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 450,
+      "yaw_deg": -55.0,
+      "exact_frame": true
+    },
+    "right_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 450,
+      "yaw_deg": 55.0,
+      "exact_frame": true
+    },
+    "rear_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 450,
+      "yaw_deg": 180.0,
+      "exact_frame": true
+    },
+    "lidar": {
+      "enabled": true,
+      "channels": 32,
+      "range_m": 80,
+      "exact_frame": true,
+      "hard_safety_constraint": true
+    },
+    "radar": {
+      "enabled": true,
+      "range_m": 80
+    },
+    "collision": {
+      "enabled": true
+    },
+    "lane_invasion": {
+      "enabled": true
+    },
+    "vehicle_state": {
+      "speed": true,
+      "steering": true,
+      "position": true,
+      "lane_offset": true,
+      "route_deviation": true
+    }
+  },
+  "controllers": {
+    "A_runtime": {
+      "only_apply_control_owner": true
+    },
+    "B_lateral": {
+      "enabled": true,
+      "return_to_route_phase": true
+    },
+    "C_longitudinal": {
+      "enabled": true
+    },
+    "D_safety": {
+      "enabled": true,
+      "must_run_before_apply_control": true,
+      "local_preemption": true,
+      "stop_hold_required": true
+    }
+  },
+  "logging": {
+    "required_files": [
+      "*.jsonl",
+      "*.summary.json"
+    ],
+    "required_summary_sections": [
+      "acceptance",
+      "latency",
+      "score",
+      "score_report",
+      "command_terminal_statuses"
+    ],
+    "required_identifiers": [
+      "scenario_id",
+      "seed",
+      "code_version",
+      "config_path"
+    ],
+    "required_metrics": [
+      "danger_timestamp",
+      "perception_timestamp",
+      "decision_timestamp",
+      "safety_override_timestamp",
+      "control_effect_timestamp",
+      "ttc_s",
+      "minimum_distance_m",
+      "collision",
+      "traffic_violation",
+      "qwen_route",
+      "qwen_request_id",
+      "qwen_plan",
+      "qwen_latency_ms",
+      "command_step_status",
+      "command_terminal",
+      "sensor_to_control_ms"
+    ]
+  },
+  "expected": {
+    "must_start_carla": true,
+    "must_spawn_ego": true,
+    "must_finish_route": true,
+    "must_no_collision": true,
+    "must_no_pedestrian_collision": true,
+    "must_execute_commands_in_order": true,
+    "must_generate_logs": true,
+    "required_real_actor_types": [
+      "vehicle",
+      "walker.pedestrian",
+      "static.prop"
+    ],
+    "expected_safety_override": true,
+    "must_emergency_brake": true,
+    "final_control_no_throttle_brake_overlap": true,
+    "max_cross_track_error_m": 1.0,
+    "min_run_time_s": 700.0
+  },
+  "competition_requirements": {
+    "environment": "雨天夜间、低光、路面反光、雨雾遮挡、城市快速路与施工路段、车道收窄",
+    "distance_km": 6.0,
+    "collision_max": 0,
+    "traffic_violation_max": 0,
+    "decision_failure_max": 0,
+    "emergency_response_p95_max_ms": 100,
+    "emergency_response_absolute_max_ms": 120,
+    "semantic_alignment_min": 0.97,
+    "normal_voice_qwen_calls": 2,
+    "emergency_fast_local_calls": 2,
+    "required_events": [
+      "construction_cones",
+      "lane_narrowing",
+      "vehicle_cut_in",
+      "pedestrian_crossing"
+    ],
+    "perception_failure_policy": "degraded_or_fail_safe_without_acceleration",
+    "stop_hold_required": true
+  },
+  "extensions": {
+    "sensor_profile": "competition_multiview",
+    "competition_scene": "S3",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true,
+      "emergency_fast_local": true
+    },
+    "oracle": {
+      "expected_behaviors": [
+        "KEEP_LANE",
+        "SLOW_DOWN",
+        "AVOID_OBSTACLE",
+        "RETURN_TO_LANE",
+        "EMERGENCY_STOP"
+      ]
+    },
+    "maneuver_route_mode": "dynamic_out_and_back",
+    "lane_change_profile": {
+      "route_distance_m": 100.0,
+      "step_m": 1.0,
+      "transition_start_m": 5.0,
+      "transition_length_m": 20.0
+    },
+    "proposed_acceptance": {
+      "qwen_request_count": 2,
+      "all_commands_must_have_terminal_status": true,
+      "expected_phase_count": 4,
+      "all_phases_must_complete": true,
+      "qwen_calls_per_frame": 0,
+      "allowed_qwen_actions": [
+        "KEEP_LANE",
+        "SET_SPEED",
+        "SLOW_DOWN",
+        "AVOID_OBSTACLE",
+        "CHANGE_LANE_LEFT",
+        "RETURN_TO_LANE",
+        "STOP"
+      ],
+      "required_emergency_event_ids": [
+        "cut_in_vehicle",
+        "emergency_pedestrian"
+      ],
+      "required_emergency_recovery_ids": [
+        "cut_in_vehicle",
+        "emergency_pedestrian"
+      ],
+      "emergency_response_p95_max_ms": 100,
+      "emergency_response_absolute_max_ms": 120
+    },
+    "emergency_recovery": {
+      "cut_in_vehicle": {
+        "minimum_hold_s": 2.0,
+        "minimum_clearance_m": 12.0,
+        "resume_speed_kph": 45.0
+      },
+      "emergency_pedestrian": {
+        "minimum_hold_s": 6.0,
+        "minimum_clearance_m": 8.0,
+        "resume_speed_kph": 45.0
+      }
+    },
+    "fixed_random_seed": true,
+    "speed_policy": {
+      "scenario_limit_kph": 50.0,
+      "override_map_limit": true
+    },
+    "weather_parameters": {
+      "cloudiness": 100.0,
+      "precipitation": 85.0,
+      "precipitation_deposits": 100.0,
+      "wetness": 100.0,
+      "fog_density": 35.0,
+      "fog_distance": 35.0,
+      "wind_intensity": 65.0,
+      "sun_altitude_angle": -25.0
+    },
+    "route_policy": {
+      "loop": false
+    },
+    "runtime_support": {
+      "status": "current",
+      "requirements": [
+        "custom_weather_parameters",
+        "event_triggers",
+        "actor_distance_trigger"
+      ],
+      "declared_requirements": [
+        "custom_weather_parameters",
+        "event_triggers",
+        "actor_distance_trigger",
+        "event_driven_cut_in_vehicle_behavior"
+      ]
+    },
+    "phase_plan": [
+      "S3_P1_RAIN_NIGHT_SAFE_SPEED",
+      "S3_P2_CONSTRUCTION_MERGE",
+      "S3_P3_CUT_IN_EMERGENCY",
+      "S3_P4_PEDESTRIAN_STOP_HOLD"
+    ],
+    "generalization_case": {
+      "base_scenario_id": "OFFICIAL_S3_EXTREME_EMERGENCY_6KM",
+      "kind": "unseen",
+      "actor_longitudinal_offset_m": -3.0,
+      "actor_lateral_offset_m": -0.3,
+      "actor_speed_scale": 0.8,
+      "brake_time_offset_s": -1.0,
+      "pedestrian_start_offset_s": -0.5,
+      "actor_count_scale": 0.8,
+      "target_lane_relation": "CURRENT",
+      "sensor_condition": "nominal"
+    }
+  },
+  "notes": [
+    "锥桶沿当前车道右侧逐步收窄，左侧相邻车道作为唯一正常并道路线上下文。",
+    "加塞车停在左侧相邻车道，自车接近至32m后才启动确定性S形切入；正steer在CARLA中表示向右。",
+    "正式成绩使用 --perception-mode sensors --scenario-facts-mode perception，并检查五个应急时间戳。",
+    "普通雨夜与施工语义指令进入Qwen Planner V2；加塞和行人EMERGENCY_STOP不等待模型，由本地安全链立即抢占并同时保留审计证据。",
+    "四路严格同帧RGB按前/左、右/后布局拼接为Qwen视觉输入；低光时LiDAR/Radar距离、TTC与车辆状态继续作为硬安全约束。",
+    "900秒运行预算按45km/h正常巡航覆盖6km，并为施工、加塞和停车保持预留时间。"
+  ]
+}

@@ -39,7 +39,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S2_P2_BUS_STOP",
-      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 240.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 60.0}]}
+      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 440.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 60.0}]}
     },
     {
       "time_s": 0.0,
@@ -50,7 +50,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S2_P3_PEDESTRIAN_YIELD",
-      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 490.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 60.0}]}
+      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 2240.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 60.0}]}
     },
     {
       "time_s": 0.0,
@@ -61,7 +61,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S2_P4_OVERTAKE_AND_RETURN",
-      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 740.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "slow_vehicle", "value": 60.0}]}
+      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 4740.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "slow_vehicle", "value": 60.0}]}
     },
     {
       "time_s": 0.0,
@@ -72,7 +72,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S2_P5_BICYCLE_AVOID",
-      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 1040.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bicycle_right", "value": 60.0}]}
+      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 6940.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bicycle_right", "value": 60.0}]}
     }
   ],
   "actors": [
@@ -80,16 +80,20 @@
       "actor_id": "bus_at_stop",
       "type": "vehicle",
       "blueprint_id": "vehicle.mitsubishi.fusorosa",
-      "spawn": {"x": 300.0, "y": 3.5, "z": 0.5, "yaw_deg": 0.0},
+      "spawn": {"z": 0.5},
+      "route_position": {"s_m": 500.0, "lane_relation": "LEFT_ADJACENT", "lateral_offset_m": 0.0},
+      "spawn_trigger": {"type": "route_progress_greater_than_m", "value": 350.0},
       "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 0.0, "target_speed_mps": 0.0}
     },
     {
       "actor_id": "bus_passenger_01",
       "type": "walker.pedestrian",
-      "spawn": {"x": 298.0, "y": 5.5, "z": 0.5, "yaw_deg": -90.0},
+      "spawn": {"z": 0.5},
+      "route_position": {"s_m": 506.0, "lane_relation": "CURRENT", "lateral_offset_m": 6.5, "yaw_offset_deg": -90.0},
+      "spawn_trigger": {"type": "route_progress_greater_than_m", "value": 350.0},
       "behavior": {
         "mode": "crossing",
-        "target_xy_m": [298.0, 3.8],
+        "target_route_position": {"s_m": 506.0, "lane_relation": "CURRENT", "lateral_offset_m": 4.0},
         "start_time_s": 0.0,
         "speed_mps": 1.0,
         "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 50.0},
@@ -99,10 +103,12 @@
     {
       "actor_id": "bus_passenger_02",
       "type": "walker.pedestrian",
-      "spawn": {"x": 302.0, "y": 5.8, "z": 0.5, "yaw_deg": -90.0},
+      "spawn": {"z": 0.5},
+      "route_position": {"s_m": 502.0, "lane_relation": "CURRENT", "lateral_offset_m": 5.8, "yaw_offset_deg": -90.0},
+      "spawn_trigger": {"type": "route_progress_greater_than_m", "value": 350.0},
       "behavior": {
         "mode": "crossing",
-        "target_xy_m": [302.0, 4.0],
+        "target_route_position": {"s_m": 502.0, "lane_relation": "CURRENT", "lateral_offset_m": 4.0},
         "start_time_s": 0.0,
         "speed_mps": 1.0,
         "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 45.0},
@@ -112,13 +118,15 @@
     {
       "actor_id": "crossing_pedestrian",
       "type": "walker.pedestrian",
-      "spawn": {"x": 550.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
+      "spawn": {"z": 0.5},
+      "route_position": {"s_m": 2300.0, "lane_relation": "CURRENT", "lateral_offset_m": 6.0, "yaw_offset_deg": -90.0},
+      "spawn_trigger": {"type": "route_progress_greater_than_m", "value": 2150.0},
       "behavior": {
         "mode": "crossing",
-        "target_xy_m": [550.0, -6.0],
+        "target_route_position": {"s_m": 2300.0, "lane_relation": "CURRENT", "lateral_offset_m": -6.0},
         "start_time_s": 0.0,
         "speed_mps": 1.5,
-        "trigger": {"type": "route_progress_greater_than_m", "value": 490.0},
+        "trigger": {"type": "route_progress_greater_than_m", "value": 2240.0},
         "phase_id": "S2_EVT_PEDESTRIAN_CROSSING"
       }
     },
@@ -126,22 +134,38 @@
       "actor_id": "slow_vehicle",
       "type": "vehicle",
       "blueprint_id": "vehicle.audi.tt",
-      "spawn": {"x": 800.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
-      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.5, "target_speed_mps": 1.0, "brake_at_s": 8.0}
+      "spawn": {"z": 0.5},
+      "route_position": {"s_m": 4800.0, "lane_relation": "CURRENT", "lateral_offset_m": 0.0},
+      "spawn_trigger": {"type": "route_progress_greater_than_m", "value": 4650.0},
+      "behavior": {
+        "mode": "lead_vehicle",
+        "initial_speed_mps": 2.5,
+        "target_speed_mps": 2.5,
+        "events": [{
+          "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 4720.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "slow_vehicle", "value": 45.0}]},
+          "action": {"type": "set_speed", "target_speed_mps": 1.0},
+          "phase_id": "S2_EVT_SLOW_VEHICLE_BRAKE"
+        }]
+      }
     },
     {
       "actor_id": "private_car_left",
       "type": "vehicle",
       "blueprint_id": "vehicle.tesla.model3",
-      "spawn": {"x": 810.0, "y": -3.5, "z": 0.5, "yaw_deg": 0.0},
+      "spawn": {"z": 0.5},
+      "route_position": {"s_m": 4810.0, "lane_relation": "LEFT_ADJACENT", "lateral_offset_m": 0.0},
+      "parameterization": {"vary_lane_relation": true, "lane_relations": ["CURRENT", "LEFT_ADJACENT"]},
+      "spawn_trigger": {"type": "route_progress_greater_than_m", "value": 4650.0},
       "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 6.0, "target_speed_mps": 6.0}
     },
     {
       "actor_id": "bicycle_right",
       "type": "vehicle",
       "blueprint_id": "vehicle.bh.crossbike",
-      "spawn": {"x": 1100.0, "y": 1.1, "z": 0.5, "yaw_deg": 0.0},
-      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.0, "target_speed_mps": 0.8, "brake_at_s": 12.0}
+      "spawn": {"z": 0.5},
+      "route_position": {"s_m": 7000.0, "lane_relation": "CURRENT", "lateral_offset_m": 1.1},
+      "spawn_trigger": {"type": "route_progress_greater_than_m", "value": 6850.0},
+      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.0, "target_speed_mps": 0.8}
     }
   ],
   "qwen_expected": {
@@ -246,7 +270,7 @@
   },
   "notes": [
     "公交、乘客、横穿行人、慢车、相邻车与自行车均为真实CARLA Actor，不使用只写在日志里的虚拟对象。",
-    "公交站、横穿行人、慢车和自行车沿前1.1km分段布置，避免事件在起步阶段集中触发。",
+    "公交站、横穿行人、慢车和自行车分别位于0.5km、2.3km、4.8km和7.0km，覆盖完整8km路线而非集中在起步阶段。",
     "正式成绩使用 --perception-mode sensors --scenario-facts-mode perception。",
     "正常巡航速度为45km/h，公交站目标速度为30km/h，确保该阶段产生可量化的真实减速。",
     "四路严格同帧RGB按前/左、右/后布局拼接为Qwen视觉输入；LiDAR/Radar距离与车辆状态作为结构化感知同时进入计划请求。",

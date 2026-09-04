@@ -19,6 +19,15 @@ def test_matrix_covers_all_competition_maps_weather_and_timing() -> None:
     assert {case.weather for case in cases} == {"ClearNoon", "CloudySunset", "HardRainNight"}
     assert {case.fixed_delta_s for case in cases} == {0.05, 0.10}
     assert {case.actor_speed_scale for case in cases} == {0.8, 1.0, 1.2}
+    assert {case.brake_time_offset_s for case in cases} == {-1.0, 0.0, 1.0}
+    assert {case.pedestrian_start_offset_s for case in cases} == {-0.5, 0.0, 0.5}
+    assert {case.actor_count_scale for case in cases} == {0.8, 1.0, 1.2}
+    assert {case.target_lane_relation for case in cases} == {
+        "CURRENT", "LEFT_ADJACENT", "RIGHT_ADJACENT",
+    }
+    assert {case.sensor_condition for case in cases} == {
+        "nominal", "reduced_rgb", "sparse_lidar",
+    }
 
 
 @pytest.mark.parametrize(
@@ -49,6 +58,47 @@ def test_holdout_set_is_frozen_and_loadable() -> None:
         path = ROOT / relative_path
         assert path.is_file()
         ScenarioSpec.load(path)
+
+
+def test_cross_map_case_drops_town_specific_anchor_and_labels_unseen() -> None:
+    raw = json.loads((
+        ROOT / "scenarios" / "official_competition" / "S2_complex_avoidance_8km.json"
+    ).read_text(encoding="utf-8"))
+    case = next(
+        item for item in load_generalization_matrix().cases(raw["scenario_id"])
+        if item.map_name != raw["map"]
+    )
+    variant = perturb_scenario(raw, case)
+    assert "route_anchor_spawn_index" not in variant["extensions"]
+    assert variant["extensions"]["generalization_case"]["kind"] == "unseen"
+
+
+def test_walker_perturbation_preserves_crossing_vector() -> None:
+    raw = json.loads((
+        ROOT / "scenarios" / "official_competition" / "S2_complex_avoidance_8km.json"
+    ).read_text(encoding="utf-8"))
+    case = next(iter(load_generalization_matrix().cases(raw["scenario_id"])))
+    variant = perturb_scenario(raw, case)
+    actor = next(item for item in variant["actors"] if item["actor_id"] == "crossing_pedestrian")
+    start = actor["route_position"]
+    target = actor["behavior"]["target_route_position"]
+    assert start["s_m"] == pytest.approx(target["s_m"])
+    assert start["lateral_offset_m"] - target["lateral_offset_m"] == pytest.approx(12.0)
+
+
+def test_s2_actor_events_cover_the_full_route_and_use_explicit_route_positions() -> None:
+    raw = json.loads((
+        ROOT / "scenarios" / "official_competition" / "S2_complex_avoidance_8km.json"
+    ).read_text(encoding="utf-8"))
+    positions = {
+        actor["actor_id"]: float(actor["route_position"]["s_m"])
+        for actor in raw["actors"]
+    }
+    assert min(positions.values()) <= 500.0
+    assert max(positions.values()) >= 7000.0
+    assert all("route_position" in actor for actor in raw["actors"])
+    slow = next(item for item in raw["actors"] if item["actor_id"] == "slow_vehicle")
+    assert slow["behavior"]["events"][0]["trigger"]["all"][1]["actor_id"] == "slow_vehicle"
 
 
 def test_generalized_core_modules_contain_no_official_scene_or_town_special_cases() -> None:

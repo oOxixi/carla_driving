@@ -552,10 +552,12 @@ def _upcoming_traffic_light(
             continue
         state = _normalise_light_state(get_state())
         for waypoint in get_waypoints() or ():
-            ego_road_id = getattr(ego_waypoint, "road_id", None)
-            stop_road_id = getattr(waypoint, "road_id", None)
-            if ego_road_id is not None and stop_road_id is not None and ego_road_id != stop_road_id:
-                continue
+            # CARLA commonly assigns the short approach segment immediately
+            # before a junction a different road_id from the signal's stop
+            # waypoint.  Requiring exact road_id equality hides a real red
+            # light until the ego is only a few metres from the line.  Lane,
+            # heading, longitudinal and lateral gates below are the relevant
+            # geometric contract and safely span that topology boundary.
             ego_lane_id = getattr(ego_waypoint, "lane_id", None)
             stop_lane_id = getattr(waypoint, "lane_id", None)
             if ego_lane_id is not None and stop_lane_id is not None and ego_lane_id != stop_lane_id:

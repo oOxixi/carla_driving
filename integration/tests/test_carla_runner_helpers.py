@@ -26,6 +26,7 @@ from integration.carla_runner import (
     _maneuver_target_passed,
     _maneuver_target_visible,
     _maneuver_target_gap_s,
+    _maneuver_requires_terminal_safety_preemption,
     _minimum_gap_contract_completed,
     _intentional_qwen_failure_completed,
     _note_safety_feedback,
@@ -71,6 +72,13 @@ from integration.carla_runner import (
     _warm_up_sensor_bridge,
     _warm_up_loaded_map,
 )
+
+
+def test_red_light_guard_holds_but_does_not_cancel_active_maneuver() -> None:
+    assert not _maneuver_requires_terminal_safety_preemption(
+        "RED_LIGHT_STOP_LINE_GUARD",
+    )
+    assert _maneuver_requires_terminal_safety_preemption("LOW_TTC")
 
 
 def test_scenario_commands_are_latched_and_serialized_behind_active_plan() -> None:

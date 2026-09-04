@@ -238,6 +238,27 @@ def test_planner_v2_stub_uses_structured_keep_lane_speed_hint():
         service.close()
 
 
+def test_planner_v2_stub_uses_structured_turn_hint_without_text_matching():
+    request = _request()
+    request["source_text"] = "opaque transcript"
+    request["command_hint"] = {
+        "intent": "TURN", "direction": "RIGHT",
+        "target_speed_mps": 25.0 / 3.6, "target": None,
+    }
+    request["scene_capabilities"] = {"route_available": True}
+    service = QwenDecisionService(
+        DeterministicPlannerV2Backend(), qwen_mode="planner_v2",
+    )
+    try:
+        plan = service.infer(request)
+        step = plan["steps"][0]
+        assert step["behavior"] == "TURN_RIGHT"
+        assert step["completion"]["type"] == "JUNCTION_EXITED"
+        assert step["timeout_s"] == 60.0
+    finally:
+        service.close()
+
+
 def test_planner_v2_stub_grounds_avoid_and_return_in_sensor_target():
     request = _request()
     request["source_text"] = "绕过前方障碍物后回到当前车道"

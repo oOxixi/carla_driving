@@ -63,8 +63,12 @@ from .route_planner import (
     warm_heading_waypoint_cache,
 )
 from .scenario_builder import (
+    ActorPlacementError,
+    actor_resample_offsets,
+    offset_actor_route_position,
     route_relative_carla_transform,
     route_relative_target_location,
+    validate_actor_transform,
 )
 from .planning_stage import prepare_scenario_route
 from .execution_stage import RouteProgressTracker
@@ -234,6 +238,22 @@ def _maneuver_target_passed(
     if pass_after_m is not None:
         return distance_from_plan_start_m >= pass_after_m
     return not target_visible and distance_from_plan_start_m >= 20.0
+
+
+def _maneuver_requires_terminal_safety_preemption(reason: str) -> bool:
+    """Return true only when an active maneuver must be cancelled.
+
+    A red-light stop-line guard is a temporary regulatory hold.  D must still
+    stop the car, but the high-level turn/route plan remains valid and resumes
+    after the signal permits movement.
+    """
+    normalized = str(reason).strip().upper()
+    return normalized.startswith("C_FRONT_") or normalized in {
+        "COLLISION_DETECTED",
+        "RISK_EMERGENCY_BRAKE_REQUESTED",
+        "LOW_TTC",
+        "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE",
+    }
 
 
 def _record_maneuver_update(
@@ -1038,6 +1058,27 @@ def _signed_forward_speed_mps(actor: Any) -> float:
     )
 
 
+def _occupied_actor_locations(world: Any) -> tuple[Any, ...]:
+    """Snapshot physical actor locations for deterministic spawn preflight."""
+    get_actors = getattr(world, "get_actors", None)
+    if not callable(get_actors):
+        return ()
+    locations: list[Any] = []
+    for actor in get_actors():
+        get_location = getattr(actor, "get_location", None)
+        if not callable(get_location):
+            continue
+        if not str(getattr(actor, "type_id", "")).startswith(
+            ("vehicle.", "walker.", "static.prop.")
+        ):
+            continue
+        try:
+            locations.append(get_location())
+        except RuntimeError:
+            continue
+    return tuple(locations)
+
+
 def _spawn_scenario_vehicle(
     session: CarlaSession,
     world: Any,
@@ -1047,6 +1088,7 @@ def _spawn_scenario_vehicle(
     actor_spec: Mapping[str, object],
     *,
     route: RouteReference | None = None,
+    seed: int = 0,
 ) -> Any:
     """Spawn a real CARLA lead vehicle from a scenario actor declaration."""
     spawn = actor_spec.get("spawn", {})
@@ -1070,15 +1112,24 @@ def _spawn_scenario_vehicle(
     ego_transform = ego.get_transform()
     world_map = world.get_map()
     lead = None
-    for offset_m in (0.0, 2.0, 4.0, 6.0):
+    placement_failures: list[str] = []
+    for forward_offset_m, lateral_offset_m in actor_resample_offsets(
+        actor_spec, seed=seed,
+    ):
+        candidate_spec = offset_actor_route_position(
+            actor_spec,
+            longitudinal_m=forward_offset_m,
+            lateral_m=lateral_offset_m,
+        )
         transform = (
             route_relative_carla_transform(
-                carla_api, world_map, route.points_xy_m, actor_spec,
-                forward_offset_m=offset_m,
+                carla_api, world_map, route.points_xy_m, candidate_spec,
             )
             if route is not None else
             _scenario_local_transform(
-                carla_api, ego_transform, spawn, forward_offset_m=offset_m,
+                carla_api,
+                ego_transform,
+                candidate_spec.get("spawn", spawn),
             )
         )
         # The ego has already settled onto the road before scenario actors are
@@ -1093,11 +1144,26 @@ def _spawn_scenario_vehicle(
             transform.location.z = max(
                 float(transform.location.z), float(road_location.z) + 0.5,
             )
+        try:
+            validate_actor_transform(
+                world_map,
+                transform,
+                candidate_spec,
+                occupied_locations=_occupied_actor_locations(world),
+            )
+        except ActorPlacementError as error:
+            placement_failures.append(str(error))
+            continue
         lead = world.try_spawn_actor(blueprint, transform)
         if lead is not None:
             break
+        placement_failures.append("CARLA rejected candidate")
     if lead is None:
-        raise RuntimeError("cannot spawn configured scenario lead vehicle")
+        detail = placement_failures[-1] if placement_failures else "no candidate"
+        raise RuntimeError(
+            "cannot spawn configured scenario lead vehicle after deterministic "
+            f"resampling: {detail}"
+        )
 
     lead = session.track_actor(lead)
     set_physics = getattr(lead, "set_simulate_physics", None)
@@ -1250,6 +1316,7 @@ def _spawn_scenario_walker(
     actor_spec: Mapping[str, object],
     *,
     route: RouteReference | None = None,
+    seed: int = 0,
 ) -> tuple[Any, Any]:
     """Spawn a real pedestrian and return it with its world-space target.
 
@@ -1284,20 +1351,23 @@ def _spawn_scenario_walker(
     offsets = (
         (0.0, 0.0),
         (0.0, 0.75 * lateral_sign),
-        (0.0, 1.5 * lateral_sign),
-        (1.5, 1.5 * lateral_sign),
-        (-1.5, 1.5 * lateral_sign),
-        (2.0, 0.0),
-        (-2.0, 0.0),
+        (0.0, -0.75 * lateral_sign),
+        *tuple(
+            item for item in actor_resample_offsets(actor_spec, seed=seed)
+            if item != (0.0, 0.0)
+        ),
     )
     walker = None
     used_offset = (0.0, 0.0)
     world_map = world.get_map()
+    placement_failures: list[str] = []
     for forward_offset_m, lateral_offset_m in offsets:
-        candidate_spawn = dict(spawn)
-        candidate_spawn["x"] = float(spawn.get("x", 0.0)) + forward_offset_m
-        candidate_spawn["y"] = float(spawn.get("y", 0.0)) + lateral_offset_m
-        candidate_spec = {**actor_spec, "spawn": candidate_spawn}
+        candidate_spec = offset_actor_route_position(
+            actor_spec,
+            longitudinal_m=forward_offset_m,
+            lateral_m=lateral_offset_m,
+        )
+        candidate_spawn = candidate_spec.get("spawn", spawn)
         transform = (
             route_relative_carla_transform(
                 carla_api, world_map, route.points_xy_m, candidate_spec,
@@ -1313,22 +1383,40 @@ def _spawn_scenario_walker(
                 float(transform.location.z),
                 float(road_waypoint.transform.location.z) + 0.5,
             )
+        try:
+            validate_actor_transform(
+                world_map,
+                transform,
+                candidate_spec,
+                occupied_locations=_occupied_actor_locations(world),
+            )
+        except ActorPlacementError as error:
+            placement_failures.append(str(error))
+            continue
         walker = world.try_spawn_actor(blueprint, transform)
         if walker is not None:
             used_offset = (forward_offset_m, lateral_offset_m)
             break
+        placement_failures.append("CARLA rejected candidate")
     if walker is None:
-        raise RuntimeError("cannot spawn configured scenario walker")
+        detail = placement_failures[-1] if placement_failures else "no candidate"
+        raise RuntimeError(
+            f"cannot spawn configured scenario walker {actor_spec.get('actor_id', 'walker')!r} "
+            f"after deterministic resampling: {detail}"
+        )
     walker = session.track_actor(walker)
     set_physics = getattr(walker, "set_simulate_physics", None)
     if callable(set_physics):
         set_physics(True)
     if route is not None:
         target = route_relative_target_location(
-            carla_api, world_map, route.points_xy_m, actor_spec,
+            carla_api, world_map, route.points_xy_m, candidate_spec,
         )
     else:
-        target_xy = behavior.get("target_xy_m", [spawn.get("x", 0.0), spawn.get("y", 0.0)])
+        candidate_behavior = candidate_spec.get("behavior", behavior)
+        target_xy = candidate_behavior.get(
+            "target_xy_m", [spawn.get("x", 0.0), spawn.get("y", 0.0)],
+        )
         if not isinstance(target_xy, (list, tuple)) or len(target_xy) != 2:
             raise TypeError("scenario walker target_xy_m must be [x, y]")
         target = _scenario_local_transform(
@@ -1401,6 +1489,7 @@ def _spawn_scenario_static_prop(
     actor_spec: Mapping[str, object],
     *,
     route: RouteReference | None = None,
+    seed: int = 0,
 ) -> Any:
     """Spawn a declared static obstacle for construction/occlusion coverage."""
     spawn = actor_spec.get("spawn", {})
@@ -1415,16 +1504,48 @@ def _spawn_scenario_static_prop(
         raise LookupError(f"scenario static prop blueprint not found: {blueprint_id!r}") from error
     if blueprint is None:
         raise LookupError(f"scenario static prop blueprint not found: {blueprint_id!r}")
-    transform = (
-        route_relative_carla_transform(
-            carla_api, world.get_map(), route.points_xy_m, actor_spec,
+    world_map = world.get_map()
+    prop = None
+    placement_failures: list[str] = []
+    for forward_offset_m, lateral_offset_m in actor_resample_offsets(
+        actor_spec, seed=seed,
+    ):
+        candidate_spec = offset_actor_route_position(
+            actor_spec,
+            longitudinal_m=forward_offset_m,
+            lateral_m=lateral_offset_m,
         )
-        if route is not None else
-        _scenario_local_transform(carla_api, ego.get_transform(), spawn)
-    )
-    prop = world.try_spawn_actor(blueprint, transform)
+        transform = (
+            route_relative_carla_transform(
+                carla_api, world_map, route.points_xy_m, candidate_spec,
+            )
+            if route is not None else
+            _scenario_local_transform(
+                carla_api,
+                ego.get_transform(),
+                candidate_spec.get("spawn", spawn),
+            )
+        )
+        try:
+            validate_actor_transform(
+                world_map,
+                transform,
+                candidate_spec,
+                occupied_locations=_occupied_actor_locations(world),
+            )
+        except ActorPlacementError as error:
+            placement_failures.append(str(error))
+            continue
+        prop = world.try_spawn_actor(blueprint, transform)
+        if prop is not None:
+            break
+        placement_failures.append("CARLA rejected candidate")
     if prop is None:
-        raise RuntimeError("cannot spawn configured scenario static prop")
+        detail = placement_failures[-1] if placement_failures else "no candidate"
+        raise RuntimeError(
+            "cannot spawn configured scenario static prop after deterministic "
+            f"resampling: {detail}"
+        )
     prop = session.track_actor(prop)
     set_physics = getattr(prop, "set_simulate_physics", None)
     if callable(set_physics):
@@ -2820,26 +2941,48 @@ def run(args: argparse.Namespace) -> None:
             scenario_walkers: list[tuple[Any, Mapping[str, object], Any]] = []
             scenario_props: list[tuple[Any, Mapping[str, object]]] = []
             spawned_scenario_actor_types: list[str] = []
+            deferred_actor_specs: list[Mapping[str, object]] = []
             for vehicle_spec in _scenario_actors(spec, "vehicle"):
+                if (
+                    isinstance(vehicle_spec.get("spawn_trigger"), Mapping)
+                    and not getattr(args, "spawn_all_scenario_actors", False)
+                ):
+                    deferred_actor_specs.append(vehicle_spec)
+                    continue
                 vehicle = _spawn_scenario_vehicle(
                     session, world, carla, ego, bp, vehicle_spec,
                     route=scenario_spawn_route,
+                    seed=spec.seed if spec is not None else 0,
                 )
                 scenario_vehicles.append((vehicle, vehicle_spec))
                 spawned_scenario_actor_types.append("vehicle")
             for walker_spec in _scenario_walkers(spec):
+                if (
+                    isinstance(walker_spec.get("spawn_trigger"), Mapping)
+                    and not getattr(args, "spawn_all_scenario_actors", False)
+                ):
+                    deferred_actor_specs.append(walker_spec)
+                    continue
                 walker, target = _spawn_scenario_walker(
                     session, world, carla, ego, walker_spec,
                     route=scenario_spawn_route,
+                    seed=spec.seed if spec is not None else 0,
                 )
                 scenario_walkers.append((walker, walker_spec, target))
                 spawned_scenario_actor_types.append(
                     str(walker_spec.get("type", "walker.pedestrian")).lower()
                 )
             for prop_spec in _scenario_static_props(spec):
+                if (
+                    isinstance(prop_spec.get("spawn_trigger"), Mapping)
+                    and not getattr(args, "spawn_all_scenario_actors", False)
+                ):
+                    deferred_actor_specs.append(prop_spec)
+                    continue
                 prop = _spawn_scenario_static_prop(
                     session, world, carla, ego, prop_spec,
                     route=scenario_spawn_route,
+                    seed=spec.seed if spec is not None else 0,
                 )
                 scenario_props.append((prop, prop_spec))
                 spawned_scenario_actor_types.append(
@@ -3010,6 +3153,7 @@ def run(args: argparse.Namespace) -> None:
             # waiting for UE rendering/physics.  Exclude that external frame
             # source wait (and optional visual pacing) from module-health time.
             watchdog.pause(now_s=time.monotonic())
+            watchdog_healthy_frames = 0
             progress_tracker = RouteProgressTracker(
                 scenario_spawn_route.points_xy_m
                 if scenario_spawn_route is not None else route.points_xy_m
@@ -3026,6 +3170,17 @@ def run(args: argparse.Namespace) -> None:
                 runtime_watchdog_timed_out = (
                     watchdog.check(now_s=time.monotonic()) is not None
                 )
+                if runtime_watchdog_timed_out:
+                    watchdog_healthy_frames = 0
+                else:
+                    watchdog_healthy_frames += 1
+                    if watchdog_healthy_frames >= 3:
+                        runtime.recover_runtime_watchdog(
+                            requested_speed_mps=max(
+                                float(route.target_speed_mps),
+                                float(args.default_speed_mps),
+                            ),
+                        )
                 snapshot = world.get_snapshot()
                 state = _vehicle_state(ego, frame, snapshot.timestamp.elapsed_seconds, world_map)
                 max_speed_mps = max(max_speed_mps, state.speed_mps)
@@ -3057,6 +3212,73 @@ def run(args: argparse.Namespace) -> None:
                     speed_mps=state.speed_mps,
                     delta_s=args.fixed_delta_s,
                 )
+                if deferred_actor_specs:
+                    still_deferred: list[Mapping[str, object]] = []
+                    spawn_context = {
+                        "route_progress_m": route_progress_m,
+                        "actor_distances_m": actor_distances_m,
+                    }
+                    for actor_spec in deferred_actor_specs:
+                        trigger = actor_spec.get("spawn_trigger")
+                        if not isinstance(trigger, Mapping) or not scenario_trigger_satisfied(
+                            trigger,
+                            elapsed_s=elapsed_s,
+                            context=spawn_context,
+                        ):
+                            still_deferred.append(actor_spec)
+                            continue
+                        actor_type = str(actor_spec.get("type", "")).strip().lower()
+                        if actor_type == "vehicle":
+                            actor = _spawn_scenario_vehicle(
+                                session, world, carla, ego, bp, actor_spec,
+                                route=scenario_spawn_route,
+                                seed=spec.seed if spec is not None else 0,
+                            )
+                            scenario_vehicles.append((actor, actor_spec))
+                            spawned_scenario_actor_types.append("vehicle")
+                        elif actor_type.startswith("walker"):
+                            actor, target = _spawn_scenario_walker(
+                                session, world, carla, ego, actor_spec,
+                                route=scenario_spawn_route,
+                                seed=spec.seed if spec is not None else 0,
+                            )
+                            scenario_walkers.append((actor, actor_spec, target))
+                            spawned_scenario_actor_types.append(actor_type)
+                        else:
+                            actor = _spawn_scenario_static_prop(
+                                session, world, carla, ego, actor_spec,
+                                route=scenario_spawn_route,
+                                seed=spec.seed if spec is not None else 0,
+                            )
+                            scenario_props.append((actor, actor_spec))
+                            spawned_scenario_actor_types.append(actor_type)
+                        actor_id = str(actor_spec.get("actor_id", ""))
+                        if actor_id:
+                            actor_distances_m[actor_id] = _actor_bbox_clearance_m(
+                                ego, actor,
+                            )
+                        print(json.dumps({
+                            "record_type": "scenario_actor_deferred_spawn",
+                            "actor_id": actor_id,
+                            "route_progress_m": route_progress_m,
+                            "elapsed_s": elapsed_s,
+                        }, ensure_ascii=False), flush=True)
+                    deferred_actor_specs = still_deferred
+                if (
+                    spec is not None
+                    and contract_route_points is not None
+                    and route.points_xy_m is not contract_route_points
+                ):
+                    # A commanded lane change legitimately replaces the
+                    # lateral reference while mission completion still belongs
+                    # to the original arc-length contract.  The parallel new
+                    # lane projects onto that contract, so retain honest
+                    # distance progress instead of freezing the old remaining
+                    # distance at the manoeuvre start.
+                    final_route_remaining_m = max(
+                        0.0,
+                        _scenario_route_distance_m(spec) - route_progress_m,
+                    )
                 traffic_state = (
                     str(scenario_traffic_light.get_state()).rsplit(".", 1)[-1].upper()
                     if scenario_traffic_light is not None else "UNKNOWN"
@@ -4211,15 +4433,8 @@ def run(args: argparse.Namespace) -> None:
                             (state.x_m, state.y_m),
                         )
                     )
-                    terminal_safety = (
-                        result.safety_reason.startswith("C_FRONT_")
-                        or result.safety_reason in {
-                            "COLLISION_DETECTED",
-                            "RISK_EMERGENCY_BRAKE_REQUESTED",
-                            "LOW_TTC",
-                            "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE",
-                            "RED_LIGHT_STOP_LINE_GUARD",
-                        }
+                    terminal_safety = _maneuver_requires_terminal_safety_preemption(
+                        result.safety_reason,
                     )
                     maneuver_update = maneuver_fsm.update(
                         {
@@ -4290,6 +4505,41 @@ def run(args: argparse.Namespace) -> None:
                             if extension_runtime is not None:
                                 extension_runtime.note_mission_route_restored()
                             maneuver_mission_route = None
+                        elif any(
+                            step.behavior.startswith("CHANGE_LANE_")
+                            for step in maneuver_fsm.plan.steps
+                        ):
+                            # A one-shot lane-change reference is intentionally
+                            # short.  Continuing to track it after completion
+                            # puts every lookahead point behind ego and causes
+                            # a permanent TARGET_BEHIND_EGO safety stop.  Start
+                            # the remaining mission from the centre of the new
+                            # lane; restoring the old route would silently undo
+                            # the commanded lane change.
+                            route = build_route_reference(
+                                world_map,
+                                ego,
+                                runtime.requested_speed_mps,
+                                distance_m=(
+                                    args.route_distance_m
+                                    if spec is None
+                                    else _scenario_route_distance_m(spec)
+                                ),
+                            )
+                            restore_payload = {
+                                "record_type": "qwen_post_lane_change_route_started",
+                                "command_id": maneuver_fsm.plan.command_id,
+                                "plan_id": maneuver_fsm.plan.plan_id,
+                                "route_points": len(route.points_xy_m),
+                                "target_speed_mps": route.target_speed_mps,
+                            }
+                            print(json.dumps(restore_payload, ensure_ascii=False), flush=True)
+                            if recorder is not None:
+                                recorder.record_canonical_routing(
+                                    phase="POST_LANE_CHANGE_ROUTE",
+                                    command_id=maneuver_fsm.plan.command_id,
+                                    payload=restore_payload,
+                                )
                     started_route_step = (
                         maneuver_update.current_step
                         if any(
@@ -4904,6 +5154,11 @@ def main() -> None:
                         help="move the graphical spectator camera behind the ego each frame")
     parser.add_argument("--scenario-file",
                         help="run a scenarios/*.json contract; overrides map, fixed delta, frames and scenario id")
+    parser.add_argument(
+        "--spawn-all-scenario-actors",
+        action="store_true",
+        help="placement-only debug: ignore deferred spawn triggers and validate all actors at startup",
+    )
     parser.add_argument("--validate-scenario-only", action="store_true",
                         help="load and validate --scenario-file without connecting to CARLA")
     parser.add_argument("--use-current-map", action="store_true",

@@ -358,6 +358,27 @@ def test_clear_safety_alerts_releases_only_named_recovered_faults():
     assert not runtime.safety_latched
 
 
+def test_transient_runner_watchdog_recovers_cruise_without_clearing_other_faults():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.step(
+        _vehicle(),
+        PerceptionFrame(frame=1, sim_time_s=0.05),
+        _route(),
+        dt_s=0.05,
+        watchdog_alerts=("RUNTIME_WATCHDOG_TIMEOUT",),
+    )
+
+    assert runtime.recover_runtime_watchdog(requested_speed_mps=5.0)
+    assert not runtime.safety_latched
+    recovered = runtime.step(
+        _vehicle(frame=2, time=0.10),
+        PerceptionFrame(frame=2, sim_time_s=0.10),
+        _route(),
+        dt_s=0.05,
+    )
+    assert recovered.final_control.throttle > 0.0
+
+
 def test_low_confidence_command_can_be_confirmed_then_execute():
     runtime = ControlRuntime(PurePursuitController(), default_speed_mps=0.0)
     command = _voice()

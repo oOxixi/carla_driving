@@ -37,14 +37,14 @@
     },
     {
       "time_s": 0.0,
-      "source_text": "前方300米路口右转，转弯前减速至25公里每小时",
+      "source_text": "前方200米路口右转，转弯前减速至25公里每小时",
       "intent": "TURN_RIGHT",
       "parameters": {"target_speed_kph": 25.0},
       "intent_confidence": 0.99,
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S1_P2_RIGHT_TURN",
-      "trigger": {"type": "route_progress_greater_than_m", "value": 250.0}
+      "trigger": {"type": "route_progress_greater_than_m", "value": 10.0}
     },
     {
       "time_s": 0.0,
@@ -74,7 +74,7 @@
       "trigger": {
         "all": [
           {"type": "previous_command_terminal", "phase_id": "S1_P3_EXIT_TURN_RECENTER"},
-          {"type": "route_progress_greater_than_m", "value": 1600.0}
+          {"type": "route_progress_greater_than_m", "value": 600.0}
         ]
       }
     },
@@ -173,6 +173,7 @@
       "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "TURN_RIGHT", "CHANGE_LANE_LEFT", "STOP"]
     },
     "fixed_random_seed": true,
+    "route_anchor_spawn_index": 164,
     "speed_policy": {"scenario_limit_kph": 50.0, "override_map_limit": true},
     "no_background_traffic": true,
     "route_policy": {"loop": false},

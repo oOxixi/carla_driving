@@ -3,8 +3,12 @@ from types import SimpleNamespace
 import pytest
 
 from integration.scenario_builder import (
+    ActorPlacementError,
+    actor_resample_offsets,
+    offset_actor_route_position,
     route_relative_carla_transform,
     route_relative_target_location,
+    validate_actor_transform,
     validate_actor_route_coverage,
 )
 
@@ -29,6 +33,7 @@ CARLA = SimpleNamespace(Location=_Location, Rotation=_Rotation, Transform=_Trans
 
 class _Waypoint:
     lane_type = "Driving"
+    lane_width = 3.5
 
     def __init__(self, x: float, y: float, yaw: float, *, left=None, right=None):
         self.transform = _Transform(_Location(x, y, 1.0), _Rotation(yaw=yaw))
@@ -97,5 +102,62 @@ def test_actor_outside_route_is_rejected_before_spawning() -> None:
         validate_actor_route_coverage(
             ({"actor_id": "late", "spawn": {"x": 101.0, "y": 0.0}},),
             100.0,
+        )
+
+
+def test_legacy_lane_width_offset_uses_real_adjacent_lane_center() -> None:
+    left = _Waypoint(10.0, 3.5, 0.0)
+    current = _Waypoint(10.0, 0.0, 0.0, left=left)
+    transform = route_relative_carla_transform(
+        CARLA,
+        _Map(current),
+        ((0.0, 0.0), (20.0, 0.0)),
+        {"type": "vehicle", "spawn": {"x": 10.0, "y": 3.5, "z": 0.5}},
+    )
+    assert (transform.location.x, transform.location.y) == pytest.approx((10.0, 3.5))
+
+
+def test_resampling_moves_walker_spawn_and_target_together() -> None:
+    actor = {
+        "actor_id": "pedestrian",
+        "type": "walker.pedestrian",
+        "spawn": {"z": 0.5},
+        "route_position": {"s_m": 20.0, "lateral_offset_m": 4.0},
+        "behavior": {
+            "target_route_position": {"s_m": 20.0, "lateral_offset_m": -4.0},
+        },
+    }
+    moved = offset_actor_route_position(actor, longitudinal_m=3.0, lateral_m=0.5)
+    assert moved["route_position"]["s_m"] == pytest.approx(23.0)
+    assert moved["behavior"]["target_route_position"] == {
+        "s_m": pytest.approx(23.0),
+        "lateral_offset_m": pytest.approx(-3.5),
+    }
+
+
+def test_actor_resampling_is_seeded_and_reproducible() -> None:
+    actor = {"actor_id": "lead"}
+    first = actor_resample_offsets(actor, seed=123)
+    assert first == actor_resample_offsets(actor, seed=123)
+    assert first[0] == (0.0, 0.0)
+    assert first != actor_resample_offsets(actor, seed=124)
+
+
+def test_vehicle_legality_rejects_lane_marking_and_overlap() -> None:
+    waypoint = _Waypoint(10.0, 0.0, 0.0)
+    world_map = _Map(waypoint)
+    on_marking = _Transform(_Location(10.0, 1.7, 1.5), _Rotation(yaw=0.0))
+    with pytest.raises(ActorPlacementError, match="lane marking"):
+        validate_actor_transform(
+            world_map, on_marking, {"type": "vehicle"},
+        )
+
+    legal = _Transform(_Location(10.0, 0.0, 1.5), _Rotation(yaw=0.0))
+    with pytest.raises(ActorPlacementError, match="overlaps"):
+        validate_actor_transform(
+            world_map,
+            legal,
+            {"type": "vehicle"},
+            occupied_locations=(_Location(11.0, 0.0, 1.5),),
         )
 

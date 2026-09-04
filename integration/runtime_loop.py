@@ -174,6 +174,25 @@ class ControlRuntime:
             alert for alert in self._latched_alerts if alert not in recovered
         ]
 
+    def recover_runtime_watchdog(self, *, requested_speed_mps: float) -> bool:
+        """Release only a transient runner-watchdog stop after health returns.
+
+        Sensor/integration faults remain operator-latched.  The CARLA runner
+        calls this after consecutive healthy frames, so a one-off slow frame
+        brakes immediately without leaving an otherwise healthy mission
+        permanently stranded at zero requested speed.
+        """
+        speed = float(requested_speed_mps)
+        if not math.isfinite(speed) or speed <= 0.0:
+            raise ValueError("requested_speed_mps must be finite and positive")
+        alert = "RUNTIME_WATCHDOG_TIMEOUT"
+        if alert not in self._latched_alerts:
+            return False
+        self.clear_safety_alerts((alert,))
+        if not self._latched_alerts and self._active_command_id is None and not self._stop_hold:
+            self.requested_speed_mps = speed
+        return True
+
     def release_scenario_stop_hold(self, *, requested_speed_mps: float) -> bool:
         """Release a completed emergency hold only for an explicit scenario recovery.
 

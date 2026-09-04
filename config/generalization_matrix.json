@@ -7,6 +7,11 @@
   "actor_longitudinal_offsets_m": [-3.0, 0.0, 3.0],
   "actor_lateral_offsets_m": [-0.30, 0.0, 0.30],
   "actor_speed_scales": [0.80, 1.0, 1.20],
+  "brake_time_offsets_s": [-1.0, 0.0, 1.0],
+  "pedestrian_start_offsets_s": [-0.5, 0.0, 0.5],
+  "actor_count_scales": [0.80, 1.0, 1.20],
+  "target_lane_relations": ["CURRENT", "LEFT_ADJACENT", "RIGHT_ADJACENT"],
+  "sensor_conditions": ["nominal", "reduced_rgb", "sparse_lidar"],
   "samples_per_scenario": 27,
   "holdout_scenarios": [
     "scenarios/qwen_fullchain/QWF_02_lane_change_then_speed.json",
