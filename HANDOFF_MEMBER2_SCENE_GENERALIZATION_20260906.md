@@ -3,6 +3,7 @@
 - 日期：2026-09-06
 - 目标分支：`carla_driving_rstar`
 - 实现提交：`7ce6928fa9065c8a7f76ecd5061323d1d2d5f4e8`
+- 固定运行环境：Python 3.12、CARLA 0.9.16
 
 ## 当前结论
 
@@ -34,15 +35,15 @@
 最小回归命令：
 
 ```powershell
-py -3.13 -m pytest integration/tests/test_scenario_builder.py integration/tests/test_generalization_gate.py integration/tests/test_carla_runner_helpers.py integration/tests/test_scenario_extensions.py -q
-py -3.13 tools/validate_scenarios.py
+py -3.12 -m pytest integration/tests/test_scenario_builder.py integration/tests/test_generalization_gate.py integration/tests/test_carla_runner_helpers.py integration/tests/test_scenario_extensions.py -q
+py -3.12 tools/validate_scenarios.py
 ```
 
 生成样本：
 
 ```powershell
-py -3.13 tools/run_generalization_gate.py scenarios/official_competition/S2_complex_avoidance_8km.json --kind variant
-py -3.13 tools/run_generalization_gate.py scenarios/official_competition/S2_complex_avoidance_8km.json --kind unseen
+py -3.12 tools/run_generalization_gate.py scenarios/official_competition/S2_complex_avoidance_8km.json --kind variant
+py -3.12 tools/run_generalization_gate.py scenarios/official_competition/S2_complex_avoidance_8km.json --kind unseen
 ```
 
 ## 验收边界
