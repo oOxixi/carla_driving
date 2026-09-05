@@ -1,8 +1,8 @@
 # 成员2 Actor / 场景泛化交接
 
-日期：2026-09-06  
-目标分支：`carla_driving_rstar`  
-实现提交：`7ce6928fa9065c8a7f76ecd5061323d1d2d5f4e8`
+- 日期：2026-09-06
+- 目标分支：`carla_driving_rstar`
+- 实现提交：`7ce6928fa9065c8a7f76ecd5061323d1d2d5f4e8`
 
 ## 当前结论
 
@@ -59,4 +59,3 @@ py -3.13 tools/run_generalization_gate.py scenarios/official_competition/S2_comp
 3. 若失败，先按路线、Actor、控制、安全接管、感知、Qwen 分类，只修通用根因，不增加场景 ID 特判。
 
 建议下一会话仅在 CARLA 闭环可复现失败时使用 `diagnose` 技能，按“复现—最小化—定位—修复—回归”处理；常规接手无需额外技能。
-
