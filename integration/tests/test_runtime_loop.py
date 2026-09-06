@@ -294,6 +294,31 @@ def test_outer_runtime_can_fail_active_command_explicitly():
     assert runtime.requested_speed_mps == 0.0
 
 
+def test_temporary_outer_hold_can_fail_and_resume_at_bounded_speed():
+    runtime = ControlRuntime(PurePursuitController(), default_speed_mps=10.0)
+    stop = _voice("STOP", {})
+    stop["command_id"] = "qwen-wait"
+    runtime.submit_voice(stop, now_s=0.05)
+
+    feedback = runtime.fail_active(
+        now_s=0.10,
+        detail="Qwen target was not grounded",
+        resume_speed_mps=8.0,
+    )
+
+    assert feedback is not None and feedback.status.value == "FAILED"
+    assert runtime.active_command_id is None
+    assert runtime.requested_speed_mps == 8.0
+    result = runtime.step(
+        _vehicle(frame=2, time=0.10, speed=0.0),
+        PerceptionFrame(frame=2, sim_time_s=0.10),
+        _route(),
+        dt_s=0.05,
+    )
+    assert result.longitudinal is not None
+    assert result.longitudinal.state != "HOLD"
+
+
 def test_external_hazard_emits_safety_override_terminal_feedback():
     runtime = ControlRuntime(PurePursuitController())
     runtime.submit_voice(_voice(), now_s=0.05)

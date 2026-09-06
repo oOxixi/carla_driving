@@ -1,0 +1,127 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "DEV_S2_BICYCLE_FOLLOW_TARGETED",
+  "category": "regression",
+  "official_level": "advanced",
+  "description": "场景2非机动车专项：Qwen 2B 指令触发后，以30km/h为上限平顺跟随真实自行车并保持至少3m车身间距。",
+  "tags": ["development", "scene_2", "bicycle", "adaptive_follow", "targeted_regression"],
+  "map": "Town03_Opt",
+  "weather": "CloudySunset",
+  "seed": 20260222,
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 35.0, "max_startup_wait_s": 20.0},
+  "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [[0.0, 0.0], [300.0, 0.0]],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 4.0,
+    "distance_contract_m": 300.0,
+    "route_generation": "Town03_Opt topology; bicycle-follow targeted regression"
+  },
+  "commands": [
+    {
+      "time_s": 0.0,
+      "source_text": "保持当前车道，以40公里每小时正常行驶",
+      "intent": "KEEP_LANE",
+      "parameters": {"target_speed_kph": 40.0},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "DEV_BIKE_START",
+      "trigger": {"type": "scenario_started"}
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "注意前方非机动车，最高30公里每小时自适应匀速跟车，并与其保持至少3米安全距离",
+      "intent": "FOLLOW_ROUTE",
+      "parameters": {"target_speed_kph": 30.0, "target_actor_id": "bicycle_lead"},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "DEV_BIKE_ADAPTIVE_FOLLOW",
+      "trigger": {"all": [
+        {"type": "previous_command_terminal", "phase_id": "DEV_BIKE_START"},
+        {"type": "route_progress_greater_than_m", "value": 75.0},
+        {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bicycle_lead", "value": 25.0}
+      ]}
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "bicycle_lead",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.bh.crossbike",
+      "spawn": {"x": 80.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+      "route_position": {"s_m": 80.0, "lateral_offset_m": 0.0, "lane_relation": "CURRENT"},
+      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 20.0},
+      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 5.5, "target_speed_mps": 5.5}
+    }
+  ],
+  "qwen_expected": {
+    "route": "QWEN_PLAN",
+    "min_calls": 2,
+    "max_calls": 2,
+    "expected_behaviors": ["KEEP_LANE", "FOLLOW"],
+    "expected_terminal": "SUCCEEDED",
+    "allowed_replans": 0,
+    "forbidden_low_level_fields": true
+  },
+  "sensors": {
+    "front_rgb": {"enabled": true, "width": 800, "height": 450, "fov": 100, "exact_frame": true},
+    "left_rgb": {"enabled": true, "width": 800, "height": 450, "yaw_deg": -55.0, "exact_frame": true},
+    "right_rgb": {"enabled": true, "width": 800, "height": 450, "yaw_deg": 55.0, "exact_frame": true},
+    "rear_rgb": {"enabled": true, "width": 800, "height": 450, "yaw_deg": 180.0, "exact_frame": true},
+    "lidar": {"enabled": true, "channels": 32, "range_m": 80, "exact_frame": true},
+    "radar": {"enabled": true, "range_m": 80},
+    "collision": {"enabled": true},
+    "lane_invasion": {"enabled": true},
+    "vehicle_state": {"speed": true, "steering": true, "position": true, "lane_offset": true, "route_deviation": true}
+  },
+  "controllers": {
+    "A_runtime": {"only_apply_control_owner": true},
+    "B_lateral": {"enabled": true},
+    "C_longitudinal": {"enabled": true},
+    "D_safety": {"enabled": true, "must_run_before_apply_control": true}
+  },
+  "logging": {"required_files": ["*.jsonl", "*.summary.json"]},
+  "expected": {
+    "must_start_carla": true,
+    "must_spawn_ego": true,
+    "must_finish_route": false,
+    "must_no_collision": true,
+    "must_no_pedestrian_collision": true,
+    "must_execute_commands_in_order": true,
+    "must_generate_logs": true,
+    "required_real_actor_types": ["vehicle"],
+    "expected_safety_override_allowed": true,
+    "final_control_no_throttle_brake_overlap": true
+  },
+  "extensions": {
+    "clean_world_on_start": true,
+    "sensor_profile": "competition_multiview",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {"required_for_every_voice_event": true, "safety_preemption": true, "high_level_only": true},
+    "speed_policy": {"scenario_limit_kph": 40.0, "map_limit_handling": "replace"},
+    "proposed_acceptance": {
+      "qwen_request_count": 2,
+      "all_commands_must_have_terminal_status": true,
+      "expected_phase_count": 2,
+      "all_phases_must_complete": true,
+      "minimum_actor_distances_m": {"bicycle_lead": 3.0}
+    },
+    "fixed_random_seed": true,
+    "topology_route_required": true,
+    "route_anchor_spawn_index": 46,
+    "route_policy": {"loop": false},
+    "phase_plan": ["DEV_BIKE_START", "DEV_BIKE_ADAPTIVE_FOLLOW"],
+    "runtime_support": {
+      "status": "current",
+      "requirements": ["event_triggers", "actor_distance_trigger", "per_actor_minimum_distance_acceptance", "route_progress_actor_activation", "scenario_speed_limit"],
+      "declared_requirements": ["event_triggers", "actor_distance_trigger", "per_actor_minimum_distance_acceptance", "route_progress_actor_activation", "scenario_speed_limit"]
+    }
+  },
+  "notes": [
+    "这是非机动车跟车专项开发回归，不替代官方8km最终验收。",
+    "30km/h是速度上限；目标更慢时C纵向控制器应匹配目标速度并保持至少3m间距。"
+  ]
+}

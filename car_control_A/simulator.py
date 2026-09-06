@@ -169,6 +169,22 @@ class ActorRegistry:
         self._actors.append(actor)
         return actor
 
+    def release(self, actor: Any) -> bool:
+        """Destroy and forget one owned actor before session shutdown.
+
+        Long scenarios may activate temporary traffic participants for a
+        bounded event.  Releasing them here keeps ownership centralized and
+        prevents ``cleanup()`` from destroying the same actor a second time.
+        Identity comparison is intentional because CARLA actor wrappers do
+        not promise useful equality semantics.
+        """
+        for index, owned in enumerate(self._actors):
+            if owned is actor:
+                del self._actors[index]
+                self.dispose(actor)
+                return True
+        return False
+
     def cleanup(self) -> None:
         actors, self._actors = self._actors, []
         for actor in reversed(actors):

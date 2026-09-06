@@ -119,6 +119,20 @@ class ManeuverFSM:
             emergency_reason = str(
                 snapshot.get("emergency_reason", "EMERGENCY_PREEMPT")
             ).strip().upper()
+            if step.behavior in {"YIELD", "SLOW_DOWN"}:
+                # Emergency braking is the expected safe response while a
+                # pedestrian is crossing or a conditional slow-observation
+                # command is active. Keep the plan active and reset its clear
+                # window instead of falsely failing at the moment it matters.
+                self._completion_frames = 0
+                if self.step_started_s is not None and now - self.step_started_s > step.timeout_s:
+                    reason = (
+                        "YIELD_HAZARD_DID_NOT_CLEAR"
+                        if step.behavior == "YIELD"
+                        else "SLOW_DOWN_HAZARD_DID_NOT_CLEAR"
+                    )
+                    return self._step_failure(step, reason, now)
+                return self._update(safe_behavior="EMERGENCY_STOP")
             return self._finish(
                 "SAFETY_OVERRIDE",
                 emergency_reason or "EMERGENCY_PREEMPT",
@@ -155,7 +169,30 @@ class ManeuverFSM:
             # Emergency risk remains continuously enforced above this gate.
             self._preconditions_latched = True
         self.state = self._step_state(step)
-        if _completion_satisfied(step.completion, snapshot):
+        completion_satisfied = _completion_satisfied(step.completion, snapshot)
+        if (
+            completion_satisfied
+            and step.behavior == "SLOW_DOWN"
+            and str(step.completion.get("type", "")) == "TARGET_PASSED"
+        ):
+            # "减速观察，确认安全后恢复" has three simultaneous gates: the
+            # reduced speed was actually reached, the named actor is behind
+            # ego, and the observation lasted long enough.  A fixed timer by
+            # itself can restore cruise while ego is still alongside a bus or
+            # pedestrian, which is semantically unsafe even without collision.
+            target_speed = step.target.get("target_speed_mps")
+            speed_ok = (
+                target_speed is not None
+                and float(snapshot.get("speed_mps", math.inf))
+                <= float(target_speed) + float(snapshot.get("speed_tolerance_mps", 0.6))
+            )
+            minimum_duration_s = float(step.completion.get("value") or 0.0)
+            duration_ok = (
+                self.step_started_s is not None
+                and now - self.step_started_s >= minimum_duration_s
+            )
+            completion_satisfied = completion_satisfied and speed_ok and duration_ok
+        if completion_satisfied:
             self._completion_frames += 1
         else:
             self._completion_frames = 0

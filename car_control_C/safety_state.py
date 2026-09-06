@@ -86,6 +86,11 @@ class SafetyStateParameters:
     caution_ttc_s: float = 2.5
     emergency_ttc_s: float = 1.5
     max_observation_gap_s: float = 0.30
+    # Temporal range differentiation is only a fallback when no aligned lead
+    # velocity exists.  A nearest-return switch can otherwise look like an
+    # impossible closing speed and manufacture a false sub-second TTC.
+    max_temporal_closing_speed_mps: float = 40.0
+    temporal_closing_confirmation_tolerance_mps: float = 5.0
     reaction_time_s: float = 0.70
     emergency_reaction_time_s: float = 0.35
     comfortable_deceleration_mps2: float = 3.5
@@ -99,6 +104,8 @@ class SafetyStateParameters:
         for name in ("caution_distance_m", "emergency_distance_m", "vru_caution_distance_m",
                      "vru_emergency_distance_m", "vru_caution_speed_cap_mps", "vru_caution_hold_s",
                      "caution_ttc_s", "emergency_ttc_s", "max_observation_gap_s",
+                     "max_temporal_closing_speed_mps",
+                     "temporal_closing_confirmation_tolerance_mps",
                      "reaction_time_s", "emergency_reaction_time_s",
                      "comfortable_deceleration_mps2", "emergency_deceleration_mps2",
                      "range_uncertainty_buffer_m"):
@@ -173,12 +180,14 @@ class ConservativeSensorFusion:
         self._previous_frame: int | None = None
         self._previous_time_s: float | None = None
         self._previous_distance_m: float | None = None
+        self._pending_temporal_closing_speed_mps: float | None = None
         self._vru_caution_until_s: float | None = None
 
     def reset(self) -> None:
         self._previous_frame = None
         self._previous_time_s = None
         self._previous_distance_m = None
+        self._pending_temporal_closing_speed_mps = None
         self._vru_caution_until_s = None
 
     def update(
@@ -230,11 +239,32 @@ class ConservativeSensorFusion:
             if lead_speed_mps is not None:
                 closing_speed = ego_speed_mps - lead_speed_mps
                 sources["closing_speed_mps"] = _source("lead_speed_source", lead_speed_source)
+                self._pending_temporal_closing_speed_mps = None
             elif self._previous_distance_m is not None and self._previous_time_s is not None:
                 dt_s = sim_time_s - self._previous_time_s
                 if dt_s <= self.parameters.max_observation_gap_s:
-                    closing_speed = (self._previous_distance_m - front_distance_m) / dt_s
-                    sources["closing_speed_mps"] = "LIDAR_TEMPORAL_DIFFERENCE"
+                    candidate = (self._previous_distance_m - front_distance_m) / dt_s
+                    previous_candidate = self._pending_temporal_closing_speed_mps
+                    if candidate <= 0.0:
+                        self._pending_temporal_closing_speed_mps = None
+                    elif candidate > self.parameters.max_temporal_closing_speed_mps:
+                        self._pending_temporal_closing_speed_mps = None
+                        sources["closing_speed_mps"] = "LIDAR_TEMPORAL_OUTLIER_REJECTED"
+                    elif (
+                        previous_candidate is not None
+                        and abs(candidate - previous_candidate)
+                        <= self.parameters.temporal_closing_confirmation_tolerance_mps
+                    ):
+                        closing_speed = (candidate + previous_candidate) / 2.0
+                        self._pending_temporal_closing_speed_mps = candidate
+                        sources["closing_speed_mps"] = "LIDAR_TEMPORAL_CONFIRMED"
+                    else:
+                        self._pending_temporal_closing_speed_mps = candidate
+                        sources["closing_speed_mps"] = "LIDAR_TEMPORAL_CONFIRMATION_PENDING"
+                else:
+                    self._pending_temporal_closing_speed_mps = None
+            else:
+                self._pending_temporal_closing_speed_mps = None
             if closing_speed is not None and closing_speed <= 0.0:
                 closing_speed = None
 
@@ -302,6 +332,8 @@ class ConservativeSensorFusion:
         self._previous_frame = frame
         self._previous_time_s = sim_time_s
         self._previous_distance_m = front_distance_m if lidar_valid else None
+        if not lidar_valid or front_distance_m is None:
+            self._pending_temporal_closing_speed_mps = None
         return summary
 
     def fail_closed_control(self) -> ControlOutput:

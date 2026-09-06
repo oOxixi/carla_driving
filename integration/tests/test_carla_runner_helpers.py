@@ -14,10 +14,15 @@ from integration.carla_perception import EventLedger, PerceptionTimeoutError
 from integration.carla_runner import (
     _DeferredCommand,
     _acceptance_lateral_controller,
+    _actor_activation_due,
+    _actor_deactivation_due,
     _actor_bbox_clearance_m,
+    _actor_signed_route_clearance_m,
+    _actor_signed_longitudinal_clearance_m,
     _apply_compiled_plan_route,
     _apply_scenario_speed_limit,
     _bind_scenario_actor_ids,
+    _build_resume_segment_spec,
     _load_command,
     _lead_vehicle_travel_m,
     _lane_change_route_parameters,
@@ -50,6 +55,7 @@ from integration.carla_runner import (
     _scene_from_world,
     _scenario_actor,
     _scenario_actors,
+    _scenario_clean_world_on_start,
     _scenario_raw_control_fault,
     _scenario_requires_adjacent_lane_anchor,
     _scenario_uses_dynamic_out_and_back,
@@ -71,6 +77,7 @@ from integration.carla_runner import (
     _warm_up_sensor_bridge,
     _warm_up_loaded_map,
 )
+from integration.scenario_execution import ScenarioSpec
 
 
 def test_scenario_commands_are_latched_and_serialized_behind_active_plan() -> None:
@@ -88,6 +95,80 @@ def test_scenario_commands_are_latched_and_serialized_behind_active_plan() -> No
     )
     assert selected == (first,)
     assert retained == [second]
+
+
+def test_resume_segment_keeps_only_unfinished_commands_and_live_actors() -> None:
+    spec = ScenarioSpec.load(
+        Path("scenarios/official_competition/S2_complex_avoidance_8km.json")
+    )
+
+    resumed, restored_phases = _build_resume_segment_spec(
+        spec,
+        route_progress_m=4100.0,
+        completed_command_count=3,
+        target_speed_kph=40.0,
+    )
+
+    assert [command.phase_id for command in resumed.commands] == [
+        "S2_P4_BICYCLE_CLEARANCE",
+        "S2_P5_INTERSECTION_MIXED_FLOW",
+        "S2_P6_LATE_PEDESTRIAN_YIELD",
+    ]
+    assert restored_phases[-1] == "S2_P3_PEDESTRIAN_OVERTAKE_RETURN"
+    assert {actor["actor_id"] for actor in resumed.actors} == {
+        "bicycle_right", "intersection_cut_in_car", "late_crossing_pedestrian",
+    }
+    proposed = resumed.extensions["proposed_acceptance"]
+    assert proposed["qwen_request_count"] == 3
+    assert proposed["actor_activation_progress_windows_m"]["bicycle_right"] == [
+        4099.0, 4101.0,
+    ]
+    assert "S2_P2_BUS_STOP" not in proposed["minimum_approach_speed_kph_by_phase"]
+
+
+def test_terminal_resume_keeps_no_commands_actors_or_qwen_contract() -> None:
+    spec = ScenarioSpec.load(
+        Path("scenarios/official_competition/S2_complex_avoidance_8km.json")
+    )
+
+    resumed, restored_phases = _build_resume_segment_spec(
+        spec,
+        route_progress_m=8034.0,
+        completed_command_count=len(spec.commands),
+        target_speed_kph=0.0,
+    )
+
+    assert resumed.commands == ()
+    assert resumed.actors == ()
+    assert resumed.qwen_expected is None
+    assert len(restored_phases) == len(spec.commands)
+    proposed = resumed.extensions["proposed_acceptance"]
+    assert proposed["qwen_request_count"] == 0
+    assert proposed["expected_phase_count"] == 0
+    assert "all_phases_must_complete" not in proposed
+    assert "actor_activation_progress_windows_m" not in proposed
+    assert "minimum_actor_distances_m" not in proposed
+
+
+def test_targeted_scenario_command_waits_for_sensor_target() -> None:
+    targeted = _DeferredCommand({
+        "command_id": "scenario_cmd_targeted",
+        "intent": "AVOID_OBSTACLE",
+    }, 1, "SCENARIO")
+
+    selected, retained = _select_deferred_commands(
+        (targeted,), scenario_plan_active=False,
+        perception_target_available=False,
+    )
+    assert selected == ()
+    assert retained == [targeted]
+
+    selected, retained = _select_deferred_commands(
+        retained, scenario_plan_active=False,
+        perception_target_available=True,
+    )
+    assert selected == (targeted,)
+    assert retained == []
 
 
 def test_scenario_vehicle_spawn_does_not_require_traffic_manager() -> None:
@@ -126,6 +207,42 @@ def test_actor_bbox_clearance_is_body_to_body_and_conservative() -> None:
     assert _actor_bbox_clearance_m(ego, bicycle) == pytest.approx(
         8.0 - math.hypot(2.0, 1.0) - math.hypot(1.0, 0.5)
     )
+
+
+def test_actor_signed_longitudinal_clearance_changes_sign_only_after_full_pass() -> None:
+    class Location:
+        def __init__(self, x: float, y: float) -> None:
+            self.x, self.y, self.z = x, y, 0.0
+
+    def actor_at(x: float):
+        return Namespace(
+            get_location=lambda: Location(x, 0.0),
+            bounding_box=Namespace(extent=Namespace(x=1.0, y=0.5)),
+        )
+
+    ego = Namespace(
+        get_location=lambda: Location(0.0, 0.0),
+        get_transform=lambda: Namespace(
+            location=Location(0.0, 0.0),
+            get_forward_vector=lambda: Namespace(x=1.0, y=0.0),
+        ),
+        bounding_box=Namespace(extent=Namespace(x=2.0, y=1.0)),
+    )
+
+    radius = math.hypot(2.0, 1.0) + math.hypot(1.0, 0.5)
+    assert _actor_signed_longitudinal_clearance_m(
+        ego, actor_at(8.0),
+    ) == pytest.approx(8.0 - radius)
+    assert _actor_signed_longitudinal_clearance_m(
+        ego, actor_at(-8.0),
+    ) == pytest.approx(-8.0 + radius)
+
+    assert _actor_signed_route_clearance_m(
+        100.0, 108.0, ego, actor_at(999.0),
+    ) == pytest.approx(8.0 - radius)
+    assert _actor_signed_route_clearance_m(
+        108.0, 100.0, ego, actor_at(999.0),
+    ) == pytest.approx(-8.0 + radius)
 from integration.contracts import DetectedObject, PerceptionFrame
 from integration.scenario_execution import ScenarioSpec
 from integration.voice_adapter import VoiceCommandAdapter
@@ -166,6 +283,42 @@ def test_scenario_speed_limit_caps_model_perception_constraint() -> None:
 
     assert capped.speed_limit_mps == pytest.approx(20.0 / 3.6)
     assert sources["speed_limit_mps"] == "SCENARIO_SPEED_POLICY"
+
+
+def test_explicit_competition_speed_contract_can_replace_map_metadata() -> None:
+    scene = PerceptionFrame(1, 0.05, speed_limit_mps=30.0 / 3.6)
+    sources: dict[str, str] = {}
+
+    replaced = _apply_scenario_speed_limit(
+        scene, 40.0 / 3.6, sources, override_map_limit=True,
+    )
+
+    assert replaced.speed_limit_mps == pytest.approx(40.0 / 3.6)
+    assert sources["speed_limit_mps"] == "SCENARIO_SPEED_POLICY_OVERRIDE"
+
+
+def test_deferred_actor_activation_uses_monotonic_route_progress() -> None:
+    actor = {
+        "activation_trigger": {
+            "type": "route_progress_greater_than_m", "value": 820.0,
+        },
+    }
+
+    assert _actor_activation_due(actor, elapsed_s=100.0, route_progress_m=819.9) is False
+    assert _actor_activation_due(actor, elapsed_s=100.1, route_progress_m=820.0) is True
+    assert _actor_activation_due({}, elapsed_s=0.0, route_progress_m=0.0) is True
+
+
+def test_temporary_actor_deactivation_uses_monotonic_route_progress() -> None:
+    actor = {
+        "deactivation_trigger": {
+            "type": "route_progress_greater_than_m", "value": 1250.0,
+        },
+    }
+
+    assert _actor_deactivation_due(actor, elapsed_s=200.0, route_progress_m=1249.9) is False
+    assert _actor_deactivation_due(actor, elapsed_s=200.1, route_progress_m=1250.0) is True
+    assert _actor_deactivation_due({}, elapsed_s=999.0, route_progress_m=9999.0) is False
 
 
 def test_completed_walker_may_be_reclaimed_but_early_death_still_fails() -> None:
@@ -229,6 +382,121 @@ def test_scenario_vehicle_applies_updated_timeline_speed() -> None:
     assert vehicle.applied is not None
     assert vehicle.applied["throttle"] > 0.0
     assert vehicle.applied["brake"] == 0.0
+
+
+def test_lead_vehicle_enforces_declared_speed_for_bicycle_physics() -> None:
+    class Vector:
+        def __init__(self, x=0.0, y=0.0, z=0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Transform:
+        @staticmethod
+        def get_forward_vector():
+            return Vector(-1.0, 0.0, 0.0)
+
+    class Vehicle:
+        is_alive = True
+        target_velocity = None
+
+        @staticmethod
+        def get_velocity():
+            return Vector()
+
+        @staticmethod
+        def get_transform():
+            return Transform()
+
+        def apply_control(self, control):
+            self.applied = control
+
+        def set_target_velocity(self, velocity):
+            self.target_velocity = velocity
+
+    class CarlaApi:
+        Vector3D = Vector
+
+        @staticmethod
+        def VehicleControl(**values):
+            return values
+
+    vehicle = Vehicle()
+    _update_scenario_vehicle(
+        vehicle,
+        {"behavior": {"mode": "lead_vehicle", "target_speed_mps": 5.5}},
+        elapsed_s=10.0,
+        carla_api=CarlaApi(),
+        desired_speed_mps=5.5,
+    )
+
+    assert vehicle.target_velocity.x == pytest.approx(-5.5)
+    assert vehicle.target_velocity.y == pytest.approx(0.0)
+
+
+def test_lead_vehicle_continues_on_map_after_finite_route_endpoint() -> None:
+    class Vector:
+        def __init__(self, x=0.0, y=0.0, z=0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Location(Vector):
+        pass
+
+    class Transform:
+        def __init__(self, location=None, yaw=0.0):
+            self.location = location or Location(1.0, 0.0, 0.0)
+            self.rotation = Namespace(yaw=yaw)
+
+        @staticmethod
+        def get_forward_vector():
+            return Vector(1.0, 0.0, 0.0)
+
+    class Vehicle:
+        is_alive = True
+
+        def __init__(self):
+            self.transform = Transform()
+            self.target_velocity = None
+
+        @staticmethod
+        def get_velocity():
+            return Vector()
+
+        def get_transform(self):
+            return self.transform
+
+        def get_location(self):
+            return self.transform.location
+
+        def apply_control(self, control):
+            self.applied = control
+
+        def set_target_velocity(self, velocity):
+            self.target_velocity = velocity
+
+    class Waypoint:
+        @staticmethod
+        def next(_distance):
+            return [Namespace(transform=Transform(Location(1.0, 5.0, 0.0), yaw=90.0))]
+
+    class CarlaApi:
+        Vector3D = Vector
+
+        @staticmethod
+        def VehicleControl(**values):
+            return values
+
+    vehicle = Vehicle()
+    _update_scenario_vehicle(
+        vehicle,
+        {"behavior": {"mode": "lead_vehicle", "target_speed_mps": 5.5}},
+        elapsed_s=10.0,
+        carla_api=CarlaApi(),
+        desired_speed_mps=5.5,
+        world_map=Namespace(get_waypoint=lambda *_args, **_kwargs: Waypoint()),
+        route_points_xy_m=((0.0, 0.0), (1.0, 0.0)),
+    )
+
+    assert vehicle.target_velocity.x == pytest.approx(0.0, abs=1e-9)
+    assert vehicle.target_velocity.y == pytest.approx(5.5)
 
 
 def test_event_driven_cut_in_waits_then_steers_and_recenters() -> None:
@@ -387,6 +655,7 @@ def test_s2_dynamic_lane_change_profile_has_outbound_stabilization_segment() -> 
         "step_m": 1.0,
         "transition_start_m": 8.0,
         "transition_length_m": 30.0,
+        "target_lane_offset_m": 0.0,
     }, mission_distance_m=8000.0)
 
     assert parameters == {
@@ -394,6 +663,7 @@ def test_s2_dynamic_lane_change_profile_has_outbound_stabilization_segment() -> 
         "step_m": 1.0,
         "transition_start_m": 8.0,
         "transition_length_m": 30.0,
+        "target_lane_offset_m": 0.0,
     }
     assert _scenario_uses_dynamic_out_and_back(Namespace(
         extensions={"maneuver_route_mode": "dynamic_out_and_back"},
@@ -432,6 +702,15 @@ def test_maneuver_target_gap_uses_bound_actor_distance() -> None:
     assert _maneuver_target_visible(step, scene)
     assert _maneuver_target_distance_m(step, scene) == pytest.approx(12.0)
     assert _maneuver_target_gap_s(step, scene, 4.0) == pytest.approx(3.0)
+
+
+def test_maneuver_target_gap_falls_back_to_real_scenario_actor() -> None:
+    step = Namespace(target={"target_id": "bicycle_lead"})
+    scene = PerceptionFrame(1, 0.05)
+
+    assert _maneuver_target_gap_s(
+        step, scene, 5.0, {"bicycle_lead": 15.0},
+    ) == pytest.approx(3.0)
 
 
 def test_maneuver_target_distance_falls_back_to_real_scenario_actor() -> None:
@@ -921,6 +1200,16 @@ def test_route_contract_uses_along_route_progress_for_overlapping_endpoint() -> 
     assert _route_contract_completed(spec, 100.0, spec.finish_radius_m) is True
 
 
+def test_route_contract_accepts_physical_finish_inside_last_coarse_sample() -> None:
+    from integration.scenario_execution import ScenarioSpec
+
+    path = Path(__file__).resolve().parents[2] / "scenarios" / "official_competition" / "S2_complex_avoidance_8km.json"
+    spec = ScenarioSpec.load(path)
+
+    assert _route_contract_completed(spec, 3.15, 6.0) is True
+    assert _route_contract_completed(spec, 3.15, 100.0) is False
+
+
 def test_remaining_route_distance_distinguishes_repeated_coordinates() -> None:
     remaining = _remaining_route_distances(((0.0, 0.0), (10.0, 0.0), (0.0, 0.0)))
     assert remaining == pytest.approx((20.0, 10.0, 0.0))
@@ -941,6 +1230,7 @@ def test_long_route_ends_after_real_contracts_not_only_frame_exhaustion() -> Non
         "elapsed_s": 1900.0,
         "speed_mps": 0.1,
         "route_remaining_m": spec.finish_radius_m,
+        "distance_to_route_end_m": spec.finish_radius_m,
         "timeline_completed": True,
         "command_finished": True,
         "canonical_pending": False,
@@ -955,7 +1245,7 @@ def test_long_route_ends_after_real_contracts_not_only_frame_exhaustion() -> Non
     for key, value in {
         "elapsed_s": 849.9,
         "speed_mps": 0.2,
-        "route_remaining_m": spec.finish_radius_m + 0.1,
+        "route_remaining_m": spec.finish_radius_m * 2.0 + 0.1,
         "timeline_completed": False,
         "command_finished": False,
         "canonical_pending": True,
@@ -1227,6 +1517,18 @@ def test_stale_acceptance_actors_are_removed_without_touching_external_vehicles(
 
     assert _cleanup_stale_scenario_actors(world, spec) == 2
     assert destroyed == ["acceptance84:old_blocker", "front_blocker"]
+
+
+def test_clean_world_on_start_is_explicit_and_opt_in() -> None:
+    assert _scenario_clean_world_on_start(None) is False
+    assert _scenario_clean_world_on_start(Namespace(extensions={})) is False
+    assert _scenario_clean_world_on_start(
+        Namespace(extensions={"clean_world_on_start": True})
+    ) is True
+    with pytest.raises(TypeError, match="clean_world_on_start"):
+        _scenario_clean_world_on_start(
+            Namespace(extensions={"clean_world_on_start": "yes"})
+        )
 
 
 def test_planner_closes_only_the_lidar_observed_adjacent_gap() -> None:

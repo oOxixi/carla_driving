@@ -403,7 +403,7 @@ def front_lidar_distance_m(
     max_range_m: float = 60.0,
     half_width_m: float = 1.35,
     min_height_m: float = -1.8,
-    max_height_m: float = 1.0,
+    max_height_m: float = 0.3,
     minimum_points: int = 3,
 ) -> float | None:
     """Return a conservative low-percentile range inside the ego lane corridor."""
@@ -431,7 +431,7 @@ def adjacent_lidar_distances_m(
     inner_lateral_m: float = 1.75,
     outer_lateral_m: float = 5.25,
     min_height_m: float = -1.8,
-    max_height_m: float = 1.0,
+    max_height_m: float = 0.3,
     minimum_points: int = 3,
 ) -> tuple[float | None, float | None]:
     """Return LiDAR-grounded left/right adjacent-lane obstacle ranges."""
@@ -468,6 +468,121 @@ class FrontRadarTarget:
     closing_speed_mps: float
 
 
+@dataclass(slots=True)
+class TemporalLeadTracker:
+    """Bridge brief LiDAR dropouts without releasing the following target.
+
+    Narrow road users such as bicycles can yield fewer than the required
+    LiDAR cluster points in an individual scan. Treating that one empty scan
+    as a clear road makes longitudinal control alternate between cruise and
+    emergency braking. This tracker keeps only a short, close-range history
+    and expires quickly so a departed target cannot become a persistent
+    phantom.
+    """
+
+    hold_s: float = 0.75
+    acquire_within_m: float = 35.0
+    max_lead_speed_mps: float = 20.0
+    distance_m: float | None = None
+    lead_speed_mps: float | None = None
+    last_update_s: float | None = None
+    last_observed_s: float | None = None
+    last_observed_distance_m: float | None = None
+    ego_travel_since_observation_m: float = 0.0
+
+    def reset(self) -> None:
+        self.distance_m = None
+        self.lead_speed_mps = None
+        self.last_update_s = None
+        self.last_observed_s = None
+        self.last_observed_distance_m = None
+        self.ego_travel_since_observation_m = 0.0
+
+    def update(
+        self,
+        *,
+        sim_time_s: float,
+        ego_speed_mps: float,
+        observed_distance_m: float | None,
+        observed_lead_speed_mps: float | None,
+    ) -> tuple[float | None, float | None, bool]:
+        """Return ``(gap, lead speed, predicted)`` for the current frame."""
+        now = float(sim_time_s)
+        ego_speed = max(0.0, float(ego_speed_mps))
+        dt_s = 0.0 if self.last_update_s is None else max(0.0, now - self.last_update_s)
+        if self.last_observed_s is not None:
+            self.ego_travel_since_observation_m += ego_speed * dt_s
+        self.last_update_s = now
+
+        if (
+            observed_distance_m is not None
+            and self.distance_m is not None
+            and self.last_observed_s is not None
+            and self.last_observed_distance_m is not None
+            and self.last_observed_distance_m <= self.acquire_within_m
+            and now - self.last_observed_s <= self.hold_s
+        ):
+            assumed_lead_speed = self.lead_speed_mps or 0.0
+            predicted_distance = max(
+                0.1,
+                self.distance_m
+                - max(0.0, ego_speed - assumed_lead_speed) * dt_s,
+            )
+            # A newly closer return can be a real cut-in or hazard and must
+            # always replace the current track. Only suppress an implausible
+            # release to a much farther return, which commonly comes from the
+            # background beside a bicycle on a bend.
+            if float(observed_distance_m) > predicted_distance + 3.0:
+                observed_distance_m = None
+
+        if observed_distance_m is not None:
+            observed = max(0.0, float(observed_distance_m))
+            sensor_speed = (
+                None
+                if observed_lead_speed_mps is None
+                else max(0.0, min(self.max_lead_speed_mps, float(observed_lead_speed_mps)))
+            )
+            inferred_speed: float | None = None
+            if self.last_observed_s is not None and self.last_observed_distance_m is not None:
+                observation_dt_s = now - self.last_observed_s
+                if 0.04 <= observation_dt_s <= self.hold_s + 0.15:
+                    inferred_speed = (
+                        observed - self.last_observed_distance_m
+                        + self.ego_travel_since_observation_m
+                    ) / observation_dt_s
+                    if not 0.0 <= inferred_speed <= self.max_lead_speed_mps:
+                        inferred_speed = None
+            measured_speed = sensor_speed if sensor_speed is not None else inferred_speed
+            if measured_speed is not None and self.lead_speed_mps is not None:
+                measured_speed = 0.65 * self.lead_speed_mps + 0.35 * measured_speed
+            self.distance_m = observed
+            self.lead_speed_mps = measured_speed
+            self.last_observed_s = now
+            self.last_observed_distance_m = observed
+            self.ego_travel_since_observation_m = 0.0
+            return observed, measured_speed, False
+
+        if (
+            self.distance_m is None
+            or self.last_observed_s is None
+            or self.last_observed_distance_m is None
+            or self.last_observed_distance_m > self.acquire_within_m
+            or now - self.last_observed_s > self.hold_s
+        ):
+            self.reset()
+            self.last_update_s = now
+            return None, None, False
+
+        assumed_lead_speed = self.lead_speed_mps
+        if assumed_lead_speed is None:
+            # One acquired scan is not enough to estimate velocity. Assuming
+            # stationary motion for a fraction of a second is conservative.
+            assumed_lead_speed = 0.0
+        closing_speed = max(0.0, ego_speed - assumed_lead_speed)
+        self.distance_m = max(0.1, self.distance_m - closing_speed * dt_s)
+        return self.distance_m, assumed_lead_speed, True
+
+
 def front_radar_target(
     measurement: Any,
     *,
@@ -476,12 +591,15 @@ def front_radar_target(
     max_range_m: float = 80.0,
     half_width_m: float = 1.75,
     min_altitude_deg: float = -3.0,
+    max_altitude_deg: float = 3.0,
 ) -> FrontRadarTarget | None:
     """Select the nearest finite radar return inside the ego corridor.
 
-    CARLA reports ``depth`` along the ray and radial ``velocity`` toward the
-    sensor.  The mount offset converts the range to the ego coordinate origin;
-    absolute lead speed is derived later from ego speed minus closing speed.
+    CARLA reports ``depth`` along the ray. Its implementation computes radial
+    ``velocity`` as ``dot(target_velocity - sensor_velocity, outward_ray)``:
+    a slower lead approached by ego is therefore negative. The mount offset
+    converts the range to the ego coordinate origin; absolute lead speed is
+    derived later from ego speed plus that signed relative velocity.
     """
     detections = getattr(measurement, "detections", measurement)
     try:
@@ -503,6 +621,7 @@ def front_radar_target(
             min_range_m <= forward <= max_range_m
             and abs(lateral) <= half_width_m
             and math.degrees(altitude) >= min_altitude_deg
+            and math.degrees(altitude) <= max_altitude_deg
         ):
             candidates.append(FrontRadarTarget(forward, velocity))
     if not candidates:
@@ -702,6 +821,7 @@ class CarlaPerceptionBridge:
         self._visual_provider = visual_provider
         self._fusion = fusion or ConservativeSensorFusion()
         self._object_tracker = SensorObjectTracker()
+        self._lead_tracker = TemporalLeadTracker()
         self._traffic_lights = tuple(
             actor
             for actor in world.get_actors()
@@ -833,17 +953,55 @@ class CarlaPerceptionBridge:
                 sources["radar_modality"] = f"RADAR_FRAME_INVALID_{type(error).__name__.upper()}"
             if radar_target is None and sources["radar_modality"] == "CARLA_RADAR_FRAME_ALIGNED":
                 sources["radar_observation"] = "CARLA_RADAR_NO_FRONT_CORRIDOR_TARGET"
-        if radar_target is not None and (
-            lead_distance is None or abs(radar_target.distance_m - lead_distance) <= 4.0
-        ):
-            if lead_distance is None:
+        if radar_target is not None and lead_distance is None:
+            # Long-range radar-only returns are common under Town03's flyovers
+            # and on tight bends. Dense LiDAR must corroborate those objects
+            # before they constrain normal cruising. Preserve a short-range
+            # radar-only fail-safe so a genuinely close target is never hidden.
+            if radar_target.distance_m <= 8.0:
                 lead_distance = radar_target.distance_m
                 sources["lead_distance_m"] = "RADAR_FRONT_CORRIDOR_DEGRADED_RANGE"
-            lead_speed = max(0.0, _speed_mps(self._ego) - radar_target.closing_speed_mps)
+                lead_speed = max(
+                    0.0, _speed_mps(self._ego) + radar_target.closing_speed_mps,
+                )
+                sources["lead_speed_mps"] = "RADAR_ONLY_RADIAL_VELOCITY"
+                sources["radar_observation"] = "RADAR_FRONT_CORRIDOR_CLOSE_FAILSAFE"
+            else:
+                sources["radar_observation"] = (
+                    "RADAR_FRONT_CORRIDOR_UNCORROBORATED_IGNORED"
+                )
+        elif radar_target is not None and abs(
+            radar_target.distance_m - lead_distance
+        ) <= 4.0:
+            lead_speed = max(0.0, _speed_mps(self._ego) + radar_target.closing_speed_mps)
             sources["lead_speed_mps"] = "RADAR_LIDAR_ASSOCIATED_RADIAL_VELOCITY"
             sources["radar_observation"] = "RADAR_FRONT_CORRIDOR_ASSOCIATED"
         elif radar_target is not None:
             sources["radar_observation"] = "RADAR_LIDAR_RANGE_GATE_REJECTED"
+        lead_track_was_active = self._lead_tracker.last_observed_s is not None
+        lead_distance, tracked_lead_speed, lead_predicted = self._lead_tracker.update(
+            sim_time_s=sim_time_s,
+            ego_speed_mps=_speed_mps(self._ego),
+            observed_distance_m=lead_distance,
+            observed_lead_speed_mps=lead_speed,
+        )
+        if lead_predicted:
+            lead_speed = tracked_lead_speed
+            sources["lead_distance_m"] = "LIDAR_TEMPORAL_SHORT_HOLD"
+            sources["lead_speed_mps"] = "LIDAR_TEMPORAL_PREDICTED_LEAD_SPEED"
+        elif lead_distance is not None and tracked_lead_speed is not None:
+            # The tracker already rejects impossible values and smooths each
+            # accepted range/radar velocity. Feeding the raw radar sample to
+            # C here bypassed that filter, so a narrow bicycle could alternate
+            # between its real radial velocity and a static background return
+            # on consecutive scans. That became alternating throttle/brake
+            # even though the temporal track itself was stable.
+            speed_was_sensor_grounded = lead_speed is not None
+            lead_speed = tracked_lead_speed
+            if not speed_was_sensor_grounded:
+                sources["lead_speed_mps"] = "LIDAR_TEMPORAL_INFERRED_LEAD_SPEED"
+            elif lead_track_was_active:
+                sources["lead_speed_mps"] = "LIDAR_TEMPORAL_FILTERED_SENSOR_LEAD_SPEED"
         if lead_distance is not None and not corridor_objects:
             # Keep a range-grounded generic target available to the
             # high-level planner without pretending that RGB supplied a

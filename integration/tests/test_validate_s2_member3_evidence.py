@@ -4,7 +4,7 @@ from tools.validate_s2_member3_evidence import SCENARIO_ID, validate_evidence
 
 
 def _passing_evidence():
-    command_ids = [f"scenario_cmd_{index:03d}" for index in range(5)]
+    command_ids = [f"scenario_cmd_{index:03d}" for index in range(6)]
     records = [{
         "record_type": "run_start",
         "config": {
@@ -21,7 +21,7 @@ def _passing_evidence():
     records.extend({
         "record_type": "canonical_routing",
         "phase": "MISSION_ROUTE_RESTORED",
-    } for _ in range(2))
+    } for _ in range(1))
     extension_checks = [
         {"key": key, "status": "PASS", "actual": True}
         for key in (
@@ -30,6 +30,11 @@ def _passing_evidence():
             "must_return_to_original_lane",
             "minimum_actor_distances_m",
             "maximum_route_deviation_m",
+            "actor_activation_progress_windows_m",
+            "command_progress_windows_m",
+            "minimum_approach_speed_kph_by_phase",
+            "minimum_resumed_speed_kph_by_phase",
+            "phase_target_speed_tolerance_kph",
         )
     ]
     summary = {
@@ -44,8 +49,8 @@ def _passing_evidence():
                 "passed": True,
                 "checks": {"low_level_boundary": True},
                 "observed": {
-                    "qwen_calls": 5,
-                    "routes": ["QWEN_PLAN"] * 5,
+                    "qwen_calls": 6,
+                    "routes": ["QWEN_PLAN"] * 6,
                     "behaviors": [
                         "KEEP_LANE", "SLOW_DOWN", "WAIT_SAFE_GAP",
                         "CHANGE_LANE_LEFT", "PASS_TARGET", "RETURN_TO_LANE",

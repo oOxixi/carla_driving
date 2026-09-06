@@ -188,6 +188,48 @@ def test_lane_change_uses_same_direction_adjacent_driving_lane(direction, expect
     assert max(math.dist(a, b) for a, b in zip(route.points_xy_m, route.points_xy_m[1:])) < 2.0
 
 
+@pytest.mark.parametrize(("direction", "expected_y"), [("LEFT", -3.75), ("RIGHT", 3.75)])
+def test_lane_change_can_add_bounded_clearance_inside_target_lane(direction, expected_y):
+    center, _, _ = _parallel_lanes()
+    route = build_lane_change_route_reference(
+        Map(center[0]),
+        SimpleNamespace(x=0.0, y=0.0),
+        4.0,
+        direction=direction,
+        distance_m=60.0,
+        target_lane_offset_m=0.25,
+    )
+
+    assert route.points_xy_m[0][1] == pytest.approx(0.0)
+    assert route.points_xy_m[-1][1] == pytest.approx(expected_y)
+    assert max(math.dist(a, b) for a, b in zip(route.points_xy_m, route.points_xy_m[1:])) < 2.0
+
+
+def test_lane_change_follows_curved_lane_topology_instead_of_cutting_chord():
+    samples = 100
+    center = []
+    left = []
+    for index in range(samples):
+        angle = math.radians(index * 1.0)
+        center.append(Waypoint(50.0 * math.cos(angle), 50.0 * math.sin(angle), index + 90.0))
+        left.append(Waypoint(46.5 * math.cos(angle), 46.5 * math.sin(angle), index + 90.0))
+    for lane in (center, left):
+        for first, second in zip(lane, lane[1:]):
+            first.children = [second]
+    for source, adjacent in zip(center, left):
+        source.left = adjacent
+
+    route = build_lane_change_route_reference(
+        Map(center[0]), SimpleNamespace(x=50.0, y=0.0), 4.0,
+        direction="LEFT", distance_m=60.0, step_m=1.0,
+        transition_start_m=8.0, transition_length_m=30.0,
+    )
+
+    radii = [math.hypot(x, y) for x, y in route.points_xy_m]
+    assert min(radii) >= 46.4
+    assert max(radii) <= 50.1
+
+
 def test_lane_change_rejects_opposite_direction_adjacent_lane():
     center, left, _ = _parallel_lanes()
     for current, opposite in zip(center, left):

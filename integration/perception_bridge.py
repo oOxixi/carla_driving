@@ -11,9 +11,17 @@ def longitudinal_request(vehicle: RuntimeVehicleState, scene: PerceptionFrame, *
     if scene.frame != vehicle.frame or scene.sim_time_s != vehicle.sim_time_s:
         raise ValueError("scene and vehicle must be from the same CARLA frame")
     traffic = TrafficConstraint(SignalState(scene.traffic_light), scene.distance_to_stop_line_m, scene.speed_limit_mps)
-    if (scene.lead_distance_m is None) != (scene.lead_speed_mps is None):
-        raise ValueError("lead_distance_m and lead_speed_mps must be supplied together")
-    closing = None if scene.lead_speed_mps is None else vehicle.speed_mps - scene.lead_speed_mps
+    if scene.lead_distance_m is None:
+        closing = None
+    elif scene.lead_speed_mps is None:
+        # A frame can have a valid LiDAR range before aligned Radar or the
+        # temporal LiDAR tracker has established target velocity.  Preserve
+        # the safety-relevant range and conservatively assume the obstacle is
+        # stationary instead of turning an ordinary sensor warm-up gap into a
+        # latched integration failure.
+        closing = vehicle.speed_mps
+    else:
+        closing = vehicle.speed_mps - scene.lead_speed_mps
     return LongitudinalRequest(vehicle, requested_speed_mps, path_curvature_per_m, traffic,
                                scene.lead_distance_m, closing)
 

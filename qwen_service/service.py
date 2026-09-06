@@ -456,14 +456,38 @@ class VllmQwenPlannerBackend:
     def _expanded_steps(
         self, request: Mapping[str, Any], behavior: str,
     ) -> list[dict[str, Any]]:
-        steps = [self._step(request, behavior, index=1)]
+        steps: list[dict[str, Any]] = []
+        if behavior == "AVOID_OBSTACLE" and self._pedestrian_then_overtake_requested(request):
+            # A compound instruction such as "让行人通过后再超越慢车" has two
+            # distinct hazards.  Preserve the ordering in the high-level plan
+            # instead of letting AVOID_OBSTACLE hide the pedestrian-yield
+            # subcommand.  Ground the first step to a visible pedestrian when
+            # available and keep the named slow vehicle for the overtake.
+            yield_request = dict(request)
+            yield_hint = dict(request.get("command_hint", {}))
+            pedestrian = next((
+                item for item in request.get("targets", ())
+                if isinstance(item, Mapping)
+                and str(item.get("class", "")).casefold() == "pedestrian"
+            ), None)
+            yield_hint["target"] = (
+                str(pedestrian["target_id"]) if pedestrian is not None else None
+            )
+            yield_request["command_hint"] = yield_hint
+            steps.append(self._step(yield_request, "YIELD", index=1))
+        steps.append(self._step(request, behavior, index=len(steps) + 1))
+        if len(steps) > 1 and behavior == "AVOID_OBSTACLE":
+            steps[-1]["preconditions"] = [
+                "PERCEPTION_FRESH", "NO_EMERGENCY_RISK",
+            ]
         if behavior == "AVOID_OBSTACLE":
-            steps.append(self._step(request, "RETURN_TO_LANE", index=2))
-        elif behavior in {"SLOW_DOWN", "YIELD"} and self._resume_requested(request):
+            steps.append(self._step(request, "RETURN_TO_LANE", index=len(steps) + 1))
+        if behavior in {"AVOID_OBSTACLE", "SLOW_DOWN", "YIELD"} and self._resume_requested(request):
             # Keep conditional multi-action voice commands complete: slowing
-            # for a pedestrian is only the first subcommand; after D reports
-            # no emergency risk, resume the bounded route speed.  Both steps
-            # remain high-level and are still validated/compiled downstream.
+            # or avoidance is only the first subcommand; after D reports no
+            # emergency risk (and, for avoidance, returns to the original
+            # lane), resume the bounded route speed.  Every step remains
+            # high-level and is validated/compiled downstream.
             resume_request = dict(request)
             resume_hint = dict(request.get("command_hint", {}))
             resume_hint["target"] = None
@@ -471,16 +495,46 @@ class VllmQwenPlannerBackend:
                 request["constraints"].get("max_target_speed_mps") or 3.0
             )
             resume_request["command_hint"] = resume_hint
-            resume = self._step(resume_request, "KEEP_LANE", index=2)
+            resume = self._step(resume_request, "KEEP_LANE", index=len(steps) + 1)
             resume["preconditions"] = ["PERCEPTION_FRESH", "NO_EMERGENCY_RISK"]
             steps.append(resume)
         return steps
+
+    @staticmethod
+    def _pedestrian_then_overtake_requested(request: Mapping[str, Any]) -> bool:
+        source = str(request.get("source_text", "")).casefold()
+        mentions_pedestrian = any(token in source for token in (
+            "行人", "pedestrian", "walker",
+        ))
+        mentions_overtake = any(token in source for token in (
+            "超越", "超车", "overtake", "pass the",
+        ))
+        expresses_order = any(token in source for token in (
+            "后", "然后", "再", "after", "then",
+        ))
+        return mentions_pedestrian and mentions_overtake and expresses_order
 
     @staticmethod
     def _resume_requested(request: Mapping[str, Any]) -> bool:
         source = str(request.get("source_text", "")).casefold()
         return any(token in source for token in (
             "继续", "恢复", "resume", "continue", "proceed",
+        ))
+
+    @staticmethod
+    def _clearance_observation_requested(request: Mapping[str, Any]) -> bool:
+        source = str(request.get("source_text", "")).casefold()
+        return any(token in source for token in (
+            "确认安全", "观察", "保持至少", "安全距离",
+            "until safe", "observe", "safe distance", "clear",
+        ))
+
+    @staticmethod
+    def _transient_merge_hazard(request: Mapping[str, Any]) -> bool:
+        """Identify hazards that clear by stabilising, not by being passed."""
+        source = str(request.get("source_text", "")).casefold()
+        return any(token in source for token in (
+            "加塞", "并线", "汇入", "切入", "cut in", "cut-in", "merge",
         ))
 
     def _choice_codes(self, request: Mapping[str, Any]) -> list[str]:
@@ -600,11 +654,12 @@ class VllmQwenPlannerBackend:
         target_behaviors = {
             "FOLLOW", "AVOID_OBSTACLE", "YIELD", "SLOW_DOWN", "STOP",
         }
-        stable_target_behaviors = {"FOLLOW", "AVOID_OBSTACLE", "YIELD"}
-        target_id = (
-            requested_target or None
-            if behavior in stable_target_behaviors else None
-        )
+        # A command may name a semantic scenario role (for example
+        # ``slow_vehicle``), while the sensor tracker exposes only opaque
+        # ``C-xxxx`` IDs. Never copy an unavailable semantic name into a plan:
+        # bind it to a visible sensor target below, or leave target_id unset
+        # for behaviors such as YIELD that can execute without identity.
+        target_id = None
         if targets and behavior in target_behaviors:
             preferred_relations = (
                 {"center_ahead", "far_ahead"}
@@ -655,14 +710,33 @@ class VllmQwenPlannerBackend:
             lane = "CURRENT"
             direction = capabilities.get("return_direction")
         target_speed = hint.get("target_speed_mps") if isinstance(hint, Mapping) else None
-        if behavior in {"STOP", "HOLD", "PULL_OVER"}:
+        if behavior in {"STOP", "HOLD", "PULL_OVER", "YIELD"}:
+            # YIELD is a stationary right-of-way transfer, not merely a
+            # request to drive at the command's reduced speed.  Keeping the
+            # original 30 km/h target made ego repeatedly creep back into a
+            # crossing pedestrian/slow lead vehicle, so the six-second clear
+            # window could never complete.  The following plan step restores
+            # the requested maneuver speed after clearance.
             target_speed = 0.0
         elif behavior == "SLOW_DOWN":
-            requested = math.inf if target_speed is None else float(target_speed)
-            target_speed = min(
-                requested,
-                3.0,
-                float(request["constraints"].get("max_target_speed_mps") or 3.0),
+            maximum = float(
+                request["constraints"].get("max_target_speed_mps") or 3.0
+            )
+            # Preserve an explicit speed from the canonical voice command.
+            # The old unconditional 3 m/s clamp turned commands such as
+            # "减速至30公里每小时" into 10.8 km/h, making normal competition
+            # traffic crawl.  Keep 3 m/s only as the conservative fallback
+            # when the command supplied no speed; the runtime limit and the
+            # independent safety layer still provide upper bounds.
+            explicit_slow_command = (
+                isinstance(hint, Mapping)
+                and str(hint.get("intent", "")).upper() == "SLOW_DOWN"
+                and target_speed is not None
+            )
+            target_speed = (
+                min(float(target_speed), maximum)
+                if explicit_slow_command
+                else min(3.0, maximum)
             )
         elif target_speed is None and behavior in {
             "KEEP_LANE", "FOLLOW", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
@@ -682,17 +756,55 @@ class VllmQwenPlannerBackend:
             "RETURN_TO_LANE": "LANE_CENTERED", "CHANGE_LANE_LEFT": "LANE_CENTERED",
             "CHANGE_LANE_RIGHT": "LANE_CENTERED", "TURN_LEFT": "JUNCTION_EXITED",
             "TURN_RIGHT": "JUNCTION_EXITED",
-            "KEEP_LANE": "HOLD_FRAMES", "YIELD": "SPEED_BELOW",
+            "KEEP_LANE": "HOLD_FRAMES", "SLOW_DOWN": "SPEED_BELOW",
+            "YIELD": "HOLD_FRAMES",
         }.get(behavior, "SPEED_REACHED")
-        timeout = 30.0 if behavior.startswith("TURN_") else 20.0 if behavior in {
-            "AVOID_OBSTACLE", "RETURN_TO_LANE",
-        } else 12.0 if behavior.startswith("CHANGE_LANE_") else 8.0
+        sustained_observation = (
+            behavior == "SLOW_DOWN"
+            and self._clearance_observation_requested(request)
+        )
+        grounded_target_ids = {
+            str(item)
+            for item in (
+                capabilities.get("grounded_target_ids", ())
+                if isinstance(capabilities, Mapping) else ()
+            )
+            if item
+        }
+        if (
+            requested_target
+            and target_id is None
+            and requested_target in grounded_target_ids
+            and behavior in target_behaviors
+        ):
+            # The runner separately proves that this semantic ID belongs to a
+            # live owned CARLA actor.  It is an authorized completion/follow
+            # target, not a fabricated visual detection.
+            target_id = requested_target
+        clearance_gated_slow = (
+            sustained_observation
+            and target_id is not None
+            and not self._transient_merge_hazard(request)
+        )
+        if clearance_gated_slow:
+            completion_type = "TARGET_PASSED"
+        timeout = 35.0 if clearance_gated_slow else 30.0 if behavior.startswith("TURN_") else 20.0 if behavior in {
+            "AVOID_OBSTACLE", "RETURN_TO_LANE", "YIELD",
+        } or sustained_observation else 12.0 if behavior.startswith("CHANGE_LANE_") else 8.0
         completion_value = target_speed
         if completion_type == "TARGET_GAP_REACHED":
             completion_value = 2.0
         elif completion_type == "SPEED_BELOW":
             completion_value = target_speed if target_speed is not None else 2.0
-        elif completion_type in {"HOLD_FRAMES", "LANE_CENTERED", "JUNCTION_EXITED", "TARGET_PASSED"}:
+        elif completion_type == "TARGET_PASSED" and clearance_gated_slow:
+            # For SLOW_DOWN this is the minimum observation duration.  The A
+            # execution FSM additionally requires the requested reduced speed
+            # and a grounded target-clear signal before it can complete.
+            completion_value = 6.0
+        elif completion_type in {
+            "HOLD_FRAMES", "LANE_CENTERED", "JUNCTION_EXITED",
+            "TARGET_PASSED",
+        }:
             completion_value = None
         return {
             "step_id": f"step-{index}",
@@ -709,7 +821,21 @@ class VllmQwenPlannerBackend:
                 "type": completion_type,
                 "value": 0.2 if completion_type == "STOPPED" else completion_value,
                 "lane": lane if completion_type == "LANE_CENTERED" else None,
-                "hold_frames": 3,
+                # A yield keeps a six-second clear-observation window. Any D
+                # emergency brake resets this counter in ManeuverFSM, so the
+                # following manoeuvre cannot start immediately after a hazard.
+                # Conditional SLOW_DOWN instructions must remain at the
+                # requested observation speed for six seconds before a later
+                # resume step can restore cruising speed.  This prevents
+                # "减速至30，确认安全后恢复" from collapsing into a brief speed
+                # crossing followed immediately by acceleration.
+                "hold_frames": (
+                    120
+                    if behavior == "YIELD" or (
+                        sustained_observation and not clearance_gated_slow
+                    )
+                    else 3
+                ),
             },
             "timeout_s": timeout,
             "on_failure": "SAFE_STOP",

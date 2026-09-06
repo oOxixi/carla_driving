@@ -120,6 +120,13 @@ class PlanValidator:
             for item in scene.get("objects", ())
             if isinstance(item, Mapping) and item.get("track_id")
         }
+        # A scenario actor may be grounded by the live CARLA actor registry
+        # before the vision tracker assigns it an opaque ID.  Keep these IDs
+        # separate from ``objects`` so they are never represented as visual
+        # detections, while still allowing a completion-only clearance gate.
+        available_targets.update(
+            str(item) for item in scene.get("grounded_target_ids", ()) if item
+        )
         available_lanes = _available_lanes(scene)
         speed_limit = _speed_limit(scene, self.maximum_speed_mps)
         must_stop = _must_stop(scene)
@@ -218,6 +225,7 @@ class PlanValidator:
             "CHANGE_LANE_RIGHT": {"LANE_CENTERED"},
             "STOP": {"STOPPED", "SPEED_BELOW"},
             "FOLLOW": {"TARGET_GAP_REACHED", "HOLD_FRAMES"},
+            "YIELD": {"HOLD_FRAMES"},
             "PULL_OVER": {"STOPPED", "LANE_CENTERED"},
         }.get(behavior)
         if expected_types is not None and completion_type not in expected_types:

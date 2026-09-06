@@ -38,6 +38,7 @@ def voice_envelope_to_driving_command(
         "STOP": "STOP",
         "SET_SPEED": "SET_SPEED",
         "SLOW_DOWN": "SLOW_DOWN",
+        "YIELD": "YIELD",
         "KEEP_LANE": "KEEP_LANE",
         "CHANGE_LANE": "CHANGE_LANE",
         "CHANGE_LANE_LEFT": "CHANGE_LANE",
@@ -210,6 +211,17 @@ def control_command_to_voice_envelope(
     elif behavior == "FOLLOW":
         intent = "SLOW_DOWN" if target_speed is not None else "KEEP_LANE"
         parameters = {} if target_speed is None else {"speed": float(target_speed), "unit": "m/s"}
+    elif behavior == "YIELD":
+        if not compiled_maneuver:
+            raise ValueError(f"current deterministic runtime cannot execute slow behavior {behavior}")
+        if target_speed is None:
+            raise ValueError("YIELD requires target_speed_mps")
+        # The deterministic longitudinal controller has no separate YIELD
+        # primitive.  A validated Qwen manoeuvre therefore realizes yielding
+        # as a bounded SLOW_DOWN step; pedestrian/obstacle safety remains
+        # independently enforced by the perception safety layer.
+        intent = "SLOW_DOWN"
+        parameters = {"speed": float(target_speed), "unit": "m/s"}
     elif behavior in {"STOP", "HOLD"}:
         intent, parameters = "STOP", {}
     elif behavior == "EMERGENCY_STOP":

@@ -357,6 +357,98 @@ def test_vllm_pedestrian_slow_down_preserves_resume_subcommand() -> None:
     assert steps[1]["preconditions"] == ["PERCEPTION_FRESH", "NO_EMERGENCY_RISK"]
 
 
+def test_vllm_slow_down_preserves_explicit_thirty_kph_target() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = (
+        "前方公交站有行人上下车，靠边减速至30公里每小时，"
+        "确认安全后继续行驶"
+    )
+    request["command_hint"] = {
+        "intent": "SLOW_DOWN", "direction": None,
+        "target_speed_mps": 30.0 / 3.6, "target": "bus_at_stop",
+    }
+    request["scene_capabilities"] = {
+        "grounded_target_ids": ["bus_at_stop"],
+    }
+    request["constraints"]["max_target_speed_mps"] = 40.0 / 3.6
+
+    step = backend._step(request, "SLOW_DOWN", index=1)
+
+    assert step["target"]["target_speed_mps"] == pytest.approx(30.0 / 3.6)
+    assert step["target"]["target_id"] == "bus_at_stop"
+    assert step["completion"]["type"] == "TARGET_PASSED"
+    assert step["completion"]["value"] == pytest.approx(6.0)
+    assert step["completion"]["hold_frames"] == 3
+    assert step["timeout_s"] == 35.0
+
+
+def test_vllm_cut_in_observation_waits_for_stability_without_requiring_overtake() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = (
+        "右侧私家车可能加塞，先减速至30公里每小时观察，"
+        "确认安全后恢复40公里每小时行驶"
+    )
+    request["command_hint"] = {
+        "intent": "SLOW_DOWN", "direction": None,
+        "target_speed_mps": 30.0 / 3.6, "target": "intersection_cut_in_car",
+    }
+    request["scene_capabilities"] = {
+        "grounded_target_ids": ["intersection_cut_in_car"],
+    }
+    request["constraints"]["max_target_speed_mps"] = 40.0 / 3.6
+
+    step = backend._step(request, "SLOW_DOWN", index=1)
+
+    assert step["target"]["target_id"] == "intersection_cut_in_car"
+    assert step["completion"]["type"] == "SPEED_BELOW"
+    assert step["completion"]["hold_frames"] == 120
+    assert step["timeout_s"] == 20.0
+
+
+def test_vllm_avoidance_preserves_return_and_resume_subcommands() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = (
+        "看到横穿行人，减速避让后向左变道超越慢车，"
+        "完成后回到原车道并恢复40公里每小时"
+    )
+    request["command_hint"] = {
+        "intent": "AVOID_OBSTACLE", "direction": "LEFT",
+        "target_speed_mps": 8.0, "target": "slow_vehicle",
+    }
+    request["constraints"]["max_target_speed_mps"] = 40.0 / 3.6
+    request["targets"] = [
+        {
+            "target_id": "crossing_pedestrian", "class": "pedestrian",
+            "distance_m": 20.0, "relation": "center_ahead",
+        },
+        {
+            "target_id": "slow_vehicle", "class": "vehicle",
+            "distance_m": 35.0, "relation": "center_ahead",
+        },
+    ]
+
+    steps = backend._expanded_steps(request, "AVOID_OBSTACLE")
+
+    assert [step["behavior"] for step in steps] == [
+        "YIELD", "AVOID_OBSTACLE", "RETURN_TO_LANE", "KEEP_LANE",
+    ]
+    assert steps[0]["target"]["target_id"] == "crossing_pedestrian"
+    assert steps[0]["target"]["target_speed_mps"] == 0.0
+    assert steps[0]["completion"] == {
+        "type": "HOLD_FRAMES", "value": None, "lane": None,
+        "hold_frames": 120,
+    }
+    assert steps[0]["timeout_s"] == 20.0
+    assert steps[1]["target"]["target_id"] == "slow_vehicle"
+    assert steps[1]["preconditions"] == ["PERCEPTION_FRESH", "NO_EMERGENCY_RISK"]
+    assert steps[3]["target"]["target_id"] is None
+    assert steps[3]["target"]["target_speed_mps"] == pytest.approx(40.0 / 3.6)
+    assert steps[3]["preconditions"] == ["PERCEPTION_FRESH", "NO_EMERGENCY_RISK"]
+
+
 def test_vllm_grounds_unavailable_named_target_to_visible_forward_object() -> None:
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
     request = _request()
@@ -372,6 +464,22 @@ def test_vllm_grounds_unavailable_named_target_to_visible_forward_object() -> No
     step = backend._step(request, "AVOID_OBSTACLE", index=1)
 
     assert step["target"]["target_id"] == "crossing_pedestrian"
+
+
+def test_vllm_yield_does_not_invent_unavailable_semantic_target_id() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "YIELD", "direction": None,
+        "target_speed_mps": 30.0 / 3.6,
+        "target": "late_crossing_pedestrian",
+    }
+    request["targets"] = []
+
+    step = backend._step(request, "YIELD", index=1)
+
+    assert step["target"]["target_id"] is None
+    assert step["target"]["target_speed_mps"] == 0.0
 
 
 def test_vllm_keep_lane_does_not_require_a_named_context_actor() -> None:

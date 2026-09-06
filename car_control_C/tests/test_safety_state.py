@@ -36,14 +36,45 @@ def test_temporal_lidar_difference_computes_low_ttc_without_actor_truth() -> Non
     fusion = ConservativeSensorFusion()
     fusion.update(frame=1, sim_time_s=0.0, ego_speed_mps=8.0,
                   front_distance_m=10.0, lidar_valid=True)
-    summary = fusion.update(frame=2, sim_time_s=0.1, ego_speed_mps=8.0,
+    pending = fusion.update(frame=2, sim_time_s=0.1, ego_speed_mps=8.0,
                             front_distance_m=9.0, lidar_valid=True)
+    summary = fusion.update(frame=3, sim_time_s=0.2, ego_speed_mps=8.0,
+                            front_distance_m=8.0, lidar_valid=True)
 
+    assert pending.closing_speed_mps is None
+    assert pending.source_by_field["closing_speed_mps"] == "LIDAR_TEMPORAL_CONFIRMATION_PENDING"
     assert summary.closing_speed_mps == pytest.approx(10.0)
-    assert summary.ttc_s == pytest.approx(0.9)
+    assert summary.ttc_s == pytest.approx(0.8)
     assert summary.recommended_action == "EMERGENCY_BRAKE"
     assert summary.fail_closed
-    assert summary.source_by_field["closing_speed_mps"] == "LIDAR_TEMPORAL_DIFFERENCE"
+    assert summary.source_by_field["closing_speed_mps"] == "LIDAR_TEMPORAL_CONFIRMED"
+
+
+def test_temporal_lidar_target_switch_rejects_impossible_closing_speed() -> None:
+    fusion = ConservativeSensorFusion()
+    fusion.update(
+        frame=1,
+        sim_time_s=0.0,
+        ego_speed_mps=8.0,
+        front_distance_m=38.35,
+        lidar_valid=True,
+    )
+
+    summary = fusion.update(
+        frame=2,
+        sim_time_s=0.05,
+        ego_speed_mps=8.0,
+        front_distance_m=35.25,
+        lidar_valid=True,
+    )
+
+    assert summary.closing_speed_mps is None
+    assert summary.ttc_s is None
+    assert summary.recommended_action == "KEEP_SPEED"
+    assert (
+        summary.source_by_field["closing_speed_mps"]
+        == "LIDAR_TEMPORAL_OUTLIER_REJECTED"
+    )
 
 
 def test_vru_braking_envelope_does_not_apply_to_a_non_vru_vehicle() -> None:

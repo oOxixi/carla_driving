@@ -237,6 +237,22 @@ def test_actor_registry_cleans_every_actor_when_one_destroy_fails() -> None:
     assert events == ["stop:second", "destroy:second", "stop:first", "destroy:first"]
 
 
+def test_actor_registry_can_release_temporary_actor_without_double_destroy() -> None:
+    events: list[str] = []
+    registry = ActorRegistry()
+    temporary = registry.track(FakeActor("temporary", events))
+    persistent = registry.track(FakeActor("persistent", events))
+
+    assert registry.release(temporary) is True
+    assert registry.release(temporary) is False
+    registry.cleanup()
+
+    assert events == [
+        "stop:temporary", "destroy:temporary",
+        "stop:persistent", "destroy:persistent",
+    ]
+
+
 def test_sensor_buffer_only_returns_a_complete_matching_frame() -> None:
     buffer = SensorFrameBuffer(max_frames=3)
     buffer.push("rgb", 10, "old-image")

@@ -6,6 +6,7 @@ fault windows, speed/weather policies, and compact extension evidence.
 """
 from __future__ import annotations
 
+from collections import deque
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 import math
@@ -35,6 +36,8 @@ IMPLEMENTED_RUNTIME_REQUIREMENTS = frozenset({
     "raw_text_qwen_routing", "relative_speed_acceptance",
     "resource_stability_metrics", "restart_after_stop_acceptance",
     "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance",
+    "route_progress_actor_activation", "route_progress_actor_lifecycle",
+    "route_progress_speed_acceptance",
     "scenario_speed_limit", "stale_result_acceptance",
     "target_lane_safety_check", "visibility_acceptance",
 })
@@ -55,6 +58,7 @@ class ExtensionFrameState:
     newly_active_fault_ids: tuple[str, ...]
     newly_recovered_fault_ids: tuple[str, ...]
     speed_limit_mps: float | None
+    speed_limit_overrides_map: bool
 
 
 class ScenarioExtensionRuntime:
@@ -138,6 +142,15 @@ class ScenarioExtensionRuntime:
         self._mission_route_restore_count = 0
         self._lead_brake_trigger_distance_m: float | None = None
         self._actor_trigger_ids: set[str] = set()
+        self._actor_activation_progress_m: dict[str, float] = {}
+        self._command_progress_m_by_phase: dict[str, float] = {}
+        self._command_approach_speed_kph_by_phase: dict[str, float] = {}
+        self._recent_speed_samples: deque[tuple[float, float]] = deque()
+        self._target_speed_kph_by_phase: dict[str, float] = {}
+        self._closest_speed_to_target_kph_by_phase: dict[str, float] = {}
+        self._active_command_phases: set[str] = set()
+        self._minimum_speed_during_phase_kph: dict[str, float] = {}
+        self._max_speed_after_phase_kph: dict[str, float] = {}
         self._rss_start_mb = self._rss_mb()
         self._rss_peak_mb = self._rss_start_mb
 
@@ -178,16 +191,29 @@ class ScenarioExtensionRuntime:
             phase_id = str(command.get("phase_id", ""))
             if phase_id:
                 self._command_phase_by_id[command_id] = phase_id
+                self._command_progress_m_by_phase[phase_id] = self._last_route_progress_m
+                recent_speeds_kph = [speed_mps * 3.6 for _, speed_mps in self._recent_speed_samples]
+                self._command_approach_speed_kph_by_phase[phase_id] = max(
+                    recent_speeds_kph,
+                    default=self._last_speed_mps * 3.6,
+                )
+                self._active_command_phases.add(phase_id)
+                self._minimum_speed_during_phase_kph[phase_id] = self._last_speed_mps * 3.6
         if command.get("confirm_required") is True:
             self._confirmation_commands += 1
         parameters = command.get("parameters", {})
         if isinstance(parameters, Mapping):
-            speed = parameters.get("speed")
+            speed = parameters.get("target_speed_kph", parameters.get("speed"))
             if type(speed) in (int, float) and not isinstance(speed, bool):
                 unit = str(parameters.get("unit", "km/h")).lower().replace(" ", "")
-                self._requested_speed_kph = float(speed) * (
+                requested_speed_kph = float(speed) * (
                     3.6 if unit in {"m/s", "mps", "m／s"} else 1.0
                 )
+                self._requested_speed_kph = requested_speed_kph
+                phase_id = str(command.get("phase_id", ""))
+                if phase_id:
+                    self._target_speed_kph_by_phase[phase_id] = requested_speed_kph
+                    self._closest_speed_to_target_kph_by_phase[phase_id] = self._last_speed_mps * 3.6
         if qwen:
             self._qwen_requests += 1
         if intent in {"STOP", "EMERGENCY_STOP"}:
@@ -205,6 +231,7 @@ class ScenarioExtensionRuntime:
         if phase_id:
             self._terminal_phase_ids.add(phase_id)
             self._completed_phase_ids.add(phase_id)
+            self._active_command_phases.discard(phase_id)
         normalized_status = str(getattr(status, "value", status)).upper()
         self._qwen_status_counts[normalized_status] = self._qwen_status_counts.get(normalized_status, 0) + 1
         if normalized_status == "SUCCEEDED":
@@ -274,10 +301,27 @@ class ScenarioExtensionRuntime:
         if normalized:
             self._completed_phase_ids.add(normalized)
 
+    def restore_terminal_phase(self, phase_id: str) -> None:
+        """Restore trigger state from a verified earlier run segment only."""
+        normalized = str(phase_id).strip()
+        if not normalized:
+            raise ValueError("restored phase_id must be non-empty")
+        self._terminal_phase_ids.add(normalized)
+        self._completed_phase_ids.add(normalized)
+
     def note_actor_trigger(self, actor_id: str) -> None:
         normalized = str(actor_id).strip()
         if normalized:
             self._actor_trigger_ids.add(normalized)
+
+    def note_actor_activated(self, actor_id: str, *, route_progress_m: float) -> None:
+        normalized = str(actor_id).strip()
+        progress = float(route_progress_m)
+        if not normalized:
+            raise ValueError("activated actor_id must be non-empty")
+        if not math.isfinite(progress) or progress < 0.0:
+            raise ValueError("actor activation route progress must be finite and non-negative")
+        self._actor_activation_progress_m.setdefault(normalized, progress)
 
     def note_target_lane_occupancy(self, count: int) -> None:
         if type(count) is not int or count < 0:
@@ -328,6 +372,28 @@ class ScenarioExtensionRuntime:
         self._last_elapsed_s = float(elapsed_s)
         self._last_route_progress_m = float(route_progress_m)
         self._last_speed_mps = float(ego_speed_mps)
+        speed_kph = float(ego_speed_mps) * 3.6
+        self._recent_speed_samples.append((self._last_elapsed_s, self._last_speed_mps))
+        recent_cutoff_s = self._last_elapsed_s - 10.0
+        while self._recent_speed_samples and self._recent_speed_samples[0][0] < recent_cutoff_s:
+            self._recent_speed_samples.popleft()
+        for phase_id in self._active_command_phases:
+            previous = self._minimum_speed_during_phase_kph.get(phase_id)
+            self._minimum_speed_during_phase_kph[phase_id] = (
+                speed_kph if previous is None else min(previous, speed_kph)
+            )
+            target_speed_kph = self._target_speed_kph_by_phase.get(phase_id)
+            closest_speed_kph = self._closest_speed_to_target_kph_by_phase.get(phase_id)
+            if target_speed_kph is not None and (
+                closest_speed_kph is None
+                or abs(speed_kph - target_speed_kph) < abs(closest_speed_kph - target_speed_kph)
+            ):
+                self._closest_speed_to_target_kph_by_phase[phase_id] = speed_kph
+        for phase_id in self._terminal_phase_ids:
+            self._max_speed_after_phase_kph[phase_id] = max(
+                self._max_speed_after_phase_kph.get(phase_id, 0.0),
+                speed_kph,
+            )
         if self._submitted_command_ids:
             self._min_speed_after_command_mps = (
                 float(ego_speed_mps)
@@ -390,14 +456,20 @@ class ScenarioExtensionRuntime:
 
         speed_policy = self.extensions.get("speed_policy", {})
         speed_limit = None
+        override_map_limit = False
         if isinstance(speed_policy, Mapping) and "scenario_limit_kph" in speed_policy:
             speed_limit = max(0.0, float(speed_policy["scenario_limit_kph"]) / 3.6)
+            mode = str(speed_policy.get("map_limit_handling", "minimum")).strip().lower()
+            if mode not in {"minimum", "replace"}:
+                raise ValueError("speed_policy.map_limit_handling must be 'minimum' or 'replace'")
+            override_map_limit = mode == "replace"
         return ExtensionFrameState(
             trigger_context=context,
             active_faults=tuple(active),
             newly_active_fault_ids=tuple(newly_active),
             newly_recovered_fault_ids=tuple(newly_recovered),
             speed_limit_mps=speed_limit,
+            speed_limit_overrides_map=override_map_limit,
         )
 
     def note_control_observation(
@@ -571,6 +643,13 @@ class ScenarioExtensionRuntime:
             "final_lateral_offset_abs_m": self._last_lateral_offset_m,
             "lead_brake_trigger_distance_m": self._lead_brake_trigger_distance_m,
             "actor_trigger_ids": sorted(self._actor_trigger_ids),
+            "actor_activation_progress_m": dict(sorted(self._actor_activation_progress_m.items())),
+            "command_progress_m_by_phase": dict(sorted(self._command_progress_m_by_phase.items())),
+            "command_approach_speed_kph_by_phase": dict(sorted(self._command_approach_speed_kph_by_phase.items())),
+            "target_speed_kph_by_phase": dict(sorted(self._target_speed_kph_by_phase.items())),
+            "closest_speed_to_target_kph_by_phase": dict(sorted(self._closest_speed_to_target_kph_by_phase.items())),
+            "minimum_speed_during_phase_kph": dict(sorted(self._minimum_speed_during_phase_kph.items())),
+            "max_speed_after_phase_kph": dict(sorted(self._max_speed_after_phase_kph.items())),
             "scenario_event_count": self._actor_event_count,
             "runtime_event_count": (
                 self._actor_event_count
@@ -691,6 +770,93 @@ class ScenarioExtensionRuntime:
                     },
                     dict(required),
                 )
+            elif key in {
+                "actor_activation_progress_windows_m",
+                "command_progress_windows_m",
+            }:
+                if not isinstance(required, Mapping):
+                    raise TypeError(f"{key} must be an object")
+                actual_values = (
+                    evidence["actor_activation_progress_m"]
+                    if key == "actor_activation_progress_windows_m" else
+                    evidence["command_progress_m_by_phase"]
+                )
+                results: dict[str, bool] = {}
+                actual: dict[str, object] = {}
+                for item_id, window in required.items():
+                    if (
+                        not isinstance(window, Sequence)
+                        or isinstance(window, (str, bytes))
+                        or len(window) != 2
+                    ):
+                        raise TypeError(f"{key}.{item_id} must be [minimum, maximum]")
+                    value = actual_values.get(str(item_id))
+                    actual[str(item_id)] = value
+                    results[str(item_id)] = (
+                        value is not None
+                        and float(window[0]) <= float(value) <= float(window[1])
+                    )
+                add(key, bool(results) and all(results.values()), actual, dict(required))
+            elif key in {
+                "minimum_approach_speed_kph_by_phase",
+                "minimum_resumed_speed_kph_by_phase",
+            }:
+                if not isinstance(required, Mapping):
+                    raise TypeError(f"{key} must be an object")
+                actual_values = (
+                    evidence["command_approach_speed_kph_by_phase"]
+                    if key == "minimum_approach_speed_kph_by_phase" else
+                    evidence["max_speed_after_phase_kph"]
+                )
+                actual = {
+                    str(phase_id): actual_values.get(str(phase_id))
+                    for phase_id in required
+                }
+                passed = bool(actual) and all(
+                    value is not None and float(value) >= float(required[phase_id])
+                    for phase_id, value in actual.items()
+                )
+                add(key, passed, actual, dict(required))
+            elif key == "phase_min_speed_ranges_kph":
+                if not isinstance(required, Mapping):
+                    raise TypeError("phase_min_speed_ranges_kph must be an object")
+                actual_values = evidence["minimum_speed_during_phase_kph"]
+                actual: dict[str, object] = {}
+                passed = bool(required)
+                for phase_id, speed_range in required.items():
+                    if (
+                        not isinstance(speed_range, Sequence)
+                        or isinstance(speed_range, (str, bytes))
+                        or len(speed_range) != 2
+                    ):
+                        raise TypeError(
+                            f"phase_min_speed_ranges_kph.{phase_id} must be [minimum, maximum]"
+                        )
+                    value = actual_values.get(str(phase_id))
+                    actual[str(phase_id)] = value
+                    passed = passed and value is not None and (
+                        float(speed_range[0]) <= float(value) <= float(speed_range[1])
+                    )
+                add(key, passed, actual, dict(required))
+            elif key == "phase_target_speed_tolerance_kph":
+                if not isinstance(required, Mapping):
+                    raise TypeError("phase_target_speed_tolerance_kph must be an object")
+                actual_speeds = evidence["closest_speed_to_target_kph_by_phase"]
+                target_speeds = evidence["target_speed_kph_by_phase"]
+                actual: dict[str, object] = {}
+                passed = bool(required)
+                for phase_id, tolerance_kph in required.items():
+                    normalized_phase_id = str(phase_id)
+                    actual_speed = actual_speeds.get(normalized_phase_id)
+                    target_speed = target_speeds.get(normalized_phase_id)
+                    actual[normalized_phase_id] = {
+                        "closest_speed_kph": actual_speed,
+                        "target_speed_kph": target_speed,
+                    }
+                    passed = passed and actual_speed is not None and target_speed is not None and (
+                        abs(float(actual_speed) - float(target_speed)) <= float(tolerance_kph)
+                    )
+                add(key, passed, actual, dict(required))
             elif key == "maximum_route_deviation_m":
                 actual = float(evidence["max_route_deviation_m"])
                 add(key, actual <= float(required), actual, required)

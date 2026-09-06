@@ -268,8 +268,8 @@ def test_multi_command_oracle_requires_each_declared_behavior() -> None:
 def _frame(runtime: ScenarioExtensionRuntime, *, elapsed_s: float, progress_m: float,
            speed_mps: float, lateral_offset_m: float = 0.0,
            distance_to_stop_line_m: float | None = None,
-           lane_id: str = "1") -> None:
-    runtime.update_frame(
+           lane_id: str = "1"):
+    return runtime.update_frame(
         elapsed_s=elapsed_s,
         route_progress_m=progress_m,
         ego_speed_mps=speed_mps,
@@ -721,6 +721,84 @@ def test_s2_actor_clearance_and_route_deviation_use_observed_minima() -> None:
     assert actual["maximum_route_deviation_m"] == 0.9
 
 
+def test_distributed_actor_and_speed_phase_acceptance_uses_observed_route_data() -> None:
+    runtime = ScenarioExtensionRuntime({"phase_plan": ["P1", "P2"]})
+    _frame(runtime, elapsed_s=1.0, progress_m=820.0, speed_mps=40.0 / 3.6)
+    runtime.note_actor_activated("bus", route_progress_m=820.0)
+    runtime.note_command_submitted(
+        {
+            "command_id": "bus-command",
+            "phase_id": "P2",
+            "intent": "SLOW_DOWN",
+            "parameters": {"target_speed_kph": 30.0},
+        },
+        qwen=True,
+    )
+    _frame(runtime, elapsed_s=2.0, progress_m=930.0, speed_mps=30.0 / 3.6)
+    runtime.note_terminal("bus-command", "SUCCEEDED")
+    _frame(runtime, elapsed_s=3.0, progress_m=960.0, speed_mps=36.0 / 3.6)
+
+    report = runtime.evaluate(
+        {
+            "actor_activation_progress_windows_m": {"bus": [810.0, 850.0]},
+            "command_progress_windows_m": {"P2": [800.0, 900.0]},
+            "minimum_approach_speed_kph_by_phase": {"P2": 30.1},
+            "minimum_resumed_speed_kph_by_phase": {"P2": 32.0},
+            "phase_target_speed_tolerance_kph": {"P2": 2.0},
+        },
+        expected_command_count=1,
+    )
+
+    assert report["passed"] is True
+    assert report["evidence"]["command_approach_speed_kph_by_phase"]["P2"] == pytest.approx(40.0)
+    assert report["evidence"]["closest_speed_to_target_kph_by_phase"]["P2"] == pytest.approx(30.0)
+
+
+def test_phase_target_speed_acceptance_allows_later_safety_stop() -> None:
+    runtime = ScenarioExtensionRuntime({"phase_plan": ["P1"]})
+    _frame(runtime, elapsed_s=1.0, progress_m=20.0, speed_mps=40.0 / 3.6)
+    runtime.note_command_submitted(
+        {
+            "command_id": "slow-command",
+            "phase_id": "P1",
+            "intent": "SLOW_DOWN",
+            "parameters": {"target_speed_kph": 30.0},
+        },
+        qwen=True,
+    )
+    _frame(runtime, elapsed_s=2.0, progress_m=30.0, speed_mps=30.5 / 3.6)
+    _frame(runtime, elapsed_s=3.0, progress_m=31.0, speed_mps=0.0)
+
+    report = runtime.evaluate(
+        {"phase_target_speed_tolerance_kph": {"P1": 1.0}},
+        expected_command_count=1,
+    )
+
+    assert report["passed"] is True
+    assert report["evidence"]["minimum_speed_during_phase_kph"]["P1"] == 0.0
+
+
+def test_speed_policy_replace_mode_is_explicit_and_validated() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "speed_policy": {
+            "scenario_limit_kph": 40.0,
+            "map_limit_handling": "replace",
+        },
+    })
+    state = _frame(runtime, elapsed_s=0.0, progress_m=0.0, speed_mps=0.0)
+    assert state.speed_limit_mps == pytest.approx(40.0 / 3.6)
+    assert state.speed_limit_overrides_map is True
+
+    invalid = ScenarioExtensionRuntime({
+        "speed_policy": {
+            "scenario_limit_kph": 40.0,
+            "map_limit_handling": "invented",
+        },
+    })
+    with pytest.raises(ValueError, match="map_limit_handling"):
+        _frame(invalid, elapsed_s=0.0, progress_m=0.0, speed_mps=0.0)
+
+
 def test_long_mission_return_uses_route_restoration_not_global_lane_id() -> None:
     runtime = ScenarioExtensionRuntime({})
     _frame(runtime, elapsed_s=1.0, progress_m=1.0, speed_mps=3.0, lane_id="3")
@@ -733,6 +811,17 @@ def test_long_mission_return_uses_route_restoration_not_global_lane_id() -> None
 
     assert result["passed"] is True
     assert result["evidence"]["mission_route_restore_count"] == 1
+
+
+def test_restored_terminal_phase_only_rehydrates_trigger_state() -> None:
+    runtime = ScenarioExtensionRuntime({"phase_plan": ["P4"]})
+    runtime.restore_terminal_phase("P3")
+    state = _frame(runtime, elapsed_s=0.0, progress_m=4100.0, speed_mps=0.0)
+
+    assert "P3" in state.trigger_context["terminal_phase_ids"]
+    evidence = runtime.evidence()
+    assert evidence["qwen_request_count"] == 0
+    assert evidence["submitted_command_ids"] == []
 
 
 def test_lane_id_change_without_route_restoration_does_not_fake_return() -> None:

@@ -3,12 +3,12 @@
   "scenario_id": "OFFICIAL_S2_COMPLEX_AVOIDANCE_8KM",
   "category": "regression",
   "official_level": "advanced",
-  "description": "官方场景2：阴天傍晚城市次干道、十字路口、公交站和混合交通流，完成8km组合避障。",
-  "tags": ["official_competition", "scene_2", "complex_avoidance", "8km", "mixed_traffic", "return_to_route"],
-  "map": "Town03",
+  "description": "官方场景2：Town03_Opt阴天傍晚城市次干道、十字路口、公交站和混合交通流，沿8km均匀布置组合避障事件。",
+  "tags": ["official_competition", "scene_2", "complex_avoidance", "8km", "mixed_traffic", "distributed_events", "return_to_route"],
+  "map": "Town03_Opt",
   "weather": "CloudySunset",
   "seed": 20260202,
-  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 3300.0, "max_startup_wait_s": 20.0},
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 3600.0, "max_startup_wait_s": 20.0},
   "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
   "route": {
     "coordinate_type": "scenario_local_xy_m",
@@ -16,12 +16,12 @@
     "resample_interval_m": 1.0,
     "finish_radius_m": 4.0,
     "distance_contract_m": 8000.0,
-    "route_generation": "CARLA waypoint topology on urban secondary roads; obstacle manoeuvre uses a legal adjacent lane and returns to the original route"
+    "route_generation": "Town03_Opt CARLA waypoint topology; event actors are activated shortly before their route-progress windows"
   },
   "commands": [
     {
       "time_s": 0.0,
-      "source_text": "开始行驶，保持当前车道，速度40公里每小时",
+      "source_text": "保持当前车道，以40公里每小时正常行驶",
       "intent": "KEEP_LANE",
       "parameters": {"target_speed_kph": 40.0},
       "intent_confidence": 0.99,
@@ -32,47 +32,79 @@
     },
     {
       "time_s": 0.0,
-      "source_text": "前方公交站有行人上下车，靠边减速至30公里每小时，确认安全后继续行驶",
-      "intent": "KEEP_LANE",
+      "source_text": "前方公交站有行人上下车，靠边减速至30公里每小时，确认安全后继续以40公里每小时行驶",
+      "intent": "SLOW_DOWN",
       "parameters": {"target_speed_kph": 30.0, "target_actor_id": "bus_at_stop"},
       "intent_confidence": 0.98,
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S2_P2_BUS_STOP",
-      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 30.0}
+      "trigger": {"all": [
+        {"type": "previous_command_terminal", "phase_id": "S2_P1_START"},
+        {"type": "route_progress_greater_than_m", "value": 920.0},
+        {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 100.0}
+      ]}
     },
     {
       "time_s": 0.0,
-      "source_text": "看到前方横穿马路的行人，减速避让，确认行人离开后继续",
-      "intent": "SLOW_DOWN",
-      "parameters": {"target_actor_id": "crossing_pedestrian"},
+      "source_text": "看到前方横穿马路的行人，先减速避让，确认行人离开后向左变道超越前方慢车，超越完成后回到原车道并恢复40公里每小时行驶",
+      "intent": "AVOID_OBSTACLE",
+      "parameters": {"direction": "LEFT", "target_actor_id": "slow_vehicle", "target_speed_kph": 30.0},
       "intent_confidence": 0.99,
       "status": "valid",
       "confirm_required": false,
-      "phase_id": "S2_P3_PEDESTRIAN_YIELD",
-      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 42.0}
+      "phase_id": "S2_P3_PEDESTRIAN_OVERTAKE_RETURN",
+      "trigger": {"all": [
+        {"type": "previous_command_terminal", "phase_id": "S2_P2_BUS_STOP"},
+        {"type": "route_progress_greater_than_m", "value": 2760.0},
+        {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 35.0},
+        {"type": "ego_distance_to_actor_less_than_m", "actor_id": "slow_vehicle", "value": 60.0}
+      ]}
     },
     {
       "time_s": 0.0,
-      "source_text": "减速避让后向左变道超越前方慢车，超越完成后回归原车道",
-      "intent": "AVOID_OBSTACLE",
-      "parameters": {"direction": "LEFT", "target_actor_id": "slow_vehicle", "target_speed_kph": 28.0},
+      "source_text": "注意右前方非机动车，减速至30公里每小时并保持至少3米安全距离，确认安全后恢复40公里每小时行驶",
+      "intent": "SLOW_DOWN",
+      "parameters": {"target_speed_kph": 30.0, "target_actor_id": "bicycle_right"},
       "intent_confidence": 0.98,
       "status": "valid",
       "confirm_required": false,
-      "phase_id": "S2_P4_OVERTAKE_AND_RETURN",
-      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "slow_vehicle", "value": 28.0}
+      "phase_id": "S2_P4_BICYCLE_CLEARANCE",
+      "trigger": {"all": [
+        {"type": "previous_command_terminal", "phase_id": "S2_P3_PEDESTRIAN_OVERTAKE_RETURN"},
+        {"type": "route_progress_greater_than_m", "value": 4200.0},
+        {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bicycle_right", "value": 120.0}
+      ]}
     },
     {
       "time_s": 0.0,
-      "source_text": "注意右前方非机动车，保持至少3米安全距离，平稳避让后回归路线",
-      "intent": "AVOID_OBSTACLE",
-      "parameters": {"direction": "LEFT", "target_actor_id": "bicycle_right", "target_speed_kph": 24.0},
+      "source_text": "前方十字路口是混合车流，右侧私家车可能加塞，先减速至30公里每小时观察，确认安全后恢复40公里每小时行驶",
+      "intent": "SLOW_DOWN",
+      "parameters": {"target_speed_kph": 30.0, "target_actor_id": "intersection_cut_in_car"},
       "intent_confidence": 0.98,
       "status": "valid",
       "confirm_required": false,
-      "phase_id": "S2_P5_BICYCLE_AVOID",
-      "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bicycle_right", "value": 45.0}
+      "phase_id": "S2_P5_INTERSECTION_MIXED_FLOW",
+      "trigger": {"all": [
+        {"type": "previous_command_terminal", "phase_id": "S2_P4_BICYCLE_CLEARANCE"},
+        {"type": "route_progress_greater_than_m", "value": 5350.0},
+        {"type": "ego_distance_to_actor_less_than_m", "actor_id": "intersection_cut_in_car", "value": 120.0}
+      ]}
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "低照度下前方又有行人横穿，减速让行，确认行人完全离开车道后恢复40公里每小时继续行驶",
+      "intent": "YIELD",
+      "parameters": {"target_speed_kph": 30.0, "target_actor_id": "late_crossing_pedestrian"},
+      "intent_confidence": 0.98,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "S2_P6_LATE_PEDESTRIAN_YIELD",
+      "trigger": {"all": [
+        {"type": "previous_command_terminal", "phase_id": "S2_P5_INTERSECTION_MIXED_FLOW"},
+        {"type": "route_progress_greater_than_m", "value": 6950.0},
+        {"type": "ego_distance_to_actor_less_than_m", "actor_id": "late_crossing_pedestrian", "value": 35.0}
+      ]}
     }
   ],
   "actors": [
@@ -80,45 +112,66 @@
       "actor_id": "bus_at_stop",
       "type": "vehicle",
       "blueprint_id": "vehicle.mitsubishi.fusorosa",
-      "spawn": {"x": 42.0, "y": 3.5, "z": 0.5, "yaw_deg": 0.0},
+      "spawn": {"x": 1050.0, "y": 4.8, "z": 0.5, "yaw_deg": 0.0},
+      "route_position": {"s_m": 1050.0, "lateral_offset_m": 4.8, "lane_relation": "CURRENT"},
+      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 820.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 1250.0},
       "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 0.0, "target_speed_mps": 0.0}
     },
     {
       "actor_id": "bus_passenger_01",
       "type": "walker.pedestrian",
-      "spawn": {"x": 40.0, "y": 5.5, "z": 0.5, "yaw_deg": -90.0},
+      "spawn": {"x": 1032.0, "y": 7.0, "z": 0.5, "yaw_deg": -90.0},
+      "route_position": {"s_m": 1032.0, "lateral_offset_m": 7.0},
+      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 820.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 1250.0},
       "behavior": {
         "mode": "crossing",
-        "target_xy_m": [40.0, 3.8],
+        "target_route_position": {"s_m": 1032.0, "lateral_offset_m": 4.7},
         "start_time_s": 0.0,
-        "speed_mps": 1.0,
-        "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 38.0},
+        "speed_mps": 0.9,
+        "trigger": {"all": [
+          {"type": "route_progress_greater_than_m", "value": 900.0},
+          {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 120.0}
+        ]},
         "phase_id": "S2_EVT_BUS_PASSENGER_01"
       }
     },
     {
       "actor_id": "bus_passenger_02",
       "type": "walker.pedestrian",
-      "spawn": {"x": 44.0, "y": 5.8, "z": 0.5, "yaw_deg": -90.0},
+      "spawn": {"x": 1068.0, "y": 7.0, "z": 0.5, "yaw_deg": -90.0},
+      "route_position": {"s_m": 1068.0, "lateral_offset_m": 7.0},
+      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 820.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 1250.0},
       "behavior": {
         "mode": "crossing",
-        "target_xy_m": [44.0, 4.0],
+        "target_route_position": {"s_m": 1068.0, "lateral_offset_m": 4.9},
         "start_time_s": 0.0,
-        "speed_mps": 1.0,
-        "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 34.0},
+        "speed_mps": 0.9,
+        "trigger": {"all": [
+          {"type": "route_progress_greater_than_m", "value": 900.0},
+          {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 120.0}
+        ]},
         "phase_id": "S2_EVT_BUS_PASSENGER_02"
       }
     },
     {
       "actor_id": "crossing_pedestrian",
       "type": "walker.pedestrian",
-      "spawn": {"x": 74.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
+      "spawn": {"x": 2800.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
+      "route_position": {"s_m": 2800.0, "lateral_offset_m": 6.0},
+      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 2550.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 3150.0},
       "behavior": {
         "mode": "crossing",
-        "target_xy_m": [74.0, -6.0],
+        "target_route_position": {"s_m": 2800.0, "lateral_offset_m": -6.0},
         "start_time_s": 0.0,
-        "speed_mps": 1.5,
-        "trigger": {"type": "route_progress_greater_than_m", "value": 36.0},
+        "speed_mps": 1.4,
+        "trigger": {"all": [
+          {"type": "route_progress_greater_than_m", "value": 2700.0},
+          {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 70.0}
+        ]},
         "phase_id": "S2_EVT_PEDESTRIAN_CROSSING"
       }
     },
@@ -126,29 +179,70 @@
       "actor_id": "slow_vehicle",
       "type": "vehicle",
       "blueprint_id": "vehicle.audi.tt",
-      "spawn": {"x": 82.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
-      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.5, "target_speed_mps": 1.0, "brake_at_s": 8.0}
-    },
-    {
-      "actor_id": "private_car_left",
-      "type": "vehicle",
-      "blueprint_id": "vehicle.tesla.model3",
-      "spawn": {"x": 90.0, "y": -3.5, "z": 0.5, "yaw_deg": 0.0},
-      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 6.0, "target_speed_mps": 6.0}
+      "spawn": {"x": 2810.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+      "route_position": {"s_m": 2810.0, "lateral_offset_m": 0.0, "lane_relation": "CURRENT"},
+      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 2700.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 3150.0},
+      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.5, "target_speed_mps": 1.5}
     },
     {
       "actor_id": "bicycle_right",
       "type": "vehicle",
       "blueprint_id": "vehicle.bh.crossbike",
-      "spawn": {"x": 180.0, "y": 1.1, "z": 0.5, "yaw_deg": 0.0},
-      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.0, "target_speed_mps": 0.8, "brake_at_s": 12.0}
+      "spawn": {"x": 4320.0, "y": 7.0, "z": 0.5, "yaw_deg": 0.0},
+      "route_position": {"s_m": 4320.0, "lateral_offset_m": 7.0, "lane_relation": "CURRENT"},
+      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 4050.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 4650.0},
+      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.8, "target_speed_mps": 1.8}
+    },
+    {
+      "actor_id": "intersection_cut_in_car",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.tesla.model3",
+      "spawn": {"x": 5450.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+      "route_position": {"s_m": 5450.0, "lateral_offset_m": 0.0, "lane_relation": "RIGHT_ADJACENT"},
+      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 5150.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 5750.0},
+      "behavior": {
+        "mode": "cut_in",
+        "initial_speed_mps": 3.0,
+        "target_speed_mps": 3.0,
+        "cut_in_on_first_event": true,
+        "cut_in_duration_s": 3.5,
+        "cut_in_steer": 0.14,
+        "direction": "LEFT",
+        "events": [{
+          "trigger": {"type": "ego_distance_to_actor_less_than_m", "actor_id": "intersection_cut_in_car", "value": 35.0},
+          "action": {"type": "set_speed", "target_speed_mps": 4.0},
+          "phase_id": "S2_EVT_INTERSECTION_CUT_IN"
+        }]
+      }
+    },
+    {
+      "actor_id": "late_crossing_pedestrian",
+      "type": "walker.pedestrian",
+      "spawn": {"x": 7040.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
+      "route_position": {"s_m": 7040.0, "lateral_offset_m": 6.0},
+      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 6750.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 7450.0},
+      "behavior": {
+        "mode": "crossing",
+        "target_route_position": {"s_m": 7040.0, "lateral_offset_m": -6.0},
+        "start_time_s": 0.0,
+        "speed_mps": 1.3,
+        "trigger": {"all": [
+          {"type": "route_progress_greater_than_m", "value": 6900.0},
+          {"type": "ego_distance_to_actor_less_than_m", "actor_id": "late_crossing_pedestrian", "value": 80.0}
+        ]},
+        "phase_id": "S2_EVT_LATE_PEDESTRIAN_CROSSING"
+      }
     }
   ],
   "qwen_expected": {
     "route": "QWEN_PLAN",
-    "min_calls": 5,
-    "max_calls": 5,
-    "expected_behaviors": ["KEEP_LANE", "SLOW_DOWN", "AVOID_OBSTACLE", "RETURN_TO_LANE"],
+    "min_calls": 6,
+    "max_calls": 6,
+    "expected_behaviors": ["KEEP_LANE", "SLOW_DOWN", "YIELD", "AVOID_OBSTACLE", "RETURN_TO_LANE"],
     "expected_terminal": "SUCCEEDED",
     "allowed_replans": 0,
     "forbidden_low_level_fields": true
@@ -174,7 +268,7 @@
     "required_files": ["*.jsonl", "*.summary.json"],
     "required_summary_sections": ["acceptance", "latency", "score", "score_report", "command_terminal_statuses"],
     "required_identifiers": ["scenario_id", "seed", "code_version", "config_path"],
-    "required_metrics": ["minimum_distance_m", "minimum_actor_distances_m", "ttc_s", "collision", "lane_invasion", "lane_invasion_count", "route_deviation_m", "qwen_route", "qwen_request_id", "qwen_plan", "qwen_latency_ms", "qwen_target_actor_id", "command_step_status", "command_terminal", "missed_subcommands", "sensor_to_control_ms"]
+    "required_metrics": ["minimum_distance_m", "minimum_actor_distances_m", "ttc_s", "collision", "lane_invasion", "lane_invasion_count", "route_deviation_m", "route_progress_m", "qwen_route", "qwen_request_id", "qwen_plan", "qwen_latency_ms", "qwen_target_actor_id", "command_step_status", "command_terminal", "missed_subcommands", "sensor_to_control_ms"]
   },
   "expected": {
     "must_start_carla": true,
@@ -204,9 +298,12 @@
     "semantic_alignment_min": 0.985,
     "end_to_end_absolute_max_ms": 150,
     "return_to_route_required": true,
-    "required_dynamic_object_classes": ["bus", "pedestrian", "slow_vehicle", "bicycle"]
+    "normal_cruise_speed_min_kph": 30.1,
+    "bus_stop_target_speed_kph": 30.0,
+    "required_dynamic_object_classes": ["bus", "private_car", "pedestrian", "slow_vehicle", "bicycle"]
   },
   "extensions": {
+    "clean_world_on_start": true,
     "sensor_profile": "competition_multiview",
     "competition_scene": "S2",
     "input_mode": "raw_text_qwen",
@@ -216,40 +313,80 @@
       "high_level_only": true
     },
     "oracle": {
-      "expected_behaviors": ["KEEP_LANE", "SLOW_DOWN", "AVOID_OBSTACLE", "RETURN_TO_LANE"]
+      "expected_behaviors": ["KEEP_LANE", "SLOW_DOWN", "YIELD", "AVOID_OBSTACLE", "RETURN_TO_LANE"]
+    },
+    "speed_policy": {
+      "scenario_limit_kph": 40.0,
+      "map_limit_handling": "replace",
+      "reason": "Town03_Opt simulator sign metadata is replaced by the explicit competition secondary-road speed contract"
     },
     "maneuver_route_mode": "dynamic_out_and_back",
     "lane_change_profile": {
       "route_distance_m": 72.0,
       "step_m": 1.0,
       "transition_start_m": 8.0,
-      "transition_length_m": 30.0
+      "transition_length_m": 30.0,
+      "target_lane_offset_m": 0.25
     },
     "proposed_acceptance": {
-      "qwen_request_count": 5,
+      "qwen_request_count": 6,
       "qwen_missing_request_count": 0,
       "all_commands_must_have_terminal_status": true,
-      "expected_phase_count": 5,
+      "expected_phase_count": 6,
       "all_phases_must_complete": true,
       "must_return_to_original_lane": true,
       "minimum_actor_distances_m": {"bicycle_right": 3.0},
       "maximum_route_deviation_m": 1.0,
+      "actor_activation_progress_windows_m": {
+        "bus_at_stop": [810.0, 850.0],
+        "crossing_pedestrian": [2540.0, 2580.0],
+        "slow_vehicle": [2690.0, 2720.0],
+        "bicycle_right": [4040.0, 4080.0],
+        "intersection_cut_in_car": [5140.0, 5180.0],
+        "late_crossing_pedestrian": [6740.0, 6780.0]
+      },
+      "command_progress_windows_m": {
+        "S2_P2_BUS_STOP": [920.0, 1020.0],
+        "S2_P3_PEDESTRIAN_OVERTAKE_RETURN": [2760.0, 2840.0],
+        "S2_P4_BICYCLE_CLEARANCE": [4200.0, 4320.0],
+        "S2_P5_INTERSECTION_MIXED_FLOW": [5350.0, 5470.0],
+        "S2_P6_LATE_PEDESTRIAN_YIELD": [6950.0, 7050.0]
+      },
+      "minimum_approach_speed_kph_by_phase": {
+        "S2_P2_BUS_STOP": 30.1,
+        "S2_P3_PEDESTRIAN_OVERTAKE_RETURN": 30.1,
+        "S2_P4_BICYCLE_CLEARANCE": 30.1,
+        "S2_P5_INTERSECTION_MIXED_FLOW": 30.1,
+        "S2_P6_LATE_PEDESTRIAN_YIELD": 30.1
+      },
+      "minimum_resumed_speed_kph_by_phase": {
+        "S2_P2_BUS_STOP": 32.0,
+        "S2_P3_PEDESTRIAN_OVERTAKE_RETURN": 32.0,
+        "S2_P4_BICYCLE_CLEARANCE": 32.0,
+        "S2_P5_INTERSECTION_MIXED_FLOW": 32.0,
+        "S2_P6_LATE_PEDESTRIAN_YIELD": 32.0
+      },
+      "phase_target_speed_tolerance_kph": {"S2_P2_BUS_STOP": 2.0},
       "qwen_calls_per_frame": 0,
       "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "YIELD", "AVOID_OBSTACLE", "CHANGE_LANE_LEFT", "RETURN_TO_LANE", "STOP"]
     },
     "fixed_random_seed": true,
     "route_anchor_spawn_index": 46,
     "route_policy": {"loop": false},
-    "runtime_support": {"status": "current", "requirements": ["event_triggers", "actor_distance_trigger", "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance"], "declared_requirements": ["event_triggers", "actor_distance_trigger", "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance"]},
-    "phase_plan": ["S2_P1_START", "S2_P2_BUS_STOP", "S2_P3_PEDESTRIAN_YIELD", "S2_P4_OVERTAKE_AND_RETURN", "S2_P5_BICYCLE_AVOID"]
+    "runtime_support": {
+      "status": "current",
+      "requirements": ["event_triggers", "actor_distance_trigger", "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance", "route_progress_actor_activation", "route_progress_actor_lifecycle", "route_progress_speed_acceptance", "scenario_speed_limit"],
+      "declared_requirements": ["event_triggers", "actor_distance_trigger", "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance", "route_progress_actor_activation", "route_progress_actor_lifecycle", "route_progress_speed_acceptance", "scenario_speed_limit"]
+    },
+    "phase_plan": ["S2_P1_START", "S2_P2_BUS_STOP", "S2_P3_PEDESTRIAN_OVERTAKE_RETURN", "S2_P4_BICYCLE_CLEARANCE", "S2_P5_INTERSECTION_MIXED_FLOW", "S2_P6_LATE_PEDESTRIAN_YIELD"]
   },
   "notes": [
-    "公交、乘客、横穿行人、慢车、相邻车与自行车均为真实CARLA Actor，不使用只写在日志里的虚拟对象。",
-    "所有交互对象集中在前200m内以便快速完成场景加载与事件触发证明；之后继续完成8km稳定驾驶。",
-    "正式成绩使用 --perception-mode sensors --scenario-facts-mode perception。",
-    "起步速度为40km/h，公交站目标速度为30km/h，确保该阶段产生可量化的真实减速。",
-    "四路严格同帧RGB按前/左、右/后布局拼接为Qwen视觉输入；LiDAR/Radar距离与车辆状态作为结构化感知同时进入计划请求。",
-    "自行车安全距离合同与指令统一为至少3.0m，按双方CARLA碰撞盒的保守车身净空计算，不使用中心点距离冒充安全间距。",
-    "两次避障均动态生成驶出与返回路线；返回步骤完成后恢复原8km任务路线，禁止用直行路线冒充变道。"
+    "场景固定使用Town03_Opt；公交站、行人+慢车、非机动车、路口加塞、末段行人事件分别位于约1.0/2.8/4.3/5.5/7.0km。",
+    "事件Actor按单调路线进度延迟生成，避免Town03_Opt长路线回绕导致远端事件提前出现或误触发。",
+    "正常巡航目标40km/h；公交站及风险观察阶段目标30km/h；每条组合指令均要求风险解除后在同一Qwen计划内恢复40km/h。",
+    "两次横穿行人均按自车到目标的实际距离启动，避免按里程提前横穿并在指令到达前离开车道。",
+    "行人+慢车事件使用一条完整组合指令；慢车在事件前约100米激活，指令只有在行人进入近场且慢车进入60米传感器窗口后触发，必须执行减速让行、确认行人持续离开感知区域、左变道、超越、回原车道和恢复巡航。",
+    "四路严格同帧RGB、LiDAR、Radar与车辆状态共同进入Qwen 2B计划请求；本地D安全层始终拥有最终控制否决权。",
+    "自行车至少3.0m为双方CARLA碰撞盒的车身净空，不用中心点距离代替。"
   ]
 }

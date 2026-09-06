@@ -292,6 +292,39 @@ def test_explicit_right_avoid_request_excludes_unrelated_complex_behaviors():
     ]
 
 
+def test_compound_pedestrian_avoid_and_overtake_request_allows_yield():
+    command = _example("driving_command")
+    command.update({
+        "intent": "AVOID_OBSTACLE",
+        "source_text": (
+            "看到前方横穿马路的行人，先减速避让，确认行人离开后"
+            "向左变道超越前方慢车，超越完成后回到原车道"
+        ),
+        "parameters": {"direction": "LEFT"},
+    })
+    scene = _example("perception_state")
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(
+            command,
+            scene,
+            now_ns=1_100_000_000,
+            runtime_state={
+                "left_lane_exists": True,
+                "left_gap_safe": True,
+                "available_lanes": ["CURRENT", "LEFT_ADJACENT"],
+            },
+        )
+
+    assert queued.disposition == "SLOW_PENDING"
+    assert queued.model_request["constraints"]["allowed_behaviors"] == [
+        "SLOW_DOWN", "STOP", "YIELD", "CHANGE_LANE", "AVOID_OBSTACLE",
+        "RETURN_TO_LANE",
+    ]
+
+
 def test_forced_qwen_safety_scene_is_audited_while_waiting_stopped():
     command = _example("driving_command")
     command["intent"] = "KEEP_LANE"

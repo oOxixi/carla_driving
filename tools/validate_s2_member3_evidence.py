@@ -16,6 +16,7 @@ from typing import Any
 
 
 SCENARIO_ID = "OFFICIAL_S2_COMPLEX_AVOIDANCE_8KM"
+EXPECTED_COMMAND_COUNT = 6
 EXPECTED_BEHAVIORS = {
     "KEEP_LANE",
     "SLOW_DOWN",
@@ -102,7 +103,12 @@ def validate_evidence(
     terminals = summary.get("command_terminal_statuses", {})
     terminals = terminals if isinstance(terminals, Mapping) else {}
     external_terminal_statuses = {command_id: terminals.get(command_id) for command_id in external_ids}
-    check("external_command_count", len(external_ids) == 5, len(external_ids), 5)
+    check(
+        "external_command_count",
+        len(external_ids) == EXPECTED_COMMAND_COUNT,
+        len(external_ids),
+        EXPECTED_COMMAND_COUNT,
+    )
     check(
         "all_external_commands_succeeded",
         bool(external_ids) and all(status == "SUCCEEDED" for status in external_terminal_statuses.values()),
@@ -122,8 +128,18 @@ def validate_evidence(
     terminal_counts = qwen_observed.get("terminal_counts", {})
     terminal_counts = terminal_counts if isinstance(terminal_counts, Mapping) else {}
     check("qwen_contract", qwen.get("passed") is True, qwen_checks, "all Qwen contract checks PASS")
-    check("qwen_request_count", qwen_observed.get("qwen_calls") == 5, qwen_observed.get("qwen_calls"), 5)
-    check("qwen_route", routes == ["QWEN_PLAN"] * 5, routes, ["QWEN_PLAN"] * 5)
+    check(
+        "qwen_request_count",
+        qwen_observed.get("qwen_calls") == EXPECTED_COMMAND_COUNT,
+        qwen_observed.get("qwen_calls"),
+        EXPECTED_COMMAND_COUNT,
+    )
+    check(
+        "qwen_route",
+        routes == ["QWEN_PLAN"] * EXPECTED_COMMAND_COUNT,
+        routes,
+        ["QWEN_PLAN"] * EXPECTED_COMMAND_COUNT,
+    )
     check(
         "qwen_high_level_behaviors",
         EXPECTED_BEHAVIORS.issubset(behaviors) and qwen_checks.get("low_level_boundary") is True,
@@ -132,7 +148,8 @@ def validate_evidence(
     )
     check(
         "unique_qwen_terminals",
-        len(terminal_counts) == 5 and all(value == 1 for value in terminal_counts.values()),
+        len(terminal_counts) == EXPECTED_COMMAND_COUNT
+        and all(value == 1 for value in terminal_counts.values()),
         dict(terminal_counts),
         "one terminal per Qwen-routed command",
     )
@@ -142,7 +159,7 @@ def validate_evidence(
         if item.get("record_type") == "canonical_routing"
         and item.get("phase") == "MISSION_ROUTE_RESTORED"
     ]
-    check("mission_route_restored", len(restored) == 2, len(restored), 2)
+    check("mission_route_restored", len(restored) == 1, len(restored), 1)
 
     extension = metrics.get("extension_acceptance", {})
     extension = extension if isinstance(extension, Mapping) else {}
@@ -153,6 +170,11 @@ def validate_evidence(
         "must_return_to_original_lane",
         "minimum_actor_distances_m",
         "maximum_route_deviation_m",
+        "actor_activation_progress_windows_m",
+        "command_progress_windows_m",
+        "minimum_approach_speed_kph_by_phase",
+        "minimum_resumed_speed_kph_by_phase",
+        "phase_target_speed_tolerance_kph",
     ):
         item = _extension_check(extension, key)
         check(

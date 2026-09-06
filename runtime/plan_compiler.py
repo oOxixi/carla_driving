@@ -75,7 +75,7 @@ class PlanCompiler:
                 return_context = dict(context)
                 if return_direction is not None:
                     return_context["return_direction"] = return_direction
-                compiled.append(self._compile_return(raw, return_context))
+                compiled.extend(self._compile_return(raw, return_context))
                 return_direction = None
             else:
                 compiled.append(_copy_step(raw))
@@ -143,7 +143,7 @@ class PlanCompiler:
     @staticmethod
     def _compile_return(
         raw: Mapping[str, Any], scene: Mapping[str, Any],
-    ) -> CompiledPlanStep:
+    ) -> tuple[CompiledPlanStep, CompiledPlanStep]:
         direction = str(scene.get("return_direction", "")).upper()
         if direction not in {"LEFT", "RIGHT"}:
             current_lane = str(scene.get("current_lane", "")).upper()
@@ -159,15 +159,38 @@ class PlanCompiler:
         source_id = str(raw["step_id"])
         lane_exists = f"{direction}_LANE_EXISTS"
         gap_safe = f"{direction}_GAP_SAFE"
-        preconditions = tuple(dict.fromkeys(
+        gap_preconditions = tuple(dict.fromkeys(
             tuple(str(item) for item in raw["preconditions"])
             + ("PERCEPTION_FRESH", lane_exists, gap_safe, "NO_EMERGENCY_RISK")
         ))
-        return CompiledPlanStep(
-            source_id, source_id, f"CHANGE_LANE_{direction}", target,
-            preconditions,
-            {"type": "LANE_CENTERED", "value": None, "lane": "CURRENT", "hold_frames": int(raw["completion"]["hold_frames"])},
-            float(raw["timeout_s"]), str(raw["on_failure"]),
+        # Gap/lane-existence facts are relative to the lane occupied before
+        # the return.  Gate them in a dedicated wait step; carrying them into
+        # the moving step can make success impossible as soon as the former
+        # adjacent lane becomes CURRENT.
+        moving_preconditions = tuple(dict.fromkeys(
+            condition
+            for condition in tuple(str(item) for item in raw["preconditions"])
+            + ("PERCEPTION_FRESH", "NO_EMERGENCY_RISK")
+            if condition not in {
+                "LEFT_LANE_EXISTS", "RIGHT_LANE_EXISTS",
+                "LEFT_GAP_SAFE", "RIGHT_GAP_SAFE",
+            }
+        ))
+        timeout = float(raw["timeout_s"])
+        failure = str(raw["on_failure"])
+        return (
+            CompiledPlanStep(
+                f"{source_id}.gap", source_id, "WAIT_SAFE_GAP", target,
+                gap_preconditions,
+                {"type": "HOLD_FRAMES", "value": None, "lane": "CURRENT", "hold_frames": 3},
+                min(8.0, timeout), failure,
+            ),
+            CompiledPlanStep(
+                source_id, source_id, f"CHANGE_LANE_{direction}", target,
+                moving_preconditions,
+                {"type": "LANE_CENTERED", "value": None, "lane": "CURRENT", "hold_frames": int(raw["completion"]["hold_frames"])},
+                timeout, failure,
+            ),
         )
 
 

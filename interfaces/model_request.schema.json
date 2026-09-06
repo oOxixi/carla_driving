@@ -60,7 +60,11 @@
         "stop_line_clear": {"type": "boolean"},
         "original_lane": {"type": "string", "minLength": 1, "maxLength": 128},
         "current_lane": {"type": "string", "minLength": 1, "maxLength": 128},
-        "return_direction": {"enum": ["LEFT", "RIGHT"]}
+        "return_direction": {"enum": ["LEFT", "RIGHT"]},
+        "grounded_target_ids": {
+          "type": "array", "uniqueItems": true, "maxItems": 8,
+          "items": {"type": "string", "minLength": 1, "maxLength": 128}
+        }
       }
     },
     "scene_summary": {

@@ -354,11 +354,15 @@ def build_lane_change_route_reference(
     step_m: float = 1.0,
     transition_start_m: float = 12.0,
     transition_length_m: float = 28.0,
+    target_lane_offset_m: float = 0.0,
 ) -> RouteReference:
     """Build a legal same-direction adjacent-lane transition."""
     side = str(direction).strip().upper()
     if side not in {"LEFT", "RIGHT"}:
         raise ValueError("lane-change direction must be LEFT or RIGHT")
+    target_lane_offset_m = float(target_lane_offset_m)
+    if not math.isfinite(target_lane_offset_m) or not 0.0 <= target_lane_offset_m <= 0.30:
+        raise ValueError("target_lane_offset_m must be finite and between 0.0 and 0.30")
     location = (anchor_or_location.get_location()
                 if hasattr(anchor_or_location, "get_location") else anchor_or_location)
     current = world_map.get_waypoint(location, project_to_road=True)
@@ -374,27 +378,53 @@ def build_lane_change_route_reference(
             raise ValueError("lane-change prefix reaches a junction or dead end")
         current = next_waypoint
 
-    adjacent = _adjacent_driving_lane(current, side)
-    if adjacent is None or bool(getattr(adjacent, "is_junction", False)):
-        raise ValueError(f"no same-direction driving lane on the {side.lower()}")
-    target_end = _advance_waypoint(adjacent, transition_length_m, step_m)
-    if target_end is None or bool(getattr(target_end, "is_junction", False)):
-        raise ValueError("adjacent lane cannot support the full transition")
-
-    transition = _hermite_lane_change(
-        current,
-        target_end,
-        samples=max(8, int(math.ceil(transition_length_m / step_m))),
-        tangent_scale_m=transition_length_m,
-    )
-    points = prefix + list(transition)
-    target = target_end
+    # Blend corresponding source/adjacent topology waypoints instead of
+    # connecting two distant endpoints with one Hermite chord.  A chord cuts
+    # the inside of Town03's curved roads and can point the ego at a kerb or
+    # barrier during a perfectly legal lane return.
+    transition_count = max(8, int(math.ceil(transition_length_m / step_m)))
+    source = current
+    target = None
+    transition_points: list[tuple[float, float]] = []
+    direction_sign = -1.0 if side == "LEFT" else 1.0
+    for index in range(transition_count + 1):
+        if index:
+            source = _next_straight(source, step_m)
+            if source is None or bool(getattr(source, "is_junction", False)):
+                raise ValueError("source lane cannot support the full transition")
+        adjacent = _adjacent_driving_lane(source, side)
+        if adjacent is None or bool(getattr(adjacent, "is_junction", False)):
+            raise ValueError(f"no same-direction driving lane on the {side.lower()}")
+        source_location = source.transform.location
+        target_location = adjacent.transform.location
+        t = index / transition_count
+        blend = t * t * (3.0 - 2.0 * t)
+        yaw_rad = math.radians(float(adjacent.transform.rotation.yaw))
+        right_x, right_y = -math.sin(yaw_rad), math.cos(yaw_rad)
+        offset_x = direction_sign * target_lane_offset_m * right_x
+        offset_y = direction_sign * target_lane_offset_m * right_y
+        transition_points.append((
+            (1.0 - blend) * float(source_location.x)
+            + blend * (float(target_location.x) + offset_x),
+            (1.0 - blend) * float(source_location.y)
+            + blend * (float(target_location.y) + offset_y),
+        ))
+        target = adjacent
+    points = prefix + transition_points
+    if target is None:
+        raise ValueError("adjacent lane transition produced no target waypoint")
+    target_yaw_rad = math.radians(float(target.transform.rotation.yaw))
+    offset_x = direction_sign * target_lane_offset_m * -math.sin(target_yaw_rad)
+    offset_y = direction_sign * target_lane_offset_m * math.cos(target_yaw_rad)
     while _route_length(points) < distance_m:
         target = _next_straight(target, step_m)
         if target is None:
             break
         loc = target.transform.location
-        points.append((float(loc.x), float(loc.y)))
+        target_yaw_rad = math.radians(float(target.transform.rotation.yaw))
+        offset_x = direction_sign * target_lane_offset_m * -math.sin(target_yaw_rad)
+        offset_y = direction_sign * target_lane_offset_m * math.cos(target_yaw_rad)
+        points.append((float(loc.x) + offset_x, float(loc.y) + offset_y))
     if _route_length(points) < distance_m * 0.8:
         raise ValueError("adjacent lane route is too short")
     route_points = tuple(points)

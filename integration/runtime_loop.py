@@ -163,14 +163,38 @@ class ControlRuntime:
             alert for alert in self._latched_alerts if alert not in recovered
         ]
 
-    def fail_active(self, *, now_s: float, detail: str) -> ExecutionFeedback | None:
-        """Terminate the active command when its outer runtime cannot continue."""
+    def fail_active(
+        self,
+        *,
+        now_s: float,
+        detail: str,
+        resume_speed_mps: float | None = None,
+    ) -> ExecutionFeedback | None:
+        """Terminate the active command when its outer runtime cannot continue.
+
+        Ordinary failures remain fail-closed.  A caller that owns a temporary
+        internal hold (for example, the Qwen request bridge) may explicitly
+        release only that hold and restore a bounded fallback speed.  The
+        independent safety supervisor still arbitrates the resumed command.
+        """
+        if resume_speed_mps is not None:
+            if (
+                type(resume_speed_mps) not in (int, float)
+                or isinstance(resume_speed_mps, bool)
+                or not math.isfinite(float(resume_speed_mps))
+                or float(resume_speed_mps) < 0.0
+            ):
+                raise ValueError("resume_speed_mps must be finite and non-negative")
         command_id = self._active_command_id
         if command_id is None:
             return None
         feedback = self.fsm.fail(command_id, now_s=now_s, detail=detail)
-        self.requested_speed_mps = 0.0
-        self._stop_hold = True
+        if resume_speed_mps is None:
+            self.requested_speed_mps = 0.0
+            self._stop_hold = True
+        else:
+            self.requested_speed_mps = float(resume_speed_mps)
+            self._stop_hold = self.requested_speed_mps <= 0.0
         self._clear_active_command()
         return feedback
 
@@ -329,7 +353,12 @@ class ControlRuntime:
                     feedback.append(completed)
             return FrameResult(vehicle, final, longitudinal, safety.reason, safety.safety_override,
                                tuple(feedback), raw_for_safety, lateral)
-        except Exception:
+        except Exception as error:
+            print(
+                "runtime step integration failure: "
+                f"{type(error).__name__}: {error}",
+                flush=True,
+            )
             if "INTEGRATION_FAILURE" not in self._latched_alerts:
                 self._latched_alerts.append("INTEGRATION_FAILURE")
             self.requested_speed_mps = 0.0

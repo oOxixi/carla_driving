@@ -523,6 +523,13 @@ class PipelineOrchestrator:
             }
             target_id = next(iter(target_ids), None)
         available = {item["track_id"] for item in result.job.perception["objects"]}
+        capabilities = request.get("scene_capabilities", {})
+        if isinstance(capabilities, Mapping):
+            available.update(
+                str(item)
+                for item in capabilities.get("grounded_target_ids", ())
+                if item
+            )
         if self.config.qwen_mode == "planner_v2":
             missing_targets = target_ids - available
         else:
@@ -779,7 +786,7 @@ class PipelineOrchestrator:
                 "available_lanes", "left_lane_exists", "right_lane_exists",
                 "left_gap_safe", "right_gap_safe", "route_available",
                 "intersection_ahead", "stop_line_clear", "original_lane",
-                "current_lane", "return_direction",
+                "current_lane", "return_direction", "grounded_target_ids",
             )
             capabilities = {
                 name: runtime_state[name]
@@ -787,6 +794,18 @@ class PipelineOrchestrator:
                 if runtime_state is not None and name in runtime_state
             }
             payload["scene_capabilities"] = capabilities
+        elif (
+            runtime_state is not None
+            and runtime_state.get("grounded_target_ids")
+        ):
+            # Atomic-v1 remains supported by unit/smoke paths. Preserve the
+            # same explicit target provenance without pretending it is a
+            # PerceptionState object.
+            payload["scene_capabilities"] = {
+                "grounded_target_ids": list(
+                    runtime_state["grounded_target_ids"]
+                ),
+            }
         return self.registry.validate("model_request", payload)
 
     def _allowed_model_behaviors(
@@ -818,9 +837,21 @@ class PipelineOrchestrator:
             },
         }
         if routing.features.requires_maneuver and intent in maneuver_by_intent:
+            permitted = set(maneuver_by_intent[intent])
+            # A compound obstacle-avoidance instruction may begin by yielding
+            # to a pedestrian before executing its lane-change manoeuvre.  The
+            # top-level parser still correctly classifies the whole sequence as
+            # AVOID_OBSTACLE, so retain YIELD when the command explicitly names
+            # a pedestrian or yielding action instead of rejecting a safe plan.
+            source_text = str(command.get("source_text", "")).upper()
+            if intent == "AVOID_OBSTACLE" and any(
+                keyword in source_text
+                for keyword in ("行人", "礼让", "让行", "PEDESTRIAN", "YIELD")
+            ):
+                permitted.add("YIELD")
             narrowed = [
                 behavior for behavior in configured
-                if behavior in maneuver_by_intent[intent]
+                if behavior in permitted
             ]
             return narrowed or ["STOP"]
         if routing.features.requires_maneuver:
