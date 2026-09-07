@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from strategy_config import DEFAULT_STRATEGY, dynamic_safety_distance
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,8 +46,13 @@ class PerceptionTarget:
 class StableTargetTracker:
     """Assign stable target IDs using class and nearest-range continuity."""
 
-    def __init__(self, *, ego_speed_mps: float = 4.0, max_association_distance_m: float = 2.0) -> None:
+    def __init__(self, *, ego_speed_mps: float = 4.0,
+                 road_curvature_per_m: float = 0.0,
+                 sensor_margin_scale: float = 1.0,
+                 max_association_distance_m: float = 2.0) -> None:
         self.ego_speed_mps = float(ego_speed_mps)
+        self.road_curvature_per_m = float(road_curvature_per_m)
+        self.sensor_margin_scale = float(sensor_margin_scale)
         self.max_association_distance_m = float(max_association_distance_m)
         self._next_index = 1
         self._tracks: dict[str, PerceptionTarget] = {}
@@ -83,12 +89,20 @@ class StableTargetTracker:
 
     def _risk_level(self, target: PerceptionTarget) -> str:
         ttc_s = self._ttc_s(target)
-        if ttc_s is not None and ttc_s <= 1.5:
+        closing_speed = max(0.0, self.ego_speed_mps - float(target.speed_mps))
+        envelope = dynamic_safety_distance(
+            ego_speed_mps=self.ego_speed_mps,
+            closing_speed_mps=closing_speed,
+            curvature_per_m=self.road_curvature_per_m,
+            actor_type=target.class_name,
+            sensor_margin_scale=self.sensor_margin_scale,
+        )
+        if ttc_s is not None and ttc_s <= DEFAULT_STRATEGY.common.emergency_ttc_s:
             return "EMERGENCY"
-        if float(target.distance_m) <= 5.0:
+        if float(target.distance_m) <= envelope.emergency_distance_m:
             return "EMERGENCY"
-        if ttc_s is not None and ttc_s <= 3.0:
+        if ttc_s is not None and ttc_s <= DEFAULT_STRATEGY.common.caution_ttc_s:
             return "CAUTION"
-        if float(target.distance_m) <= 10.0:
+        if float(target.distance_m) <= envelope.caution_distance_m:
             return "CAUTION"
         return "CLEAR"

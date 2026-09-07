@@ -3,7 +3,7 @@
 from .following_controller import FollowingController, FollowingParameters
 from .longitudinal_controller import LongitudinalController, LongitudinalParameters
 from .speed_pid import PIDParameters, SpeedPID
-from .speed_planner import SpeedPlanner, SpeedPlannerParameters
+from .speed_planner import SpeedPlan, SpeedPlanner, SpeedPlannerParameters
 from .stop_controller import StopController, StopParameters, StopState
 from .traffic_rules import TrafficRulePlanner
 from .config import FuzzyCommandPolicyConfig
@@ -17,7 +17,7 @@ from .safety_state import (
 
 __all__ = [
     "FollowingController", "FollowingParameters", "LongitudinalController", "LongitudinalParameters",
-    "PIDParameters", "SpeedPID", "SpeedPlanner", "SpeedPlannerParameters", "StopController",
+    "PIDParameters", "SpeedPID", "SpeedPlan", "SpeedPlanner", "SpeedPlannerParameters", "StopController",
     "StopParameters", "StopState", "TrafficRulePlanner",
     "FuzzyCommandPolicyConfig", "FuzzyCommandDecision", "FuzzyCommandPolicy",
     "ConservativeSensorFusion", "SafetyStateParameters", "SafetyStateSummary",

@@ -55,7 +55,7 @@ def test_fusion_tracker_keeps_target_id_stable_and_exports_risk() -> None:
 
     assert first.target_id == second.target_id
     assert second.ttc_s == 1.9
-    assert second.risk_level == "CAUTION"
+    assert second.risk_level == "EMERGENCY"
     assert second.to_dict()["source"] == "RGB_LIDAR"
 
 

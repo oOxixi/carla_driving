@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from compat import StrEnum
+from strategy_config import DEFAULT_STRATEGY
 from .validation import finite
 
 
@@ -16,12 +17,12 @@ class StopState(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class StopParameters:
-    max_decel_mps2: float = 4.0
-    comfortable_decel_mps2: float = 3.0
-    creep_speed_mps: float = 0.5
-    hold_distance_m: float = 0.8
-    hold_speed_mps: float = 0.15
-    hold_brake: float = 0.55
+    max_decel_mps2: float = DEFAULT_STRATEGY.common.max_decel_mps2
+    comfortable_decel_mps2: float = DEFAULT_STRATEGY.common.comfortable_decel_mps2
+    creep_speed_mps: float = DEFAULT_STRATEGY.longitudinal.creep_speed_mps
+    hold_distance_m: float = DEFAULT_STRATEGY.longitudinal.stop_hold_distance_m
+    hold_speed_mps: float = DEFAULT_STRATEGY.common.standstill_speed_mps
+    hold_brake: float = DEFAULT_STRATEGY.common.hold_brake
 
     def __post_init__(self) -> None:
         finite("max_decel_mps2", self.max_decel_mps2, positive=True)

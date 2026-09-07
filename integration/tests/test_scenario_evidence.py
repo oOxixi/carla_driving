@@ -61,7 +61,11 @@ def test_unified_evidence_is_auditable_and_scored(tmp_path):
     frame = records[2]
     assert frame["raw_control"]["brake"] == 0.4
     assert frame["final_control"]["brake"] == 1.0
-    assert frame["safety"] == {"override": True, "reason": "STOP_LINE_GUARD"}
+    assert frame["safety"] == {
+        "override": True,
+        "reason": "STOP_LINE_GUARD",
+        "reason_category": "NONE",
+    }
     assert frame["c_safety_state"]["fusion_mode"] == "RGB_LIDAR"
     assert frame["latency"]["decision_ms"] == pytest.approx(0.00001)
     assert frame["latency"]["simulator_tick_ms"] == pytest.approx(0.00001)
