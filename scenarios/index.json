@@ -74,8 +74,8 @@
     "qwen_faults": 3,
     "acceptance_suite": 83,
     "official_competition": 3,
-    "development": 3,
+    "development": 5,
     "generalization": 16,
-    "total": 151
+    "total": 153
   }
 }

@@ -349,6 +349,51 @@ def test_qwen_request_and_result_are_recorded_without_credentials(tmp_path):
     assert "api_key" not in path.read_text(encoding="utf-8").lower()
 
 
+def test_route_recovery_lifecycle_is_persisted_and_scored(tmp_path):
+    path = tmp_path / "route-recovery.jsonl"
+    recorder = ScenarioEvidenceRecorder(path)
+    recorder.start_run(scenario_id="ROUTE_RECOVERY")
+    recorder.record_route_recovery_event(
+        event_type="route_recovery_state",
+        payload={"frame": 1, "status": "OFF_ROUTE_CONFIRMING", "attempt": 0},
+    )
+    recorder.record_route_recovery_event(
+        event_type="route_recovery_state",
+        payload={"frame": 2, "status": "REPLANNING", "attempt": 1},
+    )
+    recorder.record_route_recovery_event(
+        event_type="route_replanned",
+        payload={"frame": 2, "attempt": 1, "new_route_id": "route-2"},
+    )
+    recorder.record_route_recovery_event(
+        event_type="route_recovery_state",
+        payload={"frame": 3, "status": "ON_ROUTE", "attempt": 1},
+    )
+    summary = recorder.complete(
+        completion=True,
+        expected={
+            "must_replan_route": True,
+            "must_recover_route": True,
+            "max_route_replan_attempts": 2,
+        },
+    )
+
+    assert summary["acceptance"]["passed"] is True
+    assert summary["route_recovery"] == {
+        "states": ["OFF_ROUTE_CONFIRMING", "REPLANNING", "REPLANNED", "ON_ROUTE"],
+        "replan_count": 1,
+        "replan_failure_count": 0,
+        "max_attempt": 1,
+        "recovered": True,
+    }
+    record_types = [
+        json.loads(line)["record_type"]
+        for line in path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert record_types.count("route_recovery_state") == 3
+    assert record_types.count("route_replanned") == 1
+
+
 def test_feedback_safety_event_is_included_in_acceptance_reasons(tmp_path):
     recorder = ScenarioEvidenceRecorder(tmp_path / "safety-feedback.jsonl")
     recorder.start_run(scenario_id="ACC_C03")

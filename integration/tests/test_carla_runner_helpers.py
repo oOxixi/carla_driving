@@ -48,6 +48,7 @@ from integration.carla_runner import (
     _rejected_load_envelope,
     _remaining_route_distances,
     _route_contract_completed,
+    _route_recovery_hold_reference,
     _route_run_can_end_early,
     _route_stop_trigger_m,
     _runtime_health_completed,
@@ -1525,6 +1526,26 @@ def test_clean_world_on_start_is_explicit_and_opt_in() -> None:
     assert _scenario_clean_world_on_start(
         Namespace(extensions={"clean_world_on_start": True})
     ) is True
+
+
+def test_route_recovery_hold_reference_is_forward_and_stationary() -> None:
+    vehicle = RuntimeVehicleState(
+        frame=1,
+        sim_time_s=0.05,
+        speed_mps=4.0,
+        x_m=10.0,
+        y_m=20.0,
+        z_m=0.0,
+        yaw_deg=90.0,
+        lane_id="3",
+    )
+
+    route = _route_recovery_hold_reference(vehicle)
+
+    assert route.points_xy_m[0] == pytest.approx((10.0, 20.0))
+    assert route.points_xy_m[-1] == pytest.approx((10.0, 32.0))
+    assert route.target_speed_mps == 0.0
+    assert route.metadata["purpose"] == "safe_replan_hold"
     with pytest.raises(TypeError, match="clean_world_on_start"):
         _scenario_clean_world_on_start(
             Namespace(extensions={"clean_world_on_start": "yes"})

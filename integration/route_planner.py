@@ -7,13 +7,13 @@ command.  It does not pretend to be a global navigation service.
 from __future__ import annotations
 
 import math
-import heapq
-import itertools
 from dataclasses import dataclass
 from typing import Any, Iterable, Sequence
 
 from car_control_A.routing import RouteReference
 from car_control_B.path_utils import estimate_curvature
+
+from .route_manager import RouteManager
 
 
 _DIRECTIONS = {"LEFT", "RIGHT", "STRAIGHT"}
@@ -473,12 +473,7 @@ def build_destination_route_reference(
     step_m: float = 2.0,
     maximum_expansions: int = 50_000,
 ) -> RouteReference:
-    """Plan a deterministic map-topology route to a destination with A*.
-
-    This is the destination-based counterpart to distance-coverage routes.
-    It explores CARLA waypoint successors rather than greedily committing to
-    the first visually straight branch.
-    """
+    """Plan and validate a deterministic topology route to a destination."""
     if len(destination_xy_m) != 2 or any(
         not math.isfinite(float(value)) for value in destination_xy_m
     ):
@@ -487,66 +482,25 @@ def build_destination_route_reference(
         raise ValueError("step_m must be finite and positive")
     if type(maximum_expansions) is not int or maximum_expansions < 1:
         raise ValueError("maximum_expansions must be a positive integer")
-    start = select_heading_compatible_waypoint(world_map, anchor_or_location)
     target_x, target_y = map(float, destination_xy_m)
-
-    def heuristic(waypoint: Any) -> float:
-        location = waypoint.transform.location
-        return math.hypot(float(location.x) - target_x, float(location.y) - target_y)
-
-    start_key = _waypoint_visit_key(start)
-    counter = itertools.count()
-    frontier: list[tuple[float, float, int, Any]] = [
-        (heuristic(start), 0.0, next(counter), start),
-    ]
-    costs: dict[tuple[object, ...], float] = {start_key: 0.0}
-    parents: dict[tuple[object, ...], tuple[object, ...] | None] = {start_key: None}
-    nodes: dict[tuple[object, ...], Any] = {start_key: start}
-    goal_key: tuple[object, ...] | None = None
-    tolerance_m = max(2.0, step_m * 1.5)
-
-    for _ in range(maximum_expansions):
-        if not frontier:
-            break
-        _priority, current_cost, _order, current = heapq.heappop(frontier)
-        current_key = _waypoint_visit_key(current)
-        if current_cost > costs.get(current_key, math.inf) + 1e-9:
-            continue
-        if heuristic(current) <= tolerance_m:
-            goal_key = current_key
-            break
-        for candidate in tuple(current.next(step_m)):
-            candidate_key = _waypoint_visit_key(candidate)
-            next_cost = current_cost + _waypoint_distance_m(
-                candidate, current.transform.location,
-            )
-            if next_cost + 1e-9 >= costs.get(candidate_key, math.inf):
-                continue
-            costs[candidate_key] = next_cost
-            parents[candidate_key] = current_key
-            nodes[candidate_key] = candidate
-            heapq.heappush(
-                frontier,
-                (next_cost + heuristic(candidate), next_cost, next(counter), candidate),
-            )
-    if goal_key is None:
-        raise RuntimeError(
-            "no CARLA topology route reaches the requested destination "
-            f"within {maximum_expansions} expansions"
+    anchor_location = getattr(anchor_or_location, "location", anchor_or_location)
+    try:
+        destination_location = type(anchor_location)(
+            x=target_x,
+            y=target_y,
+            z=float(getattr(anchor_location, "z", 0.0)),
         )
-    reversed_keys: list[tuple[object, ...]] = []
-    cursor: tuple[object, ...] | None = goal_key
-    while cursor is not None:
-        reversed_keys.append(cursor)
-        cursor = parents[cursor]
-    waypoints = tuple(nodes[key] for key in reversed(reversed_keys))
-    points = tuple(
-        (float(item.transform.location.x), float(item.transform.location.y))
-        for item in waypoints
-    )
-    if len(points) < 2:
-        raise RuntimeError("destination route is too short")
-    return RouteReference(points, _route_curvature(points), float(target_speed_mps))
+    except TypeError:
+        destination_location = type(anchor_location)(target_x, target_y, 0.0)
+    return RouteManager(
+        world_map,
+        sample_step_m=step_m,
+        maximum_expansions=maximum_expansions,
+    ).plan(
+        anchor_or_location,
+        destination_location,
+        target_speed_mps,
+    ).reference
 
 
 def select_topology_route_anchor(

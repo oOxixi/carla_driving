@@ -213,6 +213,24 @@ def test_clear_safety_alerts_releases_only_named_recovered_faults():
     assert not runtime.safety_latched
 
 
+def test_clear_safety_alert_prefix_preserves_other_fault_families():
+    runtime = ControlRuntime(PurePursuitController())
+    runtime.step(
+        _vehicle(),
+        PerceptionFrame(frame=1, sim_time_s=0.05),
+        _route(),
+        dt_s=0.05,
+        watchdog_alerts=("LATERAL_TARGET_BEHIND_EGO", "SENSOR_TIMEOUT"),
+    )
+
+    cleared = runtime.clear_safety_alert_prefix("LATERAL_")
+
+    assert cleared == ("LATERAL_TARGET_BEHIND_EGO",)
+    assert runtime.safety_latched
+    runtime.clear_safety_alerts(("SENSOR_TIMEOUT",))
+    assert not runtime.safety_latched
+
+
 def test_low_confidence_command_can_be_confirmed_then_execute():
     runtime = ControlRuntime(PurePursuitController(), default_speed_mps=0.0)
     command = _voice()

@@ -206,6 +206,10 @@ class ScenarioEvidenceRecorder:
         self._final_controls_finite = True
         self._final_control_overlap_count = 0
         self._emergency_brake_seen = False
+        self._route_recovery_states: list[str] = []
+        self._route_replan_count = 0
+        self._route_replan_failure_count = 0
+        self._route_replan_max_attempt = 0
         self._acceptance_report: dict[str, Any] | None = None
 
     @property
@@ -553,6 +557,37 @@ class ScenarioEvidenceRecorder:
             payload=_jsonable(payload),
         )
 
+    def record_route_recovery_event(
+        self,
+        *,
+        event_type: str,
+        payload: Mapping[str, object],
+    ) -> None:
+        """Persist route-recovery lifecycle evidence and update aggregates."""
+        self._ensure_active()
+        if event_type not in {
+            "route_recovery_state",
+            "route_replanned",
+            "route_replan_failed",
+        }:
+            raise ValueError("unsupported route recovery event type")
+        normalized = dict(payload)
+        attempt = normalized.get("attempt", 0)
+        if type(attempt) is not int or isinstance(attempt, bool) or attempt < 0:
+            raise ValueError("route recovery attempt must be a non-negative integer")
+        self._route_replan_max_attempt = max(self._route_replan_max_attempt, attempt)
+        if event_type == "route_recovery_state":
+            status = str(normalized.get("status", "")).strip().upper()
+            if not status:
+                raise ValueError("route recovery state requires a status")
+            self._route_recovery_states.append(status)
+        elif event_type == "route_replanned":
+            self._route_replan_count += 1
+            self._route_recovery_states.append("REPLANNED")
+        else:
+            self._route_replan_failure_count += 1
+        self._write(event_type, **normalized)
+
     def complete(self, *, completion: bool | None = None, detail: str = "",
                  expected: Mapping[str, object] | None = None,
                  acceptance_context: Mapping[str, object] | None = None) -> dict[str, Any]:
@@ -619,6 +654,13 @@ class ScenarioEvidenceRecorder:
             "lane_invasion_count": self._lane_invasions,
             "red_light_violation_count": self._red_violations,
             "route_deviation_count": self._route_deviations,
+            "route_recovery": {
+                "states": list(self._route_recovery_states),
+                "replan_count": self._route_replan_count,
+                "replan_failure_count": self._route_replan_failure_count,
+                "max_attempt": self._route_replan_max_attempt,
+                "recovered": self._route_recovery_succeeded(),
+            },
             "serious_route_deviation": 0 if self._expected_route_deviation else self._route_deviations,
             "unfinished_task_count": 0 if completion else 1,
             "safety_override_frames": self._safety_override_frames,
@@ -797,6 +839,11 @@ class ScenarioEvidenceRecorder:
             "route_deviation_event_seen": any(
                 "ROUTE_DEVIATION" in reason for reason in self._safety_reasons
             ),
+            "route_replan_count": self._route_replan_count,
+            "route_replan_failure_count": self._route_replan_failure_count,
+            "route_replan_max_attempt": self._route_replan_max_attempt,
+            "route_recovery_states": list(self._route_recovery_states),
+            "route_recovery_succeeded": self._route_recovery_succeeded(),
             "event_count": (
                 self._safety_override_episodes + self._feedback_safety_event_count
                 + self._collisions + self._lane_invasions
@@ -824,6 +871,16 @@ class ScenarioEvidenceRecorder:
             **dict(context),
         }
         return metrics
+
+    def _route_recovery_succeeded(self) -> bool:
+        try:
+            replanned_index = self._route_recovery_states.index("REPLANNED")
+        except ValueError:
+            return False
+        return any(
+            status in {"ON_ROUTE", "DESTINATION_REACHED"}
+            for status in self._route_recovery_states[replanned_index + 1:]
+        )
 
     def _write(self, record_type: str, **fields: Any) -> None:
         if self._handle is None:

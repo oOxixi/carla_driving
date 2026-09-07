@@ -169,6 +169,32 @@ def evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, obje
         add("route_deviation_trigger_m", actual is not None and required is not None and abs(actual - required) <= 1e-9,
             actual, required, "D must use the scenario-declared route recovery trigger")
 
+    if "must_replan_route" in expected:
+        supported.add("must_replan_route")
+        actual = int(metrics.get("route_replan_count", 0) or 0)
+        add(
+            "must_replan_route",
+            expected["must_replan_route"] is not True or actual > 0,
+            actual,
+            "> 0 successful replans",
+            "an off-route state must produce a valid replacement route",
+        )
+
+    if "must_recover_route" in expected:
+        supported.add("must_recover_route")
+        actual = metrics.get("route_recovery_succeeded") is True
+        add(
+            "must_recover_route",
+            expected["must_recover_route"] is not True or actual,
+            actual,
+            True,
+            "a successful replan must be followed by ON_ROUTE or DESTINATION_REACHED",
+        )
+
+    if "max_route_replan_attempts" in expected:
+        supported.add("max_route_replan_attempts")
+        maximum("max_route_replan_attempts", "route_replan_max_attempt")
+
     if "must_generate_event" in expected:
         supported.add("must_generate_event")
         actual = int(metrics.get("event_count", 0) or 0)

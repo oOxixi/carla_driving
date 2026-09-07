@@ -54,7 +54,6 @@ from .qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from .qwen_vl_adapter import StrictQwenVLAdapter
 from .live_voice import LiveVoiceConfig, LiveVoiceSource
 from .route_planner import (
-    build_destination_route_reference,
     build_lane_change_route_reference,
     build_route_reference,
     build_scenario_route_reference,
@@ -63,6 +62,13 @@ from .route_planner import (
     warm_heading_waypoint_cache,
 )
 from .route_geometry import route_pose_at_s
+from .route_manager import (
+    GlobalRoute,
+    RouteManager,
+    RoutePlanningError,
+    RouteRecoveryPolicy,
+    RouteRecoveryTracker,
+)
 from .scenario_builder import (
     ActorPlacementError,
     actor_resample_offsets,
@@ -2594,6 +2600,26 @@ def _route_stop_trigger_m(speed_mps: float, finish_radius_m: float, decel_mps2: 
     return max(finish_radius_m, speed_mps * speed_mps / (2.0 * decel_mps2) + 1.0)
 
 
+def _route_recovery_hold_reference(vehicle: RuntimeVehicleState) -> RouteReference:
+    """Build a valid ego-aligned zero-speed reference while replanning is pending."""
+    yaw_rad = math.radians(vehicle.yaw_deg)
+    forward_x, forward_y = math.cos(yaw_rad), math.sin(yaw_rad)
+    points = tuple(
+        (
+            vehicle.x_m + distance_m * forward_x,
+            vehicle.y_m + distance_m * forward_y,
+        )
+        for distance_m in (0.0, 4.0, 8.0, 12.0)
+    )
+    return RouteReference(
+        points,
+        curvature_per_m=0.0,
+        target_speed_mps=0.0,
+        route_id="route-recovery-hold",
+        metadata={"temporary": True, "purpose": "safe_replan_hold"},
+    )
+
+
 def _map_short_name(map_name: str) -> str:
     return map_name.rsplit("/", maxsplit=1)[-1]
 
@@ -3118,6 +3144,12 @@ def run(args: argparse.Namespace) -> None:
             }, ensure_ascii=False), flush=True)
         route_anchor = spawn_points[args.spawn_index % len(spawn_points)]
         topology_route: RouteReference | None = None
+        global_route_manager: RouteManager | None = None
+        global_route: GlobalRoute | None = None
+        global_route_destination: Any | None = None
+        global_route_recovery: RouteRecoveryTracker | None = None
+        global_route_progress_offset_m = 0.0
+        global_route_recovery_status: str | None = None
         prevalidated_avoid_route: RouteReference | None = None
         road_fit_required = (
             spec is not None
@@ -3135,7 +3167,12 @@ def run(args: argparse.Namespace) -> None:
             and args.seed is not None
             and _scenario_traffic_light_distance(spec) is None
         )
-        if road_fit_required or seeded_route_anchor or adjacent_lane_anchor_required:
+        destination_planning = (
+            spec is not None and spec.route_planning_mode == "destination"
+        )
+        if (
+            road_fit_required or seeded_route_anchor or adjacent_lane_anchor_required
+        ) and not destination_planning:
             maneuver = _scenario_maneuver(spec)
             configured_anchor_index = spec.extensions.get("route_anchor_spawn_index")
             if configured_anchor_index is not None:
@@ -3211,20 +3248,50 @@ def run(args: argparse.Namespace) -> None:
                 f"route anchor: spawn_index={anchor_index} maneuver={maneuver} "
                 f"topology_score={anchor_score:.3f} seed_offset_m={seed_offset_m:.1f}"
             )
-        if spec is not None and spec.route_planning_mode == "destination":
+        if destination_planning:
+            assert spec is not None
             destination_xy = spec.world_destination(
                 route_anchor.location.x,
                 route_anchor.location.y,
                 route_anchor.rotation.yaw,
             )
             assert destination_xy is not None
-            topology_route = build_destination_route_reference(
-                world_map,
-                route_anchor,
-                destination_xy,
-                args.default_speed_mps,
-                step_m=spec.route_resample_interval_m,
+            recovery_policy = RouteRecoveryPolicy.from_mapping(
+                spec.route_contract.get("recovery"),
             )
+            global_route_manager = RouteManager(
+                world_map,
+                sample_step_m=spec.route_resample_interval_m,
+                finish_radius_m=spec.finish_radius_m,
+                off_route_threshold_m=recovery_policy.off_route_threshold_m,
+            )
+            global_route_recovery = RouteRecoveryTracker(
+                recovery_policy,
+            )
+            global_route_destination = carla.Location(
+                x=destination_xy[0],
+                y=destination_xy[1],
+                z=route_anchor.location.z,
+            )
+            try:
+                global_route = global_route_manager.plan(
+                    route_anchor,
+                    global_route_destination,
+                    args.default_speed_mps,
+                )
+            except RoutePlanningError as error:
+                print(json.dumps({
+                    "record_type": "route_planning_failed",
+                    "reason": error.code,
+                    "detail": error.detail,
+                }, ensure_ascii=False), flush=True)
+                raise
+            topology_route = global_route.reference
+            print(json.dumps({
+                "record_type": "global_route_ready",
+                "planner": topology_route.metadata.get("planner"),
+                **global_route.validation.to_dict(),
+            }, ensure_ascii=False), flush=True)
         traffic_light_distance = _scenario_traffic_light_distance(spec)
         if traffic_light_distance is not None:
             seeded_stop_distance_m = traffic_light_distance + (
@@ -3577,7 +3644,9 @@ def run(args: argparse.Namespace) -> None:
                 if scenario_spawn_route is not None else route.points_xy_m,
                 progress_m=resume_progress_m,
             )
+            global_route_state = None
             for step_index in range(args.frames):
+                route_recovery_hold = False
                 simulator_tick_start_ns = time.monotonic_ns()
                 frame = session.tick(args.timeout_s)
                 simulator_tick_end_ns = time.monotonic_ns()
@@ -3602,6 +3671,144 @@ def run(args: argparse.Namespace) -> None:
                     speed_mps=state.speed_mps,
                     delta_s=args.fixed_delta_s,
                 )
+                if global_route_manager is not None and global_route is not None:
+                    global_route_state = global_route_manager.state(
+                        global_route,
+                        state.x_m,
+                        state.y_m,
+                        previous_s_m=(
+                            resume_progress_m
+                            if global_route_state is None
+                            else global_route_state.route_s
+                        ),
+                    )
+                    route_progress_m = (
+                        global_route_progress_offset_m
+                        + global_route_state.route_s
+                    )
+                    assert global_route_recovery is not None
+                    intentional_maneuver_active = (
+                        maneuver_fsm.plan is not None
+                        and maneuver_fsm.state not in TERMINAL_STATES
+                    )
+                    recovery_decision = global_route_recovery.observe(
+                        global_route_state,
+                        state.sim_time_s,
+                        recovery_suppressed=intentional_maneuver_active,
+                    )
+                    route_recovery_hold = recovery_decision.status in {
+                        "OFF_ROUTE_CONFIRMING",
+                        "REPLANNING",
+                        "REPLAN_COOLDOWN",
+                        "RECOVERY_EXHAUSTED",
+                    }
+                    if recovery_decision.status != global_route_recovery_status:
+                        recovery_payload = {
+                            "frame": frame,
+                            "status": recovery_decision.status,
+                            "reason": recovery_decision.reason,
+                            "attempt": recovery_decision.attempt,
+                            "route_s": global_route_state.route_s,
+                            "mission_route_progress_m": route_progress_m,
+                            "cross_track_error_m": global_route_state.cross_track_error_m,
+                        }
+                        print(json.dumps({
+                            "record_type": "route_recovery_state",
+                            **recovery_payload,
+                        }, ensure_ascii=False), flush=True)
+                        if recorder is not None:
+                            recorder.record_route_recovery_event(
+                                event_type="route_recovery_state",
+                                payload=recovery_payload,
+                            )
+                        global_route_recovery_status = recovery_decision.status
+                    if recovery_decision.should_replan:
+                        assert global_route_destination is not None
+                        replan_origin_m = route_progress_m
+                        try:
+                            replanned_route = global_route_manager.replan(
+                                ego.get_transform(),
+                                global_route_destination,
+                                runtime.requested_speed_mps,
+                            )
+                        except RoutePlanningError as error:
+                            replan_failure_payload = {
+                                "frame": frame,
+                                "attempt": recovery_decision.attempt,
+                                "reason": error.code,
+                                "detail": error.detail,
+                                "mission_route_progress_m": replan_origin_m,
+                            }
+                            print(json.dumps({
+                                "record_type": "route_replan_failed",
+                                **replan_failure_payload,
+                            }, ensure_ascii=False), flush=True)
+                            if recorder is not None:
+                                recorder.record_route_recovery_event(
+                                    event_type="route_replan_failed",
+                                    payload=replan_failure_payload,
+                                )
+                            if (
+                                recovery_decision.attempt
+                                >= global_route_recovery.policy.maximum_attempts
+                            ):
+                                runtime.requested_speed_mps = 0.0
+                                route = replace(route, target_speed_mps=0.0)
+                        else:
+                            route_recovery_hold = False
+                            recovery_resume_speed_mps = max(
+                                runtime.requested_speed_mps,
+                                route.target_speed_mps,
+                            )
+                            global_route_progress_offset_m = replan_origin_m
+                            global_route = replanned_route
+                            route = replace(
+                                replanned_route.reference,
+                                target_speed_mps=recovery_resume_speed_mps,
+                            )
+                            runtime.requested_speed_mps = recovery_resume_speed_mps
+                            cleared_lateral_alerts = (
+                                runtime.clear_safety_alert_prefix("LATERAL_")
+                            )
+                            if cleared_lateral_alerts and not runtime.safety_latched:
+                                # Keep the recorder's historical override evidence,
+                                # but do not let a recovered lateral-only watchdog
+                                # remain an active runtime-health failure.
+                                safety_reasons.discard("WATCHDOG_ALERT")
+                            runtime.lateral.reset()
+                            global_route_recovery.note_replan_succeeded()
+                            global_route_state = global_route_manager.state(
+                                global_route,
+                                state.x_m,
+                                state.y_m,
+                                previous_s_m=0.0,
+                            )
+                            route_progress_m = (
+                                global_route_progress_offset_m
+                                + global_route_state.route_s
+                            )
+                            global_route_recovery_status = "REPLANNED"
+                            replan_payload = {
+                                "frame": frame,
+                                "attempt": recovery_decision.attempt,
+                                "reason": "OFF_ROUTE_REPLAN",
+                                "mission_route_progress_offset_m": (
+                                    global_route_progress_offset_m
+                                ),
+                                "new_route_length_m": global_route.total_length_m,
+                                "new_route_id": global_route.reference.route_id,
+                                "resume_speed_mps": recovery_resume_speed_mps,
+                                "cleared_alerts": list(cleared_lateral_alerts),
+                            }
+                            print(json.dumps({
+                                "record_type": "route_replanned",
+                                **replan_payload,
+                            }, ensure_ascii=False), flush=True)
+                            if recorder is not None:
+                                recorder.record_route_recovery_event(
+                                    event_type="route_replanned",
+                                    payload=replan_payload,
+                                )
                 for entry in tuple(scenario_vehicles):
                     actor, actor_spec = entry
                     if _release_scenario_actor_if_due(
@@ -3925,18 +4132,28 @@ def run(args: argparse.Namespace) -> None:
                     ego_location.y - route_end_point[1],
                 )
                 final_route_end_distance_m = distance_to_route_end_m
+                if global_route_state is not None:
+                    final_route_remaining_m = global_route_state.route_remaining_m
+                remaining_for_finish_m = (
+                    global_route_state.route_remaining_m
+                    if global_route_state is not None
+                    else final_route_remaining_m
+                    if final_route_remaining_m is not None
+                    else distance_to_route_end_m
+                )
                 finish_contract_route = (
                     spec is not None
                     and (
                         spec.category == "lateral_B"
                         or spec.expected.get("must_finish_route") is True
                     )
-                    and (
-                        final_route_remaining_m
-                        if final_route_remaining_m is not None
-                        else distance_to_route_end_m
-                    ) <= _route_stop_trigger_m(
+                    and remaining_for_finish_m <= _route_stop_trigger_m(
                         state.speed_mps, spec.finish_radius_m,
+                    )
+                    and (
+                        global_route_state is None
+                        or global_route_state.cross_track_error_m
+                        <= global_route_manager.off_route_threshold_m
                     )
                 )
                 if finish_contract_route and runtime.requested_speed_mps > 0.0:
@@ -4787,9 +5004,16 @@ def run(args: argparse.Namespace) -> None:
                         scenario_sensor_fault_speed_cap_mps,
                     )
                 ) else None
+                if route_recovery_hold:
+                    effective_route = _route_recovery_hold_reference(state)
+                    active_speed_cap_mps = 0.0
                 if active_speed_cap_mps is not None:
                     effective_route = replace(
-                        route, target_speed_mps=min(route.target_speed_mps, active_speed_cap_mps),
+                        effective_route,
+                        target_speed_mps=min(
+                            effective_route.target_speed_mps,
+                            active_speed_cap_mps,
+                        ),
                     )
                 result = runtime.step(
                     state, scene, effective_route, dt_s=args.fixed_delta_s,
@@ -4799,6 +5023,8 @@ def run(args: argparse.Namespace) -> None:
                     safety_override_reason=c_perception_override_reason,
                 )
                 if (
+                    global_route_state is None
+                    and
                     contract_route_points is not None
                     and route.points_xy_m is contract_route_points
                     and result.lateral is not None
@@ -5165,6 +5391,9 @@ def run(args: argparse.Namespace) -> None:
                     "safety_override": result.safety_override,
                     "qwen_status": qwen_status,
                 }
+                if global_route_state is not None:
+                    record["route_state"] = global_route_state.to_dict()
+                    record["mission_route_progress_m"] = route_progress_m
                 if step_index % args.print_every == 0 or step_index == args.frames - 1:
                     print(json.dumps(record, ensure_ascii=False))
                 # The synchronous world is still frozen until the next tick.

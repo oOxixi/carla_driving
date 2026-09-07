@@ -163,6 +163,17 @@ class ControlRuntime:
             alert for alert in self._latched_alerts if alert not in recovered
         ]
 
+    def clear_safety_alert_prefix(self, prefix: str) -> tuple[str, ...]:
+        """Release one recovered fault family without clearing unrelated alerts."""
+        if type(prefix) is not str or not prefix:
+            raise ValueError("prefix must be a non-empty string")
+        cleared = tuple(
+            alert for alert in self._latched_alerts if alert.startswith(prefix)
+        )
+        if cleared:
+            self.clear_safety_alerts(cleared)
+        return cleared
+
     def fail_active(
         self,
         *,
