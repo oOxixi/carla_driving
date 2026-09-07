@@ -27,7 +27,7 @@ from car_control_A.watchdog import RuntimeWatchdog
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
 from car_control_C import ConservativeSensorFusion, SafetyStateParameters
 from car_control_D import SafetyConfig, SafetySupervisor
-from strategy_config import DEFAULT_STRATEGY
+from config.strategy import DEFAULT_STRATEGY
 from qwen_service.client import QwenServiceClient
 from runtime.interface_registry import InterfaceRegistry
 from runtime import (

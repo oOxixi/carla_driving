@@ -22,7 +22,7 @@ from typing import Any, Mapping
 from uuid import uuid4
 
 from car_control_D.official_score import OfficialScorer
-from strategy_config import DEFAULT_STRATEGY
+from config.strategy import DEFAULT_STRATEGY
 from .scenario_acceptance import evaluate_expected
 
 

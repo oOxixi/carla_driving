@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from strategy_config import DEFAULT_STRATEGY
+from config.strategy import DEFAULT_STRATEGY
 from .validation import finite
 
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from strategy_config import DEFAULT_STRATEGY, dynamic_safety_distance
+from config.strategy import DEFAULT_STRATEGY, dynamic_safety_distance
 
 
 @dataclass(frozen=True, slots=True)

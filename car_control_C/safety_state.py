@@ -14,7 +14,7 @@ from types import MappingProxyType
 from typing import Mapping
 
 from car_control_A import ControlOutput
-from strategy_config import DEFAULT_STRATEGY, dynamic_safety_distance
+from config.strategy import DEFAULT_STRATEGY, dynamic_safety_distance
 
 from .validation import finite
 
@@ -91,6 +91,7 @@ class SafetyStateParameters:
     # Temporal range differentiation is only a fallback when no aligned lead
     # velocity exists.  A nearest-return switch can otherwise look like an
     # impossible closing speed and manufacture a false sub-second TTC.
+    untracked_approach_speed_margin_mps: float = 5.0
     max_temporal_closing_speed_mps: float = 40.0
     temporal_closing_confirmation_tolerance_mps: float = 5.0
     reaction_time_s: float = 0.70
@@ -106,6 +107,7 @@ class SafetyStateParameters:
         for name in ("caution_distance_m", "emergency_distance_m", "vru_caution_distance_m",
                      "vru_emergency_distance_m", "vru_caution_speed_cap_mps", "vru_caution_hold_s",
                      "caution_ttc_s", "emergency_ttc_s", "max_observation_gap_s",
+                     "untracked_approach_speed_margin_mps",
                      "max_temporal_closing_speed_mps",
                      "temporal_closing_confirmation_tolerance_mps",
                      "reaction_time_s", "emergency_reaction_time_s",
@@ -259,9 +261,14 @@ class ConservativeSensorFusion:
                 if dt_s <= self.parameters.max_observation_gap_s:
                     candidate = (self._previous_distance_m - front_distance_m) / dt_s
                     previous_candidate = self._pending_temporal_closing_speed_mps
+                    maximum_untracked_closing = min(
+                        self.parameters.max_temporal_closing_speed_mps,
+                        ego_speed_mps
+                        + self.parameters.untracked_approach_speed_margin_mps,
+                    )
                     if candidate <= 0.0:
                         self._pending_temporal_closing_speed_mps = None
-                    elif candidate > self.parameters.max_temporal_closing_speed_mps:
+                    elif candidate > maximum_untracked_closing:
                         self._pending_temporal_closing_speed_mps = None
                         sources["closing_speed_mps"] = "LIDAR_TEMPORAL_OUTLIER_REJECTED"
                         sources["closing_speed_rejection"] = (

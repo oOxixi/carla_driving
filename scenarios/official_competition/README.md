@@ -119,11 +119,11 @@ bash scripts/run_official_s2_member3.sh --run
 
 ## 第二组成员4：S3 服务器验收
 
-成员4只运行 S3，继续使用项目现有 7B Qwen Planner V2 服务：
+成员4只运行 S3，使用项目统一的 Qwen3.5-2B Planner V2 服务：
 
 ```bash
 export QWEN_SERVICE_URL=http://127.0.0.1:18000
-export QWEN_MODEL=Qwen/Qwen2.5-VL-7B-Instruct-AWQ
+export QWEN_MODEL=Qwen/Qwen3.5-2B
 bash scripts/run_official_s3_member4.sh --validate
 bash scripts/run_official_s3_member4.sh --smoke
 bash scripts/run_official_s3_member4.sh --run
@@ -132,4 +132,4 @@ bash scripts/run_official_s3_member4.sh --run
 正式报告要求四阶段全部完成、2 次 `QWEN_PLAN` 与 2 次 `FAST_LOCAL` 路由正确，加塞和
 行人事件均具备危险、感知、决策、安全接管、控制生效时间戳；应急响应 P95 不超过100ms、
 最大值不超过120ms；碰撞和违规为0，最终停车保持。详细字段与故障复现见
-`docs/member4_s3_acceptance.md`。
+`docs/reports/member4_s3_acceptance.md`。

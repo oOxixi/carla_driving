@@ -6,17 +6,17 @@ cd "$project_root"
 
 python_executable="${PYTHON_EXECUTABLE:-python3}"
 qwen_service_url="${QWEN_SERVICE_URL:-http://127.0.0.1:18000}"
-# Keep the established 7B route. This value is evidence metadata for the
-# canonical service path; model selection remains owned by the running service.
-qwen_model="${QWEN_MODEL:-Qwen/Qwen2.5-VL-7B-Instruct-AWQ}"
+# Model selection remains owned by the running service; this value is retained
+# in evidence metadata and the health check enforces the repository's 2B scope.
+qwen_model="${QWEN_MODEL:-Qwen/Qwen3.5-2B}"
 carla_host="${CARLA_HOST:-127.0.0.1}"
 carla_port="${CARLA_PORT:-2000}"
 log_dir="${S3_LOG_DIR:-artifacts/logs/official_competition}"
 mode="${1:---run}"
 scene_path="scenarios/official_competition/S3_extreme_emergency_6km.json"
 
-if [[ "${qwen_model^^}" != *"7B"* ]]; then
-  echo "S3 member-4 acceptance requires the established 7B model; got: $qwen_model" >&2
+if [[ "${qwen_model^^}" != *"2B"* ]]; then
+  echo "S3 acceptance requires the production 2B model; got: $qwen_model" >&2
   exit 2
 fi
 
@@ -44,9 +44,9 @@ with urlopen(base_url + "/health", timeout=10) as response:
 if health.get("status") != "READY" or health.get("production_ready") is not True:
     raise SystemExit("Qwen service is not production-ready: " + json.dumps(health, ensure_ascii=False))
 reported = str(health.get("model") or health.get("model_id") or health.get("served_model") or "")
-if reported and "7B" not in reported.upper():
-    raise SystemExit(f"Qwen service model is not 7B: {reported}")
-print("Qwen 7B health PASS:", json.dumps(health, ensure_ascii=False), "evidence_model=", expected_model)
+if reported and "2B" not in reported.upper():
+    raise SystemExit(f"Qwen service model is not 2B: {reported}")
+print("Qwen 2B health PASS:", json.dumps(health, ensure_ascii=False), "evidence_model=", expected_model)
 PY
 
 arguments=(

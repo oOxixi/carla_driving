@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import math
-from strategy_config import DEFAULT_STRATEGY
+from config.strategy import DEFAULT_STRATEGY
 
 
 CONFIG_SCHEMA_VERSION = "1.0"

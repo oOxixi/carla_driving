@@ -15,7 +15,7 @@ from car_control_A import LongitudinalRequest, RuntimeVehicleState
 from car_control_B import PurePursuitController, RouteReference, VehiclePose
 from car_control_C import LongitudinalController
 from car_control_D import SafetySupervisor
-from strategy_config import DEFAULT_STRATEGY, dynamic_safety_distance
+from config.strategy import DEFAULT_STRATEGY, dynamic_safety_distance
 
 
 def main() -> None:

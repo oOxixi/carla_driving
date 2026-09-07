@@ -6,7 +6,7 @@ ASR + VAD 模块（A 的最终交付，含语音活动检测）—— 东风智�
   2) 还原真实车载流程：连续音频流 → VAD 切出指令 → 识别
 用微调后的 SenseVoice（普通话99%+）。接口与 asr.py 一致，D 可直接替换。
 
-前置：lora_finetuned/ 已训练好；FunASR 会自动下载 FSMN-VAD 模型
+前置：生产适配器位于 lora_dialect/；FunASR 会自动下载 FSMN-VAD 模型
 用法：
     from asr_vad import ASR
     asr = ASR()

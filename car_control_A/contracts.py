@@ -13,7 +13,7 @@ import math
 from typing import Any
 
 from compat import StrEnum
-from strategy_config import DEFAULT_STRATEGY
+from config.strategy import DEFAULT_STRATEGY
 
 
 CONTRACT_VERSION = "1.0"

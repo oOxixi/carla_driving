@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 from typing import Any, Iterable, Optional
-from strategy_config import DEFAULT_STRATEGY, dynamic_safety_distance
+from config.strategy import DEFAULT_STRATEGY, dynamic_safety_distance
 
 from .adapters import adapt_command, adapt_control, adapt_risk, adapt_vehicle_state
 from .schemas import CommandView, ControlOutput, RiskView, SafetyDecision, VehicleStateView

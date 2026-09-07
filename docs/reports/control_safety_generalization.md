@@ -16,7 +16,7 @@
 
 ### 2.1 单一策略配置
 
-新增根目录 `strategy_config.yaml`，集中管理：
+新增 `config/strategy_config.yaml`，集中管理：
 
 - command / visual confidence；
 - TTC、制动能力、驻车制动；

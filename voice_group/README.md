@@ -35,9 +35,7 @@ voice_group/
 ├── pipeline.py              # 主入口（audio_to_command）
 ├── asr_vad.py               # A：识别+VAD+微调
 ├── asr_cascade.py           # 关键控制指令的条件复核与置信度校准
-├── asr_lora.py              # A：识别（无VAD版，备用）
 ├── lora_dialect/            # ★ 当前生产 LoRA 权重，必须保留
-├── lora_finetuned/          # 备用 LoRA，当前入口不加载
 ├── vehicle_nlu/src/         # B1：意图识别
 ├── nlu_b2/                  # B2：槽位提取
 └── README.md                # 本文件
@@ -107,6 +105,9 @@ python tools/evaluate_voice_audio.py \
 
 历史机器结果不随源码保存。正式提交必须在目标机器重跑，并把原始报告写入
 `artifacts/reports/voice/` 后再建立哈希索引。
+
+仓库只保留 `lora_dialect/` 生产适配器。未被生产入口加载、且缺少训练记录和独立评测的
+旧备用适配器已从主线移除，仍可从 Git 历史获取。
 
 注意：当前 SenseVoice/FunASR 返回 `asr_confidence=null`，置信度覆盖率为 0%。低置信度拦截逻辑已有自动测试，但生产后端必须实际提供经过校准的 score 才能生效。
 

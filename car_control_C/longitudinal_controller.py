@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from car_control_A import ControlOutput, LongitudinalOutput, LongitudinalRequest
-from strategy_config import DEFAULT_STRATEGY
+from config.strategy import DEFAULT_STRATEGY
 
 from .following_controller import FollowingController, FollowingParameters
 from .speed_pid import SpeedPID

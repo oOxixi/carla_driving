@@ -1,6 +1,6 @@
 """Single, strict configuration source for generalized control and safety.
 
-``strategy_config.yaml`` deliberately uses JSON syntax.  JSON is a valid YAML
+``strategy_config.yaml`` deliberately uses JSON syntax. JSON is a valid YAML
 1.2 document, so the file remains consumable by YAML tooling while the runtime
 can parse it with Python's standard library and introduces no PyYAML dependency.
 """

@@ -3,7 +3,7 @@
 ## 1. 前置条件
 
 - CARLA 0.9.16 已启动，Python 3.12 可导入对应 CARLA API。
-- 项目现有 Qwen 7B 生产服务已启动，`GET /health` 返回 `READY` 和
+- 项目现有 Qwen3.5-2B 生产服务已启动，`GET /health` 返回 `READY` 和
   `production_ready=true`。
 - 从仓库根目录运行命令，运行输出写入 `artifacts/`。
 
@@ -65,10 +65,10 @@ S2 还必须运行：
 python tools/validate_s2_member3_evidence.py artifacts/logs/official_competition/<run>.jsonl
 ```
 
-S3 成员4使用现有 7B Qwen 服务并运行：
+S3 成员4使用现有 Qwen3.5-2B 服务并运行：
 
 ```bash
-export QWEN_MODEL=Qwen/Qwen2.5-VL-7B-Instruct-AWQ
+export QWEN_MODEL=Qwen/Qwen3.5-2B
 bash scripts/run_official_s3_member4.sh --validate
 bash scripts/run_official_s3_member4.sh --smoke
 bash scripts/run_official_s3_member4.sh --run

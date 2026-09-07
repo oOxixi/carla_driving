@@ -1,4 +1,4 @@
-# 成员2 Actor / 场景泛化交接
+# 成员2 Actor / 场景泛化记录
 
 - 日期：2026-09-07
 - 目标分支：`scene_organized`
@@ -7,7 +7,7 @@
 
 ## 当前结论
 
-成员2负责的 Actor 路线坐标生成、生成合法性检查与确定性重采样、场景参数化、S2 长路线 Actor 生命周期以及 Variant / Unseen 样本生成已同步到 `scene_organized`。实现与验证数字以 [`docs/scenario_generalization_report.md`](docs/scenario_generalization_report.md) 为准。
+成员2负责的 Actor 路线坐标生成、生成合法性检查与确定性重采样、场景参数化、S2 长路线 Actor 生命周期以及 Variant / Unseen 样本生成已同步到主线。实现与验证数字以 [`scenario_generalization.md`](scenario_generalization.md) 为准。
 
 ## 接手入口
 

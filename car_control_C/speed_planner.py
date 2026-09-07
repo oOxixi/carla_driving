@@ -8,7 +8,7 @@ from types import MappingProxyType
 from typing import Mapping
 
 from car_control_A import LongitudinalRequest
-from strategy_config import DEFAULT_STRATEGY
+from config.strategy import DEFAULT_STRATEGY
 from .following_controller import FollowingController
 from .stop_controller import StopController
 from .traffic_rules import TrafficRulePlanner

@@ -5,6 +5,7 @@
 - `runbooks/`：当前可执行的部署、联调和运行手册。
 - `reproduction/`：2B 模型与提交包复现说明。
 - `reference/`：语音命令定义等只读参考材料。
+- `reports/`：路线、场景、控制、安全和分支归并的当前验证记录。
 - `GENERALIZATION_ARCHITECTURE.md`：路线相对场景、真值隔离、五阶段运行边界和泛化测试门禁。
 
 架构边界分别见各模块的 `README.md` 或 `ARCHITECTURE.md`。正式场景定义与验收条件以

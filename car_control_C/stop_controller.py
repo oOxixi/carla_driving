@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from compat import StrEnum
-from strategy_config import DEFAULT_STRATEGY
+from config.strategy import DEFAULT_STRATEGY
 from .validation import finite
 
 

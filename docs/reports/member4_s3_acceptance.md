@@ -5,7 +5,7 @@
 - 场景：`OFFICIAL_S3_EXTREME_EMERGENCY_6KM`
 - 配置：`scenarios/official_competition/S3_extreme_emergency_6km.json`
 - 地图/天气/种子：Town04 / HardRainNight / 20260303
-- 模型：继续使用项目现有 7B Qwen Planner V2 服务；不切换模型、不修改权重。
+- 模型：使用项目统一的 Qwen3.5-2B Planner V2 服务；不切换到 3B/7B。
 - 路由：雨夜安全车速、施工绕行共 2 次 `QWEN_PLAN`；加塞、行人共 2 次
   `FAST_LOCAL`，紧急制动不能等待 Qwen。
 
@@ -40,7 +40,7 @@
 
 ```bash
 export QWEN_SERVICE_URL=http://127.0.0.1:18000
-export QWEN_MODEL=Qwen/Qwen2.5-VL-7B-Instruct-AWQ
+export QWEN_MODEL=Qwen/Qwen3.5-2B
 
 bash scripts/run_official_s3_member4.sh --validate
 bash scripts/run_official_s3_member4.sh --smoke
@@ -57,10 +57,10 @@ bash scripts/run_official_s3_member4.sh --run
 
 ## 问题复现
 
-- 服务模型不是 7B：脚本在启动 CARLA 前拒绝运行。
+- 服务模型不是 2B：脚本在启动 CARLA 前拒绝运行。
 - 行人或加塞未被感知：`required_emergency_event_ids` 或五阶段时间戳检查失败。
 - 制动超过 100/120 ms：报告分别标记 P95 或最大延迟失败。
 - 未完成停车保持、发生碰撞或违规：报告直接失败。
 
-当前代码侧未解决问题：无。正式成绩和视频必须在 CARLA 0.9.16 + 7B 生产服务机器上生成，
+当前代码侧未解决问题：无。正式成绩和视频必须在 CARLA 0.9.16 + 2B 生产服务机器上生成，
 仓库不伪造实机结果。
