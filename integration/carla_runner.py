@@ -101,6 +101,9 @@ from .scenario_extensions import ScenarioExtensionRuntime
 from .second_group_runtime import CanonicalRuntimeBridge
 
 
+DEFAULT_QWEN_MODEL = "Qwen/Qwen3.5-2B"
+
+
 @dataclass(frozen=True, slots=True)
 class _DeferredCommand:
     envelope: dict[str, object]
@@ -6066,9 +6069,9 @@ def main() -> None:
                         help="OpenAI-compatible /v1 endpoint; QWEN_API_KEY is read only from the environment")
     parser.add_argument("--qwen-model",
                         default=os.environ.get(
-                            "QWEN_MODEL", "Qwen/Qwen2.5-VL-7B-Instruct"
+                            "QWEN_MODEL", DEFAULT_QWEN_MODEL
                         ),
-                        help="exact remote Qwen 7B model id")
+                        help="exact remote Qwen 2B model id")
     parser.add_argument("--qwen-request-timeout-s", type=float, default=15.0,
                         help="OpenAI client wall-clock timeout")
     parser.add_argument("--qwen-max-inference-s", type=float, default=10.0,
