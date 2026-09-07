@@ -14,6 +14,7 @@ from integration.carla_perception import EventLedger, PerceptionTimeoutError
 from integration.carla_runner import (
     _DeferredCommand,
     _acceptance_lateral_controller,
+    _active_actor_route_context,
     _actor_activation_due,
     _actor_deactivation_due,
     _actor_bbox_clearance_m,
@@ -49,6 +50,7 @@ from integration.carla_runner import (
     _remaining_route_distances,
     _route_contract_completed,
     _route_recovery_hold_reference,
+    _route_local_reference_needs_refresh,
     _route_run_can_end_early,
     _route_stop_trigger_m,
     _runtime_health_completed,
@@ -96,6 +98,34 @@ def test_scenario_commands_are_latched_and_serialized_behind_active_plan() -> No
     )
     assert selected == (first,)
     assert retained == [second]
+
+
+def test_active_actor_route_context_rebases_only_after_global_replan() -> None:
+    original_route = object()
+    current_reference = object()
+    actor = {
+        "route_position": {"s_m": 150.0},
+        "activation_trigger": {
+            "type": "route_progress_greater_than_m", "value": 130.0,
+        },
+    }
+
+    route, rebased = _active_actor_route_context(
+        actor,
+        original_route,
+        Namespace(reference=current_reference),
+        100.0,
+    )
+
+    assert route is current_reference
+    assert rebased["route_position"]["s_m"] == pytest.approx(50.0)
+    assert rebased["activation_trigger"]["value"] == pytest.approx(130.0)
+
+    route, unchanged = _active_actor_route_context(
+        actor, original_route, None, 100.0,
+    )
+    assert route is original_route
+    assert unchanged is actor
 
 
 def test_resume_segment_keeps_only_unfinished_commands_and_live_actors() -> None:
@@ -1546,6 +1576,29 @@ def test_route_recovery_hold_reference_is_forward_and_stationary() -> None:
     assert route.points_xy_m[-1] == pytest.approx((10.0, 32.0))
     assert route.target_speed_mps == 0.0
     assert route.metadata["purpose"] == "safe_replan_hold"
+
+
+def test_local_reference_at_global_end_is_not_refreshed_every_frame() -> None:
+    global_reference = Namespace(route_id="mission-1")
+    global_route = Namespace(reference=global_reference, total_length_m=75.0)
+    local = Namespace(
+        metadata={
+            "global_route_id": "mission-1",
+            "global_s_start_m": 10.0,
+            "global_s_end_m": 75.0,
+        },
+    )
+
+    assert _route_local_reference_needs_refresh(
+        None, global_route, 20.0, 20.0,
+    ) is True
+    assert _route_local_reference_needs_refresh(
+        local, global_route, 60.0, 20.0,
+    ) is False
+    local.metadata["global_s_end_m"] = 70.0
+    assert _route_local_reference_needs_refresh(
+        local, global_route, 55.0, 20.0,
+    ) is True
     with pytest.raises(TypeError, match="clean_world_on_start"):
         _scenario_clean_world_on_start(
             Namespace(extensions={"clean_world_on_start": "yes"})

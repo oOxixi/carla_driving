@@ -298,6 +298,58 @@ def test_replan_connects_current_pose_before_returning_to_lane() -> None:
     assert state.status == "ON_ROUTE"
 
 
+def _linear_route_manager(length_m: int = 200) -> tuple[RouteManager, list[Waypoint]]:
+    nodes = [
+        Waypoint(index, 0, 0, road_id=25, lane_id=1, s=index)
+        for index in range(length_m + 1)
+    ]
+    for first, second in zip(nodes, nodes[1:]):
+        first.children = [second]
+    world_map = TopologyMap([(nodes[0], nodes[-1])], nodes)
+    return RouteManager(world_map, sample_step_m=1.0), nodes
+
+
+def test_local_reference_is_bounded_and_preserves_global_coordinates() -> None:
+    manager, nodes = _linear_route_manager()
+    route = manager.plan(nodes[0].transform, nodes[-1].transform, 9.0)
+
+    local = manager.local_reference(
+        route, 100.0, 7.0, lookbehind_m=10.0, lookahead_m=30.0,
+    )
+
+    assert local.points_xy_m[0] == pytest.approx((90.0, 0.0))
+    assert local.points_xy_m[-1] == pytest.approx((130.0, 0.0))
+    assert len(local.points_xy_m) < len(route.reference.points_xy_m)
+    assert local.target_speed_mps == 7.0
+    assert local.metadata["global_route_id"] == route.reference.route_id
+    assert local.metadata["global_route_s_m"] == pytest.approx(100.0)
+
+
+def test_local_reference_near_destination_retains_a_segment() -> None:
+    manager, nodes = _linear_route_manager(10)
+    route = manager.plan(nodes[0].transform, nodes[-1].transform, 4.0)
+
+    local = manager.local_reference(route, route.total_length_m, 0.0)
+
+    assert len(local.points_xy_m) >= 2
+    assert local.points_xy_m[-1] == pytest.approx(route.destination_xy_m)
+    assert local.metadata["global_s_end_m"] == pytest.approx(route.total_length_m)
+
+
+def test_mission_placement_translates_progress_after_replan() -> None:
+    manager, nodes = _linear_route_manager(20)
+    route = manager.plan(nodes[0].transform, nodes[-1].transform, 4.0)
+
+    placement = manager.mission_placement(route, 17.0, 10.0)
+
+    assert placement.route_s == pytest.approx(17.0)
+    assert placement.x_m == pytest.approx(7.0)
+    with pytest.raises(RoutePlanningError, match="ROUTE_EVENT_ALREADY_PASSED"):
+        manager.mission_placement(route, 9.0, 10.0)
+    with pytest.raises(RoutePlanningError, match="ROUTE_EVENT_BEYOND_ACTIVE_ROUTE"):
+        manager.mission_placement(route, 31.0, 10.0)
+
+
 def test_discontinuous_topology_edge_is_rejected() -> None:
     start = Waypoint(0, 0, 0, road_id=30, s=0)
     end = Waypoint(50, 0, 0, road_id=30, s=50)

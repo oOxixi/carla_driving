@@ -219,6 +219,59 @@ def offset_actor_route_position(
     return result
 
 
+def rebase_actor_route_position(
+    actor_spec: Mapping[str, object],
+    mission_progress_offset_m: float,
+) -> dict[str, object]:
+    """Map mission-absolute actor coordinates onto a replanned local route.
+
+    Activation/deactivation triggers intentionally remain mission-absolute;
+    only coordinates consumed by the active route geometry are rebased.
+    """
+    offset_m = float(mission_progress_offset_m)
+    if not math.isfinite(offset_m) or offset_m < 0.0:
+        raise ValueError("mission_progress_offset_m must be finite and non-negative")
+    result = deepcopy(dict(actor_spec))
+
+    def rebase_s(container: dict[str, object], key: str, label: str) -> None:
+        original_s = float(container.get(key, 0.0))
+        local_s = original_s - offset_m
+        if local_s < -1e-6:
+            raise ActorPlacementError(
+                f"{label} at mission s={original_s:.2f} m is behind "
+                f"replan origin s={offset_m:.2f} m"
+            )
+        container[key] = max(0.0, local_s)
+
+    position = result.get("route_position")
+    if isinstance(position, dict):
+        rebase_s(position, "s_m", "actor")
+    else:
+        spawn = result.get("spawn")
+        if isinstance(spawn, dict):
+            rebase_s(spawn, "x", "legacy actor")
+
+    behavior = result.get("behavior")
+    if isinstance(behavior, dict):
+        target = behavior.get("target_route_position")
+        if isinstance(target, dict):
+            rebase_s(target, "s_m", "actor target")
+        elif isinstance(behavior.get("target_xy_m"), (list, tuple)):
+            target_xy = behavior["target_xy_m"]
+            if len(target_xy) == 2:
+                original_s = float(target_xy[0])
+                if original_s - offset_m < -1e-6:
+                    raise ActorPlacementError(
+                        f"legacy actor target at mission s={original_s:.2f} m is "
+                        f"behind replan origin s={offset_m:.2f} m"
+                    )
+                behavior["target_xy_m"] = [
+                    max(0.0, original_s - offset_m),
+                    float(target_xy[1]),
+                ]
+    return result
+
+
 def actor_resample_offsets(
     actor_spec: Mapping[str, object],
     *,
@@ -353,6 +406,7 @@ __all__ = [
     "ActorPlacementError",
     "actor_resample_offsets",
     "offset_actor_route_position",
+    "rebase_actor_route_position",
     "route_relative_carla_transform",
     "route_relative_target_location",
     "validate_actor_transform",

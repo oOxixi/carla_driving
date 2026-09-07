@@ -531,6 +531,105 @@ class RouteManager:
             lane_id=getattr(waypoint, "lane_id", None),
         )
 
+    def local_reference(
+        self,
+        route: GlobalRoute,
+        route_s: float,
+        target_speed_mps: float,
+        *,
+        lookbehind_m: float = 8.0,
+        lookahead_m: float = 80.0,
+    ) -> RouteReference:
+        """Return a bounded controller view while the global route stays authoritative."""
+        values = (route_s, target_speed_mps, lookbehind_m, lookahead_m)
+        if any(
+            type(value) not in (int, float)
+            or isinstance(value, bool)
+            or not math.isfinite(float(value))
+            for value in values
+        ):
+            raise ValueError("local route reference values must be finite numbers")
+        if target_speed_mps < 0.0:
+            raise ValueError("target_speed_mps must be non-negative")
+        if lookbehind_m < 0.0 or lookahead_m <= 0.0:
+            raise ValueError("lookbehind_m must be non-negative and lookahead_m positive")
+
+        center_s = min(max(0.0, float(route_s)), route.total_length_m)
+        start_s = max(0.0, center_s - float(lookbehind_m))
+        end_s = min(route.total_length_m, center_s + float(lookahead_m))
+        if end_s - start_s < min(1.0, route.total_length_m):
+            start_s = max(0.0, end_s - max(1.0, self.sample_step_m))
+        cumulative = cumulative_distances_m(route.reference.points_xy_m)
+        start_pose = route_pose_at_s(route.reference.points_xy_m, start_s)
+        end_pose = route_pose_at_s(route.reference.points_xy_m, end_s)
+        points: list[Point2D] = [(start_pose.x_m, start_pose.y_m)]
+        points.extend(
+            point
+            for point, sample_s in zip(route.reference.points_xy_m, cumulative)
+            if start_s < sample_s < end_s
+        )
+        points.append((end_pose.x_m, end_pose.y_m))
+        deduplicated: list[Point2D] = []
+        for point in points:
+            if deduplicated and math.dist(deduplicated[-1], point) <= 1e-6:
+                continue
+            deduplicated.append(point)
+        if len(deduplicated) < 2:
+            raise RoutePlanningError(
+                "ROUTE_LOCAL_REFERENCE_EMPTY",
+                f"cannot build a control window at route_s={center_s:.2f}",
+            )
+        local_points = tuple(deduplicated)
+        metadata = dict(route.reference.metadata)
+        metadata.update({
+            "reference_scope": "LOCAL_CONTROL",
+            "global_route_id": route.reference.route_id,
+            "global_s_start_m": start_s,
+            "global_s_end_m": end_s,
+            "global_route_s_m": center_s,
+        })
+        return RouteReference(
+            local_points,
+            max(
+                (_curvature(local_points, index) for index in range(len(local_points))),
+                default=0.0,
+            ),
+            float(target_speed_mps),
+            route_id=(
+                f"{route.reference.route_id or 'global'}:local:"
+                f"{start_s:.1f}:{end_s:.1f}"
+            ),
+            metadata=metadata,
+        )
+
+    def mission_placement(
+        self,
+        route: GlobalRoute,
+        mission_route_s: float,
+        mission_progress_offset_m: float,
+        lane_relation: str = "CURRENT",
+    ) -> RoutePlacement:
+        """Resolve an absolute mission ``route_s`` on the current replanned route."""
+        if not math.isfinite(float(mission_route_s)) or not math.isfinite(
+            float(mission_progress_offset_m)
+        ):
+            raise ValueError("mission route positions must be finite")
+        local_s = float(mission_route_s) - float(mission_progress_offset_m)
+        if local_s < -1e-6:
+            raise RoutePlanningError(
+                "ROUTE_EVENT_ALREADY_PASSED",
+                f"event s={mission_route_s:.2f} precedes active route origin "
+                f"s={mission_progress_offset_m:.2f}",
+            )
+        if local_s > route.total_length_m + 1e-6:
+            raise RoutePlanningError(
+                "ROUTE_EVENT_BEYOND_ACTIVE_ROUTE",
+                f"event local s={local_s:.2f} exceeds active route length "
+                f"{route.total_length_m:.2f}",
+            )
+        placement = self.placement(route, local_s, lane_relation)
+        return replace(placement, route_s=float(mission_route_s))
+
     def replan(
         self,
         current: Any,

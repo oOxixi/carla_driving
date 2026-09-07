@@ -73,6 +73,7 @@ from .scenario_builder import (
     ActorPlacementError,
     actor_resample_offsets,
     offset_actor_route_position,
+    rebase_actor_route_position,
     route_relative_carla_transform,
     route_relative_target_location,
     validate_actor_transform,
@@ -1132,6 +1133,21 @@ def _scenario_local_transform(
             yaw=float(anchor_transform.rotation.yaw) + local_yaw,
             roll=float(getattr(anchor_transform.rotation, "roll", 0.0)),
         ),
+    )
+
+
+def _active_actor_route_context(
+    actor_spec: Mapping[str, object],
+    scenario_route: RouteReference | None,
+    global_route: GlobalRoute | None,
+    mission_progress_offset_m: float,
+) -> tuple[RouteReference | None, Mapping[str, object]]:
+    """Bind a mission-absolute actor position to the current active route."""
+    if global_route is None:
+        return scenario_route, actor_spec
+    return (
+        global_route.reference,
+        rebase_actor_route_position(actor_spec, mission_progress_offset_m),
     )
 
 
@@ -2620,6 +2636,28 @@ def _route_recovery_hold_reference(vehicle: RuntimeVehicleState) -> RouteReferen
     )
 
 
+def _route_local_reference_needs_refresh(
+    reference: RouteReference | None,
+    global_route: GlobalRoute,
+    route_s: float,
+    refresh_margin_m: float,
+) -> bool:
+    """Refresh a local window only when its usable forward horizon is exhausted."""
+    if reference is None:
+        return True
+    metadata = reference.metadata
+    if metadata.get("global_route_id") != global_route.reference.route_id:
+        return True
+    start_s = float(metadata.get("global_s_start_m", math.inf))
+    end_s = float(metadata.get("global_s_end_m", -1.0))
+    if route_s < start_s:
+        return True
+    return (
+        end_s < global_route.total_length_m - 1e-6
+        and route_s >= end_s - refresh_margin_m
+    )
+
+
 def _map_short_name(map_name: str) -> str:
     return map_name.rsplit("/", maxsplit=1)[-1]
 
@@ -3150,6 +3188,7 @@ def run(args: argparse.Namespace) -> None:
         global_route_recovery: RouteRecoveryTracker | None = None
         global_route_progress_offset_m = 0.0
         global_route_recovery_status: str | None = None
+        global_local_reference: RouteReference | None = None
         prevalidated_avoid_route: RouteReference | None = None
         road_fit_required = (
             spec is not None
@@ -3435,9 +3474,15 @@ def run(args: argparse.Namespace) -> None:
                 ):
                     pending_vehicle_specs.append(vehicle_spec)
                     continue
+                actor_route, actor_spawn_spec = _active_actor_route_context(
+                    vehicle_spec,
+                    scenario_spawn_route,
+                    global_route,
+                    global_route_progress_offset_m,
+                )
                 vehicle = _spawn_scenario_vehicle(
-                    session, world, carla, ego, bp, vehicle_spec,
-                    route=scenario_spawn_route,
+                    session, world, carla, ego, bp, actor_spawn_spec,
+                    route=actor_route,
                     seed=spec.seed if spec is not None else 0,
                 )
                 scenario_vehicles.append((vehicle, vehicle_spec))
@@ -3449,9 +3494,15 @@ def run(args: argparse.Namespace) -> None:
                 ):
                     pending_walker_specs.append(walker_spec)
                     continue
+                actor_route, actor_spawn_spec = _active_actor_route_context(
+                    walker_spec,
+                    scenario_spawn_route,
+                    global_route,
+                    global_route_progress_offset_m,
+                )
                 walker, target = _spawn_scenario_walker(
-                    session, world, carla, ego, walker_spec,
-                    route=scenario_spawn_route,
+                    session, world, carla, ego, actor_spawn_spec,
+                    route=actor_route,
                     seed=spec.seed if spec is not None else 0,
                 )
                 scenario_walkers.append((walker, walker_spec, target))
@@ -3465,9 +3516,15 @@ def run(args: argparse.Namespace) -> None:
                 ):
                     pending_prop_specs.append(prop_spec)
                     continue
+                actor_route, actor_spawn_spec = _active_actor_route_context(
+                    prop_spec,
+                    scenario_spawn_route,
+                    global_route,
+                    global_route_progress_offset_m,
+                )
                 prop = _spawn_scenario_static_prop(
-                    session, world, carla, ego, prop_spec,
-                    route=scenario_spawn_route,
+                    session, world, carla, ego, actor_spawn_spec,
+                    route=actor_route,
                     seed=spec.seed if spec is not None else 0,
                 )
                 scenario_props.append((prop, prop_spec))
@@ -3762,6 +3819,8 @@ def run(args: argparse.Namespace) -> None:
                             )
                             global_route_progress_offset_m = replan_origin_m
                             global_route = replanned_route
+                            global_local_reference = None
+                            scenario_actor_progress_trackers.clear()
                             route = replace(
                                 replanned_route.reference,
                                 target_speed_mps=recovery_resume_speed_mps,
@@ -3840,9 +3899,15 @@ def run(args: argparse.Namespace) -> None:
                         route_progress_m=route_progress_m,
                     ):
                         continue
+                    actor_route, actor_spawn_spec = _active_actor_route_context(
+                        vehicle_spec,
+                        scenario_spawn_route,
+                        global_route,
+                        global_route_progress_offset_m,
+                    )
                     vehicle = _spawn_scenario_vehicle(
-                        session, world, carla, ego, bp, vehicle_spec,
-                        route=scenario_spawn_route,
+                        session, world, carla, ego, bp, actor_spawn_spec,
+                        route=actor_route,
                         seed=spec.seed if spec is not None else 0,
                     )
                     scenario_vehicles.append((vehicle, vehicle_spec))
@@ -3860,9 +3925,15 @@ def run(args: argparse.Namespace) -> None:
                         route_progress_m=route_progress_m,
                     ):
                         continue
+                    actor_route, actor_spawn_spec = _active_actor_route_context(
+                        walker_spec,
+                        scenario_spawn_route,
+                        global_route,
+                        global_route_progress_offset_m,
+                    )
                     walker, target = _spawn_scenario_walker(
-                        session, world, carla, ego, walker_spec,
-                        route=scenario_spawn_route,
+                        session, world, carla, ego, actor_spawn_spec,
+                        route=actor_route,
                         seed=spec.seed if spec is not None else 0,
                     )
                     scenario_walkers.append((walker, walker_spec, target))
@@ -3882,9 +3953,15 @@ def run(args: argparse.Namespace) -> None:
                         route_progress_m=route_progress_m,
                     ):
                         continue
+                    actor_route, actor_spawn_spec = _active_actor_route_context(
+                        prop_spec,
+                        scenario_spawn_route,
+                        global_route,
+                        global_route_progress_offset_m,
+                    )
                     prop = _spawn_scenario_static_prop(
-                        session, world, carla, ego, prop_spec,
-                        route=scenario_spawn_route,
+                        session, world, carla, ego, actor_spawn_spec,
+                        route=actor_route,
                         seed=spec.seed if spec is not None else 0,
                     )
                     scenario_props.append((prop, prop_spec))
@@ -3910,27 +3987,37 @@ def run(args: argparse.Namespace) -> None:
                             ego, actor,
                         )
                         actor_route_position = actor_spec.get("route_position")
+                        active_actor_route = (
+                            global_route.reference
+                            if global_route is not None else scenario_spawn_route
+                        )
                         if (
-                            scenario_spawn_route is not None
+                            active_actor_route is not None
                             and isinstance(actor_route_position, Mapping)
                             and actor_route_position.get("s_m") is not None
                         ):
                             tracker = scenario_actor_progress_trackers.get(actor_id)
                             if tracker is None:
                                 configured_s_m = max(
-                                    0.0, float(actor_route_position["s_m"]) - 20.0,
+                                    0.0,
+                                    float(actor_route_position["s_m"])
+                                    - global_route_progress_offset_m
+                                    - 20.0,
                                 )
                                 tracker = RouteProgressTracker(
-                                    scenario_spawn_route.points_xy_m,
+                                    active_actor_route.points_xy_m,
                                     progress_m=configured_s_m,
                                 )
                                 scenario_actor_progress_trackers[actor_id] = tracker
                             actor_location = actor.get_location()
-                            actor_progress_m = tracker.update(
-                                float(actor_location.x),
-                                float(actor_location.y),
-                                speed_mps=_speed_mps(actor.get_velocity()),
-                                delta_s=args.fixed_delta_s,
+                            actor_progress_m = (
+                                global_route_progress_offset_m
+                                + tracker.update(
+                                    float(actor_location.x),
+                                    float(actor_location.y),
+                                    speed_mps=_speed_mps(actor.get_velocity()),
+                                    delta_s=args.fixed_delta_s,
+                                )
                             )
                             actor_longitudinal_clearances_m[actor_id] = (
                                 _actor_signed_route_clearance_m(
@@ -4006,7 +4093,9 @@ def run(args: argparse.Namespace) -> None:
                         behavior_elapsed_s=actor_state.get("elapsed_since_event_s"),
                         world_map=world_map,
                         route_points_xy_m=(
-                            scenario_spawn_route.points_xy_m
+                            global_route.reference.points_xy_m
+                            if global_route is not None
+                            else scenario_spawn_route.points_xy_m
                             if scenario_spawn_route is not None
                             else route.points_xy_m
                         ),
@@ -5007,6 +5096,43 @@ def run(args: argparse.Namespace) -> None:
                 if route_recovery_hold:
                     effective_route = _route_recovery_hold_reference(state)
                     active_speed_cap_mps = 0.0
+                elif (
+                    global_route_manager is not None
+                    and global_route is not None
+                    and global_route_state is not None
+                    and route.route_id == global_route.reference.route_id
+                ):
+                    refresh_margin_m = max(20.0, state.speed_mps * 3.0)
+                    if _route_local_reference_needs_refresh(
+                        global_local_reference,
+                        global_route,
+                        global_route_state.route_s,
+                        refresh_margin_m,
+                    ):
+                        global_local_reference = global_route_manager.local_reference(
+                            global_route,
+                            global_route_state.route_s,
+                            route.target_speed_mps,
+                            lookbehind_m=max(8.0, state.speed_mps * 1.5),
+                            lookahead_m=max(60.0, state.speed_mps * 8.0 + 20.0),
+                        )
+                        print(json.dumps({
+                            "record_type": "route_local_reference_ready",
+                            "frame": frame,
+                            "global_route_id": global_route.reference.route_id,
+                            "global_route_s_m": global_route_state.route_s,
+                            "global_s_start_m": global_local_reference.metadata[
+                                "global_s_start_m"
+                            ],
+                            "global_s_end_m": global_local_reference.metadata[
+                                "global_s_end_m"
+                            ],
+                            "point_count": len(global_local_reference.points_xy_m),
+                        }, ensure_ascii=False), flush=True)
+                    effective_route = replace(
+                        global_local_reference,
+                        target_speed_mps=route.target_speed_mps,
+                    )
                 if active_speed_cap_mps is not None:
                     effective_route = replace(
                         effective_route,

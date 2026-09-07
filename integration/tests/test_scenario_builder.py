@@ -6,6 +6,7 @@ from integration.scenario_builder import (
     ActorPlacementError,
     actor_resample_offsets,
     offset_actor_route_position,
+    rebase_actor_route_position,
     route_relative_carla_transform,
     route_relative_target_location,
     validate_actor_transform,
@@ -141,6 +142,34 @@ def test_actor_resampling_is_seeded_and_reproducible() -> None:
     assert first == actor_resample_offsets(actor, seed=123)
     assert first[0] == (0.0, 0.0)
     assert first != actor_resample_offsets(actor, seed=124)
+
+
+def test_rebase_actor_position_changes_geometry_but_not_mission_trigger() -> None:
+    actor = {
+        "actor_id": "crossing",
+        "route_position": {"s_m": 130.0, "lateral_offset_m": 4.0},
+        "activation_trigger": {
+            "type": "route_progress_greater_than_m", "value": 110.0,
+        },
+        "behavior": {
+            "target_route_position": {"s_m": 130.0, "lateral_offset_m": -4.0},
+        },
+    }
+
+    rebased = rebase_actor_route_position(actor, 100.0)
+
+    assert rebased["route_position"]["s_m"] == pytest.approx(30.0)
+    assert rebased["behavior"]["target_route_position"]["s_m"] == pytest.approx(30.0)
+    assert rebased["activation_trigger"]["value"] == pytest.approx(110.0)
+    assert actor["route_position"]["s_m"] == pytest.approx(130.0)
+
+
+def test_rebase_actor_position_rejects_an_event_already_passed() -> None:
+    with pytest.raises(ActorPlacementError, match="behind replan origin"):
+        rebase_actor_route_position(
+            {"actor_id": "late", "route_position": {"s_m": 90.0}},
+            100.0,
+        )
 
 
 def test_vehicle_legality_rejects_lane_marking_and_overlap() -> None:
