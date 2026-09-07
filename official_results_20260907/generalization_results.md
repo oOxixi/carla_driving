@@ -27,7 +27,7 @@
 | seed | 待从场景配置/团队负责人确认 |
 | result | `FAILED`，`score=20` |
 | owner | 待从场景配置/团队负责人确认 |
-| 运行命令 | 待从运行记录/团队负责人确认 |
+| 运行命令 | `python -m integration.carla_runner --scenario-file scenarios/official_competition/S1_basic_voice_control_5km.json --perception-mode sensors --scenario-facts-mode perception --qwen-service-url http://127.0.0.1:18000 --qwen-model h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4 --qwen-mode planner_v2 --qwen-timeout-ms 10000 --realtime` |
 | 证据文件 | `OFFICIAL_S1_BASIC_VOICE_CONTROL_5KM_20260907_194947_312848.jsonl`；`OFFICIAL_S1_BASIC_VOICE_CONTROL_5KM_20260907_194947_312848.summary.json` |
 
 ### 已确认事实
@@ -56,7 +56,7 @@
 | seed | 待从场景配置/团队负责人确认 |
 | result | `FAILED`，score `20` |
 | owner | 待从场景配置/团队负责人确认 |
-| 运行命令 | 待从运行记录/团队负责人确认 |
+| 运行命令 | `python -m integration.carla_runner --scenario-file scenarios/official_competition/S2_complex_avoidance_8km.json --perception-mode sensors --scenario-facts-mode perception --qwen-service-url http://127.0.0.1:18000 --qwen-model h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4 --qwen-mode planner_v2 --qwen-timeout-ms 10000 --realtime` |
 | 证据文件 | `OFFICIAL_S2_COMPLEX_AVOIDANCE_8KM_20260907_200115_891324.jsonl`；`OFFICIAL_S2_COMPLEX_AVOIDANCE_8KM_20260907_200115_891324.summary.json` |
 
 ### 已确认事实
@@ -84,7 +84,7 @@
 | seed | 待从场景配置/团队负责人确认 |
 | result | `FAILED`，score `20` |
 | owner | 待从场景配置/团队负责人确认 |
-| 运行命令 | 待从运行记录/团队负责人确认 |
+| 运行命令 | `python -m integration.carla_runner --scenario-file scenarios/official_competition/S3_extreme_emergency_6km.json --perception-mode sensors --scenario-facts-mode perception --qwen-service-url http://127.0.0.1:18000 --qwen-model h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4 --qwen-mode planner_v2 --qwen-timeout-ms 10000 --realtime` |
 | 证据文件 | `OFFICIAL_S3_EXTREME_EMERGENCY_6KM_20260907_200705_736275.jsonl`；`OFFICIAL_S3_EXTREME_EMERGENCY_6KM_20260907_200705_736275.summary.json` |
 
 ### 已确认事实
@@ -106,5 +106,5 @@
 
 - 三个场景均为第一轮官方结果，当前结果均为 `FAILED`，分数均为 `20`。
 - 本记录只保留日志明确支持的事实；未确认的配置字段不作猜测。
-- 下一步由团队负责人补齐 `map`、`seed`、`owner` 和各场景的完整运行命令，并由相应模块负责人继续定位根因。
+- `map`、`seed`、`owner` 仍待由团队负责人确认；相应模块负责人继续定位根因。
 - `D3D Lost` 属于此前 Windows AMD 780M 环境问题，不属于本轮 AutoDL 官方 `S1/S2/S3` 结果，故不列入本表失败样本。
