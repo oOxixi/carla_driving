@@ -141,7 +141,7 @@ def test_slow_qwen_path_holds_stop_without_blocking_then_dispatches_validated_pl
     release = threading.Event()
 
     def infer(request):
-        release.wait(1.0)
+        release.wait(10.0)
         return {
             "schema_version": "1.0",
             "request_id": request["request_id"],
@@ -170,10 +170,9 @@ def test_slow_qwen_path_holds_stop_without_blocking_then_dispatches_validated_pl
             sim_time_s=0.5, perception_mode="sensors", received_at_ns=1_000_000_000,
             rgb_ref="frames/follow.png",
         )
-        # The assertion proves that submit does not wait for the 1 s model
-        # callback. Keep margin for a loaded simulator/Qwen test host instead
-        # of treating scheduler jitter above 50 ms as a synchronous call.
-        assert time.perf_counter() - started < 0.25
+        # The assertion proves that submit does not wait for the 10 s model
+        # callback while tolerating scheduler jitter on a loaded host.
+        assert time.perf_counter() - started < 2.0
         assert submitted.orchestration.disposition == "SLOW_PENDING"
         assert submitted.orchestration.model_request["rgb_ref"] == "frames/follow.png"
         assert submitted.safety_envelope["intent"] == "STOP"

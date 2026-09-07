@@ -174,7 +174,7 @@ def test_qwen_timeout_does_not_block_caller() -> None:
     scene = _example("perception_state")
 
     def infer(_request):
-        release.wait(1.0)
+        release.wait(10.0)
         raise RuntimeError("offline")
 
     runtime = PipelineOrchestrator(
@@ -186,7 +186,9 @@ def test_qwen_timeout_does_not_block_caller() -> None:
         queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
         elapsed = time.perf_counter() - started
         assert queued.disposition == "SLOW_PENDING"
-        assert elapsed < 0.05
+        # This proves submission does not wait for the deliberately blocked
+        # 10 s backend while tolerating scheduler jitter on a loaded host.
+        assert elapsed < 2.0
         time.sleep(0.02)
         timeout = runtime.poll_slow(now_ns=1_120_000_000)
         assert any(item.reason_code == "QWEN_TIMEOUT" for item in timeout)

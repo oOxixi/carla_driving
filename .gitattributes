@@ -8,3 +8,8 @@
 *.wav binary
 *.xlsx binary
 *.docx binary
+
+# Frozen byte-level checksums were published from CRLF source artifacts.
+# Pin their checkout representation so Linux and Windows validate the same bytes.
+CARLA-Language-Benchmark/datasets/final_benchmark/CARLA_language_benchmark_v1_normalized.json text eol=crlf
+metrics/reference_5070/** text eol=crlf
