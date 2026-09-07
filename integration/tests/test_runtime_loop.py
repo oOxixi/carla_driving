@@ -485,7 +485,7 @@ def test_temporary_outer_hold_can_fail_and_resume_at_bounded_speed():
     assert result.longitudinal.state != "HOLD"
 
 
-def test_external_hazard_emits_safety_override_terminal_feedback():
+def test_red_light_temporarily_stops_without_discarding_active_command():
     runtime = ControlRuntime(PurePursuitController())
     runtime.submit_voice(_voice(), now_s=0.05)
     scene = PerceptionFrame(
@@ -498,9 +498,17 @@ def test_external_hazard_emits_safety_override_terminal_feedback():
     terminal = [item for item in result.feedback if item.command_id == "voice-1"]
     assert result.safety_reason == "RED_LIGHT_STOP_LINE_GUARD"
     assert result.final_control.brake == 1.0
-    assert len(terminal) == 1
-    assert terminal[0].status.value == "SAFETY_OVERRIDE"
-    assert runtime.active_command_id is None
+    assert terminal == []
+    assert runtime.active_command_id == "voice-1"
+
+    resumed = runtime.step(
+        _vehicle(frame=2, time=0.10, speed=0.0),
+        PerceptionFrame(frame=2, sim_time_s=0.10, traffic_light="GREEN"),
+        _route(),
+        dt_s=0.05,
+    )
+    assert resumed.final_control.throttle > 0.0
+    assert resumed.final_control.brake == 0.0
 
 
 def test_c_semantic_brake_becomes_one_d_owned_terminal_override():

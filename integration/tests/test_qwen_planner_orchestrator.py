@@ -349,7 +349,7 @@ def test_compound_pedestrian_avoid_and_overtake_request_allows_yield():
     ]
 
 
-def test_forced_qwen_safety_scene_is_audited_while_waiting_stopped():
+def test_forced_qwen_red_light_keeps_task_plan_while_d_stops_vehicle():
     command = _example("driving_command")
     command["intent"] = "KEEP_LANE"
     command["parameters"] = {}
@@ -363,9 +363,29 @@ def test_forced_qwen_safety_scene_is_audited_while_waiting_stopped():
         queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
 
     assert queued.disposition == "SLOW_PENDING"
-    assert queued.model_request["constraints"]["must_stop"] is True
-    assert queued.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
+    assert queued.model_request["constraints"]["must_stop"] is False
+    assert "KEEP_LANE" in queued.model_request["constraints"]["allowed_behaviors"]
     assert queued.feedback["safety_event"]["reason_code"] == "TRAFFIC_LIGHT_STOP"
+
+
+def test_explicit_stop_remains_hard_constraint_at_red_light():
+    command = _example("driving_command")
+    command["intent"] = "STOP"
+    command["source_text"] = "立即停车"
+    command["parameters"] = {}
+    scene = _example("perception_state")
+    scene["traffic_light"] = "RED"
+    scene["distance_to_stop_line_m"] = 5.0
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(force_qwen_all_voice=True),
+    ) as runtime:
+        queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
+
+    # Explicit STOP is still narrowed to STOP by the semantic intent even
+    # though must_stop represents an independent scene safety constraint.
+    assert queued.model_request["constraints"]["must_stop"] is False
+    assert queued.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
 
 
 def test_distant_red_light_allows_c_to_approach_stop_line():

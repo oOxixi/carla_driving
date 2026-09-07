@@ -213,26 +213,38 @@ class PipelineOrchestrator:
 
         routing = self.complexity_router.decide(canonical, scene, runtime_snapshot)
         self._publish_routing_event(command_id, scene, routing)
+        # Explicit command and manoeuvre constraints take precedence over a
+        # coincident signal stop; otherwise a red light could mask a hard
+        # STOP or a blocked-lane fail-closed decision.
         emergency_reason = (
-            self._perception_stop_reason(scene)
-            or self._command_stop_reason(canonical)
+            self._command_stop_reason(canonical)
             or self._blocked_maneuver_stop_reason(canonical, scene, runtime_snapshot)
+            or self._perception_stop_reason(scene)
+        )
+        # A close red/yellow light is a transient vehicle-control constraint,
+        # not a replacement for the driver's longer-lived task.  D owns the
+        # per-frame stop and releases it when the signal clears.  Turning the
+        # voice command itself into terminal STOP would strand the vehicle
+        # after green and make identical seeded runs depend on signal phase.
+        terminal_emergency_reason = (
+            None if emergency_reason == "TRAFFIC_LIGHT_STOP" else emergency_reason
         )
         intent = canonical["intent"]
         force_model = self.config.force_qwen_all_voice and intent != "EMERGENCY_STOP"
         if (
-            emergency_reason is not None
+            terminal_emergency_reason is not None
             and intent not in {"STOP", "EMERGENCY_STOP"}
             and not force_model
         ):
-            control = self._safety_stop(canonical, scene, now, emergency_reason)
+            control = self._safety_stop(canonical, scene, now, terminal_emergency_reason)
             return OrchestrationResult(
                 "FAST", command_id, control_command=control,
                 feedback=self._feedback(
                     command_id, now, "SAFETY_OVERRIDE", "safety stop issued",
-                    emergency_reason, safety_event_reason=emergency_reason,
+                    terminal_emergency_reason,
+                    safety_event_reason=terminal_emergency_reason,
                 ),
-                reason_code=emergency_reason, queues=self.queue_snapshot(),
+                reason_code=terminal_emergency_reason, queues=self.queue_snapshot(),
                 **self._routing_fields(routing),
             )
 
@@ -737,11 +749,12 @@ class PipelineOrchestrator:
             }
             for item in objects
         ]
-        must_stop = (
-            self._perception_stop_reason(scene)
-            or self._command_stop_reason(command)
+        stop_reason = (
+            self._command_stop_reason(command)
             or self._blocked_maneuver_stop_reason(command, scene, runtime_state)
-        ) is not None
+            or self._perception_stop_reason(scene)
+        )
+        must_stop = stop_reason is not None and stop_reason != "TRAFFIC_LIGHT_STOP"
         allowed = self._allowed_model_behaviors(command, routing, must_stop=must_stop)
         deadline = min(
             int(command["deadline_ns"]),
@@ -837,6 +850,7 @@ class PipelineOrchestrator:
             "KEEP_LANE": {"KEEP_LANE"},
             "SET_SPEED": {"SET_SPEED"},
             "SLOW_DOWN": {"SLOW_DOWN"},
+            "STOP": {"STOP"},
         }
         intent = str(command.get("intent", "")).upper()
         maneuver_by_intent = {

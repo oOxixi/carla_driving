@@ -264,6 +264,30 @@ def test_emergency_preempts_plan_once():
     assert second.events == ()
 
 
+def test_red_light_pauses_plan_and_resumes_without_consuming_timeout():
+    keep_lane = _step(
+        behavior="KEEP_LANE",
+        completion={
+            "type": "HOLD_FRAMES", "value": None,
+            "lane": None, "hold_frames": 2,
+        },
+        timeout_s=1.0,
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(keep_lane), now_s=0.0)
+
+    waiting = fsm.update(_snapshot(
+        emergency=True, emergency_reason="RED_LIGHT_STOP_LINE_GUARD",
+    ), now_s=10.0)
+    assert waiting.state == "WAIT_TRAFFIC_SIGNAL"
+    assert waiting.safe_behavior == "STOP"
+    assert waiting.terminal is False
+
+    assert fsm.update(_snapshot(), now_s=10.1).terminal is False
+    resumed = fsm.update(_snapshot(), now_s=10.2)
+    assert resumed.state == "SUCCEEDED"
+
+
 def test_replan_cooldown_and_limit_prevent_call_storm():
     fsm = ManeuverFSM(replan_cooldown_s=2.0, max_replans_per_command=2)
     fsm.start(_plan(replans=("TARGET_LOST",)), now_s=0.0)

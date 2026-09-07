@@ -119,6 +119,14 @@ class ManeuverFSM:
             emergency_reason = str(
                 snapshot.get("emergency_reason", "EMERGENCY_PREEMPT")
             ).strip().upper()
+            if emergency_reason == "RED_LIGHT_STOP_LINE_GUARD":
+                # A traffic signal temporarily pauses the current semantic
+                # step.  It must not turn KEEP_LANE/turn/avoidance into a
+                # terminal command or consume the step timeout while waiting.
+                self._completion_frames = 0
+                self.step_started_s = now
+                self.state = "WAIT_TRAFFIC_SIGNAL"
+                return self._update(safe_behavior="STOP")
             if step.behavior in {"YIELD", "SLOW_DOWN"}:
                 # Emergency braking is the expected safe response while a
                 # pedestrian is crossing or a conditional slow-observation
