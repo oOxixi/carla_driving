@@ -500,6 +500,21 @@ def _scenario_requires_adjacent_lane_anchor(spec: ScenarioSpec) -> bool:
     )
 
 
+def _scenario_requires_target_lane_occupancy(spec: ScenarioSpec) -> bool:
+    """Return whether startup must produce adjacent-lane occupancy evidence."""
+    proposed = spec.extensions.get("proposed_acceptance", {})
+    return bool(
+        isinstance(proposed, Mapping)
+        and any(
+            key in proposed
+            for key in (
+                "target_lane_occupied_count",
+                "target_lane_occupied_min_count",
+            )
+        )
+    )
+
+
 def _actor_activation_due(
     actor_spec: Mapping[str, object],
     *,
@@ -3607,7 +3622,11 @@ def run(args: argparse.Namespace) -> None:
             scenario_lead = _select_scenario_lead(
                 ego, [vehicle for vehicle, _ in scenario_vehicles],
             )
-            if extension_runtime is not None and spec is not None:
+            if (
+                extension_runtime is not None
+                and spec is not None
+                and _scenario_requires_target_lane_occupancy(spec)
+            ):
                 extension_runtime.note_target_lane_occupancy(
                     _scenario_target_lane_occupied_count(
                         world_map, ego, scenario_vehicles, _scenario_maneuver(spec),

@@ -61,6 +61,7 @@ from integration.carla_runner import (
     _scenario_clean_world_on_start,
     _scenario_raw_control_fault,
     _scenario_requires_adjacent_lane_anchor,
+    _scenario_requires_target_lane_occupancy,
     _scenario_uses_dynamic_out_and_back,
     _scenario_maneuver,
     _scenario_local_transform,
@@ -81,6 +82,22 @@ from integration.carla_runner import (
     _warm_up_loaded_map,
 )
 from integration.scenario_execution import ScenarioSpec
+
+
+@pytest.mark.parametrize(
+    ("relative_path", "required"),
+    (
+        ("official_competition/S2_complex_avoidance_8km.json", False),
+        ("acceptance_suite/supplemental/advanced/SUP_A14_lane_change_left_curve.json", True),
+        ("acceptance_suite/supplemental/advanced/SUP_A15_lane_change_blocked.json", True),
+    ),
+)
+def test_target_lane_occupancy_is_only_required_by_explicit_acceptance(
+    relative_path: str, required: bool,
+) -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    spec = ScenarioSpec.load(root / relative_path)
+    assert _scenario_requires_target_lane_occupancy(spec) is required
 
 
 def test_scenario_commands_are_latched_and_serialized_behind_active_plan() -> None:
