@@ -27,8 +27,11 @@ def _candidate_pairs(
 ) -> list[tuple[int, Any, int, Any]]:
     count = len(spawn_points)
     pairs: list[tuple[int, Any, int, Any]] = []
-    for start_index in range(count):
-        for offset in (1, 2, 5, 10, count // 2, count // 3, (count * 2) // 3, count // 4):
+    offsets = (1, 2, 5, 10, count // 2, count // 3, (count * 2) // 3, count // 4)
+    # Interleave starts for every offset so a bounded candidate run samples the
+    # whole map instead of exhausting one spatial cluster first.
+    for offset in offsets:
+        for start_index in range(count):
             destination_index = (start_index + max(1, offset)) % count
             start = spawn_points[start_index]
             destination = spawn_points[destination_index]
@@ -57,6 +60,7 @@ def _route_profiles(route: Any) -> tuple[tuple[str, ...], dict[str, object]]:
     }
     length_m = float(route.total_length_m)
     junction_count = int(route.validation.junction_count)
+    lane_change_count = int(route.reference.metadata.get("lane_change_count", 0))
     profiles = {
         "straight" if maximum_curvature < 0.01 else "curved",
         "junction_free" if junction_count == 0 else "junction",
@@ -70,9 +74,12 @@ def _route_profiles(route: Any) -> tuple[tuple[str, ...], dict[str, object]]:
         profiles.add("multi_junction")
     if len(road_ids) >= 3:
         profiles.add("multi_road")
+    if lane_change_count:
+        profiles.add("lane_change")
     return tuple(sorted(profiles)), {
         "maximum_curvature_per_m": maximum_curvature,
         "road_count": len(road_ids),
+        "lane_change_count": lane_change_count,
     }
 
 
@@ -212,7 +219,7 @@ def main() -> int:
         choices=(
             "straight", "curved", "junction_free", "junction",
             "multi_junction", "short_route", "medium_route", "long_route",
-            "multi_road",
+            "multi_road", "lane_change",
         ),
     )
     parser.add_argument("--candidate-limit", type=int, default=120)

@@ -11,6 +11,7 @@
   "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 3600.0, "max_startup_wait_s": 20.0},
   "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
   "route": {
+    "planning_mode": "topology_coverage",
     "coordinate_type": "scenario_local_xy_m",
     "points_xy_m": [[0.0, 0.0], [8000.0, 0.0]],
     "resample_interval_m": 1.0,
@@ -371,7 +372,6 @@
       "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "YIELD", "AVOID_OBSTACLE", "CHANGE_LANE_LEFT", "RETURN_TO_LANE", "STOP"]
     },
     "fixed_random_seed": true,
-    "route_anchor_spawn_index": 46,
     "route_policy": {"loop": false},
     "runtime_support": {
       "status": "current",

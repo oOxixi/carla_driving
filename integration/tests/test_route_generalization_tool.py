@@ -6,9 +6,12 @@ from tools.validate_route_generalization import (
 )
 
 
-def _route(points, *, length_m, junction_count, road_ids):
+def _route(points, *, length_m, junction_count, road_ids, lane_change_count=0):
     return SimpleNamespace(
-        reference=SimpleNamespace(points_xy_m=tuple(points)),
+        reference=SimpleNamespace(
+            points_xy_m=tuple(points),
+            metadata={"lane_change_count": lane_change_count},
+        ),
         total_length_m=float(length_m),
         validation=SimpleNamespace(junction_count=junction_count),
         samples=tuple(SimpleNamespace(road_id=value) for value in road_ids),
@@ -27,12 +30,14 @@ def test_route_profiles_distinguish_length_curvature_and_topology() -> None:
         length_m=1_200.0,
         junction_count=4,
         road_ids=[1, 2, 3],
+        lane_change_count=1,
     ))
 
     assert set(straight) == {"junction_free", "short_route", "straight"}
     assert metrics["maximum_curvature_per_m"] == 0.0
     assert {
         "curved", "junction", "multi_junction", "long_route", "multi_road",
+        "lane_change",
     }.issubset(curved)
 
 

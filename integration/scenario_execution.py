@@ -210,7 +210,9 @@ class ScenarioSpec:
         if explicit is None:
             return "destination" if "destination_xy_m" in self.route_contract else "distance_coverage"
         mode = _nonempty_text(explicit, "route.planning_mode").lower()
-        if mode not in {"distance_coverage", "destination", "local_polyline"}:
+        if mode not in {
+            "distance_coverage", "destination", "local_polyline", "topology_coverage",
+        }:
             raise ValueError(f"unsupported route.planning_mode: {mode}")
         return mode
 

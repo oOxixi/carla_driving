@@ -30,6 +30,9 @@ class Waypoint:
         self.children = []
         self.left = None
         self.right = None
+        self.lane_change = "NONE"
+        self.left_lane_marking = SimpleNamespace(lane_change="NONE")
+        self.right_lane_marking = SimpleNamespace(lane_change="NONE")
 
     def next(self, _distance):
         return list(self.children)
@@ -119,6 +122,35 @@ def test_topology_graph_is_cached_across_routes() -> None:
     assert world_map.topology_calls == 1
 
 
+def test_distance_contract_route_is_owned_by_route_manager() -> None:
+    manager, nodes = _linear_route_manager(20)
+
+    route = manager.plan_distance(nodes[0].transform, 10.0, 5.0)
+
+    assert route.total_length_m == pytest.approx(10.0)
+    assert route.reference.metadata["planner"] == "CARLA_TOPOLOGY_COVERAGE"
+    assert route.reference.metadata["planning_mode"] == "TOPOLOGY_DISTANCE_COVERAGE"
+    assert route.reference.metadata["requested_distance_m"] == pytest.approx(10.0)
+    assert route.reference.points_xy_m[-1] == pytest.approx((10.0, 0.0))
+
+
+def test_distance_contract_explicitly_allows_revisiting_topology() -> None:
+    first = Waypoint(0, 0, 0, road_id=12, s=0)
+    second = Waypoint(1, 0, 0, road_id=12, s=1)
+    third = Waypoint(2, 0, 0, road_id=12, s=2)
+    first.children = [second]
+    second.children = [third]
+    third.children = [first]
+    world_map = TopologyMap([(first, third)], [first, second, third])
+
+    route = RouteManager(world_map, sample_step_m=1.0).plan_distance(
+        first.transform, 6.0, 4.0,
+    )
+
+    assert route.total_length_m >= 6.0
+    assert route.validation.repeated_sample_count > 0
+
+
 def test_unreachable_destination_returns_explicit_reason() -> None:
     start = Waypoint(0, 0, 0, road_id=1, s=0)
     start_exit = Waypoint(2, 0, 0, road_id=1, s=2)
@@ -165,6 +197,60 @@ def test_parallel_lane_is_selected_by_lane_identity_not_xy_proximity() -> None:
 
     assert {sample.lane_id for sample in route.samples} == {2}
     assert all(y == pytest.approx(0.4) for _x, y in route.reference.points_xy_m)
+
+
+def _parallel_lane_change_map(*, permitted: bool = True):
+    source = [
+        Waypoint(index, 0.0, 0.0, road_id=11, lane_id=1, s=index)
+        for index in range(41)
+    ]
+    target = [
+        Waypoint(index, -3.5, 0.0, road_id=11, lane_id=2, s=index)
+        for index in range(41)
+    ]
+    for lane in (source, target):
+        for first, second in zip(lane, lane[1:]):
+            first.children = [second]
+    for current, adjacent in zip(source, target):
+        current.left = adjacent
+        adjacent.right = current
+        if permitted:
+            current.left_lane_marking.lane_change = "Left"
+            adjacent.right_lane_marking.lane_change = "Right"
+    return (
+        TopologyMap(
+            [(source[0], source[-1]), (target[0], target[-1])],
+            [*source, *target],
+        ),
+        source,
+        target,
+    )
+
+
+def test_global_route_uses_smooth_legal_lane_change_to_reach_destination() -> None:
+    world_map, source, target = _parallel_lane_change_map()
+
+    route = RouteManager(world_map, sample_step_m=1.0).plan(
+        source[0].transform, target[-1].transform, 8.0,
+    )
+
+    assert route.destination_xy_m == pytest.approx((40.0, -3.5))
+    assert route.reference.metadata["lane_change_count"] == 1
+    assert route.validation.maximum_gap_m < 1.5
+    assert {sample.lane_id for sample in route.samples} == {1, 2}
+    lateral = [point[1] for point in route.reference.points_xy_m]
+    assert lateral == sorted(lateral, reverse=True)
+
+
+def test_global_route_does_not_cross_solid_lane_marking() -> None:
+    world_map, source, target = _parallel_lane_change_map(permitted=False)
+
+    with pytest.raises(RoutePlanningError) as error:
+        RouteManager(world_map, sample_step_m=1.0).plan(
+            source[0].transform, target[-1].transform, 8.0,
+        )
+
+    assert error.value.code == "ROUTE_UNREACHABLE"
 
 
 def test_route_state_exposes_shared_route_coordinates_and_lane_relations() -> None:

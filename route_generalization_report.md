@@ -4,7 +4,7 @@
 
 成员1的路线主链已经具备“输入起点和终点，基于 CARLA 拓扑生成完整路线”的独立能力。新路线统一输出累计里程、进度、车道关系、曲率、最近路线点、剩余距离以及终点/偏航状态；场景不需要提供 waypoint 序列或固定路口分支。
 
-本轮没有调用 Qwen。真实地图测试所用 Python 环境只用于提供 CARLA Python SDK。
+路线算法和两条路线实车回归不调用 Qwen。官方 S2 的三帧主流程启动检查使用正在运行的 Qwen3.5-2B 服务，确认新8km路线能和比赛全链路共同启动；该短检查不作为8km完成成绩。
 
 ## 实现范围
 
@@ -17,6 +17,9 @@
   - 提供 `state()`、`placement()` 和 `replan()`。
   - 提供 `local_reference()`，把任意长度全局路线裁成稳定的局部控制窗口；
   - 提供 `mission_placement()`，在重规划后继续按任务绝对 `route_s` 放置事件。
+  - 读取 CARLA 车道线权限，将合法相邻车道加入全局搜索；实线、逆向车道和路口内换道不会入图；
+  - 合法换道使用18m以上的平滑拓扑走廊，并在候选走廊不可执行时自动搜索替代路线；
+  - 提供 `plan_distance()`，为8km距离合同自动选择未覆盖拓扑，不依赖固定 spawn 或人工 waypoint。
 - `integration/route_planner.py`
   - 原 destination 入口改为委托 `RouteManager`，避免保留第二套 A*。
 - `integration/carla_runner.py`
@@ -29,6 +32,7 @@
   - 重规划从车辆真实姿态接入前方合法车道点，成功后只解除已恢复的横向故障锁；
   - 保留单调任务里程，不因替换局部路线而把任务进度清零。
   - 全局路线只负责规划、进度和终点，B 控制器只接收约 60～100m 的滑动局部参考；窗口接近末端才刷新。
+  - `topology_coverage` 与 `destination` 均由 Route Manager 统一驱动；距离覆盖任务偏航后按剩余任务里程重建路线。
 - `integration/scenario_builder.py`
   - 重规划后只重基准化 Actor/行人目标的几何 `route_s`；
   - 激活/释放触发仍使用任务全局里程；已错过事件明确返回 `ROUTE_EVENT_ALREADY_PASSED`，不夹到路线起点。
@@ -68,6 +72,8 @@
 | Town05 | (-96.75,-84.54) → (-115.24,154.67) | 1535.02m | 15 | 规划终点命中；未做全程实车 | 否 | 否 | 无 |
 | Town03_Opt | (-74.55,-148.34) → (-36.54,-194.93) | 75.70m | 0 | **实车到达** | 否 | 否 | 无 |
 | Town03_Opt | 初始横向偏移约 2.50m → (-36.54,-194.93) | 重规划后 75.95m | 0 | **偏航恢复后实车到达** | 否 | 否 | 无 |
+| Town03_Opt | spawn 1 → spawn 136（相邻同向车道） | 96.69m | 0 | **一次合法换道后实车到达** | 否 | 否 | 无 |
+| Town05 | spawn 0 → spawn 271 | 167.85m | 1 | **实车到达** | 否 | 否 | 无 |
 
 六条多路口路线的终点误差均为 0m；最大相邻路线点间距为 2.91～3.00m。Town03_Opt 短路线实车在约 15s 到达，最终 `route_s=73.96m`、剩余 1.73m、状态为 `DESTINATION_REACHED`，全程无碰撞，最大路线偏差约 0.37m。
 
@@ -75,13 +81,17 @@
 
 局部参考窗口接入后的同场复测只刷新两次：`0.00～60.00m`（36点）与 `32.02～75.95m`（27点）；窗口切换没有造成方向跳变、停车或额外偏航。Town03_Opt 的 987.24m 路线在任务进度约 299.86m 处重规划后，任务绝对 700m 的事件被正确映射到新路线 `road_id=67/lane_id=-1`，CARLA 判定为 Driving 车道。
 
+Town03_Opt 合法换道夹具从 `road_id=3/lane_id=-2` 自动规划到同向 `lane_id=-1`：路线最大采样间距2.656m，实车15.9s到达，最大路线偏差0.292m、无碰撞，验收 `failed_keys=[]`。Town05 独立夹具在34.0s完成167.85m和一个路口，最大路线偏差0.225m、无碰撞，验收 `failed_keys=[]`。因此两个地图均已有真实车辆到达证据，而不再只有规划终点命中。
+
+官方 S2、成员2 Variant 和 Unseen 的8km配置已改为 `planning_mode: topology_coverage` 并移除固定 `route_anchor_spawn_index`。Town03_Opt 的 spawn 46、2、100 均能在约0.6s内生成8000.23～8000.95m路线，最大采样间距1.321m；S2主流程启动检查生成8489点/8000.95m路线，`route_state=ON_ROUTE`，第一条指令经Qwen3.5-2B成功进入并完成计划。
+
 该恢复夹具显式允许最大车道中心偏移 3.0m，因为 2.5m 初始偏移就是测试输入；生产场景自动补充的默认 2.2m 道路贴合上限未被全局放宽。Qwen 状态为 `DISABLED`，因此结果不混入模型推理因素。
 
 ## 回归中发现并隔离的问题
 
 1. 第一条 1.977km 实车回归在 329m 处暴露旧终点判定会在交叉道路按全局最近点跳到路线尾部。修复后，destination 路线统一使用带前向窗口的单调 `route_s` 和 `route_remaining_m` 判定终点。
 2. 长路线继续运行时，车辆会在红灯前正确停车，但当前安全/运行状态在绿灯后没有恢复巡航。日志中路线仍为 `ON_ROUTE`，剩余 1175～1650m，横向误差小于 0.01m；这是控制/安全状态恢复问题，不是规划失败，应交成员3处理。
-3. 随机起终点中存在有向路网不可达组合，统一返回 `ROUTE_UNREACHABLE`，而不是生成跳路或错误分支。调用方应更换合法终点或按 reason 触发重规划。
+3. 随机起终点中仍存在真正有向不可达或无法形成完整合法换道走廊的组合。规划器会屏蔽失败换道边继续搜索替代路径；所有替代路径耗尽后才返回 `ROUTE_UNREACHABLE`，不会生成跳路、跨实线或逆行路线。
 
 ## 自动化测试
 
@@ -93,7 +103,10 @@ python -m pytest -q integration/tests/test_route_manager.py \
   integration/tests/test_carla_runner_helpers.py
 
 python tools/validate_route_generalization.py \
-  --maps Town03_Opt Town05 --pairs-per-map 3
+  --maps Town03_Opt --pairs-per-map 10 --candidate-limit 300 \
+  --minimum-endpoint-gap-m 60 \
+  --required-profiles straight curved junction junction_free lane_change \
+    multi_junction short_route medium_route long_route multi_road
 ```
 
 覆盖项包括：正确路口分支、拓扑缓存、不可达终点、非驾驶车道、平行车道、路线坐标、相邻车道放置、偏航确认/冷却/次数上限、真实姿态重规划接入、恢复告警隔离、恢复证据与验收、断路、回环和旧入口委托。
@@ -102,23 +115,24 @@ python tools/validate_route_generalization.py \
 
 增强后的 `tools/validate_route_generalization.py` 不再只返回最先成功的几条路线，而是从候选集合中确定性选择能增加道路结构覆盖的路线，并输出未覆盖类别和所有失败 reason。
 
-本次枚举到 120 条合法候选路线，选择 8 条做结构集：
+最终回归从全地图交错起点中枚举300条合法候选路线，选择10条做结构集：
 
 | 覆盖 | 结果 |
 |---|---|
 | 直道 / 弯道 | 均覆盖 |
 | 短 / 中 / 长路线 | 均覆盖 |
 | 普通路口 / 多路口 | 均覆盖 |
+| 无路口 / 合法换道 | 均覆盖 |
 | 多 road 路线 | 覆盖 |
-| 路线长度范围 | 133.28m～4418.13m |
-| 最大路口数 | 49 |
-| 终点误差 | 8条均为 0m |
+| 路线长度范围 | 80.0m～3191.7m |
+| 最大路口数 / 换道数 | 38 / 7 |
+| 终点误差 | 10条均为 0m |
 | 缺失必需类别 | 无 |
 
-候选搜索过程中另有 424 个有向起终点组合返回 `ROUTE_UNREACHABLE`。工具现在完整输出尝试数、候选成功率和失败原因分布，不再用只展示成功样本的方式掩盖。该结果表示当前不做隐式非法换道时的有向车道可达性边界；调用方必须更换合法终点，不能生成跳路或逆行路线。
+419次规划尝试中成功300条，候选成功率71.60%；116条返回 `ROUTE_UNREACHABLE`，3条因地图拓扑采样出现超限间距返回 `ROUTE_DISCONTINUOUS`。修改前同等机制需要544次尝试才能得到120条候选（成功率22.06%），合法换道和失败边替代搜索显著扩大了可达范围。工具仍完整输出失败原因，不用错误道路来提高表面成功率。
 
-与成员2最新泛化提交合并后的全仓结果：`962 passed, 2 skipped, 2 failed`。两个失败仅因为本机未保存 Git 忽略的 vLLM 发布输入（38MB 源码归档和构建 wheel），不是代码测试失败；全部路线、runner、场景和控制相关测试均通过。
+与成员2最新泛化提交合并后的全仓结果：`966 passed, 2 skipped, 2 failed`。两个失败仅因为本机未保存 Git 忽略的 vLLM 发布输入（38MB 源码归档和构建 wheel），不是代码测试失败；全部路线、runner、场景和控制相关测试均通过。
 
 ## 兼容边界
 
-`planning_mode: destination` 已完全不读取 `extensions.route_anchor_spawn_index`；起点由运行输入决定，终点由 `route.destination_xy_m` 决定。仓库中既有 `distance_coverage` 长里程场景仍保留旧兼容路径，避免在成员2完成事件路线坐标化之前破坏已经通过的 S2。新增场景应优先使用 destination 模式，不再新增固定 spawn index 或人工 waypoint 分支。
+`planning_mode: destination` 已完全不读取 `extensions.route_anchor_spawn_index`；起点由运行输入决定，终点由 `route.destination_xy_m` 决定。成员2已经完成路线坐标化的官方 S2及其Variant/Unseen使用 `topology_coverage`，只声明8km距离合同，Route Manager 自动生成全程路线。其他旧验收夹具仍保留 `distance_coverage` / `local_polyline` 兼容入口，因为它们用于验证指定转弯或变道几何，不属于比赛8km生产主链；禁止在新生产场景中增加固定 spawn index 或人工 waypoint 分支。

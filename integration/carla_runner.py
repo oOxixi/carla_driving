@@ -3209,9 +3209,13 @@ def run(args: argparse.Namespace) -> None:
         destination_planning = (
             spec is not None and spec.route_planning_mode == "destination"
         )
+        topology_coverage_planning = (
+            spec is not None and spec.route_planning_mode == "topology_coverage"
+        )
+        managed_route_planning = destination_planning or topology_coverage_planning
         if (
             road_fit_required or seeded_route_anchor or adjacent_lane_anchor_required
-        ) and not destination_planning:
+        ) and not managed_route_planning:
             maneuver = _scenario_maneuver(spec)
             configured_anchor_index = spec.extensions.get("route_anchor_spawn_index")
             if configured_anchor_index is not None:
@@ -3329,6 +3333,45 @@ def run(args: argparse.Namespace) -> None:
             print(json.dumps({
                 "record_type": "global_route_ready",
                 "planner": topology_route.metadata.get("planner"),
+                "planning_mode": "destination",
+                **global_route.validation.to_dict(),
+            }, ensure_ascii=False), flush=True)
+        elif topology_coverage_planning:
+            assert spec is not None
+            recovery_policy = RouteRecoveryPolicy.from_mapping(
+                spec.route_contract.get("recovery"),
+            )
+            global_route_manager = RouteManager(
+                world_map,
+                sample_step_m=spec.route_resample_interval_m,
+                finish_radius_m=spec.finish_radius_m,
+                off_route_threshold_m=recovery_policy.off_route_threshold_m,
+            )
+            global_route_recovery = RouteRecoveryTracker(recovery_policy)
+            try:
+                global_route = global_route_manager.plan_distance(
+                    route_anchor,
+                    spec.route_distance_contract_m,
+                    args.default_speed_mps,
+                )
+            except RoutePlanningError as error:
+                print(json.dumps({
+                    "record_type": "route_planning_failed",
+                    "reason": error.code,
+                    "detail": error.detail,
+                }, ensure_ascii=False), flush=True)
+                raise
+            global_route_destination = carla.Location(
+                x=global_route.destination_xy_m[0],
+                y=global_route.destination_xy_m[1],
+                z=route_anchor.location.z,
+            )
+            topology_route = global_route.reference
+            print(json.dumps({
+                "record_type": "global_route_ready",
+                "planner": topology_route.metadata.get("planner"),
+                "planning_mode": "topology_coverage",
+                "requested_distance_m": spec.route_distance_contract_m,
                 **global_route.validation.to_dict(),
             }, ensure_ascii=False), flush=True)
         traffic_light_distance = _scenario_traffic_light_distance(spec)
@@ -3783,11 +3826,28 @@ def run(args: argparse.Namespace) -> None:
                         assert global_route_destination is not None
                         replan_origin_m = route_progress_m
                         try:
-                            replanned_route = global_route_manager.replan(
-                                ego.get_transform(),
-                                global_route_destination,
-                                runtime.requested_speed_mps,
-                            )
+                            if topology_coverage_planning:
+                                assert spec is not None
+                                remaining_contract_m = max(
+                                    spec.finish_radius_m * 2.0,
+                                    spec.route_distance_contract_m - replan_origin_m,
+                                )
+                                replanned_route = global_route_manager.plan_distance(
+                                    ego.get_transform(),
+                                    remaining_contract_m,
+                                    runtime.requested_speed_mps,
+                                )
+                                global_route_destination = carla.Location(
+                                    x=replanned_route.destination_xy_m[0],
+                                    y=replanned_route.destination_xy_m[1],
+                                    z=ego.get_location().z,
+                                )
+                            else:
+                                replanned_route = global_route_manager.replan(
+                                    ego.get_transform(),
+                                    global_route_destination,
+                                    runtime.requested_speed_mps,
+                                )
                         except RoutePlanningError as error:
                             replan_failure_payload = {
                                 "frame": frame,

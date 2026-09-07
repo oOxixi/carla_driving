@@ -29,6 +29,7 @@
     "yaw_deg": 0.0
   },
   "route": {
+    "planning_mode": "topology_coverage",
     "coordinate_type": "scenario_local_xy_m",
     "points_xy_m": [
       [
@@ -818,7 +819,6 @@
       ]
     },
     "fixed_random_seed": true,
-    "route_anchor_spawn_index": 46,
     "route_policy": {
       "loop": false
     },

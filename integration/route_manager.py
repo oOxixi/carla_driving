@@ -13,6 +13,7 @@ import hashlib
 import heapq
 import itertools
 import math
+from types import SimpleNamespace
 from typing import Any, Mapping, Sequence
 
 from car_control_A.routing import RouteReference
@@ -30,9 +31,16 @@ Point2D = tuple[float, float]
 class RoutePlanningError(RuntimeError):
     """A route failure with a stable machine-readable reason code."""
 
-    def __init__(self, code: str, detail: str) -> None:
+    def __init__(
+        self,
+        code: str,
+        detail: str,
+        *,
+        context: Mapping[str, object] | None = None,
+    ) -> None:
         self.code = str(code)
         self.detail = str(detail)
+        self.context = dict(context or {})
         super().__init__(f"{self.code}: {self.detail}")
 
 
@@ -286,6 +294,54 @@ class _TopologyEdge:
     length_m: float
 
 
+@dataclass(frozen=True, slots=True)
+class _LaneChangeTransition:
+    source_edge_index: int
+    target_edge_index: int
+    side: str
+    candidates: tuple[tuple[Any, Any], ...] = field(repr=False, compare=False)
+
+
+class _BlendedWaypoint:
+    """Waypoint-shaped route sample used inside a smooth legal lane change."""
+
+    def __init__(
+        self,
+        source: Any,
+        target: Any,
+        *,
+        x_m: float,
+        y_m: float,
+        z_m: float,
+        yaw_deg: float,
+        target_weight: float,
+    ) -> None:
+        base = target if target_weight >= 0.5 else source
+        source_location = source.transform.location
+        location_type = type(source_location)
+        try:
+            location = location_type(x=float(x_m), y=float(y_m), z=float(z_m))
+        except TypeError:
+            location = location_type(float(x_m), float(y_m), float(z_m))
+        self.transform = SimpleNamespace(
+            location=location,
+            rotation=SimpleNamespace(yaw=float(yaw_deg)),
+        )
+        for name in (
+            "road_id", "section_id", "lane_id", "s", "lane_type", "is_junction",
+        ):
+            setattr(self, name, getattr(base, name, None))
+        self._base = base
+
+    def get_left_lane(self) -> Any | None:
+        getter = getattr(self._base, "get_left_lane", None)
+        return getter() if callable(getter) else None
+
+    def get_right_lane(self) -> Any | None:
+        getter = getattr(self._base, "get_right_lane", None)
+        return getter() if callable(getter) else None
+
+
 def _location(value: Any) -> Any:
     if callable(getattr(value, "get_location", None)):
         return value.get_location()
@@ -348,6 +404,27 @@ def _same_direction(first: Any, second: Any, tolerance_deg: float = 60.0) -> boo
     return abs(_wrap_degrees(_yaw(first) - _yaw(second))) <= tolerance_deg
 
 
+def _lane_change_allowed(waypoint: Any, side: str) -> bool:
+    """Read CARLA lane-marking permissions without importing the CARLA module."""
+    marking = getattr(
+        waypoint,
+        "left_lane_marking" if side == "LEFT" else "right_lane_marking",
+        None,
+    )
+    value = getattr(marking, "lane_change", None)
+    if value is None:
+        value = getattr(waypoint, "lane_change", None)
+    if value is None:
+        return False
+    try:
+        mask = int(value)
+    except (TypeError, ValueError):
+        normalized = str(value).split(".")[-1].strip().upper()
+        return normalized == "BOTH" or normalized == side
+    # CARLA LaneChange uses Right=1, Left=2 and Both=3.
+    return bool(mask & (2 if side == "LEFT" else 1))
+
+
 def _curvature(points: Sequence[Point2D], index: int) -> float:
     if len(points) < 3:
         return 0.0
@@ -396,6 +473,9 @@ class RouteManager:
         self.off_route_threshold_m = float(off_route_threshold_m)
         self._edges: tuple[_TopologyEdge, ...] | None = None
         self._adjacency: dict[int, tuple[int, ...]] | None = None
+        self._lane_change_transitions: dict[
+            tuple[int, int], _LaneChangeTransition
+        ] = {}
 
     def plan(
         self,
@@ -414,17 +494,120 @@ class RouteManager:
         goal_edge = self._locate_edge(
             destination_waypoint, edges, "ROUTE_DESTINATION_UNMAPPABLE",
         )
-        edge_path = self._search(
-            start_edge.index, goal_edge.index, destination_waypoint,
-            edges, adjacency,
-        )
-        waypoints = self._assemble_waypoints(
-            edge_path, start_waypoint, destination_waypoint, edges,
-        )
+        blocked_connections: set[tuple[int, int]] = set()
+        while True:
+            edge_path = self._search(
+                start_edge.index,
+                goal_edge.index,
+                destination_waypoint,
+                edges,
+                adjacency,
+                blocked_connections=blocked_connections,
+            )
+            try:
+                waypoints = self._assemble_waypoints(
+                    edge_path, start_waypoint, destination_waypoint, edges,
+                )
+                break
+            except RoutePlanningError as error:
+                if error.code not in {
+                    "ROUTE_LANE_CHANGE_UNAVAILABLE",
+                    "ROUTE_LANE_CHANGE_SEQUENCE_INVALID",
+                }:
+                    raise
+                source_index = error.context.get("source_edge_index")
+                target_index = error.context.get("target_edge_index")
+                if type(source_index) is not int or type(target_index) is not int:
+                    raise
+                connection = (source_index, target_index)
+                if connection in blocked_connections:
+                    raise
+                blocked_connections.add(connection)
         return self._build_global_route(
             waypoints, start_waypoint, destination_waypoint,
             float(target_speed_mps),
         )
+
+    def plan_distance(
+        self,
+        start: Any,
+        distance_m: float,
+        target_speed_mps: float,
+    ) -> GlobalRoute:
+        """Generate a topology-following coverage route of a requested length.
+
+        This mode is for distance-contract missions such as the 8 km competition
+        scene, where a shortest path to one destination cannot express the task.
+        Junction choices prefer unvisited legal topology and never introduce an
+        implicit lane change.
+        """
+        if not math.isfinite(float(distance_m)) or distance_m <= 0.0:
+            raise ValueError("distance_m must be finite and positive")
+        if not math.isfinite(float(target_speed_mps)) or target_speed_mps < 0.0:
+            raise ValueError("target_speed_mps must be finite and non-negative")
+        start_waypoint = self._project_endpoint(start, "ROUTE_START_UNMAPPABLE")
+        requested_distance_m = float(distance_m)
+        waypoints = [start_waypoint]
+        visits = {_visit_key(start_waypoint): 1}
+        accumulated_m = 0.0
+        maximum_steps = max(
+            32,
+            math.ceil(requested_distance_m / self.sample_step_m) * 4,
+        )
+        for _ in range(maximum_steps):
+            if accumulated_m + 1e-9 >= requested_distance_m:
+                break
+            current = waypoints[-1]
+            candidates = tuple(
+                waypoint
+                for waypoint in current.next(self.sample_step_m)
+                if _is_driving_lane(waypoint) and _same_direction(current, waypoint, 120.0)
+            )
+            if not candidates:
+                raise RoutePlanningError(
+                    "ROUTE_ENDED_EARLY",
+                    f"coverage route ended at {accumulated_m:.2f} m before "
+                    f"the {requested_distance_m:.2f} m contract",
+                )
+            selected = min(
+                candidates,
+                key=lambda waypoint: (
+                    visits.get(_visit_key(waypoint), 0),
+                    -self._future_novel_capacity(waypoint, visits, depth=8),
+                    abs(_wrap_degrees(_yaw(waypoint) - _yaw(current))),
+                    _visit_key(waypoint),
+                ),
+            )
+            step_length_m = _distance(current, selected)
+            if step_length_m <= 1e-6 or step_length_m > self.maximum_gap_m:
+                raise RoutePlanningError(
+                    "ROUTE_DISCONTINUOUS",
+                    f"coverage route step {step_length_m:.2f} m is invalid",
+                )
+            waypoints.append(selected)
+            accumulated_m += step_length_m
+            key = _visit_key(selected)
+            visits[key] = visits.get(key, 0) + 1
+        if accumulated_m + 1e-9 < requested_distance_m:
+            raise RoutePlanningError(
+                "ROUTE_ENDED_EARLY",
+                f"coverage route reached only {accumulated_m:.2f} m of "
+                f"{requested_distance_m:.2f} m",
+            )
+        route = self._build_global_route(
+            waypoints,
+            start_waypoint,
+            waypoints[-1],
+            float(target_speed_mps),
+            allow_repeated_samples=True,
+        )
+        metadata = dict(route.reference.metadata)
+        metadata.update({
+            "planner": "CARLA_TOPOLOGY_COVERAGE",
+            "planning_mode": "TOPOLOGY_DISTANCE_COVERAGE",
+            "requested_distance_m": requested_distance_m,
+        })
+        return replace(route, reference=replace(route.reference, metadata=metadata))
 
     def state(
         self,
@@ -747,6 +930,38 @@ class RouteManager:
                 return None
         return self.world_map.get_waypoint(query, project_to_road=True)
 
+    def _future_novel_capacity(
+        self,
+        waypoint: Any,
+        visits: Mapping[tuple[object, ...], int],
+        *,
+        depth: int,
+        branch_seen: frozenset[tuple[object, ...]] = frozenset(),
+    ) -> int:
+        if depth <= 0:
+            return 0
+        key = _visit_key(waypoint)
+        if key in branch_seen:
+            return 0
+        successors = tuple(
+            candidate
+            for candidate in waypoint.next(self.sample_step_m)
+            if _is_driving_lane(candidate)
+        )
+        novelty = 1 if visits.get(key, 0) == 0 else 0
+        if not successors:
+            return novelty
+        next_seen = branch_seen | {key}
+        return novelty + max(
+            self._future_novel_capacity(
+                candidate,
+                visits,
+                depth=depth - 1,
+                branch_seen=next_seen,
+            )
+            for candidate in successors
+        )
+
     def _project_endpoint(self, value: Any, code: str) -> Any:
         waypoint = self.world_map.get_waypoint(
             _location(value), project_to_road=True,
@@ -837,13 +1052,12 @@ class RouteManager:
         by_lane: dict[tuple[int | None, int | None, int | None], list[_TopologyEdge]] = {}
         for edge in edges:
             by_lane.setdefault(_lane_identity(edge.entry), []).append(edge)
-        adjacency: dict[int, tuple[int, ...]] = {}
+        mutable: dict[int, set[int]] = {edge.index: set() for edge in edges}
         for edge in edges:
             successors = tuple(
                 item for item in edge.exit.next(max(0.5, self.sample_step_m * 0.5))
                 if _is_driving_lane(item)
             )
-            matches: set[int] = set()
             for successor in successors:
                 candidates = by_lane.get(_lane_identity(successor), ())
                 ranked = sorted(
@@ -855,8 +1069,8 @@ class RouteManager:
                     key=lambda item: (item[0], item[1].index),
                 )
                 if ranked and ranked[0][0] <= self.maximum_gap_m:
-                    matches.add(ranked[0][1].index)
-            if not matches:
+                    mutable[edge.index].add(ranked[0][1].index)
+            if not mutable[edge.index]:
                 for candidate in edges:
                     if candidate.index == edge.index:
                         continue
@@ -864,9 +1078,87 @@ class RouteManager:
                         _distance(edge.exit, candidate.entry) <= self.sample_step_m * 1.5
                         and _same_direction(edge.exit, candidate.entry)
                     ):
-                        matches.add(candidate.index)
-            adjacency[edge.index] = tuple(sorted(matches))
-        return adjacency
+                        mutable[edge.index].add(candidate.index)
+
+        transition_candidates: dict[
+            tuple[int, int, str], list[tuple[Any, Any]]
+        ] = {}
+        for edge in edges:
+            if bool(getattr(edge.entry, "is_junction", False)):
+                continue
+            for waypoint in edge.waypoints:
+                if bool(getattr(waypoint, "is_junction", False)):
+                    continue
+                for side in ("LEFT", "RIGHT"):
+                    if not _lane_change_allowed(waypoint, side):
+                        continue
+                    adjacent = self._adjacent_lane(waypoint, side)
+                    if adjacent is None:
+                        continue
+                    if getattr(adjacent, "road_id", None) != getattr(
+                        waypoint, "road_id", None,
+                    ):
+                        continue
+                    target_edges = by_lane.get(_lane_identity(adjacent), ())
+                    ranked = sorted(
+                        (
+                            min(
+                                _distance(adjacent, sample)
+                                for sample in candidate.waypoints
+                            ),
+                            candidate.index,
+                            candidate,
+                        )
+                        for candidate in target_edges
+                        if candidate.index != edge.index
+                        and _same_direction(waypoint, candidate.entry)
+                    )
+                    if not ranked or ranked[0][0] > self.maximum_gap_m:
+                        continue
+                    target = ranked[0][2]
+                    transition_candidates.setdefault(
+                        (edge.index, target.index, side), [],
+                    ).append((waypoint, adjacent))
+
+        self._lane_change_transitions = {}
+        for (source_index, target_index, side), candidates in sorted(
+            transition_candidates.items(),
+        ):
+            key = (source_index, target_index)
+            unique = []
+            keys = set()
+            for source, target in candidates:
+                candidate_key = (_visit_key(source), _visit_key(target))
+                if candidate_key in keys:
+                    continue
+                keys.add(candidate_key)
+                trial = _LaneChangeTransition(
+                    source_index,
+                    target_index,
+                    side,
+                    ((source, target),),
+                )
+                try:
+                    self._build_lane_change_connector(trial, source)
+                except RoutePlanningError:
+                    continue
+                unique.append((source, target))
+            if not unique:
+                continue
+            transition = _LaneChangeTransition(
+                source_index,
+                target_index,
+                side,
+                tuple(unique),
+            )
+            existing = self._lane_change_transitions.get(key)
+            if existing is None or len(transition.candidates) > len(existing.candidates):
+                self._lane_change_transitions[key] = transition
+                mutable[source_index].add(target_index)
+        return {
+            index: tuple(sorted(successors))
+            for index, successors in mutable.items()
+        }
 
     def _locate_edge(
         self,
@@ -904,6 +1196,8 @@ class RouteManager:
         destination: Any,
         edges: tuple[_TopologyEdge, ...],
         adjacency: Mapping[int, tuple[int, ...]],
+        *,
+        blocked_connections: set[tuple[int, int]] | frozenset[tuple[int, int]] = frozenset(),
     ) -> tuple[int, ...]:
         counter = itertools.count()
         frontier: list[tuple[float, float, int, int]] = [
@@ -922,7 +1216,14 @@ class RouteManager:
                 found = True
                 break
             for successor in adjacency.get(current, ()):
-                next_cost = cost + edges[successor].length_m
+                if (current, successor) in blocked_connections:
+                    continue
+                lane_change_penalty_m = (
+                    25.0
+                    if (current, successor) in self._lane_change_transitions
+                    else 0.0
+                )
+                next_cost = cost + edges[successor].length_m + lane_change_penalty_m
                 if next_cost + 1e-9 >= costs.get(successor, math.inf):
                     continue
                 costs[successor] = next_cost
@@ -952,11 +1253,84 @@ class RouteManager:
         edges: tuple[_TopologyEdge, ...],
     ) -> tuple[Any, ...]:
         assembled: list[Any] = []
-        for edge_index in edge_path:
-            for waypoint in edges[edge_index].waypoints:
+        incoming_waypoint: Any | None = None
+        for path_index, edge_index in enumerate(edge_path):
+            edge = edges[edge_index]
+            edge_waypoints = edge.waypoints
+            start_index = (
+                min(
+                    range(len(edge_waypoints)),
+                    key=lambda index: _distance(
+                        start if path_index == 0 else incoming_waypoint,
+                        edge_waypoints[index],
+                    ),
+                )
+                if path_index == 0 or incoming_waypoint is not None
+                else 0
+            )
+            outgoing = None
+            if path_index + 1 < len(edge_path):
+                outgoing = self._lane_change_transitions.get(
+                    (edge_index, edge_path[path_index + 1]),
+                )
+            end_index = len(edge_waypoints) - 1
+            connector: tuple[Any, ...] = ()
+            connector_target: Any | None = None
+            if outgoing is not None:
+                minimum_change_index = min(
+                    len(edge_waypoints) - 1,
+                    start_index + max(2, math.ceil(8.0 / self.sample_step_m)),
+                )
+                for source, _target in outgoing.candidates:
+                    source_index = min(
+                        range(len(edge_waypoints)),
+                        key=lambda index: _distance(source, edge_waypoints[index]),
+                    )
+                    if source_index < minimum_change_index:
+                        continue
+                    try:
+                        candidate_connector, candidate_target = (
+                            self._build_lane_change_connector(outgoing, source)
+                        )
+                    except RoutePlanningError:
+                        continue
+                    end_index = source_index
+                    connector = candidate_connector
+                    connector_target = candidate_target
+                    break
+                if not connector:
+                    raise RoutePlanningError(
+                        "ROUTE_LANE_CHANGE_UNAVAILABLE",
+                        f"no complete legal {outgoing.side.lower()} lane-change corridor "
+                        f"from edge {edge_index} to {outgoing.target_edge_index}",
+                        context={
+                            "source_edge_index": edge_index,
+                            "target_edge_index": outgoing.target_edge_index,
+                        },
+                    )
+            if start_index > end_index:
+                target_edge_index = (
+                    outgoing.target_edge_index
+                    if outgoing is not None else edge_index
+                )
+                raise RoutePlanningError(
+                    "ROUTE_LANE_CHANGE_SEQUENCE_INVALID",
+                    f"lane-change sequence reverses progress on edge {edge_index}",
+                    context={
+                        "source_edge_index": edge_index,
+                        "target_edge_index": target_edge_index,
+                    },
+                )
+            for waypoint in edge_waypoints[start_index:end_index + 1]:
                 if assembled and _visit_key(waypoint) == _visit_key(assembled[-1]):
                     continue
                 assembled.append(waypoint)
+            for waypoint in connector[1:]:
+                if assembled and _distance(waypoint, assembled[-1]) <= 1e-6:
+                    assembled[-1] = waypoint
+                else:
+                    assembled.append(waypoint)
+            incoming_waypoint = connector_target
         start_index = min(range(len(assembled)), key=lambda index: _distance(start, assembled[index]))
         destination_index = min(
             range(start_index, len(assembled)),
@@ -973,12 +1347,84 @@ class RouteManager:
             raise RoutePlanningError("ROUTE_ENDED_EARLY", "route contains fewer than two points")
         return tuple(deduplicated)
 
+    def _build_lane_change_connector(
+        self,
+        transition: _LaneChangeTransition,
+        source: Any,
+    ) -> tuple[tuple[Any, ...], Any]:
+        """Build a smooth, permission-checked connector between parallel lanes."""
+        transition_length_m = max(18.0, self.sample_step_m * 8.0)
+        step_count = max(8, math.ceil(transition_length_m / self.sample_step_m))
+        source_identity = _lane_identity(source)
+        target_identity = _lane_identity(
+            min(
+                transition.candidates,
+                key=lambda pair: _distance(pair[0], source),
+            )[1]
+        )
+        current = source
+        connector: list[Any] = []
+        target = None
+        for index in range(step_count + 1):
+            if index:
+                candidates = tuple(
+                    waypoint
+                    for waypoint in current.next(self.sample_step_m)
+                    if _is_driving_lane(waypoint)
+                    and _lane_identity(waypoint) == source_identity
+                    and _same_direction(current, waypoint)
+                )
+                if not candidates:
+                    raise RoutePlanningError(
+                        "ROUTE_LANE_CHANGE_UNAVAILABLE",
+                        "source lane ends before the lane change can complete",
+                    )
+                current = min(candidates, key=lambda item: _distance(current, item))
+            if bool(getattr(current, "is_junction", False)):
+                raise RoutePlanningError(
+                    "ROUTE_LANE_CHANGE_UNAVAILABLE",
+                    "lane change would enter a junction",
+                )
+            if not _lane_change_allowed(current, transition.side):
+                raise RoutePlanningError(
+                    "ROUTE_LANE_CHANGE_UNAVAILABLE",
+                    "lane marking stops permitting the requested lane change",
+                )
+            target = self._adjacent_lane(current, transition.side)
+            if target is None or _lane_identity(target) != target_identity:
+                raise RoutePlanningError(
+                    "ROUTE_LANE_CHANGE_UNAVAILABLE",
+                    "adjacent driving lane is not continuous through the transition",
+                )
+            source_location = current.transform.location
+            target_location = target.transform.location
+            ratio = index / step_count
+            blend = ratio * ratio * (3.0 - 2.0 * ratio)
+            source_yaw = _yaw(current)
+            yaw = source_yaw + _wrap_degrees(_yaw(target) - source_yaw) * blend
+            connector.append(_BlendedWaypoint(
+                current,
+                target,
+                x_m=(1.0 - blend) * float(source_location.x)
+                + blend * float(target_location.x),
+                y_m=(1.0 - blend) * float(source_location.y)
+                + blend * float(target_location.y),
+                z_m=(1.0 - blend) * float(getattr(source_location, "z", 0.0))
+                + blend * float(getattr(target_location, "z", 0.0)),
+                yaw_deg=yaw,
+                target_weight=blend,
+            ))
+        assert target is not None
+        return tuple(connector), target
+
     def _build_global_route(
         self,
         waypoints: Sequence[Any],
         start: Any,
         destination: Any,
         target_speed_mps: float,
+        *,
+        allow_repeated_samples: bool = False,
     ) -> GlobalRoute:
         points = tuple(_xy(item) for item in waypoints)
         cumulative = cumulative_distances_m(points)
@@ -991,7 +1437,7 @@ class RouteManager:
             )
         keys = [_visit_key(item) for item in waypoints]
         repeated = len(keys) - len(set(keys))
-        if repeated:
+        if repeated and not allow_repeated_samples:
             raise RoutePlanningError(
                 "ROUTE_LOOP_DETECTED", f"route repeats {repeated} waypoint samples",
             )
@@ -1024,6 +1470,12 @@ class RouteManager:
             (_curvature(points, index) for index in range(len(points))),
             default=0.0,
         )
+        lane_change_count = sum(
+            1
+            for previous, current in zip(waypoints, waypoints[1:])
+            if getattr(previous, "road_id", None) == getattr(current, "road_id", None)
+            and getattr(previous, "lane_id", None) != getattr(current, "lane_id", None)
+        )
         route_fingerprint = "|".join(
             f"{x_m:.2f},{y_m:.2f}" for x_m, y_m in points
         ).encode("ascii")
@@ -1035,6 +1487,7 @@ class RouteManager:
             metadata={
                 "planner": "CARLA_TOPOLOGY_ASTAR",
                 "validation": validation.to_dict(),
+                "lane_change_count": lane_change_count,
             },
         )
         return GlobalRoute(

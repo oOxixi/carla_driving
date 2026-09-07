@@ -100,6 +100,8 @@ def test_s2_actor_events_cover_the_full_route_and_use_explicit_route_positions()
     assert max(positions.values()) >= 7000.0
     assert all("route_position" in actor for actor in raw["actors"])
     assert all("activation_trigger" in actor for actor in raw["actors"])
+    assert raw["route"]["planning_mode"] == "topology_coverage"
+    assert "route_anchor_spawn_index" not in raw["extensions"]
 
 
 def test_generalized_core_modules_contain_no_official_scene_or_town_special_cases() -> None:
