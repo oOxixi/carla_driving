@@ -595,6 +595,13 @@ def _scenario_uses_dynamic_out_and_back(spec: ScenarioSpec | None) -> bool:
     )
 
 
+def _scenario_startup_maneuver(spec: ScenarioSpec) -> str:
+    """Keep the mission lane until a dynamic manoeuvre is actually commanded."""
+    if _scenario_uses_dynamic_out_and_back(spec):
+        return "FOLLOW"
+    return _scenario_maneuver(spec)
+
+
 def _scenario_lane_change_profile(
     spec: ScenarioSpec | None,
 ) -> Mapping[str, object] | None:
@@ -3257,7 +3264,7 @@ def run(args: argparse.Namespace) -> None:
         if (
             road_fit_required or seeded_route_anchor or adjacent_lane_anchor_required
         ) and not managed_route_planning:
-            maneuver = _scenario_maneuver(spec)
+            maneuver = _scenario_startup_maneuver(spec)
             configured_anchor_index = spec.extensions.get("route_anchor_spawn_index")
             if configured_anchor_index is not None:
                 if isinstance(configured_anchor_index, bool) or not isinstance(configured_anchor_index, int):

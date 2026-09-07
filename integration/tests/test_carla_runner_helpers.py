@@ -62,6 +62,7 @@ from integration.carla_runner import (
     _scenario_raw_control_fault,
     _scenario_requires_adjacent_lane_anchor,
     _scenario_requires_target_lane_occupancy,
+    _scenario_startup_maneuver,
     _scenario_uses_dynamic_out_and_back,
     _scenario_maneuver,
     _scenario_local_transform,
@@ -98,6 +99,19 @@ def test_target_lane_occupancy_is_only_required_by_explicit_acceptance(
     root = Path(__file__).resolve().parents[2] / "scenarios"
     spec = ScenarioSpec.load(root / relative_path)
     assert _scenario_requires_target_lane_occupancy(spec) is required
+
+
+def test_dynamic_out_and_back_does_not_change_lane_during_startup() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    s3 = ScenarioSpec.load(
+        root / "official_competition/S3_extreme_emergency_6km.json"
+    )
+    ordinary = ScenarioSpec.load(
+        root / "qwen_fullchain/QWF_02_lane_change_then_speed.json"
+    )
+    assert _scenario_maneuver(s3) == "CHANGE_LANE_LEFT"
+    assert _scenario_startup_maneuver(s3) == "FOLLOW"
+    assert _scenario_startup_maneuver(ordinary) == "CHANGE_LANE_LEFT"
 
 
 def test_scenario_commands_are_latched_and_serialized_behind_active_plan() -> None:
