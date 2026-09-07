@@ -81,7 +81,7 @@ def validate_evidence(
         identifiers,
         "seed, code_version and config_path are present",
     )
-    check("qwen_7b_model", "7B" in model_id.upper(), model_id, "existing 7B service model")
+    check("qwen_2b_model", "2B" in model_id.upper(), model_id, "production 2B service model")
 
     command_records = [item for item in records if item.get("record_type") == "command"]
     external = [item for item in command_records if item.get("disposition") != "INTERNAL_QWEN_WAIT_STOP"]
