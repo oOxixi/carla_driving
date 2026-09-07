@@ -2,18 +2,20 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import shutil
+import sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from tools.frozen_text_hash import frozen_text_sha256
 
 
 def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    return frozen_text_sha256(path)
 
 
 def promote_reference_run(source: Path, destination: Path, hardware_label: str) -> None:

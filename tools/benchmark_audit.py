@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from collections import Counter
 from pathlib import Path
+
+from tools.frozen_text_hash import frozen_text_sha256
 
 
 EXPECTED_RECORDS = 6192
@@ -103,7 +104,7 @@ def audit_dataset(path: Path) -> dict[str, object]:
         "error_examples": errors[:50],
         "category_distribution": dict(category),
         "action_distribution": dict(actions),
-        "sha256": hashlib.sha256(raw_data).hexdigest(),
+        "sha256": frozen_text_sha256(data_path),
         "evaluation_contract": evaluation_contract,
     }
 
