@@ -1,0 +1,475 @@
+{
+  "acceptance": {
+    "check_count": 12,
+    "checks": [
+      {
+        "actual": true,
+        "detail": "requires carla_started",
+        "key": "must_start_carla",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": true,
+        "detail": "requires spawned_ego",
+        "key": "must_spawn_ego",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": true,
+        "detail": "requires logs_generated",
+        "key": "must_generate_logs",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": false,
+        "detail": "requires route_finished",
+        "key": "must_finish_route",
+        "required": true,
+        "status": "FAIL"
+      },
+      {
+        "actual": false,
+        "detail": "requires commands_in_order",
+        "key": "must_execute_commands_in_order",
+        "required": true,
+        "status": "FAIL"
+      },
+      {
+        "actual": 1.1444090887581635e-05,
+        "detail": "max_abs_cross_track_error_m must be <= expected maximum",
+        "key": "max_cross_track_error_m",
+        "required": 0.8,
+        "status": "PASS"
+      },
+      {
+        "actual": 1.1444091114753974e-05,
+        "detail": "max_abs_lane_offset_m must be <= expected maximum",
+        "key": "max_lane_center_offset_m",
+        "required": 0.25,
+        "status": "PASS"
+      },
+      {
+        "actual": 4.75151509630542e-11,
+        "detail": "max_steer_rate_per_s must be <= expected maximum",
+        "key": "max_steer_rate_per_s",
+        "required": 0.8,
+        "status": "PASS"
+      },
+      {
+        "actual": 600.0000089406967,
+        "detail": "duration_s must be >= expected minimum",
+        "key": "min_run_time_s",
+        "required": 400.0,
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "route_deviation_count must be zero",
+        "key": "must_no_route_deviation",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "applied final controls must never overlap throttle and brake",
+        "key": "final_control_no_throttle_brake_overlap",
+        "required": 0,
+        "status": "PASS"
+      }
+    ],
+    "failed_keys": [
+      "must_finish_route",
+      "must_execute_commands_in_order"
+    ],
+    "metrics": {
+      "called_B": true,
+      "called_C": true,
+      "called_D": true,
+      "carla_started": true,
+      "collision_count": 0,
+      "commands_all_succeeded": false,
+      "commands_in_order": false,
+      "configured_route_deviation_trigger_m": 3.0,
+      "cross_track_error_decreased": false,
+      "duration_s": 600.0000089406967,
+      "emergency_brake_seen": true,
+      "event_count": 1,
+      "expected_command_count": 5,
+      "extension_acceptance": {
+        "checks": [
+          {
+            "actual": 1,
+            "key": "qwen_request_count",
+            "required": 5,
+            "status": "FAIL"
+          },
+          {
+            "actual": 4,
+            "key": "qwen_missing_request_count",
+            "required": 0,
+            "status": "FAIL"
+          },
+          {
+            "actual": true,
+            "key": "all_commands_must_have_terminal_status",
+            "required": true,
+            "status": "PASS"
+          },
+          {
+            "actual": 5,
+            "key": "expected_phase_count",
+            "required": 5,
+            "status": "PASS"
+          },
+          {
+            "actual": false,
+            "key": "all_phases_must_complete",
+            "required": true,
+            "status": "FAIL"
+          },
+          {
+            "actual": 0,
+            "key": "qwen_calls_per_frame",
+            "required": 0,
+            "status": "PASS"
+          },
+          {
+            "actual": [
+              "KEEP_LANE"
+            ],
+            "key": "allowed_qwen_actions",
+            "required": [
+              "CHANGE_LANE_LEFT",
+              "KEEP_LANE",
+              "SET_SPEED",
+              "SLOW_DOWN",
+              "STOP",
+              "TURN_RIGHT"
+            ],
+            "status": "PASS"
+          },
+          {
+            "actual": [
+              "KEEP_LANE"
+            ],
+            "key": "oracle_expected_behaviors",
+            "required": [
+              "CHANGE_LANE_LEFT",
+              "KEEP_LANE",
+              "TURN_RIGHT"
+            ],
+            "status": "PASS"
+          }
+        ],
+        "evidence": {
+          "actor_activation_progress_m": {},
+          "actor_trigger_ids": [],
+          "closest_speed_to_target_kph_by_phase": {
+            "S1_P1_KEEP_AND_ACCELERATE": 1.4205777494630213e-06
+          },
+          "collision_seen": false,
+          "command_approach_speed_kph_by_phase": {
+            "S1_P1_KEEP_AND_ACCELERATE": 7.599838728260586e-07
+          },
+          "command_progress_m_by_phase": {
+            "S1_P1_KEEP_AND_ACCELERATE": 0.0
+          },
+          "completed_phase_ids": [
+            "S1_P1_KEEP_AND_ACCELERATE"
+          ],
+          "confirmation_command_count": 0,
+          "current_plan_command_index": 0,
+          "degraded_mode_entered": false,
+          "fault_recovered_ids": [],
+          "fault_recovery_response_s": {},
+          "fault_response_s": {},
+          "fault_started_ids": [],
+          "final_lane_id": "1",
+          "final_lateral_offset_abs_m": 1.1444091114753974e-05,
+          "final_speed_mps": 0.0,
+          "first_brake_s": 0.05000000074505806,
+          "first_qwen_plan_s": 0.05000000074505806,
+          "initial_lane_id": "1",
+          "lane_change_count": 0,
+          "last_route_deviation_m": 1.0605726005752314e-05,
+          "late_result_applied_count": 0,
+          "lead_brake_trigger_distance_m": null,
+          "max_route_deviation_m": 1.0605726005752314e-05,
+          "max_speed_after_phase_kph": {
+            "S1_P1_KEEP_AND_ACCELERATE": 9.83431261540562e-07
+          },
+          "max_speed_mps": 3.946049304063948e-07,
+          "min_speed_after_command_mps": 0.0,
+          "minimum_actor_distances_m": {},
+          "minimum_red_stop_line_clearance_m": null,
+          "minimum_speed_during_phase_kph": {
+            "S1_P1_KEEP_AND_ACCELERATE": 7.599838728260586e-07
+          },
+          "mission_route_restore_count": 0,
+          "pre_red_max_speed_mps": 3.946049304063948e-07,
+          "qwen_applied_s": [
+            0.05000000074505806
+          ],
+          "qwen_behaviors": [
+            "KEEP_LANE"
+          ],
+          "qwen_invalid_result_count": 0,
+          "qwen_outcomes": [
+            "SLOW_READY"
+          ],
+          "qwen_request_count": 1,
+          "qwen_resolution_reasons": [
+            "QWEN_VLLM_CHOICE_A_KEEP_LANE:STEP-1 VALIDATED QWEN PLAN DISPATCHED"
+          ],
+          "qwen_stale_result_applied_count": 0,
+          "qwen_stale_result_count": 0,
+          "qwen_status_counts": {
+            "FAILED": 1,
+            "SAFETY_OVERRIDE": 1,
+            "SUCCEEDED": 1
+          },
+          "qwen_target_actor_ids": [],
+          "qwen_target_speeds_kph": [
+            30.000000000000004
+          ],
+          "qwen_timeout_count": 0,
+          "requested_speed_kph": 60.0,
+          "resource_growth_mb": 269.23828125,
+          "restart_displacement_m": null,
+          "runtime_event_count": 0,
+          "safety_first_s": 0.05000000074505806,
+          "safety_reasons": [
+            "WATCHDOG_ALERT"
+          ],
+          "scenario_event_count": 0,
+          "speed_drop_latency_s": null,
+          "stopped_on_red_before_stop_line": false,
+          "submitted_command_ids": [
+            "scenario_cmd_000"
+          ],
+          "successful_terminal_s": {
+            "scenario_cmd_000": 0.15000000223517418
+          },
+          "target_lane_occupied_count": 0,
+          "target_speed_kph_by_phase": {
+            "S1_P1_KEEP_AND_ACCELERATE": 60.0
+          },
+          "terminal_command_ids": [
+            "qwen-step-scenario_cmd_000-step-1",
+            "qwen-wait-3de4444af9394ba4b66d46c80fded701",
+            "scenario_cmd_000"
+          ],
+          "traffic_light_states": [],
+          "vehicle_advance_command_count": 1
+        },
+        "failed_keys": [
+          "qwen_request_count",
+          "qwen_missing_request_count",
+          "all_phases_must_complete"
+        ],
+        "passed": false
+      },
+      "final_abs_cross_track_error_m": 1.1444090887581635e-05,
+      "final_control_all_finite": true,
+      "final_control_overlap_count": 0,
+      "final_lateral_shift_m": 0.0,
+      "final_speed_mps": 0.0,
+      "initial_cross_track_error_m": -1.1444090887581635e-05,
+      "lane_invasion_count": 0,
+      "lane_marking_crossing_count": 0,
+      "logs_generated": true,
+      "max_abs_cross_track_error_m": 1.1444090887581635e-05,
+      "max_abs_lane_offset_m": 1.1444091114753974e-05,
+      "max_abs_steer": 2.8247058263310923e-05,
+      "max_speed_mps": 3.946049304063948e-07,
+      "max_steer_rate_per_s": 4.75151509630542e-11,
+      "mean_abs_cross_track_error_m": 1.1444090887581635e-05,
+      "min_gap_m": 51.03549652099609,
+      "qwen_acceptance": {
+        "checks": {
+          "behaviors": false,
+          "call_count": false,
+          "low_level_boundary": true,
+          "replans": true,
+          "route": true,
+          "single_terminal": true,
+          "terminal": true,
+          "terminal_reason": true
+        },
+        "failures": [
+          "call_count",
+          "behaviors"
+        ],
+        "observed": {
+          "behaviors": [
+            "HOLD",
+            "KEEP_LANE",
+            "KEEP_LANE"
+          ],
+          "forbidden_paths": [],
+          "qwen_calls": 1,
+          "replans": 0,
+          "routes": [
+            "QWEN_PLAN"
+          ],
+          "terminal_counts": {
+            "scenario_cmd_000": 1
+          },
+          "terminal_reasons": [
+            "PLAN_COMPLETE"
+          ],
+          "terminals": [
+            "SUCCEEDED"
+          ]
+        },
+        "passed": false
+      },
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "route_deviation_event_seen": false,
+      "route_end_distance_m": 225.29877506692694,
+      "route_finished": false,
+      "route_recovery_states": [],
+      "route_recovery_succeeded": false,
+      "route_remaining_m": 5063.16333636614,
+      "route_replan_count": 0,
+      "route_replan_failure_count": 0,
+      "route_replan_max_attempt": 0,
+      "safety_event_count": 0,
+      "safety_override_frames": 12000,
+      "safety_override_observed": true,
+      "safety_priority_observed": true,
+      "safety_reasons": [
+        "WATCHDOG_ALERT"
+      ],
+      "spawned_ego": true,
+      "spawned_scenario_actor_types": [],
+      "speed_after_decrease_marker_mps": null,
+      "speed_before_decrease_marker_mps": null,
+      "stop_error_m": 8.803681127062196,
+      "stop_latency_s": 0.0,
+      "stopped_before_stop_line": true,
+      "turn_direction": "STRAIGHT",
+      "yaw_change_deg": 0.0
+    },
+    "passed": false,
+    "unsupported_keys": []
+  },
+  "collision_count": 0,
+  "command_count": 2,
+  "command_terminal_statuses": {
+    "qwen-step-scenario_cmd_000-step-1": "SAFETY_OVERRIDE",
+    "qwen-wait-3de4444af9394ba4b66d46c80fded701": "FAILED",
+    "scenario_cmd_000": "SUCCEEDED"
+  },
+  "completion": false,
+  "completion_basis": "explicit_expected_contracts",
+  "detail": "scenario acceptance criteria evaluated",
+  "difficulty": "basic",
+  "feedback_safety_event_count": 0,
+  "final_speed_mps": 0.0,
+  "frames": 12000,
+  "lane_invasion_count": 0,
+  "lane_marking_crossing_count": 0,
+  "latency": {
+    "decision_avg_ms": 0.3517924165833333,
+    "decision_max_ms": 10.889941,
+    "decision_p95_ms": 0.4480766,
+    "decision_p99_ms": 0.4824648,
+    "perception_acquire_avg_ms": 9.529037751916666,
+    "perception_acquire_max_ms": 17.614451,
+    "perception_acquire_p95_ms": 12.015514149999998,
+    "perception_acquire_p99_ms": 13.496648650000001,
+    "pipeline_active_avg_ms": 48.4769828165,
+    "pipeline_active_max_ms": 3576.045484,
+    "pipeline_active_p95_ms": 52.61623635,
+    "pipeline_active_p99_ms": 55.03444967,
+    "qwen_model_avg_ms": 3543.524031,
+    "qwen_model_p95_ms": 3543.524031,
+    "sensor_to_control_avg_ms": 30.558463041083336,
+    "sensor_to_control_max_ms": 3558.474417,
+    "sensor_to_control_p95_ms": 33.95246285,
+    "sensor_to_control_p99_ms": 35.560938160000006,
+    "sensor_to_trajectory_avg_ms": 3547.196396,
+    "sensor_to_trajectory_max_ms": 3547.196396,
+    "sensor_to_trajectory_p95_ms": 3547.196396,
+    "sensor_to_trajectory_p99_ms": 3547.196396,
+    "simulator_tick_avg_ms": 1.87452642125,
+    "simulator_tick_max_ms": 6.659752,
+    "simulator_tick_p95_ms": 3.396847249999999,
+    "simulator_tick_p99_ms": 4.736039360000001
+  },
+  "min_gap_m": 51.03549652099609,
+  "min_ttc_s": 169864012.77610135,
+  "red_light_violation_count": 0,
+  "route_deviation_count": 0,
+  "route_recovery": {
+    "max_attempt": 0,
+    "recovered": false,
+    "replan_count": 0,
+    "replan_failure_count": 0,
+    "states": []
+  },
+  "run_id": "118cebb69137498b9aba3d21225a574d",
+  "safety_override_episodes": 1,
+  "safety_override_frames": 12000,
+  "safety_reasons": [
+    "WATCHDOG_ALERT"
+  ],
+  "scenario_id": "OFFICIAL_S1_BASIC_VOICE_CONTROL_5KM",
+  "score": {
+    "base_score": 25.0,
+    "deduction": 5.0,
+    "difficulty": "basic",
+    "final_score": 20.0,
+    "scenario_id": "OFFICIAL_S1_BASIC_VOICE_CONTROL_5KM",
+    "serious_route_deviation": 0,
+    "serious_safety_events": 0,
+    "unfinished_tasks": 1
+  },
+  "score_report": {
+    "latency": {
+      "asr_avg_ms": null,
+      "e2e_avg_ms": null,
+      "e2e_count": 0,
+      "e2e_max_ms": null,
+      "e2e_under_150ms_rate": null,
+      "intent_avg_ms": null
+    },
+    "scenario_scores": [
+      {
+        "base_score": 25.0,
+        "deduction": 5.0,
+        "difficulty": "basic",
+        "final_score": 20.0,
+        "scenario_id": "OFFICIAL_S1_BASIC_VOICE_CONTROL_5KM",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 1
+      }
+    ],
+    "weighted_completion": {
+      "completion_rates": {
+        "advanced": 0.0,
+        "basic": 0.0,
+        "challenge": 0.0
+      },
+      "task_completion_score_25": 0.0,
+      "weighted_completion_rate": 0.0
+    }
+  },
+  "serious_route_deviation": 0,
+  "status": "FAILED",
+  "stop_error_m": 8.803681127062196,
+  "unfinished_task_count": 1
+}

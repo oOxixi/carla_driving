@@ -1,0 +1,547 @@
+{
+  "acceptance": {
+    "check_count": 14,
+    "checks": [
+      {
+        "actual": true,
+        "detail": "requires carla_started",
+        "key": "must_start_carla",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": true,
+        "detail": "requires spawned_ego",
+        "key": "must_spawn_ego",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": true,
+        "detail": "requires logs_generated",
+        "key": "must_generate_logs",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": false,
+        "detail": "requires route_finished",
+        "key": "must_finish_route",
+        "required": true,
+        "status": "FAIL"
+      },
+      {
+        "actual": false,
+        "detail": "requires commands_in_order",
+        "key": "must_execute_commands_in_order",
+        "required": true,
+        "status": "FAIL"
+      },
+      {
+        "actual": 0.10877026995957285,
+        "detail": "max_abs_cross_track_error_m must be <= expected maximum",
+        "key": "max_cross_track_error_m",
+        "required": 1.0,
+        "status": "PASS"
+      },
+      {
+        "actual": 0.10877034721026746,
+        "detail": "max_abs_lane_offset_m must be <= expected maximum",
+        "key": "max_lane_center_offset_m",
+        "required": 2.2,
+        "status": "PASS"
+      },
+      {
+        "actual": 900.0000134110451,
+        "detail": "duration_s must be >= expected minimum",
+        "key": "min_run_time_s",
+        "required": 700.0,
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_pedestrian_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": true,
+        "detail": "a frame override or canonical safety event must be observed",
+        "key": "expected_safety_override",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": [
+          "static.prop",
+          "vehicle",
+          "walker.pedestrian"
+        ],
+        "detail": "all declared safety-critical actor types must be physically spawned",
+        "key": "required_real_actor_types",
+        "required": [
+          "static.prop",
+          "vehicle",
+          "walker.pedestrian"
+        ],
+        "status": "PASS"
+      },
+      {
+        "actual": true,
+        "detail": "a full emergency brake frame must be observed",
+        "key": "must_emergency_brake",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "applied final controls must never overlap throttle and brake",
+        "key": "final_control_no_throttle_brake_overlap",
+        "required": 0,
+        "status": "PASS"
+      }
+    ],
+    "failed_keys": [
+      "must_finish_route",
+      "must_execute_commands_in_order"
+    ],
+    "metrics": {
+      "called_B": true,
+      "called_C": true,
+      "called_D": true,
+      "carla_started": true,
+      "collision_count": 0,
+      "commands_all_succeeded": false,
+      "commands_in_order": false,
+      "configured_route_deviation_trigger_m": 3.0,
+      "cross_track_error_decreased": true,
+      "duration_s": 900.0000134110451,
+      "emergency_brake_seen": true,
+      "event_count": 497,
+      "expected_command_count": 4,
+      "extension_acceptance": {
+        "checks": [
+          {
+            "actual": 2,
+            "key": "qwen_request_count",
+            "required": 2,
+            "status": "PASS"
+          },
+          {
+            "actual": true,
+            "key": "all_commands_must_have_terminal_status",
+            "required": true,
+            "status": "PASS"
+          },
+          {
+            "actual": 4,
+            "key": "expected_phase_count",
+            "required": 4,
+            "status": "PASS"
+          },
+          {
+            "actual": false,
+            "key": "all_phases_must_complete",
+            "required": true,
+            "status": "FAIL"
+          },
+          {
+            "actual": 0,
+            "key": "qwen_calls_per_frame",
+            "required": 0,
+            "status": "PASS"
+          },
+          {
+            "actual": [
+              "AVOID_OBSTACLE",
+              "KEEP_LANE",
+              "RETURN_TO_LANE"
+            ],
+            "key": "allowed_qwen_actions",
+            "required": [
+              "AVOID_OBSTACLE",
+              "CHANGE_LANE_LEFT",
+              "KEEP_LANE",
+              "RETURN_TO_LANE",
+              "SET_SPEED",
+              "SLOW_DOWN",
+              "STOP"
+            ],
+            "status": "PASS"
+          },
+          {
+            "actual": [
+              "AVOID_OBSTACLE",
+              "KEEP_LANE",
+              "RETURN_TO_LANE"
+            ],
+            "key": "oracle_expected_behaviors",
+            "required": [
+              "AVOID_OBSTACLE",
+              "EMERGENCY_STOP",
+              "KEEP_LANE",
+              "RETURN_TO_LANE",
+              "SLOW_DOWN"
+            ],
+            "status": "PASS"
+          }
+        ],
+        "evidence": {
+          "actor_activation_progress_m": {},
+          "actor_trigger_ids": [],
+          "closest_speed_to_target_kph_by_phase": {
+            "S3_P1_RAIN_NIGHT_SAFE_SPEED": 1.6944483817876166e-06,
+            "S3_P2_CONSTRUCTION_MERGE": 21.876574830091787
+          },
+          "collision_seen": false,
+          "command_approach_speed_kph_by_phase": {
+            "S3_P1_RAIN_NIGHT_SAFE_SPEED": 1.6944483817876166e-06,
+            "S3_P2_CONSTRUCTION_MERGE": 28.37272074997838
+          },
+          "command_progress_m_by_phase": {
+            "S3_P1_RAIN_NIGHT_SAFE_SPEED": 3.063870042793624e-05,
+            "S3_P2_CONSTRUCTION_MERGE": 20.87321147616853
+          },
+          "completed_phase_ids": [
+            "S3_P1_RAIN_NIGHT_SAFE_SPEED",
+            "S3_P2_CONSTRUCTION_MERGE"
+          ],
+          "confirmation_command_count": 0,
+          "current_plan_command_index": 1,
+          "degraded_mode_entered": false,
+          "fault_recovered_ids": [],
+          "fault_recovery_response_s": {},
+          "fault_response_s": {},
+          "fault_started_ids": [],
+          "final_lane_id": "-3",
+          "final_lateral_offset_abs_m": 6.1033362726448104e-05,
+          "final_speed_mps": 0.0,
+          "first_brake_s": 12.300000183284283,
+          "first_qwen_plan_s": 0.05000000074505806,
+          "initial_lane_id": "-3",
+          "lane_change_count": 0,
+          "last_route_deviation_m": 0.00029422531652207944,
+          "late_result_applied_count": 0,
+          "lead_brake_trigger_distance_m": null,
+          "max_route_deviation_m": 0.10876597003808428,
+          "max_speed_after_phase_kph": {
+            "S3_P1_RAIN_NIGHT_SAFE_SPEED": 28.658557827258267,
+            "S3_P2_CONSTRUCTION_MERGE": 0.363919301956982
+          },
+          "max_speed_mps": 7.960710507571741,
+          "min_speed_after_command_mps": 0.0,
+          "minimum_actor_distances_m": {
+            "cone_01": 2.1636667925259436,
+            "cone_02": 9.02476460517853,
+            "cone_03": 15.988290377273257,
+            "cone_04": 22.972762652053532,
+            "cone_05": 29.964965410842595,
+            "construction_warning": 0.0,
+            "cut_in_vehicle": 49.20819121054341,
+            "emergency_pedestrian": 82.11265838992965
+          },
+          "minimum_red_stop_line_clearance_m": null,
+          "minimum_speed_during_phase_kph": {
+            "S3_P1_RAIN_NIGHT_SAFE_SPEED": 5.841806891184958e-07,
+            "S3_P2_CONSTRUCTION_MERGE": 0.27550151064422784
+          },
+          "mission_route_restore_count": 0,
+          "pre_red_max_speed_mps": 7.960710507571741,
+          "qwen_applied_s": [
+            0.05000000074505806,
+            5.700000084936619
+          ],
+          "qwen_behaviors": [
+            "KEEP_LANE",
+            "AVOID_OBSTACLE",
+            "RETURN_TO_LANE"
+          ],
+          "qwen_invalid_result_count": 0,
+          "qwen_outcomes": [
+            "SLOW_READY",
+            "SLOW_READY"
+          ],
+          "qwen_request_count": 2,
+          "qwen_resolution_reasons": [
+            "QWEN_VLLM_CHOICE_A_KEEP_LANE:STEP-1 VALIDATED QWEN PLAN DISPATCHED",
+            "QWEN_VLLM_CHOICE_K_AVOID_OBSTACLE:STEP-1.SLOW VALIDATED QWEN PLAN DISPATCHED"
+          ],
+          "qwen_stale_result_applied_count": 0,
+          "qwen_stale_result_count": 0,
+          "qwen_status_counts": {
+            "FAILED": 2,
+            "SAFETY_OVERRIDE": 1,
+            "SUCCEEDED": 3
+          },
+          "qwen_target_actor_ids": [
+            "C-0001"
+          ],
+          "qwen_target_speeds_kph": [
+            30.000000000000004,
+            22.0,
+            22.0
+          ],
+          "qwen_timeout_count": 0,
+          "requested_speed_kph": 22.0,
+          "resource_growth_mb": 163.25390625,
+          "restart_displacement_m": null,
+          "runtime_event_count": 0,
+          "safety_first_s": 12.300000183284283,
+          "safety_reasons": [
+            "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE"
+          ],
+          "scenario_event_count": 0,
+          "speed_drop_latency_s": null,
+          "stopped_on_red_before_stop_line": false,
+          "submitted_command_ids": [
+            "scenario_cmd_000",
+            "scenario_cmd_001"
+          ],
+          "successful_terminal_s": {
+            "qwen-step-scenario_cmd_000-step-1": 0.15000000223517418,
+            "qwen-step-scenario_cmd_001-step-1.slow": 6.600000098347664,
+            "scenario_cmd_000": 0.15000000223517418
+          },
+          "target_lane_occupied_count": 0,
+          "target_speed_kph_by_phase": {
+            "S3_P1_RAIN_NIGHT_SAFE_SPEED": 35.0,
+            "S3_P2_CONSTRUCTION_MERGE": 22.0
+          },
+          "terminal_command_ids": [
+            "qwen-step-scenario_cmd_000-step-1",
+            "qwen-step-scenario_cmd_001-step-1.slow",
+            "qwen-wait-153ad7b6f0214a2096c1c6f0e271d53b",
+            "qwen-wait-aa6d3c5b2f1a4d2b81fec45d01060af7",
+            "scenario_cmd_000",
+            "scenario_cmd_001"
+          ],
+          "traffic_light_states": [],
+          "vehicle_advance_command_count": 2
+        },
+        "failed_keys": [
+          "all_phases_must_complete"
+        ],
+        "passed": false
+      },
+      "final_abs_cross_track_error_m": 0.00029422531652207944,
+      "final_control_all_finite": true,
+      "final_control_overlap_count": 0,
+      "final_lateral_shift_m": 0.0002941668480909154,
+      "final_speed_mps": 0.0,
+      "initial_cross_track_error_m": 0.10877026995957285,
+      "lane_invasion_count": 0,
+      "lane_marking_crossing_count": 0,
+      "logs_generated": true,
+      "max_abs_cross_track_error_m": 0.10877026995957285,
+      "max_abs_lane_offset_m": 0.10877034721026746,
+      "max_abs_steer": 0.2356462664268769,
+      "max_speed_mps": 7.960710507571741,
+      "max_steer_rate_per_s": 0.7999999880790714,
+      "mean_abs_cross_track_error_m": 0.0005295581321298543,
+      "min_gap_m": 4.859339618682862,
+      "qwen_acceptance": {
+        "checks": {
+          "behaviors": false,
+          "call_count": true,
+          "low_level_boundary": true,
+          "replans": true,
+          "route": false,
+          "single_terminal": true,
+          "terminal": true,
+          "terminal_reason": true
+        },
+        "failures": [
+          "route",
+          "behaviors"
+        ],
+        "observed": {
+          "behaviors": [
+            "HOLD",
+            "KEEP_LANE",
+            "KEEP_LANE",
+            "HOLD",
+            "AVOID_OBSTACLE",
+            "RETURN_TO_LANE",
+            "SLOW_DOWN",
+            "WAIT_SAFE_GAP",
+            "CHANGE_LANE_LEFT",
+            "PASS_TARGET",
+            "WAIT_SAFE_GAP",
+            "CHANGE_LANE_RIGHT"
+          ],
+          "forbidden_paths": [],
+          "qwen_calls": 2,
+          "replans": 0,
+          "routes": [
+            "QWEN_PLAN",
+            "QWEN_PLAN"
+          ],
+          "terminal_counts": {
+            "scenario_cmd_000": 1,
+            "scenario_cmd_001": 1
+          },
+          "terminal_reasons": [
+            "PLAN_COMPLETE",
+            "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE"
+          ],
+          "terminals": [
+            "SUCCEEDED",
+            "SAFETY_OVERRIDE"
+          ]
+        },
+        "passed": false
+      },
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "route_deviation_event_seen": false,
+      "route_end_distance_m": 149.6401182532512,
+      "route_finished": false,
+      "route_recovery_states": [],
+      "route_recovery_succeeded": false,
+      "route_remaining_m": 5971.976205540912,
+      "route_replan_count": 0,
+      "route_replan_failure_count": 0,
+      "route_replan_max_attempt": 0,
+      "safety_event_count": 0,
+      "safety_override_frames": 17245,
+      "safety_override_observed": true,
+      "safety_priority_observed": false,
+      "safety_reasons": [
+        "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE"
+      ],
+      "spawned_ego": true,
+      "spawned_scenario_actor_types": [
+        "static.prop",
+        "vehicle",
+        "walker.pedestrian"
+      ],
+      "speed_after_decrease_marker_mps": null,
+      "speed_before_decrease_marker_mps": null,
+      "stop_error_m": null,
+      "stop_latency_s": 6.550000097602606,
+      "stopped_before_stop_line": false,
+      "turn_direction": "STRAIGHT",
+      "yaw_change_deg": 0.00171661376953125
+    },
+    "passed": false,
+    "unsupported_keys": []
+  },
+  "collision_count": 0,
+  "command_count": 4,
+  "command_terminal_statuses": {
+    "qwen-step-scenario_cmd_000-step-1": "SUCCEEDED",
+    "qwen-step-scenario_cmd_001-step-1.slow": "SUCCEEDED",
+    "qwen-wait-153ad7b6f0214a2096c1c6f0e271d53b": "FAILED",
+    "qwen-wait-aa6d3c5b2f1a4d2b81fec45d01060af7": "FAILED",
+    "scenario_cmd_000": "SUCCEEDED",
+    "scenario_cmd_001": "SAFETY_OVERRIDE"
+  },
+  "completion": false,
+  "completion_basis": "explicit_expected_contracts",
+  "detail": "scenario acceptance criteria evaluated",
+  "difficulty": "challenge",
+  "feedback_safety_event_count": 0,
+  "final_speed_mps": 0.0,
+  "frames": 18000,
+  "lane_invasion_count": 0,
+  "lane_marking_crossing_count": 0,
+  "latency": {
+    "decision_avg_ms": 1.0653287102777778,
+    "decision_max_ms": 23.351957,
+    "decision_p95_ms": 1.1289325000000001,
+    "decision_p99_ms": 1.3989205499999993,
+    "perception_acquire_avg_ms": 104.5556494165,
+    "perception_acquire_max_ms": 176.100972,
+    "perception_acquire_p95_ms": 115.19850845,
+    "perception_acquire_p99_ms": 119.54683059999999,
+    "pipeline_active_avg_ms": 179.79313698261112,
+    "pipeline_active_max_ms": 444.125148,
+    "pipeline_active_p95_ms": 189.35615439999998,
+    "pipeline_active_p99_ms": 194.17939922999997,
+    "qwen_model_avg_ms": 230.4969115,
+    "qwen_model_p95_ms": 267.19325184999997,
+    "sensor_to_control_avg_ms": 40.12248462727778,
+    "sensor_to_control_max_ms": 294.943228,
+    "sensor_to_control_p95_ms": 41.471592349999995,
+    "sensor_to_control_p99_ms": 43.16192752999999,
+    "sensor_to_trajectory_avg_ms": 238.03733599999998,
+    "sensor_to_trajectory_max_ms": 278.238837,
+    "sensor_to_trajectory_p95_ms": 274.21868689999997,
+    "sensor_to_trajectory_p99_ms": 277.43480698,
+    "simulator_tick_avg_ms": 3.1460535811111114,
+    "simulator_tick_max_ms": 15.238873,
+    "simulator_tick_p95_ms": 3.9941432000000003,
+    "simulator_tick_p99_ms": 5.422533349999999
+  },
+  "min_gap_m": 4.859339618682862,
+  "min_ttc_s": 2.664842877803025,
+  "red_light_violation_count": 0,
+  "route_deviation_count": 0,
+  "route_recovery": {
+    "max_attempt": 0,
+    "recovered": false,
+    "replan_count": 0,
+    "replan_failure_count": 0,
+    "states": []
+  },
+  "run_id": "6d4b9b523cc84be9823c9173fea65c35",
+  "safety_override_episodes": 497,
+  "safety_override_frames": 17245,
+  "safety_reasons": [
+    "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE"
+  ],
+  "scenario_id": "OFFICIAL_S3_EXTREME_EMERGENCY_6KM",
+  "score": {
+    "base_score": 25.0,
+    "deduction": 5.0,
+    "difficulty": "challenge",
+    "final_score": 20.0,
+    "scenario_id": "OFFICIAL_S3_EXTREME_EMERGENCY_6KM",
+    "serious_route_deviation": 0,
+    "serious_safety_events": 0,
+    "unfinished_tasks": 1
+  },
+  "score_report": {
+    "latency": {
+      "asr_avg_ms": null,
+      "e2e_avg_ms": null,
+      "e2e_count": 0,
+      "e2e_max_ms": null,
+      "e2e_under_150ms_rate": null,
+      "intent_avg_ms": null
+    },
+    "scenario_scores": [
+      {
+        "base_score": 25.0,
+        "deduction": 5.0,
+        "difficulty": "challenge",
+        "final_score": 20.0,
+        "scenario_id": "OFFICIAL_S3_EXTREME_EMERGENCY_6KM",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 1
+      }
+    ],
+    "weighted_completion": {
+      "completion_rates": {
+        "advanced": 0.0,
+        "basic": 0.0,
+        "challenge": 0.0
+      },
+      "task_completion_score_25": 0.0,
+      "weighted_completion_rate": 0.0
+    }
+  },
+  "serious_route_deviation": 0,
+  "status": "FAILED",
+  "stop_error_m": null,
+  "unfinished_task_count": 1
+}

@@ -1,0 +1,103 @@
+{
+  "collision_count": 0,
+  "command_count": 0,
+  "command_terminal_statuses": {},
+  "completion": false,
+  "completion_basis": "runtime_failure",
+  "detail": "",
+  "difficulty": "advanced",
+  "feedback_safety_event_count": 0,
+  "final_speed_mps": null,
+  "frames": 0,
+  "lane_invasion_count": 0,
+  "lane_marking_crossing_count": 0,
+  "latency": {
+    "decision_avg_ms": null,
+    "decision_max_ms": null,
+    "decision_p95_ms": null,
+    "decision_p99_ms": null,
+    "perception_acquire_avg_ms": null,
+    "perception_acquire_max_ms": null,
+    "perception_acquire_p95_ms": null,
+    "perception_acquire_p99_ms": null,
+    "pipeline_active_avg_ms": null,
+    "pipeline_active_max_ms": null,
+    "pipeline_active_p95_ms": null,
+    "pipeline_active_p99_ms": null,
+    "qwen_model_avg_ms": null,
+    "qwen_model_p95_ms": null,
+    "sensor_to_control_avg_ms": null,
+    "sensor_to_control_max_ms": null,
+    "sensor_to_control_p95_ms": null,
+    "sensor_to_control_p99_ms": null,
+    "sensor_to_trajectory_avg_ms": null,
+    "sensor_to_trajectory_max_ms": null,
+    "sensor_to_trajectory_p95_ms": null,
+    "sensor_to_trajectory_p99_ms": null,
+    "simulator_tick_avg_ms": null,
+    "simulator_tick_max_ms": null,
+    "simulator_tick_p95_ms": null,
+    "simulator_tick_p99_ms": null
+  },
+  "min_gap_m": null,
+  "min_ttc_s": null,
+  "red_light_violation_count": 0,
+  "route_deviation_count": 0,
+  "route_recovery": {
+    "max_attempt": 0,
+    "recovered": false,
+    "replan_count": 0,
+    "replan_failure_count": 0,
+    "states": []
+  },
+  "run_id": "3ca4db23adb24f5ebf14b39c610ac8ac",
+  "safety_override_episodes": 0,
+  "safety_override_frames": 0,
+  "safety_reasons": [],
+  "scenario_id": "OFFICIAL_S2_COMPLEX_AVOIDANCE_8KM",
+  "score": {
+    "base_score": 25.0,
+    "deduction": 5.0,
+    "difficulty": "advanced",
+    "final_score": 20.0,
+    "scenario_id": "OFFICIAL_S2_COMPLEX_AVOIDANCE_8KM",
+    "serious_route_deviation": 0,
+    "serious_safety_events": 0,
+    "unfinished_tasks": 1
+  },
+  "score_report": {
+    "latency": {
+      "asr_avg_ms": null,
+      "e2e_avg_ms": null,
+      "e2e_count": 0,
+      "e2e_max_ms": null,
+      "e2e_under_150ms_rate": null,
+      "intent_avg_ms": null
+    },
+    "scenario_scores": [
+      {
+        "base_score": 25.0,
+        "deduction": 5.0,
+        "difficulty": "advanced",
+        "final_score": 20.0,
+        "scenario_id": "OFFICIAL_S2_COMPLEX_AVOIDANCE_8KM",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 1
+      }
+    ],
+    "weighted_completion": {
+      "completion_rates": {
+        "advanced": 0.0,
+        "basic": 0.0,
+        "challenge": 0.0
+      },
+      "task_completion_score_25": 0.0,
+      "weighted_completion_rate": 0.0
+    }
+  },
+  "serious_route_deviation": 0,
+  "status": "FAILED",
+  "stop_error_m": null,
+  "unfinished_task_count": 1
+}
