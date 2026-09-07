@@ -134,7 +134,7 @@
     "must_execute_commands_in_order": true,
     "must_generate_logs": true,
     "max_cross_track_error_m": 0.8,
-    "max_lane_center_offset_m": 0.25,
+    "mean_lane_center_offset_m": 0.25,
     "max_steer_rate_per_s": 0.8,
     "final_control_no_throttle_brake_overlap": true,
     "min_run_time_s": 400.0

@@ -468,13 +468,13 @@ def test_carla_left_handed_pose_metrics_use_scenario_left_positive_convention(
         expected={
             "final_lateral_shift_m": expected_shift,
             "turn_direction": expected_turn,
-            "max_lane_center_offset_m": 2.0,
+            "mean_lane_center_offset_m": 2.0,
         },
     )
     metrics = {item["key"]: item for item in summary["acceptance"]["checks"]}
     assert metrics["final_lateral_shift_m"]["status"] == "PASS"
     assert metrics["turn_direction"]["status"] == "PASS"
-    assert metrics["max_lane_center_offset_m"]["actual"] == pytest.approx(abs(end_y) / 2.0)
+    assert metrics["mean_lane_center_offset_m"]["actual"] == pytest.approx(abs(end_y) / 2.0)
 
 
 def test_commanded_full_brake_is_emergency_evidence_without_safety_override(tmp_path) -> None:

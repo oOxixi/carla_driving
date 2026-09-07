@@ -824,6 +824,9 @@ class ScenarioEvidenceRecorder:
             "min_gap_m": self._min_gap_m,
             "max_abs_cross_track_error_m": max(abs_cte, default=None),
             "max_abs_lane_offset_m": max((abs(value) for value in self._lane_offsets_m), default=None),
+            "mean_abs_lane_offset_m": self._average(
+                [abs(value) for value in self._lane_offsets_m]
+            ),
             "mean_abs_cross_track_error_m": self._average(abs_cte),
             "initial_cross_track_error_m": self._cross_track_errors_m[0] if self._cross_track_errors_m else None,
             "final_abs_cross_track_error_m": abs(self._cross_track_errors_m[-1]) if self._cross_track_errors_m else None,

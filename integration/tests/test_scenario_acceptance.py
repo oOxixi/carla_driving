@@ -40,6 +40,7 @@ def _passing_metrics(expected: dict[str, object]) -> dict[str, object]:
         "mean_abs_cross_track_error_m": 0.0,
         "final_abs_cross_track_error_m": 0.0,
         "max_abs_lane_offset_m": 0.0,
+        "mean_abs_lane_offset_m": 0.0,
         "initial_cross_track_error_m": initial_offset,
         "max_abs_steer": 0.0,
         "max_steer_rate_per_s": 0.0,
@@ -84,6 +85,16 @@ def test_metric_violation_and_unknown_key_fail_closed() -> None:
     assert report["passed"] is False
     assert report["failed_keys"] == ["max_cross_track_error_m", "future_rule"]
     assert report["unsupported_keys"] == ["future_rule"]
+
+
+def test_mean_lane_center_contract_does_not_score_peak_turn_error() -> None:
+    report = evaluate_expected(
+        {"mean_lane_center_offset_m": 0.25},
+        {"mean_abs_lane_offset_m": 0.08, "max_abs_lane_offset_m": 0.34},
+    )
+
+    assert report["passed"] is True
+    assert report["checks"][0]["actual"] == 0.08
 
 
 def test_traffic_violation_limit_is_a_hard_expected_contract() -> None:

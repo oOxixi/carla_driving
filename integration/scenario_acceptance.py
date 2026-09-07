@@ -57,6 +57,7 @@ def evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, obje
         "mean_cross_track_error_m": "mean_abs_cross_track_error_m",
         "final_cross_track_error_m": "final_abs_cross_track_error_m",
         "max_lane_center_offset_m": "max_abs_lane_offset_m",
+        "mean_lane_center_offset_m": "mean_abs_lane_offset_m",
         "max_abs_steer": "max_abs_steer",
         "max_steer_rate_per_s": "max_steer_rate_per_s",
         "max_speed_mps": "max_speed_mps",
