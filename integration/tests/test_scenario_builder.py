@@ -141,6 +141,8 @@ def test_actor_resampling_is_seeded_and_reproducible() -> None:
     first = actor_resample_offsets(actor, seed=123)
     assert first == actor_resample_offsets(actor, seed=123)
     assert first[0] == (0.0, 0.0)
+    assert {abs(lateral_m) for _, lateral_m in first[1:5]} == {0.4, 0.8}
+    assert all(forward_m == 0.0 for forward_m, _ in first[1:5])
     assert first != actor_resample_offsets(actor, seed=124)
 
 

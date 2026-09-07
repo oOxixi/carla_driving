@@ -278,13 +278,25 @@ def actor_resample_offsets(
     seed: int,
     max_attempts: int = 17,
 ) -> tuple[tuple[float, float], ...]:
-    """Return deterministic, reproducible nearby samples for failed spawns."""
+    """Return deterministic, reproducible nearby samples for failed spawns.
+
+    Longitudinal-only retries cannot recover an otherwise valid actor whose
+    declared lateral offset lands just outside a lane centre on a curved or
+    variable-width road.  Try small in-lane lateral corrections first, then
+    retain the established longitudinal fallback sequence.  The corrections
+    stay below one metre so they cannot silently move an actor to another
+    lane.
+    """
     if max_attempts < 1:
         raise ValueError("max_attempts must be positive")
     actor_id = str(actor_spec.get("actor_id", "actor"))
     stable_actor_key = sum((index + 1) * ord(char) for index, char in enumerate(actor_id))
     rng = random.Random(int(seed) ^ stable_actor_key)
     candidates = [(0.0, 0.0)]
+    for lateral_m in (0.4, 0.8):
+        signs = [1.0, -1.0]
+        rng.shuffle(signs)
+        candidates.extend((0.0, sign * lateral_m) for sign in signs)
     for distance_m in (2.0, 4.0, 6.0, 8.0, 12.0, 20.0, 40.0, 60.0):
         signs = [1.0, -1.0]
         rng.shuffle(signs)
