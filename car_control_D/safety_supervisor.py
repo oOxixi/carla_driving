@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 from typing import Any, Iterable, Optional
+from strategy_config import DEFAULT_STRATEGY, dynamic_safety_distance
 
 from .adapters import adapt_command, adapt_control, adapt_risk, adapt_vehicle_state
 from .schemas import CommandView, ControlOutput, RiskView, SafetyDecision, VehicleStateView
@@ -16,23 +17,29 @@ from .validators import validate_command, validate_control
 
 @dataclass(frozen=True)
 class SafetyConfig:
-    min_front_distance_m: float = 5.0
-    low_ttc_s: float = 1.5
-    caution_ttc_s: float = 2.5
-    stop_line_guard_m: float = 8.0
-    max_lane_offset_m: float = 1.8
-    severe_route_deviation_m: float = 3.0
-    route_recovery_max_speed_mps: float = 1.5
+    # ``min_front_distance_m`` is a compatibility floor. The operational
+    # threshold is computed dynamically for every frame.
+    min_front_distance_m: float = DEFAULT_STRATEGY.safety_distance.minimum_emergency_distance_m
+    low_ttc_s: float = DEFAULT_STRATEGY.common.emergency_ttc_s
+    caution_ttc_s: float = DEFAULT_STRATEGY.common.caution_ttc_s
+    stop_line_guard_m: float = DEFAULT_STRATEGY.supervisor.stop_line_guard_m
+    max_lane_offset_m: float = DEFAULT_STRATEGY.supervisor.max_lane_offset_m
+    minimum_lane_offset_m: float = DEFAULT_STRATEGY.supervisor.minimum_lane_offset_m
+    severe_route_deviation_m: float = DEFAULT_STRATEGY.supervisor.severe_route_deviation_m
+    minimum_severe_route_deviation_m: float = DEFAULT_STRATEGY.supervisor.minimum_severe_route_deviation_m
+    route_speed_sensitivity: float = DEFAULT_STRATEGY.supervisor.route_speed_sensitivity
+    route_curvature_sensitivity: float = DEFAULT_STRATEGY.supervisor.route_curvature_sensitivity
+    route_recovery_max_speed_mps: float = DEFAULT_STRATEGY.supervisor.route_recovery_max_speed_mps
     # Severe route deviation is not a condition in which D may authorize
     # propulsion. Recovery requires a newly validated route/steering reference.
-    route_recovery_throttle: float = 0.0
-    route_recovery_steer_limit: float = 0.35
-    route_deviation_brake: float = 0.65
-    low_confidence_threshold: float = 0.80
-    hold_brake: float = 0.55
-    emergency_brake: float = 1.0
-    caution_brake: float = 0.35
-    standstill_speed_mps: float = 0.15
+    route_recovery_throttle: float = DEFAULT_STRATEGY.supervisor.route_recovery_throttle
+    route_recovery_steer_limit: float = DEFAULT_STRATEGY.supervisor.route_recovery_steer_limit
+    route_deviation_brake: float = DEFAULT_STRATEGY.supervisor.route_deviation_brake
+    low_confidence_threshold: float = DEFAULT_STRATEGY.common.command_confidence_threshold
+    hold_brake: float = DEFAULT_STRATEGY.common.hold_brake
+    emergency_brake: float = DEFAULT_STRATEGY.common.emergency_brake
+    caution_brake: float = DEFAULT_STRATEGY.supervisor.caution_brake
+    standstill_speed_mps: float = DEFAULT_STRATEGY.common.standstill_speed_mps
 
     def __post_init__(self) -> None:
         values = {
@@ -47,7 +54,9 @@ class SafetyConfig:
         if any(float(values[name]) < 0.0 for name in (
             "min_front_distance_m", "low_ttc_s", "caution_ttc_s",
             "stop_line_guard_m", "max_lane_offset_m",
-            "severe_route_deviation_m", "route_recovery_max_speed_mps",
+            "minimum_lane_offset_m", "severe_route_deviation_m",
+            "minimum_severe_route_deviation_m", "route_speed_sensitivity",
+            "route_curvature_sensitivity", "route_recovery_max_speed_mps",
             "standstill_speed_mps",
         )):
             raise ValueError("safety distances, times and speeds must be non-negative")
@@ -55,6 +64,10 @@ class SafetyConfig:
             raise ValueError("low_ttc_s must not exceed caution_ttc_s")
         if self.max_lane_offset_m > self.severe_route_deviation_m:
             raise ValueError("max_lane_offset_m must not exceed severe_route_deviation_m")
+        if self.minimum_lane_offset_m > self.max_lane_offset_m:
+            raise ValueError("minimum_lane_offset_m must not exceed max_lane_offset_m")
+        if self.minimum_severe_route_deviation_m > self.severe_route_deviation_m:
+            raise ValueError("minimum severe deviation must not exceed severe route deviation")
         if any(not 0.0 <= float(values[name]) <= 1.0 for name in (
             "route_recovery_throttle", "route_recovery_steer_limit",
             "low_confidence_threshold", "hold_brake", "emergency_brake",
@@ -119,8 +132,53 @@ class SafetySupervisor:
             "lane_offset_m": vs.lane_offset_m,
             "route_deviation_m": vs.route_deviation_m,
             "traffic_light": vs.traffic_light,
+            "road_curvature_per_m": vs.road_curvature_per_m,
             "watchdog_alerts": list(alerts),
         }
+
+        closing_speed = None
+        if rv.ttc_s is not None and rv.ttc_s > 0.0 and vs.front_distance_m is not None:
+            closing_speed = vs.front_distance_m / rv.ttc_s
+        distance_envelope = dynamic_safety_distance(
+            ego_speed_mps=vs.speed_mps,
+            closing_speed_mps=closing_speed,
+            curvature_per_m=vs.road_curvature_per_m,
+            actor_type=vs.front_actor_type,
+            sensor_margin_scale=vs.sensor_margin_scale,
+        )
+        metrics["dynamic_safety_distance"] = distance_envelope.to_dict()
+        route_scale = 1.0 + cfg.route_speed_sensitivity * vs.speed_mps + (
+            cfg.route_curvature_sensitivity * abs(vs.road_curvature_per_m)
+        )
+        lane_offset_threshold = max(
+            cfg.minimum_lane_offset_m, cfg.max_lane_offset_m / route_scale,
+        )
+        severe_route_threshold = max(
+            cfg.minimum_severe_route_deviation_m,
+            cfg.severe_route_deviation_m / route_scale,
+        )
+        severe_route_threshold = max(severe_route_threshold, lane_offset_threshold)
+        metrics["dynamic_lane_offset_threshold_m"] = lane_offset_threshold
+        metrics["dynamic_severe_route_deviation_m"] = severe_route_threshold
+
+        def category(reason: str) -> str:
+            if reason.startswith("COMMAND_"):
+                return "QWEN_OR_COMMAND"
+            if reason.startswith("INVALID_CONTROL"):
+                return "CONTROL"
+            if reason in {"INVALID_VEHICLE_STATE", "INVALID_RISK_STATE"}:
+                return "PERCEPTION"
+            if reason == "WATCHDOG_ALERT":
+                return (
+                    "PERCEPTION"
+                    if any("SENSOR" in item or "PERCEPTION" in item for item in alerts)
+                    else "WATCHDOG"
+                )
+            if "ROUTE" in reason or "LANE" in reason:
+                return "ROUTE_OR_LATERAL_CONTROL"
+            if reason == "NONE":
+                return "NONE"
+            return "SAFETY_POLICY"
 
         def stop(reason: str, brake: Optional[float] = None, steer: float = 0.0) -> SafetyDecision:
             return SafetyDecision(
@@ -129,15 +187,17 @@ class SafetySupervisor:
                 reason=reason,
                 risk_metrics=metrics,
                 raw_control=raw,
+                reason_category=category(reason),
             )
 
         def caution(reason: str) -> SafetyDecision:
             return SafetyDecision(
-                final_control=ControlOutput(throttle=0.0, brake=max(raw.brake, cfg.caution_brake), steer=max(min(raw.steer, 0.35), -0.35)),
+                final_control=ControlOutput(throttle=0.0, brake=max(raw.brake, cfg.caution_brake), steer=max(min(raw.steer, cfg.route_recovery_steer_limit), -cfg.route_recovery_steer_limit)),
                 safety_override=True,
                 reason=reason,
                 risk_metrics=metrics,
                 raw_control=raw,
+                reason_category=category(reason),
             )
 
         def recover_route() -> SafetyDecision:
@@ -153,6 +213,7 @@ class SafetySupervisor:
                 reason="ROUTE_DEVIATION_RECOVERY_STOP",
                 risk_metrics=metrics,
                 raw_control=raw,
+                reason_category="ROUTE_OR_LATERAL_CONTROL",
             )
 
         if not control_result.valid:
@@ -183,15 +244,26 @@ class SafetySupervisor:
             return stop("RISK_EMERGENCY_BRAKE_REQUESTED")
         if rv.ttc_s is not None and rv.ttc_s <= cfg.low_ttc_s:
             return stop("LOW_TTC")
-        if vs.front_distance_m is not None and vs.front_distance_m <= cfg.min_front_distance_m:
+        emergency_front_distance = max(
+            cfg.min_front_distance_m, distance_envelope.emergency_distance_m,
+        )
+        if vs.front_distance_m is not None and vs.front_distance_m <= emergency_front_distance:
             return stop("EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE")
-        if vs.distance_to_stop_line_m is not None and vs.distance_to_stop_line_m <= cfg.stop_line_guard_m:
+        dynamic_stop_guard_m = max(
+            cfg.stop_line_guard_m,
+            DEFAULT_STRATEGY.longitudinal.stop_hold_distance_m
+            + vs.speed_mps * DEFAULT_STRATEGY.safety_distance.reaction_time_s
+            + vs.speed_mps * vs.speed_mps
+            / (2.0 * DEFAULT_STRATEGY.common.comfortable_decel_mps2),
+        )
+        metrics["dynamic_stop_line_guard_m"] = dynamic_stop_guard_m
+        if vs.distance_to_stop_line_m is not None and vs.distance_to_stop_line_m <= dynamic_stop_guard_m:
             unsafe_light = vs.traffic_light in {"RED", "YELLOW", "UNKNOWN"}
             brake_hold_missing = raw.brake < cfg.hold_brake
             still_moving = vs.speed_mps > cfg.standstill_speed_mps
             if unsafe_light and (raw.throttle > 0.05 or still_moving or brake_hold_missing):
                 return stop("RED_LIGHT_STOP_LINE_GUARD")
-        if vs.route_deviation_m is not None and abs(vs.route_deviation_m) >= cfg.severe_route_deviation_m:
+        if vs.route_deviation_m is not None and abs(vs.route_deviation_m) >= severe_route_threshold:
             return recover_route()
         # CARLA's nearest-lane waypoint can jump to a neighbouring branch in a
         # junction.  When an explicit route reference independently confirms
@@ -199,10 +271,10 @@ class SafetySupervisor:
         # signal.  A missing or excessive route deviation still fails closed.
         route_confirms_lane_safe = (
             vs.route_deviation_m is not None
-            and abs(vs.route_deviation_m) < cfg.max_lane_offset_m
+            and abs(vs.route_deviation_m) < lane_offset_threshold
         )
         if (vs.lane_offset_m is not None
-                and abs(vs.lane_offset_m) >= cfg.max_lane_offset_m
+                and abs(vs.lane_offset_m) >= lane_offset_threshold
                 and not route_confirms_lane_safe):
             return caution("LANE_OFFSET_TOO_LARGE")
         if vs.lane_invasion and not route_confirms_lane_safe:
@@ -216,4 +288,5 @@ class SafetySupervisor:
             reason="NONE",
             risk_metrics=metrics,
             raw_control=raw,
+            reason_category="NONE",
         )

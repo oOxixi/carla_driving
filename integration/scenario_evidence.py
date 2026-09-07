@@ -22,10 +22,11 @@ from typing import Any, Mapping
 from uuid import uuid4
 
 from car_control_D.official_score import OfficialScorer
+from strategy_config import DEFAULT_STRATEGY
 from .scenario_acceptance import evaluate_expected
 
 
-SERIOUS_ROUTE_DEVIATION_M = 3.0
+SERIOUS_ROUTE_DEVIATION_M = DEFAULT_STRATEGY.supervisor.severe_route_deviation_m
 
 
 @dataclass(frozen=True, slots=True)
@@ -344,8 +345,9 @@ class ScenarioEvidenceRecorder:
         )
 
     def record_frame(self, *, vehicle: object, scene: object, raw_control: object,
-                     final_control: object, safety_reason: str,
-                     safety_override: bool, timing: FrameTiming,
+                      final_control: object, safety_reason: str,
+                      safety_override: bool, timing: FrameTiming,
+                      safety_reason_category: str = "NONE",
                       command_id: str | None = None,
                       fsm_state: str | None = None,
                       longitudinal: object | None = None,
@@ -421,7 +423,7 @@ class ScenarioEvidenceRecorder:
         self._min_gap_m = self._minimum(self._min_gap_m, lead_distance_m)
         self._min_ttc_s = self._minimum(self._min_ttc_s, ttc_s)
         self._last_speed_mps = float(speed_mps)
-        if stop_distance_m is not None and float(speed_mps) <= 0.15:
+        if stop_distance_m is not None and float(speed_mps) <= DEFAULT_STRATEGY.common.standstill_speed_mps:
             self._stationary_stop_error_m = abs(float(stop_distance_m))
 
         collision = bool(_field(scene, "collision", False))
@@ -472,7 +474,11 @@ class ScenarioEvidenceRecorder:
             c_safety_state=_jsonable(c_safety_state),
             longitudinal=_jsonable(longitudinal), lateral=_jsonable(lateral),
             raw_control=_jsonable(raw_control), final_control=_jsonable(final_control),
-            safety={"override": safety_override, "reason": safety_reason},
+            safety={
+                "override": safety_override,
+                "reason": safety_reason,
+                "reason_category": safety_reason_category,
+            },
             latency=latency,
         )
 
@@ -491,6 +497,7 @@ class ScenarioEvidenceRecorder:
             vehicle=_field(result, "vehicle"), scene=scene,
             raw_control=raw_control, final_control=_field(result, "final_control"),
             safety_reason=_field(result, "safety_reason", "UNKNOWN"),
+            safety_reason_category=_field(result, "safety_reason_category", "NONE"),
             safety_override=_field(result, "safety_override", False),
             timing=timing, command_id=command_id, fsm_state=fsm_state,
             longitudinal=_field(result, "longitudinal"), lateral=_field(result, "lateral"),

@@ -13,10 +13,11 @@ import math
 from typing import Any
 
 from compat import StrEnum
+from strategy_config import DEFAULT_STRATEGY
 
 
 CONTRACT_VERSION = "1.0"
-LOW_CONFIDENCE_THRESHOLD = 0.80
+LOW_CONFIDENCE_THRESHOLD = DEFAULT_STRATEGY.common.command_confidence_threshold
 
 
 def _number(name: str, value: object, *, minimum: float | None = None) -> float:

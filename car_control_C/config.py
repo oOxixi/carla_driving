@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import math
+from strategy_config import DEFAULT_STRATEGY
 
 
 CONFIG_SCHEMA_VERSION = "1.0"
@@ -29,12 +30,12 @@ def _finite(name: str, value: object, *, minimum: float | None = None,
 class FuzzyCommandPolicyConfig:
     """SI-only policy parameters; D remains the final safety authority."""
 
-    confidence_threshold: float = 0.80
-    comfort_decel_mps2: float = 3.0
-    max_decel_mps2: float = 5.0
-    hold_brake: float = 0.55
-    emergency_brake: float = 0.85
-    standstill_speed_mps: float = 0.20
+    confidence_threshold: float = DEFAULT_STRATEGY.common.command_confidence_threshold
+    comfort_decel_mps2: float = DEFAULT_STRATEGY.common.comfortable_decel_mps2
+    max_decel_mps2: float = DEFAULT_STRATEGY.common.max_decel_mps2
+    hold_brake: float = DEFAULT_STRATEGY.common.hold_brake
+    emergency_brake: float = DEFAULT_STRATEGY.common.emergency_brake
+    standstill_speed_mps: float = DEFAULT_STRATEGY.common.standstill_speed_mps
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "confidence_threshold", _finite(

@@ -26,6 +26,7 @@ from car_control_A.watchdog import RuntimeWatchdog
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
 from car_control_C import ConservativeSensorFusion, SafetyStateParameters
 from car_control_D import SafetyConfig, SafetySupervisor
+from strategy_config import DEFAULT_STRATEGY
 from qwen_service.client import QwenServiceClient
 from runtime.interface_registry import InterfaceRegistry
 from runtime import (
@@ -260,16 +261,17 @@ def _speed_mps(vector: Any) -> float:
 
 
 def _acceptance_lateral_controller() -> PurePursuitController:
-    """Conservative CARLA tuning that cannot snap directly to full steering."""
+    """Build the shared speed/curvature/error-adaptive lateral controller."""
+    cfg = DEFAULT_STRATEGY.lateral
     return PurePursuitController(PurePursuitParams(
-        base_lookahead_m=2.5,
-        min_lookahead_m=2.5,
-        max_lookahead_m=8.0,
-        speed_gain_s=0.45,
-        max_steer=0.60,
-        max_steer_delta_per_step=0.04,
+        base_lookahead_m=cfg.base_lookahead_m,
+        min_lookahead_m=cfg.min_lookahead_m,
+        max_lookahead_m=cfg.max_lookahead_m,
+        speed_gain_s=cfg.speed_gain_s,
+        max_steer=cfg.max_steer,
+        max_steer_delta_per_step=cfg.base_steer_delta_per_step,
         # Calibrated against a CARLA 0.9.16 Model 3 closed-loop route run.
-        steer_sign=1.0,
+        steer_sign=cfg.steer_sign,
     ))
 
 
@@ -1795,7 +1797,7 @@ def _single_sensor_fault_speed_cap_mps(
     if len(affected) != 1:
         return None
     nominal = max(0.0, float(nominal_speed_mps))
-    return min(nominal, 2.0)
+    return min(nominal, DEFAULT_STRATEGY.sensor_fault.single_sensor_speed_cap_mps)
 
 
 def _c_speed_cap_control_override(
@@ -1806,12 +1808,13 @@ def _c_speed_cap_control_override(
     if speed_cap_mps is None or not math.isfinite(current_speed_mps):
         return None
     excess = float(current_speed_mps) - speed_cap_mps
-    if excess <= 0.10:
+    policy = DEFAULT_STRATEGY.sensor_fault
+    if excess <= policy.speed_cap_tolerance_mps:
         return None
     # The request is deliberately bounded and remains a raw input to D; it is
     # not an alternate control owner.  A large excess requires prompt braking
     # because the cap was issued from an aligned VRU observation.
-    brake = min(1.0, 0.35 + 0.25 * excess)
+    brake = min(1.0, policy.speed_cap_base_brake + policy.speed_cap_brake_gain * excess)
     return {"throttle": 0.0, "brake": brake, "steer": 0.0}
 
 
@@ -2212,8 +2215,6 @@ def run(args: argparse.Namespace) -> None:
             route_deviation_trigger_m = float(spec.expected["route_deviation_trigger_m"])
         scenario_safety = SafetySupervisor(SafetyConfig(
             stop_line_guard_m=args.stop_line_guard_m,
-            max_lane_offset_m=min(1.8, route_deviation_trigger_m),
-            severe_route_deviation_m=route_deviation_trigger_m,
         ))
         runtime = ControlRuntime(_acceptance_lateral_controller(),
                                  default_speed_mps=0.0 if qwen_enabled else args.default_speed_mps,
@@ -3880,6 +3881,7 @@ def run(args: argparse.Namespace) -> None:
                     "lead_distance_m": scene.lead_distance_m,
                     "distance_to_stop_line_m": scene.distance_to_stop_line_m,
                     "control": result.final_control.to_dict(), "safety": result.safety_reason,
+                    "safety_reason_category": result.safety_reason_category,
                     "safety_override": result.safety_override,
                     "qwen_status": qwen_status,
                 }
@@ -4151,7 +4153,8 @@ def main() -> None:
                         help="class-aware NMS IoU threshold")
     parser.add_argument("--rgb-detector-input-size", type=int, default=640,
                         help="fallback square input size for dynamic ONNX models")
-    parser.add_argument("--c-visual-confidence-threshold", type=float, default=0.60,
+    parser.add_argument("--c-visual-confidence-threshold", type=float,
+                        default=DEFAULT_STRATEGY.perception_safety.visual_confidence_threshold,
                         help="C-side minimum visual confidence accepted by safety fusion")
     parser.add_argument("--qwen-remote", action="store_true",
                         help="use an OpenAI-compatible remote Qwen2.5-VL backend for the high-level command")
@@ -4192,7 +4195,8 @@ def main() -> None:
                         help="initial stationary lead distance for --scenario emergency")
     parser.add_argument("--stop-line-m", type=float, default=20.0,
                         help="virtual red stop-line distance for --scenario red_stop")
-    parser.add_argument("--stop-line-guard-m", type=float, default=1.0,
+    parser.add_argument("--stop-line-guard-m", type=float,
+                        default=DEFAULT_STRATEGY.supervisor.stop_line_guard_m,
                         help="D safety fallback distance used by the acceptance runner; C plans the approach before it")
     parser.add_argument("--test-command-ttl-s", type=float,
                         help="explicit test-only command TTL override; keeps long acceptance runs from expiring early")

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from car_control_A import ControlOutput, LongitudinalOutput, LongitudinalRequest
+from strategy_config import DEFAULT_STRATEGY
 
 from .following_controller import FollowingController, FollowingParameters
 from .speed_pid import SpeedPID
@@ -18,18 +19,18 @@ from .validation import finite
 class LongitudinalParameters:
     """Explicit, SI-only tuning for C; final safety arbitration belongs to D."""
 
-    max_lateral_accel_mps2: float = 2.5
-    command_accel_mps2: float = 1.5
-    command_decel_mps2: float = 3.0
-    max_accel_mps2: float = 2.5
-    max_decel_mps2: float = 5.0
-    max_control_delta_per_s: float = 2.0
-    hold_brake: float = 0.55
-    emergency_brake: float = 0.85
-    standstill_gap_m: float = 3.0
-    time_gap_s: float = 1.5
-    emergency_ttc_s: float = 1.5
-    comfortable_decel_mps2: float = 3.0
+    max_lateral_accel_mps2: float = DEFAULT_STRATEGY.longitudinal.max_lateral_accel_mps2
+    command_accel_mps2: float = DEFAULT_STRATEGY.longitudinal.command_accel_mps2
+    command_decel_mps2: float = DEFAULT_STRATEGY.longitudinal.command_decel_mps2
+    max_accel_mps2: float = DEFAULT_STRATEGY.longitudinal.max_accel_mps2
+    max_decel_mps2: float = DEFAULT_STRATEGY.common.max_decel_mps2
+    max_control_delta_per_s: float = DEFAULT_STRATEGY.longitudinal.max_control_delta_per_s
+    hold_brake: float = DEFAULT_STRATEGY.common.hold_brake
+    emergency_brake: float = DEFAULT_STRATEGY.common.emergency_brake
+    standstill_gap_m: float = DEFAULT_STRATEGY.safety_distance.standstill_gap_m
+    time_gap_s: float = DEFAULT_STRATEGY.safety_distance.reaction_time_s
+    emergency_ttc_s: float = DEFAULT_STRATEGY.common.emergency_ttc_s
+    comfortable_decel_mps2: float = DEFAULT_STRATEGY.common.comfortable_decel_mps2
 
     def __post_init__(self) -> None:
         for name in ("max_lateral_accel_mps2", "command_accel_mps2", "command_decel_mps2",
@@ -127,6 +128,8 @@ class LongitudinalController:
             state, reason = "FOLLOWING", "lead_vehicle_constraint"
         else:
             state, reason = "LANE_FOLLOW", "requested_speed"
+        if self.speed_planner.last_plan is not None:
+            reason = f"safe_target_speed:{self.speed_planner.last_plan.limiting_constraint}"
         return LongitudinalOutput(control, accel, target, state, reason, risk)
 
     def reset(self) -> None:

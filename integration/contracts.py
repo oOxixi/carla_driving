@@ -121,3 +121,4 @@ class FrameResult:
     # A's validated ControlOutput contract.
     raw_control: Any | None = None
     lateral: LateralOutput | None = None
+    safety_reason_category: str = "NONE"

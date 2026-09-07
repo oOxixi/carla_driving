@@ -83,6 +83,9 @@ class VehicleStateView:
     traffic_light: str = "UNKNOWN"
     lane_offset_m: Optional[float] = None
     route_deviation_m: Optional[float] = None
+    road_curvature_per_m: float = 0.0
+    front_actor_type: Optional[str] = None
+    sensor_margin_scale: float = 1.0
     collision: bool = False
     red_light_violation: bool = False
     lane_invasion: bool = False
@@ -108,6 +111,7 @@ class SafetyDecision:
     reason: str = "NONE"
     risk_metrics: Dict[str, Any] = field(default_factory=dict)
     raw_control: Optional[ControlOutput] = None
+    reason_category: str = "NONE"
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)

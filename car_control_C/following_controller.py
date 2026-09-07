@@ -5,15 +5,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from car_control_A import RiskMetrics
+from strategy_config import DEFAULT_STRATEGY
 from .validation import finite
 
 
 @dataclass(frozen=True, slots=True)
 class FollowingParameters:
-    standstill_gap_m: float = 3.0
-    time_gap_s: float = 1.5
-    emergency_ttc_s: float = 1.5
-    comfortable_decel_mps2: float = 3.0
+    standstill_gap_m: float = DEFAULT_STRATEGY.safety_distance.standstill_gap_m
+    time_gap_s: float = DEFAULT_STRATEGY.safety_distance.reaction_time_s
+    emergency_ttc_s: float = DEFAULT_STRATEGY.common.emergency_ttc_s
+    comfortable_decel_mps2: float = DEFAULT_STRATEGY.common.comfortable_decel_mps2
 
     def __post_init__(self) -> None:
         finite("standstill_gap_m", self.standstill_gap_m, minimum=0.0)
@@ -27,7 +28,12 @@ class FollowingController:
         self.parameters = parameters or FollowingParameters()
 
     def desired_gap_m(self, ego_speed_mps: float) -> float:
-        return self.parameters.standstill_gap_m + self.parameters.time_gap_s * finite("ego_speed_mps", ego_speed_mps, minimum=0.0)
+        speed = finite("ego_speed_mps", ego_speed_mps, minimum=0.0)
+        sensor_margin = (
+            DEFAULT_STRATEGY.safety_distance.sensor_base_margin_m
+            + DEFAULT_STRATEGY.safety_distance.sensor_uncertainty_time_s * speed
+        )
+        return self.parameters.standstill_gap_m + self.parameters.time_gap_s * speed + sensor_margin
 
     def risk(self, *, ego_speed_mps: float, lead_distance_m: float | None,
              closing_speed_mps: float | None) -> RiskMetrics:

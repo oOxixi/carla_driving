@@ -851,6 +851,7 @@ class CarlaPerceptionBridge:
             lidar_valid=True,
             visual=visual,
             lead_speed_mps=lead_speed,
+            road_curvature_per_m=0.0 if route is None else route.curvature_per_m,
             lead_speed_source=sources.get("lead_speed_mps", "LEAD_TRACKER_UNAVAILABLE"),
         )
         sources["visual_object_class"] = visual.source

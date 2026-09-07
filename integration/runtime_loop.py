@@ -261,6 +261,15 @@ class ControlRuntime:
                 longitudinal = self.longitudinal.step(request, dt_s)
             if longitudinal is None:
                 raise RuntimeError("fuzzy policy intervened without a longitudinal output")
+            if (
+                speed_cap_mps is not None
+                and speed_cap_mps < self.requested_speed_mps
+                and longitudinal.target_speed_mps <= speed_cap_mps + 1e-9
+            ):
+                longitudinal = replace(
+                    longitudinal,
+                    reason="safe_target_speed:sensor_or_perception_cap",
+                )
             should_hold = self._stop_hold or (
                 self._active_command is not None and
                 self._active_command.action in {"STOP", "EMERGENCY_BRAKE"} and
@@ -285,7 +294,9 @@ class ControlRuntime:
                 # C owns comfortable STOP/confirmation deceleration. D still
                 # receives vehicle/risk/watchdog facts and remains final arbiter.
                 safety_command = None
-            safety = self.safety.arbitrate(raw_for_safety, safety_vehicle_state(vehicle, scene), safety_command,
+            safety = self.safety.arbitrate(raw_for_safety, safety_vehicle_state(
+                vehicle, scene, road_curvature_per_m=route.curvature_per_m,
+            ), safety_command,
                                            longitudinal.risk, tuple(expired_alerts))
             if safety_override_reason is not None and not safety.safety_override:
                 # C may request a semantic emergency brake that is already a
@@ -296,6 +307,7 @@ class ControlRuntime:
                     safety,
                     safety_override=True,
                     reason=safety_override_reason,
+                    reason_category="PERCEPTION_SAFETY",
                 )
             final = ControlOutput(safety.final_control.throttle, safety.final_control.brake, safety.final_control.steer)
             command_owned_override = (
@@ -322,7 +334,7 @@ class ControlRuntime:
                 if completed is not None:
                     feedback.append(completed)
             return FrameResult(vehicle, final, longitudinal, safety.reason, safety.safety_override,
-                               tuple(feedback), raw_for_safety, lateral)
+                               tuple(feedback), raw_for_safety, lateral, safety.reason_category)
         except Exception:
             if "INTEGRATION_FAILURE" not in self._latched_alerts:
                 self._latched_alerts.append("INTEGRATION_FAILURE")
@@ -335,7 +347,7 @@ class ControlRuntime:
                 self._clear_active_command()
             fail_control = ControlOutput(0.0, 1.0, 0.0)
             return FrameResult(vehicle, fail_control, None, "INTEGRATION_FAILURE", True,
-                               tuple(feedback), fail_control)
+                               tuple(feedback), fail_control, safety_reason_category="CONTROL")
 
     def _completion_feedback(self, vehicle: RuntimeVehicleState) -> ExecutionFeedback | None:
         command = self._active_command

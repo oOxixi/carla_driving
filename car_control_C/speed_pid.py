@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from strategy_config import DEFAULT_STRATEGY
 from .validation import finite
 
 
 @dataclass(frozen=True, slots=True)
 class PIDParameters:
-    kp: float = 1.2
-    ki: float = 0.15
-    kd: float = 0.02
-    integral_limit: float = 4.0
-    accel_min_mps2: float = -5.0
-    accel_max_mps2: float = 2.5
-    target_step_reset_mps: float = 3.0
+    kp: float = DEFAULT_STRATEGY.longitudinal.pid_kp
+    ki: float = DEFAULT_STRATEGY.longitudinal.pid_ki
+    kd: float = DEFAULT_STRATEGY.longitudinal.pid_kd
+    integral_limit: float = DEFAULT_STRATEGY.longitudinal.pid_integral_limit
+    accel_min_mps2: float = -DEFAULT_STRATEGY.common.max_decel_mps2
+    accel_max_mps2: float = DEFAULT_STRATEGY.longitudinal.max_accel_mps2
+    target_step_reset_mps: float = DEFAULT_STRATEGY.longitudinal.pid_target_step_reset_mps
 
     def __post_init__(self) -> None:
         for name in ("kp", "ki", "kd"):
@@ -30,9 +31,13 @@ class PIDParameters:
 class SpeedPID:
     """PID with bounded integral and conditional integration anti-windup."""
 
-    def __init__(self, kp: float = 1.2, ki: float = 0.15, kd: float = 0.02,
-                 integral_limit: float = 4.0, accel_min_mps2: float = -5.0,
-                 accel_max_mps2: float = 2.5, target_step_reset_mps: float = 3.0) -> None:
+    def __init__(self, kp: float = DEFAULT_STRATEGY.longitudinal.pid_kp,
+                 ki: float = DEFAULT_STRATEGY.longitudinal.pid_ki,
+                 kd: float = DEFAULT_STRATEGY.longitudinal.pid_kd,
+                 integral_limit: float = DEFAULT_STRATEGY.longitudinal.pid_integral_limit,
+                 accel_min_mps2: float = -DEFAULT_STRATEGY.common.max_decel_mps2,
+                 accel_max_mps2: float = DEFAULT_STRATEGY.longitudinal.max_accel_mps2,
+                 target_step_reset_mps: float = DEFAULT_STRATEGY.longitudinal.pid_target_step_reset_mps) -> None:
         self.params = PIDParameters(kp, ki, kd, integral_limit, accel_min_mps2, accel_max_mps2, target_step_reset_mps)
         self.integral = 0.0
         self._previous_error: float | None = None

@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0",
+  "common": {
+    "command_confidence_threshold": 0.80,
+    "standstill_speed_mps": 0.15,
+    "comfortable_decel_mps2": 3.0,
+    "max_decel_mps2": 5.0,
+    "hold_brake": 0.55,
+    "emergency_brake": 1.0,
+    "caution_ttc_s": 2.5,
+    "emergency_ttc_s": 1.5
+  },
+  "safety_distance": {
+    "standstill_gap_m": 3.0,
+    "reaction_time_s": 1.0,
+    "emergency_reaction_time_s": 0.35,
+    "sensor_base_margin_m": 0.75,
+    "sensor_uncertainty_time_s": 0.10,
+    "curvature_margin_gain": 0.35,
+    "vru_distance_factor": 1.75,
+    "vru_emergency_distance_factor": 1.20,
+    "vru_minimum_emergency_distance_m": 8.0,
+    "large_vehicle_distance_factor": 1.15,
+    "unknown_actor_distance_factor": 1.10,
+    "minimum_emergency_distance_m": 1.5
+  },
+  "perception_safety": {
+    "visual_confidence_threshold": 0.60,
+    "max_observation_gap_s": 0.30,
+    "vru_caution_speed_cap_mps": 2.0,
+    "vru_caution_hold_s": 4.0
+  },
+  "longitudinal": {
+    "max_lateral_accel_mps2": 2.5,
+    "command_accel_mps2": 1.5,
+    "command_decel_mps2": 3.0,
+    "max_accel_mps2": 2.5,
+    "max_control_delta_per_s": 2.0,
+    "creep_speed_mps": 0.5,
+    "stop_hold_distance_m": 0.8,
+    "pid_kp": 1.2,
+    "pid_ki": 0.15,
+    "pid_kd": 0.02,
+    "pid_integral_limit": 4.0,
+    "pid_target_step_reset_mps": 3.0
+  },
+  "lateral": {
+    "wheel_base_m": 2.8,
+    "base_lookahead_m": 2.5,
+    "speed_gain_s": 0.45,
+    "min_lookahead_m": 2.5,
+    "max_lookahead_m": 8.0,
+    "curvature_lookahead_gain": 10.0,
+    "error_lookahead_gain": 0.30,
+    "max_steer_angle_rad": 0.60,
+    "steer_gain": 1.0,
+    "max_steer": 0.60,
+    "min_steer_limit": 0.35,
+    "high_speed_steer_reduction_per_mps": 0.018,
+    "curvature_steer_gain": 1.5,
+    "base_steer_delta_per_step": 0.04,
+    "min_steer_delta_per_step": 0.025,
+    "max_steer_delta_per_step": 0.12,
+    "low_speed_steer_gain": 0.75,
+    "curvature_rate_gain": 2.0,
+    "error_rate_gain": 0.15,
+    "stanley_gain": 0.8,
+    "stanley_softening_speed_mps": 1.0,
+    "stanley_curvature_gain": 1.5,
+    "steer_sign": 1.0
+  },
+  "supervisor": {
+    "stop_line_guard_m": 8.0,
+    "max_lane_offset_m": 1.8,
+    "minimum_lane_offset_m": 0.75,
+    "severe_route_deviation_m": 3.0,
+    "minimum_severe_route_deviation_m": 1.5,
+    "route_speed_sensitivity": 0.025,
+    "route_curvature_sensitivity": 2.0,
+    "route_recovery_max_speed_mps": 1.5,
+    "route_recovery_throttle": 0.0,
+    "route_recovery_steer_limit": 0.35,
+    "route_deviation_brake": 0.65,
+    "caution_brake": 0.35
+  },
+  "sensor_fault": {
+    "single_sensor_speed_cap_mps": 2.0,
+    "speed_cap_tolerance_mps": 0.10,
+    "speed_cap_base_brake": 0.35,
+    "speed_cap_brake_gain": 0.25
+  }
+}

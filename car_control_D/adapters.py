@@ -77,20 +77,38 @@ def adapt_vehicle_state(obj: Any) -> VehicleStateView:
     traffic_light = str(_get(d, "traffic_light", "signal_state", default="UNKNOWN")).upper()
     if traffic_light not in {"RED", "YELLOW", "GREEN", "UNKNOWN"}:
         raise ValueError("traffic_light must be RED/YELLOW/GREEN/UNKNOWN")
+    speed_mps = optional_float(_get(d, "speed_mps", default=0.0)) or 0.0
+    front_distance_m = optional_float(_get(d, "front_distance_m", "front_distance", default=None))
+    stop_distance_m = optional_float(_get(d, "distance_to_stop_line_m", "stop_line_distance", default=None))
+    sensor_margin_scale = optional_float(_get(d, "sensor_margin_scale", default=1.0))
+    if speed_mps < 0.0:
+        raise ValueError("speed_mps must be non-negative")
+    if front_distance_m is not None and front_distance_m < 0.0:
+        raise ValueError("front_distance_m must be non-negative")
+    if stop_distance_m is not None and stop_distance_m < 0.0:
+        raise ValueError("distance_to_stop_line_m must be non-negative")
+    if sensor_margin_scale is None or sensor_margin_scale < 0.0:
+        raise ValueError("sensor_margin_scale must be non-negative")
     return VehicleStateView(
         frame=int(_get(d, "frame", "frame_id", default=0) or 0),
         sim_time_s=optional_float(_get(d, "sim_time_s", "sim_time", default=0.0)) or 0.0,
-        speed_mps=optional_float(_get(d, "speed_mps", default=0.0)) or 0.0,
+        speed_mps=speed_mps,
         x_m=optional_float(_get(d, "x_m", "x", default=0.0)) or 0.0,
         y_m=optional_float(_get(d, "y_m", "y", default=0.0)) or 0.0,
         z_m=optional_float(_get(d, "z_m", "z", default=0.0)) or 0.0,
         yaw_deg=optional_float(_get(d, "yaw_deg", default=0.0)) or 0.0,
         lane_id=int(_get(d, "lane_id", default=0) or 0),
-        front_distance_m=optional_float(_get(d, "front_distance_m", "front_distance", default=None)),
-        distance_to_stop_line_m=optional_float(_get(d, "distance_to_stop_line_m", "stop_line_distance", default=None)),
+        front_distance_m=front_distance_m,
+        distance_to_stop_line_m=stop_distance_m,
         traffic_light=traffic_light,
         lane_offset_m=optional_float(_get(d, "lane_offset_m", "lane_offset", default=None)),
         route_deviation_m=optional_float(_get(d, "route_deviation_m", "route_deviation", default=None)),
+        road_curvature_per_m=optional_float(_get(d, "road_curvature_per_m", "path_curvature_per_m", default=0.0)) or 0.0,
+        front_actor_type=(
+            None if _get(d, "front_actor_type", "object_class", default=None) is None
+            else str(_get(d, "front_actor_type", "object_class")).strip().upper()
+        ),
+        sensor_margin_scale=sensor_margin_scale,
         collision=bool(_get(d, "collision", default=False)),
         red_light_violation=bool(_get(d, "red_light_violation", default=False)),
         lane_invasion=bool(_get(d, "lane_invasion", default=False)),
