@@ -12,7 +12,8 @@
     "qwen_faults": "模型超时、非法输出与执行中安全抢占。",
     "acceptance_suite": "东风赛道高质量验收套件 v2：83 个计分场景，不含 60 分钟长稳场景。",
     "official_competition": "比赛文件要求的三类正式长里程场景：基础操控5km、复杂避障8km、极限应急6km。",
-    "development": "正式长里程场景的短程定向回归：只复现特定事件，用于快速调试且不参与正式评分。"
+    "development": "正式长里程场景的短程定向回归：只复现特定事件，用于快速调试且不参与正式评分。",
+    "generalization": "成员2固定泛化样本：8 个同地图 Variant 与 8 个跨地图 Unseen，可由固定 seed 复现。"
   },
   "official_level_mapping": {
     "basic": "基础场景：直道、控速、停车、保持车道、普通转向。",
@@ -74,6 +75,7 @@
     "acceptance_suite": 83,
     "official_competition": 3,
     "development": 3,
-    "total": 135
+    "generalization": 16,
+    "total": 151
   }
 }
