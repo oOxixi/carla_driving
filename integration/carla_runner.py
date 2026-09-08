@@ -2778,11 +2778,17 @@ def _intentional_qwen_failure_completed(
     )
 
 
-def _route_stop_trigger_m(speed_mps: float, finish_radius_m: float, decel_mps2: float = 2.0) -> float:
-    """Choose an endpoint braking trigger from current speed and a conservative service deceleration."""
+def _route_stop_trigger_m(speed_mps: float, finish_radius_m: float, decel_mps2: float = 2.5) -> float:
+    """Choose an endpoint braking trigger that stops inside the finish radius.
+
+    The finish radius is the permitted final standstill envelope, not extra
+    stopping distance.  Using a realistic closed-loop service deceleration
+    avoids commanding zero speed so early that a long route can never satisfy
+    its physical distance contract.
+    """
     if speed_mps < 0.0 or finish_radius_m < 0.0 or decel_mps2 <= 0.0:
         raise ValueError("speed/finish radius must be non-negative and deceleration positive")
-    return max(finish_radius_m, speed_mps * speed_mps / (2.0 * decel_mps2) + 1.0)
+    return finish_radius_m + speed_mps * speed_mps / (2.0 * decel_mps2)
 
 
 def _route_recovery_hold_reference(vehicle: RuntimeVehicleState) -> RouteReference:
@@ -5768,7 +5774,11 @@ def run(args: argparse.Namespace) -> None:
                                 continuation.reference,
                                 target_speed_mps=runtime.requested_speed_mps,
                             )
-                            runtime.lateral.reset()
+                            # The route identity/progress changes here, but the
+                            # vehicle is still in one continuous manoeuvre. Keep
+                            # the last applied steer so the next reference is
+                            # subject to the same per-frame rate limit.
+                            runtime.lateral.reset(preserve_steer=True)
                             global_route_state = global_route_manager.state(
                                 continuation,
                                 state.x_m,

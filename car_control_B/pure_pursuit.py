@@ -92,8 +92,11 @@ class PurePursuitController(LateralController):
         # later route can reuse the same address with unrelated progress.
         self._route_progress: list[tuple[object, int]] = []
 
-    def reset(self) -> None:
-        self._last_steer = 0.0
+    def reset(self, *, preserve_steer: bool = False) -> None:
+        if type(preserve_steer) is not bool:
+            raise TypeError("preserve_steer must be bool")
+        if not preserve_steer:
+            self._last_steer = 0.0
         self._last_nearest_index = 0
         self._active_route_points = None
         self._active_route_slot = None

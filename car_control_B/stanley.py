@@ -60,8 +60,11 @@ class StanleyController(LateralController):
         self._last_steer = 0.0
         self._last_nearest_index = 0
 
-    def reset(self) -> None:
-        self._last_steer = 0.0
+    def reset(self, *, preserve_steer: bool = False) -> None:
+        if type(preserve_steer) is not bool:
+            raise TypeError("preserve_steer must be bool")
+        if not preserve_steer:
+            self._last_steer = 0.0
         self._last_nearest_index = 0
 
     def step(self, vehicle: VehiclePose, reference: RouteReference) -> LateralOutput:

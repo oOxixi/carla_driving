@@ -1,5 +1,7 @@
 import math
 
+import pytest
+
 from car_control_A.routing import RouteReference as RuntimeRouteReference
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
 from car_control_B.schemas import RouteReference, VehiclePose
@@ -33,6 +35,21 @@ def test_left_of_path_turns_right_positive_carla_sign():
 def test_output_limited_to_range():
     out = _controller().step(VehiclePose(0.0, 20.0, 0.0, 5.0), _ref())
     assert -1.0 <= out.steer <= 1.0
+
+
+def test_route_progress_reset_can_preserve_steering_rate_continuity() -> None:
+    controller = PurePursuitController(PurePursuitParams(
+        max_steer_delta_per_step=0.038,
+        min_steer_delta_per_step=0.038,
+        adaptive_max_steer_delta_per_step=0.038,
+    ))
+    first = controller.step(VehiclePose(0.0, -1.0, 0.0, 5.0), _ref())
+    assert first.steer == pytest.approx(0.038)
+
+    controller.reset(preserve_steer=True)
+    second = controller.step(VehiclePose(0.0, 1.0, 0.0, 5.0), _ref())
+
+    assert abs(second.steer - first.steer) <= 0.038
 
 
 def test_target_behind_ego_is_invalid_instead_of_silent_zero_steer():

@@ -18,7 +18,8 @@ class LateralController(ABC):
     """
 
     @abstractmethod
-    def reset(self) -> None:
+    def reset(self, *, preserve_steer: bool = False) -> None:
+        """Reset route-progress state, optionally retaining steering continuity."""
         pass
 
     @abstractmethod
