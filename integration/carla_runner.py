@@ -1429,7 +1429,14 @@ def _update_scenario_vehicle(
             and type(post_cut_in_speed) in (int, float)
             and not isinstance(post_cut_in_speed, bool)
         ):
-            desired = max(0.0, float(post_cut_in_speed))
+            post_target = max(0.0, float(post_cut_in_speed))
+            post_acceleration = max(
+                0.1, float(behavior.get("post_cut_in_acceleration_mps2", 3.0))
+            )
+            desired = min(
+                post_target,
+                desired + post_acceleration * (cut_in_elapsed_s - cut_in_duration_s),
+            )
     current = _signed_forward_speed_mps(lead)
     error = desired - current
     if error < -0.15:
@@ -1522,13 +1529,19 @@ def _update_scenario_vehicle(
         reverse=False,
         manual_gear_shift=False,
     ))
-    if mode == "lead_vehicle" and desired > 0.1:
-        # CARLA bicycles do not respond to VehicleControl throttle like a
-        # passenger car: the same controller that holds a car near 5.5 m/s
-        # can leave a crossbike crawling around 1 m/s.  A declared scenario
-        # lead must therefore receive its deterministic longitudinal velocity
-        # every tick. Steering remains physics-driven and follows the map
-        # waypoint above; only the speed magnitude is enforced here.
+    completed_cut_in = (
+        mode == "cut_in"
+        and cut_in_elapsed_s is not None
+        and cut_in_duration_s is not None
+        and cut_in_elapsed_s >= cut_in_duration_s
+        and behavior.get("post_cut_in_speed_mps") is not None
+    )
+    if (mode == "lead_vehicle" or completed_cut_in) and desired > 0.1:
+        # CARLA bicycles and scripted cut-in cars do not consistently follow
+        # VehicleControl throttle at the declared speed. Once a cut-in has
+        # completed, enforce only its ramped longitudinal speed so the hazard
+        # clears instead of becoming a permanent artificial roadblock.
+        # Steering remains physics-driven and follows the route above.
         set_velocity = getattr(lead, "set_target_velocity", None)
         if callable(set_velocity):
             forward = lead.get_transform().get_forward_vector()

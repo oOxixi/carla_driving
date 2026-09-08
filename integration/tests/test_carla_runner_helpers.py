@@ -663,6 +663,7 @@ def test_completed_cut_in_accelerates_clear_of_resumed_ego() -> None:
 
     class Vehicle:
         is_alive = True
+        target_velocity = None
 
         @staticmethod
         def get_velocity():
@@ -675,7 +676,12 @@ def test_completed_cut_in_accelerates_clear_of_resumed_ego() -> None:
         def apply_control(self, control):
             self.applied = control
 
+        def set_target_velocity(self, velocity):
+            self.target_velocity = velocity
+
     class CarlaApi:
+        Vector3D = Vector
+
         @staticmethod
         def VehicleControl(**values):
             return values
@@ -683,6 +689,7 @@ def test_completed_cut_in_accelerates_clear_of_resumed_ego() -> None:
     actor = {"behavior": {
         "mode": "cut_in", "cut_in_on_first_event": True,
         "cut_in_duration_s": 3.0, "post_cut_in_speed_mps": 13.9,
+        "post_cut_in_acceleration_mps2": 3.0,
     }}
     vehicle = Vehicle()
 
@@ -693,6 +700,8 @@ def test_completed_cut_in_accelerates_clear_of_resumed_ego() -> None:
 
     assert vehicle.applied["throttle"] == pytest.approx(0.45)
     assert vehicle.applied["brake"] == 0.0
+    assert vehicle.target_velocity.x == pytest.approx(7.0)
+    assert vehicle.target_velocity.y == pytest.approx(0.0)
 
 
 def test_voice_load_failure_becomes_rejected_no_op() -> None:
