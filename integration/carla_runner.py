@@ -842,6 +842,33 @@ def _lane_change_route_parameters(
     }
 
 
+def _dynamic_return_route_reference(
+    step: CompiledPlanStep,
+    *,
+    dynamic_out_and_back: bool,
+    mission_route: RouteReference | None,
+    target_speed_mps: float,
+) -> RouteReference | None:
+    """Restore validated mission topology for a commanded return leg.
+
+    Building a fresh fixed-length lane-change prefix late in a manoeuvre can
+    fail when the ego has reached a junction.  The retained mission route is
+    already the validated reference for the original lane, so a dynamic
+    out-and-back plan should reacquire it when the command explicitly returns
+    to ``CURRENT``.  Outbound and standalone lane changes still use live CARLA
+    topology validation.
+    """
+    target_lane = str(step.target.get("target_lane") or "").strip().upper()
+    if (
+        not dynamic_out_and_back
+        or mission_route is None
+        or not step.behavior.startswith("CHANGE_LANE_")
+        or target_lane != "CURRENT"
+    ):
+        return None
+    return replace(mission_route, target_speed_mps=float(target_speed_mps))
+
+
 def _scene_from_world(
     world_map: Any,
     ego: Any,
@@ -5576,7 +5603,16 @@ def run(args: argparse.Namespace) -> None:
                             if step_speed is not None:
                                 runtime.requested_speed_mps = float(step_speed)
                             route_step_applied = False
-                            if (
+                            dynamic_return_route = _dynamic_return_route_reference(
+                                started_route_step,
+                                dynamic_out_and_back=dynamic_out_and_back,
+                                mission_route=maneuver_mission_route,
+                                target_speed_mps=runtime.requested_speed_mps,
+                            )
+                            if dynamic_return_route is not None:
+                                route = dynamic_return_route
+                                route_step_applied = True
+                            elif (
                                 started_route_step.behavior.startswith("CHANGE_LANE_")
                                 and prevalidated_avoid_route is not None
                                 and not dynamic_out_and_back

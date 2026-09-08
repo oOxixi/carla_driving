@@ -27,6 +27,7 @@ from integration.carla_runner import (
     _load_command,
     _lead_vehicle_travel_m,
     _lane_change_route_parameters,
+    _dynamic_return_route_reference,
     _map_contract_name,
     _maneuver_target_distance_m,
     _maneuver_target_passed,
@@ -757,6 +758,35 @@ def test_s2_dynamic_lane_change_profile_has_outbound_stabilization_segment() -> 
     assert _scenario_uses_dynamic_out_and_back(Namespace(
         extensions={"maneuver_route_mode": "dynamic_out_and_back"},
     )) is True
+
+
+def test_dynamic_return_reuses_retained_mission_route_at_junction() -> None:
+    mission = RouteReference(((0.0, 0.0), (100.0, 0.0)), target_speed_mps=8.0)
+    return_step = Namespace(
+        behavior="CHANGE_LANE_RIGHT",
+        target={"target_lane": "CURRENT"},
+    )
+    outbound_step = Namespace(
+        behavior="CHANGE_LANE_LEFT",
+        target={"target_lane": "LEFT_ADJACENT"},
+    )
+
+    restored = _dynamic_return_route_reference(
+        return_step,
+        dynamic_out_and_back=True,
+        mission_route=mission,
+        target_speed_mps=5.0,
+    )
+
+    assert restored is not None
+    assert restored.points_xy_m == mission.points_xy_m
+    assert restored.target_speed_mps == pytest.approx(5.0)
+    assert _dynamic_return_route_reference(
+        outbound_step,
+        dynamic_out_and_back=True,
+        mission_route=mission,
+        target_speed_mps=5.0,
+    ) is None
 
 
 def test_lane_change_profile_rejects_transition_without_stabilization() -> None:
