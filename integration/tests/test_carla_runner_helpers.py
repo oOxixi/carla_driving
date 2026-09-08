@@ -28,6 +28,7 @@ from integration.carla_runner import (
     _lead_vehicle_travel_m,
     _lane_change_route_parameters,
     _is_dynamic_return_step,
+    _retain_route_for_maneuver,
     _map_contract_name,
     _maneuver_target_distance_m,
     _maneuver_target_passed,
@@ -895,6 +896,36 @@ def test_dynamic_return_defers_merge_when_retained_mission_route_exists() -> Non
         dynamic_out_and_back=True,
         mission_route=mission,
     ) is False
+
+
+def test_topology_route_is_retained_for_any_finite_maneuver() -> None:
+    assert _retain_route_for_maneuver(
+        topology_coverage_planning=True,
+        dynamic_out_and_back=False,
+        lane_change_step_count=0,
+        route_behavior="TURN_RIGHT",
+    )
+    assert _retain_route_for_maneuver(
+        topology_coverage_planning=True,
+        dynamic_out_and_back=False,
+        lane_change_step_count=1,
+        route_behavior="CHANGE_LANE_LEFT",
+    )
+    assert not _retain_route_for_maneuver(
+        topology_coverage_planning=True,
+        dynamic_out_and_back=False,
+        lane_change_step_count=0,
+        route_behavior=None,
+    )
+
+
+def test_dynamic_out_and_back_still_retains_original_route() -> None:
+    assert _retain_route_for_maneuver(
+        topology_coverage_planning=False,
+        dynamic_out_and_back=True,
+        lane_change_step_count=2,
+        route_behavior="CHANGE_LANE_LEFT",
+    )
 
 
 def test_lane_change_profile_rejects_transition_without_stabilization() -> None:

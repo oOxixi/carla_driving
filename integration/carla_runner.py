@@ -858,6 +858,27 @@ def _is_dynamic_return_step(
     )
 
 
+def _retain_route_for_maneuver(
+    *,
+    topology_coverage_planning: bool,
+    dynamic_out_and_back: bool,
+    lane_change_step_count: int,
+    route_behavior: str | None,
+) -> bool:
+    """Return whether a finite manoeuvre needs a mission-route continuation.
+
+    Topology-coverage missions measure distance independently from their current
+    local reference. A turn or lane change can replace that reference with a
+    finite manoeuvre route, so retain a marker that causes a fresh continuation
+    to be planned from the vehicle's terminal pose. Dynamic out-and-back plans
+    retain their original route until their explicit return leg completes.
+    """
+    return bool(
+        (dynamic_out_and_back and lane_change_step_count >= 2)
+        or (topology_coverage_planning and route_behavior is not None)
+    )
+
+
 def _scene_from_world(
     world_map: Any,
     ego: Any,
@@ -5317,11 +5338,7 @@ def run(args: argparse.Namespace) -> None:
                                         "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
                                     }
                                 )
-                                maneuver_mission_route = (
-                                    route
-                                    if dynamic_out_and_back and len(lane_change_steps) >= 2
-                                    else None
-                                )
+                                route_before_maneuver = route
                                 route, compiled_speed, route_behavior = _apply_compiled_plan_route(
                                     orchestration.compiled_plan,
                                     world_map=world_map,
@@ -5339,6 +5356,16 @@ def run(args: argparse.Namespace) -> None:
                                         else prevalidated_avoid_route or topology_route
                                     ),
                                     lane_change_profile=lane_change_profile,
+                                )
+                                maneuver_mission_route = (
+                                    route_before_maneuver
+                                    if _retain_route_for_maneuver(
+                                        topology_coverage_planning=topology_coverage_planning,
+                                        dynamic_out_and_back=dynamic_out_and_back,
+                                        lane_change_step_count=len(lane_change_steps),
+                                        route_behavior=route_behavior,
+                                    )
+                                    else None
                                 )
                                 runtime.requested_speed_mps = compiled_speed
                                 if route_behavior is not None:
@@ -5694,31 +5721,67 @@ def run(args: argparse.Namespace) -> None:
                             recorder.record_feedback(step_feedback)
                     # A finite maneuver route must never remain the active
                     # lateral reference after the maneuver has terminated.
-                    # On failure/safety override the longitudinal fail-safe
-                    # remains stopped, while the restored mission route avoids
-                    # converting that safe stop into a stale-route watchdog
-                    # latch.  Successful plans retain the existing behavior.
+                    # Topology-coverage missions continue from the terminal
+                    # pose and current lane for the untravelled contract
+                    # distance. Dynamic out-and-back plans restore their
+                    # retained mission route after the explicit return leg.
                     if (
                         maneuver_update.state in TERMINAL_STATES
                         and maneuver_mission_route is not None
                     ):
-                        synchronize_route_progress = getattr(
-                            runtime.lateral,
-                            "synchronize_route_progress",
-                            None,
-                        )
-                        synchronized_route_index = (
-                            synchronize_route_progress(
-                                maneuver_mission_route,
-                                route_progress_m,
+                        synchronized_route_index = None
+                        restore_source = "RETAINED_MISSION_ROUTE"
+                        if topology_coverage_planning:
+                            assert spec is not None
+                            assert global_route_manager is not None
+                            remaining_contract_m = max(
+                                spec.finish_radius_m * 2.0,
+                                spec.route_distance_contract_m - route_progress_m,
                             )
-                            if callable(synchronize_route_progress)
-                            else None
-                        )
-                        route = replace(
-                            maneuver_mission_route,
-                            target_speed_mps=runtime.requested_speed_mps,
-                        )
+                            continuation = global_route_manager.plan_distance(
+                                ego.get_transform(),
+                                remaining_contract_m,
+                                runtime.requested_speed_mps,
+                            )
+                            global_route = continuation
+                            global_route_destination = carla.Location(
+                                x=continuation.destination_xy_m[0],
+                                y=continuation.destination_xy_m[1],
+                                z=ego.get_location().z,
+                            )
+                            topology_route = continuation.reference
+                            global_local_reference = None
+                            route = replace(
+                                continuation.reference,
+                                target_speed_mps=runtime.requested_speed_mps,
+                            )
+                            runtime.lateral.reset()
+                            global_route_state = global_route_manager.state(
+                                continuation,
+                                state.x_m,
+                                state.y_m,
+                                previous_s_m=0.0,
+                            )
+                            scenario_actor_progress_trackers.clear()
+                            restore_source = "TOPOLOGY_CONTINUATION"
+                        else:
+                            synchronize_route_progress = getattr(
+                                runtime.lateral,
+                                "synchronize_route_progress",
+                                None,
+                            )
+                            synchronized_route_index = (
+                                synchronize_route_progress(
+                                    maneuver_mission_route,
+                                    route_progress_m,
+                                )
+                                if callable(synchronize_route_progress)
+                                else None
+                            )
+                            route = replace(
+                                maneuver_mission_route,
+                                target_speed_mps=runtime.requested_speed_mps,
+                            )
                         restore_payload = {
                             "record_type": "qwen_mission_route_restored",
                             "command_id": maneuver_fsm.plan.command_id,
@@ -5728,6 +5791,7 @@ def run(args: argparse.Namespace) -> None:
                             "target_speed_mps": route.target_speed_mps,
                             "mission_route_progress_m": route_progress_m,
                             "synchronized_route_index": synchronized_route_index,
+                            "restore_source": restore_source,
                         }
                         print(json.dumps(restore_payload, ensure_ascii=False), flush=True)
                         if recorder is not None:
