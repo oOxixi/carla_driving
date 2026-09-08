@@ -1003,7 +1003,23 @@ class ScenarioExtensionRuntime:
                         "danger_timestamp_s", "perception_timestamp_s",
                         "decision_timestamp_s", "safety_override_timestamp_s",
                         "control_effect_timestamp_s", "response_ms",
-                    ))
+                    )) and all(
+                        float(previous) <= float(current)
+                        for previous, current in zip(
+                            (
+                                event["danger_timestamp_s"],
+                                event["perception_timestamp_s"],
+                                event["decision_timestamp_s"],
+                                event["safety_override_timestamp_s"],
+                            ),
+                            (
+                                event["perception_timestamp_s"],
+                                event["decision_timestamp_s"],
+                                event["safety_override_timestamp_s"],
+                                event["control_effect_timestamp_s"],
+                            ),
+                        )
+                    )
                 }
                 add(
                     key,

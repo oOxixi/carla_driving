@@ -613,6 +613,31 @@ def test_emergency_event_evidence_covers_trigger_to_control_chain() -> None:
     }
 
 
+def test_emergency_event_rejects_perception_recorded_after_control() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_actor_trigger("pedestrian", elapsed_s=10.0)
+    runtime.note_control_observation(
+        elapsed_s=10.05,
+        speed_mps=4.0,
+        route_progress_m=100.0,
+        throttle=0.0,
+        brake=1.0,
+        safety_override=True,
+        safety_reason="COMMAND_EMERGENCY_STOP",
+        route_deviation_m=None,
+    )
+    runtime.note_perception_observation(
+        elapsed_s=10.10, detected_actor_ids=("pedestrian",),
+    )
+
+    result = runtime.evaluate(
+        {"required_emergency_event_ids": ["pedestrian"]},
+        expected_command_count=1,
+    )
+
+    assert result["failed_keys"] == ["required_emergency_event_ids"]
+
+
 def test_emergency_recovery_waits_for_hold_and_records_release() -> None:
     runtime = ScenarioExtensionRuntime({
         "emergency_recovery": {

@@ -78,7 +78,7 @@
       "trigger": {
         "type": "ego_distance_to_actor_less_than_m",
         "actor_id": "construction_warning",
-        "value": 32.0
+        "value": 30.0
       }
     },
     {
@@ -93,9 +93,17 @@
       "confirm_required": false,
       "phase_id": "S3_P3_CUT_IN_EMERGENCY",
       "trigger": {
-        "type": "ego_distance_to_actor_less_than_m",
-        "actor_id": "cut_in_vehicle",
-        "value": 30.0
+        "all": [
+          {
+            "type": "ego_distance_to_actor_less_than_m",
+            "actor_id": "cut_in_vehicle",
+            "value": 32.0
+          },
+          {
+            "type": "sensor_actor_detected",
+            "actor_id": "cut_in_vehicle"
+          }
+        ]
       }
     },
     {
@@ -110,9 +118,17 @@
       "confirm_required": false,
       "phase_id": "S3_P4_PEDESTRIAN_STOP_HOLD",
       "trigger": {
-        "type": "ego_distance_to_actor_less_than_m",
-        "actor_id": "emergency_pedestrian",
-        "value": 42.0
+        "all": [
+          {
+            "type": "ego_distance_to_actor_less_than_m",
+            "actor_id": "emergency_pedestrian",
+            "value": 42.0
+          },
+          {
+            "type": "sensor_actor_detected",
+            "actor_id": "emergency_pedestrian"
+          }
+        ]
       }
     }
   ],

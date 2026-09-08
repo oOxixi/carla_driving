@@ -50,7 +50,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S3_P3_CUT_IN_EMERGENCY",
-      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 590.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "cut_in_vehicle", "value": 32.0}]}
+      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 590.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "cut_in_vehicle", "value": 32.0}, {"type": "sensor_actor_detected", "actor_id": "cut_in_vehicle"}]}
     },
     {
       "time_s": 0.0,
@@ -61,7 +61,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S3_P4_PEDESTRIAN_STOP_HOLD",
-      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 990.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "emergency_pedestrian", "value": 60.0}]}
+      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 990.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "emergency_pedestrian", "value": 40.0}, {"type": "sensor_actor_detected", "actor_id": "emergency_pedestrian"}]}
     }
   ],
   "qwen_expected": {
@@ -108,10 +108,10 @@
     {
       "actor_id": "emergency_pedestrian",
       "type": "walker.pedestrian",
-      "spawn": {"x": 1050.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
+      "spawn": {"x": 1020.0, "y": 3.5, "z": 0.5, "yaw_deg": -90.0},
       "behavior": {
         "mode": "crossing",
-        "target_xy_m": [1050.0, -6.0],
+        "target_xy_m": [1020.0, -3.5],
         "start_time_s": 0.0,
         "speed_mps": 2.4,
         "trigger": {"type": "route_progress_greater_than_m", "value": 990.0},

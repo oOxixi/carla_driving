@@ -4873,6 +4873,30 @@ def run(args: argparse.Namespace) -> None:
                             )
                         ),
                     )
+                if (
+                    timeline is not None
+                    and extension_frame is not None
+                    and evidence_actor_ids is not None
+                ):
+                    sensor_trigger_context = dict(extension_frame.trigger_context)
+                    sensor_trigger_context["sensor_detected_actor_ids"] = (
+                        evidence_actor_ids
+                    )
+                    for scheduled in timeline.due(elapsed_s, sensor_trigger_context):
+                        if canonical_bridge is None:
+                            raise RuntimeError(
+                                "sensor-bound scenario commands require canonical routing"
+                            )
+                        scenario_command = resolve_scenario_command(
+                            scheduled,
+                            requested_speed_mps=runtime.requested_speed_mps,
+                            preserve_high_level=(
+                                spec is not None and spec.requires_qwen_semantics
+                            ),
+                        )
+                        deferred_commands.append(_DeferredCommand(
+                            dict(scenario_command), time.monotonic_ns(), "SCENARIO",
+                        ))
                 scene_bound_ns = time.monotonic_ns()
                 if sensor_ready_ns is None:
                     raise RuntimeError("sensor-ready timestamp was not captured")

@@ -270,12 +270,41 @@ def validate_all() -> dict[str, Any]:
         if item.get("type") == "ego_distance_to_actor_less_than_m"
     )
     _require(
+        any(
+            item.get("type") == "sensor_actor_detected"
+            and item.get("actor_id") == "cut_in_vehicle"
+            for item in cut_in_command["trigger"]["all"]
+        ),
+        "S3: cut-in emergency command must wait for a sensor-derived target",
+    )
+    _require(
         command_distance_trigger.get("actor_id") == "cut_in_vehicle"
         and 0.0 <= (
             float(cut_in_trigger["value"])
             - float(command_distance_trigger.get("value", -1.0))
         ) <= 5.0,
         "S3: emergency command must follow the real cut-in trigger without a deadlock gap",
+    )
+    pedestrian = next(
+        actor for actor in s3["actors"]
+        if actor["actor_id"] == "emergency_pedestrian"
+    )
+    pedestrian_command = next(
+        command for command in s3["commands"]
+        if command.get("phase_id") == "S3_P4_PEDESTRIAN_STOP_HOLD"
+    )
+    _require(
+        any(
+            item.get("type") == "sensor_actor_detected"
+            and item.get("actor_id") == "emergency_pedestrian"
+            for item in pedestrian_command["trigger"]["all"]
+        ),
+        "S3: pedestrian emergency command must wait for a sensor-derived target",
+    )
+    _require(
+        25.0 <= float(pedestrian["spawn"]["x"])
+        - float(pedestrian["behavior"]["trigger"]["value"]) <= 40.0,
+        "S3: pedestrian must enter sensor range with enough emergency stopping distance",
     )
     _require(s3["extensions"]["sensor_profile"] == "competition_multiview", "S3: multiview profile required")
     weather = s3["extensions"]["weather_parameters"]
