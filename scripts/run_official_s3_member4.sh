@@ -12,6 +12,7 @@ qwen_model="${QWEN_MODEL:-Qwen/Qwen3.5-2B}"
 carla_host="${CARLA_HOST:-127.0.0.1}"
 carla_port="${CARLA_PORT:-2000}"
 log_dir="${S3_LOG_DIR:-artifacts/logs/official_competition}"
+rgb_detector_model="${RGB_DETECTOR_MODEL:-}"
 mode="${1:---run}"
 scene_path="scenarios/official_competition/S3_extreme_emergency_6km.json"
 
@@ -30,6 +31,10 @@ if [[ "$mode" == "--validate" ]]; then
 fi
 if [[ "$mode" != "--smoke" && "$mode" != "--run" ]]; then
   echo "usage: $0 [--validate|--smoke|--run]" >&2
+  exit 2
+fi
+if [[ -z "$rgb_detector_model" || ! -f "$rgb_detector_model" ]]; then
+  echo "S3 sensor validation requires RGB_DETECTOR_MODEL to point to a readable ONNX detector" >&2
   exit 2
 fi
 
@@ -59,6 +64,7 @@ arguments=(
   --sensor-timeout-s 1.0
   --perception-mode sensors
   --scenario-facts-mode perception
+  --rgb-detector-model "$rgb_detector_model"
   --follow-spectator
   --realtime
   --print-every 20

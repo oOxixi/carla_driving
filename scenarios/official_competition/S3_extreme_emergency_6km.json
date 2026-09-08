@@ -50,7 +50,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S3_P3_CUT_IN_EMERGENCY",
-      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 590.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "cut_in_vehicle", "value": 30.0}]}
+      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 590.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "cut_in_vehicle", "value": 32.0}]}
     },
     {
       "time_s": 0.0,

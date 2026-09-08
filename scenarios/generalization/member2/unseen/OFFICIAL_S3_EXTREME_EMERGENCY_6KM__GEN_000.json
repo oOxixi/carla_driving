@@ -78,7 +78,7 @@
       "trigger": {
         "type": "ego_distance_to_actor_less_than_m",
         "actor_id": "construction_warning",
-        "value": 30.0
+        "value": 32.0
       }
     },
     {

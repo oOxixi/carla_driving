@@ -74,6 +74,7 @@ from integration.carla_runner import (
     _cleanup_stale_scenario_actors,
     _single_sensor_fault_speed_cap_mps,
     _scenario_vehicle_speed_mps,
+    _sensor_evidence_actor_ids,
     _update_scenario_walker,
     _update_scenario_vehicle,
     _select_scene_facts,
@@ -1069,6 +1070,42 @@ def test_generic_lidar_obstacle_binds_nearest_geometric_scenario_actor() -> None
     assert bound.detected_objects[0].track_id == "lead-car"
     assert bound.detected_objects[0].class_id == 2
     assert bound.detected_objects[0].class_name == "car"
+
+
+def test_sensor_evidence_association_does_not_modify_control_scene() -> None:
+    class Location:
+        def __init__(self, x, y):
+            self.x, self.y, self.z = x, y, 0.0
+
+        def distance(self, other):
+            return math.hypot(self.x - other.x, self.y - other.y)
+
+    class Transform:
+        location = Location(0.0, 0.0)
+
+        @staticmethod
+        def get_forward_vector():
+            return Namespace(x=1.0, y=0.0)
+
+    class Actor:
+        is_alive = True
+
+        @staticmethod
+        def get_location():
+            return Location(20.0, 0.0)
+
+    scene = PerceptionFrame(1, 0.05, detected_objects=(
+        DetectedObject(0, "obstacle", 1.0, (0.45, 0.2, 0.55, 0.8), 20.0, "C-0001"),
+    ))
+
+    actor_ids = _sensor_evidence_actor_ids(
+        scene,
+        Namespace(get_transform=lambda: Transform()),
+        ((Actor(), {"actor_id": "cut_in_vehicle", "type": "vehicle"}),),
+    )
+
+    assert actor_ids == ("cut_in_vehicle",)
+    assert scene.detected_objects[0].track_id == "C-0001"
 
 
 def test_scenario_facts_can_override_or_only_fill_missing_perception() -> None:

@@ -1074,6 +1074,30 @@ def _bind_scenario_actor_ids(
     return replace(scene, detected_objects=tuple(bound))
 
 
+def _sensor_evidence_actor_ids(
+    scene: PerceptionFrame,
+    ego: Any,
+    actors: Sequence[tuple[Any, Mapping[str, object]]],
+) -> tuple[str, ...]:
+    """Associate sensor detections for audit without changing control input.
+
+    The returned labels are used only by the evidence recorder.  The original
+    sensor-derived ``scene`` remains untouched and is still the sole input to
+    C, D, and Qwen in strict perception mode.
+    """
+    declared_ids = {
+        str(actor_spec.get("actor_id", ""))
+        for _actor, actor_spec in actors
+        if str(actor_spec.get("actor_id", ""))
+    }
+    associated = _bind_scenario_actor_ids(scene, ego, actors)
+    return tuple(
+        str(item.track_id)
+        for item in associated.detected_objects
+        if item.track_id is not None and str(item.track_id) in declared_ids
+    )
+
+
 def _spawn_static_lead(session: CarlaSession, world: Any, world_map: Any, ego: Any, blueprint: Any,
                        distance_m: float) -> Any:
     """Spawn a deterministic stationary lead vehicle in ego's current lane."""
@@ -4814,6 +4838,12 @@ def run(args: argparse.Namespace) -> None:
                                     flush=True,
                                 )
                     perception_sources["qwen_status"] = qwen_status
+                evidence_actor_ids: tuple[str, ...] | None = None
+                scenario_actor_bindings = (
+                    tuple(scenario_vehicles)
+                    + tuple((actor, actor_spec) for actor, actor_spec, _target in scenario_walkers)
+                    + tuple(scenario_props)
+                )
                 if spec is not None and not (
                     args.perception_mode == "sensors"
                     and args.scenario_facts_mode == "perception"
@@ -4821,20 +4851,26 @@ def run(args: argparse.Namespace) -> None:
                     scene = _bind_scenario_actor_ids(
                         scene,
                         ego,
-                        tuple(scenario_vehicles)
-                        + tuple((actor, actor_spec) for actor, actor_spec, _target in scenario_walkers)
-                        + tuple(scenario_props),
+                        scenario_actor_bindings,
                     )
                     if any(item.track_id for item in scene.detected_objects):
                         perception_sources["target_ids"] = "CARLA_SCENARIO_TRACK_ASSOCIATION"
+                elif spec is not None:
+                    evidence_actor_ids = _sensor_evidence_actor_ids(
+                        scene, ego, scenario_actor_bindings,
+                    )
                 elif any(item.track_id for item in scene.detected_objects):
                     perception_sources["target_ids"] = "C_SENSOR_TEMPORAL_TRACKER"
                 if extension_runtime is not None:
                     extension_runtime.note_perception_observation(
                         elapsed_s=elapsed_s,
-                        detected_actor_ids=tuple(
-                            item.track_id for item in scene.detected_objects
-                            if item.track_id is not None
+                        detected_actor_ids=(
+                            evidence_actor_ids
+                            if evidence_actor_ids is not None
+                            else tuple(
+                                item.track_id for item in scene.detected_objects
+                                if item.track_id is not None
+                            )
                         ),
                     )
                 scene_bound_ns = time.monotonic_ns()
