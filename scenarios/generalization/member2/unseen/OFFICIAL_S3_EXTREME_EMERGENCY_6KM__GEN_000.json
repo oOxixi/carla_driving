@@ -222,6 +222,10 @@
       "actor_id": "cut_in_vehicle",
       "type": "vehicle",
       "blueprint_id": "vehicle.audi.tt",
+      "deactivation_trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 800.0
+      },
       "spawn": {
         "x": 102.0,
         "y": -3.8,

@@ -2911,6 +2911,21 @@ def _build_resume_segment_spec(
             proposed["minimum_actor_distances_m"] = retained_distances
         else:
             proposed.pop("minimum_actor_distances_m", None)
+    for key in (
+        "required_emergency_event_ids",
+        "required_emergency_recovery_ids",
+    ):
+        actor_ids = proposed.get(key)
+        if not isinstance(actor_ids, Sequence) or isinstance(actor_ids, (str, bytes)):
+            continue
+        retained_ids = [
+            str(actor_id) for actor_id in actor_ids
+            if str(actor_id) in remaining_actor_ids
+        ]
+        if retained_ids:
+            proposed[key] = retained_ids
+        else:
+            proposed.pop(key, None)
 
     extensions["proposed_acceptance"] = proposed
     extensions["phase_plan"] = [

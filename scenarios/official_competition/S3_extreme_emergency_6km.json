@@ -86,6 +86,7 @@
       "type": "vehicle",
       "blueprint_id": "vehicle.audi.tt",
       "spawn": {"x": 650.0, "y": -3.5, "z": 0.5, "yaw_deg": 0.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 800.0},
       "behavior": {
         "mode": "cut_in",
         "initial_speed_mps": 0.0,

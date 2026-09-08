@@ -243,6 +243,29 @@ def test_emergency_only_resume_preserves_fast_local_routing_contract() -> None:
     assert resumed.qwen_expected["expected_behaviors"] == ["EMERGENCY_STOP"]
 
 
+def test_late_s3_resume_retains_only_the_unfinished_emergency_actor() -> None:
+    spec = ScenarioSpec.load(
+        Path("scenarios/official_competition/S3_extreme_emergency_6km.json")
+    )
+
+    resumed, _restored_phases = _build_resume_segment_spec(
+        spec,
+        route_progress_m=900.0,
+        completed_command_count=3,
+        target_speed_kph=45.0,
+    )
+
+    assert [command.phase_id for command in resumed.commands] == [
+        "S3_P4_PEDESTRIAN_STOP_HOLD",
+    ]
+    assert "cut_in_vehicle" not in {
+        actor["actor_id"] for actor in resumed.actors
+    }
+    proposed = resumed.extensions["proposed_acceptance"]
+    assert proposed["required_emergency_event_ids"] == ["emergency_pedestrian"]
+    assert proposed["required_emergency_recovery_ids"] == ["emergency_pedestrian"]
+
+
 def test_targeted_scenario_command_waits_for_sensor_target() -> None:
     targeted = _DeferredCommand({
         "command_id": "scenario_cmd_targeted",
