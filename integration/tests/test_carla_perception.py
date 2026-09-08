@@ -306,7 +306,7 @@ def test_exact_frame_radar_velocity_overrides_static_rgb_assumption() -> None:
             return (DetectedObject(2, "car", 0.9, (0.4, 0.3, 0.6, 0.8)),)
 
     ego, session = Actor(1, speed=5.0), Session()
-    points = [[11.8, -0.2, 0.0], [12.0, 0.0, 0.0], [12.2, 0.2, 0.0]]
+    points = [[11.8, -0.2, -1.0], [12.0, 0.0, -1.0], [12.2, 0.2, -1.0]]
     session.frame_buffer.push(RGB_SENSOR_ID, 44, Measurement(44))
     session.frame_buffer.push(LIDAR_SENSOR_ID, 44, Measurement(44, points))
     session.frame_buffer.push(
@@ -327,8 +327,8 @@ def test_exact_frame_radar_velocity_overrides_static_rgb_assumption() -> None:
 
 def test_bridge_uses_filtered_radar_speed_instead_of_raw_frame_toggle() -> None:
     ego, session = Actor(1, speed=5.0), Session()
-    first_points = [[11.8, -0.2, 0.0], [12.0, 0.0, 0.0], [12.2, 0.2, 0.0]]
-    second_points = [[11.7, -0.2, 0.0], [11.9, 0.0, 0.0], [12.1, 0.2, 0.0]]
+    first_points = [[11.8, -0.2, -1.0], [12.0, 0.0, -1.0], [12.2, 0.2, -1.0]]
+    second_points = [[11.7, -0.2, -1.0], [11.9, 0.0, -1.0], [12.1, 0.2, -1.0]]
     for frame, points, raw_velocity in (
         (44, first_points, -2.0),
         (45, second_points, -5.0),
@@ -355,8 +355,8 @@ def test_bridge_uses_filtered_radar_speed_instead_of_raw_frame_toggle() -> None:
 
 def test_lidar_exposes_adjacent_lane_obstacles_without_polluting_front_gap() -> None:
     points = [
-        [11.8, -0.2, -0.4], [12.0, 0.0, -0.5], [12.2, 0.2, -0.4],
-        [15.8, -3.3, -0.4], [16.0, -3.5, -0.5], [16.2, -3.7, -0.3],
+        [11.8, -0.2, -0.8], [12.0, 0.0, -0.9], [12.2, 0.2, -0.8],
+        [15.8, -3.3, -0.8], [16.0, -3.5, -0.9], [16.2, -3.7, -0.7],
     ]
     measurement = Measurement(45, points)
 
@@ -532,7 +532,7 @@ def test_route_deviation_uses_polyline_segments_not_only_sparse_points() -> None
 
 def test_lidar_obstacle_without_actor_uses_sensor_temporal_speed_estimation() -> None:
     ego, session = Actor(1), Session()
-    points = [[6.0, -0.2, 0.0], [6.1, 0.0, 0.0], [6.2, 0.2, 0.0]]
+    points = [[6.0, -0.2, -1.0], [6.1, 0.0, -1.0], [6.2, 0.2, -1.0]]
     session.frame_buffer.push(RGB_SENSOR_ID, 3, Measurement(3))
     session.frame_buffer.push(LIDAR_SENSOR_ID, 3, Measurement(3, points))
     bridge = CarlaPerceptionBridge(World((ego,)), WorldMap(), ego, session, _suite(session))
@@ -553,7 +553,7 @@ def test_rgb_detection_and_lidar_distance_replace_actor_truth_speed() -> None:
             return (DetectedObject(2, "car", 0.9, (0.4, 0.3, 0.6, 0.8)),)
 
     ego, lead, session = Actor(1), Actor(2, x=12.0, speed=3.0), Session()
-    points = [[11.8, -0.2, 0.0], [12.0, 0.0, 0.0], [12.2, 0.2, 0.0]]
+    points = [[11.8, -0.2, -1.0], [12.0, 0.0, -1.0], [12.2, 0.2, -1.0]]
     session.frame_buffer.push(RGB_SENSOR_ID, 5, Measurement(5))
     session.frame_buffer.push(LIDAR_SENSOR_ID, 5, Measurement(5, points))
     bridge = CarlaPerceptionBridge(
@@ -608,7 +608,7 @@ def test_configured_visual_provider_failure_is_fail_closed() -> None:
 
 def test_upstream_rgb_semantics_are_fused_with_lidar_without_guessing() -> None:
     ego, session = Actor(1, speed=5.0), Session()
-    points = [[6.0, -0.2, 0.0], [6.1, 0.0, 0.0], [6.2, 0.2, 0.0]]
+    points = [[6.0, -0.2, -1.0], [6.1, 0.0, -1.0], [6.2, 0.2, -1.0]]
     session.frame_buffer.push(RGB_SENSOR_ID, 12, Measurement(12))
     session.frame_buffer.push(LIDAR_SENSOR_ID, 12, Measurement(12, points))
     bridge = CarlaPerceptionBridge(
@@ -743,3 +743,11 @@ def test_front_lidar_rejects_road_surface_cluster_but_keeps_vehicle_height() -> 
     ])
 
     assert front_lidar_distance_m(points) == pytest.approx(20.02, abs=0.05)
+
+
+def test_front_lidar_rejects_overhead_tree_canopy_cluster() -> None:
+    points = Measurement(1, [
+        [4.6, -0.3, -0.22], [4.7, 0.0, -0.15], [4.8, 0.3, 0.10],
+    ])
+
+    assert front_lidar_distance_m(points) is None

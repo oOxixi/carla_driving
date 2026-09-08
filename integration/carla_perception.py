@@ -403,10 +403,17 @@ def front_lidar_distance_m(
     max_range_m: float = 60.0,
     half_width_m: float = 1.35,
     min_height_m: float = -1.8,
-    max_height_m: float = 0.3,
+    max_height_m: float = -0.35,
     minimum_points: int = 3,
 ) -> float | None:
-    """Return a conservative low-percentile range inside the ego lane corridor."""
+    """Return a conservative low-percentile range inside the ego lane corridor.
+
+    The roof LiDAR is mounted at 2.35 m. Returns above ``-0.35`` in its local
+    frame are higher than the ego's collision envelope and commonly come from
+    tree canopies, traffic-light arms, and flyover structures. Treating those
+    overhead returns as a lead object can hold the vehicle stopped forever on
+    an otherwise clear lane.
+    """
     points = _lidar_xyz(measurement)
     if not len(points):
         return None
@@ -431,7 +438,7 @@ def adjacent_lidar_distances_m(
     inner_lateral_m: float = 1.75,
     outer_lateral_m: float = 5.25,
     min_height_m: float = -1.8,
-    max_height_m: float = 0.3,
+    max_height_m: float = -0.35,
     minimum_points: int = 3,
 ) -> tuple[float | None, float | None]:
     """Return LiDAR-grounded left/right adjacent-lane obstacle ranges."""
