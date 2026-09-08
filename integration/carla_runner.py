@@ -3440,16 +3440,29 @@ def run(args: argparse.Namespace) -> None:
             spec is not None and spec.route_planning_mode == "topology_coverage"
         )
         managed_route_planning = destination_planning or topology_coverage_planning
+        configured_anchor_index = (
+            None
+            if spec is None
+            else spec.extensions.get("route_anchor_spawn_index")
+        )
+        if configured_anchor_index is not None:
+            if (
+                isinstance(configured_anchor_index, bool)
+                or not isinstance(configured_anchor_index, int)
+            ):
+                raise TypeError(
+                    "extensions.route_anchor_spawn_index must be an integer"
+                )
+            if not 0 <= configured_anchor_index < len(spawn_points):
+                raise ValueError(
+                    "extensions.route_anchor_spawn_index is outside the map spawn list"
+                )
+            route_anchor = spawn_points[configured_anchor_index]
         if (
             road_fit_required or seeded_route_anchor or adjacent_lane_anchor_required
         ) and not managed_route_planning:
             maneuver = _scenario_startup_maneuver(spec)
-            configured_anchor_index = spec.extensions.get("route_anchor_spawn_index")
             if configured_anchor_index is not None:
-                if isinstance(configured_anchor_index, bool) or not isinstance(configured_anchor_index, int):
-                    raise TypeError("extensions.route_anchor_spawn_index must be an integer")
-                if not 0 <= configured_anchor_index < len(spawn_points):
-                    raise ValueError("extensions.route_anchor_spawn_index is outside the map spawn list")
                 anchor_index = configured_anchor_index
                 topology_route = build_scenario_route_reference(
                     world_map,

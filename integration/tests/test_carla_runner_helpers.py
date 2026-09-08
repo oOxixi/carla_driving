@@ -119,6 +119,16 @@ def test_dynamic_out_and_back_does_not_change_lane_during_startup() -> None:
     assert _scenario_startup_maneuver(ordinary) == "CHANGE_LANE_LEFT"
 
 
+def test_s1_uses_topology_coverage_for_maneuver_distance_contract() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    s1 = ScenarioSpec.load(
+        root / "official_competition/S1_basic_voice_control_5km.json"
+    )
+
+    assert s1.route_planning_mode == "topology_coverage"
+    assert s1.route_distance_contract_m == pytest.approx(5000.0)
+
+
 def test_scenario_commands_are_latched_and_serialized_behind_active_plan() -> None:
     first = _DeferredCommand({"command_id": "scenario_cmd_003"}, 1, "SCENARIO")
     second = _DeferredCommand({"command_id": "scenario_cmd_004"}, 2, "SCENARIO")

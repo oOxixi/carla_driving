@@ -130,6 +130,10 @@ def validate_all() -> dict[str, Any]:
     s1 = loaded["S1"]
     _require(s1["map"] == "Town05" and s1["weather"] == "ClearNoon", "S1: map/weather mismatch")
     _require(abs(_route_length(s1["route"]["points_xy_m"]) - 5000.0) < 1e-6, "S1: route must be 5km")
+    _require(
+        s1["route"].get("planning_mode") == "topology_coverage",
+        "S1: 5km manoeuvre route must use topology coverage planning",
+    )
     _require(s1["actors"] == [], "S1: dynamic interference is forbidden")
     s1_intents = {command["intent"] for command in s1["commands"]}
     _require({"KEEP_LANE", "TURN_RIGHT", "CHANGE_LANE_LEFT"}.issubset(s1_intents), "S1: missing base manoeuvres")

@@ -17,6 +17,7 @@
   "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
   "route": {
     "coordinate_type": "scenario_local_xy_m",
+    "planning_mode": "topology_coverage",
     "points_xy_m": [[0.0, 0.0], [5000.0, 0.0]],
     "resample_interval_m": 1.0,
     "finish_radius_m": 4.0,
