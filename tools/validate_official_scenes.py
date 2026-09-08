@@ -144,7 +144,17 @@ def validate_all() -> dict[str, Any]:
     required_s2 = {"bus_at_stop", "crossing_pedestrian", "slow_vehicle", "bicycle_right"}
     _require(required_s2.issubset(_actor_ids(s2)), f"S2: missing actors {sorted(required_s2 - _actor_ids(s2))}")
     bus = next(actor for actor in s2["actors"] if actor["actor_id"] == "bus_at_stop")
-    _require(abs(float(bus["spawn"]["y"])) >= 3.0, "S2: stopped bus must remain at the station-side lane")
+    _require(
+        bus["route_position"].get("lane_relation") == "RIGHT_ADJACENT"
+        and abs(float(bus["route_position"].get("lateral_offset_m", 0.0))) <= 1.0,
+        "S2: stopped bus must use the station-side adjacent lane topology",
+    )
+    bicycle = next(actor for actor in s2["actors"] if actor["actor_id"] == "bicycle_right")
+    _require(
+        bicycle["route_position"].get("lane_relation") == "RIGHT_ADJACENT"
+        and abs(float(bicycle["route_position"].get("lateral_offset_m", 0.0))) <= 1.0,
+        "S2: bicycle must use the right adjacent lane topology",
+    )
     _require(s2["extensions"]["sensor_profile"] == "competition_multiview", "S2: multiview profile required")
     _require({"front_rgb", "left_rgb", "right_rgb", "rear_rgb", "lidar"}.issubset(s2["sensors"]), "S2: sensor set incomplete")
     _require(s2["competition_requirements"]["return_to_route_required"] is True, "S2: return-to-route required")

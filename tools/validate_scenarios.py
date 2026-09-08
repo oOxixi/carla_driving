@@ -1,4 +1,5 @@
 import json
+import math
 from pathlib import Path
 
 REQUIRED_TOP = [
@@ -39,6 +40,31 @@ def validate_one(path: Path):
     runtime = data.get("runtime", {})
     if runtime.get("duration_s", 0) <= 0:
         errors.append("runtime.duration_s must be positive")
+
+    actors = data.get("actors", [])
+    if not isinstance(actors, list):
+        errors.append("actors must be a list")
+    else:
+        for actor in actors:
+            if not isinstance(actor, dict):
+                errors.append("actors entries must be objects")
+                continue
+            if str(actor.get("type", "vehicle")).strip().lower() != "vehicle":
+                continue
+            route_position = actor.get("route_position")
+            if not isinstance(route_position, dict) or "lane_relation" not in route_position:
+                continue
+            lateral_offset = route_position.get("lateral_offset_m", 0.0)
+            if (
+                type(lateral_offset) not in (int, float)
+                or isinstance(lateral_offset, bool)
+                or not math.isfinite(float(lateral_offset))
+                or abs(float(lateral_offset)) > 1.5
+            ):
+                errors.append(
+                    f"actor {actor.get('actor_id', '<unknown>')}: explicit lane_relation "
+                    "requires a lane-local lateral_offset_m within +/-1.5m"
+                )
 
     qwen_expected = data.get("qwen_expected")
     qwen_fault = data.get("qwen_fault")

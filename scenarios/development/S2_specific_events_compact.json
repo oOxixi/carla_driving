@@ -96,8 +96,8 @@
       "actor_id": "bus_at_stop",
       "type": "vehicle",
       "blueprint_id": "vehicle.mitsubishi.fusorosa",
-      "spawn": {"x": 190.0, "y": 4.8, "z": 0.5, "yaw_deg": 0.0},
-      "route_position": {"s_m": 190.0, "lateral_offset_m": 4.8, "lane_relation": "CURRENT"},
+      "spawn": {"x": 190.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+      "route_position": {"s_m": 190.0, "lateral_offset_m": 0.0, "lane_relation": "RIGHT_ADJACENT"},
       "activation_trigger": {"type": "route_progress_greater_than_m", "value": 40.0},
       "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 0.0, "target_speed_mps": 0.0}
     },

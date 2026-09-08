@@ -226,14 +226,14 @@
       "blueprint_id": "vehicle.mitsubishi.fusorosa",
       "spawn": {
         "x": 1050.0,
-        "y": 4.8,
+        "y": -0.3,
         "z": 0.5,
         "yaw_deg": 0.0
       },
       "route_position": {
         "s_m": 1047.0,
-        "lateral_offset_m": 4.5,
-        "lane_relation": "CURRENT"
+        "lateral_offset_m": -0.3,
+        "lane_relation": "RIGHT_ADJACENT"
       },
       "activation_trigger": {
         "type": "route_progress_greater_than_m",
@@ -254,7 +254,7 @@
       "type": "walker.pedestrian",
       "spawn": {
         "x": 1032.0,
-        "y": 7.0,
+        "y": -0.3,
         "z": 0.5,
         "yaw_deg": -90.0
       },
@@ -425,8 +425,8 @@
       },
       "route_position": {
         "s_m": 4317.0,
-        "lateral_offset_m": 6.7,
-        "lane_relation": "CURRENT"
+        "lateral_offset_m": -0.3,
+        "lane_relation": "RIGHT_ADJACENT"
       },
       "activation_trigger": {
         "type": "route_progress_greater_than_m",
