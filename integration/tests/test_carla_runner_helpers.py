@@ -1559,9 +1559,9 @@ def test_distance_contract_remaining_rejects_negative_values(
 
 
 def test_route_stop_trigger_scales_with_speed_without_stopping_early() -> None:
-    assert _route_stop_trigger_m(0.0, 3.0) == pytest.approx(3.0)
-    assert _route_stop_trigger_m(4.0, 3.0) == pytest.approx(6.2)
-    assert _route_stop_trigger_m(6.0, 3.0) == pytest.approx(10.2)
+    assert _route_stop_trigger_m(0.0, 3.0) == pytest.approx(1.5)
+    assert _route_stop_trigger_m(4.0, 3.0) == pytest.approx(4.7)
+    assert _route_stop_trigger_m(6.0, 3.0) == pytest.approx(8.7)
 
 
 def test_long_route_ends_after_real_contracts_not_only_frame_exhaustion() -> None:

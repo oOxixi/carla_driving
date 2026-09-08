@@ -2781,14 +2781,15 @@ def _intentional_qwen_failure_completed(
 def _route_stop_trigger_m(speed_mps: float, finish_radius_m: float, decel_mps2: float = 2.5) -> float:
     """Choose an endpoint braking trigger that stops inside the finish radius.
 
-    The finish radius is the permitted final standstill envelope, not extra
-    stopping distance.  Using a realistic closed-loop service deceleration
-    avoids commanding zero speed so early that a long route can never satisfy
-    its physical distance contract.
+    Aim for the middle of the permitted standstill envelope rather than its
+    outer edge.  The margin absorbs controller and route-projection error while
+    a realistic closed-loop service deceleration still avoids stopping a long
+    route before its physical distance contract is satisfied.
     """
     if speed_mps < 0.0 or finish_radius_m < 0.0 or decel_mps2 <= 0.0:
         raise ValueError("speed/finish radius must be non-negative and deceleration positive")
-    return finish_radius_m + speed_mps * speed_mps / (2.0 * decel_mps2)
+    target_standstill_remaining_m = finish_radius_m * 0.5
+    return target_standstill_remaining_m + speed_mps * speed_mps / (2.0 * decel_mps2)
 
 
 def _route_recovery_hold_reference(vehicle: RuntimeVehicleState) -> RouteReference:
