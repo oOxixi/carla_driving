@@ -110,9 +110,10 @@
       "actor_id": "emergency_pedestrian",
       "type": "walker.pedestrian",
       "spawn": {"x": 1020.0, "y": 3.5, "z": 0.5, "yaw_deg": -90.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 1100.0},
       "behavior": {
         "mode": "crossing",
-        "target_xy_m": [1020.0, -3.5],
+        "target_xy_m": [1020.0, -7.0],
         "start_time_s": 0.0,
         "speed_mps": 2.4,
         "trigger": {"type": "route_progress_greater_than_m", "value": 990.0},
@@ -202,6 +203,7 @@
       "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "AVOID_OBSTACLE", "CHANGE_LANE_LEFT", "RETURN_TO_LANE", "STOP"],
       "required_emergency_event_ids": ["cut_in_vehicle", "emergency_pedestrian"],
       "required_emergency_recovery_ids": ["cut_in_vehicle", "emergency_pedestrian"],
+      "minimum_resumed_speed_kph_by_phase": {"S3_P3_CUT_IN_EMERGENCY": 32.0, "S3_P4_PEDESTRIAN_STOP_HOLD": 32.0},
       "emergency_response_p95_max_ms": 100,
       "emergency_response_absolute_max_ms": 120
     },

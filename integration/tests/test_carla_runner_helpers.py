@@ -269,6 +269,9 @@ def test_late_s3_resume_retains_only_the_unfinished_emergency_actor() -> None:
     proposed = resumed.extensions["proposed_acceptance"]
     assert proposed["required_emergency_event_ids"] == ["emergency_pedestrian"]
     assert proposed["required_emergency_recovery_ids"] == ["emergency_pedestrian"]
+    assert proposed["minimum_resumed_speed_kph_by_phase"] == {
+        "S3_P4_PEDESTRIAN_STOP_HOLD": 32.0,
+    }
 
 
 def test_targeted_scenario_command_waits_for_sensor_target() -> None:

@@ -306,6 +306,18 @@ def validate_all() -> dict[str, Any]:
         - float(pedestrian["behavior"]["trigger"]["value"]) <= 40.0,
         "S3: pedestrian must enter sensor range with enough emergency stopping distance",
     )
+    _require(
+        abs(
+            float(pedestrian["behavior"]["target_xy_m"][1])
+            - float(pedestrian["spawn"]["y"])
+        ) >= 9.0,
+        "S3: pedestrian crossing target must finish beyond the vehicle lanes",
+    )
+    _require(
+        float(pedestrian.get("deactivation_trigger", {}).get("value", 0.0))
+        > float(pedestrian["behavior"]["trigger"]["value"]),
+        "S3: cleared pedestrian must retire after its event window",
+    )
     pedestrian_recovery = s3["extensions"]["emergency_recovery"][
         "emergency_pedestrian"
     ]
@@ -321,6 +333,12 @@ def validate_all() -> dict[str, Any]:
     _require(s3["runtime"]["duration_s"] >= 800.0, "S3: runtime budget is too short for 6km at safe rain speed")
     s3_qwen = s3["extensions"]["proposed_acceptance"]
     _require(s3_qwen["qwen_request_count"] == 2, "S3: two normal semantic commands must call Qwen")
+    _require(
+        float(s3_qwen["minimum_resumed_speed_kph_by_phase"][
+            "S3_P4_PEDESTRIAN_STOP_HOLD"
+        ]) >= 32.0,
+        "S3: pedestrian recovery must regain a sustained driving speed",
+    )
     _require(s3["qwen_expected"]["route"] == "MIXED", "S3: mixed Qwen/safety routing contract required")
     _require(
         s3["qwen_expected"]["route_counts"]
