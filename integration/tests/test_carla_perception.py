@@ -267,7 +267,7 @@ def test_bridge_combines_aligned_lidar_events_and_map_without_actor_truth() -> N
     world, session, events = World((ego, lead)), Session(), EventLedger()
     events.collision_callback(type("Event", (), {"frame": 42})())
     events.lane_invasion_callback(type("Event", (), {"frame": 42})())
-    points = [[11.8, -0.3, -0.5], [12.0, 0.0, -0.4], [12.2, 0.3, -0.6], [40.0, 8.0, 0.0]]
+    points = [[11.8, -0.3, -1.0], [12.0, 0.0, -0.9], [12.2, 0.3, -1.1], [40.0, 8.0, 0.0]]
     session.frame_buffer.push(RGB_SENSOR_ID, 42, Measurement(42))
     session.frame_buffer.push(LIDAR_SENSOR_ID, 42, Measurement(42, points))
     bridge = CarlaPerceptionBridge(world, WorldMap(), ego, session, _suite(session, events))
@@ -355,8 +355,8 @@ def test_bridge_uses_filtered_radar_speed_instead_of_raw_frame_toggle() -> None:
 
 def test_lidar_exposes_adjacent_lane_obstacles_without_polluting_front_gap() -> None:
     points = [
-        [11.8, -0.2, -0.8], [12.0, 0.0, -0.9], [12.2, 0.2, -0.8],
-        [15.8, -3.3, -0.8], [16.0, -3.5, -0.9], [16.2, -3.7, -0.7],
+        [11.8, -0.2, -1.0], [12.0, 0.0, -1.1], [12.2, 0.2, -1.0],
+        [15.8, -3.3, -1.0], [16.0, -3.5, -1.1], [16.2, -3.7, -0.9],
     ]
     measurement = Measurement(45, points)
 
@@ -747,7 +747,7 @@ def test_front_lidar_rejects_road_surface_cluster_but_keeps_vehicle_height() -> 
 
 def test_front_lidar_rejects_overhead_tree_canopy_cluster() -> None:
     points = Measurement(1, [
-        [4.6, -0.3, -0.22], [4.7, 0.0, -0.15], [4.8, 0.3, 0.10],
+        [4.6, -0.3, -0.60], [4.7, 0.0, -0.45], [4.8, 0.3, -0.20],
     ])
 
     assert front_lidar_distance_m(points) is None
