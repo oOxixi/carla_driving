@@ -4587,6 +4587,14 @@ def run(args: argparse.Namespace) -> None:
                         current_multiview_rgb = sample.multi_view_rgb
                         perception_sources = dict(sample.source_by_field)
                         c_safety_state = sample.safety_summary.to_dict()
+                        if extension_runtime is not None:
+                            extension_runtime.note_front_path_observation(
+                                elapsed_s=elapsed_s,
+                                path_clear=(
+                                    sample.safety_summary.recommended_action
+                                    == "KEEP_SPEED"
+                                ),
+                            )
                         c_speed_cap_mps = _c_safety_speed_cap_mps(c_safety_state)
                         if c_speed_cap_mps is not None:
                             perception_sources["c_speed_cap_mps"] = (

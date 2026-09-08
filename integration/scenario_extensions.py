@@ -158,6 +158,7 @@ class ScenarioExtensionRuntime:
         self._actor_safety_override_time_s: dict[str, float] = {}
         self._actor_control_effect_time_s: dict[str, float] = {}
         self._actor_recovery_time_s: dict[str, float] = {}
+        self._front_path_clear_since_s: float | None = None
         self._rss_start_mb = self._rss_mb()
         self._rss_peak_mb = self._rss_start_mb
 
@@ -337,6 +338,18 @@ class ScenarioExtensionRuntime:
             if actor_id in detected:
                 self._actor_perception_time_s.setdefault(actor_id, float(elapsed_s))
 
+    def note_front_path_observation(
+        self, *, elapsed_s: float, path_clear: bool,
+    ) -> None:
+        """Track continuous sensor confirmation that the ego path is clear."""
+        if type(path_clear) is not bool:
+            raise TypeError("path_clear must be bool")
+        if path_clear:
+            if self._front_path_clear_since_s is None:
+                self._front_path_clear_since_s = float(elapsed_s)
+        else:
+            self._front_path_clear_since_s = None
+
     def ready_emergency_recovery(self, *, elapsed_s: float) -> tuple[str, float] | None:
         """Return one configured hazard whose minimum stop hold has elapsed."""
         recovery = self.extensions.get("emergency_recovery", {})
@@ -358,14 +371,34 @@ class ScenarioExtensionRuntime:
                 raise ValueError(
                     "emergency recovery hold/resume speed must be positive and clearance non-negative"
                 )
-            actor_distance_m = self._actor_distances_m.get(normalized_id)
-            hazard_clear = (
-                minimum_clearance_m <= 0.0
-                or (
-                    actor_distance_m is not None
-                    and actor_distance_m >= minimum_clearance_m
+            clearance_mode = str(
+                raw_policy.get("clearance_mode", "actor_distance")
+            ).strip().lower()
+            if clearance_mode == "actor_distance":
+                actor_distance_m = self._actor_distances_m.get(normalized_id)
+                hazard_clear = (
+                    minimum_clearance_m <= 0.0
+                    or (
+                        actor_distance_m is not None
+                        and actor_distance_m >= minimum_clearance_m
+                    )
                 )
-            )
+            elif clearance_mode == "sensor_path_clear":
+                minimum_path_clear_s = float(
+                    raw_policy.get("minimum_path_clear_s", 0.5)
+                )
+                if minimum_path_clear_s <= 0.0:
+                    raise ValueError("minimum_path_clear_s must be positive")
+                hazard_clear = (
+                    self._front_path_clear_since_s is not None
+                    and float(elapsed_s) + TIME_COMPARISON_EPSILON_S
+                    >= self._front_path_clear_since_s + minimum_path_clear_s
+                )
+            else:
+                raise ValueError(
+                    "emergency recovery clearance_mode must be actor_distance "
+                    "or sensor_path_clear"
+                )
             if (
                 hazard_clear
                 and float(elapsed_s) + TIME_COMPARISON_EPSILON_S >= control_s + hold_s

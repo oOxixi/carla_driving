@@ -306,6 +306,14 @@ def validate_all() -> dict[str, Any]:
         - float(pedestrian["behavior"]["trigger"]["value"]) <= 40.0,
         "S3: pedestrian must enter sensor range with enough emergency stopping distance",
     )
+    pedestrian_recovery = s3["extensions"]["emergency_recovery"][
+        "emergency_pedestrian"
+    ]
+    _require(
+        pedestrian_recovery.get("clearance_mode") == "sensor_path_clear"
+        and float(pedestrian_recovery.get("minimum_path_clear_s", 0.0)) >= 0.5,
+        "S3: pedestrian recovery must require continuous sensor-confirmed path clearance",
+    )
     _require(s3["extensions"]["sensor_profile"] == "competition_multiview", "S3: multiview profile required")
     weather = s3["extensions"]["weather_parameters"]
     _require(weather["precipitation"] >= 80 and weather["wetness"] == 100, "S3: heavy rain/wet road missing")

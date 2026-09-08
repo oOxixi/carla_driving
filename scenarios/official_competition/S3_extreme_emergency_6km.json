@@ -207,7 +207,7 @@
     },
     "emergency_recovery": {
       "cut_in_vehicle": {"minimum_hold_s": 2.0, "minimum_clearance_m": 12.0, "resume_speed_kph": 45.0},
-      "emergency_pedestrian": {"minimum_hold_s": 6.0, "minimum_clearance_m": 8.0, "resume_speed_kph": 45.0}
+      "emergency_pedestrian": {"minimum_hold_s": 6.0, "clearance_mode": "sensor_path_clear", "minimum_path_clear_s": 0.5, "resume_speed_kph": 45.0}
     },
     "fixed_random_seed": true,
     "speed_policy": {"scenario_limit_kph": 50.0, "override_map_limit": true},

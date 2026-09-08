@@ -703,6 +703,35 @@ def test_emergency_recovery_also_waits_until_actor_has_safe_clearance() -> None:
     assert speed_mps == pytest.approx(12.5)
 
 
+def test_pedestrian_recovery_waits_for_continuous_sensor_path_clearance() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "emergency_recovery": {
+            "pedestrian": {
+                "minimum_hold_s": 2.0,
+                "clearance_mode": "sensor_path_clear",
+                "minimum_path_clear_s": 0.5,
+                "resume_speed_kph": 18.0,
+            },
+        },
+    })
+    runtime.note_actor_trigger("pedestrian", elapsed_s=10.0)
+    runtime.note_control_observation(
+        elapsed_s=10.1, speed_mps=3.0, route_progress_m=100.0,
+        throttle=0.0, brake=1.0, safety_override=True,
+        safety_reason="COMMAND_EMERGENCY_STOP", route_deviation_m=0.0,
+    )
+
+    runtime.note_front_path_observation(elapsed_s=11.8, path_clear=True)
+    assert runtime.ready_emergency_recovery(elapsed_s=12.1) is None
+    runtime.note_front_path_observation(elapsed_s=12.2, path_clear=False)
+    runtime.note_front_path_observation(elapsed_s=12.3, path_clear=True)
+    assert runtime.ready_emergency_recovery(elapsed_s=12.7) is None
+
+    actor_id, speed_mps = runtime.ready_emergency_recovery(elapsed_s=12.8)
+    assert actor_id == "pedestrian"
+    assert speed_mps == pytest.approx(5.0)
+
+
 def test_emergency_event_contract_rejects_missing_perception_or_late_brake() -> None:
     runtime = ScenarioExtensionRuntime({})
     runtime.note_actor_trigger("emergency_pedestrian", elapsed_s=20.0)
