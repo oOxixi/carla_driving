@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "DEMO_03_overtake_slow_car",
+  "category": "demo",
+  "official_level": "challenge",
+  "description": "前方慢车（30m、2.5m/s匀速）：场景动态变化，测试变道/超车与跟车减速。",
+  "tags": ["demo", "slow_vehicle", "overtake", "dynamic"],
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 13,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 40,
+    "max_startup_wait_s": 10,
+    "sim_ticks_per_round": 20
+  },
+  "ego_spawn": {
+    "use_map_spawn_points": true,
+    "initial_speed_kph": 20
+  },
+  "route": {
+    "coordinate_type": "carla_waypoints",
+    "note": "直行，无固定路线"
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "保持车道以20km/h行驶",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 20
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "slow_car",
+      "type": "vehicle.tesla.model3",
+      "spawn": {
+        "use_relative": true,
+        "rel_x_m": 30,
+        "rel_y_m": 0,
+        "z": 0.5,
+        "yaw_deg": 0
+      },
+      "behavior": {
+        "mode": "forward",
+        "speed_mps": 2.5,
+        "start_time_s": 1,
+        "stop_after_m": 80
+      }
+    }
+  ],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 1
+    },
+    "lidar": {
+      "enabled": true,
+      "range": 80,
+      "rotation_frequency": 20,
+      "channels": 32,
+      "points_per_second": 224000
+    },
+    "collision": {
+      "enabled": true
+    }
+  },
+  "expected": {
+    "must_no_collision": true,
+    "expected_safety_override_allowed": true
+  },
+  "notes": [
+    "说“超车/变道”→ Qwen应输出CHANGE_LANE或AVOID_OBSTACLE",
+    "说“减速”→ 跟车减速，不触发急停",
+    "说“加速”→ 接近慢车后应被D安全层拦截"
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "DEMO_02_front_obstacle",
+  "category": "demo",
+  "official_level": "challenge",
+  "description": "前车静止25m：测试“加速”触发紧急制动、“变道/超车”由Qwen结合视觉判断。",
+  "tags": ["demo", "obstacle", "lane_change", "safety"],
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 7,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 30,
+    "max_startup_wait_s": 10,
+    "sim_ticks_per_round": 20
+  },
+  "ego_spawn": {
+    "use_map_spawn_points": true,
+    "initial_speed_kph": 20
+  },
+  "route": {
+    "coordinate_type": "carla_waypoints",
+    "note": "直行，无固定路线"
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "保持车道以20km/h行驶",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 20
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "obstacle_car",
+      "type": "vehicle.tesla.model3",
+      "spawn": {
+        "use_relative": true,
+        "rel_x_m": 25,
+        "rel_y_m": 0,
+        "z": 0.5,
+        "yaw_deg": 0
+      },
+      "behavior": {
+        "mode": "static"
+      }
+    }
+  ],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 1
+    },
+    "lidar": {
+      "enabled": true,
+      "range": 80,
+      "rotation_frequency": 20,
+      "channels": 32,
+      "points_per_second": 224000
+    },
+    "collision": {
+      "enabled": true
+    }
+  },
+  "expected": {
+    "must_no_collision": true,
+    "expected_safety_override_allowed": true
+  },
+  "notes": [
+    "说“加速”→ 距离<5m时D安全层强制EMERGENCY_STOP",
+    "说“变道”→ Qwen结合视觉输出CHANGE_LANE或AVOID_OBSTACLE",
+    "说“停车”→ 应输出STOP"
+  ]
+}

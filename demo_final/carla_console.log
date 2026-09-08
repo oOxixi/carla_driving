@@ -1,0 +1,7 @@
+INFO:  Listening at  0.0.0.0:2002 
+INFO:  session 0 : error sending data : 远程主机强迫关闭了一个现有的连接。 
+INFO:  session 4 : error sending data : 远程主机强迫关闭了一个现有的连接。 
+INFO:  session 8 : error sending data : 远程主机强迫关闭了一个现有的连接。 
+INFO:  session 10 : error sending data : 远程主机强迫关闭了一个现有的连接。 
+INFO:  session 14 : error sending data : 远程主机强迫关闭了一个现有的连接。 
+INFO:  Disconnecting all secondary servers 
