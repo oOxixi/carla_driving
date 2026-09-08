@@ -214,6 +214,34 @@ def test_terminal_resume_keeps_no_commands_actors_or_qwen_contract() -> None:
     assert "minimum_actor_distances_m" not in proposed
 
 
+def test_emergency_only_resume_preserves_fast_local_routing_contract() -> None:
+    spec = ScenarioSpec.load(
+        Path("scenarios/official_competition/S3_extreme_emergency_6km.json")
+    )
+
+    resumed, restored_phases = _build_resume_segment_spec(
+        spec,
+        route_progress_m=500.0,
+        completed_command_count=2,
+        target_speed_kph=22.0,
+    )
+
+    assert restored_phases[-1] == "S3_P2_CONSTRUCTION_MERGE"
+    assert [command.envelope["intent"] for command in resumed.commands] == [
+        "EMERGENCY_STOP", "EMERGENCY_STOP",
+    ]
+    proposed = resumed.extensions["proposed_acceptance"]
+    assert proposed["qwen_request_count"] == 0
+    assert "allowed_qwen_actions" not in proposed
+    assert "oracle" not in resumed.extensions
+    assert resumed.qwen_expected is not None
+    assert resumed.qwen_expected["route"] == "FAST_LOCAL"
+    assert "route_counts" not in resumed.qwen_expected
+    assert resumed.qwen_expected["min_calls"] == 0
+    assert resumed.qwen_expected["max_calls"] == 0
+    assert resumed.qwen_expected["expected_behaviors"] == ["EMERGENCY_STOP"]
+
+
 def test_targeted_scenario_command_waits_for_sensor_target() -> None:
     targeted = _DeferredCommand({
         "command_id": "scenario_cmd_targeted",
@@ -621,6 +649,50 @@ def test_event_driven_cut_in_waits_then_steers_and_recenters() -> None:
         behavior_elapsed_s=4.0,
     )
     assert vehicle.applied["steer"] == 0.0
+
+
+def test_completed_cut_in_accelerates_clear_of_resumed_ego() -> None:
+    class Vector:
+        def __init__(self, x=0.0, y=0.0, z=0.0):
+            self.x, self.y, self.z = x, y, z
+
+    class Transform:
+        @staticmethod
+        def get_forward_vector():
+            return Vector(1.0, 0.0, 0.0)
+
+    class Vehicle:
+        is_alive = True
+
+        @staticmethod
+        def get_velocity():
+            return Vector(4.0, 0.0, 0.0)
+
+        @staticmethod
+        def get_transform():
+            return Transform()
+
+        def apply_control(self, control):
+            self.applied = control
+
+    class CarlaApi:
+        @staticmethod
+        def VehicleControl(**values):
+            return values
+
+    actor = {"behavior": {
+        "mode": "cut_in", "cut_in_on_first_event": True,
+        "cut_in_duration_s": 3.0, "post_cut_in_speed_mps": 13.9,
+    }}
+    vehicle = Vehicle()
+
+    _update_scenario_vehicle(
+        vehicle, actor, 25.0, CarlaApi(), desired_speed_mps=4.0,
+        behavior_elapsed_s=4.0,
+    )
+
+    assert vehicle.applied["throttle"] == pytest.approx(0.45)
+    assert vehicle.applied["brake"] == 0.0
 
 
 def test_voice_load_failure_becomes_rejected_no_op() -> None:

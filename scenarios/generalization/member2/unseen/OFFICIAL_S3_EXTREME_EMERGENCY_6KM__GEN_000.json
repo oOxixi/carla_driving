@@ -216,6 +216,7 @@
         "mode": "cut_in",
         "initial_speed_mps": 0.0,
         "target_speed_mps": 0.0,
+        "post_cut_in_speed_mps": 13.9,
         "cut_in_on_first_event": true,
         "cut_in_duration_s": 3.0,
         "cut_in_steer": 0.18,

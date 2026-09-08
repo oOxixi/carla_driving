@@ -1406,6 +1406,30 @@ def _update_scenario_vehicle(
         _scenario_vehicle_speed_mps(actor_spec, elapsed_s)
         if desired_speed_mps is None else max(0.0, float(desired_speed_mps))
     )
+    behavior = actor_spec.get("behavior", {})
+    mode = str(behavior.get("mode", "")).strip().lower() if isinstance(behavior, Mapping) else ""
+    cut_in_elapsed_s: float | None = None
+    cut_in_duration_s: float | None = None
+    if mode == "cut_in":
+        event_driven = bool(behavior.get("cut_in_on_first_event", False))
+        if event_driven and behavior_elapsed_s is None:
+            cut_in_elapsed_s = -1.0
+        elif event_driven:
+            cut_in_elapsed_s = float(behavior_elapsed_s)
+        else:
+            cut_in_elapsed_s = float(elapsed_s) - float(
+                behavior.get("cut_in_start_s", 2.0)
+            )
+        cut_in_duration_s = max(
+            0.5, float(behavior.get("cut_in_duration_s", 3.0))
+        )
+        post_cut_in_speed = behavior.get("post_cut_in_speed_mps")
+        if (
+            cut_in_elapsed_s >= cut_in_duration_s
+            and type(post_cut_in_speed) in (int, float)
+            and not isinstance(post_cut_in_speed, bool)
+        ):
+            desired = max(0.0, float(post_cut_in_speed))
     current = _signed_forward_speed_mps(lead)
     error = desired - current
     if error < -0.15:
@@ -1415,8 +1439,6 @@ def _update_scenario_vehicle(
     else:
         throttle, brake = (0.08 if desired > 0.1 else 0.0), (0.55 if desired <= 0.1 else 0.0)
 
-    behavior = actor_spec.get("behavior", {})
-    mode = str(behavior.get("mode", "")).strip().lower() if isinstance(behavior, Mapping) else ""
     steer = 0.0
     velocity_direction: tuple[float, float] | None = None
     follow_map_waypoint = False
@@ -1480,18 +1502,12 @@ def _update_scenario_vehicle(
             ) % 360.0 - 180.0
             steer = max(-0.30, min(0.30, yaw_error_deg * 0.03))
     if mode == "cut_in":
-        event_driven = bool(behavior.get("cut_in_on_first_event", False))
-        if event_driven and behavior_elapsed_s is None:
-            maneuver_elapsed_s = -1.0
-        elif event_driven:
-            maneuver_elapsed_s = float(behavior_elapsed_s)
-        else:
-            maneuver_elapsed_s = float(elapsed_s) - float(behavior.get("cut_in_start_s", 2.0))
-        duration_s = max(0.5, float(behavior.get("cut_in_duration_s", 3.0)))
+        assert cut_in_elapsed_s is not None
+        assert cut_in_duration_s is not None
         peak = min(0.35, max(0.05, abs(float(behavior.get("cut_in_steer", 0.18)))))
         direction = str(behavior.get("direction", "RIGHT")).strip().upper()
         sign = 1.0 if direction == "RIGHT" else -1.0
-        phase = maneuver_elapsed_s / duration_s
+        phase = cut_in_elapsed_s / cut_in_duration_s
         if 0.0 <= phase < 0.45:
             steer = sign * peak
         elif 0.45 <= phase < 0.90:
@@ -2789,8 +2805,22 @@ def _build_resume_segment_spec(
 
     extensions = dict(spec.extensions)
     proposed = dict(extensions.get("proposed_acceptance", {}))
-    proposed["qwen_request_count"] = len(remaining_commands)
+    qwen_commands = tuple(
+        command for command in remaining_commands
+        if str(command.envelope.get("intent", "")).upper() != "EMERGENCY_STOP"
+    )
+    fast_local_commands = tuple(
+        command for command in remaining_commands if command not in qwen_commands
+    )
+    proposed["qwen_request_count"] = len(qwen_commands)
+    if "qwen_missing_request_count" in proposed:
+        proposed["qwen_missing_request_count"] = len(fast_local_commands)
     proposed["expected_phase_count"] = len(remaining_commands)
+    if not qwen_commands:
+        # These checks consume model-plan evidence only. A continuation that
+        # contains solely deterministic emergency commands must instead be
+        # judged by FAST_LOCAL routing and emergency/recovery evidence.
+        proposed.pop("allowed_qwen_actions", None)
     proposed.pop("must_return_to_original_lane", None)
     for key in (
         "command_progress_windows_m",
@@ -2857,17 +2887,36 @@ def _build_resume_segment_spec(
         "completed_command_count": completed_command_count,
         "target_speed_kph": target_speed_kph,
     }
+    if not qwen_commands:
+        extensions.pop("oracle", None)
 
     qwen_expected = None
     if spec.qwen_expected is not None and remaining_commands:
         qwen_expected = dict(spec.qwen_expected)
-        qwen_expected["min_calls"] = len(remaining_commands)
-        qwen_expected["max_calls"] = len(remaining_commands)
-        expected_behaviors = {"KEEP_LANE"}
-        for command in remaining_commands:
+        qwen_expected["min_calls"] = len(qwen_commands)
+        qwen_expected["max_calls"] = len(qwen_commands)
+        if qwen_commands and fast_local_commands:
+            qwen_expected["route"] = "MIXED"
+            qwen_expected["route_counts"] = {
+                "QWEN_PLAN": len(qwen_commands),
+                "FAST_LOCAL": len(fast_local_commands),
+                "CONFIRM_SAFE": 0,
+            }
+        elif fast_local_commands:
+            qwen_expected["route"] = "FAST_LOCAL"
+            qwen_expected.pop("route_counts", None)
+        else:
+            qwen_expected["route"] = "QWEN_PLAN"
+            qwen_expected.pop("route_counts", None)
+        expected_behaviors = (
+            {"KEEP_LANE"} if qwen_commands else set()
+        )
+        for command in qwen_commands:
             intent = str(command.envelope.get("intent", "")).upper()
             if intent in {"SLOW_DOWN", "YIELD"}:
                 expected_behaviors.add(intent)
+        if fast_local_commands:
+            expected_behaviors.add("EMERGENCY_STOP")
         qwen_expected["expected_behaviors"] = sorted(expected_behaviors)
 
     return replace(

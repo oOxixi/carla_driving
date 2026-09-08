@@ -247,6 +247,11 @@ def validate_all() -> dict[str, Any]:
     cut_in = next(actor for actor in s3["actors"] if actor["actor_id"] == "cut_in_vehicle")
     _require(cut_in["behavior"]["mode"] == "cut_in", "S3: cut-in actor needs deterministic lateral behaviour")
     _require(cut_in["behavior"].get("cut_in_on_first_event") is True, "S3: cut-in must be proximity-event driven")
+    _require(
+        float(cut_in["behavior"].get("post_cut_in_speed_mps", 0.0))
+        >= float(s3["extensions"]["emergency_recovery"]["cut_in_vehicle"]["resume_speed_kph"]) / 3.6,
+        "S3: completed cut-in vehicle must clear the resumed ego instead of becoming a roadblock",
+    )
     cut_in_events = cut_in["behavior"].get("events", [])
     _require(len(cut_in_events) == 1, "S3: cut-in needs exactly one deterministic start event")
     cut_in_trigger = cut_in_events[0].get("trigger", {})
@@ -256,6 +261,22 @@ def validate_all() -> dict[str, Any]:
         "S3: cut-in start must be bound to ego proximity",
     )
     _require(25.0 <= float(cut_in_trigger.get("value", 0.0)) <= 35.0, "S3: cut-in proximity threshold is unsafe")
+    cut_in_command = next(
+        command for command in s3["commands"]
+        if command.get("phase_id") == "S3_P3_CUT_IN_EMERGENCY"
+    )
+    command_distance_trigger = next(
+        item for item in cut_in_command["trigger"]["all"]
+        if item.get("type") == "ego_distance_to_actor_less_than_m"
+    )
+    _require(
+        command_distance_trigger.get("actor_id") == "cut_in_vehicle"
+        and 0.0 <= (
+            float(cut_in_trigger["value"])
+            - float(command_distance_trigger.get("value", -1.0))
+        ) <= 5.0,
+        "S3: emergency command must follow the real cut-in trigger without a deadlock gap",
+    )
     _require(s3["extensions"]["sensor_profile"] == "competition_multiview", "S3: multiview profile required")
     weather = s3["extensions"]["weather_parameters"]
     _require(weather["precipitation"] >= 80 and weather["wetness"] == 100, "S3: heavy rain/wet road missing")
