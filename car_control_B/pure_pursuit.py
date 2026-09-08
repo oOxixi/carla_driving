@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Any
 from config.strategy import DEFAULT_STRATEGY
 
 from .lateral_controller_base import LateralController
@@ -97,6 +98,56 @@ class PurePursuitController(LateralController):
         self._active_route_points = None
         self._active_route_slot = None
         self._route_progress.clear()
+
+    def synchronize_route_progress(self, reference: Any, progress_m: float) -> int:
+        """Synchronize a retained route with an external monotonic tracker.
+
+        Temporary manoeuvre routes can advance farther than the controller's
+        bounded geometric reacquisition window.  The mission progress tracker
+        already resolves loops by arc length, so use that evidence to restore
+        the exact route slot without a global nearest-point snap.
+        """
+        progress = float(progress_m)
+        if not math.isfinite(progress) or progress < 0.0:
+            raise ValueError("route progress must be finite and non-negative")
+        source_points = getattr(reference, "points_xy_m", None)
+        known_source_points = next(
+            (
+                known_points
+                for known_points, _known_progress in self._route_progress
+                if known_points is source_points
+            ),
+            None,
+        )
+        points = (
+            known_source_points
+            if known_source_points is not None
+            else self._adapt_reference_any(reference).points_xy_m
+        )
+        cumulative = [0.0]
+        for first, second in zip(points, points[1:]):
+            cumulative.append(cumulative[-1] + math.dist(first, second))
+        synchronized_index = min(
+            range(len(cumulative)),
+            key=lambda index: (abs(cumulative[index] - progress), index),
+        )
+        slot = next(
+            (
+                index
+                for index, (known_points, _known_progress) in enumerate(self._route_progress)
+                if known_points is points
+            ),
+            None,
+        )
+        if slot is None:
+            self._route_progress.append((points, synchronized_index))
+            slot = len(self._route_progress) - 1
+        else:
+            self._route_progress[slot] = (points, synchronized_index)
+        if self._active_route_points is points:
+            self._active_route_slot = slot
+            self._last_nearest_index = synchronized_index
+        return synchronized_index
 
     def _lookahead(self, speed_mps: float, curvature_per_m: float = 0.0,
                    cross_track_error_m: float = 0.0,

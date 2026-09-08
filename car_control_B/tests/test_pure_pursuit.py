@@ -119,6 +119,31 @@ def test_route_progress_is_restored_after_temporary_manoeuvre_route() -> None:
     assert restored.nearest_index == 60
 
 
+def test_external_mission_progress_restores_beyond_reacquire_window() -> None:
+    controller = PurePursuitController(PurePursuitParams(
+        nearest_search_window=2,
+        route_reacquire_search_window=20,
+        max_steer_delta_per_step=1.0,
+    ))
+    mission = RouteReference(
+        points_xy_m=[(float(index), 0.0) for index in range(200)],
+        target_speed_mps=5.0,
+    )
+    manoeuvre = RouteReference(
+        points_xy_m=[(20.0 + float(index), 3.5) for index in range(120)],
+        target_speed_mps=4.0,
+    )
+
+    controller.step(VehiclePose(20.0, 0.0, 0.0, 5.0), mission)
+    controller.step(VehiclePose(130.0, 3.5, 0.0, 4.0), manoeuvre)
+    assert controller.synchronize_route_progress(mission, 130.0) == 130
+
+    restored = controller.step(VehiclePose(130.0, 0.0, 0.0, 5.0), mission)
+
+    assert restored.nearest_index == 130
+    assert restored.status == "OK"
+
+
 def test_small_frame_window_prevents_gradual_progress_jump_on_overlap() -> None:
     controller = PurePursuitController(PurePursuitParams(
         nearest_search_window=2,

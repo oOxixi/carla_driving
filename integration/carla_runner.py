@@ -5515,6 +5515,19 @@ def run(args: argparse.Namespace) -> None:
                         maneuver_update.state in TERMINAL_STATES
                         and maneuver_mission_route is not None
                     ):
+                        synchronize_route_progress = getattr(
+                            runtime.lateral,
+                            "synchronize_route_progress",
+                            None,
+                        )
+                        synchronized_route_index = (
+                            synchronize_route_progress(
+                                maneuver_mission_route,
+                                route_progress_m,
+                            )
+                            if callable(synchronize_route_progress)
+                            else None
+                        )
                         route = replace(
                             maneuver_mission_route,
                             target_speed_mps=runtime.requested_speed_mps,
@@ -5526,6 +5539,8 @@ def run(args: argparse.Namespace) -> None:
                             "terminal_state": maneuver_update.state,
                             "route_points": len(route.points_xy_m),
                             "target_speed_mps": route.target_speed_mps,
+                            "mission_route_progress_m": route_progress_m,
+                            "synchronized_route_index": synchronized_route_index,
                         }
                         print(json.dumps(restore_payload, ensure_ascii=False), flush=True)
                         if recorder is not None:

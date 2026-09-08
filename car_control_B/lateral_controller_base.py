@@ -25,7 +25,7 @@ class LateralController(ABC):
     def step(self, vehicle: VehiclePose, reference: RouteReference) -> LateralOutput:
         pass
 
-    def step_any(self, vehicle_state: Any, reference: Any) -> LateralOutput:
+    def _adapt_reference_any(self, reference: Any) -> RouteReference:
         source_points = (
             reference.get("points_xy_m", reference.get("points"))
             if isinstance(reference, Mapping)
@@ -50,6 +50,10 @@ class LateralController(ABC):
             if len(cache) > 32:
                 del cache[0]
             setattr(self, "_adapted_route_cache", cache)
+        return adapted_reference
+
+    def step_any(self, vehicle_state: Any, reference: Any) -> LateralOutput:
+        adapted_reference = self._adapt_reference_any(reference)
         return self.step(adapt_vehicle_pose(vehicle_state), adapted_reference)
 
     def steer(self, vehicle_state: Any, reference: Any) -> float:
