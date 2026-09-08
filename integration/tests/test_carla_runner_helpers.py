@@ -30,6 +30,7 @@ from integration.carla_runner import (
     _map_contract_name,
     _maneuver_target_distance_m,
     _maneuver_target_passed,
+    _maneuver_step_reanchors_target,
     _maneuver_target_visible,
     _maneuver_target_gap_s,
     _minimum_gap_contract_completed,
@@ -864,6 +865,20 @@ def test_maneuver_target_pass_distance_is_not_satisfied_by_prior_plan_steps() ->
         distance_from_plan_start_m=pass_step_distance_m,
         pass_after_m=40.0,
     )
+
+
+def test_pass_target_reanchors_distance_when_steps_share_target_id() -> None:
+    pass_step = Namespace(
+        behavior="PASS_TARGET",
+        target={"target_id": "construction_warning"},
+    )
+    wait_step = Namespace(
+        behavior="WAIT_SAFE_GAP",
+        target={"target_id": "construction_warning"},
+    )
+
+    assert _maneuver_step_reanchors_target(pass_step, "construction_warning")
+    assert not _maneuver_step_reanchors_target(wait_step, "construction_warning")
 
 
 def test_scenario_actor_binding_uses_image_position_when_only_one_range_is_known() -> None:

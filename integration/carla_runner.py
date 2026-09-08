@@ -258,6 +258,18 @@ def _maneuver_target_passed(
     return not target_visible and distance_from_plan_start_m >= 20.0
 
 
+def _maneuver_step_reanchors_target(
+    step: CompiledPlanStep,
+    current_target_id: str,
+) -> bool:
+    """Re-anchor PASS_TARGET distance even when adjacent steps share a target."""
+    started_target_id = str(step.target.get("target_id") or "")
+    return (
+        started_target_id != str(current_target_id)
+        or step.behavior == "PASS_TARGET"
+    )
+
+
 def _record_maneuver_update(
     update: ManeuverUpdate,
     *,
@@ -5530,15 +5542,28 @@ def run(args: argparse.Namespace) -> None:
                             started_target_id = str(
                                 started_route_step.target.get("target_id") or ""
                             )
-                            if started_target_id != maneuver_target_id:
+                            target_changed = started_target_id != maneuver_target_id
+                            if _maneuver_step_reanchors_target(
+                                started_route_step,
+                                maneuver_target_id,
+                            ):
+                                target_seen_before_step = (
+                                    maneuver_target_seen
+                                    if not target_changed else False
+                                )
                                 maneuver_target_id = started_target_id
-                                maneuver_target_seen = _maneuver_target_visible(
+                                target_visible_at_step_start = _maneuver_target_visible(
                                     started_route_step, scene,
                                 )
                                 grounded_target_distance_m = _maneuver_target_distance_m(
                                     started_route_step,
                                     scene,
                                     actor_distances_m,
+                                )
+                                maneuver_target_seen = (
+                                    target_seen_before_step
+                                    or target_visible_at_step_start
+                                    or grounded_target_distance_m is not None
                                 )
                                 maneuver_target_pass_after_m = (
                                     max(20.0, grounded_target_distance_m + 20.0)
