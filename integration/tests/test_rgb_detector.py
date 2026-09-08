@@ -89,6 +89,13 @@ def test_corridor_filter_uses_normalized_box_location() -> None:
     assert driving_corridor_detections((side, center)) == (center,)
 
 
+def test_corridor_filter_excludes_adjacent_lane_after_crossing() -> None:
+    crossing = DetectedObject(0, "person", 0.9, (0.52, 0.35, 0.60, 0.55))
+    cleared_left = DetectedObject(0, "person", 0.9, (0.33, 0.42, 0.35, 0.58))
+
+    assert driving_corridor_detections((crossing, cleared_left)) == (crossing,)
+
+
 def test_backend_failure_is_explicit() -> None:
     detector = OnnxYoloDetector(
         "unused.onnx", session=Session(_raw_yolo_output(), fail=True),

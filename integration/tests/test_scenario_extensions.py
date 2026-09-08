@@ -609,7 +609,9 @@ def test_emergency_event_evidence_covers_trigger_to_control_chain() -> None:
         "control_effect_timestamp_s": 10.1,
         "recovery_timestamp_s": None,
         "hold_duration_s": None,
-        "response_ms": pytest.approx(100.0),
+        "hazard_onset_to_control_ms": pytest.approx(100.0),
+        "sensor_to_control_ms": pytest.approx(50.0),
+        "response_ms": pytest.approx(50.0),
     }
 
 

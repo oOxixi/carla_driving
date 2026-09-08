@@ -241,6 +241,11 @@ def test_emergency_only_resume_preserves_fast_local_routing_contract() -> None:
     assert resumed.qwen_expected["min_calls"] == 0
     assert resumed.qwen_expected["max_calls"] == 0
     assert resumed.qwen_expected["expected_behaviors"] == ["EMERGENCY_STOP"]
+    assert resumed.qwen_expected["expected_terminal"] == "SAFETY_OVERRIDE"
+    assert (
+        resumed.qwen_expected["expected_terminal_reason_prefix"]
+        == "COMMAND_EMERGENCY_STOP"
+    )
 
 
 def test_late_s3_resume_retains_only_the_unfinished_emergency_actor() -> None:

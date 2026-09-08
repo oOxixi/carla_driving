@@ -685,9 +685,10 @@ class ScenarioExtensionRuntime:
         emergency_events: dict[str, dict[str, float | None]] = {}
         for actor_id, danger_s in sorted(self._actor_trigger_time_s.items()):
             control_s = self._actor_control_effect_time_s.get(actor_id)
+            perception_s = self._actor_perception_time_s.get(actor_id)
             emergency_events[actor_id] = {
                 "danger_timestamp_s": danger_s,
-                "perception_timestamp_s": self._actor_perception_time_s.get(actor_id),
+                "perception_timestamp_s": perception_s,
                 "decision_timestamp_s": self._actor_decision_time_s.get(actor_id),
                 "safety_override_timestamp_s": self._actor_safety_override_time_s.get(actor_id),
                 "control_effect_timestamp_s": control_s,
@@ -697,8 +698,18 @@ class ScenarioExtensionRuntime:
                     if control_s is None or actor_id not in self._actor_recovery_time_s
                     else max(0.0, self._actor_recovery_time_s[actor_id] - control_s)
                 ),
-                "response_ms": (
+                "hazard_onset_to_control_ms": (
                     None if control_s is None else max(0.0, control_s - danger_s) * 1000.0
+                ),
+                "sensor_to_control_ms": (
+                    None
+                    if control_s is None or perception_s is None
+                    else max(0.0, control_s - perception_s) * 1000.0
+                ),
+                "response_ms": (
+                    None
+                    if control_s is None or perception_s is None
+                    else max(0.0, control_s - perception_s) * 1000.0
                 ),
             }
         response_samples_ms = [

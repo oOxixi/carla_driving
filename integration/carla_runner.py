@@ -2957,6 +2957,13 @@ def _build_resume_segment_spec(
         elif fast_local_commands:
             qwen_expected["route"] = "FAST_LOCAL"
             qwen_expected.pop("route_counts", None)
+            # A continuation containing only emergency commands terminates by
+            # audited local safety preemption, not by a Qwen-plan SUCCEEDED
+            # terminal.  Keep this segment contract faithful to that route.
+            qwen_expected["expected_terminal"] = "SAFETY_OVERRIDE"
+            qwen_expected["expected_terminal_reason_prefix"] = (
+                "COMMAND_EMERGENCY_STOP"
+            )
         else:
             qwen_expected["route"] = "QWEN_PLAN"
             qwen_expected.pop("route_counts", None)
