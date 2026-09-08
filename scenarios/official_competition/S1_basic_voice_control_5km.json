@@ -155,7 +155,7 @@
     "sensor_profile": "default",
     "competition_scene": "S1",
     "input_mode": "raw_text_qwen",
-    "route_anchor_spawn_index": 39,
+    "route_anchor_spawn_index": 75,
     "qwen_policy": {
       "required_for_every_voice_event": true,
       "safety_preemption": true,

@@ -559,6 +559,8 @@ def test_vllm_turn_timeout_allows_approach_and_junction_exit() -> None:
 
     step = backend._step(request, "TURN_RIGHT", index=1)
 
+    assert step["target"]["target_lane"] == "ROUTE_BRANCH"
+    assert step["target"]["route_direction"] == "RIGHT"
     assert step["completion"]["type"] == "JUNCTION_EXITED"
     assert step["timeout_s"] >= 60.0
 

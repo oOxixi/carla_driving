@@ -778,12 +778,16 @@ class VllmQwenPlannerBackend:
                 target_id = targets[0]["target_id"]
         lane = "CURRENT"
         direction = None
-        if behavior.endswith("_LEFT"):
+        # TURN_LEFT/RIGHT also end with a direction suffix, but they select a
+        # junction branch rather than an adjacent lane. Check turns first so
+        # a valid road turn is not rejected merely because the current lane
+        # has no same-direction neighbour on that side.
+        if behavior.startswith("TURN_"):
+            lane, direction = "ROUTE_BRANCH", behavior.rsplit("_", 1)[-1]
+        elif behavior.endswith("_LEFT"):
             lane, direction = "LEFT_ADJACENT", "LEFT"
         elif behavior.endswith("_RIGHT"):
             lane, direction = "RIGHT_ADJACENT", "RIGHT"
-        elif behavior.startswith("TURN_"):
-            lane, direction = "ROUTE_BRANCH", behavior.rsplit("_", 1)[-1]
         elif behavior == "AVOID_OBSTACLE" and isinstance(hint, Mapping):
             hinted_direction = str(hint.get("direction", "")).upper()
             if hinted_direction in {"LEFT", "RIGHT"}:
