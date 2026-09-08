@@ -2792,6 +2792,24 @@ def _route_stop_trigger_m(speed_mps: float, finish_radius_m: float, decel_mps2: 
     return target_standstill_remaining_m + speed_mps * speed_mps / (2.0 * decel_mps2)
 
 
+def _topology_planning_distance_m(
+    remaining_contract_m: float,
+    finish_radius_m: float,
+) -> float:
+    """Keep a topology reference available until physical coverage is complete.
+
+    Ego motion can be slightly shorter than the sampled centreline because the
+    controller rounds corners.  Planning exactly the remaining distance can
+    therefore exhaust the reference before the distance tracker reaches its
+    contract.  A small proportional reserve prevents terminal speed tapering;
+    physical coverage remains the only completion metric.
+    """
+    if remaining_contract_m < 0.0 or finish_radius_m < 0.0:
+        raise ValueError("remaining contract and finish radius must be non-negative")
+    reserve_m = max(finish_radius_m * 2.0, remaining_contract_m * 0.01)
+    return remaining_contract_m + reserve_m
+
+
 def _route_recovery_hold_reference(vehicle: RuntimeVehicleState) -> RouteReference:
     """Build a valid ego-aligned zero-speed reference while replanning is pending."""
     yaw_rad = math.radians(vehicle.yaw_deg)
@@ -3598,7 +3616,10 @@ def run(args: argparse.Namespace) -> None:
             try:
                 global_route = global_route_manager.plan_distance(
                     route_anchor,
-                    spec.route_distance_contract_m,
+                    _topology_planning_distance_m(
+                        spec.route_distance_contract_m,
+                        spec.finish_radius_m,
+                    ),
                     args.default_speed_mps,
                 )
             except RoutePlanningError as error:
@@ -4104,7 +4125,10 @@ def run(args: argparse.Namespace) -> None:
                                 )
                                 replanned_route = global_route_manager.plan_distance(
                                     ego.get_transform(),
-                                    remaining_contract_m,
+                                    _topology_planning_distance_m(
+                                        remaining_contract_m,
+                                        spec.finish_radius_m,
+                                    ),
                                     runtime.requested_speed_mps,
                                 )
                                 global_route_destination = carla.Location(
@@ -5760,7 +5784,10 @@ def run(args: argparse.Namespace) -> None:
                             )
                             continuation = global_route_manager.plan_distance(
                                 ego.get_transform(),
-                                remaining_contract_m,
+                                _topology_planning_distance_m(
+                                    remaining_contract_m,
+                                    spec.finish_radius_m,
+                                ),
                                 runtime.requested_speed_mps,
                             )
                             global_route = continuation

@@ -56,6 +56,7 @@ from integration.carla_runner import (
     _route_local_reference_needs_refresh,
     _route_run_can_end_early,
     _route_stop_trigger_m,
+    _topology_planning_distance_m,
     _runtime_health_completed,
     _declared_scenario_runtime_completed,
     _distance_contract_remaining_m,
@@ -1562,6 +1563,13 @@ def test_route_stop_trigger_scales_with_speed_without_stopping_early() -> None:
     assert _route_stop_trigger_m(0.0, 3.0) == pytest.approx(1.5)
     assert _route_stop_trigger_m(4.0, 3.0) == pytest.approx(4.7)
     assert _route_stop_trigger_m(6.0, 3.0) == pytest.approx(8.7)
+
+
+def test_topology_planning_distance_reserves_reference_beyond_physical_contract() -> None:
+    assert _topology_planning_distance_m(5000.0, 4.0) == pytest.approx(5050.0)
+    assert _topology_planning_distance_m(100.0, 4.0) == pytest.approx(108.0)
+    with pytest.raises(ValueError):
+        _topology_planning_distance_m(-0.1, 4.0)
 
 
 def test_long_route_ends_after_real_contracts_not_only_frame_exhaustion() -> None:
