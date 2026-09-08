@@ -355,6 +355,8 @@ def build_lane_change_route_reference(
     transition_start_m: float = 12.0,
     transition_length_m: float = 28.0,
     target_lane_offset_m: float = 0.0,
+    defer_until_safe: bool = False,
+    maximum_transition_deferral_m: float = 60.0,
 ) -> RouteReference:
     """Build a legal same-direction adjacent-lane transition."""
     side = str(direction).strip().upper()
@@ -368,15 +370,62 @@ def build_lane_change_route_reference(
     current = world_map.get_waypoint(location, project_to_road=True)
     if not _is_driving_lane(current):
         raise ValueError("lane-change anchor is not on a driving lane")
+    if (
+        not math.isfinite(float(maximum_transition_deferral_m))
+        or maximum_transition_deferral_m < 0.0
+    ):
+        raise ValueError("maximum_transition_deferral_m must be finite and non-negative")
 
     prefix: list[tuple[float, float]] = []
     for _ in range(max(1, int(math.ceil(transition_start_m / step_m))) + 1):
         loc = current.transform.location
         prefix.append((float(loc.x), float(loc.y)))
         next_waypoint = _next_straight(current, step_m)
-        if next_waypoint is None or bool(getattr(current, "is_junction", False)):
+        if next_waypoint is None:
+            raise ValueError("lane-change prefix reaches a junction or dead end")
+        if (
+            bool(getattr(current, "is_junction", False))
+            and not defer_until_safe
+        ):
             raise ValueError("lane-change prefix reaches a junction or dead end")
         current = next_waypoint
+
+    # A commanded return can begin immediately before a junction.  In that
+    # case keep following the current lane through the junction and start the
+    # lateral transition only after a complete same-direction, non-junction
+    # corridor is available.  Ordinary lane changes retain the strict legacy
+    # rejection above and below.
+    if defer_until_safe:
+        deferred_m = 0.0
+        while True:
+            probe = current
+            corridor_available = not bool(getattr(probe, "is_junction", False))
+            for _ in range(max(8, int(math.ceil(transition_length_m / step_m))) + 1):
+                adjacent = _adjacent_driving_lane(probe, side)
+                if (
+                    not corridor_available
+                    or adjacent is None
+                    or bool(getattr(adjacent, "is_junction", False))
+                ):
+                    corridor_available = False
+                    break
+                probe = _next_straight(probe, step_m)
+                if probe is None:
+                    corridor_available = False
+                    break
+            if corridor_available:
+                break
+            if deferred_m >= float(maximum_transition_deferral_m):
+                raise ValueError("no safe post-junction lane-change corridor")
+            loc = current.transform.location
+            point = (float(loc.x), float(loc.y))
+            if not prefix or point != prefix[-1]:
+                prefix.append(point)
+            next_waypoint = _next_straight(current, step_m)
+            if next_waypoint is None:
+                raise ValueError("lane-change deferral reaches a dead end")
+            current = next_waypoint
+            deferred_m += float(step_m)
 
     # Blend corresponding source/adjacent topology waypoints instead of
     # connecting two distant endpoints with one Hermite chord.  A chord cuts

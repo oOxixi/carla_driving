@@ -259,6 +259,34 @@ def test_lane_change_rejects_opposite_direction_adjacent_lane():
         )
 
 
+def test_return_lane_change_defers_transition_until_after_junction():
+    center, _, right = _parallel_lanes(length=120)
+    for index in range(4, 14):
+        center[index].is_junction = True
+        right[index].is_junction = True
+
+    with pytest.raises(ValueError, match="junction"):
+        build_lane_change_route_reference(
+            Map(center[0]), SimpleNamespace(x=0.0, y=0.0), 4.0,
+            direction="RIGHT", distance_m=60.0,
+            transition_start_m=5.0, transition_length_m=20.0,
+        )
+
+    route = build_lane_change_route_reference(
+        Map(center[0]), SimpleNamespace(x=0.0, y=0.0), 4.0,
+        direction="RIGHT", distance_m=60.0,
+        transition_start_m=5.0, transition_length_m=20.0,
+        defer_until_safe=True,
+    )
+
+    junction_points = tuple(
+        (x, y) for x, y in route.points_xy_m if 4.0 <= x <= 13.0
+    )
+    assert junction_points
+    assert all(y == pytest.approx(0.0) for _, y in junction_points)
+    assert route.points_xy_m[-1][1] == pytest.approx(3.5)
+
+
 def test_topology_anchor_selection_avoids_signal_stop_points():
     first, _, _ = _parallel_lanes()
     second, _, _ = _parallel_lanes()
