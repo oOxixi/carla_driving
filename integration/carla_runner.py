@@ -2702,6 +2702,25 @@ def _remaining_route_distances(
     return tuple(remaining)
 
 
+def _distance_contract_remaining_m(
+    total_distance_m: float,
+    route_progress_m: float,
+) -> float:
+    """Return distance-to-go from independent mission progress.
+
+    A voice manoeuvre may temporarily replace the controller's local route.
+    Distance-coverage completion must not freeze on the last nearest index of
+    the replaced route.
+    """
+    total = float(total_distance_m)
+    progress = float(route_progress_m)
+    if not math.isfinite(total) or total < 0.0:
+        raise ValueError("total_distance_m must be finite and non-negative")
+    if not math.isfinite(progress) or progress < 0.0:
+        raise ValueError("route_progress_m must be finite and non-negative")
+    return max(0.0, total - progress)
+
+
 def _minimum_gap_contract_completed(spec: ScenarioSpec | None, min_gap_m: float | None) -> bool | None:
     """Evaluate a declared front-gap floor as a hard scenario contract."""
     if spec is None or "min_front_gap_m" not in spec.expected:
@@ -4126,6 +4145,10 @@ def run(args: argparse.Namespace) -> None:
                                     event_type="route_replanned",
                                     payload=replan_payload,
                                 )
+                if global_route_state is None and contract_route_remaining:
+                    final_route_remaining_m = _distance_contract_remaining_m(
+                        contract_route_remaining[0], route_progress_m,
+                    )
                 for entry in tuple(scenario_vehicles):
                     actor, actor_spec = entry
                     if _release_scenario_actor_if_due(
@@ -5488,19 +5511,6 @@ def run(args: argparse.Namespace) -> None:
                     speed_cap_mps=active_speed_cap_mps,
                     safety_override_reason=c_perception_override_reason,
                 )
-                if (
-                    global_route_state is None
-                    and
-                    contract_route_points is not None
-                    and route.points_xy_m is contract_route_points
-                    and result.lateral is not None
-                    and contract_route_remaining
-                ):
-                    route_index = min(
-                        max(0, int(result.lateral.nearest_index)),
-                        len(contract_route_remaining) - 1,
-                    )
-                    final_route_remaining_m = contract_route_remaining[route_index]
                 if qwen_scenario_monitor is not None:
                     for feedback in result.feedback:
                         qwen_scenario_monitor.record_terminal(

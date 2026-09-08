@@ -11,7 +11,7 @@
   "runtime": {
     "sync_mode": true,
     "fixed_delta_seconds": 0.05,
-    "duration_s": 600.0,
+    "duration_s": 900.0,
     "max_startup_wait_s": 20.0
   },
   "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
@@ -155,6 +155,7 @@
     "sensor_profile": "default",
     "competition_scene": "S1",
     "input_mode": "raw_text_qwen",
+    "route_anchor_spawn_index": 75,
     "qwen_policy": {
       "required_for_every_voice_event": true,
       "safety_preemption": true,
@@ -174,6 +175,13 @@
     },
     "fixed_random_seed": true,
     "speed_policy": {"scenario_limit_kph": 50.0, "override_map_limit": true},
+    "lane_change_profile": {
+      "route_distance_m": 3500.0,
+      "step_m": 1.0,
+      "transition_start_m": 10.0,
+      "transition_length_m": 30.0,
+      "target_lane_offset_m": 0.0
+    },
     "no_background_traffic": true,
     "route_policy": {"loop": false},
     "runtime_support": {"status": "current", "requirements": [], "declared_requirements": []},

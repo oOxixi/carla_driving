@@ -465,7 +465,11 @@ def build_lane_change_route_reference(
     target_yaw_rad = math.radians(float(target.transform.rotation.yaw))
     offset_x = direction_sign * target_lane_offset_m * -math.sin(target_yaw_rad)
     offset_y = direction_sign * target_lane_offset_m * math.cos(target_yaw_rad)
-    while _route_length(points) < distance_m:
+    # Keep kilometre-scale continuations linear. Recomputing the whole
+    # polyline after every appended waypoint made this loop quadratic and
+    # could stall a live lane-change command for minutes.
+    accumulated_distance_m = _route_length(points)
+    while accumulated_distance_m < distance_m:
         target = _next_straight(target, step_m)
         if target is None:
             break
@@ -473,8 +477,10 @@ def build_lane_change_route_reference(
         target_yaw_rad = math.radians(float(target.transform.rotation.yaw))
         offset_x = direction_sign * target_lane_offset_m * -math.sin(target_yaw_rad)
         offset_y = direction_sign * target_lane_offset_m * math.cos(target_yaw_rad)
-        points.append((float(loc.x) + offset_x, float(loc.y) + offset_y))
-    if _route_length(points) < distance_m * 0.8:
+        point = (float(loc.x) + offset_x, float(loc.y) + offset_y)
+        accumulated_distance_m += math.dist(points[-1], point)
+        points.append(point)
+    if accumulated_distance_m < distance_m * 0.8:
         raise ValueError("adjacent lane route is too short")
     route_points = tuple(points)
     return RouteReference(route_points, _route_curvature(route_points), float(target_speed_mps))

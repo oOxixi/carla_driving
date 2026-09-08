@@ -57,6 +57,7 @@ from integration.carla_runner import (
     _route_stop_trigger_m,
     _runtime_health_completed,
     _declared_scenario_runtime_completed,
+    _distance_contract_remaining_m,
     _scene_from_world,
     _scenario_actor,
     _scenario_actors,
@@ -1501,6 +1502,19 @@ def test_route_contract_accepts_physical_finish_inside_last_coarse_sample() -> N
 def test_remaining_route_distance_distinguishes_repeated_coordinates() -> None:
     remaining = _remaining_route_distances(((0.0, 0.0), (10.0, 0.0), (0.0, 0.0)))
     assert remaining == pytest.approx((20.0, 10.0, 0.0))
+
+
+def test_distance_contract_remaining_uses_monotonic_mission_progress() -> None:
+    assert _distance_contract_remaining_m(5000.0, 1600.5) == pytest.approx(3399.5)
+    assert _distance_contract_remaining_m(5000.0, 5002.0) == 0.0
+
+
+@pytest.mark.parametrize("total, progress", ((-1.0, 0.0), (1.0, -0.1)))
+def test_distance_contract_remaining_rejects_negative_values(
+    total: float, progress: float,
+) -> None:
+    with pytest.raises(ValueError):
+        _distance_contract_remaining_m(total, progress)
 
 
 def test_route_stop_trigger_scales_with_speed_without_stopping_early() -> None:
