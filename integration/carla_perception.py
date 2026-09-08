@@ -679,10 +679,10 @@ def _upcoming_traffic_light(
             continue
         state = _normalise_light_state(get_state())
         for waypoint in get_waypoints() or ():
-            ego_road_id = getattr(ego_waypoint, "road_id", None)
-            stop_road_id = getattr(waypoint, "road_id", None)
-            if ego_road_id is not None and stop_road_id is not None and ego_road_id != stop_road_id:
-                continue
+            # The approach lane and a junction stop waypoint can have distinct
+            # OpenDRIVE road IDs. Geometry, heading, and lane identity below
+            # are the reliable association; requiring the same road ID makes
+            # a red light appear only a few metres before its stop line.
             ego_lane_id = getattr(ego_waypoint, "lane_id", None)
             stop_lane_id = getattr(waypoint, "lane_id", None)
             if ego_lane_id is not None and stop_lane_id is not None and ego_lane_id != stop_lane_id:

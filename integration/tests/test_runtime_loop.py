@@ -250,12 +250,14 @@ def test_yellow_dilemma_zone_commits_to_clear_through_red_transition():
         PerceptionFrame(
             frame=2, sim_time_s=0.10, traffic_light="RED",
             distance_to_stop_line_m=0.3,
+            red_light_violation=True,
         ),
         _route(),
         dt_s=0.05,
     )
     assert red_before_line.safety_override is False
     assert red_before_line.safety_reason == "NONE"
+    assert runtime.yellow_clear_committed is True
 
     runtime.step(
         _vehicle(frame=3, time=0.15, speed=9.0),

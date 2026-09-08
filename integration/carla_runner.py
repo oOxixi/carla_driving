@@ -80,7 +80,7 @@ from .scenario_builder import (
     validate_actor_transform,
 )
 from .planning_stage import prepare_scenario_route
-from .execution_stage import RouteProgressTracker
+from .execution_stage import DistanceCoverageTracker, RouteProgressTracker
 from .scoring_stage import build_acceptance_context
 from .runtime_diagnostics import diagnose_runtime_failure
 from .qwen_image_stager import QwenImageStager
@@ -3954,6 +3954,9 @@ def run(args: argparse.Namespace) -> None:
                 if scenario_spawn_route is not None else route.points_xy_m,
                 progress_m=resume_progress_m,
             )
+            distance_coverage_tracker = DistanceCoverageTracker(
+                progress_m=resume_progress_m,
+            )
             global_route_state = None
             for step_index in range(args.frames):
                 route_recovery_hold = False
@@ -3988,6 +3991,12 @@ def run(args: argparse.Namespace) -> None:
                     speed_mps=state.speed_mps,
                     delta_s=args.fixed_delta_s,
                 )
+                coverage_progress_m = distance_coverage_tracker.update(
+                    state.x_m,
+                    state.y_m,
+                    speed_mps=state.speed_mps,
+                    delta_s=args.fixed_delta_s,
+                )
                 if global_route_manager is not None and global_route is not None:
                     global_route_state = global_route_manager.state(
                         global_route,
@@ -3999,10 +4008,13 @@ def run(args: argparse.Namespace) -> None:
                             else global_route_state.route_s
                         ),
                     )
-                    route_progress_m = (
-                        global_route_progress_offset_m
-                        + global_route_state.route_s
-                    )
+                    if topology_coverage_planning:
+                        route_progress_m = coverage_progress_m
+                    else:
+                        route_progress_m = (
+                            global_route_progress_offset_m
+                            + global_route_state.route_s
+                        )
                     assert global_route_recovery is not None
                     intentional_maneuver_active = (
                         maneuver_fsm.plan is not None
@@ -4119,10 +4131,11 @@ def run(args: argparse.Namespace) -> None:
                                 state.y_m,
                                 previous_s_m=0.0,
                             )
-                            route_progress_m = (
-                                global_route_progress_offset_m
-                                + global_route_state.route_s
-                            )
+                            if not topology_coverage_planning:
+                                route_progress_m = (
+                                    global_route_progress_offset_m
+                                    + global_route_state.route_s
+                                )
                             global_route_recovery_status = "REPLANNED"
                             replan_payload = {
                                 "frame": frame,
@@ -4145,7 +4158,11 @@ def run(args: argparse.Namespace) -> None:
                                     event_type="route_replanned",
                                     payload=replan_payload,
                                 )
-                if global_route_state is None and contract_route_remaining:
+                if topology_coverage_planning and spec is not None:
+                    final_route_remaining_m = _distance_contract_remaining_m(
+                        spec.route_distance_contract_m, coverage_progress_m,
+                    )
+                elif global_route_state is None and contract_route_remaining:
                     final_route_remaining_m = _distance_contract_remaining_m(
                         contract_route_remaining[0], route_progress_m,
                     )
@@ -4524,11 +4541,11 @@ def run(args: argparse.Namespace) -> None:
                     ego_location.y - route_end_point[1],
                 )
                 final_route_end_distance_m = distance_to_route_end_m
-                if global_route_state is not None:
+                if global_route_state is not None and not topology_coverage_planning:
                     final_route_remaining_m = global_route_state.route_remaining_m
                 remaining_for_finish_m = (
                     global_route_state.route_remaining_m
-                    if global_route_state is not None
+                    if global_route_state is not None and not topology_coverage_planning
                     else final_route_remaining_m
                     if final_route_remaining_m is not None
                     else distance_to_route_end_m
@@ -5511,6 +5528,14 @@ def run(args: argparse.Namespace) -> None:
                     speed_cap_mps=active_speed_cap_mps,
                     safety_override_reason=c_perception_override_reason,
                 )
+                if scene.red_light_violation and runtime.yellow_clear_committed:
+                    # Crossing after a safe yellow dilemma-zone commitment is
+                    # not a red-light violation. Keep the raw signal transition
+                    # auditable without charging a false safety event.
+                    scene = replace(scene, red_light_violation=False)
+                    perception_sources["red_light_violation"] = (
+                        "YELLOW_CLEARANCE_COMMITMENT"
+                    )
                 if qwen_scenario_monitor is not None:
                     for feedback in result.feedback:
                         qwen_scenario_monitor.record_terminal(

@@ -674,6 +674,19 @@ def test_upcoming_red_light_is_observed_before_carla_marks_it_active() -> None:
     assert source == "CARLA_MAP_UPCOMING_STOP_WAYPOINT"
 
 
+def test_upcoming_light_can_be_on_next_opendrive_road_segment() -> None:
+    light = TrafficLight("Red", 20.0, road_id=2, lane_id=1)
+    ego = Actor(1, x=0.0, speed=6.0, traffic_light=None)
+
+    state, distance, source = traffic_light_and_stop_distance(
+        ego, (light,), world_map=WorldMap(),
+    )
+
+    assert state == "RED"
+    assert distance == 20.0
+    assert source == "CARLA_MAP_UPCOMING_STOP_WAYPOINT"
+
+
 def test_upcoming_light_ignores_nearer_stop_waypoint_for_adjacent_lane() -> None:
     adjacent = TrafficLight("Red", 10.0, stop_y=3.5, lane_id=2)
     ego_lane = TrafficLight("Green", 20.0, lane_id=1)

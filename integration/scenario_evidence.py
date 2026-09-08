@@ -437,9 +437,17 @@ class ScenarioEvidenceRecorder:
 
         collision = bool(_field(scene, "collision", False))
         lane_marking_crossing = bool(_field(scene, "lane_invasion", False))
-        lane_invasion = lane_marking_crossing and not lane_marking_crossing_expected
-        red_violation = bool(_field(scene, "red_light_violation", False))
         route_deviation_m = _field(scene, "route_deviation_m")
+        route_confirms_planned_corridor = (
+            route_deviation_m is not None
+            and abs(float(route_deviation_m)) < SERIOUS_ROUTE_DEVIATION_M
+        )
+        lane_invasion = (
+            lane_marking_crossing
+            and not lane_marking_crossing_expected
+            and not route_confirms_planned_corridor
+        )
+        red_violation = bool(_field(scene, "red_light_violation", False))
         route_deviation = (
             route_deviation_m is not None
             and abs(float(route_deviation_m)) >= SERIOUS_ROUTE_DEVIATION_M

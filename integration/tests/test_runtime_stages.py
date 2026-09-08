@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from car_control_A.routing import RouteReference
-from integration.execution_stage import RouteProgressTracker
+from integration.execution_stage import DistanceCoverageTracker, RouteProgressTracker
 from integration.planning_stage import prepare_scenario_route
 from integration.scenario_execution import ScenarioSpec
 from integration.scoring_stage import build_acceptance_context
@@ -38,6 +38,24 @@ def test_execution_progress_is_monotonic_across_route_overlap() -> None:
     ]
     assert observed == sorted(observed)
     assert observed[-1] == pytest.approx(19.0)
+
+
+def test_distance_coverage_counts_lane_change_path_but_rejects_teleport() -> None:
+    tracker = DistanceCoverageTracker()
+    observed = [
+        tracker.update(x, y, speed_mps=speed, delta_s=0.05)
+        for x, y, speed in (
+            (0.0, 0.0, 0.0),
+            (0.5, 0.0, 10.0),
+            (1.0, 0.3, 10.0),
+            (100.0, 100.0, 0.0),
+            (100.5, 100.0, 10.0),
+        )
+    ]
+
+    assert observed[2] == pytest.approx(0.5 + (0.5**2 + 0.3**2) ** 0.5)
+    assert observed[3] == observed[2]
+    assert observed[4] == pytest.approx(observed[2] + 0.5)
 
 
 def test_scoring_stage_is_read_only_and_keeps_control_policy_separate() -> None:

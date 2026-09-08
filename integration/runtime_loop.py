@@ -63,6 +63,11 @@ class ControlRuntime:
         self._yellow_clear_committed = False
         self._latched_alerts: list[str] = []
 
+    @property
+    def yellow_clear_committed(self) -> bool:
+        """Whether ego legally committed to clear a yellow-light dilemma zone."""
+        return self._yellow_clear_committed
+
     def submit_voice(self, envelope: Mapping[str, object], *, now_s: float) -> AdaptedVoiceCommand:
         """Accept a voice result at the CARLA-time boundary and retain JSON for D."""
         adapted = self.voice_adapter.adapt(envelope, now_s=now_s)
@@ -508,6 +513,7 @@ class ControlRuntime:
                 scene,
                 traffic_light="GREEN",
                 distance_to_stop_line_m=None,
+                red_light_violation=False,
             )
 
         if signal != "YELLOW" or distance is None:
@@ -525,4 +531,5 @@ class ControlRuntime:
             scene,
             traffic_light="GREEN",
             distance_to_stop_line_m=None,
+            red_light_violation=False,
         )

@@ -174,6 +174,31 @@ def test_expected_lane_change_crossing_is_audited_without_false_violation(tmp_pa
     assert summary["acceptance"]["passed"] is True
 
 
+def test_map_lane_crossing_inside_planned_route_is_not_an_invasion(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "planned-route-crossing.jsonl")
+    recorder.start_run(scenario_id="OFFICIAL_S1")
+    recorder.record_frame(
+        vehicle=_vehicle(1, 6.0),
+        scene=PerceptionFrame(
+            1, 0.05, lane_invasion=True, route_deviation_m=0.2,
+        ),
+        raw_control=ControlOutput(0.1, 0.0, 0.1),
+        final_control=ControlOutput(0.1, 0.0, 0.1),
+        safety_reason="NONE",
+        safety_override=False,
+        timing=_timing(100),
+    )
+
+    summary = recorder.complete(
+        completion=True,
+        expected={"must_no_lane_invasion": True},
+    )
+
+    assert summary["lane_marking_crossing_count"] == 1
+    assert summary["lane_invasion_count"] == 0
+    assert summary["acceptance"]["passed"] is True
+
+
 def test_failure_always_emits_terminal_record_and_summary(tmp_path):
     path = tmp_path / "failed.jsonl"
     recorder = ScenarioEvidenceRecorder(path)
