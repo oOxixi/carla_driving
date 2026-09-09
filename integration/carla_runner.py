@@ -668,6 +668,29 @@ def _scenario_startup_maneuver(spec: ScenarioSpec) -> str:
     """Keep the mission lane until a dynamic manoeuvre is actually commanded."""
     if _scenario_uses_dynamic_out_and_back(spec):
         return "FOLLOW"
+    if len(spec.commands) > 1:
+        # Route-anchor selection is startup work.  A future command in a
+        # multi-stage mission must not turn the initial KEEP_LANE segment into
+        # an uncommanded lane change or make setup require that manoeuvre at
+        # frame zero.  Adjacent-lane actor validation remains a separate
+        # topology constraint, so the later command still gets a legal lane.
+        first = spec.commands[0].envelope
+        intent = str(first.get("intent", "")).strip().upper()
+        if intent in {
+            "TURN_LEFT", "TURN_RIGHT",
+            "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
+        }:
+            return intent
+        if intent in {"TURN", "CHANGE_LANE", "AVOID_OBSTACLE"}:
+            parameters = first.get("parameters", {})
+            direction = (
+                str(parameters.get("direction", "")).strip().upper()
+                if isinstance(parameters, Mapping) else ""
+            )
+            if direction in {"LEFT", "RIGHT"}:
+                prefix = "TURN" if intent == "TURN" else "CHANGE_LANE"
+                return f"{prefix}_{direction}"
+        return "FOLLOW"
     return _scenario_maneuver(spec)
 
 

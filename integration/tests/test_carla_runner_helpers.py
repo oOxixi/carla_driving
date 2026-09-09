@@ -122,6 +122,17 @@ def test_dynamic_out_and_back_does_not_change_lane_during_startup() -> None:
     assert _scenario_startup_maneuver(ordinary) == "CHANGE_LANE_LEFT"
 
 
+def test_multi_command_mission_uses_first_command_for_startup_route() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    mission = ScenarioSpec.load(
+        root / "acceptance_suite/complex/CX_MAIN_01_safe_urban_mission.json"
+    )
+
+    assert mission.commands[0].envelope["intent"] == "KEEP_LANE"
+    assert _scenario_maneuver(mission) == "CHANGE_LANE_RIGHT"
+    assert _scenario_startup_maneuver(mission) == "FOLLOW"
+
+
 def test_s1_uses_topology_coverage_for_maneuver_distance_contract() -> None:
     root = Path(__file__).resolve().parents[2] / "scenarios"
     s1 = ScenarioSpec.load(
