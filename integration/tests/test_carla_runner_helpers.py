@@ -894,6 +894,34 @@ def test_active_prevalidated_route_is_not_rebuilt_after_ego_leaves_its_origin(
     assert behavior == "CHANGE_LANE_RIGHT"
 
 
+def test_prevalidated_route_with_same_mission_origin_survives_qwen_delay(
+    monkeypatch,
+) -> None:
+    current = RouteReference(
+        [(0.0, 0.0), (50.0, 0.0)], target_speed_mps=2.0,
+    )
+    detour = RouteReference(
+        [(0.0, 0.0), (20.0, -3.5), (50.0, 0.0)], target_speed_mps=2.0,
+    )
+    ego = Namespace(get_location=lambda: Namespace(x=22.0, y=0.0))
+
+    monkeypatch.setattr(
+        carla_runner,
+        "build_lane_change_route_reference",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("same-origin scenario route must be retained")
+        ),
+    )
+    route, _, _ = _apply_compiled_plan_route(
+        {"steps": [{"behavior": "CHANGE_LANE_LEFT", "target": {}}]},
+        world_map=object(), ego=ego, current_route=current,
+        requested_speed_mps=2.0, distance_m=50.0,
+        prevalidated_maneuver_route=detour,
+    )
+
+    assert route.points_xy_m == detour.points_xy_m
+
+
 def test_compiled_longitudinal_sequence_does_not_apply_resume_speed_early() -> None:
     current = RouteReference([(0.0, 0.0), (10.0, 0.0)], target_speed_mps=8.0)
     compiled = {

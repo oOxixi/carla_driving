@@ -542,7 +542,7 @@ class PipelineOrchestrator:
                 "validated Qwen plan dispatched",
                 None,
                 safety_event_reason=self._plan_safety_event_reason(
-                    plan, result.job.perception,
+                    plan, result.job.perception, result.job.request,
                 ),
             ),
             reason_code=control["reason_code"], queues=self.queue_snapshot(),
@@ -1087,6 +1087,7 @@ class PipelineOrchestrator:
     def _plan_safety_event_reason(
         plan: Mapping[str, Any],
         scene: Mapping[str, Any],
+        request: Mapping[str, Any] | None = None,
     ) -> str | None:
         """Expose a Qwen traffic-rule stop as canonical safety evidence."""
         behaviors = []
@@ -1104,6 +1105,15 @@ class PipelineOrchestrator:
             and behaviors[0] == "STOP"
         ):
             return "QWEN_TRAFFIC_LIGHT_STOP"
+        routing = request.get("routing", {}) if isinstance(request, Mapping) else {}
+        reasons = {
+            str(item).upper()
+            for item in (
+                routing.get("reasons", ()) if isinstance(routing, Mapping) else ()
+            )
+        }
+        if behaviors and behaviors[0] == "STOP" and "ILLEGAL_REQUEST" in reasons:
+            return "QWEN_ILLEGAL_REQUEST_STOP"
         return None
 
     def _active_snapshot(self) -> _SlowJob | None:

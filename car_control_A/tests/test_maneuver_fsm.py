@@ -193,6 +193,55 @@ def test_yield_emergency_resets_clear_window_without_failing_plan():
     assert terminal.state == "SUCCEEDED"
 
 
+def test_safe_gap_gate_is_inherited_by_its_immediate_lane_change() -> None:
+    gap = _step(
+        step_id="avoid.gap",
+        behavior="WAIT_SAFE_GAP",
+        preconditions=("PERCEPTION_FRESH", "RIGHT_LANE_EXISTS", "RIGHT_GAP_SAFE"),
+        completion={
+            "type": "HOLD_FRAMES", "value": None,
+            "lane": "RIGHT_ADJACENT", "hold_frames": 1,
+        },
+    )
+    gap = CompiledPlanStep(
+        **{
+            **gap.to_dict(),
+            "source_step_id": "avoid",
+            "preconditions": tuple(gap.preconditions),
+        }
+    )
+    lane = _step(
+        step_id="avoid.lane",
+        behavior="CHANGE_LANE_RIGHT",
+        preconditions=("PERCEPTION_FRESH", "RIGHT_LANE_EXISTS", "RIGHT_GAP_SAFE"),
+        completion={
+            "type": "LANE_CENTERED", "value": None,
+            "lane": "RIGHT_ADJACENT", "hold_frames": 1,
+        },
+    )
+    lane = CompiledPlanStep(
+        **{
+            **lane.to_dict(),
+            "source_step_id": "avoid",
+            "preconditions": tuple(lane.preconditions),
+        }
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(gap, lane), now_s=0.0)
+
+    started_lane = fsm.update(_snapshot(
+        right_lane_exists=True, right_gap_safe=True,
+        hold_condition=True, lane="CURRENT",
+    ), now_s=0.1)
+    assert started_lane.current_step is lane
+    terminal = fsm.update(_snapshot(
+        right_lane_exists=False, right_gap_safe=False,
+        lane="RIGHT_ADJACENT", lateral_error_m=0.0,
+    ), now_s=0.15)
+
+    assert terminal.state == "SUCCEEDED"
+
+
 def test_speed_below_completion_accepts_closed_loop_rounding_error():
     slowing = _step(
         behavior="SLOW_DOWN",

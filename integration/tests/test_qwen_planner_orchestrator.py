@@ -253,6 +253,11 @@ def test_red_light_stop_plan_emits_canonical_safety_reason():
         {"steps": [{"behavior": "KEEP_LANE"}]},
         {"traffic_light": "RED"},
     ) is None
+    assert PipelineOrchestrator._plan_safety_event_reason(
+        {"steps": [{"behavior": "STOP"}]},
+        {"traffic_light": "UNKNOWN"},
+        {"routing": {"reasons": ["SAFETY_CONFLICT", "ILLEGAL_REQUEST"]}},
+    ) == "QWEN_ILLEGAL_REQUEST_STOP"
 
 
 def test_conditional_keep_lane_request_cannot_hallucinate_yield():

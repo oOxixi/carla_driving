@@ -213,10 +213,19 @@ class ManeuverFSM:
         if self._completion_frames < required_frames:
             return self._update()
         completed_event = self._event("qwen_step_completed", now, "COMPLETION_HELD")
+        completed_step = step
         self.step_index += 1
         self._completion_frames = 0
         self.step_started_s = now
-        self._preconditions_latched = False
+        next_step = self.current_step
+        self._preconditions_latched = bool(
+            completed_step.behavior == "WAIT_SAFE_GAP"
+            and next_step is not None
+            and next_step.source_step_id == completed_step.source_step_id
+            and next_step.behavior in {
+                "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT", "RETURN_TO_LANE",
+            }
+        )
         if self.current_step is None:
             return self._finish("SUCCEEDED", "PLAN_COMPLETE", now, events=[completed_event])
         self.state = self._step_state(self.current_step)

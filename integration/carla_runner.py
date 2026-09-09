@@ -805,6 +805,10 @@ def _apply_compiled_plan_route(
         prevalidated_maneuver_route is not None
         and (
             current_route.points_xy_m == prevalidated_maneuver_route.points_xy_m
+            or math.dist(
+                current_route.points_xy_m[0],
+                prevalidated_maneuver_route.points_xy_m[0],
+            ) <= 1.0
             or _route_starts_near_ego(prevalidated_maneuver_route, ego)
         )
     ):
@@ -5641,6 +5645,13 @@ def run(args: argparse.Namespace) -> None:
                 if route_recovery_hold:
                     effective_route = _route_recovery_hold_reference(state)
                     active_speed_cap_mps = 0.0
+                elif finish_contract_route:
+                    # Once the explicit endpoint braking window begins, the
+                    # last sampled route target can legitimately fall behind
+                    # ego.  Hold a valid forward reference while longitudinal
+                    # control completes the stop instead of latching a false
+                    # lateral watchdog at an otherwise successful endpoint.
+                    effective_route = _route_recovery_hold_reference(state)
                 elif (
                     global_route_manager is not None
                     and global_route is not None
@@ -6014,6 +6025,10 @@ def run(args: argparse.Namespace) -> None:
                                 and not dynamic_out_and_back
                                 and (
                                     route.points_xy_m == prevalidated_avoid_route.points_xy_m
+                                    or math.dist(
+                                        route.points_xy_m[0],
+                                        prevalidated_avoid_route.points_xy_m[0],
+                                    ) <= 1.0
                                     or _route_starts_near_ego(prevalidated_avoid_route, ego)
                                 )
                             ):
