@@ -86,7 +86,23 @@ class ScenarioQwenFaultInjector:
         for item in active:
             fault_type = str(item["type"]).upper()
             if fault_type in {"TIMEOUT", "QWEN_RESPONSE_DELAY", "QWEN_COMMAND_DELAY"}:
-                self._sleeper(float(item["delay_ms"]) / 1000.0)
+                delay_s = float(item["delay_ms"]) / 1000.0
+                if fault_type in {"QWEN_RESPONSE_DELAY", "QWEN_COMMAND_DELAY"}:
+                    created_ns = request.get("created_at_ns")
+                    deadline_ns = request.get("deadline_ns")
+                    if (
+                        type(created_ns) is int
+                        and type(deadline_ns) is int
+                        and deadline_ns > created_ns
+                    ):
+                        # These two scenario faults explicitly exercise stale
+                        # result rejection.  Keep that meaning independent of
+                        # a developer's larger diagnostic Qwen timeout.
+                        delay_s = max(
+                            delay_s,
+                            (deadline_ns - created_ns) / 1e9 + 0.05,
+                        )
+                self._sleeper(delay_s)
             elif fault_type == "QWEN_SERVICE_DISCONNECT":
                 raise ConnectionError("scenario-injected Qwen service disconnect")
             elif fault_type == "QWEN_INVALID_TOKEN":

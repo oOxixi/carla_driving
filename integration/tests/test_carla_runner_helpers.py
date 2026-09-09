@@ -861,6 +861,39 @@ def test_stale_prevalidated_maneuver_route_is_rebuilt_from_live_ego(monkeypatch)
     assert behavior == "CHANGE_LANE_LEFT"
 
 
+def test_active_prevalidated_route_is_not_rebuilt_after_ego_leaves_its_origin(
+    monkeypatch,
+) -> None:
+    active = RouteReference(
+        [(0.0, 0.0), (20.0, 3.5), (50.0, 3.5), (70.0, 0.0)],
+        target_speed_mps=2.0,
+    )
+    compiled = {"steps": [{"behavior": "CHANGE_LANE_RIGHT", "target": {}}]}
+    ego = Namespace(get_location=lambda: Namespace(x=40.0, y=3.5))
+
+    def unexpected_rebuild(*_args, **_kwargs):
+        raise AssertionError("active out-and-back route must be retained")
+
+    monkeypatch.setattr(
+        carla_runner,
+        "build_lane_change_route_reference",
+        unexpected_rebuild,
+    )
+
+    route, _, behavior = _apply_compiled_plan_route(
+        compiled,
+        world_map=object(),
+        ego=ego,
+        current_route=active,
+        requested_speed_mps=2.0,
+        distance_m=70.0,
+        prevalidated_maneuver_route=active,
+    )
+
+    assert route.points_xy_m == active.points_xy_m
+    assert behavior == "CHANGE_LANE_RIGHT"
+
+
 def test_compiled_longitudinal_sequence_does_not_apply_resume_speed_early() -> None:
     current = RouteReference([(0.0, 0.0), (10.0, 0.0)], target_speed_mps=8.0)
     compiled = {

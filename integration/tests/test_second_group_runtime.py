@@ -25,8 +25,9 @@ class _VehicleRuntime:
     def fail_active(self, *, now_s, detail, resume_speed_mps=None):
         command_id = self.active_command_id
         self.active_command_id = None
-        if resume_speed_mps is not None:
-            self.requested_speed_mps = float(resume_speed_mps)
+        self.requested_speed_mps = (
+            0.0 if resume_speed_mps is None else float(resume_speed_mps)
+        )
         return SimpleNamespace(
             command_id=command_id, status="FAILED", emitted_at_s=now_s, detail=detail,
         )
@@ -252,7 +253,9 @@ def test_slow_target_missing_from_latest_frame_is_rejected_and_stop_remains() ->
     assert resolutions[0].feedbacks[0]["terminal_reason"] == "QWEN_TARGET_STALE"
     assert resolutions[0].vehicle_feedback is not None
     assert vehicle_runtime.active_command_id is None
-    assert vehicle_runtime.requested_speed_mps == 3.0
+    assert vehicle_runtime.requested_speed_mps == 0.0
+    assert resolutions[0].vehicle_feedback is not None
+    assert resolutions[0].vehicle_feedback.detail.endswith("QWEN_TARGET_STALE")
 
 
 def test_live_grounded_target_can_outlive_empty_tracker_frame() -> None:

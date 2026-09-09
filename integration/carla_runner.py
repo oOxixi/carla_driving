@@ -803,10 +803,26 @@ def _apply_compiled_plan_route(
         return replace(current_route, target_speed_mps=target_speed), target_speed, None
     if (
         prevalidated_maneuver_route is not None
-        and _route_starts_near_ego(prevalidated_maneuver_route, ego)
+        and (
+            current_route.points_xy_m == prevalidated_maneuver_route.points_xy_m
+            or _route_starts_near_ego(prevalidated_maneuver_route, ego)
+        )
     ):
+        # A scenario out-and-back reference is already the active route before
+        # its semantic lane-change step starts.  Its origin naturally moves
+        # behind ego while Qwen is pending; that does not make the currently
+        # tracked route stale.  Rebuilding here delays the lateral transition
+        # until the obstacle is too close and also discards the return leg.
         return (
-            replace(prevalidated_maneuver_route, target_speed_mps=target_speed),
+            replace(
+                (
+                    current_route
+                    if current_route.points_xy_m
+                    == prevalidated_maneuver_route.points_xy_m
+                    else prevalidated_maneuver_route
+                ),
+                target_speed_mps=target_speed,
+            ),
             target_speed,
             route_behavior,
         )
@@ -5996,13 +6012,21 @@ def run(args: argparse.Namespace) -> None:
                                 started_route_step.behavior.startswith("CHANGE_LANE_")
                                 and prevalidated_avoid_route is not None
                                 and not dynamic_out_and_back
-                                and _route_starts_near_ego(prevalidated_avoid_route, ego)
+                                and (
+                                    route.points_xy_m == prevalidated_avoid_route.points_xy_m
+                                    or _route_starts_near_ego(prevalidated_avoid_route, ego)
+                                )
                             ):
                                 # The acceptance scenario declares one legal
                                 # out-and-back detour. Keep that full route for
                                 # both the outbound and return semantic steps.
                                 route = replace(
-                                    prevalidated_avoid_route,
+                                    (
+                                        route
+                                        if route.points_xy_m
+                                        == prevalidated_avoid_route.points_xy_m
+                                        else prevalidated_avoid_route
+                                    ),
                                     target_speed_mps=runtime.requested_speed_mps,
                                 )
                                 route_step_applied = True

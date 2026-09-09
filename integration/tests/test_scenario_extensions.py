@@ -153,6 +153,43 @@ def test_timeout_is_accepted_as_a_discarded_stale_rebind_result() -> None:
     assert result["passed"] is True
 
 
+def test_emergency_brake_is_compared_with_its_own_qwen_plan() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    frame = dict(
+        route_progress_m=0.0, ego_speed_mps=3.0,
+        ego_standstill_duration_s=0.0, actor_distances_m={},
+        traffic_light_state="UNKNOWN", distance_to_stop_line_m=None, lane_id="1",
+    )
+    runtime.update_frame(elapsed_s=0.0, **frame)
+    runtime.note_command_submitted({
+        "command_id": "cruise", "intent": "SET_SPEED", "parameters": {},
+    }, qwen=True)
+    runtime.note_qwen_resolution(
+        disposition="SLOW_READY", reason_code="SET_SPEED", applied=True,
+        command_id="cruise",
+    )
+    runtime.update_frame(elapsed_s=8.0, **frame)
+    runtime.note_command_submitted({
+        "command_id": "emergency", "intent": "EMERGENCY_STOP", "parameters": {},
+    }, qwen=True)
+    runtime.note_control_observation(
+        elapsed_s=8.0, speed_mps=3.0, route_progress_m=0.0,
+        brake=1.0, throttle=0.0, safety_override=False,
+        safety_reason="NONE", route_deviation_m=0.0,
+    )
+    runtime.update_frame(elapsed_s=8.1, **frame)
+    runtime.note_qwen_resolution(
+        disposition="SLOW_READY", reason_code="STOP", applied=True,
+        command_id="emergency",
+    )
+
+    result = runtime.evaluate(
+        {"brake_before_qwen_ready": True}, expected_command_count=2,
+    )
+
+    assert result["passed"] is True
+
+
 def test_qwen_safety_stop_guard_is_scoped_to_transient_fault_window() -> None:
     runtime = ScenarioExtensionRuntime({
         "faults": [

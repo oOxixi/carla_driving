@@ -57,7 +57,6 @@ class _PendingSlow:
     command_id: str
     source_text: str
     wait_command_id: str
-    fallback_speed_mps: float
     grounded_target_ids: tuple[str, ...] = ()
 
 
@@ -120,7 +119,6 @@ class CanonicalRuntimeBridge:
             )
 
         feedbacks = () if result.feedback is None else (result.feedback,)
-        fallback_speed_mps = self._fallback_speed_mps(canonical)
         wait_envelope = self._pending_safety_envelope(canonical)
         wait_adapted = self.vehicle_runtime.submit_voice(wait_envelope, now_s=sim_time_s)
         if result.disposition == "SLOW_PENDING":
@@ -134,7 +132,7 @@ class CanonicalRuntimeBridge:
             )
             self._pending[canonical["command_id"]] = _PendingSlow(
                 canonical["command_id"], canonical["source_text"],
-                str(wait_envelope["command_id"]), fallback_speed_mps,
+                str(wait_envelope["command_id"]),
                 grounded_target_ids,
             )
         return CanonicalSubmission(
@@ -374,20 +372,7 @@ class CanonicalRuntimeBridge:
         return self.vehicle_runtime.fail_active(
             now_s=sim_time_s,
             detail=f"Qwen slow path failed closed: {reason_code}",
-            resume_speed_mps=pending.fallback_speed_mps,
         )
-
-    def _fallback_speed_mps(self, command: Mapping[str, Any]) -> float:
-        """Bound recovery after an internal Qwen wait without hiding failure."""
-        previous = float(getattr(self.vehicle_runtime, "requested_speed_mps", 0.0))
-        parameters = command.get("parameters", {})
-        requested = (
-            parameters.get("target_speed_mps")
-            if isinstance(parameters, Mapping) else None
-        )
-        if type(requested) in (int, float) and not isinstance(requested, bool):
-            return max(0.0, min(previous, float(requested)))
-        return max(0.0, min(previous, 3.0))
 
     def _rejection(
         self,

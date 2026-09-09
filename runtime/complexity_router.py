@@ -44,9 +44,9 @@ _ROUTE_RE = re.compile(
     re.IGNORECASE,
 )
 _ILLEGAL_RE = re.compile(
-    r"(?:闯红灯|逆行|撞开|撞过去|不管有没有人|无视行人|压实线|超速通过|"
+    r"(?:闯红灯|(?:不要管|不管|无视|忽略)红灯|逆行|撞开|撞过去|不管有没有人|无视行人|压实线|超速通过|"
     r"\brun (?:the )?red light\b|\bwrong way\b|\bhit (?:the )?car\b|"
-    r"\bignore (?:the )?pedestrian\b)", re.IGNORECASE,
+    r"\bignore (?:the )?red light\b|\bignore (?:the )?pedestrian\b)", re.IGNORECASE,
 )
 _SEVERE_AMBIGUITY_RE = re.compile(
     r"^(?:从那边(?:走|过去)?|往那边(?:走|开)?|跟着它|随便变个道|快一点|"

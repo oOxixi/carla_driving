@@ -85,6 +85,7 @@ class ScenarioExtensionRuntime:
         self._completed_phase_ids: set[str] = set()
         self._command_phase_by_id: dict[str, str] = {}
         self._command_intent_by_id: dict[str, str] = {}
+        self._command_submitted_s: dict[str, float] = {}
         self._actor_event_index: dict[str, int] = {}
         self._actor_event_count = 0
         self._actor_event_time_s: dict[str, float] = {}
@@ -114,6 +115,7 @@ class ScenarioExtensionRuntime:
         self._vehicle_advance_commands = 0
         self._latest_applied_command_index: int | None = None
         self._qwen_applied_s: list[float] = []
+        self._qwen_applied_by_command_s: dict[str, float] = {}
         self._first_qwen_plan_s: float | None = None
         self._max_speed_mps = 0.0
         self._min_speed_after_command_mps: float | None = None
@@ -135,6 +137,8 @@ class ScenarioExtensionRuntime:
         self._last_route_deviation_m: float | None = None
         self._max_route_deviation_m = 0.0
         self._first_brake_s: float | None = None
+        self._latest_emergency_command_id: str | None = None
+        self._first_brake_after_emergency_s: float | None = None
         self._safety_reasons: set[str] = set()
         self._safety_first_s: float | None = None
         self._collision_seen = False
@@ -196,6 +200,7 @@ class ScenarioExtensionRuntime:
         if command_id:
             self._submitted_command_ids.append(command_id)
             self._command_intent_by_id[command_id] = intent
+            self._command_submitted_s[command_id] = self._last_elapsed_s
             phase_id = str(command.get("phase_id", ""))
             if phase_id:
                 self._command_phase_by_id[command_id] = phase_id
@@ -226,6 +231,8 @@ class ScenarioExtensionRuntime:
             self._qwen_requests += 1
         if intent in {"STOP", "EMERGENCY_STOP"}:
             self._stop_seen = True
+            self._latest_emergency_command_id = command_id or None
+            self._first_brake_after_emergency_s = None
         elif self._stop_seen and intent in {"KEEP_LANE", "START", "SET_SPEED"}:
             self._restart_route_progress_m = self._last_route_progress_m
         if intent == "SLOW_DOWN":
@@ -314,6 +321,8 @@ class ScenarioExtensionRuntime:
         if applied:
             self._vehicle_advance_commands += 1
             self._qwen_applied_s.append(self._last_elapsed_s)
+            if command_id:
+                self._qwen_applied_by_command_s[str(command_id)] = self._last_elapsed_s
             if command_id in self._submitted_command_ids:
                 self._latest_applied_command_index = self._submitted_command_ids.index(command_id)
 
@@ -632,6 +641,15 @@ class ScenarioExtensionRuntime:
             self._max_route_deviation_m = max(self._max_route_deviation_m, deviation)
         if float(brake) >= 0.5 and self._first_brake_s is None:
             self._first_brake_s = now
+        if (
+            float(brake) >= 0.5
+            and self._latest_emergency_command_id is not None
+            and self._first_brake_after_emergency_s is None
+            and now + TIME_COMPARISON_EPSILON_S >= self._command_submitted_s.get(
+                self._latest_emergency_command_id, math.inf,
+            )
+        ):
+            self._first_brake_after_emergency_s = now
         normalized_reason = str(safety_reason).strip().upper()
         meaningful_safety = bool(safety_override and normalized_reason not in {"", "NONE"})
         active_sensor_faults = {
@@ -837,6 +855,18 @@ class ScenarioExtensionRuntime:
                 + len(self._fault_recovered_s)
             ),
             "first_brake_s": self._first_brake_s,
+            "emergency_command_id": self._latest_emergency_command_id,
+            "emergency_command_s": (
+                None
+                if self._latest_emergency_command_id is None
+                else self._command_submitted_s.get(self._latest_emergency_command_id)
+            ),
+            "emergency_qwen_applied_s": (
+                None
+                if self._latest_emergency_command_id is None
+                else self._qwen_applied_by_command_s.get(self._latest_emergency_command_id)
+            ),
+            "first_brake_after_emergency_s": self._first_brake_after_emergency_s,
             "first_qwen_plan_s": self._first_qwen_plan_s,
             "safety_reasons": sorted(self._safety_reasons),
             "safety_first_s": self._safety_first_s,
@@ -1226,7 +1256,16 @@ class ScenarioExtensionRuntime:
                     str(item).upper() for item in evidence["qwen_resolution_reasons"]
                 }
                 if key == "brake_before_qwen_ready":
-                    actual = first_brake is not None and (first_plan is None or first_brake <= first_plan)
+                    emergency_brake = evidence["first_brake_after_emergency_s"]
+                    emergency_plan = evidence["emergency_qwen_applied_s"]
+                    actual = (
+                        emergency_brake is not None
+                        and (
+                            emergency_plan is None
+                            or float(emergency_brake) <= float(emergency_plan)
+                            + TIME_COMPARISON_EPSILON_S
+                        )
+                    )
                 elif key == "disconnect_fail_closed":
                     actual = any("DISCONNECT" in item for item in resolution_reasons) and first_brake is not None
                 elif key == "emergency_command_preempts_normal_queue":
