@@ -505,14 +505,55 @@ def _scenario_route_distance_m(spec: ScenarioSpec) -> float:
 
 def _scenario_requires_adjacent_lane_anchor(spec: ScenarioSpec) -> bool:
     runtime_support = spec.extensions.get("runtime_support", {})
-    if not isinstance(runtime_support, Mapping):
-        return False
-    declared = runtime_support.get("declared_requirements", ())
-    return (
+    declared = (
+        runtime_support.get("declared_requirements", ())
+        if isinstance(runtime_support, Mapping) else ()
+    )
+    if (
         isinstance(declared, Sequence)
         and not isinstance(declared, (str, bytes))
         and "adjacent_lane_occupancy_acceptance" in declared
-    )
+    ):
+        return True
+
+    # Older acceptance JSON represents adjacent vehicle lanes with a legacy
+    # +/- one-lane-width spawn.y offset instead of route_position.lane_relation.
+    # Treat that geometry as a topology requirement as well; otherwise a valid
+    # scenario can deterministically select a single-lane anchor and fail before
+    # frame zero on every retry.
+    for actor in spec.actors:
+        if str(actor.get("type", "")).strip().lower() != "vehicle":
+            continue
+        position = actor.get("route_position")
+        if isinstance(position, Mapping) and str(
+            position.get("lane_relation", "CURRENT")
+        ).strip().upper() in {"LEFT_ADJACENT", "RIGHT_ADJACENT"}:
+            return True
+        spawn = actor.get("spawn")
+        if (
+            position is None
+            and isinstance(spawn, Mapping)
+            and abs(float(spawn.get("y", 0.0))) >= 2.0
+        ):
+            return True
+    return False
+
+
+def _scenario_actor_lanes_fit_route(
+    carla_api: Any,
+    world_map: Any,
+    route: RouteReference,
+    spec: ScenarioSpec,
+) -> bool:
+    """Check declared vehicle lane relations without mutating CARLA state."""
+    try:
+        for actor in _scenario_actors(spec, "vehicle"):
+            route_relative_carla_transform(
+                carla_api, world_map, route.points_xy_m, actor,
+            )
+    except ActorPlacementError:
+        return False
+    return True
 
 
 def _scenario_requires_target_lane_occupancy(spec: ScenarioSpec) -> bool:
@@ -3477,6 +3518,14 @@ def run(args: argparse.Namespace) -> None:
                     target_speed_mps=args.default_speed_mps,
                     distance_m=_scenario_route_distance_m(spec),
                     forbidden_points_xy=_traffic_light_stop_points(world),
+                    route_validator=(
+                        (
+                            lambda candidate: _scenario_actor_lanes_fit_route(
+                                carla, world_map, candidate, spec,
+                            )
+                        )
+                        if adjacent_lane_anchor_required else None
+                    ),
                 )
             route_anchor = spawn_points[anchor_index]
             seed_offset_m = float(getattr(args, "evidence_seed", 0) % 5) * 2.0

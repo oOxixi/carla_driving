@@ -393,6 +393,14 @@ def test_blocked_lane_change_requires_real_adjacent_lane_anchor() -> None:
     assert _scenario_requires_adjacent_lane_anchor(spec) is True
 
 
+def test_legacy_multi_vehicle_offsets_require_real_adjacent_lane_anchor() -> None:
+    spec = ScenarioSpec.load(
+        Path("scenarios/acceptance_suite/challenge/ACC_C04_multi_target_binding.json")
+    )
+
+    assert _scenario_requires_adjacent_lane_anchor(spec) is True
+
+
 def test_qwen_resolution_reason_preserves_object_feedback_detail() -> None:
     orchestration = Namespace(
         reason_code="QWEN_ERROR",

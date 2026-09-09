@@ -335,3 +335,30 @@ def test_topology_anchor_selection_supports_seeded_candidate_rank():
 
     assert index == 1
     assert route.points_xy_m[0][1] == pytest.approx(20.0)
+
+
+def test_topology_anchor_selection_discards_scenario_incompatible_route():
+    first, _, _ = _parallel_lanes()
+    second, _, _ = _parallel_lanes()
+    for waypoint in second:
+        waypoint.transform.location.y += 20.0
+
+    class MultiMap:
+        def get_waypoint(self, location, project_to_road=True):
+            return first[0] if location.y < 10.0 else second[0]
+
+    spawns = (
+        SimpleNamespace(location=SimpleNamespace(x=0.0, y=0.0)),
+        SimpleNamespace(location=SimpleNamespace(x=0.0, y=20.0)),
+    )
+    index, route, _ = select_topology_route_anchor(
+        MultiMap(),
+        spawns,
+        maneuver="FOLLOW",
+        target_speed_mps=4.0,
+        distance_m=60.0,
+        route_validator=lambda candidate: candidate.points_xy_m[0][1] >= 10.0,
+    )
+
+    assert index == 1
+    assert route.points_xy_m[0][1] == pytest.approx(20.0)

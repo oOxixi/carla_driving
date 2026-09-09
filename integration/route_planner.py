@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any, Iterable, Sequence
+from typing import Any, Callable, Iterable, Sequence
 
 from car_control_A.routing import RouteReference
 from car_control_B.path_utils import estimate_curvature
@@ -567,8 +567,16 @@ def select_topology_route_anchor(
     distance_m: float,
     forbidden_points_xy: Sequence[tuple[float, float]] = (),
     candidate_index: int = 0,
+    route_validator: Callable[[RouteReference], bool] | None = None,
 ) -> tuple[int, RouteReference, float]:
-    """Pick a spawn whose generated route is legal, long enough and avoids lights."""
+    """Pick a spawn whose route is legal and satisfies scenario topology.
+
+    ``route_validator`` lets the caller enforce requirements that depend on
+    the complete scenario, such as having real same-direction adjacent lanes
+    at every declared actor position.  Invalid candidates are discarded before
+    ranking; the selector never relocates an actor onto a semantically different
+    lane merely to make a spawn succeed.
+    """
     if not spawn_points:
         raise ValueError("at least one spawn point is required")
     action = str(maneuver).strip().upper()
@@ -583,6 +591,8 @@ def select_topology_route_anchor(
                 distance_m=distance_m,
             )
         except (AttributeError, TypeError, ValueError):
+            continue
+        if route_validator is not None and not route_validator(route):
             continue
         points = route.points_xy_m
         length_penalty = max(0.0, distance_m - _route_length(points)) * 10.0
