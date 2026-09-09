@@ -88,7 +88,9 @@ def _legacy_vehicle_lane(
         width = _lane_width_m(target)
         if abs(residual) < width * 0.75:
             break
-        relation = "LEFT_ADJACENT" if residual > 0.0 else "RIGHT_ADJACENT"
+        # Scenario-local +Y follows CARLA's local positive-Y/right direction
+        # (see route_geometry.offset_route_pose).  Negative offsets are left.
+        relation = "RIGHT_ADJACENT" if residual > 0.0 else "LEFT_ADJACENT"
         next_lane = _target_lane_waypoint(world_map, target, relation)
         residual -= math.copysign(width, residual)
         target = next_lane

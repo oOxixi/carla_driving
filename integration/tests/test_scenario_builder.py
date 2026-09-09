@@ -104,7 +104,7 @@ def test_unavailable_adjacent_lane_is_a_resampleable_placement_error() -> None:
 def test_non_driving_adjacent_lane_is_a_resampleable_placement_error() -> None:
     shoulder = _Waypoint(10.0, 3.5, 0.0)
     shoulder.lane_type = "Shoulder"
-    current = _Waypoint(10.0, 0.0, 0.0, left=shoulder)
+    current = _Waypoint(10.0, 0.0, 0.0, right=shoulder)
     with pytest.raises(ActorPlacementError, match="not driving: SHOULDER"):
         route_relative_carla_transform(
             CARLA,
@@ -137,8 +137,8 @@ def test_actor_outside_route_is_rejected_before_spawning() -> None:
 
 
 def test_legacy_lane_width_offset_uses_real_adjacent_lane_center() -> None:
-    left = _Waypoint(10.0, 3.5, 0.0)
-    current = _Waypoint(10.0, 0.0, 0.0, left=left)
+    right = _Waypoint(10.0, 3.5, 0.0)
+    current = _Waypoint(10.0, 0.0, 0.0, right=right)
     transform = route_relative_carla_transform(
         CARLA,
         _Map(current),
