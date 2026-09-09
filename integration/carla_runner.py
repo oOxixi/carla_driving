@@ -939,19 +939,17 @@ def _lane_change_route_parameters(
     }
 
 
-def _is_dynamic_return_step(
+def _is_deferred_dynamic_lane_change(
     step: CompiledPlanStep,
     *,
     dynamic_out_and_back: bool,
     mission_route: RouteReference | None,
 ) -> bool:
-    """Identify a return leg that may defer its merge until after a junction."""
-    target_lane = str(step.target.get("target_lane") or "").strip().upper()
+    """Allow either leg of a dynamic detour to wait for a legal corridor."""
     return bool(
         dynamic_out_and_back
         and mission_route is not None
         and step.behavior.startswith("CHANGE_LANE_")
-        and target_lane == "CURRENT"
     )
 
 
@@ -6083,7 +6081,7 @@ def run(args: argparse.Namespace) -> None:
                             if step_speed is not None:
                                 runtime.requested_speed_mps = float(step_speed)
                             route_step_applied = False
-                            dynamic_return_step = _is_dynamic_return_step(
+                            deferred_dynamic_lane_change = _is_deferred_dynamic_lane_change(
                                 started_route_step,
                                 dynamic_out_and_back=dynamic_out_and_back,
                                 mission_route=maneuver_mission_route,
@@ -6140,7 +6138,7 @@ def run(args: argparse.Namespace) -> None:
                                     ego,
                                     runtime.requested_speed_mps,
                                     direction=started_route_step.behavior.rsplit("_", 1)[-1],
-                                    defer_until_safe=dynamic_return_step,
+                                    defer_until_safe=deferred_dynamic_lane_change,
                                     **route_parameters,
                                 )
                                 route_step_applied = True

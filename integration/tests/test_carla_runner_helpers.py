@@ -27,7 +27,7 @@ from integration.carla_runner import (
     _load_command,
     _lead_vehicle_travel_m,
     _lane_change_route_parameters,
-    _is_dynamic_return_step,
+    _is_deferred_dynamic_lane_change,
     _retain_route_for_maneuver,
     _map_contract_name,
     _maneuver_target_distance_m,
@@ -994,7 +994,7 @@ def test_s2_dynamic_lane_change_profile_has_outbound_stabilization_segment() -> 
     )) is True
 
 
-def test_dynamic_return_defers_merge_when_retained_mission_route_exists() -> None:
+def test_dynamic_detour_defers_both_lane_changes_when_mission_route_exists() -> None:
     mission = RouteReference(((0.0, 0.0), (100.0, 0.0)), target_speed_mps=8.0)
     return_step = Namespace(
         behavior="CHANGE_LANE_RIGHT",
@@ -1005,16 +1005,16 @@ def test_dynamic_return_defers_merge_when_retained_mission_route_exists() -> Non
         target={"target_lane": "LEFT_ADJACENT"},
     )
 
-    assert _is_dynamic_return_step(
+    assert _is_deferred_dynamic_lane_change(
         return_step,
         dynamic_out_and_back=True,
         mission_route=mission,
     ) is True
-    assert _is_dynamic_return_step(
+    assert _is_deferred_dynamic_lane_change(
         outbound_step,
         dynamic_out_and_back=True,
         mission_route=mission,
-    ) is False
+    ) is True
 
 
 def test_topology_route_is_retained_for_any_finite_maneuver() -> None:
