@@ -808,18 +808,24 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         route=MAIN_ROUTE,
         route_values={"planning_mode": "topology_coverage", "distance_contract_m": 205.0},
         actors=[
-            vehicle("target_front", 45, speed_mps=3.0, target_speed_mps=3.0,
+            {**vehicle("target_front", 45, speed_mps=3.0, target_speed_mps=3.0,
                     behavior_mode="event_timeline", behavior_events=[
                         {"trigger": {"type": "ego_distance_less_than_m", "value": 16},
                          "action": {"type": "set_speed", "target_speed_mps": 0.3},
                          "phase_id": "P4_LEAD_BRAKE"},
                         {"trigger": {"type": "elapsed_since_previous_event_greater_than_s", "value": 5},
                          "action": {"type": "set_speed", "target_speed_mps": 3.0}},
-                    ]),
-            vehicle("distractor_left", 60, 0.0, speed_mps=4.5,
-                    blueprint_id="vehicle.tesla.model3"),
-            vehicle("distractor_right", 48, 3.5, speed_mps=3.5,
-                    blueprint_id="vehicle.mercedes.coupe"),
+                    ]), "deactivation_trigger": {
+                        "type": "route_progress_greater_than_m", "value": 80,
+                    }},
+            {**vehicle("distractor_left", 60, 0.0, speed_mps=4.5,
+                    blueprint_id="vehicle.tesla.model3"), "deactivation_trigger": {
+                        "type": "route_progress_greater_than_m", "value": 80,
+                    }},
+            {**vehicle("distractor_right", 48, 3.5, speed_mps=3.5,
+                    blueprint_id="vehicle.mercedes.coupe"), "deactivation_trigger": {
+                        "type": "route_progress_greater_than_m", "value": 80,
+                    }},
             walker("pedestrian_001", 82, -6, 3, start_time_s=0, speed_mps=1.4,
                    trigger={"type": "route_progress_greater_than_m", "value": 30},
                    phase_id="P5_PEDESTRIAN"),
@@ -833,8 +839,12 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
                      "state": "green"},
                 ]},
             },
-            prop("construction_blocker", 160, 0),
-            prop("construction_warning", 157, -2),
+            {**prop("construction_blocker", 160, 0), "activation_trigger": {
+                "type": "route_progress_greater_than_m", "value": 145,
+            }},
+            {**prop("construction_warning", 157, -2), "activation_trigger": {
+                "type": "route_progress_greater_than_m", "value": 145,
+            }},
         ],
         duration_s=120,
         expected={
@@ -873,6 +883,7 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         },
         extension_requirements=[
             "all_voice_qwen", "multi_command_qwen", "event_triggers",
+            "route_progress_actor_lifecycle",
             "command_queue_policy", "actor_state_timeline",
             "qwen_lane_change_detour_actions", "qwen_acceptance_metrics",
         ],

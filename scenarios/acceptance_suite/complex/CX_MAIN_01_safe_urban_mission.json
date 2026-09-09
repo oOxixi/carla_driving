@@ -260,6 +260,10 @@
             }
           }
         ]
+      },
+      "deactivation_trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 80
       }
     },
     {
@@ -276,6 +280,10 @@
         "mode": "lead_vehicle",
         "initial_speed_mps": 4.5,
         "target_speed_mps": 4.5
+      },
+      "deactivation_trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 80
       }
     },
     {
@@ -292,6 +300,10 @@
         "mode": "lead_vehicle",
         "initial_speed_mps": 3.5,
         "target_speed_mps": 3.5
+      },
+      "deactivation_trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 80
       }
     },
     {
@@ -352,6 +364,10 @@
         "y": 0.0,
         "z": 0.5,
         "yaw_deg": 0.0
+      },
+      "activation_trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 145
       }
     },
     {
@@ -363,6 +379,10 @@
         "y": -2,
         "z": 0.5,
         "yaw_deg": 0.0
+      },
+      "activation_trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 145
       }
     }
   ],
@@ -466,6 +486,7 @@
         "all_voice_qwen",
         "multi_command_qwen",
         "event_triggers",
+        "route_progress_actor_lifecycle",
         "command_queue_policy",
         "actor_state_timeline",
         "qwen_lane_change_detour_actions",
