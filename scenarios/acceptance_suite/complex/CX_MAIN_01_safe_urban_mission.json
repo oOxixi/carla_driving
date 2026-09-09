@@ -30,6 +30,7 @@
   },
   "route": {
     "coordinate_type": "scenario_local_xy_m",
+    "planning_mode": "topology_coverage",
     "points_xy_m": [
       [
         0,
@@ -81,7 +82,8 @@
       ]
     ],
     "resample_interval_m": 1.0,
-    "finish_radius_m": 3.0
+    "finish_radius_m": 3.0,
+    "distance_contract_m": 205.0
   },
   "commands": [
     {
@@ -265,8 +267,8 @@
       "type": "vehicle",
       "blueprint_id": "vehicle.tesla.model3",
       "spawn": {
-        "x": 40,
-        "y": 3.5,
+        "x": 60,
+        "y": 0.0,
         "z": 0.5,
         "yaw_deg": 0.0
       },
@@ -447,6 +449,7 @@
       ]
     },
     "faults": [],
+    "maneuver_route_mode": "dynamic_out_and_back",
     "proposed_acceptance": {
       "expected_phase_count": 9,
       "all_phases_must_complete": true,

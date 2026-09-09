@@ -3777,6 +3777,52 @@ def run(args: argparse.Namespace) -> None:
                 f"stop_distance_m={seeded_stop_distance_m:.2f}",
                 flush=True,
             )
+            if managed_route_planning:
+                # Traffic-light binding chooses the only start pose that can
+                # satisfy the declared stop-line distance.  Rebuild a managed
+                # route from that final pose; retaining the provisional route
+                # from the CLI/default spawn gives ego a reference on another
+                # road and fails before any semantic event can run.
+                assert global_route_manager is not None
+                if topology_coverage_planning:
+                    global_route = global_route_manager.plan_distance(
+                        route_anchor,
+                        _topology_planning_distance_m(
+                            spec.route_distance_contract_m,
+                            spec.finish_radius_m,
+                        ),
+                        args.default_speed_mps,
+                    )
+                else:
+                    destination_xy = spec.world_destination(
+                        route_anchor.location.x,
+                        route_anchor.location.y,
+                        route_anchor.rotation.yaw,
+                    )
+                    assert destination_xy is not None
+                    global_route = global_route_manager.plan(
+                        route_anchor,
+                        carla.Location(
+                            x=destination_xy[0],
+                            y=destination_xy[1],
+                            z=route_anchor.location.z,
+                        ),
+                        args.default_speed_mps,
+                    )
+                global_route_destination = carla.Location(
+                    x=global_route.destination_xy_m[0],
+                    y=global_route.destination_xy_m[1],
+                    z=route_anchor.location.z,
+                )
+                topology_route = global_route.reference
+                print(json.dumps({
+                    "record_type": "global_route_reanchored_to_signal",
+                    "planner": topology_route.metadata.get("planner"),
+                    "route_length_m": global_route.total_length_m,
+                    "traffic_light_id": getattr(
+                        scenario_traffic_light, "id", "unknown",
+                    ),
+                }, ensure_ascii=False), flush=True)
         spawn_transform = route_anchor
         if spec is not None:
             local_x, local_y, local_z, local_yaw = spec.ego_spawn_xyzyaw
