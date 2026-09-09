@@ -257,6 +257,23 @@ def _maneuver_target_distance_m(
     return None
 
 
+def _physical_actor_id_for_target(
+    target_id: str,
+    target_aliases: Mapping[str, str] | None,
+) -> str:
+    """Resolve a sensor track to its audited physical actor for progress only.
+
+    Qwen must continue to receive and bind sensor track IDs.  Once its plan is
+    accepted, the already-audited association lets the executor evaluate
+    whether that exact actor has passed behind ego; scenario actor IDs are not
+    injected into model perception or planning input.
+    """
+    normalized = str(target_id)
+    if target_aliases is None:
+        return normalized
+    return str(target_aliases.get(normalized, normalized))
+
+
 def _maneuver_target_passed(
     *,
     target_seen: bool,
@@ -3423,6 +3440,7 @@ def run(args: argparse.Namespace) -> None:
     maneuver_start_yaw_deg: float | None = None
     maneuver_junction_seen = False
     maneuver_target_id: str | None = None
+    maneuver_target_aliases: dict[str, str] = {}
     maneuver_target_seen = False
     maneuver_target_pass_after_m: float | None = None
     maneuver_route_steps_applied: set[str] = set()
@@ -5563,6 +5581,7 @@ def run(args: argparse.Namespace) -> None:
                                     maneuver_fsm.current_step.target.get("target_id")
                                     or ""
                                 )
+                                maneuver_target_aliases = dict(target_aliases)
                                 maneuver_target_seen = _maneuver_target_visible(
                                     maneuver_fsm.current_step, scene,
                                 )
@@ -5940,7 +5959,12 @@ def run(args: argparse.Namespace) -> None:
                         )
                     )
                     grounded_target_clearance_m = (
-                        actor_longitudinal_clearances_m.get(current_target_id)
+                        actor_longitudinal_clearances_m.get(
+                            _physical_actor_id_for_target(
+                                current_target_id,
+                                maneuver_target_aliases,
+                            )
+                        )
                         if current_target_id else None
                     )
                     maneuver_target_seen = (

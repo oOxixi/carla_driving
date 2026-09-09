@@ -29,6 +29,7 @@ from integration.carla_runner import (
     _lane_change_route_parameters,
     _is_deferred_dynamic_lane_change,
     _dynamic_return_destination_xy,
+    _physical_actor_id_for_target,
     _maneuver_lane_label,
     _retain_route_for_maneuver,
     _map_contract_name,
@@ -1031,6 +1032,14 @@ def test_dynamic_return_destination_stays_ahead_on_retained_route() -> None:
         0.0,
         lookahead_m=20.0,
     ) == pytest.approx((50.0, 10.0))
+
+
+def test_physical_actor_id_resolves_audited_sensor_alias() -> None:
+    assert _physical_actor_id_for_target(
+        "C-0061",
+        {"C-0061": "construction_warning"},
+    ) == "construction_warning"
+    assert _physical_actor_id_for_target("C-0099", {}) == "C-0099"
 
 
 def test_dynamic_return_destination_ignores_temporary_route_progress() -> None:
