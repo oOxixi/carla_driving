@@ -3,7 +3,12 @@ from __future__ import annotations
 import json
 
 import tools.run_acceptance_suite_a800 as runner
-from tools.run_acceptance_suite_a800 import completed_scenario_ids, parse_run, warm_qwen_service
+from tools.run_acceptance_suite_a800 import (
+    child_environment,
+    completed_scenario_ids,
+    parse_run,
+    warm_qwen_service,
+)
 
 
 def test_parse_run_reads_frame_latency_field(tmp_path) -> None:
@@ -163,3 +168,11 @@ def test_internal_fail_fast_stops_before_starting_the_next_scenario() -> None:
     assert runner.should_stop_after_record("NO_RUN_COMPLETE", fail_fast=True) is True
     assert runner.should_stop_after_record("SUCCEEDED", fail_fast=True) is False
     assert runner.should_stop_after_record("FAILED", fail_fast=False) is False
+
+
+def test_child_environment_preserves_host_runtime_pythonpath(tmp_path) -> None:
+    env = child_environment(tmp_path, {"PYTHONPATH": "/opt/carla-api", "OTHER": "kept"})
+
+    assert env["PYTHONPATH"] == f"{tmp_path}{runner.os.pathsep}/opt/carla-api"
+    assert env["QWEN_API_KEY"] == "unused"
+    assert env["OTHER"] == "kept"

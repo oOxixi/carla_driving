@@ -148,13 +148,15 @@ def test_var_b04_oracle_allows_safe_slowdown_before_stop() -> None:
     assert {"KEEP_LANE", "SLOW_DOWN", "STOP"}.issubset(allowed)
 
 
-def test_var_b05_oracle_excludes_local_fast_emergency_stop() -> None:
+def test_var_b05_oracle_audits_emergency_stop_through_qwen() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "variants" / "VAR_B05_emergency_stop_25kph.json")
         .read_text(encoding="utf-8")
     )
 
-    assert scenario["extensions"]["oracle"]["expected_behaviors"] == ["SET_SPEED"]
+    assert scenario["extensions"]["oracle"]["expected_behaviors"] == [
+        "SET_SPEED", "STOP",
+    ]
 
 
 def test_var_a02_accepts_proactive_stop_before_emergency_is_needed() -> None:
@@ -382,8 +384,8 @@ def test_sys05_keeps_emergency_stop_off_qwen_queue() -> None:
 
     assert scenario["commands"][-1]["intent"] == "EMERGENCY_STOP"
     proposed = scenario["extensions"]["proposed_acceptance"]
-    assert proposed["qwen_request_count"] == len(scenario["commands"]) - 1
-    assert proposed["qwen_missing_request_count"] == 1
+    assert proposed["qwen_request_count"] == len(scenario["commands"])
+    assert proposed["qwen_missing_request_count"] == 0
     assert proposed["emergency_command_preempts_normal_queue"] is True
 
 

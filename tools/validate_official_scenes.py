@@ -336,20 +336,17 @@ def validate_all() -> dict[str, Any]:
     _require(weather["sun_altitude_angle"] < 0 and weather["fog_density"] >= 30, "S3: night/fog conditions missing")
     _require(s3["runtime"]["duration_s"] >= 800.0, "S3: runtime budget is too short for 6km at safe rain speed")
     s3_qwen = s3["extensions"]["proposed_acceptance"]
-    _require(s3_qwen["qwen_request_count"] == 2, "S3: two normal semantic commands must call Qwen")
+    _require(s3_qwen["qwen_request_count"] == 4, "S3: every voice command must call Qwen")
+    _require(s3_qwen["qwen_missing_request_count"] == 0, "S3: no voice command may bypass Qwen")
     _require(
         float(s3_qwen["minimum_resumed_speed_kph_by_phase"][
             "S3_P4_PEDESTRIAN_STOP_HOLD"
         ]) >= 32.0,
         "S3: pedestrian recovery must regain a sustained driving speed",
     )
-    _require(s3["qwen_expected"]["route"] == "MIXED", "S3: mixed Qwen/safety routing contract required")
-    _require(
-        s3["qwen_expected"]["route_counts"]
-        == {"QWEN_PLAN": 2, "FAST_LOCAL": 2, "CONFIRM_SAFE": 0},
-        "S3: expected routes must be two Qwen plans and two local emergencies",
-    )
-    _require(s3["extensions"]["qwen_policy"].get("emergency_fast_local") is True, "S3: emergency fast-local exception must be explicit")
+    _require(s3["qwen_expected"]["route"] == "QWEN_PLAN", "S3: all voice routing must use Qwen")
+    _require("route_counts" not in s3["qwen_expected"], "S3: mixed routing contract is forbidden")
+    _require("emergency_fast_local" not in s3["extensions"]["qwen_policy"], "S3: emergency voice must not bypass Qwen")
 
     ids = [spec.scenario_id for spec in specs.values()]
     _require(len(ids) == len(set(ids)), "scenario_id values must be unique")

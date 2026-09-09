@@ -133,19 +133,14 @@
     }
   ],
   "qwen_expected": {
-    "route": "MIXED",
-    "route_counts": {
-      "QWEN_PLAN": 2,
-      "FAST_LOCAL": 2,
-      "CONFIRM_SAFE": 0
-    },
-    "min_calls": 2,
-    "max_calls": 2,
+    "route": "QWEN_PLAN",
+    "min_calls": 4,
+    "max_calls": 4,
     "expected_behaviors": [
       "KEEP_LANE",
       "AVOID_OBSTACLE",
       "RETURN_TO_LANE",
-      "EMERGENCY_STOP"
+      "STOP"
     ],
     "expected_terminal": "SUCCEEDED",
     "allowed_replans": 0,
@@ -421,8 +416,7 @@
     "emergency_response_p95_max_ms": 100,
     "emergency_response_absolute_max_ms": 120,
     "semantic_alignment_min": 0.97,
-    "normal_voice_qwen_calls": 2,
-    "emergency_fast_local_calls": 2,
+    "voice_qwen_calls": 4,
     "required_events": [
       "construction_cones",
       "lane_narrowing",
@@ -439,8 +433,7 @@
     "qwen_policy": {
       "required_for_every_voice_event": true,
       "safety_preemption": true,
-      "high_level_only": true,
-      "emergency_fast_local": true
+      "high_level_only": true
     },
     "oracle": {
       "expected_behaviors": [
@@ -448,11 +441,12 @@
         "SLOW_DOWN",
         "AVOID_OBSTACLE",
         "RETURN_TO_LANE",
-        "EMERGENCY_STOP"
+        "STOP"
       ]
     },
     "proposed_acceptance": {
-      "qwen_request_count": 2,
+      "qwen_request_count": 4,
+      "qwen_missing_request_count": 0,
       "all_commands_must_have_terminal_status": true,
       "expected_phase_count": 4,
       "all_phases_must_complete": true,

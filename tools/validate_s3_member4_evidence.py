@@ -11,7 +11,7 @@ from typing import Any
 
 SCENARIO_ID = "OFFICIAL_S3_EXTREME_EMERGENCY_6KM"
 REQUIRED_EVENTS = {"cut_in_vehicle", "emergency_pedestrian"}
-REQUIRED_ROUTES = {"QWEN_PLAN": 2, "FAST_LOCAL": 2}
+REQUIRED_ROUTES = {"QWEN_PLAN": 4}
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -106,8 +106,8 @@ def validate_evidence(
     observed = qwen.get("observed", {}) if isinstance(qwen.get("observed"), Mapping) else {}
     route_counts = dict(Counter(str(item).upper() for item in observed.get("routes", ())))
     check("qwen_contract", qwen.get("passed") is True, qwen.get("failures"), [])
-    check("qwen_call_count", observed.get("qwen_calls") == 2, observed.get("qwen_calls"), 2)
-    check("mixed_route_counts", route_counts == REQUIRED_ROUTES, route_counts, REQUIRED_ROUTES)
+    check("qwen_call_count", observed.get("qwen_calls") == 4, observed.get("qwen_calls"), 4)
+    check("all_qwen_route_counts", route_counts == REQUIRED_ROUTES, route_counts, REQUIRED_ROUTES)
 
     extension = metrics.get("extension_acceptance", {})
     extension = extension if isinstance(extension, Mapping) else {}
@@ -173,7 +173,7 @@ def validate_evidence(
     check("ttc_logged", has_ttc, has_ttc, True)
 
     qwen_trajectories = [item for item in records if item.get("record_type") == "qwen_trajectory"]
-    check("qwen_trajectory_count", len(qwen_trajectories) == 2, len(qwen_trajectories), 2)
+    check("qwen_trajectory_count", len(qwen_trajectories) == 4, len(qwen_trajectories), 4)
     check("collision_count", summary.get("collision_count") == 0, summary.get("collision_count"), 0)
     violations = sum(int(summary.get(key, 0) or 0) for key in (
         "lane_invasion_count", "red_light_violation_count", "serious_route_deviation",

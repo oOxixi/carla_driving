@@ -230,7 +230,11 @@ class PipelineOrchestrator:
             None if emergency_reason == "TRAFFIC_LIGHT_STOP" else emergency_reason
         )
         intent = canonical["intent"]
-        force_model = self.config.force_qwen_all_voice and intent != "EMERGENCY_STOP"
+        # Under the audited all-voice policy every voice event reaches Qwen,
+        # including STOP and EMERGENCY_STOP. The integration bridge installs
+        # an immediate deterministic stop hold while the plan is pending, so
+        # semantic auditing never delays D-layer braking.
+        force_model = self.config.force_qwen_all_voice
         if (
             terminal_emergency_reason is not None
             and intent not in {"STOP", "EMERGENCY_STOP"}
@@ -980,6 +984,11 @@ class PipelineOrchestrator:
 
     @staticmethod
     def _command_stop_reason(command: Mapping[str, Any]) -> str | None:
+        intent = str(command.get("intent", "")).upper()
+        if intent == "EMERGENCY_STOP":
+            return "COMMAND_EMERGENCY_STOP"
+        if intent == "STOP":
+            return "COMMAND_STOP"
         source_text = str(command.get("source_text", "")).upper()
         if any(
             keyword in source_text

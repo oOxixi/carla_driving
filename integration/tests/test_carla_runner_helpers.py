@@ -228,7 +228,7 @@ def test_terminal_resume_keeps_no_commands_actors_or_qwen_contract() -> None:
     assert "minimum_actor_distances_m" not in proposed
 
 
-def test_emergency_only_resume_preserves_fast_local_routing_contract() -> None:
+def test_emergency_only_resume_preserves_all_voice_qwen_contract() -> None:
     spec = ScenarioSpec.load(
         Path("scenarios/official_competition/S3_extreme_emergency_6km.json")
     )
@@ -245,20 +245,16 @@ def test_emergency_only_resume_preserves_fast_local_routing_contract() -> None:
         "EMERGENCY_STOP", "EMERGENCY_STOP",
     ]
     proposed = resumed.extensions["proposed_acceptance"]
-    assert proposed["qwen_request_count"] == 0
-    assert "allowed_qwen_actions" not in proposed
-    assert "oracle" not in resumed.extensions
+    assert proposed["qwen_request_count"] == 2
+    assert "allowed_qwen_actions" in proposed
+    assert "oracle" in resumed.extensions
     assert resumed.qwen_expected is not None
-    assert resumed.qwen_expected["route"] == "FAST_LOCAL"
+    assert resumed.qwen_expected["route"] == "QWEN_PLAN"
     assert "route_counts" not in resumed.qwen_expected
-    assert resumed.qwen_expected["min_calls"] == 0
-    assert resumed.qwen_expected["max_calls"] == 0
-    assert resumed.qwen_expected["expected_behaviors"] == ["EMERGENCY_STOP"]
-    assert resumed.qwen_expected["expected_terminal"] == "SAFETY_OVERRIDE"
-    assert (
-        resumed.qwen_expected["expected_terminal_reason_prefix"]
-        == "COMMAND_EMERGENCY_STOP"
-    )
+    assert resumed.qwen_expected["min_calls"] == 2
+    assert resumed.qwen_expected["max_calls"] == 2
+    assert resumed.qwen_expected["expected_behaviors"] == ["KEEP_LANE", "STOP"]
+    assert resumed.qwen_expected["expected_terminal"] == "SUCCEEDED"
 
 
 def test_late_s3_resume_retains_only_the_unfinished_emergency_actor() -> None:

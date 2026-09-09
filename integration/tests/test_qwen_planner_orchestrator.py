@@ -178,18 +178,21 @@ def test_forced_qwen_set_speed_is_an_allowed_model_behavior():
     assert "SET_SPEED" in queued.model_request["constraints"]["allowed_behaviors"]
 
 
-def test_emergency_stop_bypasses_forced_qwen_and_returns_immediate_fast_control():
+def test_emergency_stop_uses_forced_qwen_with_mandatory_stop_constraint():
     command = _example("driving_command")
     command.update({"intent": "EMERGENCY_STOP", "parameters": {}})
     scene = _example("perception_state")
     with PipelineOrchestrator(
-        infer=lambda _request: (_ for _ in ()).throw(AssertionError("Qwen must not run")),
+        infer=lambda _request: {},
         config=OrchestratorConfig(force_qwen_all_voice=True),
     ) as runtime:
         result = runtime.submit_command(command, scene, now_ns=1_100_000_000)
 
-    assert result.disposition == "FAST"
-    assert result.control_command["behavior"] == "EMERGENCY_STOP"
+    assert result.disposition == "SLOW_PENDING"
+    assert result.reason_code == "QWEN_QUEUED"
+    assert result.model_request["command_hint"]["intent"] == "EMERGENCY_STOP"
+    assert result.model_request["constraints"]["must_stop"] is True
+    assert result.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
 
 
 def test_non_maneuver_keep_lane_request_cannot_hallucinate_lane_change():
@@ -382,9 +385,9 @@ def test_explicit_stop_remains_hard_constraint_at_red_light():
     ) as runtime:
         queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
 
-    # Explicit STOP is still narrowed to STOP by the semantic intent even
-    # though must_stop represents an independent scene safety constraint.
-    assert queued.model_request["constraints"]["must_stop"] is False
+    # Explicit STOP is audited by Qwen but remains a mandatory non-propulsive
+    # plan independently of the coincident red-light constraint.
+    assert queued.model_request["constraints"]["must_stop"] is True
     assert queued.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
 
 

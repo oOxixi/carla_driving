@@ -6,8 +6,8 @@
 - 配置：`scenarios/official_competition/S3_extreme_emergency_6km.json`
 - 地图/天气/种子：Town04 / HardRainNight / 20260303
 - 模型：使用项目统一的 Qwen3.5-2B Planner V2 服务；不切换到 3B/7B。
-- 路由：雨夜安全车速、施工绕行共 2 次 `QWEN_PLAN`；加塞、行人共 2 次
-  `FAST_LOCAL`，紧急制动不能等待 Qwen。
+- 路由：四条语音全部进入 `QWEN_PLAN`；加塞、行人紧急指令提交 Qwen 的同时由
+  本地安全保持立即制动，紧急制动不能等待模型返回。
 
 ## 最终阈值
 

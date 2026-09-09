@@ -450,8 +450,8 @@
     "proposed_acceptance": {
       "expected_phase_count": 9,
       "all_phases_must_complete": true,
-      "qwen_request_count": 6,
-      "qwen_missing_request_count": 1,
+      "qwen_request_count": 7,
+      "qwen_missing_request_count": 0,
       "qwen_stale_result_applied_count": 0,
       "all_commands_must_have_terminal_status": true,
       "must_return_to_original_lane": true

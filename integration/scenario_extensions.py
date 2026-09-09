@@ -624,9 +624,9 @@ class ScenarioExtensionRuntime:
         emergency_brake = float(brake) >= 0.5 and float(throttle) <= 0.03
         responded = meaningful_safety or emergency_brake
         if responded:
-            # In S3 the FAST_LOCAL emergency command is itself the safety
-            # preemption, even when D need not override the already-safe raw
-            # control a second time.
+            # An emergency voice command enters Qwen for semantic audit while
+            # the bridge's deterministic pending hold supplies the immediate
+            # safety response, even if D need not override it a second time.
             for actor_id in self._actor_trigger_time_s:
                 self._actor_decision_time_s.setdefault(actor_id, now)
                 self._actor_safety_override_time_s.setdefault(actor_id, now)

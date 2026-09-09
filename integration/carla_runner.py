@@ -2907,22 +2907,12 @@ def _build_resume_segment_spec(
 
     extensions = dict(spec.extensions)
     proposed = dict(extensions.get("proposed_acceptance", {}))
-    qwen_commands = tuple(
-        command for command in remaining_commands
-        if str(command.envelope.get("intent", "")).upper() != "EMERGENCY_STOP"
-    )
-    fast_local_commands = tuple(
-        command for command in remaining_commands if command not in qwen_commands
-    )
+    qwen_commands = tuple(remaining_commands)
+    fast_local_commands: tuple[Any, ...] = ()
     proposed["qwen_request_count"] = len(qwen_commands)
     if "qwen_missing_request_count" in proposed:
         proposed["qwen_missing_request_count"] = len(fast_local_commands)
     proposed["expected_phase_count"] = len(remaining_commands)
-    if not qwen_commands:
-        # These checks consume model-plan evidence only. A continuation that
-        # contains solely deterministic emergency commands must instead be
-        # judged by FAST_LOCAL routing and emergency/recovery evidence.
-        proposed.pop("allowed_qwen_actions", None)
     proposed.pop("must_return_to_original_lane", None)
     for key in (
         "command_progress_windows_m",
@@ -3012,26 +3002,8 @@ def _build_resume_segment_spec(
         qwen_expected = dict(spec.qwen_expected)
         qwen_expected["min_calls"] = len(qwen_commands)
         qwen_expected["max_calls"] = len(qwen_commands)
-        if qwen_commands and fast_local_commands:
-            qwen_expected["route"] = "MIXED"
-            qwen_expected["route_counts"] = {
-                "QWEN_PLAN": len(qwen_commands),
-                "FAST_LOCAL": len(fast_local_commands),
-                "CONFIRM_SAFE": 0,
-            }
-        elif fast_local_commands:
-            qwen_expected["route"] = "FAST_LOCAL"
-            qwen_expected.pop("route_counts", None)
-            # A continuation containing only emergency commands terminates by
-            # audited local safety preemption, not by a Qwen-plan SUCCEEDED
-            # terminal.  Keep this segment contract faithful to that route.
-            qwen_expected["expected_terminal"] = "SAFETY_OVERRIDE"
-            qwen_expected["expected_terminal_reason_prefix"] = (
-                "COMMAND_EMERGENCY_STOP"
-            )
-        else:
-            qwen_expected["route"] = "QWEN_PLAN"
-            qwen_expected.pop("route_counts", None)
+        qwen_expected["route"] = "QWEN_PLAN"
+        qwen_expected.pop("route_counts", None)
         expected_behaviors = (
             {"KEEP_LANE"} if qwen_commands else set()
         )
@@ -3039,8 +3011,11 @@ def _build_resume_segment_spec(
             intent = str(command.envelope.get("intent", "")).upper()
             if intent in {"SLOW_DOWN", "YIELD"}:
                 expected_behaviors.add(intent)
-        if fast_local_commands:
-            expected_behaviors.add("EMERGENCY_STOP")
+        if any(
+            str(command.envelope.get("intent", "")).upper() == "EMERGENCY_STOP"
+            for command in qwen_commands
+        ):
+            expected_behaviors.add("STOP")
         qwen_expected["expected_behaviors"] = sorted(expected_behaviors)
 
     return replace(
@@ -3397,11 +3372,10 @@ def run(args: argparse.Namespace) -> None:
                 )
                 if qwen_faults else qwen_client
             )
-            force_all_voice_qwen = bool(
-                spec is not None
-                and isinstance(spec.extensions.get("qwen_policy"), Mapping)
-                and spec.extensions["qwen_policy"].get("required_for_every_voice_event") is True
-            )
+            # Supplying the production service opts the entire run into the
+            # single Qwen semantic path. Local D safety remains authoritative
+            # and the bridge applies an immediate stop hold while Qwen runs.
+            force_all_voice_qwen = True
             # JSON Schema compilation is deterministic runtime initialization,
             # not decision work.  Compile once and share the registry so the
             # first scored voice command does not pay Python/jsonschema import
@@ -3430,7 +3404,7 @@ def run(args: argparse.Namespace) -> None:
                 "qwen_mode": args.qwen_mode,
                 "qwen_image_root": str(args.qwen_image_root),
                 "qwen_image_prefix": args.qwen_image_prefix,
-                "policy": "FAST_DIRECT_SLOW_ASYNC_FAIL_CLOSED",
+                "policy": "ALL_VOICE_QWEN_ASYNC_WITH_LOCAL_SAFETY_HOLD",
             }, ensure_ascii=False), flush=True)
         route_anchor = spawn_points[args.spawn_index % len(spawn_points)]
         topology_route: RouteReference | None = None

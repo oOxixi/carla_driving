@@ -90,8 +90,8 @@ powershell -ExecutionPolicy Bypass -File scripts/run_official_scenes.ps1 -Scene 
 4. S2 公交与乘客不穿模，横穿行人确实进入驾驶走廊，慢车和自行车均在可检测范围内。
 5. S3 锥桶形成连续收窄但保留左侧可行空间，加塞车真实跨入自车车道，行人能完整横穿。
 6. 四视角场景日志中存在 `rgb_left/rgb_right/rgb_rear` 的同帧来源标记。
-7. S1/S2 每条指令均有 `QWEN_PLAN` 路由、请求、计划、步骤和唯一终态；S3 恰有2次 Qwen
-   请求，两个 `EMERGENCY_STOP` 为 `FAST_LOCAL`，并有安全抢占原因。
+7. S1/S2/S3 每条语音指令均有 `QWEN_PLAN` 路由、请求、计划、步骤和唯一终态；S3 的
+   两个 `EMERGENCY_STOP` 在提交 Qwen 的同时进入本地安全制动保持，不等待模型返回。
 8. 碰撞、压线、TTC、最小距离、路线偏差、Qwen 延时、sensor-to-control、指令终态和
    安全覆盖均写入结果日志。
 
@@ -129,7 +129,7 @@ bash scripts/run_official_s3_member4.sh --smoke
 bash scripts/run_official_s3_member4.sh --run
 ```
 
-正式报告要求四阶段全部完成、2 次 `QWEN_PLAN` 与 2 次 `FAST_LOCAL` 路由正确，加塞和
+正式报告要求四阶段全部完成、4 次 `QWEN_PLAN` 路由正确，加塞和
 行人事件均具备危险、感知、决策、安全接管、控制生效时间戳；应急响应 P95 不超过100ms、
 最大值不超过120ms；碰撞和违规为0，最终停车保持。详细字段与故障复现见
 `docs/reports/member4_s3_acceptance.md`。
