@@ -674,6 +674,16 @@ class PipelineOrchestrator:
         )
         must_stop = stop_reason is not None and stop_reason != "TRAFFIC_LIGHT_STOP"
         allowed = self._allowed_model_behaviors(command, routing, must_stop=must_stop)
+        if (
+            str(scene.get("traffic_light", "")).upper() == "RED"
+            and "STOP" not in allowed
+        ):
+            # A red signal may still be far enough away that the deterministic
+            # stop-line controller should approach it rather than asserting
+            # immediate ``must_stop``.  Nevertheless STOP must be a legal
+            # high-level Qwen result; excluding it made the service and the
+            # downstream safety contract contradict each other.
+            allowed = [*allowed, "STOP"]
         deadline = min(
             int(command["deadline_ns"]),
             now + int(self.config.model_timeout_ms * 1e6),

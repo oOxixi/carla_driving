@@ -222,6 +222,28 @@ def test_non_maneuver_keep_lane_request_cannot_hallucinate_lane_change():
     assert queued.model_request["constraints"]["allowed_behaviors"] == ["KEEP_LANE"]
 
 
+def test_red_light_keep_lane_request_allows_qwen_to_choose_stop():
+    command = _example("driving_command")
+    command.update({
+        "intent": "KEEP_LANE",
+        "source_text": "不用停，继续往前开",
+        "parameters": {"target_speed_mps": 20.0 / 3.6},
+    })
+    scene = _example("perception_state")
+    scene["traffic_light"] = "RED"
+    scene["distance_to_stop_line_m"] = 18.0
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
+
+    assert queued.model_request["constraints"]["must_stop"] is False
+    assert queued.model_request["constraints"]["allowed_behaviors"] == [
+        "KEEP_LANE", "STOP",
+    ]
+
+
 def test_conditional_keep_lane_request_cannot_hallucinate_yield():
     command = _example("driving_command")
     command.update({
