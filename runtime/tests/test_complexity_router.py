@@ -70,6 +70,7 @@ CONFIRM_CASES = (
     ("follow it", "FOLLOW", {}, {}),
     ("闯红灯过去", "TURN", {"direction": "RIGHT"}, {"traffic_light": "RED"}),
     ("不要管红灯，继续开", "KEEP_LANE", {}, {}),
+    ("前方是红灯，也不用停，继续往前开", "KEEP_LANE", {}, {}),
     ("逆行绕过去", "AVOID_OBSTACLE", {}, {}),
     ("撞开前面的车", "AVOID_OBSTACLE", {}, {}),
     ("不管有没有人直接过去", "KEEP_LANE", {}, {}),

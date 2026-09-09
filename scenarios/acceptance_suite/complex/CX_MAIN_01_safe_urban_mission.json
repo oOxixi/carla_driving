@@ -143,7 +143,7 @@
     },
     {
       "time_s": 0,
-      "source_text": "不用停，继续往前开",
+      "source_text": "前方是红灯，也不用停，继续往前开",
       "intent": "KEEP_LANE",
       "parameters": {
         "target_speed_kph": 15
@@ -313,7 +313,7 @@
         "speed_mps": 1.4,
         "trigger": {
           "type": "route_progress_greater_than_m",
-          "value": 68
+          "value": 45
         },
         "phase_id": "P5_PEDESTRIAN"
       }
