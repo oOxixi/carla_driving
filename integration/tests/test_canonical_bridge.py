@@ -92,6 +92,19 @@ def test_pedestrian_yield_remains_a_yield_at_the_canonical_boundary() -> None:
     assert command["parameters"]["target_id"] == "crossing_pedestrian"
 
 
+def test_hold_voice_intent_maps_to_canonical_stop() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "hold-1",
+        "source_text": "目标看不清时先保持安全",
+        "intent": "HOLD",
+        "parameters": {},
+        "intent_confidence": 0.95,
+        "valid_duration_s": 3.0,
+    }, received_at_ns=1000)
+
+    assert command["intent"] == "STOP"
+
+
 def test_legacy_perception_becomes_schema_valid_state_with_explicit_missing_radar() -> None:
     scene = PerceptionFrame(
         10, 0.5, lead_distance_m=10.0, lead_speed_mps=1.0,

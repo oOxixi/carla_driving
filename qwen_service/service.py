@@ -512,10 +512,14 @@ class VllmQwenPlannerBackend:
             raise ValueError(f"vLLM returned invalid constrained planner choice: {raw!r}")
         behavior = self._CHOICES[raw]
         routing = request.get("routing", {})
-        if isinstance(routing, Mapping) and routing.get("disposition") == "CONFIRM_SAFE":
+        if (
+            isinstance(routing, Mapping)
+            and routing.get("disposition") == "CONFIRM_SAFE"
+            and behavior != "STOP"
+        ):
             behavior = "HOLD"
         constraints = request["constraints"]
-        if constraints["must_stop"]:
+        if constraints["must_stop"] or self._traffic_stop_required(request):
             behavior = "STOP"
         allowed = set(constraints["allowed_behaviors"])
         normalized = behavior.removesuffix("_LEFT").removesuffix("_RIGHT")
@@ -623,6 +627,11 @@ class VllmQwenPlannerBackend:
         ))
 
     def _choice_codes(self, request: Mapping[str, Any]) -> list[str]:
+        if self._traffic_stop_required(request):
+            # A red signal is a non-negotiable legal constraint just like
+            # ``must_stop``. Qwen remains invoked and audited, but must not be
+            # offered propulsion that downstream D would instantly override.
+            return ["D"]
         allowed = set(request["constraints"]["allowed_behaviors"])
         hint = request.get("command_hint", {})
         direction = (
@@ -673,6 +682,14 @@ class VllmQwenPlannerBackend:
                 if not self._CHOICES[code].endswith("_" + opposite)
             ]
         return codes or ["D"]
+
+    @staticmethod
+    def _traffic_stop_required(request: Mapping[str, Any]) -> bool:
+        summary = request.get("scene_summary", {})
+        return (
+            isinstance(summary, Mapping)
+            and str(summary.get("traffic_light", "")).upper() == "RED"
+        )
 
     def _choice_prompt(
         self,

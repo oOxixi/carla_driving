@@ -37,6 +37,10 @@ def voice_envelope_to_driving_command(
         "FOLLOW_ROUTE": "FOLLOW",
         "EMERGENCY_STOP": "EMERGENCY_STOP",
         "STOP": "STOP",
+        # HOLD is an execution behavior rather than a frozen V1 voice intent.
+        # Its safe canonical longitudinal equivalent is STOP; Qwen still
+        # receives and audits the original source text.
+        "HOLD": "STOP",
         "SET_SPEED": "SET_SPEED",
         "SLOW_DOWN": "SLOW_DOWN",
         "YIELD": "YIELD",

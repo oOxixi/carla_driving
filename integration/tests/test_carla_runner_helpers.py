@@ -42,6 +42,7 @@ from integration.carla_runner import (
     _build_qwen_context,
     _c_safety_speed_cap_mps,
     _c_speed_cap_control_override,
+    _canonical_poll_wait_timeout_ms,
     _qwen_desired_speed_mps,
     _qwen_resolution_reason,
     _qwen_voice_command,
@@ -146,6 +147,19 @@ def test_scenario_commands_are_latched_and_serialized_behind_active_plan() -> No
     )
     assert selected == (first,)
     assert retained == [second]
+
+
+def test_emergency_submission_never_waits_through_first_brake_frame() -> None:
+    assert _canonical_poll_wait_timeout_ms(
+        slow_submitted_now=True,
+        emergency_submitted_now=True,
+        configured_timeout_ms=5000,
+    ) == 0.0
+    assert _canonical_poll_wait_timeout_ms(
+        slow_submitted_now=True,
+        emergency_submitted_now=False,
+        configured_timeout_ms=5000,
+    ) == 5000.0
 
 
 def test_active_actor_route_context_rebases_only_after_global_replan() -> None:

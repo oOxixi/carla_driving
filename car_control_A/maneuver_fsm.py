@@ -363,7 +363,10 @@ def _completion_satisfied(completion: Mapping[str, Any], snapshot: Mapping[str, 
     kind = str(completion["type"])
     value = completion.get("value")
     if kind == "SPEED_BELOW":
-        return float(snapshot.get("speed_mps", math.inf)) <= float(value)
+        # Closed-loop speed control converges asymptotically and can remain a
+        # few millimetres per second above the numeric target.
+        tolerance = float(snapshot.get("speed_below_tolerance_mps", 0.05))
+        return float(snapshot.get("speed_mps", math.inf)) <= float(value) + tolerance
     if kind == "SPEED_REACHED":
         # Match the closed-loop acceptance tolerance (2 km/h ~= 0.56 m/s).
         # The former 0.35 m/s threshold could time out a physically stable

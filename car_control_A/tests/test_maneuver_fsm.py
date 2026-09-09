@@ -193,6 +193,23 @@ def test_yield_emergency_resets_clear_window_without_failing_plan():
     assert terminal.state == "SUCCEEDED"
 
 
+def test_speed_below_completion_accepts_closed_loop_rounding_error():
+    slowing = _step(
+        behavior="SLOW_DOWN",
+        preconditions=("PERCEPTION_FRESH",),
+        completion={
+            "type": "SPEED_BELOW", "value": 3.0,
+            "lane": None, "hold_frames": 1,
+        },
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(slowing), now_s=0.0)
+
+    terminal = fsm.update(_snapshot(speed_mps=3.04), now_s=0.1)
+
+    assert terminal.state == "SUCCEEDED"
+
+
 def test_conditional_slow_down_survives_emergency_and_restarts_clear_window():
     slowing = _step(
         behavior="SLOW_DOWN",

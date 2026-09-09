@@ -138,6 +138,18 @@ def _select_deferred_commands(
     return tuple(selected), retained
 
 
+def _canonical_poll_wait_timeout_ms(
+    *,
+    slow_submitted_now: bool,
+    emergency_submitted_now: bool,
+    configured_timeout_ms: float,
+) -> float:
+    """Never synchronously wait through an emergency command's brake frame."""
+    if emergency_submitted_now or not slow_submitted_now:
+        return 0.0
+    return float(configured_timeout_ms)
+
+
 def _compiled_plan_from_payload(payload: Mapping[str, Any]) -> CompiledManeuverPlan:
     """Rebuild the typed A/FSM contract from an orchestrator audit payload."""
     if not isinstance(payload, Mapping):
@@ -5107,6 +5119,7 @@ def run(args: argparse.Namespace) -> None:
                     )
                     deferred_commands[:] = retained_commands
                     slow_submitted_now = False
+                    emergency_submitted_now = False
                     for deferred in queued_now:
                         image_stage_started_ns = time.monotonic_ns()
                         rgb_ref = None
@@ -5187,6 +5200,11 @@ def run(args: argparse.Namespace) -> None:
                             }
                         slow_submitted_now = slow_submitted_now or (
                             submission.orchestration.disposition == "SLOW_PENDING"
+                        )
+                        emergency_submitted_now = emergency_submitted_now or (
+                            submission.orchestration.disposition == "SLOW_PENDING"
+                            and str(deferred.envelope.get("intent", "")).upper()
+                            == "EMERGENCY_STOP"
                         )
                         if extension_runtime is not None:
                             extension_runtime.note_command_submitted(
@@ -5313,8 +5331,10 @@ def run(args: argparse.Namespace) -> None:
                         sim_time_s=state.sim_time_s,
                         perception_mode=canonical_mode,
                         captured_at_ns=sensor_ready_ns,
-                        wait_timeout_ms=(
-                            args.qwen_timeout_ms if slow_submitted_now else 0.0
+                        wait_timeout_ms=_canonical_poll_wait_timeout_ms(
+                            slow_submitted_now=slow_submitted_now,
+                            emergency_submitted_now=emergency_submitted_now,
+                            configured_timeout_ms=args.qwen_timeout_ms,
                         ),
                     )
                     for resolution in resolutions:

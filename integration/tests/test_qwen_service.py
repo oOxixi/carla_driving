@@ -333,6 +333,17 @@ def test_vllm_explicit_maneuver_allows_stop_only_for_emergency_scene() -> None:
     assert backend._choice_codes(request) == ["D", "K"]
 
 
+def test_vllm_red_light_restricts_choice_to_stop() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "KEEP_LANE", "direction": None, "target_speed_mps": 5.0,
+    }
+    request["scene_summary"]["traffic_light"] = "RED"
+
+    assert backend._choice_codes(request) == ["D"]
+
+
 def test_vllm_choice_constraint_narrows_pedestrian_slow_down_to_longitudinal_actions() -> None:
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
     request = _request()
@@ -718,3 +729,32 @@ def test_vllm_ambiguous_route_is_forced_to_hold_after_model_choice() -> None:
     request["scene_capabilities"] = {}
     plan = backend.infer(request)
     assert plan["steps"][0]["behavior"] == "HOLD"
+
+
+def test_vllm_confirm_safe_preserves_model_stop() -> None:
+    class _Completions:
+        @staticmethod
+        def create(**_kwargs):
+            message = type("Message", (), {"content": "D"})()
+            return type("Response", (), {
+                "choices": [type("Choice", (), {"message": message})()],
+            })()
+
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    backend._client = type("Client", (), {
+        "chat": type("Chat", (), {"completions": _Completions()})(),
+    })()
+    backend.model_id = "test"
+    backend.image_root = None
+    backend.max_new_tokens = 1
+    request = _request()
+    request["rgb_ref"] = None
+    request["routing"] = {
+        "disposition": "CONFIRM_SAFE", "score": 9,
+        "reasons": ["CONFIRMATION_REQUIRED"], "safe_wait_behavior": "STOP",
+    }
+    request["scene_capabilities"] = {}
+
+    plan = backend.infer(request)
+
+    assert plan["steps"][0]["behavior"] == "STOP"
