@@ -28,6 +28,7 @@ from integration.carla_runner import (
     _lead_vehicle_travel_m,
     _lane_change_route_parameters,
     _is_deferred_dynamic_lane_change,
+    _dynamic_return_destination_xy,
     _retain_route_for_maneuver,
     _map_contract_name,
     _maneuver_target_distance_m,
@@ -1015,6 +1016,19 @@ def test_dynamic_detour_defers_both_lane_changes_when_mission_route_exists() -> 
         dynamic_out_and_back=True,
         mission_route=mission,
     ) is True
+
+
+def test_dynamic_return_destination_stays_ahead_on_retained_route() -> None:
+    mission = RouteReference(
+        ((0.0, 0.0), (50.0, 0.0), (50.0, 50.0)),
+        target_speed_mps=8.0,
+    )
+
+    assert _dynamic_return_destination_xy(
+        mission,
+        40.0,
+        lookahead_m=20.0,
+    ) == pytest.approx((50.0, 10.0))
 
 
 def test_topology_route_is_retained_for_any_finite_maneuver() -> None:

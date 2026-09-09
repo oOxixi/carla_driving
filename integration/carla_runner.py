@@ -55,6 +55,7 @@ from .qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from .qwen_vl_adapter import StrictQwenVLAdapter
 from .live_voice import LiveVoiceConfig, LiveVoiceSource
 from .route_planner import (
+    build_destination_route_reference,
     build_lane_change_route_reference,
     build_route_reference,
     build_scenario_route_reference,
@@ -951,6 +952,20 @@ def _is_deferred_dynamic_lane_change(
         and mission_route is not None
         and step.behavior.startswith("CHANGE_LANE_")
     )
+
+
+def _dynamic_return_destination_xy(
+    mission_route: RouteReference,
+    route_progress_m: float,
+    *,
+    lookahead_m: float = 25.0,
+) -> tuple[float, float]:
+    """Choose an ahead point on the retained route for a topology-safe merge."""
+    pose = route_pose_at_s(
+        mission_route.points_xy_m,
+        max(0.0, float(route_progress_m)) + max(1.0, float(lookahead_m)),
+    )
+    return pose.x_m, pose.y_m
 
 
 def _retain_route_for_maneuver(
@@ -6133,14 +6148,49 @@ def run(args: argparse.Namespace) -> None:
                                         else _scenario_route_distance_m(spec)
                                     ),
                                 )
-                                route = build_lane_change_route_reference(
-                                    world_map,
-                                    ego,
-                                    runtime.requested_speed_mps,
-                                    direction=started_route_step.behavior.rsplit("_", 1)[-1],
-                                    defer_until_safe=deferred_dynamic_lane_change,
-                                    **route_parameters,
+                                return_to_retained_route = bool(
+                                    deferred_dynamic_lane_change
+                                    and str(
+                                        started_route_step.target.get("target_lane") or ""
+                                    ).strip().upper() == "CURRENT"
                                 )
+                                try:
+                                    route = build_lane_change_route_reference(
+                                        world_map,
+                                        ego,
+                                        runtime.requested_speed_mps,
+                                        direction=started_route_step.behavior.rsplit("_", 1)[-1],
+                                        defer_until_safe=deferred_dynamic_lane_change,
+                                        **route_parameters,
+                                    )
+                                except ValueError as error:
+                                    if not (
+                                        return_to_retained_route
+                                        and maneuver_mission_route is not None
+                                        and "no safe post-junction lane-change corridor"
+                                        in str(error)
+                                    ):
+                                        raise
+                                    destination_xy = _dynamic_return_destination_xy(
+                                        maneuver_mission_route,
+                                        route_progress_m,
+                                    )
+                                    route = build_destination_route_reference(
+                                        world_map,
+                                        ego.get_transform(),
+                                        destination_xy,
+                                        runtime.requested_speed_mps,
+                                    )
+                                    end_location = ego.get_location()
+                                    end_location.x, end_location.y = route.points_xy_m[-1]
+                                    destination_waypoint = world_map.get_waypoint(
+                                        end_location,
+                                        project_to_road=True,
+                                    )
+                                    if destination_waypoint is not None:
+                                        maneuver_lane_ids["CURRENT"] = str(
+                                            destination_waypoint.lane_id
+                                        )
                                 route_step_applied = True
                             else:
                                 route = replace(
