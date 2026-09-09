@@ -2534,6 +2534,7 @@ def test_scenario_completion_uses_safety_acceptance_conditions() -> None:
 
 def test_basic_scenario_rejects_runtime_health_fail_safe() -> None:
     assert _runtime_health_completed({"NONE", "PERCEPTION_STARTUP_GRACE"})
+    assert _runtime_health_completed({"PERCEPTION_EMERGENCY"})
     assert not _runtime_health_completed({"WATCHDOG_ALERT"})
     assert not _runtime_health_completed({"INTEGRATION_FAILURE"})
     assert not _runtime_health_completed({"PERCEPTION_PERCEPTIONTIMEOUTERROR"})

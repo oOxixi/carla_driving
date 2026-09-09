@@ -2664,9 +2664,19 @@ def _runtime_health_completed(safety_reasons: set[str]) -> bool:
     ``_expected_safety_completed``.  The basic runner must not report success
     merely because a watchdog-latched vehicle stayed still and avoided impact.
     """
+    non_failure_perception_reasons = {
+        "PERCEPTION_STARTUP_GRACE",
+        # A semantic hazard observation from the live perception chain is not
+        # a sensor/runtime outage. The resulting emergency response is scored
+        # by the declared safety contracts below.
+        "PERCEPTION_EMERGENCY",
+    }
     return not any(
         reason in {"WATCHDOG_ALERT", "INTEGRATION_FAILURE"}
-        or (reason.startswith("PERCEPTION_") and reason != "PERCEPTION_STARTUP_GRACE")
+        or (
+            reason.startswith("PERCEPTION_")
+            and reason not in non_failure_perception_reasons
+        )
         for reason in safety_reasons
     )
 
