@@ -754,7 +754,7 @@ class VllmQwenPlannerBackend:
             if isinstance(raw_requested_target, str) else ""
         )
         target_behaviors = {
-            "FOLLOW", "AVOID_OBSTACLE", "YIELD", "SLOW_DOWN", "STOP",
+            "FOLLOW", "AVOID_OBSTACLE", "YIELD", "SLOW_DOWN",
         }
         # A command may name a semantic scenario role (for example
         # ``slow_vehicle``), while the sensor tracker exposes only opaque

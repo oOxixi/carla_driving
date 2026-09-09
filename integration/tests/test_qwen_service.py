@@ -667,6 +667,20 @@ def test_vllm_follow_does_not_bind_known_pedestrian_as_vehicle() -> None:
     assert step["target"]["target_id"] is None
 
 
+def test_vllm_stop_never_depends_on_a_transient_scene_target() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {"intent": "EMERGENCY_STOP"}
+    request["targets"] = [{
+        "target_id": "transient-obstacle", "class": "obstacle",
+        "distance_m": 12.0, "relation": "center_ahead",
+    }]
+
+    step = backend._step(request, "STOP", index=1)
+
+    assert step["target"]["target_id"] is None
+
+
 def test_vllm_visual_slow_down_binds_target_and_reduces_hinted_speed() -> None:
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
     request = _request()

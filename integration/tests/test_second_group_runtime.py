@@ -258,6 +258,50 @@ def test_slow_target_missing_from_latest_frame_is_rejected_and_stop_remains() ->
     assert resolutions[0].vehicle_feedback.detail.endswith("QWEN_TARGET_STALE")
 
 
+def test_targetless_stop_ignores_model_supplied_stale_target() -> None:
+    def infer(request):
+        return {
+            "schema_version": "1.0",
+            "request_id": request["request_id"],
+            "command_id": request["command_id"],
+            "intent": "STOP",
+            "target_id": "transient-obstacle",
+            "behavior": "STOP",
+            "parameters": {"target_speed_mps": 0.0},
+            "confidence": 0.95,
+            "reason_code": "STOP_NOW",
+            "created_at_ns": request["created_at_ns"] + 1,
+            "valid_until_ns": request["deadline_ns"],
+            "requires_confirmation": False,
+            "model_id": "test-backend",
+        }
+
+    vehicle_runtime = _VehicleRuntime()
+    with PipelineOrchestrator(infer=infer) as orchestrator:
+        bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
+        bridge.submit(
+            _voice("stop-targetless", "EMERGENCY_STOP", text="紧急停车"),
+            _scene(), SimpleNamespace(speed_mps=5.0),
+            sim_time_s=0.5, perception_mode="sensors",
+            received_at_ns=1_000_000_000,
+        )
+        deadline = time.monotonic() + 0.5
+        resolutions = ()
+        while time.monotonic() < deadline and not resolutions:
+            resolutions = bridge.poll(
+                _scene(11, with_vehicle=False), SimpleNamespace(speed_mps=4.0),
+                sim_time_s=0.55, perception_mode="sensors",
+                captured_at_ns=1_100_000_000,
+            )
+            time.sleep(0.001)
+
+    assert resolutions[0].disposition == "SLOW_READY", (
+        resolutions[0].orchestration.reason_code,
+        resolutions[0].feedbacks,
+    )
+    assert resolutions[0].feedbacks[0]["status"] == "EXECUTING"
+
+
 def test_live_grounded_target_can_outlive_empty_tracker_frame() -> None:
     def infer(request):
         return {

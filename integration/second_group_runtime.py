@@ -179,10 +179,12 @@ class CanonicalRuntimeBridge:
                 continue
 
             target_id = result.control_command["target"].get("target_id")
+            behavior = str(result.control_command.get("behavior", "")).upper()
             current_targets = {item["track_id"] for item in current_state["objects"]}
             if pending is not None:
                 current_targets.update(pending.grounded_target_ids)
-            if target_id is not None and target_id not in current_targets:
+            target_required = behavior not in {"STOP", "HOLD", "EMERGENCY_STOP"}
+            if target_required and target_id is not None and target_id not in current_targets:
                 feedback = self._feedback(
                     result.command_id, captured, "REJECTED",
                     "Qwen target is absent from the latest perception frame",

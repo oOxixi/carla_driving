@@ -489,6 +489,8 @@ class PipelineOrchestrator:
                 step["target"].get("target_id")
                 for step in plan["steps"]
                 if step["target"].get("target_id") is not None
+                and str(step.get("behavior", "")).upper()
+                not in {"STOP", "HOLD", "EMERGENCY_STOP"}
             }
             target_id = next(iter(target_ids), None)
         available = {item["track_id"] for item in result.job.perception["objects"]}
@@ -502,7 +504,14 @@ class PipelineOrchestrator:
         if self.config.qwen_mode == "planner_v2":
             missing_targets = target_ids - available
         else:
-            missing_targets = {target_id} - available if target_id is not None else set()
+            target_required = str(plan.get("behavior", "")).upper() not in {
+                "STOP", "HOLD", "EMERGENCY_STOP",
+            }
+            missing_targets = (
+                {target_id} - available
+                if target_required and target_id is not None
+                else set()
+            )
         if missing_targets:
             return self._feedback_result(
                 command_id, decision_ns, "REJECTED", "QWEN_TARGET_NOT_FOUND",
