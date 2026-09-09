@@ -839,11 +839,11 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
                      "state": "green"},
                 ]},
             },
-            {**prop("construction_blocker", 160, 0), "activation_trigger": {
-                "type": "route_progress_greater_than_m", "value": 145,
+            {**prop("construction_blocker", 185, 0), "activation_trigger": {
+                "type": "route_progress_greater_than_m", "value": 155,
             }},
-            {**prop("construction_warning", 157, -2), "activation_trigger": {
-                "type": "route_progress_greater_than_m", "value": 145,
+            {**prop("construction_warning", 182, -2), "activation_trigger": {
+                "type": "route_progress_greater_than_m", "value": 155,
             }},
         ],
         duration_s=120,
@@ -874,6 +874,13 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         },
         extension_values={
             "maneuver_route_mode": "dynamic_out_and_back",
+            "lane_change_profile": {
+                "route_distance_m": 50.0,
+                "step_m": 1.0,
+                "transition_start_m": 2.0,
+                "transition_length_m": 12.0,
+                "target_lane_offset_m": 0.15,
+            },
             "deprecated_from": "CX06_multi_command_full_trip",
             "phase_plan": [
                 "P1_START", "P2_SET_SPEED", "P3_FOLLOW", "P4_LEAD_BRAKE",

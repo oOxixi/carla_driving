@@ -360,14 +360,14 @@
       "type": "static.prop",
       "blueprint_id": "static.prop.warningconstruction",
       "spawn": {
-        "x": 160,
+        "x": 185,
         "y": 0.0,
         "z": 0.5,
         "yaw_deg": 0.0
       },
       "activation_trigger": {
         "type": "route_progress_greater_than_m",
-        "value": 145
+        "value": 155
       }
     },
     {
@@ -375,14 +375,14 @@
       "type": "static.prop",
       "blueprint_id": "static.prop.warningconstruction",
       "spawn": {
-        "x": 157,
+        "x": 182,
         "y": -2,
         "z": 0.5,
         "yaw_deg": 0.0
       },
       "activation_trigger": {
         "type": "route_progress_greater_than_m",
-        "value": 145
+        "value": 155
       }
     }
   ],
@@ -470,6 +470,13 @@
     },
     "faults": [],
     "maneuver_route_mode": "dynamic_out_and_back",
+    "lane_change_profile": {
+      "route_distance_m": 50.0,
+      "step_m": 1.0,
+      "transition_start_m": 2.0,
+      "transition_length_m": 12.0,
+      "target_lane_offset_m": 0.15
+    },
     "proposed_acceptance": {
       "expected_phase_count": 9,
       "all_phases_must_complete": true,
