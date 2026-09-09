@@ -245,10 +245,21 @@ class ScenarioExtensionRuntime:
         if normalized_status == "SUCCEEDED":
             self._successful_terminal_s[normalized_id] = self._last_elapsed_s
 
-    def note_qwen_plan(self, plan: Mapping[str, Any], *, elapsed_s: float | None = None) -> None:
-        """Collect high-level actions and semantic target IDs from a validated plan."""
+    def note_qwen_plan(
+        self,
+        plan: Mapping[str, Any],
+        *,
+        elapsed_s: float | None = None,
+        target_aliases: Mapping[str, str] | None = None,
+    ) -> None:
+        """Collect actions and auditable sensor-to-scenario target bindings."""
         if self._first_qwen_plan_s is None:
             self._first_qwen_plan_s = self._last_elapsed_s if elapsed_s is None else float(elapsed_s)
+        aliases = {} if target_aliases is None else {
+            str(sensor_id): str(actor_id)
+            for sensor_id, actor_id in target_aliases.items()
+            if str(sensor_id) and str(actor_id)
+        }
 
         def walk(value: Any, key: str = "") -> None:
             if isinstance(value, Mapping):
@@ -258,6 +269,8 @@ class ScenarioExtensionRuntime:
                         self._qwen_behaviors.append(child.upper())
                     if normalized_key in {"target_actor_id", "actor_id", "target_id"} and isinstance(child, str):
                         self._qwen_target_ids.add(child)
+                        if child in aliases:
+                            self._qwen_target_ids.add(aliases[child])
                     if normalized_key == "target_speed_mps" and type(child) in (int, float) and not isinstance(child, bool):
                         self._qwen_target_speeds_kph.append(float(child) * 3.6)
                     if normalized_key == "target_speed_kph" and type(child) in (int, float) and not isinstance(child, bool):

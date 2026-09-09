@@ -625,6 +625,36 @@ def test_vllm_follow_prefers_vehicle_over_nearer_center_obstacle() -> None:
     assert step["target"]["target_id"] == "target_front"
 
 
+def test_vllm_follow_uses_range_grounded_generic_target_without_rgb_class() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "跟随同车道正前方车辆"
+    request["scene_capabilities"] = {}
+    request["targets"] = [{
+        "target_id": "C-0001", "class": "obstacle",
+        "distance_m": 27.0, "relation": "center_ahead",
+    }]
+
+    step = backend._step(request, "FOLLOW", index=1)
+
+    assert step["target"]["target_id"] == "C-0001"
+
+
+def test_vllm_follow_does_not_bind_known_pedestrian_as_vehicle() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "跟随同车道正前方车辆"
+    request["scene_capabilities"] = {}
+    request["targets"] = [{
+        "target_id": "pedestrian-1", "class": "pedestrian",
+        "distance_m": 18.0, "relation": "center_ahead",
+    }]
+
+    step = backend._step(request, "FOLLOW", index=1)
+
+    assert step["target"]["target_id"] is None
+
+
 def test_vllm_visual_slow_down_binds_target_and_reduces_hinted_speed() -> None:
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
     request = _request()

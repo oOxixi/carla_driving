@@ -1148,17 +1148,41 @@ def _sensor_evidence_actor_ids(
     sensor-derived ``scene`` remains untouched and is still the sole input to
     C, D, and Qwen in strict perception mode.
     """
+    return tuple(dict.fromkeys(
+        _sensor_evidence_target_aliases(scene, ego, actors).values()
+    ))
+
+
+def _sensor_evidence_target_aliases(
+    scene: PerceptionFrame,
+    ego: Any,
+    actors: Sequence[tuple[Any, Mapping[str, object]]],
+) -> dict[str, str]:
+    """Map sensor tracker IDs to scenario IDs for evidence only.
+
+    The map is captured with the exact perception frame submitted to Qwen.
+    Neither the perception state nor the model request is rewritten, so the
+    model still has to choose the correct sensor-grounded target itself.
+    """
     declared_ids = {
         str(actor_spec.get("actor_id", ""))
         for _actor, actor_spec in actors
         if str(actor_spec.get("actor_id", ""))
     }
     associated = _bind_scenario_actor_ids(scene, ego, actors)
-    return tuple(
-        str(item.track_id)
-        for item in associated.detected_objects
-        if item.track_id is not None and str(item.track_id) in declared_ids
-    )
+    aliases: dict[str, str] = {}
+    for sensor_item, associated_item in zip(
+        scene.detected_objects, associated.detected_objects,
+    ):
+        sensor_id = sensor_item.track_id
+        actor_id = associated_item.track_id
+        if (
+            sensor_id is not None
+            and actor_id is not None
+            and str(actor_id) in declared_ids
+        ):
+            aliases[str(sensor_id)] = str(actor_id)
+    return aliases
 
 
 def _spawn_static_lead(session: CarlaSession, world: Any, world_map: Any, ego: Any, blueprint: Any,
@@ -3266,6 +3290,7 @@ def run(args: argparse.Namespace) -> None:
     qwen_image_stager: QwenImageStager | None = None
     qwen_client: QwenServiceClient | None = None
     qwen_pre_submit_timing: dict[str, dict[str, float]] = {}
+    qwen_target_aliases_by_command: dict[str, dict[str, str]] = {}
     deferred_commands: list[_DeferredCommand] = []
     traffic_light_original_state: Any | None = None
     traffic_light_original_frozen: bool | None = None
@@ -4996,6 +5021,7 @@ def run(args: argparse.Namespace) -> None:
                                 )
                     perception_sources["qwen_status"] = qwen_status
                 evidence_actor_ids: tuple[str, ...] | None = None
+                evidence_target_aliases: dict[str, str] | None = None
                 scenario_actor_bindings = (
                     tuple(scenario_vehicles)
                     + tuple((actor, actor_spec) for actor, actor_spec, _target in scenario_walkers)
@@ -5013,9 +5039,12 @@ def run(args: argparse.Namespace) -> None:
                     if any(item.track_id for item in scene.detected_objects):
                         perception_sources["target_ids"] = "CARLA_SCENARIO_TRACK_ASSOCIATION"
                 elif spec is not None:
-                    evidence_actor_ids = _sensor_evidence_actor_ids(
+                    evidence_target_aliases = _sensor_evidence_target_aliases(
                         scene, ego, scenario_actor_bindings,
                     )
+                    evidence_actor_ids = tuple(dict.fromkeys(
+                        evidence_target_aliases.values()
+                    ))
                 elif any(item.track_id for item in scene.detected_objects):
                     perception_sources["target_ids"] = "C_SENSOR_TEMPORAL_TRACKER"
                 if extension_runtime is not None:
@@ -5133,6 +5162,9 @@ def run(args: argparse.Namespace) -> None:
                             captured_at_ns=sensor_ready_ns,
                             rgb_ref=rgb_ref,
                             runtime_state=planner_state,
+                        )
+                        qwen_target_aliases_by_command[staged_command_id] = dict(
+                            evidence_target_aliases or {}
                         )
                         submitted_ns = time.monotonic_ns()
                         if sensor_ready_ns is not None:
@@ -5288,6 +5320,9 @@ def run(args: argparse.Namespace) -> None:
                     for resolution in resolutions:
                         if qwen_image_stager is not None:
                             qwen_image_stager.discard(resolution.command_id)
+                        target_aliases = qwen_target_aliases_by_command.pop(
+                            resolution.command_id, {},
+                        )
                         orchestration = resolution.orchestration
                         if extension_runtime is not None:
                             resolution_reason = _qwen_resolution_reason(orchestration)
@@ -5332,7 +5367,9 @@ def run(args: argparse.Namespace) -> None:
                         if extension_runtime is not None and orchestration is not None:
                             if orchestration.decision_plan is not None:
                                 extension_runtime.note_qwen_plan(
-                                    orchestration.decision_plan, elapsed_s=elapsed_s,
+                                    orchestration.decision_plan,
+                                    elapsed_s=elapsed_s,
+                                    target_aliases=target_aliases,
                                 )
                         if (
                             orchestration is not None

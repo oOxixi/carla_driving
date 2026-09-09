@@ -768,10 +768,19 @@ class VllmQwenPlannerBackend:
                         "vehicle", "car", "truck", "bus", "cyclist",
                     }
                 ]
-                has_class_metadata = any(
-                    str(item.get("class", "")).strip() for item in targets
-                )
-                candidates = typed_targets if has_class_metadata else candidates
+                # A LiDAR/radar-only corridor detection is deliberately
+                # labelled ``obstacle`` rather than pretending RGB supplied
+                # a vehicle class.  FOLLOW must still be able to bind that
+                # range-grounded centre target when no positively classified
+                # vehicle is available.  Known incompatible road users (for
+                # example pedestrians) are never used as the fallback.
+                generic_targets = [
+                    item for item in candidates
+                    if str(item.get("class", "")).strip().lower() in {
+                        "", "unknown", "obstacle",
+                    }
+                ]
+                candidates = typed_targets or generic_targets
             if candidates:
                 target_id = candidates[0]["target_id"]
             elif not requested_target and behavior != "FOLLOW":

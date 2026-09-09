@@ -71,6 +71,18 @@ def test_qwen_plan_collects_schema_v2_target_id() -> None:
     assert runtime.evidence()["qwen_target_actor_ids"] == ["lead-target"]
 
 
+def test_qwen_plan_records_audited_sensor_target_alias() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_qwen_plan(
+        {"steps": [{"behavior": "FOLLOW", "target": {"target_id": "C-0001"}}]},
+        target_aliases={"C-0001": "lead_target"},
+    )
+
+    assert runtime.evidence()["qwen_target_actor_ids"] == [
+        "C-0001", "lead_target",
+    ]
+
+
 def test_speed_overshoot_is_measured_from_submitted_target() -> None:
     runtime = ScenarioExtensionRuntime({})
     runtime.note_command_submitted({
