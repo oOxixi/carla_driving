@@ -64,7 +64,7 @@ from .route_planner import (
     select_topology_route_anchor,
     warm_heading_waypoint_cache,
 )
-from .route_geometry import route_pose_at_s
+from .route_geometry import project_route_progress_m, route_pose_at_s
 from .route_manager import (
     GlobalRoute,
     RouteManager,
@@ -957,14 +957,28 @@ def _is_deferred_dynamic_lane_change(
 
 def _dynamic_return_destination_xy(
     mission_route: RouteReference,
-    route_progress_m: float,
+    x_m: float,
+    y_m: float,
     *,
+    previous_progress_m: float | None = None,
     lookahead_m: float = 25.0,
 ) -> tuple[float, float]:
-    """Choose an ahead point on the retained route for a topology-safe merge."""
+    """Choose an ahead point on the retained route for a topology-safe merge.
+
+    A temporary lane-change route has its own arc-length origin.  Its progress
+    must not be used to index the retained mission route, otherwise a return
+    near a bend can select a point behind ego and make the vehicle turn around.
+    Project the live pose onto the retained route instead.
+    """
+    mission_progress_m = project_route_progress_m(
+        mission_route.points_xy_m,
+        x_m,
+        y_m,
+        previous_s_m=previous_progress_m,
+    )
     pose = route_pose_at_s(
         mission_route.points_xy_m,
-        max(0.0, float(route_progress_m)) + max(1.0, float(lookahead_m)),
+        mission_progress_m + max(1.0, float(lookahead_m)),
     )
     return pose.x_m, pose.y_m
 
@@ -3413,6 +3427,7 @@ def run(args: argparse.Namespace) -> None:
     maneuver_target_pass_after_m: float | None = None
     maneuver_route_steps_applied: set[str] = set()
     maneuver_mission_route: RouteReference | None = None
+    maneuver_mission_progress_m: float | None = None
     maneuver_return_destination_xy: tuple[float, float] | None = None
     scenario_actor_progress_trackers: dict[str, RouteProgressTracker] = {}
     dynamic_out_and_back = _scenario_uses_dynamic_out_and_back(spec)
@@ -5626,6 +5641,16 @@ def run(args: argparse.Namespace) -> None:
                                     )
                                     else None
                                 )
+                                maneuver_mission_progress_m = (
+                                    project_route_progress_m(
+                                        maneuver_mission_route.points_xy_m,
+                                        state.x_m,
+                                        state.y_m,
+                                        previous_s_m=route_progress_m,
+                                    )
+                                    if maneuver_mission_route is not None
+                                    else None
+                                )
                                 runtime.requested_speed_mps = compiled_speed
                                 if route_behavior is not None:
                                     first_route_step = next(
@@ -5861,6 +5886,13 @@ def run(args: argparse.Namespace) -> None:
                     maneuver_fsm.plan is not None
                     and maneuver_fsm.state not in TERMINAL_STATES
                 ):
+                    if maneuver_mission_route is not None:
+                        maneuver_mission_progress_m = project_route_progress_m(
+                            maneuver_mission_route.points_xy_m,
+                            state.x_m,
+                            state.y_m,
+                            previous_s_m=maneuver_mission_progress_m,
+                        )
                     maneuver_step_before_update = maneuver_fsm.current_step
                     lane_marking_crossing_expected = (
                         maneuver_step_before_update is not None
@@ -6047,7 +6079,7 @@ def run(args: argparse.Namespace) -> None:
                             synchronized_route_index = (
                                 synchronize_route_progress(
                                     maneuver_mission_route,
-                                    route_progress_m,
+                                    maneuver_mission_progress_m or 0.0,
                                 )
                                 if callable(synchronize_route_progress)
                                 else None
@@ -6063,7 +6095,7 @@ def run(args: argparse.Namespace) -> None:
                             "terminal_state": maneuver_update.state,
                             "route_points": len(route.points_xy_m),
                             "target_speed_mps": route.target_speed_mps,
-                            "mission_route_progress_m": route_progress_m,
+                            "mission_route_progress_m": maneuver_mission_progress_m,
                             "synchronized_route_index": synchronized_route_index,
                             "restore_source": restore_source,
                         }
@@ -6077,6 +6109,7 @@ def run(args: argparse.Namespace) -> None:
                         if extension_runtime is not None:
                             extension_runtime.note_mission_route_restored()
                         maneuver_mission_route = None
+                        maneuver_mission_progress_m = None
                         maneuver_return_destination_xy = None
                     started_route_step = (
                         maneuver_update.current_step
@@ -6210,7 +6243,9 @@ def run(args: argparse.Namespace) -> None:
                                         raise
                                     destination_xy = _dynamic_return_destination_xy(
                                         maneuver_mission_route,
-                                        route_progress_m,
+                                        state.x_m,
+                                        state.y_m,
+                                        previous_progress_m=maneuver_mission_progress_m,
                                     )
                                     maneuver_return_destination_xy = destination_xy
                                     route = build_destination_route_reference(

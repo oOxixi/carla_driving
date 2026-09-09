@@ -1028,8 +1028,24 @@ def test_dynamic_return_destination_stays_ahead_on_retained_route() -> None:
     assert _dynamic_return_destination_xy(
         mission,
         40.0,
+        0.0,
         lookahead_m=20.0,
     ) == pytest.approx((50.0, 10.0))
+
+
+def test_dynamic_return_destination_ignores_temporary_route_progress() -> None:
+    mission = RouteReference(
+        ((0.0, 0.0), (50.0, 0.0), (50.0, 50.0)),
+        target_speed_mps=8.0,
+    )
+
+    assert _dynamic_return_destination_xy(
+        mission,
+        38.0,
+        3.5,
+        previous_progress_m=38.0,
+        lookahead_m=20.0,
+    ) == pytest.approx((50.0, 8.0))
 
 
 def test_dynamic_return_uses_retained_route_when_junction_renumbers_lane() -> None:
