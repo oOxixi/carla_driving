@@ -564,7 +564,11 @@ def _scenario_actor_lanes_fit_route(
             route_relative_carla_transform(
                 carla_api, world_map, route.points_xy_m, actor,
             )
-    except ActorPlacementError:
+    except (ActorPlacementError, RuntimeError, ValueError):
+        # This function is a candidate predicate used while scanning spawn
+        # anchors.  A heading/topology mismatch invalidates only the current
+        # candidate; it is not a fatal route-planning error until every
+        # candidate has been exhausted.
         return False
     return True
 

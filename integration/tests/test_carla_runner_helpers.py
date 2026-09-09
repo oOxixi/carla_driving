@@ -69,6 +69,7 @@ from integration.carla_runner import (
     _scenario_requires_adjacent_lane_anchor,
     _scenario_requires_target_lane_occupancy,
     _scenario_startup_maneuver,
+    _scenario_actor_lanes_fit_route,
     _scenario_uses_dynamic_out_and_back,
     _scenario_maneuver,
     _scenario_local_transform,
@@ -131,6 +132,21 @@ def test_multi_command_mission_uses_first_command_for_startup_route() -> None:
     assert mission.commands[0].envelope["intent"] == "KEEP_LANE"
     assert _scenario_maneuver(mission) == "CHANGE_LANE_RIGHT"
     assert _scenario_startup_maneuver(mission) == "FOLLOW"
+
+
+def test_actor_lane_route_validator_skips_heading_mismatch(monkeypatch) -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    mission = ScenarioSpec.load(
+        root / "acceptance_suite/complex/CX_MAIN_01_safe_urban_mission.json"
+    )
+    route = RouteReference(((0.0, 0.0), (50.0, 0.0)), 0.0, 3.0)
+
+    def heading_mismatch(*_args, **_kwargs):
+        raise RuntimeError("no nearby driving waypoint agrees with ego heading")
+
+    monkeypatch.setattr(carla_runner, "route_relative_carla_transform", heading_mismatch)
+
+    assert _scenario_actor_lanes_fit_route(object(), object(), route, mission) is False
 
 
 def test_s1_uses_topology_coverage_for_maneuver_distance_contract() -> None:
