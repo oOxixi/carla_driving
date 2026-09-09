@@ -45,6 +45,7 @@ from .carla_perception import (
     attach_default_sensors,
     attach_event_sensors,
     lane_metrics,
+    route_deviation_m,
     sensor_specs_for_profile,
     traffic_light_and_stop_distance,
 )
@@ -966,6 +967,31 @@ def _dynamic_return_destination_xy(
         max(0.0, float(route_progress_m)) + max(1.0, float(lookahead_m)),
     )
     return pose.x_m, pose.y_m
+
+
+def _maneuver_lane_label(
+    lane_id: str,
+    lane_ids: Mapping[str, str],
+    step: CompiledPlanStep | None,
+    mission_route: RouteReference | None,
+    *,
+    x_m: float,
+    y_m: float,
+    return_tolerance_m: float = 0.5,
+) -> str:
+    """Resolve semantic lanes across junctions where CARLA renumbers lane IDs."""
+    label = next(
+        (name for name, mapped_lane_id in lane_ids.items() if mapped_lane_id == lane_id),
+        lane_id,
+    )
+    if (
+        step is not None
+        and mission_route is not None
+        and str(step.target.get("target_lane") or "").strip().upper() == "CURRENT"
+        and route_deviation_m(x_m, y_m, mission_route) <= return_tolerance_m
+    ):
+        return "CURRENT"
+    return label
 
 
 def _retain_route_for_maneuver(
@@ -5845,13 +5871,13 @@ def run(args: argparse.Namespace) -> None:
                     maneuver_junction_seen = (
                         maneuver_junction_seen or current_is_junction
                     )
-                    lane_label = next(
-                        (
-                            label
-                            for label, lane_id in maneuver_lane_ids.items()
-                            if lane_id == state.lane_id
-                        ),
+                    lane_label = _maneuver_lane_label(
                         state.lane_id,
+                        maneuver_lane_ids,
+                        maneuver_fsm.current_step,
+                        maneuver_mission_route,
+                        x_m=state.x_m,
+                        y_m=state.y_m,
                     )
                     heading_change_deg = (
                         0.0

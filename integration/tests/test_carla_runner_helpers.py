@@ -29,6 +29,7 @@ from integration.carla_runner import (
     _lane_change_route_parameters,
     _is_deferred_dynamic_lane_change,
     _dynamic_return_destination_xy,
+    _maneuver_lane_label,
     _retain_route_for_maneuver,
     _map_contract_name,
     _maneuver_target_distance_m,
@@ -1029,6 +1030,31 @@ def test_dynamic_return_destination_stays_ahead_on_retained_route() -> None:
         40.0,
         lookahead_m=20.0,
     ) == pytest.approx((50.0, 10.0))
+
+
+def test_dynamic_return_uses_retained_route_when_junction_renumbers_lane() -> None:
+    mission = RouteReference(((0.0, 0.0), (100.0, 0.0)), target_speed_mps=8.0)
+    return_step = Namespace(
+        behavior="CHANGE_LANE_LEFT",
+        target={"target_lane": "CURRENT"},
+    )
+
+    assert _maneuver_lane_label(
+        "1",
+        {"CURRENT": "-1", "RIGHT_ADJACENT": "-2"},
+        return_step,
+        mission,
+        x_m=60.0,
+        y_m=0.2,
+    ) == "CURRENT"
+    assert _maneuver_lane_label(
+        "1",
+        {"CURRENT": "-1", "RIGHT_ADJACENT": "-2"},
+        return_step,
+        mission,
+        x_m=60.0,
+        y_m=2.0,
+    ) == "1"
 
 
 def test_topology_route_is_retained_for_any_finite_maneuver() -> None:
