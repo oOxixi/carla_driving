@@ -77,6 +77,7 @@ def test_lane_change_waits_for_gap_and_times_out_to_safe_stop():
     timeout = fsm.update(_snapshot(left_gap_safe=False), now_s=1.1)
     assert timeout.state == "FAILED"
     assert timeout.safe_behavior == "STOP"
+    assert timeout.events[-1].reason_code == "LANE_GAP_UNSAFE"
 
 
 def test_speed_completion_accepts_closed_loop_ripple_near_30_kph():

@@ -77,6 +77,8 @@ class PlanCompiler:
                     return_context["return_direction"] = return_direction
                 compiled.extend(self._compile_return(raw, return_context))
                 return_direction = None
+            elif behavior in {"CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}:
+                compiled.extend(self._compile_change_lane(raw))
             else:
                 compiled.append(_copy_step(raw))
         if not compiled:
@@ -87,6 +89,39 @@ class PlanCompiler:
             steps=tuple(compiled),
             replan_conditions=tuple(str(item) for item in plan["replan_conditions"]),
             valid_until_ns=int(plan["valid_until_ns"]),
+        )
+
+    @staticmethod
+    def _compile_change_lane(
+        raw: Mapping[str, Any],
+    ) -> tuple[CompiledPlanStep, CompiledPlanStep]:
+        """Gate every ordinary lane change on a fresh, safe target-lane gap."""
+        behavior = str(raw["behavior"])
+        side = "LEFT" if behavior == "CHANGE_LANE_LEFT" else "RIGHT"
+        target = dict(raw["target"])
+        target["target_lane"] = f"{side}_ADJACENT"
+        source_id = str(raw["step_id"])
+        common = tuple(str(item) for item in raw["preconditions"])
+        gated = tuple(dict.fromkeys(
+            common
+            + ("PERCEPTION_FRESH", f"{side}_LANE_EXISTS", f"{side}_GAP_SAFE")
+        ))
+        timeout = float(raw["timeout_s"])
+        failure = str(raw["on_failure"])
+        return (
+            CompiledPlanStep(
+                f"{source_id}.gap", source_id, "WAIT_SAFE_GAP", target,
+                gated,
+                {
+                    "type": "HOLD_FRAMES", "value": None,
+                    "lane": target["target_lane"], "hold_frames": 3,
+                },
+                min(5.0, timeout), failure,
+            ),
+            CompiledPlanStep(
+                source_id, source_id, behavior, target, gated,
+                dict(raw["completion"]), timeout, failure,
+            ),
         )
 
     @staticmethod

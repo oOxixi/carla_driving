@@ -153,7 +153,12 @@ class ManeuverFSM:
         if self.step_started_s is None:
             self.step_started_s = now
         if now - self.step_started_s > step.timeout_s:
-            return self._step_failure(step, "STEP_TIMEOUT", now)
+            reason = (
+                "LANE_GAP_UNSAFE"
+                if any(item.endswith("GAP_SAFE") for item in step.preconditions)
+                else "STEP_TIMEOUT"
+            )
+            return self._step_failure(step, reason, now)
         if not self._preconditions_latched:
             unmet = tuple(
                 condition for condition in step.preconditions
