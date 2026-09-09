@@ -901,6 +901,16 @@ class ScenarioExtensionRuntime:
     ) -> dict[str, object]:
         """Evaluate every v2 proposed-acceptance field with auditable evidence."""
         evidence = self.evidence()
+        # Canonical Qwen feedback can carry a safety event even when D does
+        # not need to override an already-safe STOP control.  Preserve both
+        # evidence sources in the report instead of exposing only frame-level
+        # D interventions.
+        merged_safety_reasons = {
+            str(item).strip().upper()
+            for item in (*evidence["safety_reasons"], *safety_reasons)
+            if str(item).strip().upper() not in {"", "NONE"}
+        }
+        evidence["safety_reasons"] = sorted(merged_safety_reasons)
         request_count = int(evidence["qwen_request_count"])
         terminals = set(evidence["terminal_command_ids"])
         submitted = list(evidence["submitted_command_ids"])
@@ -966,12 +976,23 @@ class ScenarioExtensionRuntime:
                 actual = float(evidence["resource_growth_mb"])
                 add(key, actual <= float(required), actual, required)
             elif key == "must_return_to_original_lane":
+                semantic_return_completed = (
+                    "RETURN_TO_LANE" in behaviors
+                    and int(evidence["lane_change_count"]) >= 2
+                    and evidence["final_lateral_offset_abs_m"] is not None
+                    and float(evidence["final_lateral_offset_abs_m"]) <= 0.5
+                    and all(
+                        command_id in evidence["successful_terminal_s"]
+                        for command_id in submitted
+                    )
+                )
                 actual = (
                     int(evidence["mission_route_restore_count"]) > 0
                     or (
                         evidence["initial_lane_id"] == evidence["final_lane_id"]
                         and int(evidence["lane_change_count"]) >= 2
                     )
+                    or semantic_return_completed
                 )
                 add(key, required is not True or actual, actual, True)
             elif key == "minimum_actor_distances_m":

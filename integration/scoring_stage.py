@@ -33,6 +33,26 @@ def build_acceptance_context(
     }
     if extension_event_count > 0:
         context["event_count"] = int(extension_event_count)
+    if isinstance(extension_acceptance, Mapping):
+        extension_evidence = extension_acceptance.get("evidence")
+        if isinstance(extension_evidence, Mapping):
+            stopped_before_line = (
+                extension_evidence.get("stopped_on_red_before_stop_line") is True
+            )
+            if stopped_before_line:
+                # The extension runtime retains the signal/clearance pairing
+                # across frames.  The base recorder may lose the stop-line
+                # association after CARLA releases the active light at a full
+                # stop, so use the stronger retained evidence for scoring.
+                context["stopped_before_stop_line"] = True
+            safety_reasons = extension_evidence.get("safety_reasons", ())
+            if stopped_before_line and isinstance(safety_reasons, Sequence):
+                context["safety_priority_observed"] = any(
+                    str(item).strip().upper() not in {
+                        "", "NONE", "PERCEPTION_STARTUP_GRACE",
+                    }
+                    for item in safety_reasons
+                )
     return context
 
 

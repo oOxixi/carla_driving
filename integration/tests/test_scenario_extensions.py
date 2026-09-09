@@ -326,7 +326,7 @@ def _frame(runtime: ScenarioExtensionRuntime, *, elapsed_s: float, progress_m: f
         actor_distances_m={},
         traffic_light_state="UNKNOWN",
         distance_to_stop_line_m=distance_to_stop_line_m,
-        lane_id="1",
+        lane_id=lane_id,
         lateral_offset_m=lateral_offset_m,
     )
 
@@ -1054,6 +1054,42 @@ def test_long_mission_return_uses_route_restoration_not_global_lane_id() -> None
 
     assert result["passed"] is True
     assert result["evidence"]["mission_route_restore_count"] == 1
+
+
+def test_completed_semantic_return_survives_road_lane_id_renumbering() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_command_submitted(
+        {"command_id": "avoid", "intent": "AVOID_OBSTACLE"}, qwen=True,
+    )
+    runtime.note_qwen_plan({"steps": [
+        {"behavior": "AVOID_OBSTACLE"},
+        {"behavior": "RETURN_TO_LANE"},
+    ]})
+    _frame(runtime, elapsed_s=1.0, progress_m=1.0, speed_mps=3.0, lane_id="3")
+    _frame(runtime, elapsed_s=2.0, progress_m=2.0, speed_mps=3.0, lane_id="2")
+    _frame(runtime, elapsed_s=3.0, progress_m=3.0, speed_mps=3.0, lane_id="1")
+    runtime.note_terminal("avoid", "SUCCEEDED")
+
+    result = runtime.evaluate(
+        {"must_return_to_original_lane": True}, expected_command_count=1,
+    )
+
+    assert result["passed"] is True
+    assert result["evidence"]["initial_lane_id"] == "3"
+    assert result["evidence"]["final_lane_id"] == "1"
+
+
+def test_canonical_safety_reason_is_merged_into_extension_evidence() -> None:
+    runtime = ScenarioExtensionRuntime({})
+
+    result = runtime.evaluate(
+        {}, expected_command_count=0,
+        safety_reasons=("QWEN_ILLEGAL_REQUEST_STOP",),
+    )
+
+    assert result["evidence"]["safety_reasons"] == [
+        "QWEN_ILLEGAL_REQUEST_STOP",
+    ]
 
 
 def test_restored_terminal_phase_only_rehydrates_trigger_state() -> None:

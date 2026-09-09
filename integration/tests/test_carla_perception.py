@@ -490,6 +490,11 @@ def test_long_range_radar_only_return_does_not_constrain_clear_lidar_route() -> 
     sample = bridge.acquire(46, 2.3, timeout_s=0.01)
 
     assert sample.frame.lead_distance_m is None
+    assert len(sample.frame.detected_objects) == 1
+    assert sample.frame.detected_objects[0].distance_m == pytest.approx(21.5)
+    assert sample.source_by_field["detected_objects"] == (
+        "RADAR_FRONT_CORRIDOR_QWEN_CANDIDATE"
+    )
     assert sample.source_by_field["radar_observation"] == (
         "RADAR_FRONT_CORRIDOR_UNCORROBORATED_IGNORED"
     )

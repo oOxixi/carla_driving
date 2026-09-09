@@ -79,6 +79,30 @@ def test_scoring_stage_is_read_only_and_keeps_control_policy_separate() -> None:
     assert spec.control_policy == policy_before
 
 
+def test_scoring_stage_retains_red_stop_and_qwen_safety_evidence() -> None:
+    spec = ScenarioSpec.load(
+        ROOT / "scenarios" / "acceptance_suite" / "supplemental" /
+        "challenge" / "SUP_C06_ignore_red_light.json"
+    )
+    context = build_acceptance_context(
+        spec,
+        final_route_end_distance_m=15.0,
+        final_route_remaining_m=15.0,
+        configured_route_deviation_trigger_m=3.0,
+        spawned_scenario_actor_types=(),
+        extension_acceptance={
+            "evidence": {
+                "stopped_on_red_before_stop_line": True,
+                "safety_reasons": ["QWEN_ILLEGAL_REQUEST_STOP"],
+            },
+        },
+        qwen_acceptance=None,
+    )
+
+    assert context["stopped_before_stop_line"] is True
+    assert context["safety_priority_observed"] is True
+
+
 def test_expected_threshold_does_not_implicitly_become_control_policy() -> None:
     spec = ScenarioSpec.load(
         ROOT / "scenarios" / "official_competition" / "S2_complex_avoidance_8km.json"

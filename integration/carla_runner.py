@@ -805,12 +805,8 @@ def _apply_compiled_plan_route(
         prevalidated_maneuver_route is not None
         and (
             current_route.points_xy_m == prevalidated_maneuver_route.points_xy_m
-            or math.dist(
-                current_route.points_xy_m[0],
-                prevalidated_maneuver_route.points_xy_m[0],
-            ) <= 1.0
-            or _route_starts_near_ego(prevalidated_maneuver_route, ego)
         )
+        and _route_starts_near_ego(prevalidated_maneuver_route, ego)
     ):
         # A scenario out-and-back reference is already the active route before
         # its semantic lane-change step starts.  Its origin naturally moves
@@ -6023,14 +6019,7 @@ def run(args: argparse.Namespace) -> None:
                                 started_route_step.behavior.startswith("CHANGE_LANE_")
                                 and prevalidated_avoid_route is not None
                                 and not dynamic_out_and_back
-                                and (
-                                    route.points_xy_m == prevalidated_avoid_route.points_xy_m
-                                    or math.dist(
-                                        route.points_xy_m[0],
-                                        prevalidated_avoid_route.points_xy_m[0],
-                                    ) <= 1.0
-                                    or _route_starts_near_ego(prevalidated_avoid_route, ego)
-                                )
+                                and _route_starts_near_ego(prevalidated_avoid_route, ego)
                             ):
                                 # The acceptance scenario declares one legal
                                 # out-and-back detour. Keep that full route for

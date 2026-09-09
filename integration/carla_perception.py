@@ -1032,6 +1032,23 @@ class CarlaPerceptionBridge:
             )
             detected_objects = (lidar_target,) + tuple(detected_objects)
             sources["detected_objects"] = "LIDAR_RADAR_FRONT_CORRIDOR_OBJECT"
+        elif radar_target is not None and not corridor_objects:
+            # A long-range radar return is too weak to constrain longitudinal
+            # control without LiDAR corroboration, but it is still legitimate
+            # sensor evidence that a pending visual/semantic command has a
+            # candidate ahead.  Expose it to Qwen without assigning it to
+            # ``lead_distance_m``; C/D therefore keep their stricter fusion
+            # gate while event-driven commands can be evaluated before a
+            # predeclared manoeuvre route has moved behind the ego.
+            radar_candidate = DetectedObject(
+                0,
+                "obstacle",
+                0.55,
+                (0.42, 0.34, 0.58, 0.76),
+                radar_target.distance_m,
+            )
+            detected_objects = (radar_candidate,) + tuple(detected_objects)
+            sources["detected_objects"] = "RADAR_FRONT_CORRIDOR_QWEN_CANDIDATE"
         if self._detector is not None and corridor_objects and lead_distance is not None:
             selected = max(corridor_objects, key=lambda item: item.confidence)
             detected_objects = tuple(
