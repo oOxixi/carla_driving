@@ -394,7 +394,7 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
     add(scenario(
         "ACC_A01_lead_brake", "advanced", priority="P0", category="safety_D", level="advanced",
         capability="lead_vehicle_brake", description="跟随前车，前车在 6 秒急刹，验证间距、TTC 和安全制动。",
-        commands=[command(0, "跟随正前方车辆并保持安全距离", "KEEP_LANE", speed_kph=25)],
+        commands=[command(0, "跟随正前方车辆并保持安全距离", "FOLLOW", speed_kph=25)],
         actors=[vehicle("lead_001", 20, speed_mps=5.0, brake_at_s=6.0, target_speed_mps=0.3)],
         expected={"min_front_gap_m": 2.5, "required_real_actor_types": ["vehicle"],
                   "expected_safety_override_allowed": True},
@@ -491,11 +491,11 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
     ))
     add(scenario(
         "ACC_C04_multi_target_binding", "challenge", priority="P0", category="regression", level="challenge",
-        capability="multi_target_binding", description="三辆候选车中绑定同车道正前方目标。",
-        commands=[command(0, "跟随正前方同车道的车辆，不要跟左右两辆车", "KEEP_LANE", speed_kph=18)],
+        capability="multi_target_binding", description="三辆候选车中绑定最近的同车道正前方目标。",
+        commands=[command(0, "跟随最近的同车道正前方车辆，不要跟相邻车道或远处车辆", "FOLLOW", speed_kph=18)],
         actors=[vehicle("lead_target", 26, speed_mps=3.0),
-                vehicle("distractor_left", 20, 3.5, speed_mps=3.5, blueprint_id="vehicle.tesla.model3"),
-                vehicle("distractor_right", 32, -3.5, speed_mps=2.5, blueprint_id="vehicle.lincoln.mkz_2020")],
+                vehicle("distractor_far", 44, 0.0, speed_mps=3.5, blueprint_id="vehicle.tesla.model3"),
+                vehicle("distractor_adjacent", 32, -3.5, speed_mps=2.5, blueprint_id="vehicle.lincoln.mkz_2020")],
         expected={"required_real_actor_types": ["vehicle"], "min_front_gap_m": 2.5,
                   "expected_safety_override_allowed": True},
         oracle_behaviors=["FOLLOW"], expected_target_actor_id="lead_target",
@@ -585,7 +585,7 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
     add(scenario(
         "VAR_A01_lead_brake_late", "variants", priority="P1", category="safety_D", level="advanced",
         capability="late_lead_brake", description="长期跟随后前车在 15 秒急刹。",
-        commands=[command(0, "持续跟随正前方车辆并保持安全距离", "KEEP_LANE", speed_kph=22)],
+        commands=[command(0, "持续跟随正前方车辆并保持安全距离", "FOLLOW", speed_kph=22)],
         route=STRAIGHT_100, actors=[vehicle("lead_001", 22, speed_mps=4.5, brake_at_s=15, target_speed_mps=0.2)],
         duration_s=42, expected={"min_front_gap_m": 2.5, "required_real_actor_types": ["vehicle"],
                   "expected_safety_override_allowed": True}, oracle_behaviors=["FOLLOW", "STOP"],
@@ -662,7 +662,7 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
     add(scenario(
         "VAR_C03_multi_target_partial_occlusion", "variants", priority="P1", category="regression", level="challenge",
         capability="occluded_target_binding", description="多目标条件下正前方目标被施工道具局部遮挡。",
-        commands=[command(0, "跟随正前方被部分遮挡的车辆", "KEEP_LANE", speed_kph=16)],
+        commands=[command(0, "跟随正前方被部分遮挡的车辆", "FOLLOW", speed_kph=16)],
         actors=[vehicle("lead_target", 28, speed_mps=2.8),
                 vehicle("distractor_left", 23, 3.5, speed_mps=3.0, blueprint_id="vehicle.tesla.model3"),
                 prop("partial_occluder", 20, -2.3, 90)],
@@ -717,11 +717,11 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
     ))
     add(scenario(
         "CX02_multi_vehicle_target_follow_brake", "complex", priority="P2", category="regression", level="challenge",
-        capability="multi_target_follow_brake", description="三车目标选择后，正前方目标在 8 秒急刹。",
-        commands=[command(0, "跟随正前方同车道车辆并保持安全距离", "KEEP_LANE", speed_kph=20)],
+        capability="multi_target_follow_brake", description="三车目标选择后，最近的同车道目标在 8 秒急刹。",
+        commands=[command(0, "跟随最近的同车道正前方车辆并保持安全距离", "FOLLOW", speed_kph=20)],
         actors=[vehicle("lead_target", 26, speed_mps=4.0, brake_at_s=8, target_speed_mps=0.2),
-                vehicle("distractor_left", 21, 3.5, speed_mps=3.0, blueprint_id="vehicle.tesla.model3"),
-                vehicle("distractor_right", 31, -3.5, speed_mps=3.5, blueprint_id="vehicle.lincoln.mkz_2020")],
+                vehicle("distractor_far", 44, 0.0, speed_mps=3.0, blueprint_id="vehicle.tesla.model3"),
+                vehicle("distractor_adjacent", 31, -3.5, speed_mps=3.5, blueprint_id="vehicle.lincoln.mkz_2020")],
         duration_s=42, expected={"required_real_actor_types": ["vehicle"],
                   "min_front_gap_m": 2.5, "expected_safety_override_allowed": True},
         oracle_behaviors=["FOLLOW", "SLOW_DOWN", "STOP"], expected_target_actor_id="lead_target", seed=202,
@@ -780,7 +780,7 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
                         {"type": "previous_command_terminal", "phase_id": "P1_START"},
                         {"type": "route_progress_greater_than_m", "value": 10},
                     ]}),
-            command(35, "跟随正前方同车道的车辆并保持安全距离", "KEEP_LANE", speed_kph=18,
+            command(35, "跟随正前方同车道的车辆并保持安全距离", "FOLLOW", speed_kph=18,
                     phase_id="P3_FOLLOW",
                     trigger={"type": "route_progress_greater_than_m", "value": 35}),
             command(90, "不用停，继续往前开", "KEEP_LANE", speed_kph=15,
@@ -998,7 +998,7 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         add(scenario(
             scenario_id, "supplemental/advanced", priority="P1", category="safety_D",
             level="advanced", capability="distance_triggered_lead_brake", description=description,
-            commands=[command(0, "跟随正前方车辆并保持安全距离", "KEEP_LANE", speed_kph=ego_kph)],
+            commands=[command(0, "跟随正前方车辆并保持安全距离", "FOLLOW", speed_kph=ego_kph)],
             actors=[vehicle(
                 "lead_target", gap_m, speed_mps=lead_mps, target_speed_mps=lead_mps,
                 behavior_mode="event_timeline", behavior_events=[{
@@ -1175,12 +1175,16 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         description="左侧目标车道被占，变道请求必须被本地安全检查拒绝。",
         commands=[command(0, "向左变道", "CHANGE_LANE_LEFT", speed_kph=12)],
         actors=[vehicle("front_blocker", 26),
-                vehicle("left_lane_occupant", 16, 3.5, speed_mps=3.0,
+                vehicle("left_lane_occupant", 16, -3.5, speed_mps=0.0,
                         blueprint_id="vehicle.tesla.model3")], seed=425,
         expected={"required_real_actor_types": ["vehicle"], "min_front_gap_m": 2.5,
                   "expected_safety_override_allowed": True},
         oracle_behaviors=["CHANGE_LANE_LEFT", "HOLD", "STOP"],
-        proposed_acceptance={"must_not_change_lane": True, "lane_change_rejection_reason_required": True},
+        proposed_acceptance={
+            "must_not_change_lane": True,
+            "target_lane_occupied_min_count": 1,
+            "lane_change_rejection_reason_required": True,
+        },
         extension_requirements=["all_voice_qwen", "qwen_lane_change_detour_actions",
                                 "target_lane_safety_check", "adjacent_lane_occupancy_acceptance"],
     ))
@@ -1310,13 +1314,13 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
     add(scenario(
         "SUP_C07_three_vehicle_binding", "supplemental/challenge", priority="P1",
         category="regression", level="challenge", capability="three_vehicle_binding_v2",
-        description="在同车道目标和左右干扰车中绑定正前方目标。",
-        commands=[command(0, "跟随正前方同车道的车辆", "KEEP_LANE", speed_kph=16)],
+        description="在最近同车道目标、远处车辆和相邻车道车辆中绑定目标。",
+        commands=[command(0, "跟随最近的同车道正前方车辆", "FOLLOW", speed_kph=16)],
         actors=[
             vehicle("target_front", 26, speed_mps=3.0),
-            vehicle("distractor_left", 20, 3.5, speed_mps=3.5,
+            vehicle("distractor_far", 44, 0.0, speed_mps=3.5,
                     blueprint_id="vehicle.tesla.model3"),
-            vehicle("distractor_right", 32, -3.5, speed_mps=2.5,
+            vehicle("distractor_adjacent", 32, -3.5, speed_mps=2.5,
                     blueprint_id="vehicle.lincoln.mkz_2020"),
         ], duration_s=40, seed=437,
         expected={"required_real_actor_types": ["vehicle"], "min_front_gap_m": 2.5,
@@ -1330,9 +1334,9 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
         category="regression", level="challenge", capability="occluded_target_stale_rejection",
         description="目标短时遮挡时拒绝超时或陈旧 Qwen 结果，恢复感知后安全决策并确保跟随目标绑定正确。",
         commands=[
-            command(1, "跟随正前方车辆", "KEEP_LANE", speed_kph=15),
+            command(1, "跟随正前方车辆", "FOLLOW", speed_kph=15),
             command(12, "目标看不清时先保持安全", "HOLD"),
-            command(14, "重新看清正前方车辆后继续跟随", "KEEP_LANE", speed_kph=15),
+            command(14, "重新看清正前方车辆后继续跟随", "FOLLOW", speed_kph=15),
         ],
         actors=[vehicle("target_front", 28, speed_mps=2.8),
                 prop("temporary_occluder", 22, -2.0, 90)],

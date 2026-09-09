@@ -33,6 +33,7 @@ def voice_envelope_to_driving_command(
     registry = registry or InterfaceRegistry()
     intent = str(envelope.get("intent", "UNKNOWN")).upper()
     canonical_intent = {
+        "FOLLOW": "FOLLOW",
         "FOLLOW_ROUTE": "FOLLOW",
         "EMERGENCY_STOP": "EMERGENCY_STOP",
         "STOP": "STOP",

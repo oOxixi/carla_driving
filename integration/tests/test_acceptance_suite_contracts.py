@@ -37,6 +37,16 @@ def test_acceptance_suite_has_exactly_83_loadable_scenarios() -> None:
     assert max(ScenarioSpec.load(path).duration_s for path in files) < 3600
 
 
+def test_following_voice_text_uses_follow_intent() -> None:
+    mismatches = []
+    for path in _scenario_files():
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for index, command in enumerate(data["commands"]):
+            if "跟随" in str(command.get("source_text", "")) and command.get("intent") != "FOLLOW":
+                mismatches.append(f"{path.name}:commands[{index}]")
+    assert mismatches == []
+
+
 def test_acceptance_matrix_matches_files_and_required_counts() -> None:
     matrix = json.loads((SUITE_ROOT / "matrix.json").read_text(encoding="utf-8"))
     entries = matrix["scenarios"]

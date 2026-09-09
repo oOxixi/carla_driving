@@ -17,6 +17,7 @@ SUPPORTED_LEVELS = frozenset({"basic", "advanced", "challenge"})
 DEFAULT_RELATIVE_SPEED_STEP_MPS = 5.0 / 3.6
 ROUTE_FOLLOWING_INTENTS = frozenset({
     "KEEP_LANE",
+    "FOLLOW",
     "FOLLOW_ROUTE",
     "TURN_LEFT",
     "TURN_RIGHT",

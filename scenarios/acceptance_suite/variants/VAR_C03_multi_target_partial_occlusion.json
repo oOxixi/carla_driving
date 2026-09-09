@@ -55,7 +55,7 @@
     {
       "time_s": 0,
       "source_text": "跟随正前方被部分遮挡的车辆",
-      "intent": "KEEP_LANE",
+      "intent": "FOLLOW",
       "parameters": {
         "target_speed_kph": 16
       },

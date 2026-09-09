@@ -269,7 +269,7 @@
       "category": "regression",
       "primary_capability": "multi_target_binding",
       "suite_group": "challenge_scoring",
-      "description": "三辆候选车中绑定同车道正前方目标。",
+      "description": "三辆候选车中绑定最近的同车道正前方目标。",
       "runtime_support": {
         "status": "current",
         "requirements": [],
@@ -629,7 +629,7 @@
       "category": "regression",
       "primary_capability": "multi_target_follow_brake",
       "suite_group": "complex_regression",
-      "description": "三车目标选择后，正前方目标在 8 秒急刹。",
+      "description": "三车目标选择后，最近的同车道目标在 8 秒急刹。",
       "runtime_support": {
         "status": "current",
         "requirements": [],
@@ -1273,7 +1273,7 @@
       "category": "regression",
       "primary_capability": "three_vehicle_binding_v2",
       "suite_group": "challenge_scoring",
-      "description": "在同车道目标和左右干扰车中绑定正前方目标。",
+      "description": "在最近同车道目标、远处车辆和相邻车道车辆中绑定目标。",
       "runtime_support": {
         "status": "current",
         "requirements": [],
