@@ -839,11 +839,11 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
                      "state": "green"},
                 ]},
             },
-            {**prop("construction_blocker", 185, 0), "activation_trigger": {
-                "type": "route_progress_greater_than_m", "value": 155,
+            {**prop("construction_blocker", 125, 0), "activation_trigger": {
+                "type": "route_progress_greater_than_m", "value": 90,
             }},
-            {**prop("construction_warning", 182, -2), "activation_trigger": {
-                "type": "route_progress_greater_than_m", "value": 155,
+            {**prop("construction_warning", 122, -2), "activation_trigger": {
+                "type": "route_progress_greater_than_m", "value": 90,
             }},
         ],
         duration_s=120,
