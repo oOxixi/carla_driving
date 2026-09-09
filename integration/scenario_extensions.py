@@ -304,6 +304,18 @@ class ScenarioExtensionRuntime:
             if command_id in self._submitted_command_ids:
                 self._latest_applied_command_index = self._submitted_command_ids.index(command_id)
 
+    def note_maneuver_terminal_reason(self, reason_code: str | None) -> None:
+        """Preserve downstream FSM rejection/failure reasons for acceptance.
+
+        Qwen resolution records why a plan was accepted or rejected at the
+        model boundary.  A safe-gap decision can only be resolved later by the
+        execution FSM, so its terminal reason is separate evidence and must not
+        be counted as another Qwen request or outcome.
+        """
+        normalized = str(reason_code or "").strip().upper()
+        if normalized and normalized != "PLAN_COMPLETE":
+            self._qwen_resolution_reasons.append(normalized)
+
     def note_phase_completed(self, phase_id: str) -> None:
         normalized = str(phase_id).strip()
         if normalized:

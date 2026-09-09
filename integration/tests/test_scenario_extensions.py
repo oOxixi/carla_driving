@@ -353,6 +353,13 @@ def test_lane_change_rejection_requires_explicit_safety_reason() -> None:
     )
     assert rejected["passed"] is True
 
+    runtime.note_maneuver_terminal_reason("LANE_GAP_UNSAFE")
+    downstream_rejected = runtime.evaluate(
+        {"lane_change_rejection_reason_required": True},
+        expected_command_count=1,
+    )
+    assert downstream_rejected["passed"] is True
+
 
 def test_actor_event_records_real_lead_brake_trigger_distance() -> None:
     runtime = ScenarioExtensionRuntime({})

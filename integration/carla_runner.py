@@ -292,6 +292,7 @@ def _record_maneuver_update(
         if event.event_type == "qwen_terminal":
             if extension_runtime is not None:
                 extension_runtime.note_terminal(event.command_id, event.state)
+                extension_runtime.note_maneuver_terminal_reason(event.reason_code)
             if monitor is not None:
                 monitor.record_terminal(
                     event.state,
