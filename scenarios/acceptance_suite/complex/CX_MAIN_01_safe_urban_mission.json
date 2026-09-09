@@ -360,14 +360,14 @@
       "type": "static.prop",
       "blueprint_id": "static.prop.warningconstruction",
       "spawn": {
-        "x": 125,
+        "x": 110,
         "y": 0.0,
         "z": 0.5,
         "yaw_deg": 0.0
       },
       "activation_trigger": {
         "type": "route_progress_greater_than_m",
-        "value": 90
+        "value": 75
       }
     },
     {
@@ -375,14 +375,14 @@
       "type": "static.prop",
       "blueprint_id": "static.prop.warningconstruction",
       "spawn": {
-        "x": 122,
+        "x": 107,
         "y": -2,
         "z": 0.5,
         "yaw_deg": 0.0
       },
       "activation_trigger": {
         "type": "route_progress_greater_than_m",
-        "value": 90
+        "value": 75
       }
     }
   ],
