@@ -977,6 +977,7 @@ def _maneuver_lane_label(
     *,
     x_m: float,
     y_m: float,
+    return_destination_xy: tuple[float, float] | None = None,
     return_tolerance_m: float = 0.5,
 ) -> str:
     """Resolve semantic lanes across junctions where CARLA renumbers lane IDs."""
@@ -984,11 +985,17 @@ def _maneuver_lane_label(
         (name for name, mapped_lane_id in lane_ids.items() if mapped_lane_id == lane_id),
         lane_id,
     )
-    if (
+    returning_to_current = bool(
         step is not None
         and mission_route is not None
         and str(step.target.get("target_lane") or "").strip().upper() == "CURRENT"
-        and route_deviation_m(x_m, y_m, mission_route) <= return_tolerance_m
+    )
+    if returning_to_current and (
+        route_deviation_m(x_m, y_m, mission_route) <= return_tolerance_m
+        or (
+            return_destination_xy is not None
+            and math.dist((x_m, y_m), return_destination_xy) <= 2.5
+        )
     ):
         return "CURRENT"
     return label
@@ -3406,6 +3413,7 @@ def run(args: argparse.Namespace) -> None:
     maneuver_target_pass_after_m: float | None = None
     maneuver_route_steps_applied: set[str] = set()
     maneuver_mission_route: RouteReference | None = None
+    maneuver_return_destination_xy: tuple[float, float] | None = None
     scenario_actor_progress_trackers: dict[str, RouteProgressTracker] = {}
     dynamic_out_and_back = _scenario_uses_dynamic_out_and_back(spec)
     lane_change_profile = _scenario_lane_change_profile(spec)
@@ -5565,6 +5573,7 @@ def run(args: argparse.Namespace) -> None:
                                     else None
                                 )
                                 maneuver_route_steps_applied.clear()
+                                maneuver_return_destination_xy = None
                                 maneuver_lane_ids = {"CURRENT": state.lane_id}
                                 plan_waypoint = world_map.get_waypoint(
                                     ego.get_location(), project_to_road=True,
@@ -5878,6 +5887,7 @@ def run(args: argparse.Namespace) -> None:
                         maneuver_mission_route,
                         x_m=state.x_m,
                         y_m=state.y_m,
+                        return_destination_xy=maneuver_return_destination_xy,
                     )
                     heading_change_deg = (
                         0.0
@@ -6067,6 +6077,7 @@ def run(args: argparse.Namespace) -> None:
                         if extension_runtime is not None:
                             extension_runtime.note_mission_route_restored()
                         maneuver_mission_route = None
+                        maneuver_return_destination_xy = None
                     started_route_step = (
                         maneuver_update.current_step
                         if any(
@@ -6201,6 +6212,7 @@ def run(args: argparse.Namespace) -> None:
                                         maneuver_mission_route,
                                         route_progress_m,
                                     )
+                                    maneuver_return_destination_xy = destination_xy
                                     route = build_destination_route_reference(
                                         world_map,
                                         ego.get_transform(),
