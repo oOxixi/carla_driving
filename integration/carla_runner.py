@@ -1358,30 +1358,31 @@ def _spawn_scenario_vehicle(
             longitudinal_m=forward_offset_m,
             lateral_m=lateral_offset_m,
         )
-        transform = (
-            route_relative_carla_transform(
-                carla_api, world_map, route.points_xy_m, candidate_spec,
-            )
-            if route is not None else
-            _scenario_local_transform(
-                carla_api,
-                ego_transform,
-                candidate_spec.get("spawn", spawn),
-            )
-        )
-        # The ego has already settled onto the road before scenario actors are
-        # created, so its transform Z is near zero.  Preserve the declarative
-        # 0.5 m spawn clearance relative to the road surface; otherwise CARLA
-        # rejects the vehicle because its collision box intersects the road.
-        road_waypoint = world_map.get_waypoint(
-            transform.location, project_to_road=True,
-        )
-        if road_waypoint is not None:
-            road_location = road_waypoint.transform.location
-            transform.location.z = max(
-                float(transform.location.z), float(road_location.z) + 0.5,
-            )
         try:
+            transform = (
+                route_relative_carla_transform(
+                    carla_api, world_map, route.points_xy_m, candidate_spec,
+                )
+                if route is not None else
+                _scenario_local_transform(
+                    carla_api,
+                    ego_transform,
+                    candidate_spec.get("spawn", spawn),
+                )
+            )
+            # The ego has already settled onto the road before scenario actors
+            # are created, so its transform Z is near zero.  Preserve the
+            # declarative 0.5 m spawn clearance relative to the road surface;
+            # otherwise CARLA rejects the vehicle because its collision box
+            # intersects the road.
+            road_waypoint = world_map.get_waypoint(
+                transform.location, project_to_road=True,
+            )
+            if road_waypoint is not None:
+                road_location = road_waypoint.transform.location
+                transform.location.z = max(
+                    float(transform.location.z), float(road_location.z) + 0.5,
+                )
             validate_actor_transform(
                 world_map,
                 transform,
@@ -1717,22 +1718,22 @@ def _spawn_scenario_walker(
             lateral_m=lateral_offset_m,
         )
         candidate_spawn = candidate_spec.get("spawn", spawn)
-        transform = (
-            route_relative_carla_transform(
-                carla_api, world_map, route.points_xy_m, candidate_spec,
-            )
-            if route is not None else
-            _scenario_local_transform(carla_api, anchor, candidate_spawn)
-        )
-        road_waypoint = world_map.get_waypoint(
-            transform.location, project_to_road=True,
-        )
-        if road_waypoint is not None:
-            transform.location.z = max(
-                float(transform.location.z),
-                float(road_waypoint.transform.location.z) + 0.5,
-            )
         try:
+            transform = (
+                route_relative_carla_transform(
+                    carla_api, world_map, route.points_xy_m, candidate_spec,
+                )
+                if route is not None else
+                _scenario_local_transform(carla_api, anchor, candidate_spawn)
+            )
+            road_waypoint = world_map.get_waypoint(
+                transform.location, project_to_road=True,
+            )
+            if road_waypoint is not None:
+                transform.location.z = max(
+                    float(transform.location.z),
+                    float(road_waypoint.transform.location.z) + 0.5,
+                )
             validate_actor_transform(
                 world_map,
                 transform,
@@ -1864,18 +1865,18 @@ def _spawn_scenario_static_prop(
             longitudinal_m=forward_offset_m,
             lateral_m=lateral_offset_m,
         )
-        transform = (
-            route_relative_carla_transform(
-                carla_api, world_map, route.points_xy_m, candidate_spec,
-            )
-            if route is not None else
-            _scenario_local_transform(
-                carla_api,
-                ego.get_transform(),
-                candidate_spec.get("spawn", spawn),
-            )
-        )
         try:
+            transform = (
+                route_relative_carla_transform(
+                    carla_api, world_map, route.points_xy_m, candidate_spec,
+                )
+                if route is not None else
+                _scenario_local_transform(
+                    carla_api,
+                    ego.get_transform(),
+                    candidate_spec.get("spawn", spawn),
+                )
+            )
             validate_actor_transform(
                 world_map,
                 transform,
@@ -2908,10 +2909,9 @@ def _build_resume_segment_spec(
     extensions = dict(spec.extensions)
     proposed = dict(extensions.get("proposed_acceptance", {}))
     qwen_commands = tuple(remaining_commands)
-    fast_local_commands: tuple[Any, ...] = ()
     proposed["qwen_request_count"] = len(qwen_commands)
     if "qwen_missing_request_count" in proposed:
-        proposed["qwen_missing_request_count"] = len(fast_local_commands)
+        proposed["qwen_missing_request_count"] = 0
     proposed["expected_phase_count"] = len(remaining_commands)
     proposed.pop("must_return_to_original_lane", None)
     for key in (
@@ -3372,10 +3372,9 @@ def run(args: argparse.Namespace) -> None:
                 )
                 if qwen_faults else qwen_client
             )
-            # Supplying the production service opts the entire run into the
-            # single Qwen semantic path. Local D safety remains authoritative
-            # and the bridge applies an immediate stop hold while Qwen runs.
-            force_all_voice_qwen = True
+            # The canonical orchestrator has a single semantic route: every
+            # valid voice event is submitted to Qwen. Local D safety remains
+            # authoritative while inference is pending.
             # JSON Schema compilation is deterministic runtime initialization,
             # not decision work.  Compile once and share the registry so the
             # first scored voice command does not pay Python/jsonschema import
@@ -3389,7 +3388,6 @@ def run(args: argparse.Namespace) -> None:
                     model_timeout_ms=args.qwen_timeout_ms,
                     stop_line_guard_m=args.stop_line_guard_m,
                     qwen_mode=args.qwen_mode,
-                    force_qwen_all_voice=force_all_voice_qwen,
                 ),
                 registry=canonical_registry,
             )
@@ -5120,12 +5118,11 @@ def run(args: argparse.Namespace) -> None:
                         for feedback in submission.feedbacks:
                             _note_safety_feedback(safety_reasons, feedback)
                         if qwen_scenario_monitor is not None:
-                            observed_route = (
-                                "FAST_LOCAL"
-                                if submission.orchestration.disposition == "FAST"
-                                else "CONFIRM_SAFE"
-                                if submission.orchestration.disposition == "CONFIRM_SAFE"
-                                else "QWEN_PLAN"
+                            request_routing = (
+                                submission.orchestration.model_request or {}
+                            ).get("routing", {})
+                            observed_route = str(
+                                request_routing.get("disposition", "QWEN_PLAN")
                             )
                             qwen_scenario_monitor.record_routing(
                                 observed_route,

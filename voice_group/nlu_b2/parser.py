@@ -47,7 +47,7 @@ class ParseContext:
     intent_confidence: float
     asr_confidence: float | None = None
     b1_status: str | None = None
-    route: str = "fast"
+    route: str = "qwen"
     reason: str | None = None
     b1_latency_ms: float | None = None
     slots: dict[str, Any] = field(default_factory=dict)
@@ -141,7 +141,7 @@ class CommandParser:
             default=1.0,
         )
         b1_status = _optional_lower(b1_result.get("status"))
-        route = _optional_lower(b1_result.get("route")) or "fast"
+        route = _optional_lower(b1_result.get("route")) or "qwen"
         reason = b1_result.get("reason")
         return ParseContext(
             request_id=request_id,
@@ -158,9 +158,6 @@ class CommandParser:
 
     @staticmethod
     def _blocking_b1_error(ctx: ParseContext) -> tuple[str, str] | None:
-        if ctx.b1_status == "needs_slow_path":
-            ctx.route = "slow"
-            return ("NEEDS_SLOW_PATH", "B1 标记为慢路径处理，B2 不生成快路径可执行指令")
         if ctx.b1_status == "unknown":
             return ("B1_UNKNOWN", "B1 未能识别为可执行车控指令")
         if ctx.b1_status and ctx.b1_status != "valid":
@@ -299,7 +296,6 @@ class CommandParser:
         if not ctx.errors:
             return "valid"
         priority = (
-            ("NEEDS_SLOW_PATH", "needs_slow_path"),
             ("B1_UNKNOWN", "unknown"),
             ("UNKNOWN_INTENT", "unknown_intent"),
             ("LOW_ASR_CONFIDENCE", "low_confidence"),

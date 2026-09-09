@@ -3,7 +3,6 @@
 from .latency_trace import LatencyCollector, StageTrace
 from .complexity_router import (
     CONFIRM_SAFE,
-    FAST_LOCAL,
     QWEN_PLAN,
     ComplexityFeatures,
     ComplexityRouter,
@@ -22,7 +21,6 @@ __all__ = [
     "LatencyCollector",
     "StageTrace",
     "CONFIRM_SAFE",
-    "FAST_LOCAL",
     "QWEN_PLAN",
     "ComplexityFeatures",
     "ComplexityRouter",

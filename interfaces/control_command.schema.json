@@ -11,7 +11,7 @@
   "properties": {
     "schema_version": {"const": "1.0"},
     "command_id": {"type": "string", "minLength": 1, "maxLength": 128},
-    "path_type": {"enum": ["FAST", "SLOW"]},
+    "path_type": {"const": "SLOW"},
     "behavior": {"enum": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "EMERGENCY_STOP", "YIELD", "FOLLOW", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT", "TURN_LEFT", "TURN_RIGHT", "PULL_OVER", "HOLD"]},
     "target": {
       "type": "object",
@@ -34,7 +34,7 @@
     },
     "issued_at_ns": {"type": "integer", "minimum": 0},
     "deadline_ns": {"type": "integer", "minimum": 1},
-    "source": {"enum": ["DETERMINISTIC_FAST_PATH", "QWEN_DECISION_PLAN", "SAFETY_SYSTEM"]},
+    "source": {"enum": ["QWEN_DECISION_PLAN", "SAFETY_SYSTEM"]},
     "confidence": {"type": "number", "minimum": 0, "maximum": 1},
     "reason_code": {"type": "string", "minLength": 1, "maxLength": 128}
   },
@@ -42,15 +42,15 @@
     {
       "schema_version": "1.0",
       "command_id": "voice-0001",
-      "path_type": "FAST",
+      "path_type": "SLOW",
       "behavior": "SET_SPEED",
       "target": {"target_id": null, "target_speed_mps": 5.5555555556, "time_gap_s": null},
       "limits": {"max_speed_mps": 8.3333333333, "max_accel_mps2": 2.5, "max_decel_mps2": 5.0},
       "issued_at_ns": 1050000000,
       "deadline_ns": 4000000000,
-      "source": "DETERMINISTIC_FAST_PATH",
+      "source": "QWEN_DECISION_PLAN",
       "confidence": 0.98,
-      "reason_code": "FAST_SET_SPEED"
+      "reason_code": "QWEN_SET_SPEED"
     }
   ]
 }

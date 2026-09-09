@@ -1,8 +1,8 @@
-"""Deterministic, explainable routing for simple and complex driving commands.
+"""Deterministic, explainable constraints for Qwen-routed driving commands.
 
-The router never calls a model and never grants vehicle-control authority.  It
-only decides whether a command can use the local fast path, needs a constrained
-Qwen planner, or must fail closed and ask for clarification.
+The router never grants vehicle-control authority. Every valid voice command
+is submitted to Qwen; this module only decides whether the request is a normal
+plan or needs additional fail-closed confirmation constraints.
 """
 
 from __future__ import annotations
@@ -13,11 +13,10 @@ import re
 from typing import Any
 
 
-FAST_LOCAL = "FAST_LOCAL"
 QWEN_PLAN = "QWEN_PLAN"
 CONFIRM_SAFE = "CONFIRM_SAFE"
 
-_FAST_INTENTS = frozenset({
+_ATOMIC_INTENTS = frozenset({
     "START", "STOP", "EMERGENCY_STOP", "SET_SPEED", "SLOW_DOWN", "KEEP_LANE",
 })
 _EMERGENCY_INTENTS = frozenset({"STOP", "EMERGENCY_STOP"})
@@ -204,9 +203,9 @@ class ComplexityRouter:
         safe_wait = _safe_wait_behavior(perception, runtime)
 
         if emergency or intent in _EMERGENCY_INTENTS:
-            reason = "LOCAL_SAFETY" if emergency else "CLEAR_ATOMIC"
+            reason = "IMMEDIATE_SAFETY_HOLD" if emergency else "CLEAR_ATOMIC_QWEN"
             return self._decision(
-                FAST_LOCAL, -5, (reason,), actions, has_sequence, has_condition,
+                QWEN_PLAN, -5, (reason,), actions, has_sequence, has_condition,
                 has_visual, has_route, candidate_count, target_unique, scene_conflict,
                 modality_disagreement, requires_maneuver, parameters_complete,
                 confidence, perception_fresh, requires_replan, safe_wait,
@@ -244,7 +243,7 @@ class ComplexityRouter:
                 safe_wait,
             )
         clear_atomic = (
-            intent in _FAST_INTENTS
+            intent in _ATOMIC_INTENTS
             and len(actions) <= 1
             and not has_sequence
             and not has_condition
@@ -258,7 +257,7 @@ class ComplexityRouter:
         )
         if clear_atomic:
             return self._decision(
-                FAST_LOCAL, -4, ("CLEAR_ATOMIC",), actions, has_sequence,
+                QWEN_PLAN, -4, ("CLEAR_ATOMIC_QWEN",), actions, has_sequence,
                 has_condition, has_visual, has_route, candidate_count, target_unique,
                 scene_conflict, modality_disagreement, requires_maneuver,
                 parameters_complete, confidence, perception_fresh, requires_replan,
@@ -329,7 +328,9 @@ class ComplexityRouter:
             reasons=unique_reasons,
             features=features,
             safe_wait_behavior=safe_wait,
-            expected_qwen_calls=1 if disposition == QWEN_PLAN else 0,
+            # CONFIRM_SAFE also reaches Qwen, but with stricter constraints and
+            # an immediate independent safety hold while inference is pending.
+            expected_qwen_calls=1,
         )
 
 
@@ -478,7 +479,6 @@ def _safe_wait_behavior(perception: Mapping[str, Any], runtime: Mapping[str, Any
 
 __all__ = [
     "CONFIRM_SAFE",
-    "FAST_LOCAL",
     "QWEN_PLAN",
     "ComplexityFeatures",
     "ComplexityRouter",

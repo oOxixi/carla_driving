@@ -37,7 +37,7 @@ def _load_payload(args: argparse.Namespace) -> dict[str, Any]:
             "intent": args.intent,
             "normalized_text": args.text,
             "status": "valid",
-            "route": "fast",
+            "route": "qwen",
         }
         if args.request_id:
             payload["request_id"] = args.request_id

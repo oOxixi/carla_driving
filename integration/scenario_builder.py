@@ -55,12 +55,16 @@ def _target_lane_waypoint(world_map: Any, base: Any, relation: str) -> Any:
     getter = getattr(base, getter_name, None)
     target = getter() if callable(getter) else None
     if target is None:
-        raise RuntimeError(f"scenario actor requires unavailable {relation.lower()} lane")
+        raise ActorPlacementError(
+            f"scenario actor requires unavailable {relation.lower()} lane"
+        )
     lane_type = str(getattr(target, "lane_type", "Driving")).rsplit(".", 1)[-1].upper()
     if lane_type != "DRIVING":
-        raise RuntimeError(f"scenario actor target lane is not driving: {lane_type}")
+        raise ActorPlacementError(
+            f"scenario actor target lane is not driving: {lane_type}"
+        )
     if not _same_direction(base, target):
-        raise RuntimeError(
+        raise ActorPlacementError(
             f"scenario actor target {relation.lower()} lane runs in the opposite direction"
         )
     return target
@@ -126,7 +130,9 @@ def route_relative_carla_transform(
         road_z = float(road_location.z)
     else:
         if relation not in {"CURRENT", "ORIGINAL"}:
-            raise RuntimeError("cannot resolve adjacent lane without a CARLA waypoint")
+            raise ActorPlacementError(
+                "cannot resolve adjacent lane without a CARLA waypoint"
+            )
         road_pose = offset_route_pose(pose, lateral_m, yaw_offset_deg)
         pitch = roll = road_z = 0.0
     return carla_api.Transform(

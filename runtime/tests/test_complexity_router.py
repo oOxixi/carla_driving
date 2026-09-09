@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from runtime.complexity_router import CONFIRM_SAFE, FAST_LOCAL, QWEN_PLAN, ComplexityRouter
+from runtime.complexity_router import CONFIRM_SAFE, QWEN_PLAN, ComplexityRouter
 
 
 SIMPLE_CASES = (
@@ -107,11 +107,11 @@ def _scene(**updates):
 
 
 @pytest.mark.parametrize("text,intent,parameters", SIMPLE_CASES)
-def test_clear_atomic_commands_never_call_qwen(text, intent, parameters):
+def test_clear_atomic_commands_still_require_qwen(text, intent, parameters):
     result = ComplexityRouter().decide(_command(text, intent, parameters), _scene(), {})
-    assert result.disposition == FAST_LOCAL
-    assert result.expected_qwen_calls == 0
-    assert "CLEAR_ATOMIC" in result.reasons or "LOCAL_SAFETY" in result.reasons
+    assert result.disposition == QWEN_PLAN
+    assert result.expected_qwen_calls == 1
+    assert "CLEAR_ATOMIC_QWEN" in result.reasons or "IMMEDIATE_SAFETY_HOLD" in result.reasons
 
 
 @pytest.mark.parametrize("text,intent,parameters", COMPLEX_CASES)
@@ -128,11 +128,11 @@ def test_ambiguous_or_illegal_commands_fail_closed(text, intent, parameters, sce
         _command(text, intent, parameters), _scene(**scene_updates), {},
     )
     assert result.disposition == CONFIRM_SAFE
-    assert result.expected_qwen_calls == 0
+    assert result.expected_qwen_calls == 1
     assert result.safe_wait_behavior in {"STOP", "SLOW_DOWN", "KEEP_LANE_LIMITED"}
 
 
-def test_stale_perception_and_emergency_are_deterministic_gates():
+def test_stale_perception_constrains_qwen_and_emergency_keeps_immediate_hold():
     router = ComplexityRouter()
     stale = router.decide(
         _command("前方路口右转", "TURN", {"direction": "RIGHT"}),
@@ -144,7 +144,8 @@ def test_stale_perception_and_emergency_are_deterministic_gates():
         _command("紧急停车", "EMERGENCY_STOP", {}),
         _scene(risk_level="EMERGENCY"), {},
     )
-    assert emergency.disposition == FAST_LOCAL
+    assert emergency.disposition == QWEN_PLAN
+    assert emergency.expected_qwen_calls == 1
     assert emergency.safe_wait_behavior == "EMERGENCY_STOP"
 
 

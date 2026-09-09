@@ -84,6 +84,36 @@ def test_explicit_adjacent_lane_uses_map_lane_relationship() -> None:
     assert (transform.location.x, transform.location.y) == pytest.approx((10.0, 1.5))
 
 
+def test_unavailable_adjacent_lane_is_a_resampleable_placement_error() -> None:
+    current = _Waypoint(10.0, 0.0, 0.0)
+    with pytest.raises(ActorPlacementError, match="unavailable left_adjacent"):
+        route_relative_carla_transform(
+            CARLA,
+            _Map(current),
+            ((0.0, 0.0), (20.0, 0.0)),
+            {
+                "spawn": {"z": 0.5},
+                "route_position": {
+                    "s_m": 10.0,
+                    "lane_relation": "LEFT_ADJACENT",
+                },
+            },
+        )
+
+
+def test_non_driving_adjacent_lane_is_a_resampleable_placement_error() -> None:
+    shoulder = _Waypoint(10.0, 3.5, 0.0)
+    shoulder.lane_type = "Shoulder"
+    current = _Waypoint(10.0, 0.0, 0.0, left=shoulder)
+    with pytest.raises(ActorPlacementError, match="not driving: SHOULDER"):
+        route_relative_carla_transform(
+            CARLA,
+            _Map(current),
+            ((0.0, 0.0), (20.0, 0.0)),
+            {"type": "vehicle", "spawn": {"x": 10.0, "y": 3.5}},
+        )
+
+
 def test_walker_target_uses_route_arc_length_on_a_curve() -> None:
     waypoint = _Waypoint(10.0, 8.0, 90.0)
     target = route_relative_target_location(

@@ -60,7 +60,7 @@ def test_ambiguous_voice_still_calls_qwen_for_safe_confirmation() -> None:
     envelope["ambiguity_type"] = "ASR_DISAGREEMENT"
     with PipelineOrchestrator(
         infer=lambda request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as orchestrator:
         bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
         submitted = bridge.submit(
@@ -85,7 +85,7 @@ def _scene(frame: int = 10, *, with_vehicle: bool = True) -> PerceptionFrame:
     )
 
 
-def test_fast_command_is_validated_clamped_and_dispatched_without_qwen() -> None:
+def test_atomic_command_fails_closed_when_qwen_is_unavailable() -> None:
     vehicle_runtime = _VehicleRuntime()
     with PipelineOrchestrator() as orchestrator:
         bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
@@ -96,11 +96,32 @@ def test_fast_command_is_validated_clamped_and_dispatched_without_qwen() -> None
             _scene(), SimpleNamespace(speed_mps=0.0),
             sim_time_s=0.5, perception_mode="sensors", received_at_ns=1_000_000_000,
         )
-    assert submitted.orchestration.disposition == "FAST"
-    assert submitted.runtime_adapted.control_authorized is True
-    assert vehicle_runtime.submitted[-1]["parameters"] == {"speed": 8.0, "unit": "m/s"}
-    assert vehicle_runtime.submitted[-1]["t_audio_start_ns"] == 1
-    assert submitted.safety_envelope is None
+    assert submitted.orchestration.disposition == "REJECTED"
+    assert submitted.orchestration.reason_code == "QWEN_UNAVAILABLE"
+    assert submitted.runtime_adapted is None
+    assert submitted.safety_envelope is not None
+    assert submitted.safety_envelope["intent"] == "STOP"
+
+
+def test_emergency_command_calls_qwen_and_installs_emergency_pending_brake() -> None:
+    vehicle_runtime = _VehicleRuntime()
+    with PipelineOrchestrator(
+        infer=lambda request: {},
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
+    ) as orchestrator:
+        bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
+        submitted = bridge.submit(
+            _voice("emergency", "EMERGENCY_STOP", text="立即紧急停车"),
+            _scene(), SimpleNamespace(speed_mps=5.0),
+            sim_time_s=0.5, perception_mode="sensors",
+            received_at_ns=1_000_000_000,
+        )
+
+    assert submitted.orchestration.disposition == "SLOW_PENDING"
+    assert submitted.orchestration.model_request is not None
+    assert submitted.safety_envelope is not None
+    assert submitted.safety_envelope["intent"] == "EMERGENCY_STOP"
+    assert vehicle_runtime.submitted[-1]["intent"] == "EMERGENCY_STOP"
 
 
 def test_perception_preserves_tracker_owned_actor_id() -> None:
@@ -165,7 +186,7 @@ def test_slow_qwen_path_holds_stop_without_blocking_then_dispatches_validated_pl
         bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
         started = time.perf_counter()
         submitted = bridge.submit(
-            _voice("follow", "FOLLOW_ROUTE", text="跟随前车", confirm=True),
+            _voice("follow", "FOLLOW_ROUTE", text="跟随前车"),
             _scene(), SimpleNamespace(speed_mps=5.0),
             sim_time_s=0.5, perception_mode="sensors", received_at_ns=1_000_000_000,
             rgb_ref="frames/follow.png",
@@ -214,7 +235,7 @@ def test_slow_target_missing_from_latest_frame_is_rejected_and_stop_remains() ->
     with PipelineOrchestrator(infer=infer) as orchestrator:
         bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
         bridge.submit(
-            _voice("follow-stale", "FOLLOW_ROUTE", text="跟随前车", confirm=True),
+            _voice("follow-stale", "FOLLOW_ROUTE", text="跟随前车"),
             _scene(), SimpleNamespace(speed_mps=5.0),
             sim_time_s=0.5, perception_mode="sensors", received_at_ns=1_000_000_000,
         )
@@ -256,7 +277,7 @@ def test_live_grounded_target_can_outlive_empty_tracker_frame() -> None:
     with PipelineOrchestrator(infer=infer) as orchestrator:
         bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
         bridge.submit(
-            _voice("follow-grounded", "FOLLOW_ROUTE", text="跟随前方自行车", confirm=True),
+            _voice("follow-grounded", "FOLLOW_ROUTE", text="跟随前方自行车"),
             _scene(), SimpleNamespace(speed_mps=5.0),
             sim_time_s=0.5, perception_mode="sensors",
             received_at_ns=1_000_000_000,

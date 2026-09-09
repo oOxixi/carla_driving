@@ -32,7 +32,7 @@
       "additionalProperties": false,
       "required": ["disposition", "score", "reasons", "safe_wait_behavior"],
       "properties": {
-        "disposition": {"enum": ["FAST_LOCAL", "QWEN_PLAN", "CONFIRM_SAFE"]},
+        "disposition": {"enum": ["QWEN_PLAN", "CONFIRM_SAFE"]},
         "score": {"type": "integer"},
         "reasons": {
           "type": "array", "minItems": 1, "uniqueItems": true,

@@ -38,7 +38,7 @@ def test_numeric_target_speed_routes_as_set_speed(
 
     assert b1["intent"] == "SET_SPEED"
     assert b1["status"] == "valid"
-    assert b1["route"] == "fast"
+    assert b1["route"] == "qwen"
 
     b2 = parse_command(b1)
 
@@ -67,7 +67,7 @@ def test_relative_nonnumeric_slowdown_remains_slow_down(
 
     assert b1["intent"] == "SLOW_DOWN"
     assert b1["status"] == "valid"
-    assert b1["route"] == "fast"
+    assert b1["route"] == "qwen"
 
     b2 = parse_command(b1)
 
@@ -95,7 +95,7 @@ def test_change_into_target_lane_is_change_lane(
 
     assert b1["intent"] == "CHANGE_LANE"
     assert b1["status"] == "valid"
-    assert b1["route"] == "fast"
+    assert b1["route"] == "qwen"
 
     b2 = parse_command(b1)
 

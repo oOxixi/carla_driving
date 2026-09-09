@@ -346,7 +346,6 @@ def validate_all() -> dict[str, Any]:
     )
     _require(s3["qwen_expected"]["route"] == "QWEN_PLAN", "S3: all voice routing must use Qwen")
     _require("route_counts" not in s3["qwen_expected"], "S3: mixed routing contract is forbidden")
-    _require("emergency_fast_local" not in s3["extensions"]["qwen_policy"], "S3: emergency voice must not bypass Qwen")
 
     ids = [spec.scenario_id for spec in specs.values()]
     _require(len(ids) == len(set(ids)), "scenario_id values must be unique")

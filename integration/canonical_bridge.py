@@ -264,8 +264,7 @@ def control_command_to_voice_envelope(
         ),
         "errors": [],
         "warnings": [{
-            "code": ("QWEN_HIGH_LEVEL_PLAN" if control.get("path_type") == "SLOW"
-                     else "CANONICAL_FAST_PATH"),
+            "code": "QWEN_HIGH_LEVEL_PLAN",
             "message": str(control.get("reason_code", "QWEN_DECISION")),
         }],
         "valid_duration_s": max(0.1, (int(control["deadline_ns"]) - int(control["issued_at_ns"])) / 1e9),

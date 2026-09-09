@@ -27,14 +27,14 @@ from voice_group.vehicle_nlu.src.intent_classifier import classify_intent
         "公交车旁边有行人在路侧，请把当前速度调到30公里每小时后继续前进",
     ],
 )
-def test_multi_action_commands_route_to_slow_path(
+def test_multi_action_commands_are_preserved_for_qwen(
     text: str,
 ) -> None:
     result = classify_intent(text)
 
     assert result["intent"] == "UNKNOWN"
-    assert result["status"] == "needs_slow_path"
-    assert result["route"] == "slow"
+    assert result["status"] == "ambiguous"
+    assert result["route"] == "qwen"
     assert result["reason"] == "multiple_intents"
 
 
@@ -63,12 +63,12 @@ def test_multi_action_commands_route_to_slow_path(
         ),
     ],
 )
-def test_single_or_terminal_commands_remain_fast(
+def test_single_or_terminal_commands_also_route_to_qwen(
     text: str,
     expected_intent: str,
 ) -> None:
     result = classify_intent(text)
 
-    assert result["route"] == "fast"
+    assert result["route"] == "qwen"
     assert result["status"] == "valid"
     assert result["intent"] == expected_intent

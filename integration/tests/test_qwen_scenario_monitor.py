@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from integration.qwen_scenario_monitor import QwenScenarioMonitor
 
 
@@ -54,15 +56,9 @@ def test_monitor_enforces_replan_limit_without_call_storm():
     assert monitor.finalize().checks["replans"] is False
 
 
-def test_monitor_accepts_fast_path_behavior_without_a_model_plan():
-    monitor = QwenScenarioMonitor(_expected(
-        route="FAST_LOCAL", min_calls=0, max_calls=0,
-        expected_behaviors=["SET_SPEED"],
-    ))
-    monitor.record_routing("FAST_LOCAL")
-    monitor.record_behavior("SET_SPEED")
-    monitor.record_terminal("SUCCEEDED")
-    assert monitor.finalize().passed is True
+def test_monitor_rejects_obsolete_local_route():
+    with pytest.raises(ValueError, match="route is invalid"):
+        QwenScenarioMonitor(_expected(route="LOCAL_BYPASS"))
 
 
 def test_monitor_does_not_accept_internal_wait_command_as_user_terminal():
@@ -118,19 +114,18 @@ def test_monitor_requires_configured_terminal_reason_prefix():
     assert semantic.finalize().passed is True
 
 
-def test_monitor_accepts_exact_mixed_qwen_and_fast_local_routes():
+def test_monitor_accepts_every_command_on_qwen_route():
     monitor = QwenScenarioMonitor(_expected(
-        route="MIXED",
-        route_counts={"QWEN_PLAN": 2, "FAST_LOCAL": 2, "CONFIRM_SAFE": 0},
-        min_calls=2,
-        max_calls=2,
+        route="QWEN_PLAN",
+        min_calls=4,
+        max_calls=4,
         expected_behaviors=["KEEP_LANE", "EMERGENCY_STOP"],
         allowed_replans=0,
     ))
-    monitor.record_routing("QWEN_PLAN", qwen_submitted=True, command_id="normal-1")
-    monitor.record_routing("QWEN_PLAN", qwen_submitted=True, command_id="normal-2")
-    monitor.record_routing("FAST_LOCAL", command_id="emergency-1")
-    monitor.record_routing("FAST_LOCAL", command_id="emergency-2")
+    for command_id in ("normal-1", "normal-2", "emergency-1", "emergency-2"):
+        monitor.record_routing(
+            "QWEN_PLAN", qwen_submitted=True, command_id=command_id,
+        )
     monitor.record_behavior("KEEP_LANE")
     monitor.record_behavior("EMERGENCY_STOP")
     for command_id in ("normal-1", "normal-2", "emergency-1", "emergency-2"):

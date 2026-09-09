@@ -1,4 +1,4 @@
-"""A-owned fast/slow router with strict deadlines and bounded queues."""
+"""A-owned Qwen planner boundary with strict deadlines and bounded queues."""
 
 from __future__ import annotations
 
@@ -12,20 +12,12 @@ import time
 from typing import Any
 from uuid import uuid4
 
-from .complexity_router import (
-    CONFIRM_SAFE,
-    FAST_LOCAL,
-    ComplexityRouter,
-    QwenRoutingDecision,
-)
+from .complexity_router import ComplexityRouter, QwenRoutingDecision
 from .interface_registry import InterfaceRegistry, InterfaceValidationError
 from .plan_compiler import CompiledManeuverPlan, PlanCompiler
 from .plan_validator import PlanValidationError, PlanValidator
 
 
-FAST_INTENTS = frozenset({
-    "START", "STOP", "EMERGENCY_STOP", "SET_SPEED", "SLOW_DOWN", "KEEP_LANE",
-})
 PROPULSION_BEHAVIORS = frozenset({
     "KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "FOLLOW", "CHANGE_LANE_LEFT",
     "CHANGE_LANE_RIGHT", "TURN_LEFT", "TURN_RIGHT", "PULL_OVER", "YIELD",
@@ -48,7 +40,6 @@ class OrchestratorConfig:
     stop_line_guard_m: float = 8.0
     top_k_targets: int = 8
     qwen_mode: str = "atomic_v1"
-    force_qwen_all_voice: bool = False
     allowed_slow_behaviors: tuple[str, ...] = (
         "KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
         "CHANGE_LANE", "TURN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "PULL_OVER",
@@ -70,8 +61,6 @@ class OrchestratorConfig:
             raise ValueError("minimum_confidence must be in [0, 1]")
         if self.qwen_mode not in {"atomic_v1", "planner_v2"}:
             raise ValueError("qwen_mode must be 'atomic_v1' or 'planner_v2'")
-        if type(self.force_qwen_all_voice) is not bool:
-            raise TypeError("force_qwen_all_voice must be bool")
         allowed_values = {
             "KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
             "CHANGE_LANE", "TURN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "PULL_OVER",
@@ -137,11 +126,11 @@ class _SlowResult:
 
 
 class PipelineOrchestrator:
-    """Route commands while model inference stays on a private slow worker.
+    """Route every valid command through Qwen on a private worker.
 
     ``infer`` is deliberately a callback boundary. It may be an HTTP Qwen
-    client or a local adapter, but it executes only on the private slow worker.
-    A missing callback keeps the fast path available and rejects slow requests.
+    client or a contract-test adapter, but it executes only on the private
+    worker. A missing callback rejects every valid voice command fail-closed.
     ``poll_slow`` is non-blocking by default; an explicit bounded wait is used
     only on a newly submitted acceptance command to measure the same-frame
     sensor-to-trajectory boundary.
@@ -221,57 +210,9 @@ class PipelineOrchestrator:
             or self._blocked_maneuver_stop_reason(canonical, scene, runtime_snapshot)
             or self._perception_stop_reason(scene)
         )
-        # A close red/yellow light is a transient vehicle-control constraint,
-        # not a replacement for the driver's longer-lived task.  D owns the
-        # per-frame stop and releases it when the signal clears.  Turning the
-        # voice command itself into terminal STOP would strand the vehicle
-        # after green and make identical seeded runs depend on signal phase.
-        terminal_emergency_reason = (
-            None if emergency_reason == "TRAFFIC_LIGHT_STOP" else emergency_reason
-        )
-        intent = canonical["intent"]
-        # Under the audited all-voice policy every voice event reaches Qwen,
-        # including STOP and EMERGENCY_STOP. The integration bridge installs
-        # an immediate deterministic stop hold while the plan is pending, so
-        # semantic auditing never delays D-layer braking.
-        force_model = self.config.force_qwen_all_voice
-        if (
-            terminal_emergency_reason is not None
-            and intent not in {"STOP", "EMERGENCY_STOP"}
-            and not force_model
-        ):
-            control = self._safety_stop(canonical, scene, now, terminal_emergency_reason)
-            return OrchestrationResult(
-                "FAST", command_id, control_command=control,
-                feedback=self._feedback(
-                    command_id, now, "SAFETY_OVERRIDE", "safety stop issued",
-                    terminal_emergency_reason,
-                    safety_event_reason=terminal_emergency_reason,
-                ),
-                reason_code=terminal_emergency_reason, queues=self.queue_snapshot(),
-                **self._routing_fields(routing),
-            )
-
-        if routing.disposition == FAST_LOCAL and not force_model:
-            try:
-                control = self._fast_control(canonical, scene, now)
-            except (ValueError, InterfaceValidationError) as error:
-                return self._rejected(command_id, now, "FAST_PATH_INVALID", str(error))
-            return OrchestrationResult(
-                "FAST", command_id, control_command=control,
-                feedback=self._feedback(command_id, now, "RECEIVED", "fast command validated", None),
-                reason_code=control["reason_code"], queues=self.queue_snapshot(),
-                **self._routing_fields(routing),
-            )
-
-        if routing.disposition == CONFIRM_SAFE and not force_model:
-            reason = routing.reasons[0] if routing.reasons else "CONFIRMATION_REQUIRED"
-            return self._feedback_result(
-                command_id, now, "REJECTED", reason,
-                "command requires safe clarification and was not sent to Qwen",
-                disposition="CONFIRM_SAFE", routing=routing,
-            )
-
+        # Every valid voice command reaches Qwen, including atomic commands,
+        # ambiguous commands, STOP and EMERGENCY_STOP. The runtime bridge owns
+        # the independent fail-closed hold used while this request is pending.
         request = self._model_request(
             canonical, scene, now, rgb_ref=rgb_ref,
             runtime_state=runtime_snapshot, routing=routing,
@@ -279,7 +220,7 @@ class PipelineOrchestrator:
         if self._infer is None:
             return self._feedback_result(
                 command_id, now, "REJECTED", "QWEN_UNAVAILABLE",
-                "complex command rejected because Qwen service is unavailable",
+                "voice command rejected because Qwen service is unavailable",
                 model_request=request, routing=routing,
             )
         job = _SlowJob(request, scene, self._clock_ns(), routing, runtime_snapshot)
@@ -628,33 +569,6 @@ class PipelineOrchestrator:
             timing["sensor_to_submit_ms"] = max(0, submitted_ns - created_ns) / 1e6
         return timing
 
-    def _fast_control(self, command: Mapping[str, Any], scene: Mapping[str, Any], now: int) -> dict[str, Any]:
-        intent = command["intent"]
-        behavior = {
-            "START": "KEEP_LANE",
-            "STOP": "STOP",
-            "EMERGENCY_STOP": "EMERGENCY_STOP",
-            "SET_SPEED": "SET_SPEED",
-            "SLOW_DOWN": "SLOW_DOWN",
-            "KEEP_LANE": "KEEP_LANE",
-        }[intent]
-        requested = command["parameters"].get("target_speed_mps")
-        if requested is not None:
-            requested = min(float(requested), self._scene_speed_limit(scene))
-        return self.registry.validate("control_command", {
-            "schema_version": "1.0",
-            "command_id": command["command_id"],
-            "path_type": "FAST",
-            "behavior": behavior,
-            "target": {"target_id": None, "target_speed_mps": requested, "time_gap_s": None},
-            "limits": self._limits(scene),
-            "issued_at_ns": now,
-            "deadline_ns": command["deadline_ns"],
-            "source": "DETERMINISTIC_FAST_PATH",
-            "confidence": command["confidence"],
-            "reason_code": f"FAST_{intent}",
-        })
-
     def _plan_control(
         self,
         plan: Mapping[str, Any],
@@ -796,21 +710,22 @@ class PipelineOrchestrator:
                 "max_target_speed_mps": self._scene_speed_limit(scene),
             },
         }
+        if routing is None:
+            raise ValueError("Qwen model requests require routing metadata")
+        confirmation_required = (
+            command.get("requires_confirmation") is True
+            or str(command.get("ambiguity", "NONE")) != "NONE"
+            or routing.disposition == "CONFIRM_SAFE"
+        )
+        if confirmation_required and not must_stop:
+            payload["constraints"]["allowed_behaviors"] = ["STOP"]
+        payload["routing"] = {
+            "disposition": "CONFIRM_SAFE" if confirmation_required else routing.disposition,
+            "score": routing.score,
+            "reasons": list(routing.reasons),
+            "safe_wait_behavior": routing.safe_wait_behavior,
+        }
         if self.config.qwen_mode == "planner_v2":
-            if routing is None:
-                raise ValueError("planner_v2 model requests require routing metadata")
-            confirmation_required = (
-                command.get("requires_confirmation") is True
-                or str(command.get("ambiguity", "NONE")) != "NONE"
-            )
-            if confirmation_required and not must_stop:
-                payload["constraints"]["allowed_behaviors"] = ["STOP"]
-            payload["routing"] = {
-                "disposition": "CONFIRM_SAFE" if confirmation_required else routing.disposition,
-                "score": routing.score,
-                "reasons": list(routing.reasons),
-                "safe_wait_behavior": routing.safe_wait_behavior,
-            }
             capability_names = (
                 "available_lanes", "left_lane_exists", "right_lane_exists",
                 "left_gap_safe", "right_gap_safe", "route_available",
@@ -913,21 +828,6 @@ class PipelineOrchestrator:
             return configured
         narrowed = [behavior for behavior in configured if behavior in permitted]
         return narrowed or ["STOP"]
-
-    def _safety_stop(self, command: Mapping[str, Any], scene: Mapping[str, Any], now: int, reason: str) -> dict[str, Any]:
-        return self.registry.validate("control_command", {
-            "schema_version": "1.0",
-            "command_id": command["command_id"],
-            "path_type": "FAST",
-            "behavior": "EMERGENCY_STOP" if scene["risk_level"] == "EMERGENCY" else "STOP",
-            "target": {"target_id": None, "target_speed_mps": 0.0, "time_gap_s": None},
-            "limits": self._limits(scene),
-            "issued_at_ns": now,
-            "deadline_ns": command["deadline_ns"],
-            "source": "SAFETY_SYSTEM",
-            "confidence": 1.0,
-            "reason_code": reason,
-        })
 
     def _limits(self, scene: Mapping[str, Any]) -> dict[str, float]:
         return {
@@ -1226,7 +1126,6 @@ class PipelineOrchestrator:
 
 
 __all__ = [
-    "FAST_INTENTS",
     "OrchestratorConfig",
     "OrchestrationResult",
     "PipelineOrchestrator",

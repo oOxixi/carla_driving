@@ -79,7 +79,7 @@ def test_planner_v2_routes_validates_compiles_and_exposes_auditable_metadata():
     assert routing_logs[0]["route"] == "QWEN_PLAN"
 
 
-def test_ambiguous_target_is_not_sent_to_backend():
+def test_ambiguous_target_is_sent_to_qwen_with_stop_only_constraints():
     calls = []
     command = _example("driving_command")
     command.update({
@@ -95,9 +95,13 @@ def test_ambiguous_target_is_not_sent_to_backend():
             command, scene, now_ns=1_100_000_000,
             runtime_state={"target_candidate_count": 2},
         )
-    assert result.disposition == "CONFIRM_SAFE"
-    assert result.reason_code == "TARGET_AMBIGUOUS"
-    assert calls == []
+        deadline = time.monotonic() + 0.5
+        while not calls and time.monotonic() < deadline:
+            time.sleep(0.001)
+    assert result.disposition == "SLOW_PENDING"
+    assert result.model_request["routing"]["disposition"] == "CONFIRM_SAFE"
+    assert result.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
+    assert len(calls) == 1
 
 
 def test_planner_v2_low_level_fault_is_rejected_not_dispatched():
@@ -170,7 +174,7 @@ def test_forced_qwen_set_speed_is_an_allowed_model_behavior():
     scene = _example("perception_state")
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True),
+        config=OrchestratorConfig(),
     ) as runtime:
         queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
 
@@ -184,7 +188,7 @@ def test_emergency_stop_uses_forced_qwen_with_mandatory_stop_constraint():
     scene = _example("perception_state")
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True),
+        config=OrchestratorConfig(),
     ) as runtime:
         result = runtime.submit_command(command, scene, now_ns=1_100_000_000)
 
@@ -205,7 +209,7 @@ def test_non_maneuver_keep_lane_request_cannot_hallucinate_lane_change():
     scene = _example("perception_state")
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as runtime:
         queued = runtime.submit_command(
             command,
@@ -228,7 +232,7 @@ def test_conditional_keep_lane_request_cannot_hallucinate_yield():
     scene = _example("perception_state")
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as runtime:
         queued = runtime.submit_command(
             command,
@@ -253,7 +257,7 @@ def test_turn_sequence_allows_safe_slowdown_and_speed_recovery_steps():
     scene = _example("perception_state")
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as runtime:
         queued = runtime.submit_command(
             command,
@@ -277,7 +281,7 @@ def test_visual_target_keep_lane_request_allows_slow_or_stop_response():
     scene = _example("perception_state")
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as runtime:
         queued = runtime.submit_command(
             command,
@@ -301,7 +305,7 @@ def test_explicit_right_avoid_request_excludes_unrelated_complex_behaviors():
     scene = _example("perception_state")
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as runtime:
         queued = runtime.submit_command(
             command,
@@ -332,7 +336,7 @@ def test_compound_pedestrian_avoid_and_overtake_request_allows_yield():
     scene = _example("perception_state")
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as runtime:
         queued = runtime.submit_command(
             command,
@@ -361,7 +365,7 @@ def test_forced_qwen_red_light_keeps_task_plan_while_d_stops_vehicle():
     scene["distance_to_stop_line_m"] = 8.0
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True),
+        config=OrchestratorConfig(),
     ) as runtime:
         queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
 
@@ -381,7 +385,7 @@ def test_explicit_stop_remains_hard_constraint_at_red_light():
     scene["distance_to_stop_line_m"] = 5.0
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True),
+        config=OrchestratorConfig(),
     ) as runtime:
         queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
 
@@ -401,7 +405,7 @@ def test_distant_red_light_allows_c_to_approach_stop_line():
     with PipelineOrchestrator(
         infer=lambda _request: {},
         config=OrchestratorConfig(
-            force_qwen_all_voice=True, qwen_mode="planner_v2",
+            qwen_mode="planner_v2",
             stop_line_guard_m=1.0,
         ),
     ) as runtime:
@@ -426,7 +430,7 @@ def test_close_center_lead_forces_targeted_stop_plan() -> None:
     scene["min_gap_m"] = 12.0
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as runtime:
         queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
 
@@ -446,7 +450,7 @@ def test_occlusion_warning_forces_proactive_stop_plan() -> None:
     scene["min_gap_m"] = None
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as runtime:
         queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
 
@@ -463,7 +467,7 @@ def test_partially_occluded_follow_target_does_not_force_stop() -> None:
     scene = _example("perception_state")
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as runtime:
         queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
 
@@ -486,7 +490,7 @@ def test_blocked_maneuver_without_safe_adjacent_lane_forces_stop() -> None:
     })
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as runtime:
         queued = runtime.submit_command(
             command,
@@ -525,7 +529,7 @@ def test_explicit_maneuver_with_existing_lane_waits_for_safe_gap() -> None:
     })
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as runtime:
         queued = runtime.submit_command(
             command,
@@ -558,7 +562,7 @@ def test_ambiguous_voice_command_is_constrained_to_audited_hold() -> None:
     scene = _example("perception_state")
     with PipelineOrchestrator(
         infer=lambda _request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as runtime:
         queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
 

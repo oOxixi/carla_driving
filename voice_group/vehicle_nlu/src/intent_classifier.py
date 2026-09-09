@@ -65,18 +65,18 @@ def _build_result(
 
 
 # ---------------------------------------------------------------------------
-# Compound-command routing
+# Compound-command hinting
 # ---------------------------------------------------------------------------
 #
-# B1's deterministic fast path represents one executable intent.  Commands
-# that express multiple independent manoeuvre semantics must therefore be
-# routed to the planner slow path rather than silently dropping one action.
+# B1 provides an intent hint but never authorizes execution. Commands that
+# express multiple independent manoeuvre semantics retain UNKNOWN here so the
+# full source text can be interpreted by Qwen without dropping an action.
 #
-# Important safety exception:
+# Important hinting exception:
 #     "cannot avoid / no avoidance space -> emergency stop"
 # is a single terminal emergency action.  The word "avoid" describes an
 # unavailable alternative and must not cause an emergency command to be
-# routed through the slower planner path.
+# misclassified as a compound instruction.
 #
 # These rules operate only on source text.  They do not depend on benchmark
 # IDs, categories, semantic_intent labels, or expected actions.
@@ -318,9 +318,9 @@ def _contains_multiple_actions(text: str) -> bool:
     """
     Return True when one utterance requires multiple high-level semantics.
 
-    Complex commands are routed to the Qwen/planner slow path.  Terminal
-    emergency-stop commands remain on the deterministic fast path even when
-    they describe avoidance as unavailable.
+    Complex commands keep their full text for Qwen. Terminal emergency-stop
+    commands remain a single intent hint even when they describe avoidance as
+    unavailable; the independent safety layer still brakes while Qwen runs.
     """
 
     if _is_terminal_emergency_stop(text):
@@ -366,7 +366,7 @@ def classify_intent(text: str) -> dict:
             intent="UNKNOWN",
             confidence=0.0,
             status="unknown",
-            route="fast",
+            route="qwen",
             reason="empty_text",
             start_time=start_time,
         )
@@ -378,8 +378,8 @@ def classify_intent(text: str) -> dict:
             normalized_text=normalized_text,
             intent="UNKNOWN",
             confidence=0.0,
-            status="needs_slow_path",
-            route="slow",
+            status="ambiguous",
+            route="qwen",
             reason="multiple_intents",
             start_time=start_time,
         )
@@ -398,7 +398,7 @@ def classify_intent(text: str) -> dict:
             intent="UNKNOWN",
             confidence=0.0,
             status="unknown",
-            route="fast",
+            route="qwen",
             reason="negated_command",
             start_time=start_time,
         )
@@ -773,7 +773,7 @@ def classify_intent(text: str) -> dict:
             intent="UNKNOWN",
             confidence=0.0,
             status="unknown",
-            route="fast",
+            route="qwen",
             reason="unsupported_command",
             start_time=start_time,
         )
@@ -784,7 +784,7 @@ def classify_intent(text: str) -> dict:
         intent=intent,
         confidence=confidence,
         status="valid",
-        route="fast",
+        route="qwen",
         reason=None,
         start_time=start_time,
     )
