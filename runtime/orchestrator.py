@@ -535,7 +535,16 @@ class PipelineOrchestrator:
         return OrchestrationResult(
             "SLOW_READY", command_id, control_command=control, model_request=request,
             decision_plan=plan,
-            feedback=self._feedback(command_id, decision_ns, "EXECUTING", "validated Qwen plan dispatched", None),
+            feedback=self._feedback(
+                command_id,
+                decision_ns,
+                "EXECUTING",
+                "validated Qwen plan dispatched",
+                None,
+                safety_event_reason=self._plan_safety_event_reason(
+                    plan, result.job.perception,
+                ),
+            ),
             reason_code=control["reason_code"], queues=self.queue_snapshot(),
             compiled_plan=(None if result.compiled is None else result.compiled.to_dict()),
             model_completed_ns=decision_ns,
@@ -1073,6 +1082,29 @@ class PipelineOrchestrator:
             "safety_event": safety_event,
             "terminal_reason": reason if status in TERMINAL_STATUSES else None,
         })
+
+    @staticmethod
+    def _plan_safety_event_reason(
+        plan: Mapping[str, Any],
+        scene: Mapping[str, Any],
+    ) -> str | None:
+        """Expose a Qwen traffic-rule stop as canonical safety evidence."""
+        behaviors = []
+        if isinstance(plan.get("steps"), list):
+            behaviors = [
+                str(step.get("behavior", "")).upper()
+                for step in plan["steps"]
+                if isinstance(step, Mapping)
+            ]
+        elif plan.get("behavior") is not None:
+            behaviors = [str(plan.get("behavior", "")).upper()]
+        if (
+            str(scene.get("traffic_light", "")).upper() == "RED"
+            and behaviors
+            and behaviors[0] == "STOP"
+        ):
+            return "QWEN_TRAFFIC_LIGHT_STOP"
+        return None
 
     def _active_snapshot(self) -> _SlowJob | None:
         with self._lock:

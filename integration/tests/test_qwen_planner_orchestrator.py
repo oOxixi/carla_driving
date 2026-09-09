@@ -244,6 +244,17 @@ def test_red_light_keep_lane_request_allows_qwen_to_choose_stop():
     ]
 
 
+def test_red_light_stop_plan_emits_canonical_safety_reason():
+    assert PipelineOrchestrator._plan_safety_event_reason(
+        {"steps": [{"behavior": "STOP"}]},
+        {"traffic_light": "RED"},
+    ) == "QWEN_TRAFFIC_LIGHT_STOP"
+    assert PipelineOrchestrator._plan_safety_event_reason(
+        {"steps": [{"behavior": "KEEP_LANE"}]},
+        {"traffic_light": "RED"},
+    ) is None
+
+
 def test_conditional_keep_lane_request_cannot_hallucinate_yield():
     command = _example("driving_command")
     command.update({
