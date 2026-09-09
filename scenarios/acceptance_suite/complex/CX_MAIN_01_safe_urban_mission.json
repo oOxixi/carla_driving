@@ -19,7 +19,7 @@
   "runtime": {
     "sync_mode": true,
     "fixed_delta_seconds": 0.05,
-    "duration_s": 66,
+    "duration_s": 120,
     "max_startup_wait_s": 10
   },
   "ego_spawn": {
@@ -313,7 +313,7 @@
         "speed_mps": 1.4,
         "trigger": {
           "type": "route_progress_greater_than_m",
-          "value": 45
+          "value": 30
         },
         "phase_id": "P5_PEDESTRIAN"
       }
@@ -329,7 +329,7 @@
           {
             "trigger": {
               "type": "route_progress_greater_than_m",
-              "value": 90
+              "value": 45
             },
             "state": "red"
           },

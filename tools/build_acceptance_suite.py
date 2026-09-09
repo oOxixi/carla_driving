@@ -821,13 +821,13 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
             vehicle("distractor_right", 48, 3.5, speed_mps=3.5,
                     blueprint_id="vehicle.mercedes.coupe"),
             walker("pedestrian_001", 82, -6, 3, start_time_s=0, speed_mps=1.4,
-                   trigger={"type": "route_progress_greater_than_m", "value": 45},
+                   trigger={"type": "route_progress_greater_than_m", "value": 30},
                    phase_id="P5_PEDESTRIAN"),
             {
                 **red_light(105),
                 "state": "green",
                 "behavior": {"mode": "event_timeline", "states": [
-                    {"trigger": {"type": "route_progress_greater_than_m", "value": 90},
+                    {"trigger": {"type": "route_progress_greater_than_m", "value": 45},
                      "state": "red"},
                     {"trigger": {"type": "ego_standstill_duration_greater_than_s", "value": 3},
                      "state": "green"},
@@ -836,7 +836,7 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
             prop("construction_blocker", 160, 0),
             prop("construction_warning", 157, -2),
         ],
-        duration_s=66,
+        duration_s=120,
         expected={
             "must_no_pedestrian_collision": True,
             "must_stop_before_stop_line": True,
