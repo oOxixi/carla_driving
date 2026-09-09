@@ -242,7 +242,7 @@ class DeterministicPlannerV2Backend:
                     _planner_step(
                         "s2", "RETURN_TO_LANE", speed=requested_speed,
                         lane="CURRENT", completion="LANE_CENTERED",
-                        completion_value=None, timeout_s=20.0,
+                        completion_value=None, timeout_s=60.0,
                     ),
                 ))
                 reason = "DETERMINISTIC_STRUCTURED_COMMAND_HINT"
@@ -338,7 +338,7 @@ class DeterministicPlannerV2Backend:
                         "s2", "RETURN_TO_LANE", speed=slow_speed,
                         lane="CURRENT",
                         completion="LANE_CENTERED", completion_value=None,
-                        timeout_s=20.0,
+                        timeout_s=60.0,
                     ),
                 ))
                 reason = "DETERMINISTIC_AVOID_AND_RETURN"

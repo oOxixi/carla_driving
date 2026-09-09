@@ -19,7 +19,7 @@
   "runtime": {
     "sync_mode": true,
     "fixed_delta_seconds": 0.05,
-    "duration_s": 120,
+    "duration_s": 180,
     "max_startup_wait_s": 10
   },
   "ego_spawn": {

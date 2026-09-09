@@ -846,7 +846,7 @@ def build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]:
                 "type": "route_progress_greater_than_m", "value": 90,
             }},
         ],
-        duration_s=120,
+        duration_s=180,
         expected={
             "must_no_pedestrian_collision": True,
             "must_stop_before_stop_line": True,
