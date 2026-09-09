@@ -904,8 +904,10 @@ class VllmQwenPlannerBackend:
         if clearance_gated_slow:
             completion_type = "TARGET_PASSED"
         # Turn timeout covers the approach to the junction as well as the turn.
-        timeout = 35.0 if clearance_gated_slow else 60.0 if behavior.startswith("TURN_") else 20.0 if behavior in {
-            "AVOID_OBSTACLE", "RETURN_TO_LANE", "YIELD",
+        timeout = 35.0 if clearance_gated_slow else 60.0 if (
+            behavior.startswith("TURN_") or behavior == "RETURN_TO_LANE"
+        ) else 20.0 if behavior in {
+            "AVOID_OBSTACLE", "YIELD",
         } or sustained_observation else 12.0 if behavior.startswith("CHANGE_LANE_") else 8.0
         completion_value = target_speed
         if completion_type == "TARGET_GAP_REACHED":
