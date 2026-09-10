@@ -1,6 +1,9 @@
 {
   "schema_version": "1.0",
-  "model_id": "student-v0-fp32",
+  "model_id": "student-v0-r2-fp32",
+  "source_git_sha": "f45f6668a55ba3114f3640972a5437527ab5de8e",
+  "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
+  "config_id": "student-v0-r2-structure-20260911",
   "precision": "fp32",
   "input_shapes": {
     "rgb": [
@@ -16,22 +19,22 @@
     "targets": [
       1,
       8,
-      8
+      14
     ],
     "state": [
       1,
-      32
+      64
     ]
   },
-  "parameters": 21392757,
-  "trainable_parameters": 21392757,
-  "parameter_size_bytes_fp32": 85571028,
-  "macs_per_fixed_batch": 247706624,
-  "flops_per_fixed_batch": 495413248,
+  "parameters": 23006581,
+  "trainable_parameters": 23006581,
+  "parameter_size_bytes_fp32": 92026324,
+  "macs_per_fixed_batch": 249320448,
+  "flops_per_fixed_batch": 498640896,
   "teacher_model_id": "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
   "teacher_non_embedding_active_parameters_lower_bound": 1409286144,
   "teacher_flops_lower_bound_one_text_token": 2818572288,
-  "flops_ratio_student_over_teacher_lower_bound": 0.17576744442894346,
+  "flops_ratio_student_over_teacher_lower_bound": 0.17691258021763392,
   "ratio_target": 0.5,
   "ratio_pass": true,
   "counting_convention": "Conv2D/Linear only; 1 MAC = 2 FLOPs",
@@ -42,12 +45,12 @@
     "vision_encoder.features.4": 57802752,
     "vision_encoder.features.6": 57802752,
     "vision_encoder.features.8": 43352064,
-    "vision_encoder.projection": 196608,
+    "vision_encoder.projection": 1769472,
     "text_encoder.layers.0": 16384,
     "text_encoder.layers.2": 262144,
-    "target_encoder.layers.0": 32768,
+    "target_encoder.layers.0": 57344,
     "target_encoder.layers.2": 262144,
-    "state_encoder.layers.0": 16384,
+    "state_encoder.layers.0": 32768,
     "state_encoder.layers.2": 262144,
     "fusion.0": 6291456,
     "fusion.2": 9437184,

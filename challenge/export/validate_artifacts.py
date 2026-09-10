@@ -48,6 +48,8 @@ def validate_artifacts(root: str | Path) -> dict[str, Any]:
     forbidden = sorted(FORBIDDEN_ONNX_OPS.intersection(operators))
     if forbidden:
         raise RuntimeError(f"forbidden dynamic/control-flow ONNX operators: {forbidden}")
+    if structure.get("onnx_operators") != operators:
+        raise RuntimeError("reported ONNX operator set drift")
     metadata = {item.key: item.value for item in graph.metadata_props}
     if metadata.get("model_id") != StudentPlannerV0.model_id:
         raise RuntimeError("ONNX model_id metadata drift")
