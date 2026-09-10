@@ -47,7 +47,7 @@ class ParseContext:
     intent_confidence: float
     asr_confidence: float | None = None
     b1_status: str | None = None
-    route: str = "fast"
+    route: str = "qwen"
     reason: str | None = None
     b1_latency_ms: float | None = None
     slots: dict[str, Any] = field(default_factory=dict)
@@ -141,7 +141,7 @@ class CommandParser:
             default=1.0,
         )
         b1_status = _optional_lower(b1_result.get("status"))
-        route = _optional_lower(b1_result.get("route")) or "fast"
+        route = _optional_lower(b1_result.get("route")) or "qwen"
         reason = b1_result.get("reason")
         return ParseContext(
             request_id=request_id,
@@ -158,9 +158,6 @@ class CommandParser:
 
     @staticmethod
     def _blocking_b1_error(ctx: ParseContext) -> tuple[str, str] | None:
-        if ctx.b1_status == "needs_slow_path":
-            ctx.route = "slow"
-            return ("NEEDS_SLOW_PATH", "B1 标记为慢路径处理，B2 不生成快路径可执行指令")
         if ctx.b1_status == "unknown":
             return ("B1_UNKNOWN", "B1 未能识别为可执行车控指令")
         if ctx.b1_status and ctx.b1_status != "valid":
@@ -236,15 +233,49 @@ class CommandParser:
         ctx.slots["direction"] = direction
 
     def _handle_relative_speed(self, ctx: ParseContext) -> None:
-        speed = _extract_speed(ctx.normalized_text)
+        text = ctx.normalized_text
+
+        # Relative speed expressions must not be interpreted as
+        # numeric target speed.
+        #
+        # Examples:
+        #   速度降一点
+        #   速度慢一点
+        #   再慢一些
+        #
+        # These mean relative adjustment, not 1 km/h.
+        relative_only_patterns = (
+            r"一点",
+            r"一些",
+            r"一下",
+            r"稍微",
+            r"略微",
+            r"慢一点",
+            r"快一点",
+        )
+
+        is_relative_only = any(
+            re.search(pattern, text)
+            for pattern in relative_only_patterns
+        )
+
+        speed = None if is_relative_only else _extract_speed(text)
+
         if speed is not None:
             ctx.slots["speed"] = speed
             ctx.slots["unit"] = "km/h"
             ctx.slots["mode"] = "TARGET"
         else:
             ctx.slots["mode"] = "RELATIVE"
-            ctx.slots["action"] = "DECELERATE" if ctx.intent == "SLOW_DOWN" else "ACCELERATE"
-            ctx.warning("MISSING_OPTIONAL_SLOT", "未给出目标速度，输出相对速度动作")
+            ctx.slots["action"] = (
+                "DECELERATE"
+                if ctx.intent == "SLOW_DOWN"
+                else "ACCELERATE"
+            )
+            ctx.warning(
+                "MISSING_OPTIONAL_SLOT",
+                "未给出目标速度，输出相对速度动作"
+            )
 
     def _validate_common_safety(self, ctx: ParseContext) -> None:
         speed = ctx.slots.get("speed")
@@ -265,7 +296,6 @@ class CommandParser:
         if not ctx.errors:
             return "valid"
         priority = (
-            ("NEEDS_SLOW_PATH", "needs_slow_path"),
             ("B1_UNKNOWN", "unknown"),
             ("UNKNOWN_INTENT", "unknown_intent"),
             ("LOW_ASR_CONFIDENCE", "low_confidence"),

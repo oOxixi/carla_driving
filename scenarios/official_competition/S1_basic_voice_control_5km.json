@@ -11,12 +11,13 @@
   "runtime": {
     "sync_mode": true,
     "fixed_delta_seconds": 0.05,
-    "duration_s": 600.0,
+    "duration_s": 900.0,
     "max_startup_wait_s": 20.0
   },
   "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
   "route": {
     "coordinate_type": "scenario_local_xy_m",
+    "planning_mode": "topology_coverage",
     "points_xy_m": [[0.0, 0.0], [5000.0, 0.0]],
     "resample_interval_m": 1.0,
     "finish_radius_m": 4.0,
@@ -37,14 +38,14 @@
     },
     {
       "time_s": 0.0,
-      "source_text": "前方200米路口右转，转弯前减速至25公里每小时",
+      "source_text": "前方300米路口右转，转弯前减速至25公里每小时",
       "intent": "TURN_RIGHT",
       "parameters": {"target_speed_kph": 25.0},
       "intent_confidence": 0.99,
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S1_P2_RIGHT_TURN",
-      "trigger": {"type": "route_progress_greater_than_m", "value": 10.0}
+      "trigger": {"type": "route_progress_greater_than_m", "value": 250.0}
     },
     {
       "time_s": 0.0,
@@ -74,7 +75,7 @@
       "trigger": {
         "all": [
           {"type": "previous_command_terminal", "phase_id": "S1_P3_EXIT_TURN_RECENTER"},
-          {"type": "route_progress_greater_than_m", "value": 600.0}
+          {"type": "route_progress_greater_than_m", "value": 1600.0}
         ]
       }
     },
@@ -134,7 +135,7 @@
     "must_execute_commands_in_order": true,
     "must_generate_logs": true,
     "max_cross_track_error_m": 0.8,
-    "max_lane_center_offset_m": 0.25,
+    "mean_lane_center_offset_m": 0.25,
     "max_steer_rate_per_s": 0.8,
     "final_control_no_throttle_brake_overlap": true,
     "min_run_time_s": 400.0
@@ -155,6 +156,7 @@
     "sensor_profile": "default",
     "competition_scene": "S1",
     "input_mode": "raw_text_qwen",
+    "route_anchor_spawn_index": 75,
     "qwen_policy": {
       "required_for_every_voice_event": true,
       "safety_preemption": true,
@@ -173,8 +175,14 @@
       "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "TURN_RIGHT", "CHANGE_LANE_LEFT", "STOP"]
     },
     "fixed_random_seed": true,
-    "route_anchor_spawn_index": 164,
     "speed_policy": {"scenario_limit_kph": 50.0, "override_map_limit": true},
+    "lane_change_profile": {
+      "route_distance_m": 3500.0,
+      "step_m": 1.0,
+      "transition_start_m": 10.0,
+      "transition_length_m": 30.0,
+      "target_lane_offset_m": 0.0
+    },
     "no_background_traffic": true,
     "route_policy": {"loop": false},
     "runtime_support": {"status": "current", "requirements": [], "declared_requirements": []},

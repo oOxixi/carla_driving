@@ -46,6 +46,36 @@ def _actor_ids(data: dict[str, Any]) -> set[str]:
     return {str(actor.get("actor_id", "")) for actor in data.get("actors", [])}
 
 
+def _trigger_actor_ids(trigger: Any) -> set[str]:
+    if not isinstance(trigger, dict):
+        return set()
+    result = {
+        str(trigger["actor_id"])
+        for _ in (0,)
+        if trigger.get("actor_id") is not None
+    }
+    children = trigger.get("all", ())
+    if isinstance(children, list):
+        for child in children:
+            result.update(_trigger_actor_ids(child))
+    return result
+
+
+def _trigger_route_progress_m(trigger: Any) -> float | None:
+    if not isinstance(trigger, dict):
+        return None
+    if str(trigger.get("type", "")).lower() == "route_progress_greater_than_m":
+        return float(trigger.get("value", 0.0))
+    children = trigger.get("all", ())
+    if isinstance(children, list):
+        values = [
+            value for child in children
+            if (value := _trigger_route_progress_m(child)) is not None
+        ]
+        return max(values) if values else None
+    return None
+
+
 def _validate_common(label: str, path: Path, data: dict[str, Any]) -> ScenarioSpec:
     generic_errors = validate_one(path)
     _require(not generic_errors, f"{label}: generic scenario errors: {generic_errors}")
@@ -70,9 +100,8 @@ def _validate_common(label: str, path: Path, data: dict[str, Any]) -> ScenarioSp
     actor_ids = _actor_ids(data)
     for command in data["commands"]:
         trigger = command.get("trigger", {})
-        trigger_actor = trigger.get("actor_id") if isinstance(trigger, dict) else None
-        if trigger_actor is not None:
-            _require(str(trigger_actor) in actor_ids, f"{label}: trigger references unknown actor {trigger_actor}")
+        for trigger_actor in _trigger_actor_ids(trigger):
+            _require(trigger_actor in actor_ids, f"{label}: trigger references unknown actor {trigger_actor}")
     required_qwen_metrics = {
         "qwen_route", "qwen_request_id", "qwen_plan", "qwen_latency_ms",
         "command_step_status", "command_terminal", "sensor_to_control_ms",
@@ -101,6 +130,10 @@ def validate_all() -> dict[str, Any]:
     s1 = loaded["S1"]
     _require(s1["map"] == "Town05" and s1["weather"] == "ClearNoon", "S1: map/weather mismatch")
     _require(abs(_route_length(s1["route"]["points_xy_m"]) - 5000.0) < 1e-6, "S1: route must be 5km")
+    _require(
+        s1["route"].get("planning_mode") == "topology_coverage",
+        "S1: 5km manoeuvre route must use topology coverage planning",
+    )
     _require(s1["actors"] == [], "S1: dynamic interference is forbidden")
     s1_intents = {command["intent"] for command in s1["commands"]}
     _require({"KEEP_LANE", "TURN_RIGHT", "CHANGE_LANE_LEFT"}.issubset(s1_intents), "S1: missing base manoeuvres")
@@ -110,18 +143,50 @@ def validate_all() -> dict[str, Any]:
     _require(s1["qwen_expected"]["max_calls"] == len(s1["commands"]), "S1: unexpected Qwen call budget")
 
     s2 = loaded["S2"]
-    _require(s2["map"] == "Town03" and s2["weather"] == "CloudySunset", "S2: map/weather mismatch")
+    _require(s2["map"] == "Town03_Opt" and s2["weather"] == "CloudySunset", "S2: map/weather mismatch")
     _require(abs(_route_length(s2["route"]["points_xy_m"]) - 8000.0) < 1e-6, "S2: route must be 8km")
     required_s2 = {"bus_at_stop", "crossing_pedestrian", "slow_vehicle", "bicycle_right"}
     _require(required_s2.issubset(_actor_ids(s2)), f"S2: missing actors {sorted(required_s2 - _actor_ids(s2))}")
     bus = next(actor for actor in s2["actors"] if actor["actor_id"] == "bus_at_stop")
-    _require(abs(float(bus["spawn"]["y"])) >= 3.0, "S2: stopped bus must remain at the station-side lane")
+    _require(
+        bus["route_position"].get("lane_relation") == "RIGHT_ADJACENT"
+        and abs(float(bus["route_position"].get("lateral_offset_m", 0.0))) <= 1.0,
+        "S2: stopped bus must use the station-side adjacent lane topology",
+    )
+    bicycle = next(actor for actor in s2["actors"] if actor["actor_id"] == "bicycle_right")
+    _require(
+        bicycle["route_position"].get("lane_relation") == "RIGHT_ADJACENT"
+        and abs(float(bicycle["route_position"].get("lateral_offset_m", 0.0))) <= 1.0,
+        "S2: bicycle must use the right adjacent lane topology",
+    )
     _require(s2["extensions"]["sensor_profile"] == "competition_multiview", "S2: multiview profile required")
     _require({"front_rgb", "left_rgb", "right_rgb", "rear_rgb", "lidar"}.issubset(s2["sensors"]), "S2: sensor set incomplete")
     _require(s2["competition_requirements"]["return_to_route_required"] is True, "S2: return-to-route required")
     _require(s2["competition_requirements"]["lane_invasion_max"] == 0, "S2: lane invasion must be zero")
     _require(s2["expected"]["must_no_lane_invasion"] is True, "S2: lane-invasion acceptance is required")
     _require(float(s2["commands"][0]["parameters"]["target_speed_kph"]) > 30.0, "S2: bus-stop phase needs a measurable deceleration")
+    _require(
+        float(s2["commands"][1]["parameters"]["target_speed_kph"]) == 30.0,
+        "S2: bus-stop instruction must reduce speed to 30km/h",
+    )
+    event_progress = [
+        _trigger_route_progress_m(command.get("trigger"))
+        for command in s2["commands"][1:]
+    ]
+    _require(all(value is not None for value in event_progress), "S2: every event must be route-progress gated")
+    distributed = [float(value) for value in event_progress if value is not None]
+    _require(
+        len(distributed) >= 5
+        and distributed[0] >= 800.0
+        and distributed[-1] >= 6800.0
+        and all(800.0 <= second - first <= 2000.0 for first, second in zip(distributed, distributed[1:])),
+        "S2: events must be distributed through the full 8km route",
+    )
+    composite_text = str(s2["commands"][2].get("source_text", ""))
+    _require(
+        all(token in composite_text for token in ("行人", "减速", "左变道", "超越", "回到原车道", "恢复")),
+        "S2: pedestrian/overtake command must remain one complete composite instruction",
+    )
     _require(float(s2["expected"]["min_front_gap_m"]) >= 3.0, "S2: bicycle clearance must be at least 3m")
     _require(s2["qwen_expected"]["min_calls"] == len(s2["commands"]), "S2: every combination command must call Qwen")
     _require(s2["qwen_expected"]["max_calls"] == len(s2["commands"]), "S2: unexpected Qwen call budget")
@@ -140,8 +205,34 @@ def validate_all() -> dict[str, Any]:
     _require(float(lane_profile.get("transition_length_m", 0.0)) >= 20.0, "S2: lane transition is too abrupt")
     runtime_requirements = set(s2_extensions["runtime_support"]["requirements"])
     _require(
-        {"dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance"}.issubset(runtime_requirements),
+        {
+            "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance",
+            "route_progress_actor_activation", "route_progress_actor_lifecycle",
+            "route_progress_speed_acceptance",
+        }.issubset(runtime_requirements),
         "S2: runtime requirements do not declare the member-3 route/distance owners",
+    )
+    speed_policy = s2_extensions.get("speed_policy", {})
+    _require(
+        float(speed_policy.get("scenario_limit_kph", 0.0)) > 30.0
+        and speed_policy.get("map_limit_handling") == "replace",
+        "S2: Town03_Opt needs an explicit >30km/h competition cruise contract",
+    )
+    activations = [
+        float(actor.get("activation_trigger", {}).get("value", -1.0))
+        for actor in s2["actors"]
+    ]
+    _require(
+        all(value >= 0.0 for value in activations),
+        "S2: every distributed actor must be activated by route progress",
+    )
+    deactivations = [
+        float(actor.get("deactivation_trigger", {}).get("value", -1.0))
+        for actor in s2["actors"]
+    ]
+    _require(
+        all(end > start for start, end in zip(activations, deactivations)),
+        "S2: every distributed actor must retire after its activation window",
     )
     passenger_triggers = [
         actor.get("behavior", {}).get("trigger")
@@ -160,6 +251,11 @@ def validate_all() -> dict[str, Any]:
     cut_in = next(actor for actor in s3["actors"] if actor["actor_id"] == "cut_in_vehicle")
     _require(cut_in["behavior"]["mode"] == "cut_in", "S3: cut-in actor needs deterministic lateral behaviour")
     _require(cut_in["behavior"].get("cut_in_on_first_event") is True, "S3: cut-in must be proximity-event driven")
+    _require(
+        float(cut_in["behavior"].get("post_cut_in_speed_mps", 0.0))
+        >= float(s3["extensions"]["emergency_recovery"]["cut_in_vehicle"]["resume_speed_kph"]) / 3.6,
+        "S3: completed cut-in vehicle must clear the resumed ego instead of becoming a roadblock",
+    )
     cut_in_events = cut_in["behavior"].get("events", [])
     _require(len(cut_in_events) == 1, "S3: cut-in needs exactly one deterministic start event")
     cut_in_trigger = cut_in_events[0].get("trigger", {})
@@ -169,20 +265,87 @@ def validate_all() -> dict[str, Any]:
         "S3: cut-in start must be bound to ego proximity",
     )
     _require(25.0 <= float(cut_in_trigger.get("value", 0.0)) <= 35.0, "S3: cut-in proximity threshold is unsafe")
+    cut_in_command = next(
+        command for command in s3["commands"]
+        if command.get("phase_id") == "S3_P3_CUT_IN_EMERGENCY"
+    )
+    command_distance_trigger = next(
+        item for item in cut_in_command["trigger"]["all"]
+        if item.get("type") == "ego_distance_to_actor_less_than_m"
+    )
+    _require(
+        any(
+            item.get("type") == "sensor_actor_detected"
+            and item.get("actor_id") == "cut_in_vehicle"
+            for item in cut_in_command["trigger"]["all"]
+        ),
+        "S3: cut-in emergency command must wait for a sensor-derived target",
+    )
+    _require(
+        command_distance_trigger.get("actor_id") == "cut_in_vehicle"
+        and 0.0 <= (
+            float(cut_in_trigger["value"])
+            - float(command_distance_trigger.get("value", -1.0))
+        ) <= 5.0,
+        "S3: emergency command must follow the real cut-in trigger without a deadlock gap",
+    )
+    pedestrian = next(
+        actor for actor in s3["actors"]
+        if actor["actor_id"] == "emergency_pedestrian"
+    )
+    pedestrian_command = next(
+        command for command in s3["commands"]
+        if command.get("phase_id") == "S3_P4_PEDESTRIAN_STOP_HOLD"
+    )
+    _require(
+        any(
+            item.get("type") == "sensor_actor_detected"
+            and item.get("actor_id") == "emergency_pedestrian"
+            for item in pedestrian_command["trigger"]["all"]
+        ),
+        "S3: pedestrian emergency command must wait for a sensor-derived target",
+    )
+    _require(
+        25.0 <= float(pedestrian["spawn"]["x"])
+        - float(pedestrian["behavior"]["trigger"]["value"]) <= 40.0,
+        "S3: pedestrian must enter sensor range with enough emergency stopping distance",
+    )
+    _require(
+        abs(
+            float(pedestrian["behavior"]["target_xy_m"][1])
+            - float(pedestrian["spawn"]["y"])
+        ) >= 9.0,
+        "S3: pedestrian crossing target must finish beyond the vehicle lanes",
+    )
+    _require(
+        float(pedestrian.get("deactivation_trigger", {}).get("value", 0.0))
+        > float(pedestrian["behavior"]["trigger"]["value"]),
+        "S3: cleared pedestrian must retire after its event window",
+    )
+    pedestrian_recovery = s3["extensions"]["emergency_recovery"][
+        "emergency_pedestrian"
+    ]
+    _require(
+        pedestrian_recovery.get("clearance_mode") == "sensor_path_clear"
+        and float(pedestrian_recovery.get("minimum_path_clear_s", 0.0)) >= 0.5,
+        "S3: pedestrian recovery must require continuous sensor-confirmed path clearance",
+    )
     _require(s3["extensions"]["sensor_profile"] == "competition_multiview", "S3: multiview profile required")
     weather = s3["extensions"]["weather_parameters"]
     _require(weather["precipitation"] >= 80 and weather["wetness"] == 100, "S3: heavy rain/wet road missing")
     _require(weather["sun_altitude_angle"] < 0 and weather["fog_density"] >= 30, "S3: night/fog conditions missing")
     _require(s3["runtime"]["duration_s"] >= 800.0, "S3: runtime budget is too short for 6km at safe rain speed")
     s3_qwen = s3["extensions"]["proposed_acceptance"]
-    _require(s3_qwen["qwen_request_count"] == 2, "S3: two normal semantic commands must call Qwen")
-    _require(s3["qwen_expected"]["route"] == "MIXED", "S3: mixed Qwen/safety routing contract required")
+    _require(s3_qwen["qwen_request_count"] == 4, "S3: every voice command must call Qwen")
+    _require(s3_qwen["qwen_missing_request_count"] == 0, "S3: no voice command may bypass Qwen")
     _require(
-        s3["qwen_expected"]["route_counts"]
-        == {"QWEN_PLAN": 2, "FAST_LOCAL": 2, "CONFIRM_SAFE": 0},
-        "S3: expected routes must be two Qwen plans and two local emergencies",
+        float(s3_qwen["minimum_resumed_speed_kph_by_phase"][
+            "S3_P4_PEDESTRIAN_STOP_HOLD"
+        ]) >= 32.0,
+        "S3: pedestrian recovery must regain a sustained driving speed",
     )
-    _require(s3["extensions"]["qwen_policy"].get("emergency_fast_local") is True, "S3: emergency fast-local exception must be explicit")
+    _require(s3["qwen_expected"]["route"] == "QWEN_PLAN", "S3: all voice routing must use Qwen")
+    _require("route_counts" not in s3["qwen_expected"], "S3: mixed routing contract is forbidden")
 
     ids = [spec.scenario_id for spec in specs.values()]
     _require(len(ids) == len(set(ids)), "scenario_id values must be unique")

@@ -205,6 +205,48 @@ def test_lane_change_uses_same_direction_adjacent_driving_lane(direction, expect
     assert max(math.dist(a, b) for a, b in zip(route.points_xy_m, route.points_xy_m[1:])) < 2.0
 
 
+@pytest.mark.parametrize(("direction", "expected_y"), [("LEFT", -3.75), ("RIGHT", 3.75)])
+def test_lane_change_can_add_bounded_clearance_inside_target_lane(direction, expected_y):
+    center, _, _ = _parallel_lanes()
+    route = build_lane_change_route_reference(
+        Map(center[0]),
+        SimpleNamespace(x=0.0, y=0.0),
+        4.0,
+        direction=direction,
+        distance_m=60.0,
+        target_lane_offset_m=0.25,
+    )
+
+    assert route.points_xy_m[0][1] == pytest.approx(0.0)
+    assert route.points_xy_m[-1][1] == pytest.approx(expected_y)
+    assert max(math.dist(a, b) for a, b in zip(route.points_xy_m, route.points_xy_m[1:])) < 2.0
+
+
+def test_lane_change_follows_curved_lane_topology_instead_of_cutting_chord():
+    samples = 100
+    center = []
+    left = []
+    for index in range(samples):
+        angle = math.radians(index * 1.0)
+        center.append(Waypoint(50.0 * math.cos(angle), 50.0 * math.sin(angle), index + 90.0))
+        left.append(Waypoint(46.5 * math.cos(angle), 46.5 * math.sin(angle), index + 90.0))
+    for lane in (center, left):
+        for first, second in zip(lane, lane[1:]):
+            first.children = [second]
+    for source, adjacent in zip(center, left):
+        source.left = adjacent
+
+    route = build_lane_change_route_reference(
+        Map(center[0]), SimpleNamespace(x=50.0, y=0.0), 4.0,
+        direction="LEFT", distance_m=60.0, step_m=1.0,
+        transition_start_m=8.0, transition_length_m=30.0,
+    )
+
+    radii = [math.hypot(x, y) for x, y in route.points_xy_m]
+    assert min(radii) >= 46.4
+    assert max(radii) <= 50.1
+
+
 def test_lane_change_rejects_opposite_direction_adjacent_lane():
     center, left, _ = _parallel_lanes()
     for current, opposite in zip(center, left):
@@ -215,6 +257,34 @@ def test_lane_change_rejects_opposite_direction_adjacent_lane():
             Map(center[0]), SimpleNamespace(x=0.0, y=0.0), 4.0,
             direction="LEFT", distance_m=60.0,
         )
+
+
+def test_return_lane_change_defers_transition_until_after_junction():
+    center, _, right = _parallel_lanes(length=120)
+    for index in range(4, 14):
+        center[index].is_junction = True
+        right[index].is_junction = True
+
+    with pytest.raises(ValueError, match="junction"):
+        build_lane_change_route_reference(
+            Map(center[0]), SimpleNamespace(x=0.0, y=0.0), 4.0,
+            direction="RIGHT", distance_m=60.0,
+            transition_start_m=5.0, transition_length_m=20.0,
+        )
+
+    route = build_lane_change_route_reference(
+        Map(center[0]), SimpleNamespace(x=0.0, y=0.0), 4.0,
+        direction="RIGHT", distance_m=60.0,
+        transition_start_m=5.0, transition_length_m=20.0,
+        defer_until_safe=True,
+    )
+
+    junction_points = tuple(
+        (x, y) for x, y in route.points_xy_m if 4.0 <= x <= 13.0
+    )
+    assert junction_points
+    assert all(y == pytest.approx(0.0) for _, y in junction_points)
+    assert route.points_xy_m[-1][1] == pytest.approx(3.5)
 
 
 def test_topology_anchor_selection_avoids_signal_stop_points():
@@ -261,6 +331,33 @@ def test_topology_anchor_selection_supports_seeded_candidate_rank():
         target_speed_mps=4.0,
         distance_m=60.0,
         candidate_index=1,
+    )
+
+    assert index == 1
+    assert route.points_xy_m[0][1] == pytest.approx(20.0)
+
+
+def test_topology_anchor_selection_discards_scenario_incompatible_route():
+    first, _, _ = _parallel_lanes()
+    second, _, _ = _parallel_lanes()
+    for waypoint in second:
+        waypoint.transform.location.y += 20.0
+
+    class MultiMap:
+        def get_waypoint(self, location, project_to_road=True):
+            return first[0] if location.y < 10.0 else second[0]
+
+    spawns = (
+        SimpleNamespace(location=SimpleNamespace(x=0.0, y=0.0)),
+        SimpleNamespace(location=SimpleNamespace(x=0.0, y=20.0)),
+    )
+    index, route, _ = select_topology_route_anchor(
+        MultiMap(),
+        spawns,
+        maneuver="FOLLOW",
+        target_speed_mps=4.0,
+        distance_m=60.0,
+        route_validator=lambda candidate: candidate.points_xy_m[0][1] >= 10.0,
     )
 
     assert index == 1

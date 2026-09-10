@@ -57,6 +57,7 @@ def evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, obje
         "mean_cross_track_error_m": "mean_abs_cross_track_error_m",
         "final_cross_track_error_m": "final_abs_cross_track_error_m",
         "max_lane_center_offset_m": "max_abs_lane_offset_m",
+        "mean_lane_center_offset_m": "mean_abs_lane_offset_m",
         "max_abs_steer": "max_abs_steer",
         "max_steer_rate_per_s": "max_steer_rate_per_s",
         "max_speed_mps": "max_speed_mps",
@@ -168,6 +169,32 @@ def evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, obje
         required = _number(expected["route_deviation_trigger_m"])
         add("route_deviation_trigger_m", actual is not None and required is not None and abs(actual - required) <= 1e-9,
             actual, required, "D must use the scenario-declared route recovery trigger")
+
+    if "must_replan_route" in expected:
+        supported.add("must_replan_route")
+        actual = int(metrics.get("route_replan_count", 0) or 0)
+        add(
+            "must_replan_route",
+            expected["must_replan_route"] is not True or actual > 0,
+            actual,
+            "> 0 successful replans",
+            "an off-route state must produce a valid replacement route",
+        )
+
+    if "must_recover_route" in expected:
+        supported.add("must_recover_route")
+        actual = metrics.get("route_recovery_succeeded") is True
+        add(
+            "must_recover_route",
+            expected["must_recover_route"] is not True or actual,
+            actual,
+            True,
+            "a successful replan must be followed by ON_ROUTE or DESTINATION_REACHED",
+        )
+
+    if "max_route_replan_attempts" in expected:
+        supported.add("max_route_replan_attempts")
+        maximum("max_route_replan_attempts", "route_replan_max_attempt")
 
     if "must_generate_event" in expected:
         supported.add("must_generate_event")

@@ -15,7 +15,11 @@ def _plan():
 
 def test_primitive_steps_compile_without_low_level_control():
     compiled = PlanCompiler().compile(_plan())
-    assert [step.behavior for step in compiled.steps] == ["SLOW_DOWN", "CHANGE_LANE_LEFT"]
+    assert [step.behavior for step in compiled.steps] == [
+        "SLOW_DOWN", "WAIT_SAFE_GAP", "CHANGE_LANE_LEFT",
+    ]
+    assert "LEFT_LANE_EXISTS" in compiled.steps[1].preconditions
+    assert "LEFT_GAP_SAFE" in compiled.steps[1].preconditions
     payload = compiled.to_dict()
     assert not {"throttle", "brake", "steer"}.intersection(str(payload))
 
@@ -55,11 +59,16 @@ def test_return_to_lane_uses_explicit_deterministic_direction():
         "timeout_s": 8.0, "on_failure": "SAFE_STOP",
     }]
     compiled = PlanCompiler().compile(plan, scene={"return_direction": "RIGHT"})
-    assert compiled.steps[0].behavior == "CHANGE_LANE_RIGHT"
-    assert compiled.steps[0].completion["lane"] == "CURRENT"
+    assert [step.behavior for step in compiled.steps] == [
+        "WAIT_SAFE_GAP", "CHANGE_LANE_RIGHT",
+    ]
     assert compiled.steps[0].preconditions == (
         "PERCEPTION_FRESH", "RIGHT_GAP_SAFE", "RIGHT_LANE_EXISTS",
         "NO_EMERGENCY_RISK",
+    )
+    assert compiled.steps[1].completion["lane"] == "CURRENT"
+    assert compiled.steps[1].preconditions == (
+        "PERCEPTION_FRESH", "NO_EMERGENCY_RISK",
     )
 
 
@@ -99,6 +108,8 @@ def test_avoid_then_return_derives_opposite_direction_from_avoid_lane():
 
     assert compiled.steps[-1].behavior == "CHANGE_LANE_RIGHT"
     assert compiled.steps[-1].target["target_lane"] == "CURRENT"
-    assert "RIGHT_LANE_EXISTS" in compiled.steps[-1].preconditions
-    assert "RIGHT_GAP_SAFE" in compiled.steps[-1].preconditions
+    assert compiled.steps[-2].behavior == "WAIT_SAFE_GAP"
+    assert "RIGHT_LANE_EXISTS" in compiled.steps[-2].preconditions
+    assert "RIGHT_GAP_SAFE" in compiled.steps[-2].preconditions
+    assert "RIGHT_GAP_SAFE" not in compiled.steps[-1].preconditions
     assert "NO_EMERGENCY_RISK" in compiled.steps[-1].preconditions

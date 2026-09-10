@@ -9,6 +9,7 @@ from typing import Mapping
 
 from car_control_C.safety_state import SafetyStateParameters
 from car_control_D.safety_supervisor import SafetyConfig
+from config.strategy import DEFAULT_STRATEGY
 
 
 DEFAULT_POLICY_PATH = Path(__file__).resolve().parents[1] / "config" / "driving_policy.json"
@@ -81,7 +82,15 @@ class DrivingPolicy:
                 if stop_line_guard_override_m is None else float(stop_line_guard_override_m)
             ),
             max_lane_offset_m=maximum_lane_offset,
+            minimum_lane_offset_m=min(
+                DEFAULT_STRATEGY.supervisor.minimum_lane_offset_m,
+                maximum_lane_offset,
+            ),
             severe_route_deviation_m=route_deviation,
+            minimum_severe_route_deviation_m=min(
+                DEFAULT_STRATEGY.supervisor.minimum_severe_route_deviation_m,
+                route_deviation,
+            ),
             route_recovery_max_speed_mps=_number(s, "route_recovery_max_speed_mps"),
             low_confidence_threshold=_number(s, "low_confidence_threshold"),
             emergency_reaction_time_s=_number(s, "emergency_reaction_time_s"),

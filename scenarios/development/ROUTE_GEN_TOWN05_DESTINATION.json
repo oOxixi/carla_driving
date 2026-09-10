@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "ROUTE_GEN_TOWN05_DESTINATION",
+  "category": "lateral_B",
+  "official_level": "basic",
+  "description": "Second-map Route Manager regression using only a Town05 start and destination.",
+  "tags": ["route_generalization", "destination", "second_map", "no_qwen_required"],
+  "map": "Town05",
+  "weather": "ClearNoon",
+  "seed": 0,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 45.0,
+    "max_startup_wait_s": 30
+  },
+  "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "planning_mode": "destination",
+    "destination_xy_m": [110.7862, -74.1003],
+    "points_xy_m": [[0.0, 0.0], [1.0, 0.0]],
+    "distance_contract_m": 160.0,
+    "resample_interval_m": 2.0,
+    "finish_radius_m": 4.0
+  },
+  "commands": [
+    {
+      "time_s": 0.0,
+      "source_text": "按照导航路线以每小时20公里安全行驶到终点",
+      "intent": "KEEP_LANE",
+      "parameters": {"target_speed_kph": 20.0},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "valid_duration_s": 45.0
+    }
+  ],
+  "actors": [],
+  "sensors": {
+    "front_rgb": {"enabled": true},
+    "lidar": {"enabled": true},
+    "collision": {"enabled": true},
+    "lane_invasion": {"enabled": true}
+  },
+  "expected": {
+    "must_finish_route": true,
+    "must_no_collision": true,
+    "must_start_carla": true,
+    "must_spawn_ego": true,
+    "must_call_B": true,
+    "must_call_C": true,
+    "must_call_D": true,
+    "must_generate_logs": true,
+    "max_cross_track_error_m": 2.0,
+    "max_speed_mps": 10.0,
+    "min_run_time_s": 1.0
+  },
+  "extensions": {
+    "topology_route_required": true,
+    "route_regression_only": true
+  },
+  "notes": [
+    "Run on Town05 with --spawn-index 0.",
+    "The destination is spawn 271; no route_anchor_spawn_index is stored."
+  ]
+}

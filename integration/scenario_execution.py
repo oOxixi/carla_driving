@@ -17,6 +17,7 @@ SUPPORTED_LEVELS = frozenset({"basic", "advanced", "challenge"})
 DEFAULT_RELATIVE_SPEED_STEP_MPS = 5.0 / 3.6
 ROUTE_FOLLOWING_INTENTS = frozenset({
     "KEEP_LANE",
+    "FOLLOW",
     "FOLLOW_ROUTE",
     "TURN_LEFT",
     "TURN_RIGHT",
@@ -210,7 +211,9 @@ class ScenarioSpec:
         if explicit is None:
             return "destination" if "destination_xy_m" in self.route_contract else "distance_coverage"
         mode = _nonempty_text(explicit, "route.planning_mode").lower()
-        if mode not in {"distance_coverage", "destination", "local_polyline"}:
+        if mode not in {
+            "distance_coverage", "destination", "local_polyline", "topology_coverage",
+        }:
             raise ValueError(f"unsupported route.planning_mode: {mode}")
         return mode
 
@@ -358,6 +361,14 @@ def scenario_trigger_satisfied(
         ).upper()
     if trigger_type == "ego_standstill_duration_greater_than_s":
         return float(values.get("ego_standstill_duration_s", 0.0)) >= float(trigger.get("value", 0.0))
+    if trigger_type == "sensor_actor_detected":
+        actor_id = str(trigger.get("actor_id", values.get("default_actor_id", "")))
+        detected = values.get("sensor_detected_actor_ids", ())
+        return (
+            isinstance(detected, Sequence)
+            and not isinstance(detected, (str, bytes))
+            and actor_id in {str(item) for item in detected}
+        )
     if trigger_type == "previous_command_terminal":
         terminals = values.get("terminal_phase_ids", ())
         return str(trigger.get("phase_id", "")) in set(terminals if isinstance(terminals, Sequence) else ())

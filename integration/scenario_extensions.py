@@ -6,6 +6,7 @@ fault windows, speed/weather policies, and compact extension evidence.
 """
 from __future__ import annotations
 
+from collections import deque
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 import math
@@ -35,6 +36,8 @@ IMPLEMENTED_RUNTIME_REQUIREMENTS = frozenset({
     "raw_text_qwen_routing", "relative_speed_acceptance",
     "resource_stability_metrics", "restart_after_stop_acceptance",
     "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance",
+    "route_progress_actor_activation", "route_progress_actor_lifecycle",
+    "route_progress_speed_acceptance",
     "scenario_speed_limit", "stale_result_acceptance",
     "target_lane_safety_check", "visibility_acceptance",
 })
@@ -55,7 +58,7 @@ class ExtensionFrameState:
     newly_active_fault_ids: tuple[str, ...]
     newly_recovered_fault_ids: tuple[str, ...]
     speed_limit_mps: float | None
-    speed_limit_override: bool
+    speed_limit_overrides_map: bool
 
 
 class ScenarioExtensionRuntime:
@@ -82,6 +85,7 @@ class ScenarioExtensionRuntime:
         self._completed_phase_ids: set[str] = set()
         self._command_phase_by_id: dict[str, str] = {}
         self._command_intent_by_id: dict[str, str] = {}
+        self._command_submitted_s: dict[str, float] = {}
         self._actor_event_index: dict[str, int] = {}
         self._actor_event_count = 0
         self._actor_event_time_s: dict[str, float] = {}
@@ -111,6 +115,7 @@ class ScenarioExtensionRuntime:
         self._vehicle_advance_commands = 0
         self._latest_applied_command_index: int | None = None
         self._qwen_applied_s: list[float] = []
+        self._qwen_applied_by_command_s: dict[str, float] = {}
         self._first_qwen_plan_s: float | None = None
         self._max_speed_mps = 0.0
         self._min_speed_after_command_mps: float | None = None
@@ -132,6 +137,8 @@ class ScenarioExtensionRuntime:
         self._last_route_deviation_m: float | None = None
         self._max_route_deviation_m = 0.0
         self._first_brake_s: float | None = None
+        self._latest_emergency_command_id: str | None = None
+        self._first_brake_after_emergency_s: float | None = None
         self._safety_reasons: set[str] = set()
         self._safety_first_s: float | None = None
         self._collision_seen = False
@@ -140,12 +147,22 @@ class ScenarioExtensionRuntime:
         self._mission_route_restore_count = 0
         self._lead_brake_trigger_distance_m: float | None = None
         self._actor_trigger_ids: set[str] = set()
+        self._actor_activation_progress_m: dict[str, float] = {}
+        self._command_progress_m_by_phase: dict[str, float] = {}
+        self._command_approach_speed_kph_by_phase: dict[str, float] = {}
+        self._recent_speed_samples: deque[tuple[float, float]] = deque()
+        self._target_speed_kph_by_phase: dict[str, float] = {}
+        self._closest_speed_to_target_kph_by_phase: dict[str, float] = {}
+        self._active_command_phases: set[str] = set()
+        self._minimum_speed_during_phase_kph: dict[str, float] = {}
+        self._max_speed_after_phase_kph: dict[str, float] = {}
         self._actor_trigger_time_s: dict[str, float] = {}
         self._actor_perception_time_s: dict[str, float] = {}
         self._actor_decision_time_s: dict[str, float] = {}
         self._actor_safety_override_time_s: dict[str, float] = {}
         self._actor_control_effect_time_s: dict[str, float] = {}
         self._actor_recovery_time_s: dict[str, float] = {}
+        self._front_path_clear_since_s: float | None = None
         self._rss_start_mb = self._rss_mb()
         self._rss_peak_mb = self._rss_start_mb
 
@@ -183,23 +200,39 @@ class ScenarioExtensionRuntime:
         if command_id:
             self._submitted_command_ids.append(command_id)
             self._command_intent_by_id[command_id] = intent
+            self._command_submitted_s[command_id] = self._last_elapsed_s
             phase_id = str(command.get("phase_id", ""))
             if phase_id:
                 self._command_phase_by_id[command_id] = phase_id
+                self._command_progress_m_by_phase[phase_id] = self._last_route_progress_m
+                recent_speeds_kph = [speed_mps * 3.6 for _, speed_mps in self._recent_speed_samples]
+                self._command_approach_speed_kph_by_phase[phase_id] = max(
+                    recent_speeds_kph,
+                    default=self._last_speed_mps * 3.6,
+                )
+                self._active_command_phases.add(phase_id)
+                self._minimum_speed_during_phase_kph[phase_id] = self._last_speed_mps * 3.6
         if command.get("confirm_required") is True:
             self._confirmation_commands += 1
         parameters = command.get("parameters", {})
         if isinstance(parameters, Mapping):
-            speed = parameters.get("speed")
+            speed = parameters.get("target_speed_kph", parameters.get("speed"))
             if type(speed) in (int, float) and not isinstance(speed, bool):
                 unit = str(parameters.get("unit", "km/h")).lower().replace(" ", "")
-                self._requested_speed_kph = float(speed) * (
+                requested_speed_kph = float(speed) * (
                     3.6 if unit in {"m/s", "mps", "m／s"} else 1.0
                 )
+                self._requested_speed_kph = requested_speed_kph
+                phase_id = str(command.get("phase_id", ""))
+                if phase_id:
+                    self._target_speed_kph_by_phase[phase_id] = requested_speed_kph
+                    self._closest_speed_to_target_kph_by_phase[phase_id] = self._last_speed_mps * 3.6
         if qwen:
             self._qwen_requests += 1
         if intent in {"STOP", "EMERGENCY_STOP"}:
             self._stop_seen = True
+            self._latest_emergency_command_id = command_id or None
+            self._first_brake_after_emergency_s = None
         elif self._stop_seen and intent in {"KEEP_LANE", "START", "SET_SPEED"}:
             self._restart_route_progress_m = self._last_route_progress_m
         if intent == "SLOW_DOWN":
@@ -213,15 +246,27 @@ class ScenarioExtensionRuntime:
         if phase_id:
             self._terminal_phase_ids.add(phase_id)
             self._completed_phase_ids.add(phase_id)
+            self._active_command_phases.discard(phase_id)
         normalized_status = str(getattr(status, "value", status)).upper()
         self._qwen_status_counts[normalized_status] = self._qwen_status_counts.get(normalized_status, 0) + 1
         if normalized_status == "SUCCEEDED":
             self._successful_terminal_s[normalized_id] = self._last_elapsed_s
 
-    def note_qwen_plan(self, plan: Mapping[str, Any], *, elapsed_s: float | None = None) -> None:
-        """Collect high-level actions and semantic target IDs from a validated plan."""
+    def note_qwen_plan(
+        self,
+        plan: Mapping[str, Any],
+        *,
+        elapsed_s: float | None = None,
+        target_aliases: Mapping[str, str] | None = None,
+    ) -> None:
+        """Collect actions and auditable sensor-to-scenario target bindings."""
         if self._first_qwen_plan_s is None:
             self._first_qwen_plan_s = self._last_elapsed_s if elapsed_s is None else float(elapsed_s)
+        aliases = {} if target_aliases is None else {
+            str(sensor_id): str(actor_id)
+            for sensor_id, actor_id in target_aliases.items()
+            if str(sensor_id) and str(actor_id)
+        }
 
         def walk(value: Any, key: str = "") -> None:
             if isinstance(value, Mapping):
@@ -231,6 +276,8 @@ class ScenarioExtensionRuntime:
                         self._qwen_behaviors.append(child.upper())
                     if normalized_key in {"target_actor_id", "actor_id", "target_id"} and isinstance(child, str):
                         self._qwen_target_ids.add(child)
+                        if child in aliases:
+                            self._qwen_target_ids.add(aliases[child])
                     if normalized_key == "target_speed_mps" and type(child) in (int, float) and not isinstance(child, bool):
                         self._qwen_target_speeds_kph.append(float(child) * 3.6)
                     if normalized_key == "target_speed_kph" and type(child) in (int, float) and not isinstance(child, bool):
@@ -274,13 +321,35 @@ class ScenarioExtensionRuntime:
         if applied:
             self._vehicle_advance_commands += 1
             self._qwen_applied_s.append(self._last_elapsed_s)
+            if command_id:
+                self._qwen_applied_by_command_s[str(command_id)] = self._last_elapsed_s
             if command_id in self._submitted_command_ids:
                 self._latest_applied_command_index = self._submitted_command_ids.index(command_id)
+
+    def note_maneuver_terminal_reason(self, reason_code: str | None) -> None:
+        """Preserve downstream FSM rejection/failure reasons for acceptance.
+
+        Qwen resolution records why a plan was accepted or rejected at the
+        model boundary.  A safe-gap decision can only be resolved later by the
+        execution FSM, so its terminal reason is separate evidence and must not
+        be counted as another Qwen request or outcome.
+        """
+        normalized = str(reason_code or "").strip().upper()
+        if normalized and normalized != "PLAN_COMPLETE":
+            self._qwen_resolution_reasons.append(normalized)
 
     def note_phase_completed(self, phase_id: str) -> None:
         normalized = str(phase_id).strip()
         if normalized:
             self._completed_phase_ids.add(normalized)
+
+    def restore_terminal_phase(self, phase_id: str) -> None:
+        """Restore trigger state from a verified earlier run segment only."""
+        normalized = str(phase_id).strip()
+        if not normalized:
+            raise ValueError("restored phase_id must be non-empty")
+        self._terminal_phase_ids.add(normalized)
+        self._completed_phase_ids.add(normalized)
 
     def note_actor_trigger(self, actor_id: str, *, elapsed_s: float | None = None) -> None:
         normalized = str(actor_id).strip()
@@ -303,6 +372,18 @@ class ScenarioExtensionRuntime:
             if actor_id in detected:
                 self._actor_perception_time_s.setdefault(actor_id, float(elapsed_s))
 
+    def note_front_path_observation(
+        self, *, elapsed_s: float, path_clear: bool,
+    ) -> None:
+        """Track continuous sensor confirmation that the ego path is clear."""
+        if type(path_clear) is not bool:
+            raise TypeError("path_clear must be bool")
+        if path_clear:
+            if self._front_path_clear_since_s is None:
+                self._front_path_clear_since_s = float(elapsed_s)
+        else:
+            self._front_path_clear_since_s = None
+
     def ready_emergency_recovery(self, *, elapsed_s: float) -> tuple[str, float] | None:
         """Return one configured hazard whose minimum stop hold has elapsed."""
         recovery = self.extensions.get("emergency_recovery", {})
@@ -324,14 +405,34 @@ class ScenarioExtensionRuntime:
                 raise ValueError(
                     "emergency recovery hold/resume speed must be positive and clearance non-negative"
                 )
-            actor_distance_m = self._actor_distances_m.get(normalized_id)
-            hazard_clear = (
-                minimum_clearance_m <= 0.0
-                or (
-                    actor_distance_m is not None
-                    and actor_distance_m >= minimum_clearance_m
+            clearance_mode = str(
+                raw_policy.get("clearance_mode", "actor_distance")
+            ).strip().lower()
+            if clearance_mode == "actor_distance":
+                actor_distance_m = self._actor_distances_m.get(normalized_id)
+                hazard_clear = (
+                    minimum_clearance_m <= 0.0
+                    or (
+                        actor_distance_m is not None
+                        and actor_distance_m >= minimum_clearance_m
+                    )
                 )
-            )
+            elif clearance_mode == "sensor_path_clear":
+                minimum_path_clear_s = float(
+                    raw_policy.get("minimum_path_clear_s", 0.5)
+                )
+                if minimum_path_clear_s <= 0.0:
+                    raise ValueError("minimum_path_clear_s must be positive")
+                hazard_clear = (
+                    self._front_path_clear_since_s is not None
+                    and float(elapsed_s) + TIME_COMPARISON_EPSILON_S
+                    >= self._front_path_clear_since_s + minimum_path_clear_s
+                )
+            else:
+                raise ValueError(
+                    "emergency recovery clearance_mode must be actor_distance "
+                    "or sensor_path_clear"
+                )
             if (
                 hazard_clear
                 and float(elapsed_s) + TIME_COMPARISON_EPSILON_S >= control_s + hold_s
@@ -344,6 +445,15 @@ class ScenarioExtensionRuntime:
         if normalized not in self._actor_control_effect_time_s:
             raise ValueError("emergency recovery requires prior control-effect evidence")
         self._actor_recovery_time_s.setdefault(normalized, float(elapsed_s))
+
+    def note_actor_activated(self, actor_id: str, *, route_progress_m: float) -> None:
+        normalized = str(actor_id).strip()
+        progress = float(route_progress_m)
+        if not normalized:
+            raise ValueError("activated actor_id must be non-empty")
+        if not math.isfinite(progress) or progress < 0.0:
+            raise ValueError("actor activation route progress must be finite and non-negative")
+        self._actor_activation_progress_m.setdefault(normalized, progress)
 
     def note_target_lane_occupancy(self, count: int) -> None:
         if type(count) is not int or count < 0:
@@ -398,6 +508,28 @@ class ScenarioExtensionRuntime:
         self._last_elapsed_s = float(elapsed_s)
         self._last_route_progress_m = float(route_progress_m)
         self._last_speed_mps = float(ego_speed_mps)
+        speed_kph = float(ego_speed_mps) * 3.6
+        self._recent_speed_samples.append((self._last_elapsed_s, self._last_speed_mps))
+        recent_cutoff_s = self._last_elapsed_s - 10.0
+        while self._recent_speed_samples and self._recent_speed_samples[0][0] < recent_cutoff_s:
+            self._recent_speed_samples.popleft()
+        for phase_id in self._active_command_phases:
+            previous = self._minimum_speed_during_phase_kph.get(phase_id)
+            self._minimum_speed_during_phase_kph[phase_id] = (
+                speed_kph if previous is None else min(previous, speed_kph)
+            )
+            target_speed_kph = self._target_speed_kph_by_phase.get(phase_id)
+            closest_speed_kph = self._closest_speed_to_target_kph_by_phase.get(phase_id)
+            if target_speed_kph is not None and (
+                closest_speed_kph is None
+                or abs(speed_kph - target_speed_kph) < abs(closest_speed_kph - target_speed_kph)
+            ):
+                self._closest_speed_to_target_kph_by_phase[phase_id] = speed_kph
+        for phase_id in self._terminal_phase_ids:
+            self._max_speed_after_phase_kph[phase_id] = max(
+                self._max_speed_after_phase_kph.get(phase_id, 0.0),
+                speed_kph,
+            )
         if self._submitted_command_ids:
             self._min_speed_after_command_mps = (
                 float(ego_speed_mps)
@@ -460,17 +592,24 @@ class ScenarioExtensionRuntime:
 
         speed_policy = self.extensions.get("speed_policy", {})
         speed_limit = None
-        speed_limit_override = False
+        override_map_limit = False
         if isinstance(speed_policy, Mapping) and "scenario_limit_kph" in speed_policy:
             speed_limit = max(0.0, float(speed_policy["scenario_limit_kph"]) / 3.6)
-            speed_limit_override = bool(speed_policy.get("override_map_limit", False))
+            default_mode = (
+                "replace" if speed_policy.get("override_map_limit") is True
+                else "minimum"
+            )
+            mode = str(speed_policy.get("map_limit_handling", default_mode)).strip().lower()
+            if mode not in {"minimum", "replace"}:
+                raise ValueError("speed_policy.map_limit_handling must be 'minimum' or 'replace'")
+            override_map_limit = mode == "replace"
         return ExtensionFrameState(
             trigger_context=context,
             active_faults=tuple(active),
             newly_active_fault_ids=tuple(newly_active),
             newly_recovered_fault_ids=tuple(newly_recovered),
             speed_limit_mps=speed_limit,
-            speed_limit_override=speed_limit_override,
+            speed_limit_overrides_map=override_map_limit,
         )
 
     def note_control_observation(
@@ -502,6 +641,15 @@ class ScenarioExtensionRuntime:
             self._max_route_deviation_m = max(self._max_route_deviation_m, deviation)
         if float(brake) >= 0.5 and self._first_brake_s is None:
             self._first_brake_s = now
+        if (
+            float(brake) >= 0.5
+            and self._latest_emergency_command_id is not None
+            and self._first_brake_after_emergency_s is None
+            and now + TIME_COMPARISON_EPSILON_S >= self._command_submitted_s.get(
+                self._latest_emergency_command_id, math.inf,
+            )
+        ):
+            self._first_brake_after_emergency_s = now
         normalized_reason = str(safety_reason).strip().upper()
         meaningful_safety = bool(safety_override and normalized_reason not in {"", "NONE"})
         active_sensor_faults = {
@@ -519,9 +667,9 @@ class ScenarioExtensionRuntime:
         emergency_brake = float(brake) >= 0.5 and float(throttle) <= 0.03
         responded = meaningful_safety or emergency_brake
         if responded:
-            # In S3 the FAST_LOCAL emergency command is itself the safety
-            # preemption, even when D need not override the already-safe raw
-            # control a second time.
+            # An emergency voice command enters Qwen for semantic audit while
+            # the bridge's deterministic pending hold supplies the immediate
+            # safety response, even if D need not override it a second time.
             for actor_id in self._actor_trigger_time_s:
                 self._actor_decision_time_s.setdefault(actor_id, now)
                 self._actor_safety_override_time_s.setdefault(actor_id, now)
@@ -613,9 +761,10 @@ class ScenarioExtensionRuntime:
         emergency_events: dict[str, dict[str, float | None]] = {}
         for actor_id, danger_s in sorted(self._actor_trigger_time_s.items()):
             control_s = self._actor_control_effect_time_s.get(actor_id)
+            perception_s = self._actor_perception_time_s.get(actor_id)
             emergency_events[actor_id] = {
                 "danger_timestamp_s": danger_s,
-                "perception_timestamp_s": self._actor_perception_time_s.get(actor_id),
+                "perception_timestamp_s": perception_s,
                 "decision_timestamp_s": self._actor_decision_time_s.get(actor_id),
                 "safety_override_timestamp_s": self._actor_safety_override_time_s.get(actor_id),
                 "control_effect_timestamp_s": control_s,
@@ -625,8 +774,18 @@ class ScenarioExtensionRuntime:
                     if control_s is None or actor_id not in self._actor_recovery_time_s
                     else max(0.0, self._actor_recovery_time_s[actor_id] - control_s)
                 ),
-                "response_ms": (
+                "hazard_onset_to_control_ms": (
                     None if control_s is None else max(0.0, control_s - danger_s) * 1000.0
+                ),
+                "sensor_to_control_ms": (
+                    None
+                    if control_s is None or perception_s is None
+                    else max(0.0, control_s - perception_s) * 1000.0
+                ),
+                "response_ms": (
+                    None
+                    if control_s is None or perception_s is None
+                    else max(0.0, control_s - perception_s) * 1000.0
                 ),
             }
         response_samples_ms = [
@@ -678,6 +837,13 @@ class ScenarioExtensionRuntime:
             "final_lateral_offset_abs_m": self._last_lateral_offset_m,
             "lead_brake_trigger_distance_m": self._lead_brake_trigger_distance_m,
             "actor_trigger_ids": sorted(self._actor_trigger_ids),
+            "actor_activation_progress_m": dict(sorted(self._actor_activation_progress_m.items())),
+            "command_progress_m_by_phase": dict(sorted(self._command_progress_m_by_phase.items())),
+            "command_approach_speed_kph_by_phase": dict(sorted(self._command_approach_speed_kph_by_phase.items())),
+            "target_speed_kph_by_phase": dict(sorted(self._target_speed_kph_by_phase.items())),
+            "closest_speed_to_target_kph_by_phase": dict(sorted(self._closest_speed_to_target_kph_by_phase.items())),
+            "minimum_speed_during_phase_kph": dict(sorted(self._minimum_speed_during_phase_kph.items())),
+            "max_speed_after_phase_kph": dict(sorted(self._max_speed_after_phase_kph.items())),
             "emergency_events": emergency_events,
             "emergency_response_samples_ms": response_samples_ms,
             "emergency_response_p95_ms": self._percentile(response_samples_ms, 0.95),
@@ -689,6 +855,18 @@ class ScenarioExtensionRuntime:
                 + len(self._fault_recovered_s)
             ),
             "first_brake_s": self._first_brake_s,
+            "emergency_command_id": self._latest_emergency_command_id,
+            "emergency_command_s": (
+                None
+                if self._latest_emergency_command_id is None
+                else self._command_submitted_s.get(self._latest_emergency_command_id)
+            ),
+            "emergency_qwen_applied_s": (
+                None
+                if self._latest_emergency_command_id is None
+                else self._qwen_applied_by_command_s.get(self._latest_emergency_command_id)
+            ),
+            "first_brake_after_emergency_s": self._first_brake_after_emergency_s,
             "first_qwen_plan_s": self._first_qwen_plan_s,
             "safety_reasons": sorted(self._safety_reasons),
             "safety_first_s": self._safety_first_s,
@@ -723,6 +901,16 @@ class ScenarioExtensionRuntime:
     ) -> dict[str, object]:
         """Evaluate every v2 proposed-acceptance field with auditable evidence."""
         evidence = self.evidence()
+        # Canonical Qwen feedback can carry a safety event even when D does
+        # not need to override an already-safe STOP control.  Preserve both
+        # evidence sources in the report instead of exposing only frame-level
+        # D interventions.
+        merged_safety_reasons = {
+            str(item).strip().upper()
+            for item in (*evidence["safety_reasons"], *safety_reasons)
+            if str(item).strip().upper() not in {"", "NONE"}
+        }
+        evidence["safety_reasons"] = sorted(merged_safety_reasons)
         request_count = int(evidence["qwen_request_count"])
         terminals = set(evidence["terminal_command_ids"])
         submitted = list(evidence["submitted_command_ids"])
@@ -788,12 +976,23 @@ class ScenarioExtensionRuntime:
                 actual = float(evidence["resource_growth_mb"])
                 add(key, actual <= float(required), actual, required)
             elif key == "must_return_to_original_lane":
+                semantic_return_completed = (
+                    "RETURN_TO_LANE" in behaviors
+                    and int(evidence["lane_change_count"]) >= 2
+                    and evidence["final_lateral_offset_abs_m"] is not None
+                    and float(evidence["final_lateral_offset_abs_m"]) <= 0.5
+                    and all(
+                        command_id in evidence["successful_terminal_s"]
+                        for command_id in submitted
+                    )
+                )
                 actual = (
                     int(evidence["mission_route_restore_count"]) > 0
                     or (
                         evidence["initial_lane_id"] == evidence["final_lane_id"]
                         and int(evidence["lane_change_count"]) >= 2
                     )
+                    or semantic_return_completed
                 )
                 add(key, required is not True or actual, actual, True)
             elif key == "minimum_actor_distances_m":
@@ -816,6 +1015,93 @@ class ScenarioExtensionRuntime:
                     },
                     dict(required),
                 )
+            elif key in {
+                "actor_activation_progress_windows_m",
+                "command_progress_windows_m",
+            }:
+                if not isinstance(required, Mapping):
+                    raise TypeError(f"{key} must be an object")
+                actual_values = (
+                    evidence["actor_activation_progress_m"]
+                    if key == "actor_activation_progress_windows_m" else
+                    evidence["command_progress_m_by_phase"]
+                )
+                results: dict[str, bool] = {}
+                actual: dict[str, object] = {}
+                for item_id, window in required.items():
+                    if (
+                        not isinstance(window, Sequence)
+                        or isinstance(window, (str, bytes))
+                        or len(window) != 2
+                    ):
+                        raise TypeError(f"{key}.{item_id} must be [minimum, maximum]")
+                    value = actual_values.get(str(item_id))
+                    actual[str(item_id)] = value
+                    results[str(item_id)] = (
+                        value is not None
+                        and float(window[0]) <= float(value) <= float(window[1])
+                    )
+                add(key, bool(results) and all(results.values()), actual, dict(required))
+            elif key in {
+                "minimum_approach_speed_kph_by_phase",
+                "minimum_resumed_speed_kph_by_phase",
+            }:
+                if not isinstance(required, Mapping):
+                    raise TypeError(f"{key} must be an object")
+                actual_values = (
+                    evidence["command_approach_speed_kph_by_phase"]
+                    if key == "minimum_approach_speed_kph_by_phase" else
+                    evidence["max_speed_after_phase_kph"]
+                )
+                actual = {
+                    str(phase_id): actual_values.get(str(phase_id))
+                    for phase_id in required
+                }
+                passed = bool(actual) and all(
+                    value is not None and float(value) >= float(required[phase_id])
+                    for phase_id, value in actual.items()
+                )
+                add(key, passed, actual, dict(required))
+            elif key == "phase_min_speed_ranges_kph":
+                if not isinstance(required, Mapping):
+                    raise TypeError("phase_min_speed_ranges_kph must be an object")
+                actual_values = evidence["minimum_speed_during_phase_kph"]
+                actual: dict[str, object] = {}
+                passed = bool(required)
+                for phase_id, speed_range in required.items():
+                    if (
+                        not isinstance(speed_range, Sequence)
+                        or isinstance(speed_range, (str, bytes))
+                        or len(speed_range) != 2
+                    ):
+                        raise TypeError(
+                            f"phase_min_speed_ranges_kph.{phase_id} must be [minimum, maximum]"
+                        )
+                    value = actual_values.get(str(phase_id))
+                    actual[str(phase_id)] = value
+                    passed = passed and value is not None and (
+                        float(speed_range[0]) <= float(value) <= float(speed_range[1])
+                    )
+                add(key, passed, actual, dict(required))
+            elif key == "phase_target_speed_tolerance_kph":
+                if not isinstance(required, Mapping):
+                    raise TypeError("phase_target_speed_tolerance_kph must be an object")
+                actual_speeds = evidence["closest_speed_to_target_kph_by_phase"]
+                target_speeds = evidence["target_speed_kph_by_phase"]
+                actual: dict[str, object] = {}
+                passed = bool(required)
+                for phase_id, tolerance_kph in required.items():
+                    normalized_phase_id = str(phase_id)
+                    actual_speed = actual_speeds.get(normalized_phase_id)
+                    target_speed = target_speeds.get(normalized_phase_id)
+                    actual[normalized_phase_id] = {
+                        "closest_speed_kph": actual_speed,
+                        "target_speed_kph": target_speed,
+                    }
+                    passed = passed and actual_speed is not None and target_speed is not None and (
+                        abs(float(actual_speed) - float(target_speed)) <= float(tolerance_kph)
+                    )
+                add(key, passed, actual, dict(required))
             elif key == "maximum_route_deviation_m":
                 actual = float(evidence["max_route_deviation_m"])
                 add(key, actual <= float(required), actual, required)
@@ -837,7 +1123,23 @@ class ScenarioExtensionRuntime:
                         "danger_timestamp_s", "perception_timestamp_s",
                         "decision_timestamp_s", "safety_override_timestamp_s",
                         "control_effect_timestamp_s", "response_ms",
-                    ))
+                    )) and all(
+                        float(previous) <= float(current)
+                        for previous, current in zip(
+                            (
+                                event["danger_timestamp_s"],
+                                event["perception_timestamp_s"],
+                                event["decision_timestamp_s"],
+                                event["safety_override_timestamp_s"],
+                            ),
+                            (
+                                event["perception_timestamp_s"],
+                                event["decision_timestamp_s"],
+                                event["safety_override_timestamp_s"],
+                                event["control_effect_timestamp_s"],
+                            ),
+                        )
+                    )
                 }
                 add(
                     key,
@@ -975,7 +1277,16 @@ class ScenarioExtensionRuntime:
                     str(item).upper() for item in evidence["qwen_resolution_reasons"]
                 }
                 if key == "brake_before_qwen_ready":
-                    actual = first_brake is not None and (first_plan is None or first_brake <= first_plan)
+                    emergency_brake = evidence["first_brake_after_emergency_s"]
+                    emergency_plan = evidence["emergency_qwen_applied_s"]
+                    actual = (
+                        emergency_brake is not None
+                        and (
+                            emergency_plan is None
+                            or float(emergency_brake) <= float(emergency_plan)
+                            + TIME_COMPARISON_EPSILON_S
+                        )
+                    )
                 elif key == "disconnect_fail_closed":
                     actual = any("DISCONNECT" in item for item in resolution_reasons) and first_brake is not None
                 elif key == "emergency_command_preempts_normal_queue":

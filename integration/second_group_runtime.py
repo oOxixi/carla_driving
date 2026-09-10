@@ -57,6 +57,7 @@ class _PendingSlow:
     command_id: str
     source_text: str
     wait_command_id: str
+    grounded_target_ids: tuple[str, ...] = ()
 
 
 class CanonicalRuntimeBridge:
@@ -118,25 +119,21 @@ class CanonicalRuntimeBridge:
             )
 
         feedbacks = () if result.feedback is None else (result.feedback,)
-        if result.disposition == "FAST" and result.control_command is not None:
-            runtime_envelope = self._runtime_envelope(result.control_command, envelope)
-            adapted = self.vehicle_runtime.submit_voice(runtime_envelope, now_s=sim_time_s)
-            if not adapted.control_authorized:
-                local = self._feedback(
-                    canonical["command_id"], received, "REJECTED",
-                    "D runtime rejected canonical fast command", "D_RUNTIME_REJECTED",
-                )
-                feedbacks = feedbacks + (local,)
-            return CanonicalSubmission(
-                canonical, state, result, adapted, None, None, feedbacks,
-            )
-
-        wait_envelope = self._wait_stop_envelope(canonical)
+        wait_envelope = self._pending_safety_envelope(canonical)
         wait_adapted = self.vehicle_runtime.submit_voice(wait_envelope, now_s=sim_time_s)
         if result.disposition == "SLOW_PENDING":
+            grounded_target_ids = tuple(
+                str(item)
+                for item in (
+                    runtime_state.get("grounded_target_ids", ())
+                    if isinstance(runtime_state, Mapping) else ()
+                )
+                if item
+            )
             self._pending[canonical["command_id"]] = _PendingSlow(
                 canonical["command_id"], canonical["source_text"],
                 str(wait_envelope["command_id"]),
+                grounded_target_ids,
             )
         return CanonicalSubmission(
             canonical, state, result, None, wait_envelope, wait_adapted, feedbacks,
@@ -182,8 +179,12 @@ class CanonicalRuntimeBridge:
                 continue
 
             target_id = result.control_command["target"].get("target_id")
+            behavior = str(result.control_command.get("behavior", "")).upper()
             current_targets = {item["track_id"] for item in current_state["objects"]}
-            if target_id is not None and target_id not in current_targets:
+            if pending is not None:
+                current_targets.update(pending.grounded_target_ids)
+            target_required = behavior not in {"STOP", "HOLD", "EMERGENCY_STOP"}
+            if target_required and target_id is not None and target_id not in current_targets:
                 feedback = self._feedback(
                     result.command_id, captured, "REJECTED",
                     "Qwen target is absent from the latest perception frame",
@@ -329,12 +330,17 @@ class CanonicalRuntimeBridge:
         return envelope
 
     @staticmethod
-    def _wait_stop_envelope(command: Mapping[str, Any]) -> dict[str, Any]:
+    def _pending_safety_envelope(command: Mapping[str, Any]) -> dict[str, Any]:
+        # Qwen still interprets and audits the emergency instruction.  This
+        # envelope belongs to the independent D-layer pending safety action:
+        # an explicit emergency command must apply full brake immediately,
+        # while all other model requests use an ordinary fail-closed stop.
+        emergency = str(command.get("intent", "")).upper() == "EMERGENCY_STOP"
         return {
             "schema_version": "1.0",
             "command_id": f"qwen-wait-{uuid4().hex}",
             "source_text": f"Qwen 安全等待: {command['source_text']}",
-            "intent": "STOP",
+            "intent": "EMERGENCY_STOP" if emergency else "STOP",
             "parameters": {},
             "confidence": 1.0,
             "intent_confidence": 1.0,

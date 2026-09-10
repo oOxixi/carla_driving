@@ -7,12 +7,13 @@
     "lateral_B": "B横向控制专项：直道、偏移、缓弯、左右转、变道。",
     "safety_D": "D安全仲裁专项：红灯、行人、前车、路线偏差、非法控制、低TTC。",
     "regression": "综合回归：基础/进阶/挑战混合，多seed、多天气、多命令。",
-    "qwen_routing": "Qwen 调用策略：FAST_LOCAL、QWEN_PLAN、CONFIRM_SAFE。",
+    "qwen_routing": "所有语音均调用 Qwen；歧义或危险输入只允许生成安全保持计划。",
     "qwen_fullchain": "复杂指令到 ManeuverPlan、车辆动作和终态的正常闭环。",
     "qwen_faults": "模型超时、非法输出与执行中安全抢占。",
-    "acceptance_suite": "东风赛道高质量验收套件 v2：83 个计分场景，不含 60 分钟长稳场景。"
-    ,"official_competition": "比赛文件要求的三类正式长里程场景：基础操控5km、复杂避障8km、极限应急6km。"
-    ,"generalization": "成员2固定泛化样本：8类核心模板各1个同地图Variant和1个跨地图Unseen。"
+    "acceptance_suite": "东风赛道高质量验收套件 v2：83 个计分场景，不含 60 分钟长稳场景。",
+    "official_competition": "比赛文件要求的三类正式长里程场景：基础操控5km、复杂避障8km、极限应急6km。",
+    "development": "正式长里程场景的短程定向回归：只复现特定事件，用于快速调试且不参与正式评分。",
+    "generalization": "成员2固定泛化样本：8 个同地图 Variant 与 8 个跨地图 Unseen，可由固定 seed 复现。"
   },
   "official_level_mapping": {
     "basic": "基础场景：直道、控速、停车、保持车道、普通转向。",
@@ -42,7 +43,7 @@
     "regression/REG_013_multi_vehicle_brake.json",
     "regression/REG_014_occluded_pedestrian_crossing.json",
     "regression/REG_015_construction_bicycle_lead.json"
-    ,"qwen_routing/QWR_01_fast_speed_no_qwen.json"
+    ,"qwen_routing/QWR_01_speed_through_qwen.json"
     ,"qwen_routing/QWR_05_turn_requires_qwen.json"
     ,"qwen_routing/QWR_07_visual_avoid_return.json"
     ,"qwen_routing/QWR_09_ambiguous_white_vehicle.json"
@@ -73,7 +74,8 @@
     "qwen_faults": 3,
     "acceptance_suite": 83,
     "official_competition": 3,
+    "development": 7,
     "generalization": 16,
-    "total": 148
+    "total": 155
   }
 }

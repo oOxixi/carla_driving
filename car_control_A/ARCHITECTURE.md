@@ -2,17 +2,17 @@
 
 ## 1. 职责与边界
 
-成员 A 是运行时的唯一编排方：维护同步 CARLA 世界和 Actor 生命周期、将语音组的识别文本转为受限命令、维护命令终态和高层行为状态、记录延迟，并向 C、B、D 提供稳定的协议边界。
+成员 A 是运行时的唯一编排方：维护同步 CARLA 世界和 Actor 生命周期、将每条有效语音指令提交给 Qwen、校验并编译模型高层计划、维护命令终态和高层行为状态、记录延迟，并向 C、B、D 提供稳定的协议边界。
 
 不属于 A 的工作：RGB/LiDAR 感知与场景理解、复杂语句的多模态决策模型、横向控制算法（B）、最终安全仲裁/官方评分（D）、CARLA 服务或地图的安装和启动。`CARLA_ROOT` 与 CARLA 服务均由使用者手工启动和管理；本目录不会启动、停止或加载地图。
 
 ## 2. 目录与模块图
 
 ```text
-语音 ASR 文本
-  -> command_adapter.CommandAdapter
-     ├─ FAST_PATH -> contracts.DrivingCommand -> behavior_fsm.BehaviorFSM
-     └─ NEEDS_DECISION -> DecisionProvider.submit(异步多模态模块)
+语音 ASR 文本 -> B1/B2 仅生成提示与槽位
+  -> runtime.PipelineOrchestrator -> Qwen（所有有效语音）
+  -> Schema/安全约束校验 -> PlanCompiler -> behavior_fsm.BehaviorFSM
+  -> Qwen 等待期间：D 层安全保持；紧急指令立即全制动
 
 CARLA World -> simulator.CarlaSession/SynchronousWorld -> tick(frame)
   -> SensorFrameBuffer(RGB/LiDAR 同帧数据) -> 感知/决策（外部）
@@ -28,7 +28,6 @@ watchdog.RuntimeWatchdog -> 故障时 ControlOutput(0, 1, 0)
 |---|---|
 |`contracts.py`|版本化、严格 JSON 的 A/C 共享数据契约|
 |`simulator.py`|同步 World、Actor 反序清理、RGB/LiDAR 帧对齐、Ego/Sensor 生成|
-|`command_adapter.py`|基础中文命令快路径；复杂命令转异步决策请求|
 |`behavior_fsm.py`|命令唯一终态、确认、过期、超时、抢占和高层状态|
 |`routing.py`|路线参考和 B 的最小横向控制协议，不含横向算法|
 |`telemetry.py`|单调时间戳、分段/端到端延迟和 JSONL 写入|
@@ -62,8 +61,8 @@ conda run --no-capture-output -n carla python -m pytest car_control_A/tests/test
 
 ## 4. 核心执行流程与实现要点
 
-1. 上游以同一 `now_s`（仿真秒）调用 `CommandAdapter.adapt(text, command_id, now_s, confidence, expires_at_s)`。快路径仅支持“停车/停止/停下/请停车/请停止”、紧急刹车词，以及“设置到/速度… + km/h”的限速表达；未知组合动作绝不猜测，返回 `DecisionRequest` 交给实现 `DecisionProvider.submit()` 的异步模块。
-2. 将 `DrivingCommand` 交给 `BehaviorFSM.submit()`。低置信度（`<0.80`）、歧义或显式确认命令进入 `CONFIRMING`；通过 `confirm()` 后才执行。新命令会以 `FAILED: superseded by a newer command` 结束旧活跃命令。
+1. 上游语音识别和 B1/B2 只提供原始文本、意图提示与槽位，不具备控制授权。规范化后的每条有效或歧义语音均进入 `PipelineOrchestrator` 并生成一次 Qwen 请求；没有 Qwen 服务时拒绝并安全停车。
+2. Qwen 返回结果必须通过 Schema、目标绑定、速度/车道/红灯和低层字段边界校验，再由 `PlanCompiler` 转为 `DrivingCommand` 并交给 `BehaviorFSM.submit()`。等待模型期间由 D 层施加安全保持；明确的紧急停车指令立即使用全制动，但语义请求仍必须完成 Qwen 审计。
 3. 在 `with CarlaSession(world, ...) as session:` 内生成 Ego 并 `attach_sensor()`；**只允许**通过 `session.tick()` 触发世界时钟。传感器 callback 以 CARLA `measurement.frame` 放入 `SensorFrameBuffer`，再以 `pop_aligned(('rgb', 'lidar'), frame, timeout_s=...)` 获取同帧数据；超时必须按安全路径处理，不能混用邻帧。
 4. 由外部感知生成 `RuntimeVehicleState`、`TrafficConstraint`、前车观测，构造 `LongitudinalRequest` 给 C。路线仅封装为 `RouteReference`，B 实现 `LateralController.steer(reference)` 并返回 `[-1,1]` 转向；D 应在 C/B 输出合成为 `ControlOutput` 后进行最终仲裁。
 5. 在接收、FSM 接纳、纵向规划、控制下发等阶段调用 `LatencyTrace.mark()`，终态/关键指标以 `append_jsonl()` 追加。每帧调用 `BehaviorFSM.tick()` 处理过期/超时；完成时用 `complete()` 或失败时用 `fail()`，任一 `command_id` 只保留首次终态。
@@ -86,7 +85,6 @@ conda run --no-capture-output -n carla python -m pytest car_control_A/tests/test
 |`LongitudinalOutput`|`control`, `target_accel_mps2`, `target_speed_mps`, `state`, `reason`, `risk`|C 的纵向输出；加速度 m/s²|
 |`ExecutionFeedback`|`command_id`, `status`, `completed_at_s`, `detail`|每条命令的唯一终态记录|
 |`ExecutionStatus`|`SUCCEEDED/FAILED/REJECTED/EXPIRED/TIMED_OUT`|仅有这五种终态；重复完成返回首个结果|
-|`CommandAdapter.adapt`|见第 4 节|返回 `AdaptedCommand(FAST_PATH, command=...)` 或 `NEEDS_DECISION, decision_request=...`，两者恰有一个|
 |`BehaviorFSM`|`submit/confirm/complete/fail/tick`|状态包括 `IDLE`、`LANE_FOLLOW`、`APPROACH_STOP`、`STOPPED`、`FOLLOWING`、`YIELDING`、`CONFIRMING`、`EMERGENCY_BRAKE`、`RECOVERING`|
 |`SynchronousWorld` / `CarlaSession`|上下文管理器、`tick()`、`spawn_ego()`、`attach_sensor()`|同步生命周期唯一入口；勿直接在会话外 `world.tick()`|
 |`RouteReference` / `LateralController`|`points_xy_m`, `curvature_per_m`, `target_speed_mps`；`steer(reference)`|A→B 接口；B 只能回传转向，不接管油门/刹车|
@@ -100,14 +98,14 @@ conda run --no-capture-output -n carla python -m pytest car_control_A/tests/test
 
 ## 7. 测试覆盖、边界与交接
 
-`car_control_A/tests` 已覆盖：严格版本化 JSON、命令元数据和中文快路径、确认/拒绝/过期/超时/抢占/终态唯一性、路线协议、传感器乱序/容量/超时/线程等待、World/TM 恢复、Actor 清理、watchdog、JSONL 延迟；`test_ac_integration.py` 用固定 B 转向桩与透传 D 安全桩验证“ASR→FSM→C→B/D→控制”链路。
+`car_control_A/tests` 已覆盖：严格版本化 JSON、确认/拒绝/过期/超时/抢占/终态唯一性、路线协议、传感器乱序/容量/超时/线程等待、World/TM 恢复、Actor 清理、watchdog 和 JSONL 延迟；Qwen 路由、计划边界及 CARLA 闭环由 `runtime/tests` 与 `integration/tests` 覆盖。
 
 已知边界：A 未实现复杂语音的 VLM、实际 RGB/LiDAR 检测、路线规划器、横向控制、D 的最终安全裁决或官方 ScenarioRunner 评分。`RouteReference` 当前仅是数据边界，路线点和曲率必须由接手方接入规划/感知结果。
 
 - **交给 B：** 实现 `LateralController.steer(RouteReference) -> float`，自行验证输出在 `[-1,1]`；不得修改 C 的纵向目标。
 - **交给 C：** 使用 `LongitudinalRequest`/`LongitudinalOutput`；共享契约的字段、JSON 版本和 SI 单位不得私改。
 - **交给 D：** 提供 `arbitrate(ControlOutput) -> ControlOutput` 之类的最终覆盖层；读取 `RiskMetrics` 与 A 的 watchdog 结果，D 是最终安全责任方。
-- **交给感知/决策负责人：** 为每个 `session.tick()` 产生同帧车况、交通/前车约束；复杂命令必须消费 `DecisionRequest` 并返回受约束高层动作，不能绕开 FSM。
+- **交给感知/决策负责人：** 为每个 `session.tick()` 产生同帧车况、交通/前车约束；所有语音命令必须产生 Qwen 请求并返回受约束高层动作，不能绕开模型、计划校验或 FSM。
 
 ## 8. 常见故障定位
 

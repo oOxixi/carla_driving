@@ -55,7 +55,7 @@
     {
       "time_s": 0,
       "source_text": "持续跟随正前方车辆并保持安全距离",
-      "intent": "KEEP_LANE",
+      "intent": "FOLLOW",
       "parameters": {
         "target_speed_kph": 22
       },

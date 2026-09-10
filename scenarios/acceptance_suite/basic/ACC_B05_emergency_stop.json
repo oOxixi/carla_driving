@@ -137,12 +137,14 @@
     },
     "oracle": {
       "expected_behaviors": [
-        "SET_SPEED"
+        "SET_SPEED",
+        "STOP"
       ]
     },
     "faults": [],
     "proposed_acceptance": {
-      "qwen_command_count": 1
+      "qwen_command_count": 2,
+      "qwen_missing_request_count": 0
     },
     "runtime_support": {
       "status": "current",

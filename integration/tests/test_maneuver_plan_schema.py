@@ -97,6 +97,12 @@ def test_invented_target_speeding_and_missing_lane_context_are_rejected():
     }
     with pytest.raises(PlanValidationError, match="TARGET_NOT_FOUND"):
         PlanValidator().validate(target, scene=_scene(), now_ns=2_000_000_000)
+    grounded = copy.deepcopy(target)
+    PlanValidator().validate(
+        grounded,
+        scene=_scene(grounded_target_ids=["invented"]),
+        now_ns=2_000_000_000,
+    )
     speeding = _plan()
     speeding["steps"][0]["target"]["target_speed_mps"] = 20.0
     with pytest.raises(PlanValidationError, match="SPEED_LIMIT_EXCEEDED"):

@@ -61,7 +61,11 @@ def test_unified_evidence_is_auditable_and_scored(tmp_path):
     frame = records[2]
     assert frame["raw_control"]["brake"] == 0.4
     assert frame["final_control"]["brake"] == 1.0
-    assert frame["safety"] == {"override": True, "reason": "STOP_LINE_GUARD"}
+    assert frame["safety"] == {
+        "override": True,
+        "reason": "STOP_LINE_GUARD",
+        "reason_category": "NONE",
+    }
     assert frame["c_safety_state"]["fusion_mode"] == "RGB_LIDAR"
     assert frame["latency"]["decision_ms"] == pytest.approx(0.00001)
     assert frame["latency"]["simulator_tick_ms"] == pytest.approx(0.00001)
@@ -158,6 +162,31 @@ def test_expected_lane_change_crossing_is_audited_without_false_violation(tmp_pa
         safety_override=False,
         timing=_timing(100),
         lane_marking_crossing_expected=True,
+    )
+
+    summary = recorder.complete(
+        completion=True,
+        expected={"must_no_lane_invasion": True},
+    )
+
+    assert summary["lane_marking_crossing_count"] == 1
+    assert summary["lane_invasion_count"] == 0
+    assert summary["acceptance"]["passed"] is True
+
+
+def test_map_lane_crossing_inside_planned_route_is_not_an_invasion(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "planned-route-crossing.jsonl")
+    recorder.start_run(scenario_id="OFFICIAL_S1")
+    recorder.record_frame(
+        vehicle=_vehicle(1, 6.0),
+        scene=PerceptionFrame(
+            1, 0.05, lane_invasion=True, route_deviation_m=0.2,
+        ),
+        raw_control=ControlOutput(0.1, 0.0, 0.1),
+        final_control=ControlOutput(0.1, 0.0, 0.1),
+        safety_reason="NONE",
+        safety_override=False,
+        timing=_timing(100),
     )
 
     summary = recorder.complete(
@@ -349,6 +378,51 @@ def test_qwen_request_and_result_are_recorded_without_credentials(tmp_path):
     assert "api_key" not in path.read_text(encoding="utf-8").lower()
 
 
+def test_route_recovery_lifecycle_is_persisted_and_scored(tmp_path):
+    path = tmp_path / "route-recovery.jsonl"
+    recorder = ScenarioEvidenceRecorder(path)
+    recorder.start_run(scenario_id="ROUTE_RECOVERY")
+    recorder.record_route_recovery_event(
+        event_type="route_recovery_state",
+        payload={"frame": 1, "status": "OFF_ROUTE_CONFIRMING", "attempt": 0},
+    )
+    recorder.record_route_recovery_event(
+        event_type="route_recovery_state",
+        payload={"frame": 2, "status": "REPLANNING", "attempt": 1},
+    )
+    recorder.record_route_recovery_event(
+        event_type="route_replanned",
+        payload={"frame": 2, "attempt": 1, "new_route_id": "route-2"},
+    )
+    recorder.record_route_recovery_event(
+        event_type="route_recovery_state",
+        payload={"frame": 3, "status": "ON_ROUTE", "attempt": 1},
+    )
+    summary = recorder.complete(
+        completion=True,
+        expected={
+            "must_replan_route": True,
+            "must_recover_route": True,
+            "max_route_replan_attempts": 2,
+        },
+    )
+
+    assert summary["acceptance"]["passed"] is True
+    assert summary["route_recovery"] == {
+        "states": ["OFF_ROUTE_CONFIRMING", "REPLANNING", "REPLANNED", "ON_ROUTE"],
+        "replan_count": 1,
+        "replan_failure_count": 0,
+        "max_attempt": 1,
+        "recovered": True,
+    }
+    record_types = [
+        json.loads(line)["record_type"]
+        for line in path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert record_types.count("route_recovery_state") == 3
+    assert record_types.count("route_replanned") == 1
+
+
 def test_feedback_safety_event_is_included_in_acceptance_reasons(tmp_path):
     recorder = ScenarioEvidenceRecorder(tmp_path / "safety-feedback.jsonl")
     recorder.start_run(scenario_id="ACC_C03")
@@ -419,13 +493,13 @@ def test_carla_left_handed_pose_metrics_use_scenario_left_positive_convention(
         expected={
             "final_lateral_shift_m": expected_shift,
             "turn_direction": expected_turn,
-            "max_lane_center_offset_m": 2.0,
+            "mean_lane_center_offset_m": 2.0,
         },
     )
     metrics = {item["key"]: item for item in summary["acceptance"]["checks"]}
     assert metrics["final_lateral_shift_m"]["status"] == "PASS"
     assert metrics["turn_direction"]["status"] == "PASS"
-    assert metrics["max_lane_center_offset_m"]["actual"] == pytest.approx(abs(end_y) / 2.0)
+    assert metrics["mean_lane_center_offset_m"]["actual"] == pytest.approx(abs(end_y) / 2.0)
 
 
 def test_commanded_full_brake_is_emergency_evidence_without_safety_override(tmp_path) -> None:

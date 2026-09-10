@@ -22,6 +22,23 @@ def test_timeout_fault_delays_before_calling_real_client():
     assert events == [("sleep", 6.0), ("infer", "request-1")]
 
 
+def test_stale_response_fault_outlives_current_request_deadline():
+    sleeps = []
+    injector = ScenarioQwenFaultInjector(
+        lambda _request: {"ok": True},
+        {"type": "QWEN_RESPONSE_DELAY", "delay_ms": 350},
+        sleeper=sleeps.append,
+    )
+
+    injector({
+        "request_id": "request-1",
+        "created_at_ns": 1_000_000_000,
+        "deadline_ns": 6_000_000_000,
+    })
+
+    assert sleeps == [pytest.approx(5.05)]
+
+
 def test_low_level_fault_corrupts_copy_at_runtime_boundary():
     original = {"schema_version": "2.0", "steps": [{"behavior": "TURN_RIGHT"}]}
     injector = ScenarioQwenFaultInjector(

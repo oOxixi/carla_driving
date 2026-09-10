@@ -77,6 +77,7 @@ def test_lane_change_waits_for_gap_and_times_out_to_safe_stop():
     timeout = fsm.update(_snapshot(left_gap_safe=False), now_s=1.1)
     assert timeout.state == "FAILED"
     assert timeout.safe_behavior == "STOP"
+    assert timeout.events[-1].reason_code == "LANE_GAP_UNSAFE"
 
 
 def test_speed_completion_accepts_closed_loop_ripple_near_30_kph():
@@ -167,6 +168,158 @@ def test_pass_target_can_start_after_a_previously_seen_target_leaves_view():
     assert terminal.state == "SUCCEEDED"
 
 
+def test_yield_emergency_resets_clear_window_without_failing_plan():
+    yielding = _step(
+        behavior="YIELD",
+        preconditions=("PERCEPTION_FRESH",),
+        completion={
+            "type": "HOLD_FRAMES", "value": None,
+            "lane": None, "hold_frames": 2,
+        },
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(yielding), now_s=0.0)
+
+    assert not fsm.update(_snapshot(
+        hold_condition=True,
+    ), now_s=0.1).terminal
+    emergency = fsm.update(_snapshot(emergency=True), now_s=0.15)
+    assert not emergency.terminal
+    assert emergency.safe_behavior == "EMERGENCY_STOP"
+    assert not fsm.update(_snapshot(hold_condition=True), now_s=0.2).terminal
+    terminal = fsm.update(_snapshot(
+        hold_condition=True,
+    ), now_s=0.25)
+    assert terminal.state == "SUCCEEDED"
+
+
+def test_safe_gap_gate_is_inherited_by_its_immediate_lane_change() -> None:
+    gap = _step(
+        step_id="avoid.gap",
+        behavior="WAIT_SAFE_GAP",
+        preconditions=("PERCEPTION_FRESH", "RIGHT_LANE_EXISTS", "RIGHT_GAP_SAFE"),
+        completion={
+            "type": "HOLD_FRAMES", "value": None,
+            "lane": "RIGHT_ADJACENT", "hold_frames": 1,
+        },
+    )
+    gap = CompiledPlanStep(
+        **{
+            **gap.to_dict(),
+            "source_step_id": "avoid",
+            "preconditions": tuple(gap.preconditions),
+        }
+    )
+    lane = _step(
+        step_id="avoid.lane",
+        behavior="CHANGE_LANE_RIGHT",
+        preconditions=("PERCEPTION_FRESH", "RIGHT_LANE_EXISTS", "RIGHT_GAP_SAFE"),
+        completion={
+            "type": "LANE_CENTERED", "value": None,
+            "lane": "RIGHT_ADJACENT", "hold_frames": 1,
+        },
+    )
+    lane = CompiledPlanStep(
+        **{
+            **lane.to_dict(),
+            "source_step_id": "avoid",
+            "preconditions": tuple(lane.preconditions),
+        }
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(gap, lane), now_s=0.0)
+
+    started_lane = fsm.update(_snapshot(
+        right_lane_exists=True, right_gap_safe=True,
+        hold_condition=True, lane="CURRENT",
+    ), now_s=0.1)
+    assert started_lane.current_step is lane
+    terminal = fsm.update(_snapshot(
+        right_lane_exists=False, right_gap_safe=False,
+        lane="RIGHT_ADJACENT", lateral_error_m=0.0,
+    ), now_s=0.15)
+
+    assert terminal.state == "SUCCEEDED"
+
+
+def test_speed_below_completion_accepts_closed_loop_rounding_error():
+    slowing = _step(
+        behavior="SLOW_DOWN",
+        preconditions=("PERCEPTION_FRESH",),
+        completion={
+            "type": "SPEED_BELOW", "value": 3.0,
+            "lane": None, "hold_frames": 1,
+        },
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(slowing), now_s=0.0)
+
+    terminal = fsm.update(_snapshot(speed_mps=3.04), now_s=0.1)
+
+    assert terminal.state == "SUCCEEDED"
+
+
+def test_conditional_slow_down_survives_emergency_and_restarts_clear_window():
+    slowing = _step(
+        behavior="SLOW_DOWN",
+        preconditions=("PERCEPTION_FRESH",),
+        completion={
+            "type": "SPEED_BELOW", "value": 8.33,
+            "lane": None, "hold_frames": 2,
+        },
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(slowing), now_s=0.0)
+
+    assert not fsm.update(_snapshot(speed_mps=8.0), now_s=0.1).terminal
+    emergency = fsm.update(_snapshot(
+        speed_mps=0.0, emergency=True,
+    ), now_s=0.15)
+    assert not emergency.terminal
+    assert emergency.safe_behavior == "EMERGENCY_STOP"
+    assert not fsm.update(_snapshot(speed_mps=8.0), now_s=0.2).terminal
+    terminal = fsm.update(_snapshot(speed_mps=8.0), now_s=0.25)
+    assert terminal.state == "SUCCEEDED"
+
+
+def test_conditional_slow_down_waits_for_speed_duration_and_target_clearance():
+    slowing = CompiledPlanStep(
+        step_id="slow-clear", source_step_id="slow-clear",
+        behavior="SLOW_DOWN",
+        target={"target_speed_mps": 8.33, "target_id": "bus_at_stop"},
+        preconditions=("PERCEPTION_FRESH",),
+        completion={
+            "type": "TARGET_PASSED", "value": 6.0,
+            "lane": None, "hold_frames": 3,
+        },
+        timeout_s=35.0, on_failure="SAFE_STOP",
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(slowing), now_s=0.0)
+
+    # Duration and reduced speed alone must never advance the plan while the
+    # named actor is still ahead.  Repeating this for the full hold window
+    # catches accidental replacement (rather than conjunction) of the
+    # TARGET_PASSED predicate.
+    for now_s in (6.0, 6.1, 6.2, 6.3):
+        assert not fsm.update(_snapshot(
+            speed_mps=8.0, target_passed=False,
+        ), now_s=now_s).terminal
+    assert not fsm.update(_snapshot(
+        speed_mps=9.1, target_passed=True,
+    ), now_s=6.4).terminal
+    assert not fsm.update(_snapshot(
+        speed_mps=8.0, target_passed=True,
+    ), now_s=6.5).terminal
+    assert not fsm.update(_snapshot(
+        speed_mps=8.0, target_passed=True,
+    ), now_s=6.55).terminal
+    terminal = fsm.update(_snapshot(
+        speed_mps=8.0, target_passed=True,
+    ), now_s=6.6)
+    assert terminal.state == "SUCCEEDED"
+
+
 def test_emergency_preempts_plan_once():
     fsm = ManeuverFSM()
     fsm.start(_plan(), now_s=0.0)
@@ -176,6 +329,30 @@ def test_emergency_preempts_plan_once():
     assert len(first.events) == 1
     second = fsm.update(_snapshot(emergency=True), now_s=0.2)
     assert second.events == ()
+
+
+def test_red_light_pauses_plan_and_resumes_without_consuming_timeout():
+    keep_lane = _step(
+        behavior="KEEP_LANE",
+        completion={
+            "type": "HOLD_FRAMES", "value": None,
+            "lane": None, "hold_frames": 2,
+        },
+        timeout_s=1.0,
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(keep_lane), now_s=0.0)
+
+    waiting = fsm.update(_snapshot(
+        emergency=True, emergency_reason="RED_LIGHT_STOP_LINE_GUARD",
+    ), now_s=10.0)
+    assert waiting.state == "WAIT_TRAFFIC_SIGNAL"
+    assert waiting.safe_behavior == "STOP"
+    assert waiting.terminal is False
+
+    assert fsm.update(_snapshot(), now_s=10.1).terminal is False
+    resumed = fsm.update(_snapshot(), now_s=10.2)
+    assert resumed.state == "SUCCEEDED"
 
 
 def test_replan_cooldown_and_limit_prevent_call_storm():

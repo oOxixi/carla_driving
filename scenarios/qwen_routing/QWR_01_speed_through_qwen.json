@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
-  "scenario_id": "QWR_01_fast_speed_no_qwen",
+  "scenario_id": "QWR_01_speed_through_qwen",
   "category": "qwen_routing",
   "official_level": "basic",
-  "description": "清晰定速命令必须走本地快路径，不调用 Qwen。",
+  "description": "清晰定速命令也必须进入 Qwen，并由严格计划边界执行。",
   "map": "Town03",
   "weather": "ClearNoon",
   "seed": 4101,
@@ -12,6 +12,6 @@
   "route": {"coordinate_type": "scenario_local_xy_m", "points_xy_m": [[0, 0], [30, 0], [70, 0]], "resample_interval_m": 1.0, "finish_radius_m": 3.0},
   "commands": [{"time_s": 0, "source_text": "保持20公里每小时", "intent": "SET_SPEED", "parameters": {"target_speed_kph": 20}, "intent_confidence": 0.98, "status": "valid", "confirm_required": false}],
   "actors": [],
-  "qwen_expected": {"route": "FAST_LOCAL", "min_calls": 0, "max_calls": 0, "expected_behaviors": ["SET_SPEED"], "expected_terminal": "SUCCEEDED", "allowed_replans": 0, "forbidden_low_level_fields": true},
+  "qwen_expected": {"route": "QWEN_PLAN", "min_calls": 1, "max_calls": 1, "expected_behaviors": ["SET_SPEED"], "expected_terminal": "SUCCEEDED", "allowed_replans": 0, "forbidden_low_level_fields": true},
   "expected": {"must_no_collision": true, "must_no_route_deviation": true}
 }

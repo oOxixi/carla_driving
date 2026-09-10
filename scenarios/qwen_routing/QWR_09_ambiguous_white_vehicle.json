@@ -3,7 +3,7 @@
   "scenario_id": "QWR_09_ambiguous_white_vehicle",
   "category": "qwen_routing",
   "official_level": "challenge",
-  "description": "两个相似候选目标时必须安全确认，不允许 Qwen 猜测。",
+  "description": "两个相似候选目标时仍审计调用 Qwen，但只允许安全保持，不允许模型猜测目标。",
   "map": "Town03",
   "weather": "ClearNoon",
   "seed": 4109,
@@ -15,6 +15,6 @@
     {"actor_id": "white-left", "type": "vehicle", "blueprint_id": "vehicle.tesla.model3", "spawn": {"x": 18, "y": 3.5, "z": 0.5, "yaw_deg": 0}, "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 2, "target_speed_mps": 2}},
     {"actor_id": "white-right", "type": "vehicle", "blueprint_id": "vehicle.tesla.model3", "spawn": {"x": 18, "y": -3.5, "z": 0.5, "yaw_deg": 0}, "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 2, "target_speed_mps": 2}}
   ],
-  "qwen_expected": {"route": "CONFIRM_SAFE", "min_calls": 0, "max_calls": 0, "expected_behaviors": [], "expected_terminal": "REJECTED", "allowed_replans": 0, "forbidden_low_level_fields": true},
+  "qwen_expected": {"route": "QWEN_PLAN", "min_calls": 1, "max_calls": 1, "expected_behaviors": ["HOLD"], "expected_terminal": "SUCCEEDED", "allowed_replans": 0, "forbidden_low_level_fields": true},
   "expected": {"must_no_collision": true}
 }

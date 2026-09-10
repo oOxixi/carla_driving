@@ -31,6 +31,20 @@ def test_voice_complex_intent_becomes_canonical_deadline_request() -> None:
     assert command["requires_confirmation"] is True
 
 
+def test_direct_follow_intent_remains_follow_at_canonical_boundary() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "follow-direct",
+        "source_text": "跟随正前方车辆",
+        "intent": "FOLLOW",
+        "parameters": {"speed": 18, "unit": "km/h"},
+        "confidence": 0.95,
+        "valid_duration_s": 30.0,
+    }, received_at_ns=100)
+
+    assert command["intent"] == "FOLLOW"
+    assert command["parameters"]["target_speed_mps"] == pytest.approx(5.0)
+
+
 def test_directional_lane_change_keeps_declared_intent_and_direction() -> None:
     command = voice_envelope_to_driving_command({
         "command_id": "lane-left",
@@ -62,6 +76,33 @@ def test_scenario_target_actor_alias_is_preserved_for_qwen_binding() -> None:
     assert command["intent"] == "AVOID_OBSTACLE"
     assert command["parameters"]["target_id"] == "bicycle_right"
     assert command["parameters"]["direction"] == "LEFT"
+
+
+def test_pedestrian_yield_remains_a_yield_at_the_canonical_boundary() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "yield-pedestrian",
+        "source_text": "前方行人横穿，减速让行，安全后继续",
+        "intent": "YIELD",
+        "parameters": {"target_actor_id": "crossing_pedestrian"},
+        "confidence": 0.98,
+        "valid_duration_s": 60.0,
+    }, received_at_ns=100)
+
+    assert command["intent"] == "YIELD"
+    assert command["parameters"]["target_id"] == "crossing_pedestrian"
+
+
+def test_hold_voice_intent_maps_to_canonical_stop() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "hold-1",
+        "source_text": "目标看不清时先保持安全",
+        "intent": "HOLD",
+        "parameters": {},
+        "intent_confidence": 0.95,
+        "valid_duration_s": 3.0,
+    }, received_at_ns=1000)
+
+    assert command["intent"] == "STOP"
 
 
 def test_legacy_perception_becomes_schema_valid_state_with_explicit_missing_radar() -> None:
@@ -118,6 +159,39 @@ def test_qwen_follow_plan_maps_to_existing_deterministic_longitudinal_runtime() 
     }, source_text="跟随前车")
     assert envelope["intent"] == "SLOW_DOWN"
     assert envelope["parameters"] == {"speed": 3.0, "unit": "m/s"}
+
+
+def test_compiled_qwen_yield_maps_to_bounded_longitudinal_slow_down() -> None:
+    envelope = control_command_to_voice_envelope({
+        "command_id": "yield-pedestrian",
+        "path_type": "SLOW",
+        "source": "QWEN_DECISION_PLAN",
+        "behavior": "YIELD",
+        "target": {"target_speed_mps": 30.0 / 3.6},
+        "confidence": 0.95,
+        "reason_code": "PEDESTRIAN_CROSSING",
+        "issued_at_ns": 100,
+        "deadline_ns": 10_000_000_100,
+    }, source_text="前方行人横穿，减速让行")
+
+    assert envelope["intent"] == "SLOW_DOWN"
+    assert envelope["parameters"] == {
+        "speed": pytest.approx(30.0 / 3.6),
+        "unit": "m/s",
+    }
+
+
+def test_uncompiled_yield_still_fails_closed() -> None:
+    with pytest.raises(ValueError, match="cannot execute"):
+        control_command_to_voice_envelope({
+            "command_id": "yield-unvalidated",
+            "behavior": "YIELD",
+            "target": {"target_speed_mps": 3.0},
+            "confidence": 0.95,
+            "reason_code": "MODEL",
+            "issued_at_ns": 100,
+            "deadline_ns": 1_000_000_100,
+        }, source_text="让行")
 
 
 def test_unsupported_slow_manoeuvre_fails_closed_instead_of_inventing_steer() -> None:

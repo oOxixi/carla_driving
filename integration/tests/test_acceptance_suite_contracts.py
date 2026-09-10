@@ -37,6 +37,16 @@ def test_acceptance_suite_has_exactly_83_loadable_scenarios() -> None:
     assert max(ScenarioSpec.load(path).duration_s for path in files) < 3600
 
 
+def test_following_voice_text_uses_follow_intent() -> None:
+    mismatches = []
+    for path in _scenario_files():
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for index, command in enumerate(data["commands"]):
+            if "跟随" in str(command.get("source_text", "")) and command.get("intent") != "FOLLOW":
+                mismatches.append(f"{path.name}:commands[{index}]")
+    assert mismatches == []
+
+
 def test_acceptance_matrix_matches_files_and_required_counts() -> None:
     matrix = json.loads((SUITE_ROOT / "matrix.json").read_text(encoding="utf-8"))
     entries = matrix["scenarios"]
@@ -148,13 +158,15 @@ def test_var_b04_oracle_allows_safe_slowdown_before_stop() -> None:
     assert {"KEEP_LANE", "SLOW_DOWN", "STOP"}.issubset(allowed)
 
 
-def test_var_b05_oracle_excludes_local_fast_emergency_stop() -> None:
+def test_var_b05_oracle_audits_emergency_stop_through_qwen() -> None:
     scenario = json.loads(
         (SUITE_ROOT / "variants" / "VAR_B05_emergency_stop_25kph.json")
         .read_text(encoding="utf-8")
     )
 
-    assert scenario["extensions"]["oracle"]["expected_behaviors"] == ["SET_SPEED"]
+    assert scenario["extensions"]["oracle"]["expected_behaviors"] == [
+        "SET_SPEED", "STOP",
+    ]
 
 
 def test_var_a02_accepts_proactive_stop_before_emergency_is_needed() -> None:
@@ -382,8 +394,8 @@ def test_sys05_keeps_emergency_stop_off_qwen_queue() -> None:
 
     assert scenario["commands"][-1]["intent"] == "EMERGENCY_STOP"
     proposed = scenario["extensions"]["proposed_acceptance"]
-    assert proposed["qwen_request_count"] == len(scenario["commands"]) - 1
-    assert proposed["qwen_missing_request_count"] == 1
+    assert proposed["qwen_request_count"] == len(scenario["commands"])
+    assert proposed["qwen_missing_request_count"] == 0
     assert proposed["emergency_command_preempts_normal_queue"] is True
 
 

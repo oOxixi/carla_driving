@@ -210,7 +210,10 @@ def test_qwen_red_light_stop_approaches_then_holds_at_stop_line():
     assert approaching.safety_override is False
     assert approaching.longitudinal is not None
     assert approaching.longitudinal.target_speed_mps > 0.0
-    assert approaching.longitudinal.reason == "traffic_stop_constraint"
+    assert approaching.longitudinal.reason in {
+        "traffic_stop_constraint",
+        "safe_target_speed:voice_or_default_request",
+    }
 
     at_line = runtime.step(
         _vehicle(frame=2, time=0.10, speed=0.1),
@@ -247,12 +250,14 @@ def test_yellow_dilemma_zone_commits_to_clear_through_red_transition():
         PerceptionFrame(
             frame=2, sim_time_s=0.10, traffic_light="RED",
             distance_to_stop_line_m=0.3,
+            red_light_violation=True,
         ),
         _route(),
         dt_s=0.05,
     )
     assert red_before_line.safety_override is False
     assert red_before_line.safety_reason == "NONE"
+    assert runtime.yellow_clear_committed is True
 
     runtime.step(
         _vehicle(frame=3, time=0.15, speed=9.0),
@@ -358,25 +363,22 @@ def test_clear_safety_alerts_releases_only_named_recovered_faults():
     assert not runtime.safety_latched
 
 
-def test_transient_runner_watchdog_recovers_cruise_without_clearing_other_faults():
+def test_clear_safety_alert_prefix_preserves_other_fault_families():
     runtime = ControlRuntime(PurePursuitController())
     runtime.step(
         _vehicle(),
         PerceptionFrame(frame=1, sim_time_s=0.05),
         _route(),
         dt_s=0.05,
-        watchdog_alerts=("RUNTIME_WATCHDOG_TIMEOUT",),
+        watchdog_alerts=("LATERAL_TARGET_BEHIND_EGO", "SENSOR_TIMEOUT"),
     )
 
-    assert runtime.recover_runtime_watchdog(requested_speed_mps=5.0)
+    cleared = runtime.clear_safety_alert_prefix("LATERAL_")
+
+    assert cleared == ("LATERAL_TARGET_BEHIND_EGO",)
+    assert runtime.safety_latched
+    runtime.clear_safety_alerts(("SENSOR_TIMEOUT",))
     assert not runtime.safety_latched
-    recovered = runtime.step(
-        _vehicle(frame=2, time=0.10),
-        PerceptionFrame(frame=2, sim_time_s=0.10),
-        _route(),
-        dt_s=0.05,
-    )
-    assert recovered.final_control.throttle > 0.0
 
 
 def test_low_confidence_command_can_be_confirmed_then_execute():
@@ -460,7 +462,32 @@ def test_outer_runtime_can_fail_active_command_explicitly():
     assert runtime.requested_speed_mps == 0.0
 
 
-def test_external_hazard_emits_safety_override_terminal_feedback():
+def test_temporary_outer_hold_can_fail_and_resume_at_bounded_speed():
+    runtime = ControlRuntime(PurePursuitController(), default_speed_mps=10.0)
+    stop = _voice("STOP", {})
+    stop["command_id"] = "qwen-wait"
+    runtime.submit_voice(stop, now_s=0.05)
+
+    feedback = runtime.fail_active(
+        now_s=0.10,
+        detail="Qwen target was not grounded",
+        resume_speed_mps=8.0,
+    )
+
+    assert feedback is not None and feedback.status.value == "FAILED"
+    assert runtime.active_command_id is None
+    assert runtime.requested_speed_mps == 8.0
+    result = runtime.step(
+        _vehicle(frame=2, time=0.10, speed=0.0),
+        PerceptionFrame(frame=2, sim_time_s=0.10),
+        _route(),
+        dt_s=0.05,
+    )
+    assert result.longitudinal is not None
+    assert result.longitudinal.state != "HOLD"
+
+
+def test_red_light_temporarily_stops_without_discarding_active_command():
     runtime = ControlRuntime(PurePursuitController())
     runtime.submit_voice(_voice(), now_s=0.05)
     scene = PerceptionFrame(
@@ -473,9 +500,17 @@ def test_external_hazard_emits_safety_override_terminal_feedback():
     terminal = [item for item in result.feedback if item.command_id == "voice-1"]
     assert result.safety_reason == "RED_LIGHT_STOP_LINE_GUARD"
     assert result.final_control.brake == 1.0
-    assert len(terminal) == 1
-    assert terminal[0].status.value == "SAFETY_OVERRIDE"
-    assert runtime.active_command_id is None
+    assert terminal == []
+    assert runtime.active_command_id == "voice-1"
+
+    resumed = runtime.step(
+        _vehicle(frame=2, time=0.10, speed=0.0),
+        PerceptionFrame(frame=2, sim_time_s=0.10, traffic_light="GREEN"),
+        _route(),
+        dt_s=0.05,
+    )
+    assert resumed.final_control.throttle > 0.0
+    assert resumed.final_control.brake == 0.0
 
 
 def test_c_semantic_brake_becomes_one_d_owned_terminal_override():

@@ -50,7 +50,7 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S3_P3_CUT_IN_EMERGENCY",
-      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 590.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "cut_in_vehicle", "value": 60.0}]}
+      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 590.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "cut_in_vehicle", "value": 32.0}, {"type": "sensor_actor_detected", "actor_id": "cut_in_vehicle"}]}
     },
     {
       "time_s": 0.0,
@@ -61,15 +61,14 @@
       "status": "valid",
       "confirm_required": false,
       "phase_id": "S3_P4_PEDESTRIAN_STOP_HOLD",
-      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 990.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "emergency_pedestrian", "value": 60.0}]}
+      "trigger": {"all": [{"type": "route_progress_greater_than_m", "value": 990.0}, {"type": "ego_distance_to_actor_less_than_m", "actor_id": "emergency_pedestrian", "value": 40.0}, {"type": "sensor_actor_detected", "actor_id": "emergency_pedestrian"}]}
     }
   ],
   "qwen_expected": {
-    "route": "MIXED",
-    "route_counts": {"QWEN_PLAN": 2, "FAST_LOCAL": 2, "CONFIRM_SAFE": 0},
-    "min_calls": 2,
-    "max_calls": 2,
-    "expected_behaviors": ["KEEP_LANE", "AVOID_OBSTACLE", "RETURN_TO_LANE", "EMERGENCY_STOP"],
+    "route": "QWEN_PLAN",
+    "min_calls": 4,
+    "max_calls": 4,
+    "expected_behaviors": ["KEEP_LANE", "AVOID_OBSTACLE", "RETURN_TO_LANE", "STOP"],
     "expected_terminal": "SUCCEEDED",
     "allowed_replans": 0,
     "forbidden_low_level_fields": true
@@ -86,10 +85,13 @@
       "type": "vehicle",
       "blueprint_id": "vehicle.audi.tt",
       "spawn": {"x": 650.0, "y": -3.5, "z": 0.5, "yaw_deg": 0.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 800.0},
       "behavior": {
         "mode": "cut_in",
         "initial_speed_mps": 0.0,
         "target_speed_mps": 0.0,
+        "post_cut_in_speed_mps": 13.9,
+        "post_cut_in_acceleration_mps2": 3.0,
         "cut_in_on_first_event": true,
         "cut_in_duration_s": 3.0,
         "cut_in_steer": 0.18,
@@ -106,10 +108,11 @@
     {
       "actor_id": "emergency_pedestrian",
       "type": "walker.pedestrian",
-      "spawn": {"x": 1050.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
+      "spawn": {"x": 1020.0, "y": 3.5, "z": 0.5, "yaw_deg": -90.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 1100.0},
       "behavior": {
         "mode": "crossing",
-        "target_xy_m": [1050.0, -6.0],
+        "target_xy_m": [1020.0, -7.0],
         "start_time_s": 0.0,
         "speed_mps": 2.4,
         "trigger": {"type": "route_progress_greater_than_m", "value": 990.0},
@@ -164,8 +167,7 @@
     "emergency_response_p95_max_ms": 100,
     "emergency_response_absolute_max_ms": 120,
     "semantic_alignment_min": 0.97,
-    "normal_voice_qwen_calls": 2,
-    "emergency_fast_local_calls": 2,
+    "voice_qwen_calls": 4,
     "required_events": ["construction_cones", "lane_narrowing", "vehicle_cut_in", "pedestrian_crossing"],
     "perception_failure_policy": "degraded_or_fail_safe_without_acceleration",
     "stop_hold_required": true
@@ -177,11 +179,10 @@
     "qwen_policy": {
       "required_for_every_voice_event": true,
       "safety_preemption": true,
-      "high_level_only": true,
-      "emergency_fast_local": true
+      "high_level_only": true
     },
     "oracle": {
-      "expected_behaviors": ["KEEP_LANE", "SLOW_DOWN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "EMERGENCY_STOP"]
+      "expected_behaviors": ["KEEP_LANE", "SLOW_DOWN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "STOP"]
     },
     "maneuver_route_mode": "dynamic_out_and_back",
     "lane_change_profile": {
@@ -191,7 +192,8 @@
       "transition_length_m": 20.0
     },
     "proposed_acceptance": {
-      "qwen_request_count": 2,
+      "qwen_request_count": 4,
+      "qwen_missing_request_count": 0,
       "all_commands_must_have_terminal_status": true,
       "expected_phase_count": 4,
       "all_phases_must_complete": true,
@@ -199,12 +201,13 @@
       "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "AVOID_OBSTACLE", "CHANGE_LANE_LEFT", "RETURN_TO_LANE", "STOP"],
       "required_emergency_event_ids": ["cut_in_vehicle", "emergency_pedestrian"],
       "required_emergency_recovery_ids": ["cut_in_vehicle", "emergency_pedestrian"],
+      "minimum_resumed_speed_kph_by_phase": {"S3_P3_CUT_IN_EMERGENCY": 32.0, "S3_P4_PEDESTRIAN_STOP_HOLD": 32.0},
       "emergency_response_p95_max_ms": 100,
       "emergency_response_absolute_max_ms": 120
     },
     "emergency_recovery": {
       "cut_in_vehicle": {"minimum_hold_s": 2.0, "minimum_clearance_m": 12.0, "resume_speed_kph": 45.0},
-      "emergency_pedestrian": {"minimum_hold_s": 6.0, "minimum_clearance_m": 8.0, "resume_speed_kph": 45.0}
+      "emergency_pedestrian": {"minimum_hold_s": 6.0, "clearance_mode": "sensor_path_clear", "minimum_path_clear_s": 0.5, "resume_speed_kph": 45.0}
     },
     "fixed_random_seed": true,
     "speed_policy": {"scenario_limit_kph": 50.0, "override_map_limit": true},
@@ -218,7 +221,7 @@
     "锥桶沿当前车道右侧逐步收窄，左侧相邻车道作为唯一正常并道路线上下文。",
     "加塞车停在左侧相邻车道，自车接近至32m后才启动确定性S形切入；正steer在CARLA中表示向右。",
     "正式成绩使用 --perception-mode sensors --scenario-facts-mode perception，并检查五个应急时间戳。",
-    "普通雨夜与施工语义指令进入Qwen Planner V2；加塞和行人EMERGENCY_STOP不等待模型，由本地安全链立即抢占并同时保留审计证据。",
+    "全部四条语音指令均进入Qwen Planner V2；加塞和行人EMERGENCY_STOP提交模型的同时由本地安全保持立即制动，不等待模型返回。",
     "四路严格同帧RGB按前/左、右/后布局拼接为Qwen视觉输入；低光时LiDAR/Radar距离、TTC与车辆状态继续作为硬安全约束。",
     "900秒运行预算按45km/h正常巡航覆盖6km，并为施工、加塞和停车保持预留时间。"
   ]

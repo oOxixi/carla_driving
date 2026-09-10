@@ -228,11 +228,20 @@ class OnnxYoloDetector:
 def driving_corridor_detections(
     detections: Iterable[DetectedObject],
     *,
-    center_min: float = 0.20,
-    center_max: float = 0.80,
+    center_min: float = 0.35,
+    center_max: float = 0.65,
     minimum_bottom: float = 0.30,
 ) -> tuple[DetectedObject, ...]:
-    """Select plausible ego-lane road users without pretending to segment lanes."""
+    """Select plausible ego-lane road users without pretending to segment lanes.
+
+    The front camera has a 100 degree horizontal field of view, so the former
+    20--80 percent gate covered adjacent lanes as well as the ego lane.  That
+    made a pedestrian who had completed a crossing remain a permanent visual
+    fail-closed obstacle even though LiDAR correctly reported an empty front
+    corridor.  The central 30 percent is the conservative ego-path region;
+    side detections remain in ``PerceptionFrame.detected_objects`` for Qwen and
+    audit, but no longer request longitudinal emergency braking by themselves.
+    """
     selected: list[DetectedObject] = []
     for detection in detections:
         x1, _y1, x2, y2 = detection.bbox_xyxy_norm

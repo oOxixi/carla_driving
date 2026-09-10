@@ -114,6 +114,10 @@ def audio_to_command(audio, t_audio_start_ns: int = None) -> dict:
     b1 = process_asr_text(request_id=cmd_id, text=a["text"], asr_confidence=a["asr_confidence"])
     b2 = parse_command(b1)
     t_end = time.monotonic_ns()
+    parsed_status = str(b2.get("status", "invalid"))
+    # NLU supplies a hint only. Any non-valid parse remains routable as an
+    # ambiguous request so Qwen can interpret the original text fail-closed.
+    command_status = "valid" if parsed_status == "valid" else "ambiguous"
 
     cmd = {
         "schema_version": "1.0",
@@ -123,9 +127,9 @@ def audio_to_command(audio, t_audio_start_ns: int = None) -> dict:
         "parameters": b2.get("slots", {}),
         "asr_confidence": a["asr_confidence"],
         "intent_confidence": b2.get("intent_confidence"),
-        "status": b2.get("status"),
-        "ambiguity_type": "NONE" if b2.get("status") == "valid" else "AMBIGUOUS",
-        "confirm_required": b2.get("status") != "valid",
+        "status": command_status,
+        "ambiguity_type": "NONE" if command_status == "valid" else parsed_status.upper(),
+        "confirm_required": command_status != "valid",
         "errors": b2.get("errors", []),
         "warnings": b2.get("warnings", []),
         # 单调纳秒时间戳（time.monotonic_ns），供车辆控制组算真实端到端延时
@@ -168,6 +172,12 @@ def audio_to_command(audio, t_audio_start_ns: int = None) -> dict:
             (time.monotonic_ns() - t0) / 1e6,
             1,
         )
+    final_status = str(cmd.get("status", "invalid"))
+    if final_status != "valid":
+        cmd["status"] = "ambiguous"
+        if str(cmd.get("ambiguity_type", "NONE")).upper() == "NONE":
+            cmd["ambiguity_type"] = final_status.upper()
+        cmd["confirm_required"] = True
     return cmd
 
 

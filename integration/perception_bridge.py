@@ -13,31 +13,47 @@ def longitudinal_request(vehicle: RuntimeVehicleState, scene: PerceptionFrame, *
     traffic = TrafficConstraint(SignalState(scene.traffic_light), scene.distance_to_stop_line_m, scene.speed_limit_mps)
     if scene.lead_distance_m is None and scene.lead_speed_mps is not None:
         raise ValueError("lead_speed_mps requires lead_distance_m")
-    # A fresh LiDAR track can provide range one frame before temporal speed is
-    # available.  Treat that short interval conservatively as a stationary
-    # lead instead of turning a valid sensor frame into a latched integration
-    # failure.
-    closing = (
-        None
-        if scene.lead_distance_m is None
-        else vehicle.speed_mps - (
-            0.0 if scene.lead_speed_mps is None else scene.lead_speed_mps
-        )
-    )
+    if scene.lead_distance_m is None:
+        closing = None
+    elif scene.lead_speed_mps is None:
+        # A frame can have a valid LiDAR range before aligned Radar or the
+        # temporal LiDAR tracker has established target velocity.  Preserve
+        # the safety-relevant range and conservatively assume the obstacle is
+        # stationary instead of turning an ordinary sensor warm-up gap into a
+        # latched integration failure.
+        closing = vehicle.speed_mps
+    else:
+        closing = vehicle.speed_mps - scene.lead_speed_mps
     return LongitudinalRequest(vehicle, requested_speed_mps, path_curvature_per_m, traffic,
                                scene.lead_distance_m, closing)
 
 
-def safety_vehicle_state(vehicle: RuntimeVehicleState, scene: PerceptionFrame) -> dict[str, object]:
+def safety_vehicle_state(vehicle: RuntimeVehicleState, scene: PerceptionFrame, *,
+                         road_curvature_per_m: float = 0.0,
+                         front_actor_type: str | None = None,
+                         sensor_margin_scale: float = 1.0) -> dict[str, object]:
     """D needs a numeric lane id, unlike A's arbitrary string identifier."""
     try:
         lane_id = int(vehicle.lane_id)
     except ValueError:
         lane_id = 0
+    if front_actor_type is None and scene.lead_distance_m is not None:
+        ranged_objects = [
+            item for item in scene.detected_objects if item.distance_m is not None
+        ]
+        if ranged_objects:
+            nearest = min(
+                ranged_objects,
+                key=lambda item: abs(float(item.distance_m) - scene.lead_distance_m),
+            )
+            front_actor_type = nearest.class_name
     return {"frame": vehicle.frame, "sim_time_s": vehicle.sim_time_s, "speed_mps": vehicle.speed_mps,
             "x_m": vehicle.x_m, "y_m": vehicle.y_m, "z_m": vehicle.z_m, "yaw_deg": vehicle.yaw_deg,
             "lane_id": lane_id, "front_distance_m": scene.lead_distance_m,
             "distance_to_stop_line_m": scene.distance_to_stop_line_m, "traffic_light": scene.traffic_light,
             "lane_offset_m": scene.lane_offset_m, "route_deviation_m": scene.route_deviation_m,
+            "road_curvature_per_m": road_curvature_per_m,
+            "front_actor_type": front_actor_type,
+            "sensor_margin_scale": sensor_margin_scale,
             "collision": scene.collision, "red_light_violation": scene.red_light_violation,
             "lane_invasion": scene.lane_invasion}

@@ -55,12 +55,16 @@ def _target_lane_waypoint(world_map: Any, base: Any, relation: str) -> Any:
     getter = getattr(base, getter_name, None)
     target = getter() if callable(getter) else None
     if target is None:
-        raise RuntimeError(f"scenario actor requires unavailable {relation.lower()} lane")
+        raise ActorPlacementError(
+            f"scenario actor requires unavailable {relation.lower()} lane"
+        )
     lane_type = str(getattr(target, "lane_type", "Driving")).rsplit(".", 1)[-1].upper()
     if lane_type != "DRIVING":
-        raise RuntimeError(f"scenario actor target lane is not driving: {lane_type}")
+        raise ActorPlacementError(
+            f"scenario actor target lane is not driving: {lane_type}"
+        )
     if not _same_direction(base, target):
-        raise RuntimeError(
+        raise ActorPlacementError(
             f"scenario actor target {relation.lower()} lane runs in the opposite direction"
         )
     return target
@@ -84,7 +88,9 @@ def _legacy_vehicle_lane(
         width = _lane_width_m(target)
         if abs(residual) < width * 0.75:
             break
-        relation = "LEFT_ADJACENT" if residual > 0.0 else "RIGHT_ADJACENT"
+        # Scenario-local +Y follows CARLA's local positive-Y/right direction
+        # (see route_geometry.offset_route_pose).  Negative offsets are left.
+        relation = "RIGHT_ADJACENT" if residual > 0.0 else "LEFT_ADJACENT"
         next_lane = _target_lane_waypoint(world_map, target, relation)
         residual -= math.copysign(width, residual)
         target = next_lane
@@ -126,7 +132,9 @@ def route_relative_carla_transform(
         road_z = float(road_location.z)
     else:
         if relation not in {"CURRENT", "ORIGINAL"}:
-            raise RuntimeError("cannot resolve adjacent lane without a CARLA waypoint")
+            raise ActorPlacementError(
+                "cannot resolve adjacent lane without a CARLA waypoint"
+            )
         road_pose = offset_route_pose(pose, lateral_m, yaw_offset_deg)
         pitch = roll = road_z = 0.0
     return carla_api.Transform(
@@ -219,19 +227,84 @@ def offset_actor_route_position(
     return result
 
 
+def rebase_actor_route_position(
+    actor_spec: Mapping[str, object],
+    mission_progress_offset_m: float,
+) -> dict[str, object]:
+    """Map mission-absolute actor coordinates onto a replanned local route.
+
+    Activation/deactivation triggers intentionally remain mission-absolute;
+    only coordinates consumed by the active route geometry are rebased.
+    """
+    offset_m = float(mission_progress_offset_m)
+    if not math.isfinite(offset_m) or offset_m < 0.0:
+        raise ValueError("mission_progress_offset_m must be finite and non-negative")
+    result = deepcopy(dict(actor_spec))
+
+    def rebase_s(container: dict[str, object], key: str, label: str) -> None:
+        original_s = float(container.get(key, 0.0))
+        local_s = original_s - offset_m
+        if local_s < -1e-6:
+            raise ActorPlacementError(
+                f"{label} at mission s={original_s:.2f} m is behind "
+                f"replan origin s={offset_m:.2f} m"
+            )
+        container[key] = max(0.0, local_s)
+
+    position = result.get("route_position")
+    if isinstance(position, dict):
+        rebase_s(position, "s_m", "actor")
+    else:
+        spawn = result.get("spawn")
+        if isinstance(spawn, dict):
+            rebase_s(spawn, "x", "legacy actor")
+
+    behavior = result.get("behavior")
+    if isinstance(behavior, dict):
+        target = behavior.get("target_route_position")
+        if isinstance(target, dict):
+            rebase_s(target, "s_m", "actor target")
+        elif isinstance(behavior.get("target_xy_m"), (list, tuple)):
+            target_xy = behavior["target_xy_m"]
+            if len(target_xy) == 2:
+                original_s = float(target_xy[0])
+                if original_s - offset_m < -1e-6:
+                    raise ActorPlacementError(
+                        f"legacy actor target at mission s={original_s:.2f} m is "
+                        f"behind replan origin s={offset_m:.2f} m"
+                    )
+                behavior["target_xy_m"] = [
+                    max(0.0, original_s - offset_m),
+                    float(target_xy[1]),
+                ]
+    return result
+
+
 def actor_resample_offsets(
     actor_spec: Mapping[str, object],
     *,
     seed: int,
     max_attempts: int = 17,
 ) -> tuple[tuple[float, float], ...]:
-    """Return deterministic, reproducible nearby samples for failed spawns."""
+    """Return deterministic, reproducible nearby samples for failed spawns.
+
+    Longitudinal-only retries cannot recover an otherwise valid actor whose
+    declared lateral offset lands just outside a lane centre on a curved or
+    variable-width road.  Try small in-lane lateral corrections first, then
+    retain the established longitudinal fallback sequence.  The corrections
+    stay below one metre so they cannot silently move an actor to another
+    lane.
+    """
     if max_attempts < 1:
         raise ValueError("max_attempts must be positive")
     actor_id = str(actor_spec.get("actor_id", "actor"))
     stable_actor_key = sum((index + 1) * ord(char) for index, char in enumerate(actor_id))
     rng = random.Random(int(seed) ^ stable_actor_key)
     candidates = [(0.0, 0.0)]
+    for lateral_m in (0.4, 0.8):
+        signs = [1.0, -1.0]
+        rng.shuffle(signs)
+        candidates.extend((0.0, sign * lateral_m) for sign in signs)
     for distance_m in (2.0, 4.0, 6.0, 8.0, 12.0, 20.0, 40.0, 60.0):
         signs = [1.0, -1.0]
         rng.shuffle(signs)
@@ -353,6 +426,7 @@ __all__ = [
     "ActorPlacementError",
     "actor_resample_offsets",
     "offset_actor_route_position",
+    "rebase_actor_route_position",
     "route_relative_carla_transform",
     "route_relative_target_location",
     "validate_actor_transform",

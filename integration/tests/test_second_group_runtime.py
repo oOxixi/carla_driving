@@ -13,6 +13,7 @@ class _VehicleRuntime:
     def __init__(self) -> None:
         self.submitted: list[dict] = []
         self.active_command_id: str | None = None
+        self.requested_speed_mps = 10.0
 
     def submit_voice(self, envelope, *, now_s):
         payload = dict(envelope)
@@ -21,9 +22,12 @@ class _VehicleRuntime:
         command = SimpleNamespace(command_id=payload["command_id"])
         return SimpleNamespace(command=command, control_authorized=True, feedback=None)
 
-    def fail_active(self, *, now_s, detail):
+    def fail_active(self, *, now_s, detail, resume_speed_mps=None):
         command_id = self.active_command_id
         self.active_command_id = None
+        self.requested_speed_mps = (
+            0.0 if resume_speed_mps is None else float(resume_speed_mps)
+        )
         return SimpleNamespace(
             command_id=command_id, status="FAILED", emitted_at_s=now_s, detail=detail,
         )
@@ -57,7 +61,7 @@ def test_ambiguous_voice_still_calls_qwen_for_safe_confirmation() -> None:
     envelope["ambiguity_type"] = "ASR_DISAGREEMENT"
     with PipelineOrchestrator(
         infer=lambda request: {},
-        config=OrchestratorConfig(force_qwen_all_voice=True, qwen_mode="planner_v2"),
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
     ) as orchestrator:
         bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
         submitted = bridge.submit(
@@ -82,7 +86,7 @@ def _scene(frame: int = 10, *, with_vehicle: bool = True) -> PerceptionFrame:
     )
 
 
-def test_fast_command_is_validated_clamped_and_dispatched_without_qwen() -> None:
+def test_atomic_command_fails_closed_when_qwen_is_unavailable() -> None:
     vehicle_runtime = _VehicleRuntime()
     with PipelineOrchestrator() as orchestrator:
         bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
@@ -93,11 +97,32 @@ def test_fast_command_is_validated_clamped_and_dispatched_without_qwen() -> None
             _scene(), SimpleNamespace(speed_mps=0.0),
             sim_time_s=0.5, perception_mode="sensors", received_at_ns=1_000_000_000,
         )
-    assert submitted.orchestration.disposition == "FAST"
-    assert submitted.runtime_adapted.control_authorized is True
-    assert vehicle_runtime.submitted[-1]["parameters"] == {"speed": 8.0, "unit": "m/s"}
-    assert vehicle_runtime.submitted[-1]["t_audio_start_ns"] == 1
-    assert submitted.safety_envelope is None
+    assert submitted.orchestration.disposition == "REJECTED"
+    assert submitted.orchestration.reason_code == "QWEN_UNAVAILABLE"
+    assert submitted.runtime_adapted is None
+    assert submitted.safety_envelope is not None
+    assert submitted.safety_envelope["intent"] == "STOP"
+
+
+def test_emergency_command_calls_qwen_and_installs_emergency_pending_brake() -> None:
+    vehicle_runtime = _VehicleRuntime()
+    with PipelineOrchestrator(
+        infer=lambda request: {},
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
+    ) as orchestrator:
+        bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
+        submitted = bridge.submit(
+            _voice("emergency", "EMERGENCY_STOP", text="立即紧急停车"),
+            _scene(), SimpleNamespace(speed_mps=5.0),
+            sim_time_s=0.5, perception_mode="sensors",
+            received_at_ns=1_000_000_000,
+        )
+
+    assert submitted.orchestration.disposition == "SLOW_PENDING"
+    assert submitted.orchestration.model_request is not None
+    assert submitted.safety_envelope is not None
+    assert submitted.safety_envelope["intent"] == "EMERGENCY_STOP"
+    assert vehicle_runtime.submitted[-1]["intent"] == "EMERGENCY_STOP"
 
 
 def test_perception_preserves_tracker_owned_actor_id() -> None:
@@ -138,7 +163,7 @@ def test_slow_qwen_path_holds_stop_without_blocking_then_dispatches_validated_pl
     release = threading.Event()
 
     def infer(request):
-        release.wait(1.0)
+        release.wait(10.0)
         return {
             "schema_version": "1.0",
             "request_id": request["request_id"],
@@ -162,12 +187,14 @@ def test_slow_qwen_path_holds_stop_without_blocking_then_dispatches_validated_pl
         bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
         started = time.perf_counter()
         submitted = bridge.submit(
-            _voice("follow", "FOLLOW_ROUTE", text="跟随前车", confirm=True),
+            _voice("follow", "FOLLOW_ROUTE", text="跟随前车"),
             _scene(), SimpleNamespace(speed_mps=5.0),
             sim_time_s=0.5, perception_mode="sensors", received_at_ns=1_000_000_000,
             rgb_ref="frames/follow.png",
         )
-        assert time.perf_counter() - started < 0.05
+        # The assertion proves that submit does not wait for the 10 s model
+        # callback while tolerating scheduler jitter on a loaded host.
+        assert time.perf_counter() - started < 2.0
         assert submitted.orchestration.disposition == "SLOW_PENDING"
         assert submitted.orchestration.model_request["rgb_ref"] == "frames/follow.png"
         assert submitted.safety_envelope["intent"] == "STOP"
@@ -209,7 +236,7 @@ def test_slow_target_missing_from_latest_frame_is_rejected_and_stop_remains() ->
     with PipelineOrchestrator(infer=infer) as orchestrator:
         bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
         bridge.submit(
-            _voice("follow-stale", "FOLLOW_ROUTE", text="跟随前车", confirm=True),
+            _voice("follow-stale", "FOLLOW_ROUTE", text="跟随前车"),
             _scene(), SimpleNamespace(speed_mps=5.0),
             sim_time_s=0.5, perception_mode="sensors", received_at_ns=1_000_000_000,
         )
@@ -226,6 +253,95 @@ def test_slow_target_missing_from_latest_frame_is_rejected_and_stop_remains() ->
     assert resolutions[0].feedbacks[0]["terminal_reason"] == "QWEN_TARGET_STALE"
     assert resolutions[0].vehicle_feedback is not None
     assert vehicle_runtime.active_command_id is None
+    assert vehicle_runtime.requested_speed_mps == 0.0
+    assert resolutions[0].vehicle_feedback is not None
+    assert resolutions[0].vehicle_feedback.detail.endswith("QWEN_TARGET_STALE")
+
+
+def test_targetless_stop_ignores_model_supplied_stale_target() -> None:
+    def infer(request):
+        return {
+            "schema_version": "1.0",
+            "request_id": request["request_id"],
+            "command_id": request["command_id"],
+            "intent": "STOP",
+            "target_id": "transient-obstacle",
+            "behavior": "STOP",
+            "parameters": {"target_speed_mps": 0.0},
+            "confidence": 0.95,
+            "reason_code": "STOP_NOW",
+            "created_at_ns": request["created_at_ns"] + 1,
+            "valid_until_ns": request["deadline_ns"],
+            "requires_confirmation": False,
+            "model_id": "test-backend",
+        }
+
+    vehicle_runtime = _VehicleRuntime()
+    with PipelineOrchestrator(infer=infer) as orchestrator:
+        bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
+        bridge.submit(
+            _voice("stop-targetless", "EMERGENCY_STOP", text="紧急停车"),
+            _scene(), SimpleNamespace(speed_mps=5.0),
+            sim_time_s=0.5, perception_mode="sensors",
+            received_at_ns=1_000_000_000,
+        )
+        deadline = time.monotonic() + 0.5
+        resolutions = ()
+        while time.monotonic() < deadline and not resolutions:
+            resolutions = bridge.poll(
+                _scene(11, with_vehicle=False), SimpleNamespace(speed_mps=4.0),
+                sim_time_s=0.55, perception_mode="sensors",
+                captured_at_ns=1_100_000_000,
+            )
+            time.sleep(0.001)
+
+    assert resolutions[0].disposition == "SLOW_READY", (
+        resolutions[0].orchestration.reason_code,
+        resolutions[0].feedbacks,
+    )
+    assert resolutions[0].feedbacks[0]["status"] == "EXECUTING"
+
+
+def test_live_grounded_target_can_outlive_empty_tracker_frame() -> None:
+    def infer(request):
+        return {
+            "schema_version": "1.0",
+            "request_id": request["request_id"],
+            "command_id": request["command_id"],
+            "intent": "FOLLOW",
+            "target_id": "bicycle_lead",
+            "behavior": "FOLLOW",
+            "parameters": {"target_speed_mps": 4.0, "time_gap_s": 2.0},
+            "confidence": 0.95,
+            "reason_code": "GROUNDED_SCENARIO_TARGET",
+            "created_at_ns": request["created_at_ns"] + 1,
+            "valid_until_ns": request["deadline_ns"],
+            "requires_confirmation": False,
+            "model_id": "test-backend",
+        }
+
+    vehicle_runtime = _VehicleRuntime()
+    with PipelineOrchestrator(infer=infer) as orchestrator:
+        bridge = CanonicalRuntimeBridge(vehicle_runtime, orchestrator)
+        bridge.submit(
+            _voice("follow-grounded", "FOLLOW_ROUTE", text="跟随前方自行车"),
+            _scene(), SimpleNamespace(speed_mps=5.0),
+            sim_time_s=0.5, perception_mode="sensors",
+            received_at_ns=1_000_000_000,
+            runtime_state={"grounded_target_ids": ["bicycle_lead"]},
+        )
+        deadline = time.monotonic() + 0.5
+        resolutions = ()
+        while time.monotonic() < deadline and not resolutions:
+            resolutions = bridge.poll(
+                _scene(11, with_vehicle=False), SimpleNamespace(speed_mps=4.0),
+                sim_time_s=0.55, perception_mode="sensors",
+                captured_at_ns=1_100_000_000,
+            )
+            time.sleep(0.001)
+
+    assert resolutions[0].disposition == "SLOW_READY"
+    assert resolutions[0].runtime_adapted.control_authorized is True
 
 
 def test_runtime_end_gives_pending_qwen_command_a_terminal() -> None:

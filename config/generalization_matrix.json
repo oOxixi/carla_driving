@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "maps": ["Town03", "Town04", "Town05"],
+  "maps": ["Town03", "Town03_Opt", "Town04", "Town05"],
   "weather_profiles": ["ClearNoon", "CloudySunset", "HardRainNight"],
   "seeds": [20260301, 20260317, 20260409, 20260521, 20260713],
   "fixed_delta_seconds": [0.05, 0.10],

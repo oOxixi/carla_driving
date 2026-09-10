@@ -14,6 +14,7 @@ from types import MappingProxyType
 from typing import Mapping
 
 from car_control_A import ControlOutput
+from config.strategy import DEFAULT_STRATEGY, dynamic_safety_distance
 
 from .validation import finite
 
@@ -71,9 +72,10 @@ class VisualObservation:
 
 @dataclass(frozen=True, slots=True)
 class SafetyStateParameters:
-    """Frozen C-side thresholds used to summarize longitudinal hazards."""
+    """C-side perception policy; distance thresholds are computed per frame."""
 
-    visual_confidence_threshold: float = 0.60
+    visual_confidence_threshold: float = DEFAULT_STRATEGY.perception_safety.visual_confidence_threshold
+    # Compatibility floors retained for the scenario-level driving policy.
     caution_distance_m: float = 10.0
     emergency_distance_m: float = 5.0
     # A VRU is first approached at a low, reviewable speed.  Full braking is
@@ -81,20 +83,23 @@ class SafetyStateParameters:
     # detection cannot unnecessarily stop normal traffic.
     vru_caution_distance_m: float = 25.0
     vru_emergency_distance_m: float = 8.0
-    vru_caution_speed_cap_mps: float = 2.0
-    vru_caution_hold_s: float = 4.0
-    caution_ttc_s: float = 2.5
-    emergency_ttc_s: float = 1.5
-    max_observation_gap_s: float = 0.30
-    # A nearest-point LiDAR corridor has no target identity.  A larger
-    # frame-to-frame range collapse is a target switch, not trustworthy TTC.
+    vru_caution_speed_cap_mps: float = DEFAULT_STRATEGY.perception_safety.vru_caution_speed_cap_mps
+    vru_caution_hold_s: float = DEFAULT_STRATEGY.perception_safety.vru_caution_hold_s
+    caution_ttc_s: float = DEFAULT_STRATEGY.common.caution_ttc_s
+    emergency_ttc_s: float = DEFAULT_STRATEGY.common.emergency_ttc_s
+    max_observation_gap_s: float = DEFAULT_STRATEGY.perception_safety.max_observation_gap_s
+    # Temporal range differentiation is only a fallback when no aligned lead
+    # velocity exists.  A nearest-return switch can otherwise look like an
+    # impossible closing speed and manufacture a false sub-second TTC.
     untracked_approach_speed_margin_mps: float = 5.0
+    max_temporal_closing_speed_mps: float = 40.0
+    temporal_closing_confirmation_tolerance_mps: float = 5.0
     reaction_time_s: float = 0.70
     emergency_reaction_time_s: float = 0.35
     comfortable_deceleration_mps2: float = 3.5
     emergency_deceleration_mps2: float = 6.0
     range_uncertainty_buffer_m: float = 1.0
-    full_brake: float = 1.0
+    full_brake: float = DEFAULT_STRATEGY.common.emergency_brake
 
     def __post_init__(self) -> None:
         finite("visual_confidence_threshold", self.visual_confidence_threshold,
@@ -103,6 +108,8 @@ class SafetyStateParameters:
                      "vru_emergency_distance_m", "vru_caution_speed_cap_mps", "vru_caution_hold_s",
                      "caution_ttc_s", "emergency_ttc_s", "max_observation_gap_s",
                      "untracked_approach_speed_margin_mps",
+                     "max_temporal_closing_speed_mps",
+                     "temporal_closing_confirmation_tolerance_mps",
                      "reaction_time_s", "emergency_reaction_time_s",
                      "comfortable_deceleration_mps2", "emergency_deceleration_mps2",
                      "range_uncertainty_buffer_m"):
@@ -135,6 +142,9 @@ class SafetyStateSummary:
     fusion_mode: str
     recommended_action: str
     recommended_speed_cap_mps: float | None
+    dynamic_caution_distance_m: float | None
+    dynamic_emergency_distance_m: float | None
+    safety_distance_components: Mapping[str, float]
     reason: str
     source_by_field: Mapping[str, str]
 
@@ -158,6 +168,9 @@ class SafetyStateSummary:
             "fusion_mode": self.fusion_mode,
             "recommended_action": self.recommended_action,
             "recommended_speed_cap_mps": self.recommended_speed_cap_mps,
+            "dynamic_caution_distance_m": self.dynamic_caution_distance_m,
+            "dynamic_emergency_distance_m": self.dynamic_emergency_distance_m,
+            "safety_distance_components": dict(self.safety_distance_components),
             "reason": self.reason,
             "source_by_field": dict(self.source_by_field),
         }
@@ -177,12 +190,14 @@ class ConservativeSensorFusion:
         self._previous_frame: int | None = None
         self._previous_time_s: float | None = None
         self._previous_distance_m: float | None = None
+        self._pending_temporal_closing_speed_mps: float | None = None
         self._vru_caution_until_s: float | None = None
 
     def reset(self) -> None:
         self._previous_frame = None
         self._previous_time_s = None
         self._previous_distance_m = None
+        self._pending_temporal_closing_speed_mps = None
         self._vru_caution_until_s = None
 
     def update(
@@ -195,6 +210,8 @@ class ConservativeSensorFusion:
         lidar_valid: bool,
         visual: VisualObservation | None = None,
         lead_speed_mps: float | None = None,
+        road_curvature_per_m: float = 0.0,
+        sensor_margin_scale: float = 1.0,
         lidar_source: str = "LIDAR_FRONT_CORRIDOR",
         lead_speed_source: str = "LEAD_TRACKER",
     ) -> SafetyStateSummary:
@@ -204,6 +221,8 @@ class ConservativeSensorFusion:
         ego_speed_mps = finite("ego_speed_mps", ego_speed_mps, minimum=0.0)
         front_distance_m = _optional_non_negative("front_distance_m", front_distance_m)
         lead_speed_mps = _optional_non_negative("lead_speed_mps", lead_speed_mps)
+        road_curvature_per_m = finite("road_curvature_per_m", road_curvature_per_m)
+        sensor_margin_scale = finite("sensor_margin_scale", sensor_margin_scale, minimum=0.0)
         if type(lidar_valid) is not bool:
             raise TypeError("lidar_valid must be bool")
         if self._previous_frame is not None and frame <= self._previous_frame:
@@ -230,25 +249,47 @@ class ConservativeSensorFusion:
         }
 
         closing_speed: float | None = None
+        envelope_closing_speed: float | None = None
         if lidar_valid and front_distance_m is not None:
             if lead_speed_mps is not None:
-                closing_speed = ego_speed_mps - lead_speed_mps
+                envelope_closing_speed = max(0.0, ego_speed_mps - lead_speed_mps)
+                closing_speed = envelope_closing_speed
                 sources["closing_speed_mps"] = _source("lead_speed_source", lead_speed_source)
+                self._pending_temporal_closing_speed_mps = None
             elif self._previous_distance_m is not None and self._previous_time_s is not None:
                 dt_s = sim_time_s - self._previous_time_s
                 if dt_s <= self.parameters.max_observation_gap_s:
                     candidate = (self._previous_distance_m - front_distance_m) / dt_s
-                    maximum_untracked_closing = (
+                    previous_candidate = self._pending_temporal_closing_speed_mps
+                    maximum_untracked_closing = min(
+                        self.parameters.max_temporal_closing_speed_mps,
                         ego_speed_mps
-                        + self.parameters.untracked_approach_speed_margin_mps
+                        + self.parameters.untracked_approach_speed_margin_mps,
                     )
-                    if candidate <= maximum_untracked_closing:
-                        closing_speed = candidate
-                        sources["closing_speed_mps"] = "LIDAR_TEMPORAL_DIFFERENCE"
-                    else:
+                    if candidate <= 0.0:
+                        self._pending_temporal_closing_speed_mps = None
+                    elif candidate > maximum_untracked_closing:
+                        self._pending_temporal_closing_speed_mps = None
+                        sources["closing_speed_mps"] = "LIDAR_TEMPORAL_OUTLIER_REJECTED"
                         sources["closing_speed_rejection"] = (
                             "LIDAR_NEAREST_TARGET_SWITCH_IMPLAUSIBLE_RATE"
                         )
+                    elif (
+                        previous_candidate is not None
+                        and abs(candidate - previous_candidate)
+                        <= self.parameters.temporal_closing_confirmation_tolerance_mps
+                    ):
+                        closing_speed = (candidate + previous_candidate) / 2.0
+                        envelope_closing_speed = closing_speed
+                        self._pending_temporal_closing_speed_mps = candidate
+                        sources["closing_speed_mps"] = "LIDAR_TEMPORAL_CONFIRMED"
+                    else:
+                        self._pending_temporal_closing_speed_mps = candidate
+                        sources["closing_speed_mps"] = "LIDAR_TEMPORAL_CONFIRMATION_PENDING"
+                else:
+                    self._pending_temporal_closing_speed_mps = None
+            else:
+                self._pending_temporal_closing_speed_mps = None
             if closing_speed is not None and closing_speed <= 0.0:
                 closing_speed = None
 
@@ -257,11 +298,26 @@ class ConservativeSensorFusion:
             ttc_s = front_distance_m / closing_speed
             sources["ttc_s"] = "FRONT_DISTANCE_DIVIDED_BY_CLOSING_SPEED"
 
+        envelope = None
+        if lidar_valid and front_distance_m is not None:
+            envelope = dynamic_safety_distance(
+                ego_speed_mps=ego_speed_mps,
+                closing_speed_mps=envelope_closing_speed,
+                curvature_per_m=road_curvature_per_m,
+                actor_type=object_class,
+                sensor_margin_scale=sensor_margin_scale,
+            )
+            sources["dynamic_safety_distance"] = "STRATEGY_CONFIG_KINEMATIC_MODEL"
+
         vru_in_caution_zone = bool(
             visual_valid
             and object_class in self._VRU_CLASSES
             and front_distance_m is not None
-            and front_distance_m <= self.parameters.vru_caution_distance_m
+            and envelope is not None
+            and front_distance_m <= max(
+                self.parameters.vru_caution_distance_m,
+                envelope.caution_distance_m,
+            )
         )
         if vru_in_caution_zone:
             self._vru_caution_until_s = sim_time_s + self.parameters.vru_caution_hold_s
@@ -272,12 +328,12 @@ class ConservativeSensorFusion:
             mode, action, reason = "RGB_ONLY", "FULL_BRAKE", "visual_hazard_without_range"
         elif visual_valid and front_distance_m is not None:
             mode, action, reason = self._range_action(
-                front_distance_m, ttc_s, "RGB_LIDAR", ego_speed_mps=ego_speed_mps,
+                front_distance_m, ttc_s, "RGB_LIDAR", envelope=envelope,
                 object_class=object_class,
             )
         elif front_distance_m is not None:
             mode, action, reason = self._range_action(
-                front_distance_m, ttc_s, "LIDAR_ONLY", ego_speed_mps=ego_speed_mps,
+                front_distance_m, ttc_s, "LIDAR_ONLY", envelope=envelope,
             )
         elif visual_valid:
             mode, action, reason = "RGB_ONLY", "KEEP_SPEED", "visual_non_hazard_without_range"
@@ -294,6 +350,18 @@ class ConservativeSensorFusion:
         if vru_hold_active and action == "SLOW_DOWN":
             speed_cap_mps = self.parameters.vru_caution_speed_cap_mps
             sources["vru_speed_cap"] = "RGB_LIDAR_VRU_CAUTION_HOLD"
+        elif action == "SLOW_DOWN" and envelope is not None and front_distance_m is not None:
+            available = max(
+                0.0,
+                front_distance_m
+                - DEFAULT_STRATEGY.safety_distance.standstill_gap_m
+                - envelope.sensor_margin_m,
+            )
+            speed_cap_mps = min(
+                ego_speed_mps,
+                (2.0 * DEFAULT_STRATEGY.common.comfortable_decel_mps2 * available) ** 0.5,
+            )
+            sources["hazard_speed_cap"] = "DYNAMIC_SAFETY_DISTANCE"
 
         fused_valid = visual_valid and lidar_valid and front_distance_m is not None
         summary = SafetyStateSummary(
@@ -310,12 +378,19 @@ class ConservativeSensorFusion:
             fusion_mode=mode,
             recommended_action=action,
             recommended_speed_cap_mps=speed_cap_mps,
+            dynamic_caution_distance_m=None if envelope is None else envelope.caution_distance_m,
+            dynamic_emergency_distance_m=None if envelope is None else envelope.emergency_distance_m,
+            safety_distance_components=MappingProxyType(
+                {} if envelope is None else envelope.to_dict()
+            ),
             reason=reason,
             source_by_field=MappingProxyType(sources),
         )
         self._previous_frame = frame
         self._previous_time_s = sim_time_s
         self._previous_distance_m = front_distance_m if lidar_valid else None
+        if not lidar_valid or front_distance_m is None:
+            self._pending_temporal_closing_speed_mps = None
         return summary
 
     def fail_closed_control(self) -> ControlOutput:
@@ -327,43 +402,33 @@ class ConservativeSensorFusion:
         ttc_s: float | None,
         mode: str,
         *,
-        ego_speed_mps: float = 0.0,
+        envelope: object,
         object_class: str | None = None,
     ) -> tuple[str, str, str]:
-        # A frame-aligned, high-confidence vulnerable-road-user observation
-        # needs a larger braking envelope than a vehicle.  It is intentionally
-        # limited to semantic RGB+LiDAR fusion: unclassified LiDAR obstacles
-        # retain the established 5 m threshold and cannot cause new false
-        # positive full brakes merely due to range noise.
-        emergency_distance = max(
-            self.parameters.emergency_distance_m,
-            self.parameters.range_uncertainty_buffer_m
-            + ego_speed_mps * self.parameters.emergency_reaction_time_s
-            + ego_speed_mps * ego_speed_mps
-            / (2.0 * self.parameters.emergency_deceleration_mps2),
+        if envelope is None:
+            raise ValueError("a range action requires a dynamic safety envelope")
+        is_vru = object_class in self._VRU_CLASSES
+        caution_floor_m = (
+            self.parameters.vru_caution_distance_m
+            if is_vru else self.parameters.caution_distance_m
         )
-        caution_distance = max(
-            self.parameters.caution_distance_m,
-            self.parameters.range_uncertainty_buffer_m
-            + ego_speed_mps * self.parameters.reaction_time_s
-            + ego_speed_mps * ego_speed_mps
-            / (2.0 * self.parameters.comfortable_deceleration_mps2),
+        emergency_floor_m = (
+            self.parameters.vru_emergency_distance_m
+            if is_vru else self.parameters.emergency_distance_m
         )
-        vru_emergency_distance = max(
-            self.parameters.vru_emergency_distance_m,
-            emergency_distance + 2.0,
+        caution_distance_m = max(
+            caution_floor_m, float(getattr(envelope, "caution_distance_m")),
         )
-        if (
-            object_class in self._VRU_CLASSES
-            and distance_m <= vru_emergency_distance
-        ):
-            return mode, "EMERGENCY_BRAKE", "vru_short_front_distance"
+        emergency_distance_m = max(
+            emergency_floor_m, float(getattr(envelope, "emergency_distance_m")),
+        )
         if ttc_s is not None and ttc_s <= self.parameters.emergency_ttc_s:
             return mode, "EMERGENCY_BRAKE", "low_ttc"
-        if distance_m <= emergency_distance:
-            return mode, "EMERGENCY_BRAKE", "short_front_distance"
+        if distance_m <= emergency_distance_m:
+            reason = "vru_dynamic_emergency_distance" if is_vru else "dynamic_emergency_distance"
+            return mode, "EMERGENCY_BRAKE", reason
         if ttc_s is not None and ttc_s <= self.parameters.caution_ttc_s:
             return mode, "SLOW_DOWN", "caution_ttc"
-        if distance_m <= caution_distance:
-            return mode, "SLOW_DOWN", "caution_front_distance"
-        return mode, "KEEP_SPEED", "front_hazard_outside_caution_threshold"
+        if distance_m <= caution_distance_m:
+            return mode, "SLOW_DOWN", "dynamic_caution_distance"
+        return mode, "KEEP_SPEED", "front_hazard_outside_dynamic_envelope"

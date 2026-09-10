@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
+
+from tools.frozen_text_hash import frozen_text_sha256
 
 from tools.build_submission_package import check_release
 from tools.repro_cli import (
@@ -17,7 +18,15 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return frozen_text_sha256(path)
+
+
+def test_frozen_text_hash_is_checkout_eol_independent(tmp_path: Path) -> None:
+    lf = tmp_path / "lf.json"
+    crlf = tmp_path / "crlf.json"
+    lf.write_bytes(b'{\n  "ok": true\n}\n')
+    crlf.write_bytes(b'{\r\n  "ok": true\r\n}\r\n')
+    assert _sha256(lf) == _sha256(crlf)
 
 
 def test_latency_first_contract_and_explicit_modes() -> None:

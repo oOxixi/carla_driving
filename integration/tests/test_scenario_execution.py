@@ -10,8 +10,22 @@ from integration.scenario_execution import (
     CommandTimeline,
     ScenarioSpec,
     resolve_scenario_command,
+    scenario_trigger_satisfied,
     select_best_route_anchor,
 )
+
+
+def test_sensor_actor_trigger_requires_the_named_sensor_detection() -> None:
+    trigger = {"type": "sensor_actor_detected", "actor_id": "pedestrian"}
+
+    assert not scenario_trigger_satisfied(
+        trigger, elapsed_s=1.0, context={"sensor_detected_actor_ids": ()},
+    )
+    assert scenario_trigger_satisfied(
+        trigger,
+        elapsed_s=1.0,
+        context={"sensor_detected_actor_ids": ("pedestrian",)},
+    )
 
 
 SCENARIO_ROOT = Path(__file__).resolve().parents[2] / "scenarios"

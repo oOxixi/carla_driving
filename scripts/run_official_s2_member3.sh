@@ -6,6 +6,7 @@ cd "$project_root"
 
 python_executable="${PYTHON_EXECUTABLE:-python3}"
 qwen_service_url="${QWEN_SERVICE_URL:-http://127.0.0.1:18000}"
+qwen_timeout_ms="${QWEN_TIMEOUT_MS:-5000}"
 carla_host="${CARLA_HOST:-127.0.0.1}"
 carla_port="${CARLA_PORT:-2000}"
 log_dir="${S2_LOG_DIR:-artifacts/logs/official_competition}"
@@ -55,7 +56,7 @@ arguments=(
   --log-dir "$log_dir"
   --qwen-service-url "$qwen_service_url"
   --qwen-mode planner_v2
-  --qwen-timeout-ms 100
+  --qwen-timeout-ms "$qwen_timeout_ms"
   --qwen-queue-size 1
   --qwen-image-root "$project_root"
   --qwen-image-prefix artifacts/runtime/qwen_official

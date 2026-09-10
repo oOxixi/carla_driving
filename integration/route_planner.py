@@ -7,13 +7,13 @@ command.  It does not pretend to be a global navigation service.
 from __future__ import annotations
 
 import math
-import heapq
-import itertools
 from dataclasses import dataclass
-from typing import Any, Iterable, Sequence
+from typing import Any, Callable, Iterable, Sequence
 
 from car_control_A.routing import RouteReference
 from car_control_B.path_utils import estimate_curvature
+
+from .route_manager import RouteManager
 
 
 _DIRECTIONS = {"LEFT", "RIGHT", "STRAIGHT"}
@@ -354,48 +354,133 @@ def build_lane_change_route_reference(
     step_m: float = 1.0,
     transition_start_m: float = 12.0,
     transition_length_m: float = 28.0,
+    target_lane_offset_m: float = 0.0,
+    defer_until_safe: bool = False,
+    maximum_transition_deferral_m: float = 60.0,
 ) -> RouteReference:
     """Build a legal same-direction adjacent-lane transition."""
     side = str(direction).strip().upper()
     if side not in {"LEFT", "RIGHT"}:
         raise ValueError("lane-change direction must be LEFT or RIGHT")
+    target_lane_offset_m = float(target_lane_offset_m)
+    if not math.isfinite(target_lane_offset_m) or not 0.0 <= target_lane_offset_m <= 0.30:
+        raise ValueError("target_lane_offset_m must be finite and between 0.0 and 0.30")
     location = (anchor_or_location.get_location()
                 if hasattr(anchor_or_location, "get_location") else anchor_or_location)
     current = world_map.get_waypoint(location, project_to_road=True)
     if not _is_driving_lane(current):
         raise ValueError("lane-change anchor is not on a driving lane")
+    if (
+        not math.isfinite(float(maximum_transition_deferral_m))
+        or maximum_transition_deferral_m < 0.0
+    ):
+        raise ValueError("maximum_transition_deferral_m must be finite and non-negative")
 
     prefix: list[tuple[float, float]] = []
     for _ in range(max(1, int(math.ceil(transition_start_m / step_m))) + 1):
         loc = current.transform.location
         prefix.append((float(loc.x), float(loc.y)))
         next_waypoint = _next_straight(current, step_m)
-        if next_waypoint is None or bool(getattr(current, "is_junction", False)):
+        if next_waypoint is None:
+            raise ValueError("lane-change prefix reaches a junction or dead end")
+        if (
+            bool(getattr(current, "is_junction", False))
+            and not defer_until_safe
+        ):
             raise ValueError("lane-change prefix reaches a junction or dead end")
         current = next_waypoint
 
-    adjacent = _adjacent_driving_lane(current, side)
-    if adjacent is None or bool(getattr(adjacent, "is_junction", False)):
-        raise ValueError(f"no same-direction driving lane on the {side.lower()}")
-    target_end = _advance_waypoint(adjacent, transition_length_m, step_m)
-    if target_end is None or bool(getattr(target_end, "is_junction", False)):
-        raise ValueError("adjacent lane cannot support the full transition")
+    # A commanded return can begin immediately before a junction.  In that
+    # case keep following the current lane through the junction and start the
+    # lateral transition only after a complete same-direction, non-junction
+    # corridor is available.  Ordinary lane changes retain the strict legacy
+    # rejection above and below.
+    if defer_until_safe:
+        deferred_m = 0.0
+        while True:
+            probe = current
+            corridor_available = not bool(getattr(probe, "is_junction", False))
+            for _ in range(max(8, int(math.ceil(transition_length_m / step_m))) + 1):
+                adjacent = _adjacent_driving_lane(probe, side)
+                if (
+                    not corridor_available
+                    or adjacent is None
+                    or bool(getattr(adjacent, "is_junction", False))
+                ):
+                    corridor_available = False
+                    break
+                probe = _next_straight(probe, step_m)
+                if probe is None:
+                    corridor_available = False
+                    break
+            if corridor_available:
+                break
+            if deferred_m >= float(maximum_transition_deferral_m):
+                raise ValueError("no safe post-junction lane-change corridor")
+            loc = current.transform.location
+            point = (float(loc.x), float(loc.y))
+            if not prefix or point != prefix[-1]:
+                prefix.append(point)
+            next_waypoint = _next_straight(current, step_m)
+            if next_waypoint is None:
+                raise ValueError("lane-change deferral reaches a dead end")
+            current = next_waypoint
+            deferred_m += float(step_m)
 
-    transition = _hermite_lane_change(
-        current,
-        target_end,
-        samples=max(8, int(math.ceil(transition_length_m / step_m))),
-        tangent_scale_m=transition_length_m,
-    )
-    points = prefix + list(transition)
-    target = target_end
-    while _route_length(points) < distance_m:
+    # Blend corresponding source/adjacent topology waypoints instead of
+    # connecting two distant endpoints with one Hermite chord.  A chord cuts
+    # the inside of Town03's curved roads and can point the ego at a kerb or
+    # barrier during a perfectly legal lane return.
+    transition_count = max(8, int(math.ceil(transition_length_m / step_m)))
+    source = current
+    target = None
+    transition_points: list[tuple[float, float]] = []
+    direction_sign = -1.0 if side == "LEFT" else 1.0
+    for index in range(transition_count + 1):
+        if index:
+            source = _next_straight(source, step_m)
+            if source is None or bool(getattr(source, "is_junction", False)):
+                raise ValueError("source lane cannot support the full transition")
+        adjacent = _adjacent_driving_lane(source, side)
+        if adjacent is None or bool(getattr(adjacent, "is_junction", False)):
+            raise ValueError(f"no same-direction driving lane on the {side.lower()}")
+        source_location = source.transform.location
+        target_location = adjacent.transform.location
+        t = index / transition_count
+        blend = t * t * (3.0 - 2.0 * t)
+        yaw_rad = math.radians(float(adjacent.transform.rotation.yaw))
+        right_x, right_y = -math.sin(yaw_rad), math.cos(yaw_rad)
+        offset_x = direction_sign * target_lane_offset_m * right_x
+        offset_y = direction_sign * target_lane_offset_m * right_y
+        transition_points.append((
+            (1.0 - blend) * float(source_location.x)
+            + blend * (float(target_location.x) + offset_x),
+            (1.0 - blend) * float(source_location.y)
+            + blend * (float(target_location.y) + offset_y),
+        ))
+        target = adjacent
+    points = prefix + transition_points
+    if target is None:
+        raise ValueError("adjacent lane transition produced no target waypoint")
+    target_yaw_rad = math.radians(float(target.transform.rotation.yaw))
+    offset_x = direction_sign * target_lane_offset_m * -math.sin(target_yaw_rad)
+    offset_y = direction_sign * target_lane_offset_m * math.cos(target_yaw_rad)
+    # Keep kilometre-scale continuations linear. Recomputing the whole
+    # polyline after every appended waypoint made this loop quadratic and
+    # could stall a live lane-change command for minutes.
+    accumulated_distance_m = _route_length(points)
+    while accumulated_distance_m < distance_m:
         target = _next_straight(target, step_m)
         if target is None:
             break
         loc = target.transform.location
-        points.append((float(loc.x), float(loc.y)))
-    if _route_length(points) < distance_m * 0.8:
+        target_yaw_rad = math.radians(float(target.transform.rotation.yaw))
+        offset_x = direction_sign * target_lane_offset_m * -math.sin(target_yaw_rad)
+        offset_y = direction_sign * target_lane_offset_m * math.cos(target_yaw_rad)
+        point = (float(loc.x) + offset_x, float(loc.y) + offset_y)
+        accumulated_distance_m += math.dist(points[-1], point)
+        points.append(point)
+    if accumulated_distance_m < distance_m * 0.8:
         raise ValueError("adjacent lane route is too short")
     route_points = tuple(points)
     return RouteReference(route_points, _route_curvature(route_points), float(target_speed_mps))
@@ -443,12 +528,7 @@ def build_destination_route_reference(
     step_m: float = 2.0,
     maximum_expansions: int = 50_000,
 ) -> RouteReference:
-    """Plan a deterministic map-topology route to a destination with A*.
-
-    This is the destination-based counterpart to distance-coverage routes.
-    It explores CARLA waypoint successors rather than greedily committing to
-    the first visually straight branch.
-    """
+    """Plan and validate a deterministic topology route to a destination."""
     if len(destination_xy_m) != 2 or any(
         not math.isfinite(float(value)) for value in destination_xy_m
     ):
@@ -457,66 +537,25 @@ def build_destination_route_reference(
         raise ValueError("step_m must be finite and positive")
     if type(maximum_expansions) is not int or maximum_expansions < 1:
         raise ValueError("maximum_expansions must be a positive integer")
-    start = select_heading_compatible_waypoint(world_map, anchor_or_location)
     target_x, target_y = map(float, destination_xy_m)
-
-    def heuristic(waypoint: Any) -> float:
-        location = waypoint.transform.location
-        return math.hypot(float(location.x) - target_x, float(location.y) - target_y)
-
-    start_key = _waypoint_visit_key(start)
-    counter = itertools.count()
-    frontier: list[tuple[float, float, int, Any]] = [
-        (heuristic(start), 0.0, next(counter), start),
-    ]
-    costs: dict[tuple[object, ...], float] = {start_key: 0.0}
-    parents: dict[tuple[object, ...], tuple[object, ...] | None] = {start_key: None}
-    nodes: dict[tuple[object, ...], Any] = {start_key: start}
-    goal_key: tuple[object, ...] | None = None
-    tolerance_m = max(2.0, step_m * 1.5)
-
-    for _ in range(maximum_expansions):
-        if not frontier:
-            break
-        _priority, current_cost, _order, current = heapq.heappop(frontier)
-        current_key = _waypoint_visit_key(current)
-        if current_cost > costs.get(current_key, math.inf) + 1e-9:
-            continue
-        if heuristic(current) <= tolerance_m:
-            goal_key = current_key
-            break
-        for candidate in tuple(current.next(step_m)):
-            candidate_key = _waypoint_visit_key(candidate)
-            next_cost = current_cost + _waypoint_distance_m(
-                candidate, current.transform.location,
-            )
-            if next_cost + 1e-9 >= costs.get(candidate_key, math.inf):
-                continue
-            costs[candidate_key] = next_cost
-            parents[candidate_key] = current_key
-            nodes[candidate_key] = candidate
-            heapq.heappush(
-                frontier,
-                (next_cost + heuristic(candidate), next_cost, next(counter), candidate),
-            )
-    if goal_key is None:
-        raise RuntimeError(
-            "no CARLA topology route reaches the requested destination "
-            f"within {maximum_expansions} expansions"
+    anchor_location = getattr(anchor_or_location, "location", anchor_or_location)
+    try:
+        destination_location = type(anchor_location)(
+            x=target_x,
+            y=target_y,
+            z=float(getattr(anchor_location, "z", 0.0)),
         )
-    reversed_keys: list[tuple[object, ...]] = []
-    cursor: tuple[object, ...] | None = goal_key
-    while cursor is not None:
-        reversed_keys.append(cursor)
-        cursor = parents[cursor]
-    waypoints = tuple(nodes[key] for key in reversed(reversed_keys))
-    points = tuple(
-        (float(item.transform.location.x), float(item.transform.location.y))
-        for item in waypoints
-    )
-    if len(points) < 2:
-        raise RuntimeError("destination route is too short")
-    return RouteReference(points, _route_curvature(points), float(target_speed_mps))
+    except TypeError:
+        destination_location = type(anchor_location)(target_x, target_y, 0.0)
+    return RouteManager(
+        world_map,
+        sample_step_m=step_m,
+        maximum_expansions=maximum_expansions,
+    ).plan(
+        anchor_or_location,
+        destination_location,
+        target_speed_mps,
+    ).reference
 
 
 def select_topology_route_anchor(
@@ -528,8 +567,16 @@ def select_topology_route_anchor(
     distance_m: float,
     forbidden_points_xy: Sequence[tuple[float, float]] = (),
     candidate_index: int = 0,
+    route_validator: Callable[[RouteReference], bool] | None = None,
 ) -> tuple[int, RouteReference, float]:
-    """Pick a spawn whose generated route is legal, long enough and avoids lights."""
+    """Pick a spawn whose route is legal and satisfies scenario topology.
+
+    ``route_validator`` lets the caller enforce requirements that depend on
+    the complete scenario, such as having real same-direction adjacent lanes
+    at every declared actor position.  Invalid candidates are discarded before
+    ranking; the selector never relocates an actor onto a semantically different
+    lane merely to make a spawn succeed.
+    """
     if not spawn_points:
         raise ValueError("at least one spawn point is required")
     action = str(maneuver).strip().upper()
@@ -544,6 +591,8 @@ def select_topology_route_anchor(
                 distance_m=distance_m,
             )
         except (AttributeError, TypeError, ValueError):
+            continue
+        if route_validator is not None and not route_validator(route):
             continue
         points = route.points_xy_m
         length_penalty = max(0.0, distance_m - _route_length(points)) * 10.0

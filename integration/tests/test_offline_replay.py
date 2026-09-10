@@ -32,9 +32,9 @@ def test_invalid_qwen_response_fails_closed_through_d(tmp_path: Path) -> None:
     rgb = np.zeros((8, 12, 3), dtype=np.uint8)
     np.save(tmp_path / "rgb.npy", rgb)
     lidar = np.array([
-        [5.0, -0.2, 0.0, 1.0],
-        [5.1, 0.0, 0.0, 1.0],
-        [5.2, 0.2, 0.0, 1.0],
+        [5.0, -0.2, -1.0, 1.0],
+        [5.1, 0.0, -1.0, 1.0],
+        [5.2, 0.2, -1.0, 1.0],
     ], dtype=np.float32)
     np.save(tmp_path / "lidar.npy", lidar)
     manifest = _write_manifest(tmp_path / "replay.jsonl", [{

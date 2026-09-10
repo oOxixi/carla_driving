@@ -15,7 +15,9 @@ def test_matrix_covers_all_competition_maps_weather_and_timing() -> None:
     matrix = load_generalization_matrix()
     cases = tuple(matrix.cases("base"))
     assert len(cases) == 27
-    assert {case.map_name for case in cases} == {"Town03", "Town04", "Town05"}
+    assert {case.map_name for case in cases} == {
+        "Town03", "Town03_Opt", "Town04", "Town05",
+    }
     assert {case.weather for case in cases} == {"ClearNoon", "CloudySunset", "HardRainNight"}
     assert {case.fixed_delta_s for case in cases} == {0.05, 0.10}
     assert {case.actor_speed_scale for case in cases} == {0.8, 1.0, 1.2}
@@ -94,11 +96,12 @@ def test_s2_actor_events_cover_the_full_route_and_use_explicit_route_positions()
         actor["actor_id"]: float(actor["route_position"]["s_m"])
         for actor in raw["actors"]
     }
-    assert min(positions.values()) <= 500.0
+    assert min(positions.values()) <= 1100.0
     assert max(positions.values()) >= 7000.0
     assert all("route_position" in actor for actor in raw["actors"])
-    slow = next(item for item in raw["actors"] if item["actor_id"] == "slow_vehicle")
-    assert slow["behavior"]["events"][0]["trigger"]["all"][1]["actor_id"] == "slow_vehicle"
+    assert all("activation_trigger" in actor for actor in raw["actors"])
+    assert raw["route"]["planning_mode"] == "topology_coverage"
+    assert "route_anchor_spawn_index" not in raw["extensions"]
 
 
 def test_generalized_core_modules_contain_no_official_scene_or_town_special_cases() -> None:

@@ -32,11 +32,15 @@ def _passing_metrics(expected: dict[str, object]) -> dict[str, object]:
         "lane_invasion_count": 0,
         "route_deviation_count": 1 if expected.get("expected_route_deviation_event") is True else 0,
         "route_deviation_event_seen": expected.get("expected_route_deviation_event") is True,
+        "route_replan_count": 1,
+        "route_replan_max_attempt": 1,
+        "route_recovery_succeeded": True,
         "red_light_violation_count": 0,
         "max_abs_cross_track_error_m": abs(initial_offset),
         "mean_abs_cross_track_error_m": 0.0,
         "final_abs_cross_track_error_m": 0.0,
         "max_abs_lane_offset_m": 0.0,
+        "mean_abs_lane_offset_m": 0.0,
         "initial_cross_track_error_m": initial_offset,
         "max_abs_steer": 0.0,
         "max_steer_rate_per_s": 0.0,
@@ -83,6 +87,16 @@ def test_metric_violation_and_unknown_key_fail_closed() -> None:
     assert report["unsupported_keys"] == ["future_rule"]
 
 
+def test_mean_lane_center_contract_does_not_score_peak_turn_error() -> None:
+    report = evaluate_expected(
+        {"mean_lane_center_offset_m": 0.25},
+        {"mean_abs_lane_offset_m": 0.08, "max_abs_lane_offset_m": 0.34},
+    )
+
+    assert report["passed"] is True
+    assert report["checks"][0]["actual"] == 0.08
+
+
 def test_traffic_violation_limit_is_a_hard_expected_contract() -> None:
     passing = evaluate_expected(
         {"traffic_violation_max": 1}, {"red_light_violation_count": 1},
@@ -121,3 +135,27 @@ def test_lane_invasion_contract_fails_on_any_recorded_episode() -> None:
 
     assert report["passed"] is False
     assert report["failed_keys"] == ["must_no_lane_invasion"]
+
+
+def test_route_recovery_contract_requires_replan_and_return_to_route() -> None:
+    expected = {
+        "must_replan_route": True,
+        "must_recover_route": True,
+        "max_route_replan_attempts": 2,
+    }
+    passing = evaluate_expected(expected, {
+        "route_replan_count": 1,
+        "route_replan_max_attempt": 1,
+        "route_recovery_succeeded": True,
+    })
+    failing = evaluate_expected(expected, {
+        "route_replan_count": 1,
+        "route_replan_max_attempt": 3,
+        "route_recovery_succeeded": False,
+    })
+
+    assert passing["passed"] is True
+    assert failing["failed_keys"] == [
+        "must_recover_route",
+        "max_route_replan_attempts",
+    ]

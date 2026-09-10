@@ -22,10 +22,11 @@ from typing import Any, Mapping
 from uuid import uuid4
 
 from car_control_D.official_score import OfficialScorer
+from config.strategy import DEFAULT_STRATEGY
 from .scenario_acceptance import evaluate_expected
 
 
-SERIOUS_ROUTE_DEVIATION_M = 3.0
+SERIOUS_ROUTE_DEVIATION_M = DEFAULT_STRATEGY.supervisor.severe_route_deviation_m
 
 
 @dataclass(frozen=True, slots=True)
@@ -206,6 +207,10 @@ class ScenarioEvidenceRecorder:
         self._final_controls_finite = True
         self._final_control_overlap_count = 0
         self._emergency_brake_seen = False
+        self._route_recovery_states: list[str] = []
+        self._route_replan_count = 0
+        self._route_replan_failure_count = 0
+        self._route_replan_max_attempt = 0
         self._acceptance_report: dict[str, Any] | None = None
 
     @property
@@ -348,8 +353,9 @@ class ScenarioEvidenceRecorder:
         )
 
     def record_frame(self, *, vehicle: object, scene: object, raw_control: object,
-                     final_control: object, safety_reason: str,
-                     safety_override: bool, timing: FrameTiming,
+                      final_control: object, safety_reason: str,
+                      safety_override: bool, timing: FrameTiming,
+                      safety_reason_category: str = "NONE",
                       command_id: str | None = None,
                       fsm_state: str | None = None,
                       longitudinal: object | None = None,
@@ -426,14 +432,22 @@ class ScenarioEvidenceRecorder:
         self._min_gap_m = self._minimum(self._min_gap_m, lead_distance_m)
         self._min_ttc_s = self._minimum(self._min_ttc_s, ttc_s)
         self._last_speed_mps = float(speed_mps)
-        if stop_distance_m is not None and float(speed_mps) <= 0.15:
+        if stop_distance_m is not None and float(speed_mps) <= DEFAULT_STRATEGY.common.standstill_speed_mps:
             self._stationary_stop_error_m = abs(float(stop_distance_m))
 
         collision = bool(_field(scene, "collision", False))
         lane_marking_crossing = bool(_field(scene, "lane_invasion", False))
-        lane_invasion = lane_marking_crossing and not lane_marking_crossing_expected
-        red_violation = bool(_field(scene, "red_light_violation", False))
         route_deviation_m = _field(scene, "route_deviation_m")
+        route_confirms_planned_corridor = (
+            route_deviation_m is not None
+            and abs(float(route_deviation_m)) < SERIOUS_ROUTE_DEVIATION_M
+        )
+        lane_invasion = (
+            lane_marking_crossing
+            and not lane_marking_crossing_expected
+            and not route_confirms_planned_corridor
+        )
+        red_violation = bool(_field(scene, "red_light_violation", False))
         route_deviation = (
             route_deviation_m is not None
             and abs(float(route_deviation_m)) >= SERIOUS_ROUTE_DEVIATION_M
@@ -485,7 +499,11 @@ class ScenarioEvidenceRecorder:
             c_safety_state=_jsonable(c_safety_state),
             longitudinal=_jsonable(longitudinal), lateral=_jsonable(lateral),
             raw_control=_jsonable(raw_control), final_control=_jsonable(final_control),
-            safety={"override": safety_override, "reason": safety_reason},
+            safety={
+                "override": safety_override,
+                "reason": safety_reason,
+                "reason_category": safety_reason_category,
+            },
             lane_marking_crossing_expected=lane_marking_crossing_expected,
             latency=latency,
         )
@@ -506,6 +524,7 @@ class ScenarioEvidenceRecorder:
             vehicle=_field(result, "vehicle"), scene=scene,
             raw_control=raw_control, final_control=_field(result, "final_control"),
             safety_reason=_field(result, "safety_reason", "UNKNOWN"),
+            safety_reason_category=_field(result, "safety_reason_category", "NONE"),
             safety_override=_field(result, "safety_override", False),
             timing=timing, command_id=command_id, fsm_state=fsm_state,
             longitudinal=_field(result, "longitudinal"), lateral=_field(result, "lateral"),
@@ -552,6 +571,37 @@ class ScenarioEvidenceRecorder:
             command_id=command_id,
             payload=_jsonable(payload),
         )
+
+    def record_route_recovery_event(
+        self,
+        *,
+        event_type: str,
+        payload: Mapping[str, object],
+    ) -> None:
+        """Persist route-recovery lifecycle evidence and update aggregates."""
+        self._ensure_active()
+        if event_type not in {
+            "route_recovery_state",
+            "route_replanned",
+            "route_replan_failed",
+        }:
+            raise ValueError("unsupported route recovery event type")
+        normalized = dict(payload)
+        attempt = normalized.get("attempt", 0)
+        if type(attempt) is not int or isinstance(attempt, bool) or attempt < 0:
+            raise ValueError("route recovery attempt must be a non-negative integer")
+        self._route_replan_max_attempt = max(self._route_replan_max_attempt, attempt)
+        if event_type == "route_recovery_state":
+            status = str(normalized.get("status", "")).strip().upper()
+            if not status:
+                raise ValueError("route recovery state requires a status")
+            self._route_recovery_states.append(status)
+        elif event_type == "route_replanned":
+            self._route_replan_count += 1
+            self._route_recovery_states.append("REPLANNED")
+        else:
+            self._route_replan_failure_count += 1
+        self._write(event_type, **normalized)
 
     def complete(self, *, completion: bool | None = None, detail: str = "",
                  expected: Mapping[str, object] | None = None,
@@ -619,6 +669,13 @@ class ScenarioEvidenceRecorder:
             "lane_invasion_count": self._lane_invasions,
             "red_light_violation_count": self._red_violations,
             "route_deviation_count": self._route_deviations,
+            "route_recovery": {
+                "states": list(self._route_recovery_states),
+                "replan_count": self._route_replan_count,
+                "replan_failure_count": self._route_replan_failure_count,
+                "max_attempt": self._route_replan_max_attempt,
+                "recovered": self._route_recovery_succeeded(),
+            },
             "serious_route_deviation": 0 if self._expected_route_deviation else self._route_deviations,
             "unfinished_task_count": 0 if completion else 1,
             "safety_override_frames": self._safety_override_frames,
@@ -775,6 +832,9 @@ class ScenarioEvidenceRecorder:
             "min_gap_m": self._min_gap_m,
             "max_abs_cross_track_error_m": max(abs_cte, default=None),
             "max_abs_lane_offset_m": max((abs(value) for value in self._lane_offsets_m), default=None),
+            "mean_abs_lane_offset_m": self._average(
+                [abs(value) for value in self._lane_offsets_m]
+            ),
             "mean_abs_cross_track_error_m": self._average(abs_cte),
             "initial_cross_track_error_m": self._cross_track_errors_m[0] if self._cross_track_errors_m else None,
             "final_abs_cross_track_error_m": abs(self._cross_track_errors_m[-1]) if self._cross_track_errors_m else None,
@@ -797,6 +857,11 @@ class ScenarioEvidenceRecorder:
             "route_deviation_event_seen": any(
                 "ROUTE_DEVIATION" in reason for reason in self._safety_reasons
             ),
+            "route_replan_count": self._route_replan_count,
+            "route_replan_failure_count": self._route_replan_failure_count,
+            "route_replan_max_attempt": self._route_replan_max_attempt,
+            "route_recovery_states": list(self._route_recovery_states),
+            "route_recovery_succeeded": self._route_recovery_succeeded(),
             "event_count": (
                 self._safety_override_episodes + self._feedback_safety_event_count
                 + self._collisions + self._lane_invasions
@@ -824,6 +889,16 @@ class ScenarioEvidenceRecorder:
             **dict(context),
         }
         return metrics
+
+    def _route_recovery_succeeded(self) -> bool:
+        try:
+            replanned_index = self._route_recovery_states.index("REPLANNED")
+        except ValueError:
+            return False
+        return any(
+            status in {"ON_ROUTE", "DESTINATION_REACHED"}
+            for status in self._route_recovery_states[replanned_index + 1:]
+        )
 
     def _write(self, record_type: str, **fields: Any) -> None:
         if self._handle is None:

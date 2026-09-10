@@ -55,7 +55,7 @@
     {
       "time_s": 1,
       "source_text": "跟随正前方车辆",
-      "intent": "KEEP_LANE",
+      "intent": "FOLLOW",
       "parameters": {
         "target_speed_kph": 15
       },
@@ -75,7 +75,7 @@
     {
       "time_s": 14,
       "source_text": "重新看清正前方车辆后继续跟随",
-      "intent": "KEEP_LANE",
+      "intent": "FOLLOW",
       "parameters": {
         "target_speed_kph": 15
       },

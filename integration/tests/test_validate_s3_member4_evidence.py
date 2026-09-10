@@ -11,19 +11,19 @@ def _passing_evidence():
             "seed": 20260303,
             "code_version": "abc123",
             "config_path": "scenarios/official_competition/S3_extreme_emergency_6km.json",
-            "qwen_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+            "qwen_model": "Qwen/Qwen3.5-2B",
         },
     }]
     records.extend({
         "record_type": "command",
         "command_id": command_id,
-        "disposition": "SCENARIO_FAST" if index >= 2 else "SCENARIO_SLOW_PENDING",
+        "disposition": "SCENARIO_SLOW_PENDING",
     } for index, command_id in enumerate(command_ids))
     records.extend({
         "record_type": "qwen_trajectory",
         "request_id": f"request-{index}",
         "latency": {"sensor_to_trajectory_ms": 80.0},
-    } for index in range(2))
+    } for index in range(4))
     records.append({
         "record_type": "frame",
         "latency": {"sensor_to_control_ms": 12.0},
@@ -66,8 +66,8 @@ def _passing_evidence():
                 "passed": True,
                 "failures": [],
                 "observed": {
-                    "qwen_calls": 2,
-                    "routes": ["QWEN_PLAN", "QWEN_PLAN", "FAST_LOCAL", "FAST_LOCAL"],
+                    "qwen_calls": 4,
+                    "routes": ["QWEN_PLAN"] * 4,
                 },
             },
             "extension_acceptance": {
@@ -104,18 +104,18 @@ def test_member4_evidence_rejects_missing_pedestrian_timestamps():
     assert "emergency_event_timestamps" in report["failed_keys"]
 
 
-def test_member4_evidence_rejects_non_7b_model_and_route_mismatch():
+def test_member4_evidence_rejects_non_2b_model_and_route_mismatch():
     summary, records = _passing_evidence()
-    records[0]["config"]["qwen_model"] = "Qwen/Qwen3-VL-2B-Instruct"
+    records[0]["config"]["qwen_model"] = "Qwen/Qwen2.5-VL-7B-Instruct"
     summary["acceptance"]["metrics"]["qwen_acceptance"]["observed"]["routes"] = [
-        "QWEN_PLAN", "QWEN_PLAN", "QWEN_PLAN", "FAST_LOCAL",
+        "QWEN_PLAN", "QWEN_PLAN", "QWEN_PLAN", "CONFIRM_SAFE",
     ]
 
     report = validate_evidence(summary, records)
 
     assert report["passed"] is False
-    assert "qwen_7b_model" in report["failed_keys"]
-    assert "mixed_route_counts" in report["failed_keys"]
+    assert "qwen_2b_model" in report["failed_keys"]
+    assert "all_qwen_route_counts" in report["failed_keys"]
 
 
 def test_member4_functional_profile_reports_but_does_not_block_latency():

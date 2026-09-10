@@ -278,6 +278,17 @@ def should_stop_after_record(status: object, *, fail_fast: bool) -> bool:
     return bool(fail_fast and str(status) != "SUCCEEDED")
 
 
+def child_environment(project: Path, base: dict[str, str] | None = None) -> dict[str, str]:
+    """Prepend the checkout without hiding host-provided runtime dependencies."""
+    env = dict(os.environ if base is None else base)
+    inherited_pythonpath = env.get("PYTHONPATH", "").strip()
+    env["PYTHONPATH"] = os.pathsep.join(
+        part for part in (str(project), inherited_pythonpath) if part
+    )
+    env["QWEN_API_KEY"] = "unused"
+    return env
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", type=Path, required=True)
@@ -291,6 +302,18 @@ def main() -> int:
     parser.add_argument("--carla-host", default="127.0.0.1")
     parser.add_argument("--carla-port", type=int, default=2000)
     parser.add_argument("--warmup-requests", type=int, default=20)
+    parser.add_argument(
+        "--qwen-timeout-ms", type=float, default=300.0,
+        help="per-command Qwen deadline; keep 300 ms for formal A800 measurement",
+    )
+    parser.add_argument(
+        "--hardware", default=os.environ.get("VALIDATION_HARDWARE", "NVIDIA A800-SXM4-80GB"),
+        help="truthful hardware label stored in the evidence report",
+    )
+    parser.add_argument(
+        "--cuda", default=os.environ.get("VALIDATION_CUDA", "13.2"),
+        help="CUDA runtime label stored in the evidence report",
+    )
     parser.add_argument(
         "--fail-fast", action="store_true",
         help="stop after writing the first non-SUCCEEDED scenario result",
@@ -313,6 +336,8 @@ def main() -> int:
         help="deployment revision used when the server copy has no .git directory",
     )
     args = parser.parse_args()
+    if args.qwen_timeout_ms <= 0.0:
+        parser.error("--qwen-timeout-ms must be positive")
 
     project = args.project.resolve()
     qwen_image_root = (
@@ -362,8 +387,8 @@ def main() -> int:
     metadata: dict[str, object] = {
         "schema_version": "1.0",
         "suite_revision": revision,
-        "hardware": "NVIDIA A800-SXM4-80GB",
-        "cuda": "13.2",
+        "hardware": args.hardware,
+        "cuda": args.cuda,
         "selection": (
             "targeted diagnostic subset" if included
             else "all 83 scored scenarios with runtime_support.status=current; long stability excluded"
@@ -379,10 +404,10 @@ def main() -> int:
         ),
         "qwen_image_root": str(qwen_image_root),
         "official_measurement_window": "first 50 successful sensor-to-trajectory samples",
+        "qwen_timeout_ms": args.qwen_timeout_ms,
     }
     records: list[dict[str, object]] = []
-    env = os.environ.copy()
-    env.update({"PYTHONPATH": str(project), "QWEN_API_KEY": "unused"})
+    env = child_environment(project)
     total = len(scenarios)
     for index, item in enumerate(scenarios, 1):
         scenario_id = item["scenario_id"]
@@ -396,7 +421,7 @@ def main() -> int:
             "--perception-mode", "sensors", "--scenario-facts-mode", "perception",
             "--sensor-profile", "low", "--realtime",
             "--qwen-service-url", args.qwen_service_url,
-            "--qwen-mode", "planner_v2", "--qwen-timeout-ms", "300",
+            "--qwen-mode", "planner_v2", "--qwen-timeout-ms", str(args.qwen_timeout_ms),
             "--qwen-queue-size", "8", "--qwen-image-root", str(qwen_image_root),
             "--qwen-image-prefix", f"artifacts/acceptance84/qwen_images/{scenario_id}",
             "--sensor-warmup-frames", "20", "--sensor-timeout-s", "1.0",

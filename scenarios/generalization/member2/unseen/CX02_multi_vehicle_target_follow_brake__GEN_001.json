@@ -9,7 +9,7 @@
     "p2",
     "multi_target_follow_brake"
   ],
-  "map": "Town04",
+  "map": "Town03_Opt",
   "weather": "HardRainNight",
   "seed": 20260521,
   "runtime": {

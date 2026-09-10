@@ -32,7 +32,6 @@ _TERMINAL_SAFETY_REASONS = {
     "RISK_EMERGENCY_BRAKE_REQUESTED",
     "LOW_TTC",
     "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE",
-    "RED_LIGHT_STOP_LINE_GUARD",
 }
 
 
@@ -63,6 +62,11 @@ class ControlRuntime:
         # bumper passes the stop waypoint.
         self._yellow_clear_committed = False
         self._latched_alerts: list[str] = []
+
+    @property
+    def yellow_clear_committed(self) -> bool:
+        """Whether ego legally committed to clear a yellow-light dilemma zone."""
+        return self._yellow_clear_committed
 
     def submit_voice(self, envelope: Mapping[str, object], *, now_s: float) -> AdaptedVoiceCommand:
         """Accept a voice result at the CARLA-time boundary and retain JSON for D."""
@@ -174,32 +178,19 @@ class ControlRuntime:
             alert for alert in self._latched_alerts if alert not in recovered
         ]
 
-    def recover_runtime_watchdog(self, *, requested_speed_mps: float) -> bool:
-        """Release only a transient runner-watchdog stop after health returns.
-
-        Sensor/integration faults remain operator-latched.  The CARLA runner
-        calls this after consecutive healthy frames, so a one-off slow frame
-        brakes immediately without leaving an otherwise healthy mission
-        permanently stranded at zero requested speed.
-        """
-        speed = float(requested_speed_mps)
-        if not math.isfinite(speed) or speed <= 0.0:
-            raise ValueError("requested_speed_mps must be finite and positive")
-        alert = "RUNTIME_WATCHDOG_TIMEOUT"
-        if alert not in self._latched_alerts:
-            return False
-        self.clear_safety_alerts((alert,))
-        if not self._latched_alerts and self._active_command_id is None and not self._stop_hold:
-            self.requested_speed_mps = speed
-        return True
+    def clear_safety_alert_prefix(self, prefix: str) -> tuple[str, ...]:
+        """Release one recovered fault family without clearing unrelated alerts."""
+        if type(prefix) is not str or not prefix:
+            raise ValueError("prefix must be a non-empty string")
+        cleared = tuple(
+            alert for alert in self._latched_alerts if alert.startswith(prefix)
+        )
+        if cleared:
+            self.clear_safety_alerts(cleared)
+        return cleared
 
     def release_scenario_stop_hold(self, *, requested_speed_mps: float) -> bool:
-        """Release a completed emergency hold only for an explicit scenario recovery.
-
-        A live command or a latched safety fault always wins and keeps the
-        vehicle stopped. The CARLA scenario runner calls this only after its
-        configured hazard-clear hold time has elapsed.
-        """
+        """Release a completed scenario emergency hold after its hazard clears."""
         speed = float(requested_speed_mps)
         if not math.isfinite(speed) or speed <= 0.0:
             raise ValueError("requested_speed_mps must be finite and positive")
@@ -209,14 +200,38 @@ class ControlRuntime:
         self._stop_hold = False
         return True
 
-    def fail_active(self, *, now_s: float, detail: str) -> ExecutionFeedback | None:
-        """Terminate the active command when its outer runtime cannot continue."""
+    def fail_active(
+        self,
+        *,
+        now_s: float,
+        detail: str,
+        resume_speed_mps: float | None = None,
+    ) -> ExecutionFeedback | None:
+        """Terminate the active command when its outer runtime cannot continue.
+
+        Ordinary failures remain fail-closed.  A caller that owns a temporary
+        internal hold (for example, the Qwen request bridge) may explicitly
+        release only that hold and restore a bounded fallback speed.  The
+        independent safety supervisor still arbitrates the resumed command.
+        """
+        if resume_speed_mps is not None:
+            if (
+                type(resume_speed_mps) not in (int, float)
+                or isinstance(resume_speed_mps, bool)
+                or not math.isfinite(float(resume_speed_mps))
+                or float(resume_speed_mps) < 0.0
+            ):
+                raise ValueError("resume_speed_mps must be finite and non-negative")
         command_id = self._active_command_id
         if command_id is None:
             return None
         feedback = self.fsm.fail(command_id, now_s=now_s, detail=detail)
-        self.requested_speed_mps = 0.0
-        self._stop_hold = True
+        if resume_speed_mps is None:
+            self.requested_speed_mps = 0.0
+            self._stop_hold = True
+        else:
+            self.requested_speed_mps = float(resume_speed_mps)
+            self._stop_hold = self.requested_speed_mps <= 0.0
         self._clear_active_command()
         return feedback
 
@@ -320,6 +335,15 @@ class ControlRuntime:
                 longitudinal = self.longitudinal.step(request, dt_s)
             if longitudinal is None:
                 raise RuntimeError("fuzzy policy intervened without a longitudinal output")
+            if (
+                speed_cap_mps is not None
+                and speed_cap_mps < self.requested_speed_mps
+                and longitudinal.target_speed_mps <= speed_cap_mps + 1e-9
+            ):
+                longitudinal = replace(
+                    longitudinal,
+                    reason="safe_target_speed:sensor_or_perception_cap",
+                )
             should_hold = self._stop_hold or (
                 self._active_command is not None and
                 self._active_command.action in {"STOP", "EMERGENCY_BRAKE"} and
@@ -345,7 +369,9 @@ class ControlRuntime:
                 # C owns comfortable STOP/confirmation deceleration. D still
                 # receives vehicle/risk/watchdog facts and remains final arbiter.
                 safety_command = None
-            safety = self.safety.arbitrate(raw_for_safety, safety_vehicle_state(vehicle, control_scene), safety_command,
+            safety = self.safety.arbitrate(raw_for_safety, safety_vehicle_state(
+                vehicle, control_scene, road_curvature_per_m=route.curvature_per_m,
+            ), safety_command,
                                            longitudinal.risk, tuple(expired_alerts))
             if safety_override_reason is not None and not safety.safety_override:
                 # C may request a semantic emergency brake that is already a
@@ -356,6 +382,7 @@ class ControlRuntime:
                     safety,
                     safety_override=True,
                     reason=safety_override_reason,
+                    reason_category="PERCEPTION_SAFETY",
                 )
             final = ControlOutput(safety.final_control.throttle, safety.final_control.brake, safety.final_control.steer)
             command_owned_override = (
@@ -382,8 +409,14 @@ class ControlRuntime:
                 if completed is not None:
                     feedback.append(completed)
             return FrameResult(vehicle, final, longitudinal, safety.reason, safety.safety_override,
-                               tuple(feedback), raw_for_safety, lateral)
-        except Exception:
+                               tuple(feedback), raw_for_safety, lateral,
+                               safety.reason_category)
+        except Exception as error:
+            print(
+                "runtime step integration failure: "
+                f"{type(error).__name__}: {error}",
+                flush=True,
+            )
             if "INTEGRATION_FAILURE" not in self._latched_alerts:
                 self._latched_alerts.append("INTEGRATION_FAILURE")
             self.requested_speed_mps = 0.0
@@ -395,7 +428,7 @@ class ControlRuntime:
                 self._clear_active_command()
             fail_control = ControlOutput(0.0, 1.0, 0.0)
             return FrameResult(vehicle, fail_control, None, "INTEGRATION_FAILURE", True,
-                               tuple(feedback), fail_control)
+                               tuple(feedback), fail_control, safety_reason_category="CONTROL")
 
     def _completion_feedback(self, vehicle: RuntimeVehicleState) -> ExecutionFeedback | None:
         command = self._active_command
@@ -480,6 +513,7 @@ class ControlRuntime:
                 scene,
                 traffic_light="GREEN",
                 distance_to_stop_line_m=None,
+                red_light_violation=False,
             )
 
         if signal != "YELLOW" or distance is None:
@@ -497,4 +531,5 @@ class ControlRuntime:
             scene,
             traffic_light="GREEN",
             distance_to_stop_line_m=None,
+            red_light_violation=False,
         )

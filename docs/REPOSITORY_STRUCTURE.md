@@ -11,7 +11,7 @@
 | `car_control_D/` | 最终安全仲裁、执行反馈、约束检查和控制基准工具 | 否 |
 | `CARLA-Language-Benchmark/` | 6192 条冻结语言 schema 回归数据、校验和与审计策略 | 否 |
 | `CARLA_Language_Benchmark/` | 上述带连字符数据目录的 Python 可导入包装器 | 否 |
-| `config/` | Docker/复现运行所用环境配置；正式模型配置均为 2B | 否 |
+| `config/` | 控制/安全策略、场景泛化矩阵和复现环境配置；正式模型配置均为 2B | 否 |
 | `datasets/` | 小型可提交语言、多模态、代理集和复现清单 | 否 |
 | `docker/` | 控制器、Qwen、CARLA 相关 Compose 与镜像构建文件 | 否 |
 | `docs/` | 当前手册、复现文档、参考材料和保留报告 | 否 |
@@ -44,6 +44,7 @@
 | `scenarios/acceptance_suite/` | P0–P3 综合验收矩阵 |
 | `docs/runbooks/` | 服务器运行和外部接入手册 |
 | `docs/reproduction/` | Qwen 2B 固定版本、证据范围和复现步骤 |
+| `docs/reports/` | 路线、场景、控制、安全和分支归并报告 |
 | `metrics/reference_5070/` | 2B INT4 诊断基准、原始 JSON、日志和 SHA256 清单 |
 | `submission/current/` | 当前技术方案源文件 |
 | `submission/templates/` | 单次演示记录和机器可读证据索引模板 |

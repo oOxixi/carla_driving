@@ -119,6 +119,28 @@ class ManeuverFSM:
             emergency_reason = str(
                 snapshot.get("emergency_reason", "EMERGENCY_PREEMPT")
             ).strip().upper()
+            if emergency_reason == "RED_LIGHT_STOP_LINE_GUARD":
+                # A traffic signal temporarily pauses the current semantic
+                # step.  It must not turn KEEP_LANE/turn/avoidance into a
+                # terminal command or consume the step timeout while waiting.
+                self._completion_frames = 0
+                self.step_started_s = now
+                self.state = "WAIT_TRAFFIC_SIGNAL"
+                return self._update(safe_behavior="STOP")
+            if step.behavior in {"YIELD", "SLOW_DOWN"}:
+                # Emergency braking is the expected safe response while a
+                # pedestrian is crossing or a conditional slow-observation
+                # command is active. Keep the plan active and reset its clear
+                # window instead of falsely failing at the moment it matters.
+                self._completion_frames = 0
+                if self.step_started_s is not None and now - self.step_started_s > step.timeout_s:
+                    reason = (
+                        "YIELD_HAZARD_DID_NOT_CLEAR"
+                        if step.behavior == "YIELD"
+                        else "SLOW_DOWN_HAZARD_DID_NOT_CLEAR"
+                    )
+                    return self._step_failure(step, reason, now)
+                return self._update(safe_behavior="EMERGENCY_STOP")
             return self._finish(
                 "SAFETY_OVERRIDE",
                 emergency_reason or "EMERGENCY_PREEMPT",
@@ -131,7 +153,12 @@ class ManeuverFSM:
         if self.step_started_s is None:
             self.step_started_s = now
         if now - self.step_started_s > step.timeout_s:
-            return self._step_failure(step, "STEP_TIMEOUT", now)
+            reason = (
+                "LANE_GAP_UNSAFE"
+                if any(item.endswith("GAP_SAFE") for item in step.preconditions)
+                else "STEP_TIMEOUT"
+            )
+            return self._step_failure(step, reason, now)
         if not self._preconditions_latched:
             unmet = tuple(
                 condition for condition in step.preconditions
@@ -155,7 +182,30 @@ class ManeuverFSM:
             # Emergency risk remains continuously enforced above this gate.
             self._preconditions_latched = True
         self.state = self._step_state(step)
-        if _completion_satisfied(step.completion, snapshot):
+        completion_satisfied = _completion_satisfied(step.completion, snapshot)
+        if (
+            completion_satisfied
+            and step.behavior == "SLOW_DOWN"
+            and str(step.completion.get("type", "")) == "TARGET_PASSED"
+        ):
+            # "减速观察，确认安全后恢复" has three simultaneous gates: the
+            # reduced speed was actually reached, the named actor is behind
+            # ego, and the observation lasted long enough.  A fixed timer by
+            # itself can restore cruise while ego is still alongside a bus or
+            # pedestrian, which is semantically unsafe even without collision.
+            target_speed = step.target.get("target_speed_mps")
+            speed_ok = (
+                target_speed is not None
+                and float(snapshot.get("speed_mps", math.inf))
+                <= float(target_speed) + float(snapshot.get("speed_tolerance_mps", 0.6))
+            )
+            minimum_duration_s = float(step.completion.get("value") or 0.0)
+            duration_ok = (
+                self.step_started_s is not None
+                and now - self.step_started_s >= minimum_duration_s
+            )
+            completion_satisfied = completion_satisfied and speed_ok and duration_ok
+        if completion_satisfied:
             self._completion_frames += 1
         else:
             self._completion_frames = 0
@@ -163,10 +213,19 @@ class ManeuverFSM:
         if self._completion_frames < required_frames:
             return self._update()
         completed_event = self._event("qwen_step_completed", now, "COMPLETION_HELD")
+        completed_step = step
         self.step_index += 1
         self._completion_frames = 0
         self.step_started_s = now
-        self._preconditions_latched = False
+        next_step = self.current_step
+        self._preconditions_latched = bool(
+            completed_step.behavior == "WAIT_SAFE_GAP"
+            and next_step is not None
+            and next_step.source_step_id == completed_step.source_step_id
+            and next_step.behavior in {
+                "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT", "RETURN_TO_LANE",
+            }
+        )
         if self.current_step is None:
             return self._finish("SUCCEEDED", "PLAN_COMPLETE", now, events=[completed_event])
         self.state = self._step_state(self.current_step)
@@ -313,7 +372,10 @@ def _completion_satisfied(completion: Mapping[str, Any], snapshot: Mapping[str, 
     kind = str(completion["type"])
     value = completion.get("value")
     if kind == "SPEED_BELOW":
-        return float(snapshot.get("speed_mps", math.inf)) <= float(value)
+        # Closed-loop speed control converges asymptotically and can remain a
+        # few millimetres per second above the numeric target.
+        tolerance = float(snapshot.get("speed_below_tolerance_mps", 0.05))
+        return float(snapshot.get("speed_mps", math.inf)) <= float(value) + tolerance
     if kind == "SPEED_REACHED":
         # Match the closed-loop acceptance tolerance (2 km/h ~= 0.56 m/s).
         # The former 0.35 m/s threshold could time out a physically stable

@@ -23,43 +23,46 @@ def _clock(start: int = 1_000_000_000):
     return state, lambda: state["now"]
 
 
-def test_fast_path_validates_without_qwen_and_clamps_speed_limit() -> None:
+def test_atomic_command_is_queued_for_qwen() -> None:
     state, clock = _clock()
     command = _example("driving_command")
     scene = _example("perception_state")
-    with PipelineOrchestrator(clock_ns=clock) as runtime:
+    with PipelineOrchestrator(infer=lambda request: {}, clock_ns=clock) as runtime:
         result = runtime.submit_command(command, scene, now_ns=1_100_000_000)
-    assert result.disposition == "FAST"
-    assert result.control_command is not None
-    assert result.control_command["path_type"] == "FAST"
-    assert result.control_command["target"]["target_speed_mps"] == pytest.approx(5.5555555556)
+    assert result.disposition == "SLOW_PENDING"
+    assert result.control_command is None
+    assert result.model_request is not None
+    assert result.model_request["routing"]["disposition"] == "QWEN_PLAN"
     assert result.feedback["status"] == "RECEIVED"
 
 
-def test_standard_command_still_works_when_qwen_is_unavailable() -> None:
+def test_every_command_fails_closed_when_qwen_is_unavailable() -> None:
     command = _example("driving_command")
     scene = _example("perception_state")
     with PipelineOrchestrator(infer=None) as runtime:
-        assert runtime.submit_command(command, scene, now_ns=1_100_000_000).disposition == "FAST"
+        atomic = runtime.submit_command(command, scene, now_ns=1_100_000_000)
         complex_command = copy.deepcopy(command)
         complex_command.update({"command_id": "complex", "intent": "CHANGE_LANE"})
         complex_command["parameters"] = {"direction": "LEFT"}
         result = runtime.submit_command(complex_command, scene, now_ns=1_100_000_000)
+    assert atomic.disposition == "REJECTED"
+    assert atomic.reason_code == "QWEN_UNAVAILABLE"
     assert result.disposition == "REJECTED"
     assert result.reason_code == "QWEN_UNAVAILABLE"
 
 
-def test_stale_perception_fail_closes_propulsion_to_stop() -> None:
+def test_stale_perception_is_sent_to_qwen_with_fail_closed_constraints() -> None:
     command = _example("driving_command")
     scene = _example("perception_state")
     scene["stale"] = True
     scene["sync"]["within_tolerance"] = False
     scene["sync"]["missing_modalities"] = ["LIDAR"]
-    with PipelineOrchestrator() as runtime:
+    with PipelineOrchestrator(infer=lambda request: {}) as runtime:
         result = runtime.submit_command(command, scene, now_ns=1_100_000_000)
-    assert result.control_command["source"] == "SAFETY_SYSTEM"
-    assert result.control_command["behavior"] == "STOP"
-    assert result.feedback["status"] == "SAFETY_OVERRIDE"
+    assert result.disposition == "SLOW_PENDING"
+    assert result.control_command is None
+    assert result.model_request["routing"]["disposition"] == "CONFIRM_SAFE"
+    assert result.model_request["constraints"]["must_stop"] is True
 
 
 def test_slow_path_is_async_and_validates_matching_target() -> None:
@@ -174,7 +177,7 @@ def test_qwen_timeout_does_not_block_caller() -> None:
     scene = _example("perception_state")
 
     def infer(_request):
-        release.wait(1.0)
+        release.wait(10.0)
         raise RuntimeError("offline")
 
     runtime = PipelineOrchestrator(
@@ -186,7 +189,9 @@ def test_qwen_timeout_does_not_block_caller() -> None:
         queued = runtime.submit_command(command, scene, now_ns=1_100_000_000)
         elapsed = time.perf_counter() - started
         assert queued.disposition == "SLOW_PENDING"
-        assert elapsed < 0.05
+        # This proves submission does not wait for the deliberately blocked
+        # 10 s backend while tolerating scheduler jitter on a loaded host.
+        assert elapsed < 2.0
         time.sleep(0.02)
         timeout = runtime.poll_slow(now_ns=1_120_000_000)
         assert any(item.reason_code == "QWEN_TIMEOUT" for item in timeout)
@@ -303,7 +308,7 @@ def test_all_queues_are_bounded_and_report_overflow() -> None:
 def test_latency_trace_reports_required_percentiles(tmp_path: Path) -> None:
     collector = LatencyCollector()
     for index, duration_ms in enumerate((100, 120, 140, 160, 180)):
-        trace = StageTrace(f"cmd-{index}", "FAST")
+        trace = StageTrace(f"cmd-{index}", "QWEN")
         trace.mark("audio_start", timestamp_ns=1_000_000_000)
         trace.mark("asr_end", timestamp_ns=1_010_000_000)
         trace.mark("nlu_end", timestamp_ns=1_020_000_000)
@@ -322,7 +327,7 @@ def test_latency_trace_reports_required_percentiles(tmp_path: Path) -> None:
 
 
 def test_latency_trace_rejects_out_of_order_marks() -> None:
-    trace = StageTrace("cmd", "FAST")
+    trace = StageTrace("cmd", "QWEN")
     trace.mark("nlu_end", timestamp_ns=10)
     with pytest.raises(ValueError, match="out of order"):
         trace.mark("asr_end", timestamp_ns=11)

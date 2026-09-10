@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from car_control_A.routing import RouteReference
-from integration.execution_stage import RouteProgressTracker
+from integration.execution_stage import DistanceCoverageTracker, RouteProgressTracker
 from integration.planning_stage import prepare_scenario_route
 from integration.scenario_execution import ScenarioSpec
 from integration.scoring_stage import build_acceptance_context
@@ -40,6 +40,24 @@ def test_execution_progress_is_monotonic_across_route_overlap() -> None:
     assert observed[-1] == pytest.approx(19.0)
 
 
+def test_distance_coverage_counts_lane_change_path_but_rejects_teleport() -> None:
+    tracker = DistanceCoverageTracker()
+    observed = [
+        tracker.update(x, y, speed_mps=speed, delta_s=0.05)
+        for x, y, speed in (
+            (0.0, 0.0, 0.0),
+            (0.5, 0.0, 10.0),
+            (1.0, 0.3, 10.0),
+            (100.0, 100.0, 0.0),
+            (100.5, 100.0, 10.0),
+        )
+    ]
+
+    assert observed[2] == pytest.approx(0.5 + (0.5**2 + 0.3**2) ** 0.5)
+    assert observed[3] == observed[2]
+    assert observed[4] == pytest.approx(observed[2] + 0.5)
+
+
 def test_scoring_stage_is_read_only_and_keeps_control_policy_separate() -> None:
     spec = ScenarioSpec.load(
         ROOT / "scenarios" / "safety_D" / "D04_lane_deviation.json"
@@ -59,6 +77,30 @@ def test_scoring_stage_is_read_only_and_keeps_control_policy_separate() -> None:
     assert context["spawned_scenario_actor_types"] == ["vehicle"]
     assert context["configured_route_deviation_trigger_m"] == 2.0
     assert spec.control_policy == policy_before
+
+
+def test_scoring_stage_retains_red_stop_and_qwen_safety_evidence() -> None:
+    spec = ScenarioSpec.load(
+        ROOT / "scenarios" / "acceptance_suite" / "supplemental" /
+        "challenge" / "SUP_C06_ignore_red_light.json"
+    )
+    context = build_acceptance_context(
+        spec,
+        final_route_end_distance_m=15.0,
+        final_route_remaining_m=15.0,
+        configured_route_deviation_trigger_m=3.0,
+        spawned_scenario_actor_types=(),
+        extension_acceptance={
+            "evidence": {
+                "stopped_on_red_before_stop_line": True,
+                "safety_reasons": ["QWEN_ILLEGAL_REQUEST_STOP"],
+            },
+        },
+        qwen_acceptance=None,
+    )
+
+    assert context["stopped_before_stop_line"] is True
+    assert context["safety_priority_observed"] is True
 
 
 def test_expected_threshold_does_not_implicitly_become_control_policy() -> None:

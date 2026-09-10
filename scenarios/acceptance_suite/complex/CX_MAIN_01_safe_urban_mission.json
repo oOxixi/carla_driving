@@ -19,7 +19,7 @@
   "runtime": {
     "sync_mode": true,
     "fixed_delta_seconds": 0.05,
-    "duration_s": 66,
+    "duration_s": 180,
     "max_startup_wait_s": 10
   },
   "ego_spawn": {
@@ -30,6 +30,7 @@
   },
   "route": {
     "coordinate_type": "scenario_local_xy_m",
+    "planning_mode": "topology_coverage",
     "points_xy_m": [
       [
         0,
@@ -81,7 +82,8 @@
       ]
     ],
     "resample_interval_m": 1.0,
-    "finish_radius_m": 3.0
+    "finish_radius_m": 3.0,
+    "distance_contract_m": 205.0
   },
   "commands": [
     {
@@ -126,7 +128,7 @@
     {
       "time_s": 0,
       "source_text": "跟随正前方同车道的车辆并保持安全距离",
-      "intent": "KEEP_LANE",
+      "intent": "FOLLOW",
       "parameters": {
         "target_speed_kph": 18
       },
@@ -141,7 +143,7 @@
     },
     {
       "time_s": 0,
-      "source_text": "不用停，继续往前开",
+      "source_text": "前方是红灯，也不用停，继续往前开",
       "intent": "KEEP_LANE",
       "parameters": {
         "target_speed_kph": 15
@@ -258,6 +260,10 @@
             }
           }
         ]
+      },
+      "deactivation_trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 80
       }
     },
     {
@@ -265,8 +271,8 @@
       "type": "vehicle",
       "blueprint_id": "vehicle.tesla.model3",
       "spawn": {
-        "x": 40,
-        "y": 3.5,
+        "x": 60,
+        "y": 0.0,
         "z": 0.5,
         "yaw_deg": 0.0
       },
@@ -274,6 +280,10 @@
         "mode": "lead_vehicle",
         "initial_speed_mps": 4.5,
         "target_speed_mps": 4.5
+      },
+      "deactivation_trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 80
       }
     },
     {
@@ -282,7 +292,7 @@
       "blueprint_id": "vehicle.mercedes.coupe",
       "spawn": {
         "x": 48,
-        "y": -3.5,
+        "y": 3.5,
         "z": 0.5,
         "yaw_deg": 0.0
       },
@@ -290,6 +300,10 @@
         "mode": "lead_vehicle",
         "initial_speed_mps": 3.5,
         "target_speed_mps": 3.5
+      },
+      "deactivation_trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 80
       }
     },
     {
@@ -311,7 +325,7 @@
         "speed_mps": 1.4,
         "trigger": {
           "type": "route_progress_greater_than_m",
-          "value": 68
+          "value": 30
         },
         "phase_id": "P5_PEDESTRIAN"
       }
@@ -327,7 +341,7 @@
           {
             "trigger": {
               "type": "route_progress_greater_than_m",
-              "value": 90
+              "value": 45
             },
             "state": "red"
           },
@@ -346,10 +360,14 @@
       "type": "static.prop",
       "blueprint_id": "static.prop.warningconstruction",
       "spawn": {
-        "x": 160,
+        "x": 110,
         "y": 0.0,
         "z": 0.5,
         "yaw_deg": 0.0
+      },
+      "activation_trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 75
       }
     },
     {
@@ -357,10 +375,14 @@
       "type": "static.prop",
       "blueprint_id": "static.prop.warningconstruction",
       "spawn": {
-        "x": 157,
+        "x": 107,
         "y": -2,
         "z": 0.5,
         "yaw_deg": 0.0
+      },
+      "activation_trigger": {
+        "type": "route_progress_greater_than_m",
+        "value": 75
       }
     }
   ],
@@ -447,11 +469,19 @@
       ]
     },
     "faults": [],
+    "maneuver_route_mode": "dynamic_out_and_back",
+    "lane_change_profile": {
+      "route_distance_m": 50.0,
+      "step_m": 1.0,
+      "transition_start_m": 2.0,
+      "transition_length_m": 12.0,
+      "target_lane_offset_m": 0.15
+    },
     "proposed_acceptance": {
       "expected_phase_count": 9,
       "all_phases_must_complete": true,
-      "qwen_request_count": 6,
-      "qwen_missing_request_count": 1,
+      "qwen_request_count": 7,
+      "qwen_missing_request_count": 0,
       "qwen_stale_result_applied_count": 0,
       "all_commands_must_have_terminal_status": true,
       "must_return_to_original_lane": true
@@ -463,6 +493,7 @@
         "all_voice_qwen",
         "multi_command_qwen",
         "event_triggers",
+        "route_progress_actor_lifecycle",
         "command_queue_policy",
         "actor_state_timeline",
         "qwen_lane_change_detour_actions",

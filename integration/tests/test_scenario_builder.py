@@ -6,6 +6,7 @@ from integration.scenario_builder import (
     ActorPlacementError,
     actor_resample_offsets,
     offset_actor_route_position,
+    rebase_actor_route_position,
     route_relative_carla_transform,
     route_relative_target_location,
     validate_actor_transform,
@@ -83,6 +84,36 @@ def test_explicit_adjacent_lane_uses_map_lane_relationship() -> None:
     assert (transform.location.x, transform.location.y) == pytest.approx((10.0, 1.5))
 
 
+def test_unavailable_adjacent_lane_is_a_resampleable_placement_error() -> None:
+    current = _Waypoint(10.0, 0.0, 0.0)
+    with pytest.raises(ActorPlacementError, match="unavailable left_adjacent"):
+        route_relative_carla_transform(
+            CARLA,
+            _Map(current),
+            ((0.0, 0.0), (20.0, 0.0)),
+            {
+                "spawn": {"z": 0.5},
+                "route_position": {
+                    "s_m": 10.0,
+                    "lane_relation": "LEFT_ADJACENT",
+                },
+            },
+        )
+
+
+def test_non_driving_adjacent_lane_is_a_resampleable_placement_error() -> None:
+    shoulder = _Waypoint(10.0, 3.5, 0.0)
+    shoulder.lane_type = "Shoulder"
+    current = _Waypoint(10.0, 0.0, 0.0, right=shoulder)
+    with pytest.raises(ActorPlacementError, match="not driving: SHOULDER"):
+        route_relative_carla_transform(
+            CARLA,
+            _Map(current),
+            ((0.0, 0.0), (20.0, 0.0)),
+            {"type": "vehicle", "spawn": {"x": 10.0, "y": 3.5}},
+        )
+
+
 def test_walker_target_uses_route_arc_length_on_a_curve() -> None:
     waypoint = _Waypoint(10.0, 8.0, 90.0)
     target = route_relative_target_location(
@@ -106,8 +137,8 @@ def test_actor_outside_route_is_rejected_before_spawning() -> None:
 
 
 def test_legacy_lane_width_offset_uses_real_adjacent_lane_center() -> None:
-    left = _Waypoint(10.0, 3.5, 0.0)
-    current = _Waypoint(10.0, 0.0, 0.0, left=left)
+    right = _Waypoint(10.0, 3.5, 0.0)
+    current = _Waypoint(10.0, 0.0, 0.0, right=right)
     transform = route_relative_carla_transform(
         CARLA,
         _Map(current),
@@ -140,7 +171,37 @@ def test_actor_resampling_is_seeded_and_reproducible() -> None:
     first = actor_resample_offsets(actor, seed=123)
     assert first == actor_resample_offsets(actor, seed=123)
     assert first[0] == (0.0, 0.0)
+    assert {abs(lateral_m) for _, lateral_m in first[1:5]} == {0.4, 0.8}
+    assert all(forward_m == 0.0 for forward_m, _ in first[1:5])
     assert first != actor_resample_offsets(actor, seed=124)
+
+
+def test_rebase_actor_position_changes_geometry_but_not_mission_trigger() -> None:
+    actor = {
+        "actor_id": "crossing",
+        "route_position": {"s_m": 130.0, "lateral_offset_m": 4.0},
+        "activation_trigger": {
+            "type": "route_progress_greater_than_m", "value": 110.0,
+        },
+        "behavior": {
+            "target_route_position": {"s_m": 130.0, "lateral_offset_m": -4.0},
+        },
+    }
+
+    rebased = rebase_actor_route_position(actor, 100.0)
+
+    assert rebased["route_position"]["s_m"] == pytest.approx(30.0)
+    assert rebased["behavior"]["target_route_position"]["s_m"] == pytest.approx(30.0)
+    assert rebased["activation_trigger"]["value"] == pytest.approx(110.0)
+    assert actor["route_position"]["s_m"] == pytest.approx(130.0)
+
+
+def test_rebase_actor_position_rejects_an_event_already_passed() -> None:
+    with pytest.raises(ActorPlacementError, match="behind replan origin"):
+        rebase_actor_route_position(
+            {"actor_id": "late", "route_position": {"s_m": 90.0}},
+            100.0,
+        )
 
 
 def test_vehicle_legality_rejects_lane_marking_and_overlap() -> None:

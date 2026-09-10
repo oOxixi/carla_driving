@@ -1,5 +1,7 @@
 import math
 
+import pytest
+
 from car_control_A.routing import RouteReference as RuntimeRouteReference
 from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
 from car_control_B.schemas import RouteReference, VehiclePose
@@ -33,6 +35,21 @@ def test_left_of_path_turns_right_positive_carla_sign():
 def test_output_limited_to_range():
     out = _controller().step(VehiclePose(0.0, 20.0, 0.0, 5.0), _ref())
     assert -1.0 <= out.steer <= 1.0
+
+
+def test_route_progress_reset_can_preserve_steering_rate_continuity() -> None:
+    controller = PurePursuitController(PurePursuitParams(
+        max_steer_delta_per_step=0.038,
+        min_steer_delta_per_step=0.038,
+        adaptive_max_steer_delta_per_step=0.038,
+    ))
+    first = controller.step(VehiclePose(0.0, -1.0, 0.0, 5.0), _ref())
+    assert first.steer == pytest.approx(0.038)
+
+    controller.reset(preserve_steer=True)
+    second = controller.step(VehiclePose(0.0, 1.0, 0.0, 5.0), _ref())
+
+    assert abs(second.steer - first.steer) <= 0.038
 
 
 def test_target_behind_ego_is_invalid_instead_of_silent_zero_steer():
@@ -117,6 +134,31 @@ def test_route_progress_is_restored_after_temporary_manoeuvre_route() -> None:
     restored = controller.step(VehiclePose(60.0, 0.0, 0.0, 5.0), mission)
 
     assert restored.nearest_index == 60
+
+
+def test_external_mission_progress_restores_beyond_reacquire_window() -> None:
+    controller = PurePursuitController(PurePursuitParams(
+        nearest_search_window=2,
+        route_reacquire_search_window=20,
+        max_steer_delta_per_step=1.0,
+    ))
+    mission = RouteReference(
+        points_xy_m=[(float(index), 0.0) for index in range(200)],
+        target_speed_mps=5.0,
+    )
+    manoeuvre = RouteReference(
+        points_xy_m=[(20.0 + float(index), 3.5) for index in range(120)],
+        target_speed_mps=4.0,
+    )
+
+    controller.step(VehiclePose(20.0, 0.0, 0.0, 5.0), mission)
+    controller.step(VehiclePose(130.0, 3.5, 0.0, 4.0), manoeuvre)
+    assert controller.synchronize_route_progress(mission, 130.0) == 130
+
+    restored = controller.step(VehiclePose(130.0, 0.0, 0.0, 5.0), mission)
+
+    assert restored.nearest_index == 130
+    assert restored.status == "OK"
 
 
 def test_small_frame_window_prevents_gradual_progress_jump_on_overlap() -> None:

@@ -3,7 +3,7 @@
   "scenario_id": "SUP_C07_three_vehicle_binding",
   "category": "regression",
   "official_level": "challenge",
-  "description": "在同车道目标和左右干扰车中绑定正前方目标。",
+  "description": "在最近同车道目标、远处车辆和相邻车道车辆中绑定目标。",
   "tags": [
     "acceptance_suite",
     "p1",
@@ -54,8 +54,8 @@
   "commands": [
     {
       "time_s": 0,
-      "source_text": "跟随正前方同车道的车辆",
-      "intent": "KEEP_LANE",
+      "source_text": "跟随最近的同车道正前方车辆",
+      "intent": "FOLLOW",
       "parameters": {
         "target_speed_kph": 16
       },
@@ -82,12 +82,12 @@
       }
     },
     {
-      "actor_id": "distractor_left",
+      "actor_id": "distractor_far",
       "type": "vehicle",
       "blueprint_id": "vehicle.tesla.model3",
       "spawn": {
-        "x": 20,
-        "y": 3.5,
+        "x": 44,
+        "y": 0.0,
         "z": 0.5,
         "yaw_deg": 0.0
       },
@@ -98,7 +98,7 @@
       }
     },
     {
-      "actor_id": "distractor_right",
+      "actor_id": "distractor_adjacent",
       "type": "vehicle",
       "blueprint_id": "vehicle.lincoln.mkz_2020",
       "spawn": {
