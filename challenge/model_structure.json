@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "model_id": "student-v0-fp32",
+  "status": "A1_STRUCTURE_READY_A3_WEIGHTS_PENDING",
+  "parameters": 21392757,
+  "precision": "fp32",
+  "artifact": "student_v0_fp32.onnx",
+  "artifact_sha256": "3b9154a2298a10fb49d377a4343ac700f62fa91d2be0d8256a33bf56483fb39c",
+  "opset": 17,
+  "dynamic_axes": false,
+  "modules": {
+    "vision_encoder": "Conv2D/ReLU x5 + AdaptiveAveragePool + Linear/ReLU",
+    "text_encoder": "Linear/ReLU x2",
+    "target_encoder": "flatten fixed 8x8 + Linear/ReLU x2",
+    "state_encoder": "Linear/ReLU x2",
+    "fusion": "Linear 2048->3072->3072->1024 with ReLU",
+    "heads": 10
+  },
+  "input_shapes": {
+    "rgb": [1, 3, 224, 224],
+    "text_tokens": [1, 32],
+    "targets": [1, 8, 8],
+    "state": [1, 32]
+  },
+  "output_names": [
+    "plan_length_logits",
+    "behavior_logits",
+    "target_pointer_logits",
+    "target_lane_logits",
+    "target_speed_mps",
+    "completion_type_logits",
+    "on_failure_logits",
+    "confidence",
+    "requires_confirmation_logits",
+    "replan_condition_logits"
+  ],
+  "forbidden_outputs": ["steer", "throttle", "brake", "waypoints"],
+  "training_state": "random_initialization_for_export_smoke_only"
+}
