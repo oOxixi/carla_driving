@@ -152,6 +152,87 @@ class RoutePlacement:
 
 
 @dataclass(frozen=True, slots=True)
+class LaneCorridorRequirement:
+    """Adjacent-lane topology that must exist over a mission-distance window."""
+
+    requirement_id: str
+    relation: str
+    start_s_m: float
+    end_s_m: float
+    junction_free: bool = False
+
+    def __post_init__(self) -> None:
+        relation = str(self.relation).strip().upper().removesuffix("_ADJACENT")
+        if not self.requirement_id:
+            raise ValueError("lane corridor requirement_id must be non-empty")
+        if relation not in {"LEFT", "RIGHT"}:
+            raise ValueError("lane corridor relation must be LEFT or RIGHT")
+        start, end = float(self.start_s_m), float(self.end_s_m)
+        if not math.isfinite(start) or not math.isfinite(end) or start < 0.0 or end < start:
+            raise ValueError("lane corridor distances must be finite and ordered")
+        if type(self.junction_free) is not bool:
+            raise TypeError("lane corridor junction_free must be bool")
+        object.__setattr__(self, "relation", relation)
+        object.__setattr__(self, "start_s_m", start)
+        object.__setattr__(self, "end_s_m", end)
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, object]) -> "LaneCorridorRequirement":
+        if not isinstance(value, Mapping):
+            raise TypeError("route lane corridor must be an object")
+        return cls(
+            str(value.get("id", value.get("phase_id", ""))),
+            str(value.get("relation", "")),
+            float(value.get("start_s_m", 0.0)),
+            float(value.get("end_s_m", value.get("start_s_m", 0.0))),
+            value.get("junction_free", False),  # type: ignore[arg-type]
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class SpeedWindowRequirement:
+    """Minimum physically supportable speed over a route-distance window."""
+
+    requirement_id: str
+    start_s_m: float
+    end_s_m: float
+    minimum_speed_kph: float
+    max_lateral_accel_mps2: float = 2.0
+    lookahead_m: float = 45.0
+
+    def __post_init__(self) -> None:
+        values = tuple(map(float, (
+            self.start_s_m, self.end_s_m, self.minimum_speed_kph,
+            self.max_lateral_accel_mps2, self.lookahead_m,
+        )))
+        if not self.requirement_id:
+            raise ValueError("speed window requirement_id must be non-empty")
+        if any(not math.isfinite(item) for item in values):
+            raise ValueError("speed window values must be finite")
+        start, end, speed, lateral_accel, lookahead = values
+        if start < 0.0 or end < start or speed <= 0.0 or lateral_accel <= 0.0 or lookahead <= 0.0:
+            raise ValueError("speed window values are outside their valid range")
+        object.__setattr__(self, "start_s_m", start)
+        object.__setattr__(self, "end_s_m", end)
+        object.__setattr__(self, "minimum_speed_kph", speed)
+        object.__setattr__(self, "max_lateral_accel_mps2", lateral_accel)
+        object.__setattr__(self, "lookahead_m", lookahead)
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, object]) -> "SpeedWindowRequirement":
+        if not isinstance(value, Mapping):
+            raise TypeError("route speed window must be an object")
+        return cls(
+            str(value.get("id", value.get("phase_id", ""))),
+            float(value.get("start_s_m", 0.0)),
+            float(value.get("end_s_m", value.get("start_s_m", 0.0))),
+            float(value.get("minimum_speed_kph", 0.0)),
+            float(value.get("max_lateral_accel_mps2", 2.0)),
+            float(value.get("lookahead_m", 45.0)),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class RouteRecoveryPolicy:
     """Map-independent hysteresis for automatic off-route recovery."""
 
@@ -608,6 +689,132 @@ class RouteManager:
             "requested_distance_m": requested_distance_m,
         })
         return replace(route, reference=replace(route.reference, metadata=metadata))
+
+    def plan_distance_compatible(
+        self,
+        starts: Sequence[Any],
+        distance_m: float,
+        target_speed_mps: float,
+        *,
+        lane_corridors: Sequence[LaneCorridorRequirement] = (),
+        speed_windows: Sequence[SpeedWindowRequirement] = (),
+    ) -> tuple[int, GlobalRoute]:
+        """Select the first start whose route satisfies scene topology.
+
+        The caller owns deterministic candidate order. No town, scenario, or
+        spawn index is embedded here; compatibility is route-relative.
+        """
+        if not starts:
+            raise ValueError("at least one route start candidate is required")
+        failures: list[dict[str, object]] = []
+        for candidate_index, start in enumerate(starts):
+            try:
+                route = self.plan_distance(start, distance_m, target_speed_mps)
+                self.validate_compatibility(
+                    route,
+                    lane_corridors=lane_corridors,
+                    speed_windows=speed_windows,
+                )
+            except RoutePlanningError as error:
+                failures.append({
+                    "candidate_index": candidate_index,
+                    "code": error.code,
+                    "detail": error.detail,
+                })
+                continue
+            metadata = dict(route.reference.metadata)
+            metadata["compatibility_candidate_index"] = candidate_index
+            metadata["lane_corridor_count"] = len(lane_corridors)
+            metadata["speed_window_count"] = len(speed_windows)
+            return candidate_index, replace(
+                route,
+                reference=replace(route.reference, metadata=metadata),
+            )
+        raise RoutePlanningError(
+            "ROUTE_NO_COMPATIBLE_ANCHOR",
+            f"none of {len(starts)} route starts satisfies the declared topology",
+            context={"failures": failures},
+        )
+
+    def validate_compatibility(
+        self,
+        route: GlobalRoute,
+        *,
+        lane_corridors: Sequence[LaneCorridorRequirement] = (),
+        speed_windows: Sequence[SpeedWindowRequirement] = (),
+    ) -> None:
+        """Reject route/event combinations that are physically inconsistent."""
+        cumulative = cumulative_distances_m(route.reference.points_xy_m)
+        for requirement in lane_corridors:
+            self._validate_lane_corridor(route, cumulative, requirement)
+        for requirement in speed_windows:
+            self._validate_speed_window(route, cumulative, requirement)
+
+    def _validate_lane_corridor(
+        self,
+        route: GlobalRoute,
+        cumulative: Sequence[float],
+        requirement: LaneCorridorRequirement,
+    ) -> None:
+        if requirement.end_s_m > route.total_length_m + 1e-6:
+            raise RoutePlanningError(
+                "ROUTE_LANE_CORRIDOR_BEYOND_ROUTE",
+                f"{requirement.requirement_id} ends beyond the route contract",
+            )
+        start_index = min(len(route.waypoints) - 1, bisect_left(cumulative, requirement.start_s_m))
+        end_index = min(len(route.waypoints) - 1, bisect_left(cumulative, requirement.end_s_m))
+        for index in range(start_index, end_index + 1):
+            source = route.waypoints[index]
+            adjacent = self._adjacent_lane(source, requirement.relation)
+            if adjacent is None:
+                raise RoutePlanningError(
+                    "ROUTE_LANE_CORRIDOR_UNAVAILABLE",
+                    f"{requirement.requirement_id} has no legal "
+                    f"{requirement.relation.lower()} lane at s={cumulative[index]:.2f}m",
+                )
+            if requirement.junction_free and (
+                bool(getattr(source, "is_junction", False))
+                or bool(getattr(adjacent, "is_junction", False))
+            ):
+                raise RoutePlanningError(
+                    "ROUTE_LANE_CORRIDOR_CROSSES_JUNCTION",
+                    f"{requirement.requirement_id} reaches a junction at "
+                    f"s={cumulative[index]:.2f}m",
+                )
+
+    def _validate_speed_window(
+        self,
+        route: GlobalRoute,
+        cumulative: Sequence[float],
+        requirement: SpeedWindowRequirement,
+    ) -> None:
+        if requirement.end_s_m > route.total_length_m + 1e-6:
+            raise RoutePlanningError(
+                "ROUTE_SPEED_WINDOW_BEYOND_ROUTE",
+                f"{requirement.requirement_id} ends beyond the route contract",
+            )
+        points = route.reference.points_xy_m
+        start_index = min(len(points) - 1, bisect_left(cumulative, requirement.start_s_m))
+        end_index = min(len(points) - 1, bisect_left(cumulative, requirement.end_s_m))
+        minimum_mps = requirement.minimum_speed_kph / 3.6
+        for index in range(start_index, end_index + 1):
+            horizon_end = bisect_left(cumulative, cumulative[index] + requirement.lookahead_m)
+            horizon_end = min(len(points) - 1, max(index, horizon_end))
+            curvature = max(
+                (_curvature(points, sample) for sample in range(index, horizon_end + 1)),
+                default=0.0,
+            )
+            supported_mps = (
+                math.inf
+                if curvature <= 1e-9
+                else math.sqrt(requirement.max_lateral_accel_mps2 / curvature)
+            )
+            if supported_mps + 1e-6 < minimum_mps:
+                raise RoutePlanningError(
+                    "ROUTE_SPEED_WINDOW_INFEASIBLE",
+                    f"{requirement.requirement_id} supports at most "
+                    f"{supported_mps * 3.6:.2f}km/h at s={cumulative[index]:.2f}m",
+                )
 
     def state(
         self,
@@ -1533,6 +1740,7 @@ class RouteManager:
 
 __all__ = [
     "GlobalRoute",
+    "LaneCorridorRequirement",
     "RouteManager",
     "RoutePlacement",
     "RoutePlanningError",
@@ -1542,4 +1750,5 @@ __all__ = [
     "RouteSample",
     "RouteState",
     "RouteValidation",
+    "SpeedWindowRequirement",
 ]

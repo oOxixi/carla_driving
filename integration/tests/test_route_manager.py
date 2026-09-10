@@ -4,10 +4,12 @@ from types import SimpleNamespace
 import pytest
 
 from integration.route_manager import (
+    LaneCorridorRequirement,
     RouteManager,
     RoutePlanningError,
     RouteRecoveryPolicy,
     RouteRecoveryTracker,
+    SpeedWindowRequirement,
 )
 from integration.route_planner import build_destination_route_reference
 
@@ -149,6 +151,65 @@ def test_distance_contract_explicitly_allows_revisiting_topology() -> None:
 
     assert route.total_length_m >= 6.0
     assert route.validation.repeated_sample_count > 0
+
+
+def test_distance_route_selects_first_candidate_that_satisfies_scene_topology() -> None:
+    _blocked_manager, blocked = _linear_route_manager(30)
+    compatible = [
+        Waypoint(index, 100.0, 0, road_id=26, lane_id=1, s=index)
+        for index in range(31)
+    ]
+    for first, second in zip(compatible, compatible[1:]):
+        first.children = [second]
+    for source in compatible:
+        adjacent = Waypoint(
+            source.transform.location.x, 96.5, 0.0,
+            road_id=26, lane_id=2, s=source.s,
+        )
+        source.left = adjacent
+    world_map = TopologyMap(
+        [
+            (blocked[0], blocked[-1]),
+            (compatible[0], compatible[-1]),
+        ],
+        [*blocked, *compatible],
+    )
+    manager = RouteManager(world_map, sample_step_m=1.0)
+
+    selected, route = manager.plan_distance_compatible(
+        (blocked[0].transform, compatible[0].transform),
+        20.0,
+        5.0,
+        lane_corridors=(
+            LaneCorridorRequirement("overtake", "LEFT", 5.0, 15.0, True),
+        ),
+    )
+
+    assert selected == 1
+    assert route.start_xy_m == pytest.approx((0.0, 100.0))
+    assert route.reference.metadata["compatibility_candidate_index"] == 1
+
+
+def test_distance_route_rejects_speed_window_that_curvature_cannot_support() -> None:
+    start = Waypoint(0, 0, 0, road_id=27, s=0)
+    corner = Waypoint(1, 0, 90, road_id=27, s=1)
+    end = Waypoint(1, 1, 90, road_id=27, s=2)
+    start.children = [corner]
+    corner.children = [end]
+    world_map = TopologyMap([(start, end)], [start, corner, end])
+    manager = RouteManager(world_map, sample_step_m=1.0)
+
+    with pytest.raises(RoutePlanningError) as error:
+        manager.plan_distance_compatible(
+            (start.transform,),
+            2.0,
+            10.0,
+            speed_windows=(
+                SpeedWindowRequirement("approach", 0.0, 2.0, 40.0),
+            ),
+        )
+
+    assert error.value.code == "ROUTE_NO_COMPATIBLE_ANCHOR"
 
 
 def test_unreachable_destination_returns_explicit_reason() -> None:
