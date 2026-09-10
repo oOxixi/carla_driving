@@ -1,19 +1,19 @@
 {
   "schema_version": "1.0",
-  "model_id": "student-v0-r2-fp32",
-  "source_git_sha": "f45f6668a55ba3114f3640972a5437527ab5de8e",
+  "model_id": "student-v0-r3-fp32",
+  "source_git_sha": "a42e5c715e5e5bc2dc5ce0948bfca43ef61b29d0",
   "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
-  "config_id": "student-v0-r2-structure-20260911",
+  "config_id": "student-v0-r3-structure-20260911",
   "status": "A1_STRUCTURE_READY_A3_WEIGHTS_PENDING",
   "parameters": 23006581,
   "precision": "fp32",
   "artifact": "student_v0_fp32.onnx",
-  "artifact_sha256": "5c9111c7e161dc9e1ea9a3502b67e1edad933e32b57f16dc80c8959cfee6319a",
+  "artifact_sha256": "8c88b61cb066d8117214973676484c8a8e5d5a8605cfaed7bb0f0cf4acb05945",
   "opset": 17,
   "dynamic_axes": false,
   "onnx_operators": [
     "AveragePool", "Concat", "Constant", "Conv", "Flatten",
-    "Gemm", "Mul", "Relu", "Reshape", "Sigmoid"
+    "Gemm", "Identity", "Mul", "Relu", "Reshape", "Sigmoid"
   ],
   "modules": {
     "vision_encoder": "Conv2D/ReLU x5 + fixed AveragePool 7x7->3x3 + Linear/ReLU",
@@ -41,6 +41,20 @@
     "requires_confirmation_logits",
     "replan_condition_logits"
   ],
+  "output_shapes": {
+    "plan_length_logits": [1, 4],
+    "behavior_logits": [1, 4, 14],
+    "target_pointer_logits": [1, 4, 9],
+    "target_lane_logits": [1, 4, 6],
+    "target_speed_mps": [1, 4],
+    "completion_type_logits": [1, 4, 8],
+    "on_failure_logits": [1, 4, 4],
+    "confidence": [1, 1],
+    "requires_confirmation_logits": [1, 1],
+    "replan_condition_logits": [1, 7]
+  },
+  "input_dtype": "float32",
+  "output_dtype": "float32",
   "forbidden_outputs": ["steer", "throttle", "brake", "waypoints"],
   "training_state": "random_initialization_for_export_smoke_only"
 }
