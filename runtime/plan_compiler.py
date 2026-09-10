@@ -118,13 +118,13 @@ class PlanCompiler:
                 {**target, "target_speed_mps": speed},
                 tuple(dict.fromkeys(common + ("PERCEPTION_FRESH",))),
                 {"type": "SPEED_BELOW", "value": speed + 0.3, "lane": None, "hold_frames": 3},
-                min(5.0, timeout), failure,
+                timeout, failure,
             ),
             CompiledPlanStep(
                 f"{source_id}.gap", source_id, "WAIT_SAFE_GAP", target,
                 tuple(dict.fromkeys(common + (lane_exists, gap_safe))),
                 {"type": "HOLD_FRAMES", "value": None, "lane": lane, "hold_frames": 3},
-                min(5.0, timeout), failure,
+                timeout, failure,
             ),
             CompiledPlanStep(
                 f"{source_id}.lane", source_id, f"CHANGE_LANE_{side}", target,
@@ -183,7 +183,7 @@ class PlanCompiler:
                 f"{source_id}.gap", source_id, "WAIT_SAFE_GAP", target,
                 gap_preconditions,
                 {"type": "HOLD_FRAMES", "value": None, "lane": "CURRENT", "hold_frames": 3},
-                min(8.0, timeout), failure,
+                timeout, failure,
             ),
             CompiledPlanStep(
                 source_id, source_id, f"CHANGE_LANE_{direction}", target,

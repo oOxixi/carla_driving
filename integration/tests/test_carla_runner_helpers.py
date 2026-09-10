@@ -24,6 +24,7 @@ from integration.carla_runner import (
     _apply_scenario_speed_limit,
     _bind_scenario_actor_ids,
     _build_resume_segment_spec,
+    _hazard_recovery_active,
     _load_command,
     _lead_vehicle_travel_m,
     _lane_change_route_parameters,
@@ -50,6 +51,7 @@ from integration.carla_runner import (
     _remaining_route_distances,
     _route_contract_completed,
     _route_recovery_hold_reference,
+    _route_recovery_policy_before_safety_stop,
     _route_local_reference_needs_refresh,
     _route_run_can_end_early,
     _route_stop_trigger_m,
@@ -61,6 +63,7 @@ from integration.carla_runner import (
     _scenario_clean_world_on_start,
     _scenario_raw_control_fault,
     _scenario_requires_adjacent_lane_anchor,
+    _scenario_route_compatibility,
     _scenario_uses_dynamic_out_and_back,
     _scenario_maneuver,
     _scenario_local_transform,
@@ -147,14 +150,29 @@ def test_resume_segment_keeps_only_unfinished_commands_and_live_actors() -> None
     ]
     assert restored_phases[-1] == "S2_P3_PEDESTRIAN_OVERTAKE_RETURN"
     assert {actor["actor_id"] for actor in resumed.actors} == {
-        "bicycle_right", "intersection_cut_in_car", "late_crossing_pedestrian",
+        "bicycle_ahead", "intersection_cut_in_car", "late_crossing_pedestrian",
     }
     proposed = resumed.extensions["proposed_acceptance"]
     assert proposed["qwen_request_count"] == 3
-    assert proposed["actor_activation_progress_windows_m"]["bicycle_right"] == [
-        4099.0, 4101.0,
+    assert proposed["actor_activation_progress_windows_m"]["bicycle_ahead"] == [
+        4330.0, 4350.0,
     ]
     assert "S2_P2_BUS_STOP" not in proposed["minimum_approach_speed_kph_by_phase"]
+
+
+def test_s2_route_compatibility_is_parsed_without_a_fixed_spawn_anchor() -> None:
+    spec = ScenarioSpec.load(
+        Path("scenarios/official_competition/S2_complex_avoidance_8km.json")
+    )
+
+    lane_corridors, speed_windows = _scenario_route_compatibility(spec)
+
+    assert len(lane_corridors) == 3
+    assert len(speed_windows) == 5
+    assert "route_anchor_spawn_index" not in spec.extensions
+    assert [item.minimum_speed_kph for item in speed_windows] == pytest.approx([
+        40.0, 30.1, 40.0, 40.0, 40.0,
+    ])
 
 
 def test_terminal_resume_keeps_no_commands_actors_or_qwen_contract() -> None:
@@ -275,6 +293,25 @@ def test_actor_signed_longitudinal_clearance_changes_sign_only_after_full_pass()
         108.0, 100.0, ego, actor_at(999.0),
     ) == pytest.approx(-8.0 + radius)
 from integration.contracts import DetectedObject, PerceptionFrame
+
+
+def test_hazard_recovery_uses_fused_front_corridor_not_nearby_visual_class_alone() -> None:
+    scene = PerceptionFrame(1, 0.05, detected_objects=(
+        DetectedObject(0, "pedestrian", 0.99, (0.1, 0.2, 0.3, 0.8), 8.0),
+    ))
+    policy = {"hazard_classes": ["pedestrian"], "clearance_m": 18.0}
+
+    assert not _hazard_recovery_active(
+        scene,
+        {"recommended_action": "KEEP_SPEED", "lidar_valid": True},
+        policy,
+    )
+    assert _hazard_recovery_active(
+        scene,
+        {"recommended_action": "EMERGENCY_BRAKE", "lidar_valid": True},
+        policy,
+    )
+    assert _hazard_recovery_active(scene, None, policy)
 from integration.scenario_execution import ScenarioSpec
 from integration.voice_adapter import VoiceCommandAdapter
 
@@ -1528,6 +1565,26 @@ def test_target_lane_occupancy_follows_adjacent_lane_across_road_segments() -> N
     ) == 1
 
 
+def test_target_lane_occupancy_is_zero_when_spawn_has_no_adjacent_lane() -> None:
+    ego_waypoint = Namespace(
+        road_id=7,
+        lane_id=1,
+        get_left_lane=lambda: None,
+        get_right_lane=lambda: None,
+    )
+    ego_location = object()
+    world_map = Namespace(
+        get_waypoint=lambda location, project_to_road=True: ego_waypoint,
+    )
+
+    assert _scenario_target_lane_occupied_count(
+        world_map,
+        Namespace(get_location=lambda: ego_location),
+        (),
+        "CHANGE_LANE_LEFT",
+    ) == 0
+
+
 def test_stale_acceptance_actors_are_removed_without_touching_external_vehicles() -> None:
     destroyed: list[str] = []
 
@@ -1576,6 +1633,18 @@ def test_route_recovery_hold_reference_is_forward_and_stationary() -> None:
     assert route.points_xy_m[-1] == pytest.approx((10.0, 32.0))
     assert route.target_speed_mps == 0.0
     assert route.metadata["purpose"] == "safe_replan_hold"
+
+
+def test_route_recovery_trigger_is_reachable_before_safety_stop() -> None:
+    policy = _route_recovery_policy_before_safety_stop(None, 3.0)
+    assert policy.off_route_threshold_m == pytest.approx(2.5)
+
+    explicit = _route_recovery_policy_before_safety_stop(
+        {"off_route_threshold_m": 2.0, "confirmation_s": 0.2},
+        3.0,
+    )
+    assert explicit.off_route_threshold_m == pytest.approx(2.0)
+    assert explicit.confirmation_s == pytest.approx(0.2)
 
 
 def test_local_reference_at_global_end_is_not_refreshed_every_frame() -> None:

@@ -40,6 +40,8 @@ def test_avoid_expands_to_deterministic_slow_gap_lane_and_pass_steps():
     assert compiled.steps[-1].preconditions == (
         "PERCEPTION_FRESH", "TARGET_VISIBLE", "NO_EMERGENCY_RISK",
     )
+    assert compiled.steps[0].timeout_s == 8.0
+    assert compiled.steps[1].timeout_s == 8.0
 
 
 def test_return_to_lane_uses_explicit_deterministic_direction():
@@ -66,6 +68,7 @@ def test_return_to_lane_uses_explicit_deterministic_direction():
     assert compiled.steps[1].preconditions == (
         "PERCEPTION_FRESH", "NO_EMERGENCY_RISK",
     )
+    assert compiled.steps[0].timeout_s == 8.0
 
 
 def test_avoid_then_return_derives_opposite_direction_from_avoid_lane():

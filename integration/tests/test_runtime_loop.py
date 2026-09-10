@@ -42,6 +42,24 @@ def test_runtime_preserves_d_emergency_stop_authority():
     assert result.final_control.brake == 1.0
 
 
+def test_runtime_can_resume_a_completed_hazard_hold_without_a_new_voice_command():
+    runtime = ControlRuntime(PurePursuitController(), default_speed_mps=35.0 / 3.6)
+    runtime.submit_voice(_voice("EMERGENCY_STOP", {}), now_s=0.05)
+    runtime.step(
+        _vehicle(speed=0.0), PerceptionFrame(frame=1, sim_time_s=0.05),
+        _route(), dt_s=0.05,
+    )
+
+    assert runtime.resume_from_hazard(35.0 / 3.6) is True
+    result = runtime.step(
+        _vehicle(frame=2, time=0.10, speed=0.0),
+        PerceptionFrame(frame=2, sim_time_s=0.10), _route(), dt_s=0.05,
+    )
+
+    assert result.final_control.brake < 1.0
+    assert result.final_control.throttle > 0.0
+
+
 def test_runtime_temporary_speed_cap_does_not_mutate_driver_requested_speed():
     runtime = ControlRuntime(PurePursuitController(), default_speed_mps=5.0)
     result = runtime.step(
@@ -187,6 +205,24 @@ def test_watchdog_stop_is_latched_until_explicit_reset():
     assert still_stopped.final_control.brake == 1.0
     runtime.reset_safety_latch()
     assert not runtime.safety_latched
+
+
+def test_runtime_watchdog_timeout_can_recover_after_health_returns():
+    runtime = ControlRuntime(PurePursuitController(), default_speed_mps=40.0 / 3.6)
+    stopped = runtime.step(
+        _vehicle(), PerceptionFrame(frame=1, sim_time_s=0.05), _route(),
+        dt_s=0.05, watchdog_alerts=("RUNTIME_WATCHDOG_TIMEOUT",),
+    )
+
+    assert stopped.final_control.brake == 1.0
+    assert runtime.recover_runtime_watchdog(40.0 / 3.6) is True
+
+    resumed = runtime.step(
+        _vehicle(frame=2, time=0.10),
+        PerceptionFrame(frame=2, sim_time_s=0.10), _route(), dt_s=0.05,
+    )
+    assert resumed.final_control.brake < 1.0
+    assert resumed.final_control.throttle > 0.0
 
 
 def test_clear_safety_alerts_releases_only_named_recovered_faults():

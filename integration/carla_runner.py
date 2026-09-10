@@ -64,10 +64,12 @@ from .route_planner import (
 from .route_geometry import route_pose_at_s
 from .route_manager import (
     GlobalRoute,
+    LaneCorridorRequirement,
     RouteManager,
     RoutePlanningError,
     RouteRecoveryPolicy,
     RouteRecoveryTracker,
+    SpeedWindowRequirement,
 )
 from .scenario_builder import (
     ActorPlacementError,
@@ -189,6 +191,38 @@ def _legacy_target_classes(target_id: str) -> set[str]:
         "obstacle": {"obstacle"},
     }
     return aliases.get(target_class, {target_class})
+
+
+def _hazard_recovery_active(
+    scene: PerceptionFrame,
+    c_safety_state: Mapping[str, object] | None,
+    policy: Mapping[str, object],
+) -> bool:
+    """Use only sensor-derived risk to decide whether a temporary hold may clear."""
+    recommended = str(
+        (c_safety_state or {}).get("recommended_action", "")
+    ).strip().upper()
+    if recommended in {"FULL_BRAKE", "EMERGENCY_BRAKE", "STOP", "SLOW_DOWN"}:
+        return True
+    if recommended == "KEEP_SPEED" and (c_safety_state or {}).get("lidar_valid") is True:
+        # C already fuses semantics with the front driving corridor. A person
+        # standing safely beside the lane may remain visually close after
+        # crossing, but must not keep the vehicle stopped forever.
+        return False
+    if c_safety_state is not None and c_safety_state.get("lidar_valid") is False:
+        return True
+    raw_classes = policy.get("hazard_classes", ("person", "pedestrian", "walker"))
+    if not isinstance(raw_classes, Sequence) or isinstance(raw_classes, (str, bytes)):
+        raise TypeError("hazard_recovery.hazard_classes must be a list")
+    hazard_classes = {str(item).strip().lower() for item in raw_classes}
+    clearance_m = float(policy.get("clearance_m", 18.0))
+    if not math.isfinite(clearance_m) or clearance_m <= 0.0:
+        raise ValueError("hazard_recovery.clearance_m must be finite and positive")
+    return any(
+        item.class_name.strip().lower() in hazard_classes
+        and (item.distance_m is None or item.distance_m <= clearance_m)
+        for item in scene.detected_objects
+    )
 
 
 def _maneuver_target_gap_s(
@@ -484,6 +518,27 @@ def _scenario_maneuver(spec: ScenarioSpec) -> str:
 
 def _scenario_route_distance_m(spec: ScenarioSpec) -> float:
     return spec.route_distance_contract_m
+
+
+def _scenario_route_compatibility(
+    spec: ScenarioSpec,
+) -> tuple[tuple[LaneCorridorRequirement, ...], tuple[SpeedWindowRequirement, ...]]:
+    raw = spec.route_contract.get("topology_requirements", {})
+    if not isinstance(raw, Mapping):
+        raise TypeError("route.topology_requirements must be an object")
+    raw_corridors = raw.get("lane_corridors", ())
+    raw_speeds = raw.get("speed_windows", ())
+    if (
+        not isinstance(raw_corridors, Sequence)
+        or isinstance(raw_corridors, (str, bytes))
+    ):
+        raise TypeError("route.topology_requirements.lane_corridors must be a list")
+    if not isinstance(raw_speeds, Sequence) or isinstance(raw_speeds, (str, bytes)):
+        raise TypeError("route.topology_requirements.speed_windows must be a list")
+    return (
+        tuple(LaneCorridorRequirement.from_mapping(item) for item in raw_corridors),
+        tuple(SpeedWindowRequirement.from_mapping(item) for item in raw_speeds),
+    )
 
 
 def _scenario_requires_adjacent_lane_anchor(spec: ScenarioSpec) -> bool:
@@ -1472,8 +1527,11 @@ def _scenario_target_lane_occupied_count(
         else None
     )
     if target is None:
-        if normalized.endswith("LEFT") or normalized.endswith("RIGHT"):
-            raise RuntimeError("scenario target lane is unavailable for occupancy acceptance")
+        # Some long routes start on a single-lane segment and reach the
+        # commanded adjacent lane only near a later maneuver.  At startup the
+        # truthful occupancy is zero; any scenario that explicitly requires an
+        # occupied target lane will fail its acceptance check without aborting
+        # the entire run before frame 1.
         return 0
     target_segments: set[tuple[object, object]] = set()
     frontier = (target,)
@@ -2636,6 +2694,25 @@ def _route_recovery_hold_reference(vehicle: RuntimeVehicleState) -> RouteReferen
     )
 
 
+def _route_recovery_policy_before_safety_stop(
+    value: Mapping[str, object] | None,
+    severe_route_deviation_m: float,
+) -> RouteRecoveryPolicy:
+    """Keep route replanning reachable before D's fail-closed stop threshold."""
+    safety_threshold_m = float(severe_route_deviation_m)
+    if not math.isfinite(safety_threshold_m) or safety_threshold_m <= 0.5:
+        raise ValueError("severe route deviation threshold must exceed 0.5 m")
+    policy = RouteRecoveryPolicy.from_mapping(value)
+    if policy.off_route_threshold_m < safety_threshold_m:
+        return policy
+    # If both thresholds are equal (or recovery is later), D can stop the car
+    # before lateral deviation ever becomes large enough to request a replan.
+    return replace(
+        policy,
+        off_route_threshold_m=safety_threshold_m - 0.5,
+    )
+
+
 def _route_local_reference_needs_refresh(
     reference: RouteReference | None,
     global_route: GlobalRoute,
@@ -3299,8 +3376,9 @@ def run(args: argparse.Namespace) -> None:
                 route_anchor.rotation.yaw,
             )
             assert destination_xy is not None
-            recovery_policy = RouteRecoveryPolicy.from_mapping(
+            recovery_policy = _route_recovery_policy_before_safety_stop(
                 spec.route_contract.get("recovery"),
+                scenario_safety.config.severe_route_deviation_m,
             )
             global_route_manager = RouteManager(
                 world_map,
@@ -3338,8 +3416,9 @@ def run(args: argparse.Namespace) -> None:
             }, ensure_ascii=False), flush=True)
         elif topology_coverage_planning:
             assert spec is not None
-            recovery_policy = RouteRecoveryPolicy.from_mapping(
+            recovery_policy = _route_recovery_policy_before_safety_stop(
                 spec.route_contract.get("recovery"),
+                scenario_safety.config.severe_route_deviation_m,
             )
             global_route_manager = RouteManager(
                 world_map,
@@ -3349,11 +3428,30 @@ def run(args: argparse.Namespace) -> None:
             )
             global_route_recovery = RouteRecoveryTracker(recovery_policy)
             try:
-                global_route = global_route_manager.plan_distance(
-                    route_anchor,
-                    spec.route_distance_contract_m,
-                    args.default_speed_mps,
-                )
+                lane_corridors, speed_windows = _scenario_route_compatibility(spec)
+                if lane_corridors or speed_windows:
+                    preferred_index = args.spawn_index % len(spawn_points)
+                    candidate_indices = tuple(range(preferred_index, len(spawn_points))) + tuple(
+                        range(0, preferred_index)
+                    )
+                    selected_offset, global_route = (
+                        global_route_manager.plan_distance_compatible(
+                            tuple(spawn_points[index] for index in candidate_indices),
+                            spec.route_distance_contract_m,
+                            args.default_speed_mps,
+                            lane_corridors=lane_corridors,
+                            speed_windows=speed_windows,
+                        )
+                    )
+                    anchor_index = candidate_indices[selected_offset]
+                    route_anchor = spawn_points[anchor_index]
+                else:
+                    anchor_index = args.spawn_index % len(spawn_points)
+                    global_route = global_route_manager.plan_distance(
+                        route_anchor,
+                        spec.route_distance_contract_m,
+                        args.default_speed_mps,
+                    )
             except RoutePlanningError as error:
                 print(json.dumps({
                     "record_type": "route_planning_failed",
@@ -3371,6 +3469,9 @@ def run(args: argparse.Namespace) -> None:
                 "record_type": "global_route_ready",
                 "planner": topology_route.metadata.get("planner"),
                 "planning_mode": "topology_coverage",
+                "spawn_index": anchor_index,
+                "lane_corridor_count": len(lane_corridors),
+                "speed_window_count": len(speed_windows),
                 "requested_distance_m": spec.route_distance_contract_m,
                 **global_route.validation.to_dict(),
             }, ensure_ascii=False), flush=True)
@@ -3745,6 +3846,8 @@ def run(args: argparse.Namespace) -> None:
                 progress_m=resume_progress_m,
             )
             global_route_state = None
+            runtime_watchdog_healthy_frames = 0
+            runtime_watchdog_resume_speed_mps: float | None = None
             for step_index in range(args.frames):
                 route_recovery_hold = False
                 simulator_tick_start_ns = time.monotonic_ns()
@@ -3828,19 +3931,11 @@ def run(args: argparse.Namespace) -> None:
                         try:
                             if topology_coverage_planning:
                                 assert spec is not None
-                                remaining_contract_m = max(
-                                    spec.finish_radius_m * 2.0,
-                                    spec.route_distance_contract_m - replan_origin_m,
-                                )
-                                replanned_route = global_route_manager.plan_distance(
+                                replanned_route = global_route_manager.rejoin_route(
                                     ego.get_transform(),
-                                    remaining_contract_m,
-                                    runtime.requested_speed_mps,
-                                )
-                                global_route_destination = carla.Location(
-                                    x=replanned_route.destination_xy_m[0],
-                                    y=replanned_route.destination_xy_m[1],
-                                    z=ego.get_location().z,
+                                    global_route,
+                                    route_s=global_route_state.route_s,
+                                    target_speed_mps=runtime.requested_speed_mps,
                                 )
                             else:
                                 replanned_route = global_route_manager.replan(
@@ -4656,6 +4751,35 @@ def run(args: argparse.Namespace) -> None:
                 elif any(item.track_id for item in scene.detected_objects):
                     perception_sources["target_ids"] = "C_SENSOR_TEMPORAL_TRACKER"
                 scene_bound_ns = time.monotonic_ns()
+                if extension_runtime is not None:
+                    recovery_policy = extension_runtime.hazard_recovery_policy
+                    if recovery_policy is not None:
+                        resume_speed_mps = extension_runtime.hazard_recovery_request(
+                            hazard_active=_hazard_recovery_active(
+                                scene, c_safety_state, recovery_policy,
+                            ),
+                        )
+                        if (
+                            resume_speed_mps is not None
+                            and runtime.resume_from_hazard(resume_speed_mps)
+                        ):
+                            extension_runtime.note_hazard_recovery_applied()
+                            route = replace(route, target_speed_mps=resume_speed_mps)
+                            recovery_payload = {
+                                "record_type": "hazard_clear_recovery",
+                                "resume_speed_mps": resume_speed_mps,
+                                "route_progress_m": route_progress_m,
+                                "decision_source": "SENSOR_RISK_CLEAR",
+                            }
+                            print(json.dumps(
+                                recovery_payload, ensure_ascii=False,
+                            ), flush=True)
+                            if recorder is not None:
+                                recorder.record_canonical_routing(
+                                    phase="HAZARD_CLEAR_RECOVERY",
+                                    command_id="internal-hazard-recovery",
+                                    payload=recovery_payload,
+                                )
                 if sensor_ready_ns is None:
                     raise RuntimeError("sensor-ready timestamp was not captured")
                 if canonical_bridge is not None:
@@ -5106,8 +5230,37 @@ def run(args: argparse.Namespace) -> None:
                     perception_sources["canonical_state"] = (
                         "PERCEPTION_STATE_V1_" + canonical_mode.upper()
                     )
-                if not sensor_startup_grace and watchdog.check(now_s=time.monotonic()) is not None:
+                runtime_watchdog_timed_out = (
+                    not sensor_startup_grace
+                    and watchdog.check(now_s=time.monotonic()) is not None
+                )
+                if runtime_watchdog_timed_out:
+                    if runtime_watchdog_resume_speed_mps is None:
+                        runtime_watchdog_resume_speed_mps = max(
+                            runtime.requested_speed_mps,
+                            float(route.target_speed_mps),
+                            float(args.default_speed_mps),
+                        )
+                    runtime_watchdog_healthy_frames = 0
                     watchdog_alerts.append("RUNTIME_WATCHDOG_TIMEOUT")
+                elif runtime_watchdog_resume_speed_mps is not None:
+                    if watchdog_alerts:
+                        runtime_watchdog_healthy_frames = 0
+                    else:
+                        runtime_watchdog_healthy_frames += 1
+                    if runtime_watchdog_healthy_frames >= 5:
+                        resume_speed_mps = runtime_watchdog_resume_speed_mps
+                        resumed = runtime.recover_runtime_watchdog(resume_speed_mps)
+                        if resumed:
+                            route = replace(route, target_speed_mps=resume_speed_mps)
+                            print(json.dumps({
+                                "record_type": "runtime_watchdog_recovered",
+                                "frame": frame,
+                                "healthy_frames": runtime_watchdog_healthy_frames,
+                                "resume_speed_mps": resume_speed_mps,
+                            }, ensure_ascii=False), flush=True)
+                        runtime_watchdog_healthy_frames = 0
+                        runtime_watchdog_resume_speed_mps = None
                 if watchdog_alerts:
                     # Preserve the concrete upstream fault in evidence.  D's
                     # public safety reason intentionally remains the stable

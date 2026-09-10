@@ -38,7 +38,8 @@ IMPLEMENTED_RUNTIME_REQUIREMENTS = frozenset({
     "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance",
     "route_progress_actor_activation", "route_progress_actor_lifecycle",
     "route_progress_speed_acceptance",
-    "scenario_speed_limit", "stale_result_acceptance",
+    "scenario_speed_limit", "stale_result_acceptance", "hazard_clear_recovery",
+    "compatible_topology_route",
     "target_lane_safety_check", "visibility_acceptance",
 })
 
@@ -82,6 +83,7 @@ class ScenarioExtensionRuntime:
         self._fault_active: set[str] = set()
         self._fault_recovered: set[str] = set()
         self._terminal_phase_ids: set[str] = set()
+        self._terminal_phase_s: dict[str, float] = {}
         self._completed_phase_ids: set[str] = set()
         self._command_phase_by_id: dict[str, str] = {}
         self._command_intent_by_id: dict[str, str] = {}
@@ -151,6 +153,18 @@ class ScenarioExtensionRuntime:
         self._active_command_phases: set[str] = set()
         self._minimum_speed_during_phase_kph: dict[str, float] = {}
         self._max_speed_after_phase_kph: dict[str, float] = {}
+        raw_hazard_recovery = self.extensions.get("hazard_recovery")
+        if raw_hazard_recovery is not None and not isinstance(raw_hazard_recovery, Mapping):
+            raise TypeError("extensions.hazard_recovery must be an object")
+        self._hazard_recovery = (
+            None if raw_hazard_recovery is None else dict(raw_hazard_recovery)
+        )
+        self._hazard_clear_frames = 0
+        self._hazard_recovery_pending_phase: str | None = None
+        self._hazard_recovery_applied_phases: set[str] = set()
+        self._hazard_recovery_count = 0
+        self._hazard_stop_hold_s: float | None = None
+        self._last_standstill_duration_s = 0.0
         self._rss_start_mb = self._rss_mb()
         self._rss_peak_mb = self._rss_start_mb
 
@@ -181,6 +195,64 @@ class ScenarioExtensionRuntime:
     def route_loop(self) -> bool:
         policy = self.extensions.get("route_policy", {})
         return bool(policy.get("loop", False)) if isinstance(policy, Mapping) else False
+
+    @property
+    def hazard_recovery_policy(self) -> dict[str, object] | None:
+        return None if self._hazard_recovery is None else dict(self._hazard_recovery)
+
+    def hazard_recovery_request(self, *, hazard_active: bool) -> float | None:
+        """Return a safe resume speed after a completed, sustained hazard hold."""
+        if type(hazard_active) is not bool:
+            raise TypeError("hazard_active must be bool")
+        policy = self._hazard_recovery
+        if policy is None:
+            return None
+        raw_phase_ids = policy.get("after_phase_ids")
+        if raw_phase_ids is None:
+            phase_ids = (str(policy.get("after_phase_id", "")),)
+        elif isinstance(raw_phase_ids, Sequence) and not isinstance(raw_phase_ids, (str, bytes)):
+            phase_ids = tuple(str(item) for item in raw_phase_ids)
+        else:
+            raise TypeError("hazard_recovery.after_phase_ids must be a list")
+        eligible = [
+            phase_id for phase_id in phase_ids
+            if phase_id
+            and phase_id in self._terminal_phase_ids
+            and phase_id not in self._hazard_recovery_applied_phases
+        ]
+        if not eligible:
+            return None
+        phase_id = max(eligible, key=lambda item: self._terminal_phase_s.get(item, -1.0))
+        minimum_hold_s = float(policy.get("minimum_hold_s", 0.0))
+        clear_frames = policy.get("clear_frames", 1)
+        resume_speed_kph = float(policy.get("resume_speed_kph", 0.0))
+        if minimum_hold_s < 0.0 or resume_speed_kph <= 0.0:
+            raise ValueError("hazard recovery hold/speed values are invalid")
+        if type(clear_frames) is not int or isinstance(clear_frames, bool) or clear_frames < 1:
+            raise ValueError("hazard recovery clear_frames must be a positive integer")
+        if self._last_standstill_duration_s + TIME_COMPARISON_EPSILON_S < minimum_hold_s:
+            self._hazard_clear_frames = 0
+            return None
+        if hazard_active:
+            self._hazard_clear_frames = 0
+            self._hazard_recovery_pending_phase = None
+            return None
+        self._hazard_clear_frames += 1
+        if self._hazard_clear_frames < clear_frames:
+            return None
+        self._hazard_recovery_pending_phase = phase_id
+        return resume_speed_kph / 3.6
+
+    def note_hazard_recovery_applied(self) -> None:
+        phase_id = self._hazard_recovery_pending_phase
+        if phase_id is None or phase_id in self._hazard_recovery_applied_phases:
+            raise RuntimeError("no hazard recovery request is pending")
+        self._hazard_recovery_pending_phase = None
+        self._hazard_recovery_applied_phases.add(phase_id)
+        self._hazard_clear_frames = 0
+        self._hazard_recovery_count += 1
+        self._hazard_stop_hold_s = self._last_standstill_duration_s
+        self._restart_route_progress_m = self._last_route_progress_m
 
     def note_command_submitted(self, command: Mapping[str, object], *, qwen: bool) -> None:
         command_id = str(command.get("command_id", ""))
@@ -230,6 +302,7 @@ class ScenarioExtensionRuntime:
         phase_id = self._command_phase_by_id.get(normalized_id)
         if phase_id:
             self._terminal_phase_ids.add(phase_id)
+            self._terminal_phase_s[phase_id] = self._last_elapsed_s
             self._completed_phase_ids.add(phase_id)
             self._active_command_phases.discard(phase_id)
         normalized_status = str(getattr(status, "value", status)).upper()
@@ -372,6 +445,7 @@ class ScenarioExtensionRuntime:
         self._last_elapsed_s = float(elapsed_s)
         self._last_route_progress_m = float(route_progress_m)
         self._last_speed_mps = float(ego_speed_mps)
+        self._last_standstill_duration_s = float(ego_standstill_duration_s)
         speed_kph = float(ego_speed_mps) * 3.6
         self._recent_speed_samples.append((self._last_elapsed_s, self._last_speed_mps))
         recent_cutoff_s = self._last_elapsed_s - 10.0
@@ -640,6 +714,8 @@ class ScenarioExtensionRuntime:
             "target_lane_occupied_count": self._target_lane_occupied_count,
             "mission_route_restore_count": self._mission_route_restore_count,
             "restart_displacement_m": self._restart_displacement_m,
+            "hazard_recovery_count": self._hazard_recovery_count,
+            "hazard_stop_hold_s": self._hazard_stop_hold_s,
             "final_lateral_offset_abs_m": self._last_lateral_offset_m,
             "lead_brake_trigger_distance_m": self._lead_brake_trigger_distance_m,
             "actor_trigger_ids": sorted(self._actor_trigger_ids),
@@ -1067,7 +1143,8 @@ class ScenarioExtensionRuntime:
             elif key in {
                 "target_lane_occupied_count", "target_lane_occupied_min_count",
                 "restart_displacement_m", "final_lateral_offset_abs_max_m",
-                "lead_brake_trigger_distance_m",
+                "lead_brake_trigger_distance_m", "hazard_recovery_count",
+                "minimum_stop_hold_s",
             }:
                 evidence_key = {
                     "target_lane_occupied_count": "target_lane_occupied_count",
@@ -1075,9 +1152,14 @@ class ScenarioExtensionRuntime:
                     "restart_displacement_m": "restart_displacement_m",
                     "final_lateral_offset_abs_max_m": "final_lateral_offset_abs_m",
                     "lead_brake_trigger_distance_m": "lead_brake_trigger_distance_m",
+                    "hazard_recovery_count": "hazard_recovery_count",
+                    "minimum_stop_hold_s": "hazard_stop_hold_s",
                 }[key]
                 actual = evidence[evidence_key]
-                if key in {"restart_displacement_m", "target_lane_occupied_min_count"}:
+                if key in {
+                    "restart_displacement_m", "target_lane_occupied_min_count",
+                    "hazard_recovery_count", "minimum_stop_hold_s",
+                }:
                     passed = actual is not None and float(actual) >= float(required)
                 else:
                     passed = actual is not None and float(actual) <= float(required)

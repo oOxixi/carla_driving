@@ -248,6 +248,49 @@ def test_planner_v2_stub_grounds_avoid_and_return_in_sensor_target():
         service.close()
 
 
+def test_planner_v2_stub_uses_canonical_hint_for_chinese_keep_lane():
+    request = _request()
+    request["source_text"] = "保持当前车道，以40公里每小时正常行驶"
+    request["command_hint"] = {
+        "intent": "KEEP_LANE", "direction": None,
+        "target": None, "target_speed_mps": 40.0 / 3.6,
+    }
+    request["constraints"]["max_target_speed_mps"] = 40.0 / 3.6
+    request["constraints"]["allowed_behaviors"] = [
+        "KEEP_LANE", "SLOW_DOWN", "STOP",
+    ]
+
+    plan = DeterministicPlannerV2Backend().infer(request)
+
+    assert plan["requires_confirmation"] is False
+    assert plan["confidence"] == 1.0
+    assert [step["behavior"] for step in plan["steps"]] == ["KEEP_LANE"]
+    assert plan["steps"][0]["target"]["target_speed_mps"] == pytest.approx(40.0 / 3.6)
+
+
+def test_planner_v2_stub_preserves_chinese_slow_then_resume_sequence():
+    request = _request()
+    request["source_text"] = "前方公交站有行人上下车，靠边减速至30公里每小时，确认安全后继续以40公里每小时行驶"
+    request["command_hint"] = {
+        "intent": "SLOW_DOWN", "direction": None,
+        "target": "bus_at_stop", "target_speed_mps": 30.0 / 3.6,
+    }
+    request["targets"] = []
+    request["scene_capabilities"] = {"grounded_target_ids": ["bus_at_stop"]}
+    request["constraints"]["max_target_speed_mps"] = 40.0 / 3.6
+    request["constraints"]["allowed_behaviors"] = [
+        "KEEP_LANE", "SLOW_DOWN", "STOP",
+    ]
+
+    plan = DeterministicPlannerV2Backend().infer(request)
+
+    assert plan["requires_confirmation"] is False
+    assert [step["behavior"] for step in plan["steps"]] == [
+        "SLOW_DOWN", "KEEP_LANE",
+    ]
+    assert plan["steps"][0]["target"]["target_id"] == "bus_at_stop"
+
+
 def test_vllm_prompt_does_not_leak_hint_and_is_bounded() -> None:
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
     request = _request()
@@ -380,7 +423,7 @@ def test_vllm_slow_down_preserves_explicit_thirty_kph_target() -> None:
     assert step["completion"]["type"] == "TARGET_PASSED"
     assert step["completion"]["value"] == pytest.approx(6.0)
     assert step["completion"]["hold_frames"] == 3
-    assert step["timeout_s"] == 35.0
+    assert step["timeout_s"] == 120.0
 
 
 def test_vllm_cut_in_observation_waits_for_stability_without_requiring_overtake() -> None:

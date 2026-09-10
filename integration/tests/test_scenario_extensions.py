@@ -52,6 +52,78 @@ def test_fault_window_activates_and_recovers_with_evidence():
     assert runtime.evidence()["fault_recovered_ids"] == ["rgb"]
 
 
+def test_hazard_recovery_waits_for_terminal_stop_hold_and_clear_frames() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "runtime_support": {"requirements": ["hazard_clear_recovery"]},
+        "hazard_recovery": {
+            "after_phase_id": "P_STOP",
+            "resume_speed_kph": 35.0,
+            "minimum_hold_s": 6.0,
+            "clear_frames": 2,
+        },
+    })
+    runtime.note_command_submitted({
+        "command_id": "stop", "phase_id": "P_STOP", "intent": "EMERGENCY_STOP",
+    }, qwen=False)
+    runtime.note_terminal("stop", "SUCCEEDED")
+    common = dict(
+        route_progress_m=100.0, ego_speed_mps=0.0,
+        actor_distances_m={}, traffic_light_state="UNKNOWN",
+        distance_to_stop_line_m=None, lane_id="1",
+    )
+    runtime.update_frame(elapsed_s=5.9, ego_standstill_duration_s=5.9, **common)
+    assert runtime.hazard_recovery_request(hazard_active=False) is None
+    runtime.update_frame(elapsed_s=6.0, ego_standstill_duration_s=6.0, **common)
+    assert runtime.hazard_recovery_request(hazard_active=True) is None
+    runtime.update_frame(elapsed_s=6.1, ego_standstill_duration_s=6.1, **common)
+    assert runtime.hazard_recovery_request(hazard_active=False) is None
+    runtime.update_frame(elapsed_s=6.2, ego_standstill_duration_s=6.2, **common)
+    assert runtime.hazard_recovery_request(hazard_active=False) == pytest.approx(35.0 / 3.6)
+    runtime.note_hazard_recovery_applied()
+
+    evidence = runtime.evidence()
+    assert evidence["hazard_recovery_count"] == 1
+    assert evidence["hazard_stop_hold_s"] == pytest.approx(6.2)
+
+
+def test_hazard_recovery_can_resume_each_completed_hazard_phase() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "hazard_recovery": {
+            "after_phase_ids": ["cut-in", "pedestrian"],
+            "resume_speed_kph": 35.0,
+            "minimum_hold_s": 1.0,
+            "clear_frames": 1,
+        },
+    })
+
+    for phase_id, elapsed_s, progress_m in (
+        ("cut-in", 10.0, 3700.0),
+        ("pedestrian", 20.0, 5400.0),
+    ):
+        command_id = f"command-{phase_id}"
+        runtime.note_command_submitted({
+            "command_id": command_id,
+            "phase_id": phase_id,
+            "intent": "EMERGENCY_STOP",
+        }, qwen=False)
+        runtime.update_frame(
+            elapsed_s=elapsed_s,
+            route_progress_m=progress_m,
+            ego_speed_mps=0.0,
+            ego_standstill_duration_s=1.5,
+            actor_distances_m={},
+            traffic_light_state="UNKNOWN",
+            distance_to_stop_line_m=None,
+            lane_id="1",
+        )
+        runtime.note_terminal(command_id, "SUCCEEDED")
+        assert runtime.hazard_recovery_request(hazard_active=False) == pytest.approx(35.0 / 3.6)
+        assert runtime.hazard_recovery_request(hazard_active=False) == pytest.approx(35.0 / 3.6)
+        runtime.note_hazard_recovery_applied()
+
+    assert runtime.evidence()["hazard_recovery_count"] == 2
+
+
 def test_qwen_faults_are_separated_from_sensor_faults():
     runtime = ScenarioExtensionRuntime({
         "runtime_support": {"requirements": ["qwen_timeout_injection", "fault_injection"]},

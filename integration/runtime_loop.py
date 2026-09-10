@@ -154,6 +154,36 @@ class ControlRuntime:
         """Explicitly release a persistent watchdog/integration stop after recovery."""
         self._latched_alerts.clear()
 
+    def resume_from_hazard(self, resume_speed_mps: float) -> bool:
+        """Release a completed temporary hazard hold without fabricating voice input.
+
+        The caller must first prove the hazard has cleared.  An active command
+        or unrelated safety latch keeps fail-closed authority and rejects the
+        release; D still arbitrates the first resumed control frame.
+        """
+        if (
+            type(resume_speed_mps) not in (int, float)
+            or isinstance(resume_speed_mps, bool)
+            or not math.isfinite(float(resume_speed_mps))
+            or float(resume_speed_mps) <= 0.0
+        ):
+            raise ValueError("resume_speed_mps must be finite and positive")
+        if self._active_command_id is not None or self.safety_latched:
+            return False
+        self.requested_speed_mps = float(resume_speed_mps)
+        self._stop_hold = False
+        return True
+
+    def recover_runtime_watchdog(self, resume_speed_mps: float) -> bool:
+        """Release only a transient runner-health timeout after health returns.
+
+        The caller owns the healthy-frame debounce.  Other fail-closed alerts
+        remain latched, so recovery cannot mask a sensor, route, or safety
+        failure.
+        """
+        self.clear_safety_alerts(("RUNTIME_WATCHDOG_TIMEOUT",))
+        return self.resume_from_hazard(resume_speed_mps)
+
     def clear_safety_alerts(self, alerts: tuple[str, ...]) -> None:
         """Clear only explicitly recovered alerts, preserving unrelated faults."""
         if type(alerts) is not tuple or any(type(alert) is not str or not alert for alert in alerts):

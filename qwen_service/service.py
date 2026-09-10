@@ -161,6 +161,29 @@ class DeterministicPlannerV2Backend:
         confirmation = False
         reason = "DETERMINISTIC_PLANNER_V2"
 
+        # This backend validates scenario/runtime integration rather than
+        # natural-language understanding. Prefer the canonical NLU hint so a
+        # valid Chinese command cannot fall through to a confirmation HOLD.
+        hint = request.get("command_hint", {})
+        hinted_intent = (
+            str(hint.get("intent", "")).upper()
+            if isinstance(hint, Mapping) else ""
+        )
+        hinted_direction = (
+            str(hint.get("direction", "")).upper()
+            if isinstance(hint, Mapping) else ""
+        )
+        hinted_behavior = {
+            "START": "KEEP_LANE",
+            "FORWARD": "KEEP_LANE",
+            "SPEED_UP": "SET_SPEED",
+            "EMERGENCY_STOP": "STOP",
+        }.get(hinted_intent, hinted_intent)
+        if hinted_behavior == "CHANGE_LANE" and hinted_direction in {"LEFT", "RIGHT"}:
+            hinted_behavior = f"CHANGE_LANE_{hinted_direction}"
+        elif hinted_behavior == "TURN" and hinted_direction in {"LEFT", "RIGHT"}:
+            hinted_behavior = f"TURN_{hinted_direction}"
+
         if constraints["must_stop"]:
             steps.append(_planner_step(
                 "s1", "STOP", speed=0.0,
@@ -168,6 +191,17 @@ class DeterministicPlannerV2Backend:
                 timeout_s=5.0, failure="SAFE_STOP",
             ))
             reason = "DETERMINISTIC_SAFETY_STOP"
+        elif hinted_behavior in {
+            "KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD",
+            "FOLLOW", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
+            "TURN_LEFT", "TURN_RIGHT", "AVOID_OBSTACLE",
+            "RETURN_TO_LANE", "PULL_OVER",
+        }:
+            # Keep sequence expansion identical to the real-Qwen path after
+            # it has selected a constrained high-level behavior.
+            builder = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+            steps = builder._expanded_steps(request, hinted_behavior)
+            reason = f"DETERMINISTIC_CANONICAL_HINT_{hinted_behavior}"
         elif any(token in lower for token in ("右转", "turn right", "next right")):
             steps.extend((
                 _planner_step("s1", "SLOW_DOWN", speed=slow_speed),
@@ -788,7 +822,11 @@ class VllmQwenPlannerBackend:
         )
         if clearance_gated_slow:
             completion_type = "TARGET_PASSED"
-        timeout = 35.0 if clearance_gated_slow else 30.0 if behavior.startswith("TURN_") else 20.0 if behavior in {
+        # A clearance-gated follow/slow step may legitimately last for a
+        # complete actor lifecycle (for example a bicycle remaining ahead for
+        # tens of seconds).  Keep a finite watchdog, but do not misclassify a
+        # safe sustained follow as a failure after the former 35-second cap.
+        timeout = 120.0 if clearance_gated_slow else 30.0 if behavior.startswith("TURN_") else 20.0 if behavior in {
             "AVOID_OBSTACLE", "RETURN_TO_LANE", "YIELD",
         } or sustained_observation else 12.0 if behavior.startswith("CHANGE_LANE_") else 8.0
         completion_value = target_speed
