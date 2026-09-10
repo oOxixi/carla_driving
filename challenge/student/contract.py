@@ -29,6 +29,12 @@ OUTPUT_NAMES = (
     "replan_condition_logits",
 )
 
+BEHAVIOR_TO_ID = {name: index for index, name in enumerate(BEHAVIORS)}
+TARGET_LANE_TO_ID = {name: index for index, name in enumerate(TARGET_LANES)}
+COMPLETION_TYPE_TO_ID = {name: index for index, name in enumerate(COMPLETION_TYPES)}
+ON_FAILURE_TO_ID = {name: index for index, name in enumerate(ON_FAILURE)}
+REPLAN_CONDITION_TO_ID = {name: index for index, name in enumerate(REPLAN_CONDITIONS)}
+
 
 @dataclass(frozen=True, slots=True)
 class StudentShapeContract:
@@ -51,8 +57,29 @@ class StudentShapeContract:
             "state": (self.batch, self.state_features),
         }
 
+    @property
+    def output_shapes(self) -> dict[str, tuple[int, ...]]:
+        return {
+            "plan_length_logits": (self.batch, self.max_steps),
+            "behavior_logits": (self.batch, self.max_steps, len(BEHAVIORS)),
+            "target_pointer_logits": (
+                self.batch, self.max_steps, self.max_targets + 1,
+            ),
+            "target_lane_logits": (self.batch, self.max_steps, len(TARGET_LANES)),
+            "target_speed_mps": (self.batch, self.max_steps),
+            "completion_type_logits": (
+                self.batch, self.max_steps, len(COMPLETION_TYPES),
+            ),
+            "on_failure_logits": (self.batch, self.max_steps, len(ON_FAILURE)),
+            "confidence": (self.batch, 1),
+            "requires_confirmation_logits": (self.batch, 1),
+            "replan_condition_logits": (self.batch, len(REPLAN_CONDITIONS)),
+        }
+
 
 __all__ = [
-    "BEHAVIORS", "COMPLETION_TYPES", "ON_FAILURE", "OUTPUT_NAMES",
-    "REPLAN_CONDITIONS", "StudentShapeContract", "TARGET_LANES",
+    "BEHAVIORS", "BEHAVIOR_TO_ID", "COMPLETION_TYPES", "COMPLETION_TYPE_TO_ID",
+    "ON_FAILURE", "ON_FAILURE_TO_ID", "OUTPUT_NAMES", "REPLAN_CONDITIONS",
+    "REPLAN_CONDITION_TO_ID", "StudentShapeContract", "TARGET_LANES",
+    "TARGET_LANE_TO_ID",
 ]

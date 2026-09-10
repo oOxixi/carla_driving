@@ -14,8 +14,16 @@ from challenge.planner.student_backend import StudentBackend, validate_weight_ma
 from challenge.planner.teacher_backend import QwenTeacherBackend
 from challenge.planner.frozen_contracts import assert_frozen_contracts
 from challenge.student.contract import OUTPUT_NAMES, StudentShapeContract
-from challenge.student.model import StudentPlannerV0
+from challenge.student.model import StudentModelConfig, StudentPlannerV0
 from challenge.student.preprocess import StudentPreprocessor
+from challenge.student.training_contract import (
+    PAD_CLASS_INDICES,
+    build_step_mask,
+    masked_step_mean,
+    padded_target_pointer_index,
+    plan_length_to_class,
+)
+from challenge.export.export_onnx import StudentOnnxExportWrapper
 from runtime.interface_registry import InterfaceValidationError
 from runtime.interface_registry import InterfaceRegistry
 
@@ -33,11 +41,9 @@ def test_student_has_fixed_shapes_and_all_structured_heads() -> None:
     inputs = tuple(torch.zeros(shape) for shape in contract.input_shapes.values())
     with torch.inference_mode():
         outputs = model(*inputs)
-    assert len(outputs) == len(OUTPUT_NAMES)
-    assert outputs[0].shape == (1, 4)
-    assert outputs[1].shape[:2] == (1, 4)
-    assert outputs[2].shape == (1, 4, 9)
-    assert outputs[4].shape == (1, 4)
+    assert tuple(outputs) == OUTPUT_NAMES
+    assert {name: tuple(value.shape) for name, value in outputs.items()} == contract.output_shapes
+    assert all(value.dtype == torch.float32 for value in outputs.values())
 
 
 def test_fixed_onnx_matches_seeded_pytorch() -> None:
@@ -48,7 +54,8 @@ def test_fixed_onnx_matches_seeded_pytorch() -> None:
     model = StudentPlannerV0(contract).eval()
     inputs = tuple(torch.zeros(shape) for shape in contract.input_shapes.values())
     with torch.inference_mode():
-        pytorch_outputs = [value.numpy() for value in model(*inputs)]
+        outputs = model(*inputs)
+        pytorch_outputs = [outputs[name].numpy() for name in OUTPUT_NAMES]
     session = ort.InferenceSession(
         str(ROOT / "challenge/student_v0_fp32.onnx"),
         providers=["CPUExecutionProvider"],
@@ -118,18 +125,70 @@ def test_vision_encoder_retains_coarse_left_right_position() -> None:
     assert float(relative_difference) > 0.01
 
 
+def test_model_config_and_initialization_are_explicit_and_seed_reproducible() -> None:
+    config = StudentModelConfig()
+    assert config.config_id == "student-v0-r3-structure-20260911"
+    assert config.max_target_speed_mps == 50.0
+    torch.manual_seed(20260911)
+    first = StudentPlannerV0(config=config)
+    torch.manual_seed(20260911)
+    second = StudentPlannerV0(config=config)
+    assert all(
+        torch.equal(left, right)
+        for left, right in zip(first.state_dict().values(), second.state_dict().values())
+    )
+
+
+def test_onnx_wrapper_preserves_public_output_order() -> None:
+    model = StudentPlannerV0().eval()
+    wrapper = StudentOnnxExportWrapper(model).eval()
+    inputs = tuple(
+        torch.zeros(shape, dtype=torch.float32)
+        for shape in model.contract.input_shapes.values()
+    )
+    with torch.inference_mode():
+        named = model(*inputs)
+        positional = wrapper(*inputs)
+    assert len(positional) == len(OUTPUT_NAMES)
+    assert all(
+        torch.equal(named[name], value)
+        for name, value in zip(OUTPUT_NAMES, positional)
+    )
+
+
+def test_plan_padding_and_mask_contract() -> None:
+    lengths = torch.tensor([1, 3, 4], dtype=torch.int64)
+    mask = build_step_mask(lengths)
+    assert mask.dtype == torch.bool
+    assert mask.tolist() == [
+        [True, False, False, False],
+        [True, True, True, False],
+        [True, True, True, True],
+    ]
+    assert plan_length_to_class(lengths).tolist() == [0, 2, 3]
+    assert PAD_CLASS_INDICES == {
+        "behavior": 13,
+        "target_lane": 5,
+        "completion_type": 7,
+        "on_failure": 1,
+    }
+    assert padded_target_pointer_index() == 8
+    loss = torch.ones((3, 4), dtype=torch.float32)
+    assert masked_step_mean(loss, mask).item() == 1.0
+
+
 def test_adapter_grounds_pointer_in_current_request() -> None:
     request = _request()
     model = StudentPlannerV0().eval()
     with torch.inference_mode():
-        outputs = list(model(*StudentPreprocessor()(request).as_tuple()))
-    outputs[0] = torch.tensor([[9.0, 0.0, 0.0, 0.0]])
-    behavior = torch.full_like(outputs[1], -20.0)
+        outputs = model(*StudentPreprocessor()(request).as_tuple())
+    outputs["plan_length_logits"] = torch.tensor([[9.0, 0.0, 0.0, 0.0]])
+    behavior = torch.full_like(outputs["behavior_logits"], -20.0)
     behavior[0, 0, 5] = 20.0  # FOLLOW
-    outputs[1] = behavior
-    pointer = torch.full_like(outputs[2], -20.0)
+    outputs["behavior_logits"] = behavior
+    pointer = torch.full_like(outputs["target_pointer_logits"], -20.0)
     pointer[0, 0, 0] = 20.0
-    outputs[2] = pointer
+    outputs["target_pointer_logits"] = pointer
     plan = StudentPlanAdapter().decode(request, outputs)
     assert plan["steps"][0]["target"]["target_id"] == request["targets"][0]["target_id"]
     assert plan["steps"][0]["behavior"] == "FOLLOW"
@@ -140,15 +199,15 @@ def test_adapter_repairs_missing_pointer_without_leaving_allowed_behavior() -> N
     request["constraints"]["allowed_behaviors"] = ["FOLLOW"]
     model = StudentPlannerV0().eval()
     with torch.inference_mode():
-        outputs = list(model(*StudentPreprocessor()(request).as_tuple()))
-    outputs[0] = torch.tensor([[9.0, 0.0, 0.0, 0.0]])
-    behavior = torch.full_like(outputs[1], -20.0)
+        outputs = model(*StudentPreprocessor()(request).as_tuple())
+    outputs["plan_length_logits"] = torch.tensor([[9.0, 0.0, 0.0, 0.0]])
+    behavior = torch.full_like(outputs["behavior_logits"], -20.0)
     behavior[0, 0, 5] = 20.0
-    outputs[1] = behavior
-    pointer = torch.full_like(outputs[2], -20.0)
+    outputs["behavior_logits"] = behavior
+    pointer = torch.full_like(outputs["target_pointer_logits"], -20.0)
     pointer[0, 0, 8] = 20.0
     pointer[0, 0, 0] = 10.0
-    outputs[2] = pointer
+    outputs["target_pointer_logits"] = pointer
     plan = StudentPlanAdapter().decode(request, outputs)
     assert plan["steps"][0]["behavior"] == "FOLLOW"
     assert plan["steps"][0]["target"]["target_id"] == request["targets"][0]["target_id"]
@@ -159,12 +218,12 @@ def test_adapter_truncates_sequence_after_terminal_stop() -> None:
     request["constraints"]["allowed_behaviors"] = ["STOP", "SET_SPEED"]
     model = StudentPlannerV0().eval()
     with torch.inference_mode():
-        outputs = list(model(*StudentPreprocessor()(request).as_tuple()))
-    outputs[0] = torch.tensor([[0.0, 9.0, 0.0, 0.0]])
-    behavior = torch.full_like(outputs[1], -20.0)
+        outputs = model(*StudentPreprocessor()(request).as_tuple())
+    outputs["plan_length_logits"] = torch.tensor([[0.0, 9.0, 0.0, 0.0]])
+    behavior = torch.full_like(outputs["behavior_logits"], -20.0)
     behavior[0, 0, 3] = 20.0
     behavior[0, 1, 1] = 20.0
-    outputs[1] = behavior
+    outputs["behavior_logits"] = behavior
     plan = StudentPlanAdapter().decode(request, outputs)
     assert [step["behavior"] for step in plan["steps"]] == ["STOP"]
 
@@ -193,7 +252,7 @@ def test_student_readiness_requires_verified_a3_weight_manifest(tmp_path) -> Non
     weights.write_bytes(b"candidate")
     manifest = tmp_path / "manifest.json"
     manifest.write_text(json.dumps({
-        "model_id": "student-v0-r2-fp32",
+        "model_id": "student-v0-r3-fp32",
         "gate_status": "A3_FP32_GATE_PASSED",
         "weights_sha256": "wrong",
         "git_sha": "deadbeef",
@@ -201,7 +260,7 @@ def test_student_readiness_requires_verified_a3_weight_manifest(tmp_path) -> Non
         "config_id": "test",
     }), encoding="utf-8")
     with pytest.raises(ValueError, match="SHA256"):
-        validate_weight_manifest(weights, manifest, expected_model_id="student-v0-r2-fp32")
+        validate_weight_manifest(weights, manifest, expected_model_id="student-v0-r3-fp32")
     with pytest.raises(ValueError, match="requires weights"):
         StudentBackend(weights_manifest=manifest)
 

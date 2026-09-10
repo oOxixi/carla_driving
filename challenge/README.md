@@ -24,7 +24,7 @@ py -3.12 -m challenge.export.export_onnx --output challenge/student_v0_fp32.onnx
 py -3.12 -m challenge.export.validate_artifacts --root .
 ```
 
-输入 Shape、输出顺序和 Adapter 映射见 `student_shape_contract.md`；结构与压缩依据见
+对接 A2/A3/A4 时以 `A1_MODEL_INTERFACE.md` 为统一入口；结构与压缩依据见
 `student_architecture.md`。Teacher 的代码与模型版本见 `teacher_baseline_manifest.json`。
 Student 只有在权重 manifest 的模型 ID、SHA256 和 `A3_FP32_GATE_PASSED` 均通过校验后
 才会报告 production-ready，不能通过手工布尔参数绕过 Gate。

@@ -13,6 +13,7 @@ from challenge.student.contract import (
     BEHAVIORS,
     COMPLETION_TYPES,
     ON_FAILURE,
+    OUTPUT_NAMES,
     REPLAN_CONDITIONS,
     TARGET_LANES,
 )
@@ -20,16 +21,20 @@ from challenge.student.preprocess import _expanded_allowed_behaviors
 
 
 class StudentPlanAdapter:
-    def __init__(self, *, model_id: str = "student-v0-r2-fp32") -> None:
+    def __init__(self, *, model_id: str = "student-v0-r3-fp32") -> None:
         self.model_id = model_id
 
     def decode(
         self,
         request: Mapping[str, Any],
-        outputs: Sequence[Tensor],
+        outputs: Mapping[str, Tensor],
     ) -> dict[str, Any]:
-        if len(outputs) != 10:
-            raise ValueError("Student V0 must return exactly 10 structured heads")
+        missing = [name for name in OUTPUT_NAMES if name not in outputs]
+        extra = sorted(set(outputs).difference(OUTPUT_NAMES))
+        if missing or extra:
+            raise ValueError(
+                f"Student V0 output dict mismatch: missing={missing}, extra={extra}"
+            )
         (
             plan_length_logits,
             behavior_logits,
@@ -41,7 +46,7 @@ class StudentPlanAdapter:
             confidence_value,
             confirmation_logits,
             replan_logits,
-        ) = outputs
+        ) = (outputs[name] for name in OUTPUT_NAMES)
         maximum_steps = int(behavior_logits.shape[1])
         plan_length = int(plan_length_logits[0].argmax().item()) + 1
         plan_length = max(1, min(plan_length, maximum_steps))

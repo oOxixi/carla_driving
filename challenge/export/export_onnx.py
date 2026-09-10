@@ -9,7 +9,7 @@ import subprocess
 import torch
 
 from challenge.student.contract import OUTPUT_NAMES, StudentShapeContract
-from challenge.student.model import StudentPlannerV0
+from challenge.student.model import StudentModelConfig, StudentPlannerV0
 from challenge.planner.frozen_contracts import FROZEN_CONTRACT_SHA256
 
 
@@ -17,6 +17,18 @@ def _source_git_sha() -> str:
     return subprocess.check_output(
         ("git", "rev-parse", "HEAD"), text=True, encoding="utf-8",
     ).strip()
+
+
+class StudentOnnxExportWrapper(torch.nn.Module):
+    """Convert the public named dict to ONNX's stable positional output list."""
+
+    def __init__(self, model: StudentPlannerV0) -> None:
+        super().__init__()
+        self.model = model
+
+    def forward(self, *inputs: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        outputs = self.model(*inputs)
+        return tuple(outputs[name] for name in OUTPUT_NAMES)
 
 
 def export_student_v0(
@@ -27,12 +39,14 @@ def export_student_v0(
 ) -> Path:
     torch.manual_seed(seed)
     contract = StudentShapeContract()
-    model = StudentPlannerV0(contract).eval()
+    config = StudentModelConfig()
+    model = StudentPlannerV0(contract, config).eval()
+    export_model = StudentOnnxExportWrapper(model).eval()
     inputs = tuple(torch.zeros(shape, dtype=torch.float32) for shape in contract.input_shapes.values())
     path = Path(output)
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.onnx.export(
-        model,
+        export_model,
         inputs,
         path,
         input_names=list(contract.input_shapes),
@@ -54,7 +68,7 @@ def export_student_v0(
         "onnx_opset": "17",
         "source_git_sha": source_git_sha or _source_git_sha(),
         "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
-        "config_id": "student-v0-r2-structure-20260911",
+        "config_id": config.config_id,
         "model_request_sha256": FROZEN_CONTRACT_SHA256["model_request"],
         "maneuver_plan_sha256": FROZEN_CONTRACT_SHA256["maneuver_plan"],
     })
@@ -79,3 +93,6 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+__all__ = ["StudentOnnxExportWrapper", "export_student_v0"]

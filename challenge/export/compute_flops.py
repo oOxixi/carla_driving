@@ -12,12 +12,13 @@ import torch
 from torch import nn
 
 from challenge.student.contract import StudentShapeContract
-from challenge.student.model import StudentPlannerV0
+from challenge.student.model import StudentModelConfig, StudentPlannerV0
 
 
 def analyze_model() -> dict[str, Any]:
     contract = StudentShapeContract()
-    model = StudentPlannerV0(contract).eval()
+    config = StudentModelConfig()
+    model = StudentPlannerV0(contract, config).eval()
     macs_by_module: dict[str, int] = {}
     handles = []
 
@@ -64,7 +65,7 @@ def analyze_model() -> dict[str, Any]:
             ("git", "rev-parse", "HEAD"), text=True, encoding="utf-8",
         ).strip(),
         "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
-        "config_id": "student-v0-r2-structure-20260911",
+        "config_id": config.config_id,
         "precision": "fp32",
         "input_shapes": {name: list(shape) for name, shape in contract.input_shapes.items()},
         "parameters": parameters,
