@@ -43,9 +43,18 @@ def analyze_model() -> dict[str, Any]:
     parameters = sum(parameter.numel() for parameter in model.parameters())
     trainable_parameters = sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
     macs = sum(macs_by_module.values())
-    # Architectural estimate for the frozen 2B Teacher at the same 64 visual
-    # + 32 text-token planning input. It is explicitly not a runtime metric.
-    teacher_flops_estimate = 430_000_000_000
+    # Conservative lower bound from the frozen Qwen3-VL-2B text config:
+    # hidden=2048, intermediate=6144, 16 query heads, 8 KV heads, 28 layers.
+    # It counts one text token only and excludes embeddings, vision, attention
+    # score products and all other input/output tokens. The real comparable
+    # Teacher workload is therefore strictly larger.
+    teacher_active_parameters_lower_bound = (
+        2048 * 2048
+        + 2 * 2048 * (8 * 128)
+        + 2048 * 2048
+        + 3 * 2048 * 6144
+    ) * 28
+    teacher_flops_lower_bound = 2 * teacher_active_parameters_lower_bound
     flops = macs * 2
     return {
         "schema_version": "1.0",
@@ -58,12 +67,13 @@ def analyze_model() -> dict[str, Any]:
         "macs_per_fixed_batch": macs,
         "flops_per_fixed_batch": flops,
         "teacher_model_id": "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
-        "teacher_flops_estimate_same_budget": teacher_flops_estimate,
-        "flops_ratio_student_over_teacher_estimate": flops / teacher_flops_estimate,
+        "teacher_non_embedding_active_parameters_lower_bound": teacher_active_parameters_lower_bound,
+        "teacher_flops_lower_bound_one_text_token": teacher_flops_lower_bound,
+        "flops_ratio_student_over_teacher_lower_bound": flops / teacher_flops_lower_bound,
         "ratio_target": 0.5,
-        "ratio_pass": flops / teacher_flops_estimate <= 0.5,
+        "ratio_pass": flops / teacher_flops_lower_bound <= 0.5,
         "counting_convention": "Conv2D/Linear only; 1 MAC = 2 FLOPs",
-        "teacher_estimate_scope": "architectural estimate, not latency or board evidence",
+        "teacher_bound_scope": "one text token; excludes vision and sequence work; not latency or board evidence",
         "macs_by_module": macs_by_module,
     }
 
@@ -77,11 +87,10 @@ def main() -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({key: report[key] for key in (
-        "parameters", "flops_per_fixed_batch", "flops_ratio_student_over_teacher_estimate", "ratio_pass",
+        "parameters", "flops_per_fixed_batch", "flops_ratio_student_over_teacher_lower_bound", "ratio_pass",
     )}, ensure_ascii=False))
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
