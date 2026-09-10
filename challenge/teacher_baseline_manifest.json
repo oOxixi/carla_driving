@@ -1,6 +1,7 @@
 {
   "schema_version": "1.0",
   "baseline_id": "teacher-baseline-v1",
+  "verification_status": "IDENTITY_FROZEN_B2_BENCHMARK_PENDING",
   "source_remote": "https://github.com/oOxixi/carla_driving.git",
   "source_branch": "main",
   "git_sha": "a05c8b76efcd4c176965223c661f40b153cb1836",
@@ -12,13 +13,13 @@
   "input_contract": {
     "name": "ModelRequest V1",
     "schema_version": "1.0",
-    "sha256": "3ef806ea5bdb15716e5bc0957fd31bdc10780f3c2632e40ea7b1c2c30e0c5b64"
+    "canonical_json_sha256": "7e68bc0d43ea2a37643c0dbf846766202b7f206190475d6b917471ffcd1a4ccf"
   },
   "output_contract": {
     "name": "ManeuverPlan V2",
     "schema_version": "2.0",
-    "sha256": "fb994ab58e4d44cb33ba10246d83bc8b4e79a4d99cafc3a772c91b4c189ac3df"
+    "canonical_json_sha256": "6fb4c94c73b493be107cda3abef64033efdec88918887a4ae0e66120aa72b0d7"
   },
+  "contract_fingerprint_method": "SHA256(canonical JSON: UTF-8, sorted keys, compact separators)",
   "scope": "contract and model identity freeze; benchmark evidence remains B2-owned"
 }
-

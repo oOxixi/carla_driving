@@ -26,8 +26,11 @@ class TinyVisionEncoder(nn.Module):
                 nn.ReLU(inplace=False),
             ))
         self.features = nn.Sequential(*layers)
-        self.pool = nn.AdaptiveAvgPool2d((1, 1))
-        self.projection = nn.Linear(channels[-1], output_width)
+        # The fifth stride-2 block produces a fixed 7x7 map.  A 2x2 average
+        # pool retains a coarse 3x3 spatial grid, unlike global pooling which
+        # made left/right objects nearly indistinguishable.
+        self.pool = nn.AvgPool2d(kernel_size=2, stride=2)
+        self.projection = nn.Linear(channels[-1] * 3 * 3, output_width)
         self.activation = nn.ReLU(inplace=False)
 
     def forward(self, rgb: Tensor) -> Tensor:
@@ -52,7 +55,7 @@ class FixedVectorEncoder(nn.Module):
 class StudentPlannerV0(nn.Module):
     """About 21M FP32 parameters; no dynamic axes or Python control flow."""
 
-    model_id = "student-v0-fp32"
+    model_id = "student-v0-r2-fp32"
 
     def __init__(self, contract: StudentShapeContract | None = None) -> None:
         super().__init__()
@@ -116,4 +119,3 @@ class StudentPlannerV0(nn.Module):
 
 
 __all__ = ["StudentPlannerV0", "TinyVisionEncoder"]
-

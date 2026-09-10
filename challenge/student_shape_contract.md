@@ -6,11 +6,13 @@
 |---|---|---:|---|
 | `rgb` | float32 | `1×3×224×224` | `ModelRequest.rgb_ref`，缺失时全零 |
 | `text_tokens` | float32 | `1×32` | `source_text` 的固定长度 Unicode 数值编码 |
-| `targets` | float32 | `1×8×8` | 当前请求中前 8 个目标，顺序不变 |
-| `state` | float32 | `1×32` | 灯态、风险、速度约束、车道能力和允许行为 |
+| `targets` | float32 | `1×8×14` | 当前请求中前 8 个目标，顺序不变 |
+| `state` | float32 | `1×64` | 灯态、风险、速度约束、命令提示、车道能力和允许行为 |
 
-`targets` 每项为：5 维类别 one-hot、归一化距离、归一化相对速度、置信度。所有维度
-固定，超长文本和目标只在预处理边界确定性截断，不进入模型动态控制流。
+`targets` 每项为：5 维类别 one-hot、归一化距离、归一化相对速度、置信度，以及
+left/right/center/ahead/behind/unknown 六维关系。`state` 额外保留 NLU intent、方向、
+提示速度和场景车道能力。所有维度固定，超长文本和目标只在预处理边界确定性截断，
+不进入模型动态控制流。
 
 ## 输出
 
@@ -35,4 +37,3 @@ replan_condition_logits     1×7
 
 模型永远不输出 `steer/throttle/brake`。Adapter 负责速度上限、必停约束、车道可用性、
 目标存在性和低置信度确认；输出随后再次经过既有 `PlanValidator`。
-

@@ -38,8 +38,8 @@ class StudentShapeContract:
     rgb_width: int = 224
     text_length: int = 32
     max_targets: int = 8
-    target_features: int = 8
-    state_features: int = 32
+    target_features: int = 14
+    state_features: int = 64
     max_steps: int = 4
 
     @property
@@ -56,4 +56,3 @@ __all__ = [
     "BEHAVIORS", "COMPLETION_TYPES", "ON_FAILURE", "OUTPUT_NAMES",
     "REPLAN_CONDITIONS", "StudentShapeContract", "TARGET_LANES",
 ]
-

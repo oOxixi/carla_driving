@@ -9,6 +9,7 @@ from runtime.interface_registry import InterfaceRegistry
 from runtime.plan_validator import PlanValidator
 
 from .common import validation_scene
+from .frozen_contracts import assert_frozen_contracts
 
 
 class QwenTeacherBackend:
@@ -22,6 +23,7 @@ class QwenTeacherBackend:
         self._validator = PlanValidator(registry=self._registry)
         self.model_id = str(getattr(delegate, "model_id", "QWEN_TEACHER_UNKNOWN"))
         self.production_ready = bool(getattr(delegate, "production_ready", False))
+        assert_frozen_contracts(self._registry)
 
     def infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]:
         frozen_request = self._registry.validate("model_request", request)
@@ -39,9 +41,10 @@ class QwenTeacherBackend:
         health = getattr(self._delegate, "health", None)
         if callable(health):
             ready, detail = health()
+            if not self.production_ready:
+                return False, f"delegate is not production-ready: {detail}"
             return bool(ready), str(detail)
         return self.production_ready, f"teacher backend configured: {self.model_id}"
 
 
 __all__ = ["QwenTeacherBackend"]
-

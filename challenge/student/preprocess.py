@@ -22,6 +22,10 @@ _CLASS_INDEX = {
 }
 _TRAFFIC_INDEX = {"RED": 0, "YELLOW": 1, "GREEN": 2, "UNKNOWN": 3}
 _RISK_INDEX = {"LOW": 0, "CAUTION": 1, "HIGH": 2, "EMERGENCY": 3, "UNKNOWN": 4}
+_INTENTS = (
+    "KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "EMERGENCY_STOP", "YIELD",
+    "FOLLOW", "TURN", "CHANGE_LANE", "AVOID_OBSTACLE", "RETURN_TO_LANE", "PULL_OVER",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,12 +61,25 @@ class StudentPreprocessor:
         from PIL import Image
 
         with Image.open(path) as image:
-            image = image.convert("RGB").resize(
+            image = image.convert("RGB")
+            image.thumbnail(
                 (self.contract.rgb_width, self.contract.rgb_height),
+                Image.Resampling.BILINEAR,
             )
-            value = torch.tensor(bytearray(image.tobytes()), dtype=torch.uint8)
+            # Letterbox instead of distorting camera geometry.  Padding uses
+            # the ImageNet mean so it becomes approximately zero after the
+            # normalization below.
+            canvas = Image.new("RGB", (self.contract.rgb_width, self.contract.rgb_height), (123, 116, 104))
+            canvas.paste(
+                image,
+                ((self.contract.rgb_width - image.width) // 2, (self.contract.rgb_height - image.height) // 2),
+            )
+            value = torch.tensor(bytearray(canvas.tobytes()), dtype=torch.uint8)
         value = value.reshape(self.contract.rgb_height, self.contract.rgb_width, 3)
-        return value.permute(2, 0, 1).unsqueeze(0).to(torch.float32).div_(255.0)
+        value = value.permute(2, 0, 1).unsqueeze(0).to(torch.float32).div_(255.0)
+        mean = torch.tensor((0.485, 0.456, 0.406), dtype=torch.float32).reshape(1, 3, 1, 1)
+        std = torch.tensor((0.229, 0.224, 0.225), dtype=torch.float32).reshape(1, 3, 1, 1)
+        return (value - mean) / std
 
     def _text(self, text: str) -> Tensor:
         values = torch.zeros((1, self.contract.text_length), dtype=torch.float32)
@@ -87,6 +104,17 @@ class StudentPreprocessor:
             if relative_speed is not None:
                 values[0, index, 6] = max(-1.0, min(1.0, float(relative_speed) / 30.0))
             values[0, index, 7] = float(target.get("confidence", 0.0))
+            relation = str(target.get("relation", "")).lower()
+            relation_flags = (
+                "left" in relation,
+                "right" in relation,
+                "center" in relation,
+                "ahead" in relation or "front" in relation,
+                "behind" in relation or "rear" in relation,
+            )
+            for relation_index, flag in enumerate(relation_flags):
+                values[0, index, 8 + relation_index] = float(flag)
+            values[0, index, 13] = float(not any(relation_flags))
         return values
 
     def _state(self, request: Mapping[str, Any]) -> Tensor:
@@ -112,6 +140,37 @@ class StudentPreprocessor:
             values[0, 16 + behavior_index] = float(behavior in allowed)
         values[0, 30] = min(len(request["targets"]), self.contract.max_targets) / self.contract.max_targets
         values[0, 31] = float(bool(capabilities.get("route_available", False)))
+        hint = request.get("command_hint") or {}
+        intent = str(hint.get("intent", "")).upper()
+        if intent in _INTENTS:
+            values[0, 32 + _INTENTS.index(intent)] = 1.0
+        target_speed = hint.get("target_speed_mps")
+        if target_speed is not None:
+            values[0, 44] = min(float(target_speed), 50.0) / 50.0
+        direction = str(hint.get("direction") or "").upper()
+        if direction in {"LEFT", "RIGHT", "STRAIGHT"}:
+            values[0, 45 + ("LEFT", "RIGHT", "STRAIGHT").index(direction)] = 1.0
+        values[0, 48] = float(bool(capabilities.get("left_lane_exists", False)))
+        values[0, 49] = float(bool(capabilities.get("right_lane_exists", False)))
+        values[0, 50] = float(bool(capabilities.get("intersection_ahead", False)))
+        values[0, 51] = float(bool(capabilities.get("stop_line_clear", False)))
+        routing = request.get("routing") or {}
+        values[0, 52] = float(str(routing.get("disposition", "")) == "CONFIRM_SAFE")
+        values[0, 53] = max(-1.0, min(1.0, float(routing.get("score", 0)) / 10.0))
+        safe_wait = str(routing.get("safe_wait_behavior", ""))
+        safe_wait_behaviors = ("KEEP_LANE_LIMITED", "SLOW_DOWN", "STOP", "EMERGENCY_STOP")
+        if safe_wait in safe_wait_behaviors:
+            values[0, 54 + safe_wait_behaviors.index(safe_wait)] = 1.0
+        reasons = routing.get("reasons") or ()
+        values[0, 58] = min(len(reasons), 8) / 8.0
+        return_direction = str(capabilities.get("return_direction", ""))
+        if return_direction in {"LEFT", "RIGHT"}:
+            values[0, 59 + ("LEFT", "RIGHT").index(return_direction)] = 1.0
+        values[0, 61] = float(
+            capabilities.get("current_lane") is not None
+            and capabilities.get("current_lane") == capabilities.get("original_lane")
+        )
+        values[0, 62] = min(len(capabilities.get("grounded_target_ids", ())), 8) / 8.0
         return values
 
 
@@ -140,4 +199,3 @@ def _expanded_allowed_behaviors(request: Mapping[str, Any]) -> set[str]:
 
 
 __all__ = ["StudentPreprocessor", "TensorizedRequest", "_expanded_allowed_behaviors"]
-

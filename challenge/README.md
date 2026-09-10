@@ -21,8 +21,10 @@ py -3.12 -m pip install -r challenge/requirements.txt
 py -3.12 -m pytest -q challenge/tests/test_a1_student.py
 py -3.12 -m challenge.export.compute_flops --output challenge/flops_report.json
 py -3.12 -m challenge.export.export_onnx --output challenge/student_v0_fp32.onnx
+py -3.12 -m challenge.export.validate_artifacts --root .
 ```
 
 输入 Shape、输出顺序和 Adapter 映射见 `student_shape_contract.md`；结构与压缩依据见
 `student_architecture.md`。Teacher 的代码与模型版本见 `teacher_baseline_manifest.json`。
-
+Student 只有在权重 manifest 的模型 ID、SHA256 和 `A3_FP32_GATE_PASSED` 均通过校验后
+才会报告 production-ready，不能通过手工布尔参数绕过 Gate。

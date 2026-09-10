@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import subprocess
 from typing import Any
 
 import torch
@@ -59,6 +60,11 @@ def analyze_model() -> dict[str, Any]:
     return {
         "schema_version": "1.0",
         "model_id": model.model_id,
+        "source_git_sha": subprocess.check_output(
+            ("git", "rev-parse", "HEAD"), text=True, encoding="utf-8",
+        ).strip(),
+        "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
+        "config_id": "student-v0-r2-structure-20260911",
         "precision": "fp32",
         "input_shapes": {name: list(shape) for name, shape in contract.input_shapes.items()},
         "parameters": parameters,

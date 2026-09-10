@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+import hashlib
 from typing import Any
 
 import torch
@@ -19,7 +20,7 @@ from challenge.student.preprocess import _expanded_allowed_behaviors
 
 
 class StudentPlanAdapter:
-    def __init__(self, *, model_id: str = "student-v0-fp32") -> None:
+    def __init__(self, *, model_id: str = "student-v0-r2-fp32") -> None:
         self.model_id = model_id
 
     def decode(
@@ -44,7 +45,9 @@ class StudentPlanAdapter:
         maximum_steps = int(behavior_logits.shape[1])
         plan_length = int(plan_length_logits[0].argmax().item()) + 1
         plan_length = max(1, min(plan_length, maximum_steps))
-        allowed = _feasible_behaviors(request, _expanded_allowed_behaviors(request))
+        feasible = _feasible_behaviors(request, _expanded_allowed_behaviors(request))
+        forced_confirmation = not feasible
+        allowed = feasible or {"HOLD"}
         must_stop = bool(request["constraints"]["must_stop"])
         if must_stop:
             plan_length = 1
@@ -54,7 +57,11 @@ class StudentPlanAdapter:
             behavior = "STOP" if must_stop else _best_allowed(
                 behavior_logits[0, index], BEHAVIORS, allowed,
             )
-            pointer = int(target_pointer_logits[0, index].argmax().item())
+            pointer_scores = target_pointer_logits[0, index]
+            if behavior in {"FOLLOW", "AVOID_OBSTACLE"} and request["targets"]:
+                pointer = int(pointer_scores[: min(len(request["targets"]), 8)].argmax().item())
+            else:
+                pointer = int(pointer_scores.argmax().item())
             target = request["targets"][pointer] if pointer < len(request["targets"]) else None
             if behavior in {"FOLLOW", "AVOID_OBSTACLE"} and target is None:
                 behavior = "KEEP_LANE" if "KEEP_LANE" in allowed else "STOP"
@@ -72,9 +79,15 @@ class StudentPlanAdapter:
                 completion=completion,
                 on_failure=on_failure,
             ))
+            if behavior in {"STOP", "HOLD", "PULL_OVER"}:
+                break
 
         confidence = max(0.0, min(1.0, float(confidence_value[0, 0].item())))
-        confirmation = bool(confirmation_logits[0, 0].item() >= 0.0 or confidence < 0.80)
+        confirmation = bool(
+            forced_confirmation
+            or confirmation_logits[0, 0].item() >= 0.0
+            or confidence < 0.80
+        )
         replan_conditions = [
             name for name, logit in zip(REPLAN_CONDITIONS, replan_logits[0])
             if float(logit.item()) >= 0.0
@@ -87,7 +100,7 @@ class StudentPlanAdapter:
             "schema_version": "2.0",
             "request_id": request["request_id"],
             "command_id": request["command_id"],
-            "plan_id": f"student-{request['request_id']}",
+            "plan_id": _plan_id(str(request["request_id"])),
             "plan_type": "MANEUVER_SEQUENCE",
             "steps": steps,
             "replan_conditions": replan_conditions,
@@ -125,7 +138,17 @@ def _feasible_behaviors(request: Mapping[str, Any], allowed: set[str]) -> set[st
         feasible.difference_update(("TURN_LEFT", "TURN_RIGHT", "RETURN_TO_LANE"))
     if not bool(capabilities.get("intersection_ahead", False)):
         feasible.difference_update(("TURN_LEFT", "TURN_RIGHT"))
-    return feasible or {"HOLD"}
+    available_lanes = {
+        str(item).upper() for item in capabilities.get("available_lanes", ())
+    }
+    if "SHOULDER" not in available_lanes:
+        feasible.discard("PULL_OVER")
+    return feasible
+
+
+def _plan_id(request_id: str) -> str:
+    digest = hashlib.sha256(request_id.encode("utf-8")).hexdigest()[:12]
+    return f"student-{request_id[:80]}-{digest}"
 
 
 def _bounded_speed(predicted: float, request: Mapping[str, Any]) -> float:
