@@ -1,0 +1,53 @@
+{
+  "source_dataset_version": "teacher_distill_v0.1_smoke",
+  "training_view_version": "a3_view_v1",
+  "student_contract": "student_v0_r3",
+  "view": "A3_DISTILLATION_COMPATIBLE",
+  "source_train": "challenge/dataset/smoke_v0/data/train.jsonl",
+  "source_val": "challenge/dataset/smoke_v0/data/val.jsonl",
+  "counts": {
+    "train": 22,
+    "val": 6
+  },
+  "classes": {
+    "train": {
+      "complex": 3,
+      "normal": 14,
+      "safety_critical": 5
+    },
+    "val": {
+      "complex": 1,
+      "normal": 3,
+      "safety_critical": 2
+    }
+  },
+  "sample_id_overlap": 0,
+  "field_mapping": {
+    "model_request": "input",
+    "teacher_plan": "teacher.maneuver_plan",
+    "sample_class.primary": "metadata.sample_class",
+    "dataset_version": "metadata.dataset_version",
+    "split": "metadata.split"
+  },
+  "student_contract_limits": {
+    "max_steps": 4,
+    "max_targets": 8,
+    "no_target_index": 8
+  },
+  "rgb_policy": {
+    "portable_package_root_used": true,
+    "input_rgb_ref_relative_to_training_view": true,
+    "canonical_rgb_ref_preserved_in_training_view_provenance": true
+  },
+  "raw_fields_preserved": true,
+  "files": {
+    "train_a3": {
+      "path": "train_a3.jsonl",
+      "sha256": "a97840300dd895b423434374d8c9e92204c83520379f486a5488009b651f2203"
+    },
+    "val_a3": {
+      "path": "val_a3.jsonl",
+      "sha256": "900b54286102d30273240110a67c31a14f4a723b23ef40373ca4f4d8a61e383c"
+    }
+  }
+}

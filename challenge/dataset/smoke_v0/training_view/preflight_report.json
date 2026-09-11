@@ -1,0 +1,65 @@
+{
+  "valid": true,
+  "train_path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/challenge/dataset/smoke_v0/training_view/train_a3.jsonl",
+  "validation_path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/challenge/dataset/smoke_v0/training_view/val_a3.jsonl",
+  "expected_dataset_version": "teacher_distill_v0.1_smoke",
+  "train": {
+    "records": 22,
+    "valid_records": 22,
+    "sample_classes": {
+      "complex": 3,
+      "normal": 14,
+      "safety_critical": 5
+    },
+    "behaviors": {
+      "AVOID_OBSTACLE": 2,
+      "FOLLOW": 2,
+      "KEEP_LANE": 3,
+      "RETURN_TO_LANE": 2,
+      "SET_SPEED": 9,
+      "STOP": 6
+    },
+    "plan_lengths": {
+      "1": 20,
+      "2": 2
+    },
+    "target_counts": {
+      "1": 4,
+      "2": 18
+    },
+    "dataset_versions": {
+      "teacher_distill_v0.1_smoke": 22
+    }
+  },
+  "validation": {
+    "records": 6,
+    "valid_records": 6,
+    "sample_classes": {
+      "complex": 1,
+      "normal": 3,
+      "safety_critical": 2
+    },
+    "behaviors": {
+      "AVOID_OBSTACLE": 1,
+      "KEEP_LANE": 1,
+      "RETURN_TO_LANE": 1,
+      "SET_SPEED": 2,
+      "STOP": 2
+    },
+    "plan_lengths": {
+      "1": 5,
+      "2": 1
+    },
+    "target_counts": {
+      "1": 1,
+      "2": 5
+    },
+    "dataset_versions": {
+      "teacher_distill_v0.1_smoke": 6
+    }
+  },
+  "errors": [],
+  "error_count": 0,
+  "warnings": [],
+  "warning_count": 0
+}

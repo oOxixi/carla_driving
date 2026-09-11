@@ -467,8 +467,8 @@ def main() -> None:
         "- Candidate order preserves ModelRequest.targets order",
         "- TARGET_OUTSIDE_TOPK must never silently become NO_TARGET",
         "",
-        "TopK=8 is a Smoke validation setting, "
-        "not the final frozen Student contract.",
+        "Current Student V0 / A3 contract freezes max_targets=8 and NO_TARGET=8; "
+        "the canonical B1 dataset still preserves complete ModelRequest.targets.",
         "",
         "## 5. Training Policy",
         "",

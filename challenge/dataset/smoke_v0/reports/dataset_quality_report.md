@@ -48,7 +48,7 @@ Teacher Git SHAs:
 - TARGET_OUTSIDE_TOPK steps: 0
 - Invalid target-id steps: 0
 
-TopK=8 is a Smoke-stage validation setting, not a permanently frozen Student contract.
+Current Student V0 / A3 contract freezes max_targets=8 and NO_TARGET=8; the canonical B1 dataset still preserves the complete ModelRequest.targets.
 
 ## 6. Training Policy
 
@@ -158,3 +158,29 @@ Val class distribution:
 ## 13. Smoke Acceptance
 
 **B1 Smoke Dataset Acceptance: PASS**
+
+<!-- B1_A3_INTERFACE_PATCH_START -->
+## B1 -> A3 Interface Validation
+
+Derived training view：
+
+```text
+training_view/train_a3.jsonl
+training_view/val_a3.jsonl
+```
+
+Result：
+
+```text
+Train records:       22
+Train valid records: 22
+Val records:         6
+Val valid records:   6
+Error count:         0
+Warning count:       0
+```
+
+**B1 -> A3 Interface Gate: PASS**
+
+Canonical Teacher records remain unchanged. The A3 view is derived by `build_dataset.py`.
+<!-- B1_A3_INTERFACE_PATCH_END -->

@@ -111,7 +111,7 @@
 ### 7）targets 字段定义、排序和 TopK 截取规则
 Raw dataset 保留完整 `ModelRequest.targets`，严格保持原始顺序。
 Smoke target-pointer 验证暂时使用 `TopK = 8`。
-**TopK=8 只是 Smoke 验证配置，不是最终 Student frozen contract。**
+Current Student V0 / A3 contract freezes max_targets=8 and NO_TARGET=8; the canonical B1 dataset still preserves the complete ModelRequest.targets.
 状态：`DONE`
 
 ### 8）target_id -> target_pointer 映射和无目标编码规则
@@ -356,3 +356,68 @@ Frozen Test 不用于调参。
 GitHub 只提交整理后的 `challenge/dataset/`。
 
 其中 `smoke_v0/` 已包含 JSONL、manifest、quality report、30 张 RGB、schema 和 README。
+
+<!-- B1_A3_INTERFACE_PATCH_START -->
+# B1 Smoke Interface Patch v0.1.1
+
+在初始 Smoke v0 交付后，`challenge` 分支已合入正式 Student V0 / A3 蒸馏代码。
+
+因此本次补丁新增：
+
+```text
+challenge/dataset/build_dataset.py
+challenge/dataset/smoke_v0/training_view/
+```
+
+并正式验证 B1 -> A3 数据接口。
+
+## 接口验证结果
+
+```text
+Train records = 22
+Train valid   = 22
+Val records   = 6
+Val valid     = 6
+error_count   = 0
+warning_count = 0
+B1_A3_INTERFACE_AUDIT = PASS
+A3_PREFLIGHT = PASS
+```
+
+## 两层数据边界
+B1 Canonical 保留完整真实 Teacher supervision；A3 Training View 通过 `build_dataset.py` 生成，用于当前 Student V0 蒸馏。
+
+映射：
+
+```text
+model_request -> input
+teacher_plan -> teacher.maneuver_plan
+sample_class.primary -> metadata.sample_class
+dataset_version -> metadata.dataset_version
+split assignment -> metadata.split
+```
+
+## 关于 TopK / target_pointer
+当前 `challenge` 分支 Student V0 / A3 contract 已正式固定：
+
+```text
+max_targets = 8
+NO_TARGET = 8
+max_steps = 4
+```
+
+但是 B1 canonical dataset 仍完整保存原始 ModelRequest targets。
+
+对于 `TARGET_OUTSIDE_TOPK`：不映射为 NO_TARGET，不静默进入普通训练，必须隔离、拒绝或按后续正式策略处理。
+
+## 版本关系
+
+```text
+Canonical dataset version: teacher_distill_v0.1_smoke
+Delivery revision: smoke_v0.1.1-interface
+Training view: a3_view_v1
+Student contract: student_v0_r3
+```
+
+原始 30 条 Teacher supervision、28 条 train-eligible、22/6 split 均未改变。
+<!-- B1_A3_INTERFACE_PATCH_END -->

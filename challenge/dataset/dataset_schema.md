@@ -905,3 +905,72 @@ RGB
 ManeuverPlan
 closed-loop evidence
 
+<!-- B1_A3_INTERFACE_PATCH_START -->
+## B1 -> Student V0 / A3 正式接口映射
+
+从 `smoke_v0.1.1-interface` 起，B1 明确区分两层数据。
+
+### Canonical B1 Dataset
+Canonical 数据是 Teacher supervision 的无损治理记录。核心字段保持：
+
+```text
+model_request
+teacher_plan
+visual_input
+metadata
+sample_class
+closed_loop_quality
+quality
+student_targets
+training_policy
+```
+
+Canonical 层不得为了某一个训练实现而删除或重命名原始 Teacher 字段。
+
+### A3 Training View
+由 `challenge/dataset/build_dataset.py` 从 canonical Train/Val 派生：
+
+```text
+canonical model_request -> input
+canonical teacher_plan -> teacher.maneuver_plan
+canonical sample_class.primary -> metadata.sample_class
+canonical dataset_version -> metadata.dataset_version
+split assignment -> metadata.split
+```
+
+当前正式 A3 view：
+
+```text
+training_view/train_a3.jsonl
+training_view/val_a3.jsonl
+```
+
+### Student V0 target contract
+当前 `challenge` 分支的 Student V0 / A3 contract 已固定：
+
+```text
+max_steps = 4
+max_targets = 8
+target_pointer = 0..7
+NO_TARGET = 8
+```
+
+Canonical 数据仍完整保存 ModelRequest V1 中的 targets，不为 Student V0 静默裁剪原始记录。
+
+如果 Teacher 引用的 target 落在 Student V0 可表达范围之外，则标记 `TARGET_OUTSIDE_TOPK`。该样本不得被静默编码为 `NO_TARGET`，也不得作为普通有效训练样本直接进入 A3。
+
+未来如 A1 正式修改 Student contract，必须生成新的 training-view contract/version；不得静默改变现有 dataset view。
+
+### A3 preflight Gate
+当前 Smoke v0 已实际通过 A3 正式 preflight：
+
+```text
+Train records: 22
+Train valid:   22
+Val records:   6
+Val valid:     6
+Errors:        0
+Warnings:      0
+A3 preflight:  PASS
+```
+<!-- B1_A3_INTERFACE_PATCH_END -->

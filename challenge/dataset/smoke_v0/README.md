@@ -34,7 +34,7 @@ ModelRequest V1 → actual Teacher RGB → Qwen/Qwen3.5-2B → ManeuverPlan V2 �
 - Candidate order preserves ModelRequest.targets order
 - TARGET_OUTSIDE_TOPK must never silently become NO_TARGET
 
-TopK=8 is a Smoke validation setting, not the final frozen Student contract.
+Current Student V0 / A3 contract freezes max_targets=8 and NO_TARGET=8; the canonical B1 dataset still preserves the complete ModelRequest.targets.
 
 ## 5. Training Policy
 
@@ -103,3 +103,41 @@ smoke_v0/
 This Smoke dataset validates the B1 data pipeline.
 
 It is not the final D3 Train/Val/Test dataset.
+
+<!-- B1_A3_INTERFACE_PATCH_START -->
+## Student V0 / A3 Training View
+
+本交付从 `smoke_v0.1.1-interface` 起增加正式下游训练视图：
+
+```text
+training_view/
+├── train_a3.jsonl
+├── val_a3.jsonl
+├── a3_view_manifest.json
+└── preflight_report.json
+```
+
+`data/` 中的数据仍是 B1 canonical/governance 数据。
+
+`training_view/` 是通过 `build_dataset.py` 从 canonical 数据派生的 Student V0 / A3 消费视图。
+
+当前正式 Student V0 contract：
+
+```text
+max_steps = 4
+max_targets = 8
+NO_TARGET = 8
+```
+
+Canonical B1 数据仍保留完整 `ModelRequest.targets`。不得把 Student 无法表达的 `TARGET_OUTSIDE_TOPK` 静默映射为 `NO_TARGET`。
+
+本交付已经通过 A3 正式 preflight：
+
+```text
+Train 22/22 valid
+Val    6/6 valid
+Errors 0
+Warnings 0
+PASS
+```
+<!-- B1_A3_INTERFACE_PATCH_END -->

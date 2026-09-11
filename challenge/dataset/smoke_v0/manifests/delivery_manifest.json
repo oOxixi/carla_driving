@@ -121,5 +121,46 @@
   "rgb_manifest": {
     "path": "manifests/rgb_manifest.json",
     "sha256": "c5043bfd4b6d2f63c9ddc07ce2d5487be3fae34adf7d4ce2ae543ffc47a9b203"
+  },
+  "delivery_revision": "smoke_v0.1.1-interface",
+  "training_view": {
+    "view_version": "a3_view_v1",
+    "student_contract": "student_v0_r3",
+    "source_dataset_version": "teacher_distill_v0.1_smoke",
+    "train_records": 22,
+    "val_records": 6,
+    "max_steps": 4,
+    "max_targets": 8,
+    "no_target_index": 8,
+    "preflight_valid": true,
+    "preflight_errors": 0,
+    "preflight_warnings": 0,
+    "files": {
+      "train_a3": {
+        "path": "training_view/train_a3.jsonl",
+        "sha256": "d1bfeddedbfc6e7d229bb5430ffd82bd58245a32f38ddeb44eaac483a50d5b6a"
+      },
+      "val_a3": {
+        "path": "training_view/val_a3.jsonl",
+        "sha256": "ad32ef3bc384a6205914e10d14ef081cbe106d7fd0e96fc96697dee70f4058e2"
+      },
+      "a3_view_manifest": {
+        "path": "training_view/a3_view_manifest.json",
+        "sha256": "309fb6c2f2e5aa8c71e38973806aa45fcc9664918dc7e1797d78003ccbd9dde8"
+      },
+      "preflight_report": {
+        "path": "training_view/preflight_report.json",
+        "sha256": "2b135e13d77998d51cd6b75529240f483577beb787f908b29cb16dea76f0df11"
+      }
+    }
+  },
+  "interface_policy": {
+    "canonical_b1_schema_is_lossless": true,
+    "a3_training_view_is_derived": true,
+    "raw_targets_preserved": true,
+    "student_v0_max_steps": 4,
+    "student_v0_max_targets": 8,
+    "student_v0_no_target_index": 8,
+    "silent_target_truncation_forbidden": true
   }
 }
