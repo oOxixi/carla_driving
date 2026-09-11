@@ -254,7 +254,14 @@ def _inspect_record(
     if not isinstance(plan, Mapping):
         raise ValueError("record.teacher.maneuver_plan must contain ManeuverPlan V2")
     labels = encoder.encode(request, plan)
-    teacher_sha = str(metadata.get("teacher_git_sha", ""))
+    # New pinned B1 data separates the frozen Teacher baseline from the
+    # collection worktree SHA. Prefer that unambiguous field while retaining
+    # the historical Smoke field as a compatibility fallback.
+    teacher_sha = str(
+        metadata.get("teacher_baseline_git_sha")
+        or metadata.get("teacher_git_sha")
+        or ""
+    )
     teacher_model = str(metadata.get("teacher_model_id") or plan.get("model_id") or "")
     provenance = record.get("teacher_provenance", {})
     if not isinstance(provenance, Mapping):
@@ -267,7 +274,9 @@ def _inspect_record(
     )
     teacher_fingerprint = str(
         metadata.get("teacher_artifact_fingerprint_sha256")
+        or metadata.get("teacher_model_artifact_sha256")
         or provenance.get("artifact_fingerprint_sha256")
+        or provenance.get("model_artifact_sha256")
         or provenance.get("teacher_artifact_fingerprint_sha256")
         or ""
     )

@@ -65,13 +65,24 @@ def test_preflight_rejects_cross_split_overlap_and_frozen_metadata(tmp_path: Pat
 
 def test_preflight_enforces_pinned_teacher_provenance(tmp_path: Path) -> None:
     records = build_mock_records(6)
-    for record in records:
-        record["metadata"].update({
-            "teacher_git_sha": TEACHER_SHA,
-            "teacher_model_id": TEACHER_MODEL,
-            "teacher_model_revision": TEACHER_REVISION,
-            "teacher_artifact_fingerprint_sha256": TEACHER_FINGERPRINT,
-        })
+    for index, record in enumerate(records):
+        if index < 4:
+            record["metadata"].update({
+                "teacher_git_sha": TEACHER_SHA,
+                "teacher_model_id": TEACHER_MODEL,
+                "teacher_model_revision": TEACHER_REVISION,
+                "teacher_artifact_fingerprint_sha256": TEACHER_FINGERPRINT,
+            })
+        else:
+            # Formal B1 D1 uses explicit baseline and model-artifact names and
+            # preserves the collection SHA in the historical ambiguous field.
+            record["metadata"].update({
+                "teacher_git_sha": "f" * 40,
+                "teacher_baseline_git_sha": TEACHER_SHA,
+                "teacher_model_id": TEACHER_MODEL,
+                "teacher_model_revision": TEACHER_REVISION,
+                "teacher_model_artifact_sha256": TEACHER_FINGERPRINT,
+            })
     train_path, val_path = tmp_path / "train.jsonl", tmp_path / "validation.jsonl"
     _write(train_path, records[:4], "train")
     _write(val_path, records[4:], "validation")
@@ -93,7 +104,7 @@ def test_preflight_enforces_pinned_teacher_provenance(tmp_path: Path) -> None:
     )
 
     rows = [json.loads(line) for line in val_path.read_text(encoding="utf-8").splitlines()]
-    rows[0]["metadata"]["teacher_artifact_fingerprint_sha256"] = "0" * 64
+    rows[0]["metadata"]["teacher_model_artifact_sha256"] = "0" * 64
     val_path.write_text(
         "\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8",
     )

@@ -209,6 +209,46 @@ def load_teacher_manifest(repo: Path) -> dict[str, Any]:
     return data
 
 
+def load_model_artifact_manifest(path: Path) -> dict[str, Any]:
+    data = read_json(path)
+    files = data.get("files")
+    if not isinstance(files, list) or not files:
+        raise RuntimeError("Teacher artifact manifest has no file inventory")
+    expected = {
+        "model_id": EXPECTED_MODEL_ID,
+        "model_revision": EXPECTED_MODEL_REVISION,
+        "model_artifact_sha256": EXPECTED_ARTIFACT_SHA256,
+        "file_count": len(files),
+    }
+    mismatch = {
+        key: {"expected": value, "actual": data.get(key)}
+        for key, value in expected.items()
+        if data.get(key) != value
+    }
+    inventory_sha256 = canonical_json_sha256(files)
+    if inventory_sha256 != EXPECTED_ARTIFACT_SHA256:
+        mismatch["files_inventory_sha256"] = {
+            "expected": EXPECTED_ARTIFACT_SHA256,
+            "actual": inventory_sha256,
+        }
+    if mismatch:
+        raise RuntimeError(
+            "Teacher artifact manifest does not match pinned artifact: "
+            + json.dumps(mismatch, ensure_ascii=False)
+        )
+    evidence = {
+        "path": str(path),
+        "manifest_sha256": sha256_file(path),
+        "model_id": data["model_id"],
+        "model_revision": data["model_revision"],
+        "model_artifact_sha256": data["model_artifact_sha256"],
+        "file_count": data["file_count"],
+        "fingerprint_method": data.get("fingerprint_method"),
+    }
+    print("TEACHER_ARTIFACT_MANIFEST_GATE=PASS")
+    return evidence
+
+
 def runner_preflight(runner_python: str, repo: Path) -> dict[str, str]:
     code = (
         "import sys, carla; "
@@ -462,6 +502,18 @@ def enrich_canonical(
 def student_view_or_reason(
     sample: dict[str, Any],
 ) -> tuple[dict[str, Any] | None, str | None]:
+    quality = sample.get("quality")
+    if not isinstance(quality, dict) or quality.get("valid_for_training") is not True:
+        return None, "TEACHER_LABEL_INVALID"
+
+    closed_loop = sample.get("closed_loop_quality")
+    if not isinstance(closed_loop, dict) or closed_loop.get("available") is not True:
+        return None, "CLOSED_LOOP_EVIDENCE_MISSING"
+    if closed_loop.get("command_terminal_status") != "SUCCEEDED":
+        return None, "COMMAND_TERMINAL_NOT_SUCCEEDED"
+    if closed_loop.get("plan_terminal_state") != "SUCCEEDED":
+        return None, "PLAN_TERMINAL_NOT_SUCCEEDED"
+
     request = sample.get("model_request")
     plan = sample.get("teacher_plan")
     if not isinstance(request, dict):
@@ -503,15 +555,28 @@ def student_view_or_reason(
     meta["raw_target_count"] = len(raw_targets)
     meta["student_target_count"] = len(adapted_request["targets"])
 
+    normalized_quality = json.loads(json.dumps(quality))
+    normalized_quality.update({
+        "schema_valid": True,
+        "closed_loop_success": True,
+        "safety_critical": primary_sample_class(sample) == "safety_critical",
+    })
+
     view = {
         "sample_id": sample.get("sample_id"),
         "input": adapted_request,
         "teacher": {"maneuver_plan": plan},
         "visual_input": sample.get("visual_input"),
-        "quality": sample.get("quality"),
-        "closed_loop_quality": sample.get("closed_loop_quality"),
+        "quality": normalized_quality,
+        "closed_loop_quality": closed_loop,
         "sample_class": sample.get("sample_class"),
         "metadata": meta,
+        "training_policy": {
+            "policy_version": "b1_d1_pinned_training_policy_v1",
+            "teacher_label_valid": True,
+            "closed_loop_success": True,
+            "train_eligible": True,
+        },
     }
     return view, None
 
@@ -597,6 +662,7 @@ def capture_provenance(
     out_path: Path,
     health: dict[str, Any],
     teacher_manifest: dict[str, Any],
+    teacher_artifact_evidence: dict[str, Any],
     runner_info: dict[str, str],
     service_url: str,
     registry_path: Path,
@@ -619,6 +685,7 @@ def capture_provenance(
         "teacher_service_url": service_url,
         "teacher_health_snapshot": health,
         "teacher_manifest_snapshot": teacher_manifest,
+        "teacher_artifact_evidence": teacher_artifact_evidence,
         "runner": runner_info,
         "registry_path": str(registry_path),
         "registry_sha256": sha256_file(registry_path),
@@ -657,6 +724,11 @@ def main() -> int:
     parser.add_argument(
         "--qwen-service-url",
         default="http://127.0.0.1:18004",
+    )
+    parser.add_argument(
+        "--teacher-artifact-manifest",
+        default="artifacts/b1_teacher_pinned/teacher_model_manifest.json",
+        help="Manifest emitted by teacher_model_fingerprint.py for the loaded Teacher",
     )
     parser.add_argument(
         "--runner-python",
@@ -703,6 +775,10 @@ def main() -> int:
     print("REPO_BRANCH=" + current_branch(repo))
 
     teacher_manifest = load_teacher_manifest(repo)
+    artifact_manifest_path = Path(args.teacher_artifact_manifest)
+    if not artifact_manifest_path.is_absolute():
+        artifact_manifest_path = (repo / artifact_manifest_path).resolve()
+    teacher_artifact_evidence = load_model_artifact_manifest(artifact_manifest_path)
     health = teacher_health(args.qwen_service_url)
     runner_info = runner_preflight(args.runner_python, repo)
     carla_port_preflight(args.carla_host, args.carla_port)
@@ -751,6 +827,7 @@ def main() -> int:
         out_path=out / "provenance_manifest.json",
         health=health,
         teacher_manifest=teacher_manifest,
+        teacher_artifact_evidence=teacher_artifact_evidence,
         runner_info=runner_info,
         service_url=args.qwen_service_url,
         registry_path=registry_path,

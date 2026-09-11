@@ -45,6 +45,13 @@ Test set. Formal B1 records must also match the frozen Teacher identity in
 Missing or mismatched per-record provenance fails preflight before a batch is
 created.
 
+The pinned B1 D1 collector uses the explicit metadata names
+`teacher_baseline_git_sha` and `teacher_model_artifact_sha256`; A3 accepts
+those as the authoritative equivalents of its historical field names. D1
+records enter the Student view only when the Teacher label is structurally
+valid and both command and plan terminal states are `SUCCEEDED`. Missing
+closed-loop evidence is quarantined, not trained.
+
 Run dataset preflight without training:
 
 ```bash

@@ -128,12 +128,28 @@ def main() -> int:
             "Configured --runner-python cannot import CARLA Python API"
         )
 
-    pinned_manifest = repo / "challenge" / "teacher_pinned_manifest.json"
+    pinned_manifest = repo / "challenge" / "teacher_baseline_manifest.json"
     if not pinned_manifest.is_file():
-        raise RuntimeError("challenge/teacher_pinned_manifest.json not found")
+        raise RuntimeError("challenge/teacher_baseline_manifest.json not found")
     provenance = json.loads(pinned_manifest.read_text(encoding="utf-8"))
-    if provenance.get("teacher_profile") != TEACHER_PROFILE:
-        raise RuntimeError("Pinned Teacher profile mismatch")
+    expected_identity = {
+        "git_sha": "a05c8b76efcd4c176965223c661f40b153cb1836",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+        "artifact_fingerprint_sha256": (
+            "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa"
+        ),
+    }
+    mismatch = {
+        key: {"expected": expected, "actual": provenance.get(key)}
+        for key, expected in expected_identity.items()
+        if provenance.get(key) != expected
+    }
+    if mismatch:
+        raise RuntimeError(
+            "Pinned Teacher identity mismatch: "
+            + json.dumps(mismatch, ensure_ascii=False)
+        )
 
     print("DATASET_VERSION=" + DATASET_VERSION)
     print("TEACHER_PROFILE=" + TEACHER_PROFILE)
