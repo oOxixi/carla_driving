@@ -17,8 +17,9 @@ preprocessor, six Train mock records and two Validation mock records. One
 optimizer update, validation, backward, checkpoint and pure-state-dict export
 completed successfully.
 
-- Best checkpoint SHA-256:
-  `4b74d986e19238d2ae8cca25df158fb2125d6dea61ebde86dfd1d14db20da9a3`
+- The run-specific checkpoint SHA-256 and source Git SHA are recorded together
+  in the ignored artifact's `training_summary.json`; they are intentionally
+  not hard-coded into this versioned report.
 - Candidate weights SHA-256:
   `77fe0b31a8a8dcbc2e29c975b3f9a76bf8ca8bc28d6f847359f1086eb3a4bab4`
 - Candidate status: `MOCK_ONLY`
