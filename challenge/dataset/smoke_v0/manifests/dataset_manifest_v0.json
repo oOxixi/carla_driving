@@ -1,0 +1,107 @@
+{
+  "manifest_schema_version": "1.0",
+  "dataset_version": "teacher_distill_v0.1_smoke",
+  "created_at_utc": "2026-09-11T05:02:52.113725+00:00",
+  "source": {
+    "accepted_jsonl": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/artifacts/b1_teacher_smoke/dataset/smoke_valid.jsonl",
+    "rejected_jsonl": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/artifacts/b1_teacher_smoke/dataset/smoke_rejected.jsonl",
+    "accepted_sha256": "f92ce6d106829fbd1d1201713f2a8e0d2cc647003b2508ed2520b11f4270a4b1",
+    "rejected_sha256": "d8f4902d273ad127d4e254d01ba22f30b7cccd8832e0ea6e67278a8a09147af3"
+  },
+  "counts": {
+    "accepted": 30,
+    "rejected": 2,
+    "effective_teacher_samples": 30,
+    "groups": 14,
+    "scenarios": 24
+  },
+  "teacher": {
+    "model_ids": {
+      "Qwen/Qwen3.5-2B": 30
+    },
+    "git_shas": {
+      "a05c8b76efcd4c176965223c661f40b153cb1836": 30
+    }
+  },
+  "distribution": {
+    "scenarios": {
+      "ACC_A01_lead_brake": 1,
+      "ACC_A02_red_light_conflict": 1,
+      "ACC_A03_pedestrian_crossing": 1,
+      "ACC_A04_static_obstacle_stop": 1,
+      "ACC_A05_lane_change_left": 1,
+      "ACC_A06_obstacle_detour_return": 1,
+      "ACC_B01_start_keep_lane": 1,
+      "ACC_B02_set_speed_20": 1,
+      "ACC_B03_slow_to_10": 2,
+      "ACC_B04_normal_stop": 2,
+      "ACC_B05_emergency_stop": 2,
+      "ACC_B06_offset_recovery": 1,
+      "S00_chain_start": 1,
+      "S01_set_speed_20": 1,
+      "S02_slow_down": 2,
+      "S03_stop": 2,
+      "S04_emergency_stop": 2,
+      "SUP_A01_lead_brake_15m": 1,
+      "SUP_A04_red_light_close_stop_line": 1,
+      "SUP_A07_pedestrian_right_to_left": 1,
+      "SUP_A10_static_vehicle_center": 1,
+      "SUP_A13_lane_change_right": 1,
+      "SUP_A16_detour_right_static_vehicle": 1,
+      "SUP_A17_detour_left_construction": 1
+    },
+    "maps": {
+      "Town03": 30
+    },
+    "difficulties": {
+      "advanced": 13,
+      "basic": 17
+    },
+    "sample_classes": {
+      "COMPLEX": 6,
+      "NORMAL": 17,
+      "SAFETY_CRITICAL": 7
+    },
+    "group_sizes": {
+      "2db95c17db88444310af": 4,
+      "1dc29185271f691068ec": 1,
+      "56fbed009b7e95d5173c": 1,
+      "c7b9d8bc00753ac2ac20": 5,
+      "5f3663285414e4f70c2e": 3,
+      "199cced911d49bcbdba3": 1,
+      "672e09cbcfd21d97f051": 8,
+      "7f96e9479b956e4baf07": 1,
+      "2680374db864d380a9bf": 1,
+      "5c1bf82216cdb431eb36": 1,
+      "ad4aed771660da1558cd": 1,
+      "309fd382316efe247277": 1,
+      "171ff0d47a96cef6399b": 1,
+      "8e30a90057085e8f35e5": 1
+    }
+  },
+  "rejection_reasons": {
+    "MANEUVER_PLAN_MISSING": 1,
+    "RESOLVE_NOT_READY:REJECTED": 1,
+    "NO_CANONICAL_SUBMIT": 1
+  },
+  "split_policy": {
+    "unit": "group_key",
+    "group_definition": [
+      "scenario_family",
+      "map",
+      "route_hash",
+      "seed"
+    ],
+    "frame_level_random_split_forbidden": true
+  },
+  "target_policy": {
+    "preserve_model_request_order": true,
+    "raw_dataset_topk_truncation": false,
+    "null_target_is_valid_no_target": true
+  },
+  "status": {
+    "phase": "SMOKE",
+    "test_frozen": false,
+    "calibration_frozen": false
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "manifest_schema_version": "1.0",
+  "dataset_version": "teacher_distill_v0.1_smoke",
+  "split": "train",
+  "created_at_utc": "2026-09-11T05:31:06.063526+00:00",
+  "file": "artifacts/b1_teacher_smoke/dataset/splits/train.jsonl",
+  "sha256": "b22a6466d1edf59b351c9cfbf0ff5bba44b80e5f397126efc6b7f5f1208cbbc2",
+  "counts": {
+    "samples": 22,
+    "groups": 10,
+    "scenarios": 18
+  },
+  "distribution": {
+    "groups": {
+      "2db95c17db88444310af": 4,
+      "56fbed009b7e95d5173c": 1,
+      "5f3663285414e4f70c2e": 3,
+      "199cced911d49bcbdba3": 1,
+      "672e09cbcfd21d97f051": 8,
+      "7f96e9479b956e4baf07": 1,
+      "2680374db864d380a9bf": 1,
+      "5c1bf82216cdb431eb36": 1,
+      "ad4aed771660da1558cd": 1,
+      "8e30a90057085e8f35e5": 1
+    },
+    "scenarios": {
+      "ACC_A01_lead_brake": 1,
+      "ACC_A02_red_light_conflict": 1,
+      "ACC_A03_pedestrian_crossing": 1,
+      "ACC_A04_static_obstacle_stop": 1,
+      "ACC_A06_obstacle_detour_return": 1,
+      "ACC_B02_set_speed_20": 1,
+      "ACC_B03_slow_to_10": 2,
+      "ACC_B06_offset_recovery": 1,
+      "S00_chain_start": 1,
+      "S01_set_speed_20": 1,
+      "S02_slow_down": 2,
+      "S03_stop": 2,
+      "S04_emergency_stop": 2,
+      "SUP_A01_lead_brake_15m": 1,
+      "SUP_A04_red_light_close_stop_line": 1,
+      "SUP_A07_pedestrian_right_to_left": 1,
+      "SUP_A10_static_vehicle_center": 1,
+      "SUP_A17_detour_left_construction": 1
+    },
+    "maps": {
+      "Town03": 22
+    },
+    "sample_classes": {
+      "COMPLEX": 3,
+      "NORMAL": 14,
+      "SAFETY_CRITICAL": 5
+    }
+  },
+  "teacher": {
+    "model_ids": {
+      "Qwen/Qwen3.5-2B": 22
+    },
+    "git_shas": {
+      "a05c8b76efcd4c176965223c661f40b153cb1836": 22
+    }
+  }
+}

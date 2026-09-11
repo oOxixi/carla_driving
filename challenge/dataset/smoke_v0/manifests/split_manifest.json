@@ -1,0 +1,45 @@
+{
+  "split_schema_version": "1.0",
+  "dataset_version": "teacher_distill_v0.1_smoke",
+  "created_at_utc": "2026-09-11T05:31:06.064475+00:00",
+  "source_dataset": "artifacts/b1_teacher_smoke/dataset/smoke_train_eligible.jsonl",
+  "source_sha256": "dc2ea5ed2b540f79031460af928416edf10297c16657c84319d9a6dcbb053c03",
+  "seed": 1,
+  "requested_val_ratio": 0.2,
+  "actual_val_ratio": 0.21428571428571427,
+  "group_definition": [
+    "scenario_family",
+    "map",
+    "route_hash",
+    "seed"
+  ],
+  "counts": {
+    "total_samples": 28,
+    "total_groups": 12,
+    "train_samples": 22,
+    "train_groups": 10,
+    "val_samples": 6,
+    "val_groups": 2
+  },
+  "train_group_keys": [
+    "199cced911d49bcbdba3",
+    "2680374db864d380a9bf",
+    "2db95c17db88444310af",
+    "56fbed009b7e95d5173c",
+    "5c1bf82216cdb431eb36",
+    "5f3663285414e4f70c2e",
+    "672e09cbcfd21d97f051",
+    "7f96e9479b956e4baf07",
+    "8e30a90057085e8f35e5",
+    "ad4aed771660da1558cd"
+  ],
+  "val_group_keys": [
+    "171ff0d47a96cef6399b",
+    "c7b9d8bc00753ac2ac20"
+  ],
+  "leakage_checks": {
+    "group_overlap": 0,
+    "sample_id_overlap": 0,
+    "passed": true
+  }
+}

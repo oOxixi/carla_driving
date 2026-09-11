@@ -1,0 +1,41 @@
+{
+  "manifest_schema_version": "1.0",
+  "dataset_version": "teacher_distill_v0.1_smoke",
+  "split": "val",
+  "created_at_utc": "2026-09-11T05:31:06.064033+00:00",
+  "file": "artifacts/b1_teacher_smoke/dataset/splits/val.jsonl",
+  "sha256": "4023297473f587b9f1aaf13b69851d6e094fb10ed1f48c94fcec11cb5b6be9fe",
+  "counts": {
+    "samples": 6,
+    "groups": 2,
+    "scenarios": 4
+  },
+  "distribution": {
+    "groups": {
+      "c7b9d8bc00753ac2ac20": 5,
+      "171ff0d47a96cef6399b": 1
+    },
+    "scenarios": {
+      "ACC_B01_start_keep_lane": 1,
+      "ACC_B04_normal_stop": 2,
+      "ACC_B05_emergency_stop": 2,
+      "SUP_A16_detour_right_static_vehicle": 1
+    },
+    "maps": {
+      "Town03": 6
+    },
+    "sample_classes": {
+      "NORMAL": 3,
+      "SAFETY_CRITICAL": 2,
+      "COMPLEX": 1
+    }
+  },
+  "teacher": {
+    "model_ids": {
+      "Qwen/Qwen3.5-2B": 6
+    },
+    "git_shas": {
+      "a05c8b76efcd4c176965223c661f40b153cb1836": 6
+    }
+  }
+}
