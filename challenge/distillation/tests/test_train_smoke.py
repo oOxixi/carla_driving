@@ -59,18 +59,24 @@ def test_real_data_integration_gate_preflights_and_limits_training(tmp_path: Pat
     def write(path: Path, rows: list[dict], split: str) -> None:
         encoded = []
         for row in rows:
-            copied = deepcopy(row)
-            copied["metadata"]["split"] = split
-            copied["metadata"]["dataset_version"] = "b1-v1"
-            encoded.append(json.dumps(copied))
+                copied = deepcopy(row)
+                copied["metadata"]["split"] = split
+                copied["metadata"]["dataset_version"] = "b1-v1"
+                copied["metadata"]["teacher_git_sha"] = config["teacher"]["git_sha"]
+                copied["metadata"]["teacher_model_id"] = config["teacher"]["model_id"]
+                copied["metadata"]["teacher_model_revision"] = config["teacher"][
+                    "model_revision"
+                ]
+                copied["metadata"]["teacher_artifact_fingerprint_sha256"] = config[
+                    "teacher"
+                ]["artifact_fingerprint_sha256"]
+                encoded.append(json.dumps(copied))
         path.write_text("\n".join(encoded) + "\n", encoding="utf-8")
 
     write(train_path, records[:24], "train")
     write(val_path, records[24:], "validation")
     config["dataset"].update({
         "version": "b1-v1", "train_path": str(train_path), "val_path": str(val_path),
-        "verify_teacher_identity": False,
-        "require_pinned_teacher_provenance": False,
     })
     config["training"]["batch_size"] = 8
 

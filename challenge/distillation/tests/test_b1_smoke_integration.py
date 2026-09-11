@@ -60,6 +60,10 @@ def test_legacy_smoke_identity_cannot_enter_formal_training() -> None:
     )
     _validate_frozen_identities(formal_cfg, integration_smoke=False)
 
+    formal_cfg["dataset"]["require_pinned_teacher_provenance"] = False
+    with pytest.raises(ValueError, match="requires pinned per-record provenance"):
+        _validate_frozen_identities(formal_cfg, integration_smoke=False)
+
 
 def test_b1_smoke_preflight_and_rgb_use_a1_contract(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(ROOT)

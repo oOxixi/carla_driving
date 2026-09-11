@@ -499,11 +499,16 @@ def _validate_frozen_identities(
     actual_teacher = {
         key: cfg["teacher"].get(key) for key in expected_teacher
     }
+    dataset_cfg = cfg["dataset"]
     if policy == "legacy_unpinned_smoke":
         if not integration_smoke:
             raise ValueError(
                 "legacy unpinned Teacher data is allowed only for integration smoke"
             )
+        if dataset_cfg.get("verify_teacher_identity") is not True:
+            raise ValueError("legacy Smoke must verify Teacher SHA and model ID")
+        if dataset_cfg.get("require_pinned_teacher_provenance") is not False:
+            raise ValueError("legacy Smoke cannot claim pinned Teacher provenance")
         if actual_teacher["git_sha"] != expected_teacher["git_sha"]:
             raise ValueError("legacy Smoke Teacher git_sha does not match frozen baseline")
         if actual_teacher["model_id"] != expected_teacher["model_id"]:
@@ -512,10 +517,15 @@ def _validate_frozen_identities(
             raise ValueError("legacy Smoke must not claim a model revision")
         if actual_teacher["artifact_fingerprint_sha256"] != "NOT_RECORDED_BY_B1_SMOKE":
             raise ValueError("legacy Smoke must not claim an artifact fingerprint")
-    elif actual_teacher != expected_teacher:
-        raise ValueError(
-            "teacher identity does not match challenge/teacher_baseline_manifest.json"
-        )
+    else:
+        if actual_teacher != expected_teacher:
+            raise ValueError(
+                "teacher identity does not match challenge/teacher_baseline_manifest.json"
+            )
+        if dataset_cfg.get("verify_teacher_identity") is not True:
+            raise ValueError("formal A3 training cannot disable Teacher identity checks")
+        if dataset_cfg.get("require_pinned_teacher_provenance") is not True:
+            raise ValueError("formal A3 training requires pinned per-record provenance")
     if cfg["model"].get("model_id") == StudentPlannerV0.model_id:
         if cfg["model"].get("config_id") != StudentModelConfig().config_id:
             raise ValueError("Student config_id does not match A1 V0 r3")
