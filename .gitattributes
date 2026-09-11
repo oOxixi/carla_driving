@@ -8,7 +8,6 @@
 *.wav binary
 *.xlsx binary
 *.docx binary
-*.onnx binary
 
 # Frozen byte-level checksums were published from CRLF source artifacts.
 # Pin their checkout representation so Linux and Windows validate the same bytes.
