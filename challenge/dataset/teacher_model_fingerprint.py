@@ -7,6 +7,9 @@ import json
 from pathlib import Path
 
 
+LOCAL_METADATA_FILES = frozenset({".model_revision"})
+
+
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
@@ -15,20 +18,10 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model-dir", required=True)
-    parser.add_argument("--model-id", default="Qwen/Qwen3.5-2B")
-    parser.add_argument("--revision", required=True)
-    parser.add_argument(
-        "--output",
-        default="artifacts/b1_teacher_pinned/teacher_model_manifest.json",
-    )
-    args = parser.parse_args()
-
-    root = Path(args.model_dir).expanduser().resolve()
+def build_manifest(root: Path, *, model_id: str, revision: str) -> dict:
+    root = root.expanduser().resolve()
     if not root.is_dir():
-        raise SystemExit(f"MODEL_DIR_NOT_FOUND={root}")
+        raise ValueError(f"MODEL_DIR_NOT_FOUND={root}")
 
     files = []
     for p in sorted(root.rglob("*")):
@@ -36,6 +29,8 @@ def main() -> int:
             continue
         rel = p.relative_to(root)
         if ".cache" in rel.parts:
+            continue
+        if rel.as_posix() in LOCAL_METADATA_FILES:
             continue
         files.append(
             {
@@ -56,16 +51,36 @@ def main() -> int:
     payload = {
         "schema_version": "1.0",
         "fingerprint_method": (
-            "SHA256(canonical JSON list of non-.cache files, "
+            "SHA256(canonical JSON list of model artifact files; excludes "
+            ".cache and local .model_revision metadata; "
             "sorted by path; each entry contains path,size_bytes,sha256)"
         ),
-        "model_id": args.model_id,
-        "model_revision": args.revision,
+        "model_id": model_id,
+        "model_revision": revision,
         "local_dir": str(root),
         "file_count": len(files),
         "model_artifact_sha256": artifact_sha,
         "files": files,
     }
+    return payload
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-dir", required=True)
+    parser.add_argument("--model-id", default="Qwen/Qwen3.5-2B")
+    parser.add_argument("--revision", required=True)
+    parser.add_argument(
+        "--output",
+        default="artifacts/b1_teacher_pinned/teacher_model_manifest.json",
+    )
+    args = parser.parse_args()
+
+    root = Path(args.model_dir).expanduser().resolve()
+    try:
+        payload = build_manifest(root, model_id=args.model_id, revision=args.revision)
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
 
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -76,8 +91,8 @@ def main() -> int:
 
     print("MODEL_ID=" + args.model_id)
     print("MODEL_REVISION=" + args.revision)
-    print("MODEL_FILES=" + str(len(files)))
-    print("MODEL_ARTIFACT_SHA256=" + artifact_sha)
+    print("MODEL_FILES=" + str(payload["file_count"]))
+    print("MODEL_ARTIFACT_SHA256=" + payload["model_artifact_sha256"])
     print("MANIFEST=" + str(out))
     print("TEACHER_ARTIFACT_FINGERPRINT=PASS")
     return 0

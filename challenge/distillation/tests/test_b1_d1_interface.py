@@ -10,6 +10,7 @@ from challenge.dataset.collect_d1_200 import (
     load_model_artifact_manifest,
     student_view_or_reason,
 )
+from challenge.dataset.teacher_model_fingerprint import build_manifest
 from challenge.distillation.dataset import load_jsonl
 
 
@@ -85,3 +86,16 @@ def test_d1_artifact_manifest_is_verified_not_only_declared(
     path.write_text(json.dumps(manifest), encoding="utf-8")
     with pytest.raises(RuntimeError, match="does not match pinned artifact"):
         load_model_artifact_manifest(path)
+
+
+def test_teacher_fingerprint_excludes_local_revision_marker(tmp_path: Path) -> None:
+    (tmp_path / "weights.bin").write_bytes(b"weights")
+    (tmp_path / ".model_revision").write_text("local-only\n", encoding="utf-8")
+
+    first = build_manifest(tmp_path, model_id="teacher", revision="revision")
+    (tmp_path / ".model_revision").write_text("changed-locally\n", encoding="utf-8")
+    second = build_manifest(tmp_path, model_id="teacher", revision="revision")
+
+    assert first["file_count"] == 1
+    assert first["files"][0]["path"] == "weights.bin"
+    assert first["model_artifact_sha256"] == second["model_artifact_sha256"]
