@@ -1,15 +1,15 @@
 {
   "schema_version": "1.0",
   "baseline_id": "teacher-baseline-v1",
-  "verification_status": "IDENTITY_FROZEN_B2_BENCHMARK_PENDING",
+  "verification_status": "MODEL_ID_ALIGNED_REVISION_PENDING_B2_BENCHMARK_PENDING",
   "source_remote": "https://github.com/oOxixi/carla_driving.git",
   "source_branch": "main",
   "git_sha": "a05c8b76efcd4c176965223c661f40b153cb1836",
-  "model_profile": "qwen3vl-2b-int4",
-  "model_id": "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
-  "model_revision": "f91db2369bd00e7ec20bf09b6a0080cdb26aefa5",
-  "quantization": "GPTQ INT4",
-  "visual_tokens": 64,
+  "model_profile": "qwen3.5-2b",
+  "model_id": "Qwen/Qwen3.5-2B",
+  "model_revision": "NOT_RECORDED_BY_B1_SMOKE",
+  "quantization": "NOT_RECORDED_BY_B1_SMOKE",
+  "visual_tokens": "NOT_RECORDED_BY_B1_SMOKE",
   "input_contract": {
     "name": "ModelRequest V1",
     "schema_version": "1.0",
@@ -21,5 +21,5 @@
     "canonical_json_sha256": "6fb4c94c73b493be107cda3abef64033efdec88918887a4ae0e66120aa72b0d7"
   },
   "contract_fingerprint_method": "SHA256(canonical JSON: UTF-8, sorted keys, compact separators)",
-  "scope": "contract and model identity freeze; benchmark evidence remains B2-owned"
+  "scope": "Teacher model ID and contracts aligned to the real B1 smoke run; exact model revision and benchmark evidence remain pending and B2-owned"
 }

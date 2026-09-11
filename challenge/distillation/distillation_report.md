@@ -4,8 +4,8 @@
 
 - Branch baseline: `challenge@047c659744a526a73ba1e9326ee7d78d65a15205`
 - Teacher baseline SHA: `a05c8b76efcd4c176965223c661f40b153cb1836`
-- Teacher model: `h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4`
-- Teacher revision: `f91db2369bd00e7ec20bf09b6a0080cdb26aefa5`
+- Teacher model: `Qwen/Qwen3.5-2B`
+- Teacher revision: `NOT_RECORDED_BY_B1_SMOKE` (must be pinned before final D3)
 - Student: `student-v0-r3-fp32`
 - Student config: `student-v0-r3-structure-20260911`
 - Local environment: Python 3.12, PyTorch 2.6.0 CPU

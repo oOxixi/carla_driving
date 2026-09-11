@@ -57,6 +57,21 @@ python -m challenge.distillation.train \
   --integration-smoke
 ```
 
+For the committed B1 Smoke v0 delivery, use its dedicated configuration:
+
+```bash
+python -m challenge.distillation.train \
+  --config challenge/distillation/b1_smoke_config.yaml \
+  --integration-smoke
+```
+
+This path consumes B1's committed `training_view`, verifies the unified
+`Qwen/Qwen3.5-2B` Teacher identity, resolves
+packaged RGB by SHA256 instead of stale collector-host paths, checks B1's
+recorded target pointers against A1's encoder, and audits quarantined records
+without mixing them into ordinary supervision. Integration-smoke candidates
+remain `MOCK_ONLY` and cannot pass the production FP32 gate.
+
 A1 V0 r3 is already wired through `a1_student.py`; its frozen class order,
 target-pointer convention, Head names and four-modal input shapes are imported
 from `challenge.student` rather than duplicated. Every forward call is checked

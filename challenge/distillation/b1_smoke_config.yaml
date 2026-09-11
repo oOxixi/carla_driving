@@ -1,21 +1,24 @@
-config_id: a3-distillation-v1-a1-r3
-seed: 20260910
+config_id: a3-b1-teacher-distill-v0.1-smoke
+seed: 20260911
 
 teacher:
   git_sha: a05c8b76efcd4c176965223c661f40b153cb1836
   model_id: Qwen/Qwen3.5-2B
   model_revision: NOT_RECORDED_BY_B1_SMOKE
+  identity_policy: frozen_manifest
 
 contract:
   max_steps: 4
   max_targets: 8
 
 dataset:
-  version: PENDING_B1
-  train_path: null
-  val_path: null
-  mock_samples: 8
-  mock_train_fraction: 0.75
+  version: teacher_distill_v0.1_smoke
+  train_path: challenge/dataset/smoke_v0/training_view/train_a3.jsonl
+  val_path: challenge/dataset/smoke_v0/training_view/val_a3.jsonl
+  hard_cases_path: challenge/dataset/smoke_v0/data/smoke_hard_cases.jsonl
+  asset_root: challenge/dataset/smoke_v0/rgb
+  require_rgb: true
+  verify_teacher_identity: true
 
 model:
   model_id: student-v0-r3-fp32
@@ -30,21 +33,17 @@ input:
 training:
   device: auto
   epochs: 1
-  batch_size: 2
+  batch_size: 4
   learning_rate: 0.0001
   weight_decay: 0.0001
   gradient_clip_norm: 1.0
-  max_updates: 1
+  max_updates: 2
   selection_metric: plan_sequence_accuracy
   resume: null
 
 sampling:
-  weights:
-    normal: 1.0
-    complex: 1.5
-    safety_critical: 2.5
+  weights: {normal: 1.0, complex: 1.5, safety_critical: 2.5}
 
-# Disabled until B1 Train is available. Weights are derived from Train only.
 class_balance:
   enabled: false
   heads: [behavior]
@@ -63,9 +62,7 @@ loss_weights:
   plan_length: 0.5
   requires_confirmation: 0.2
 
-distillation:
-  soft_alpha: 0.0
-  temperature: 1.0
+distillation: {soft_alpha: 0.0, temperature: 1.0}
 
 output:
-  directory: artifacts/challenge/distillation/a1_r3_smoke
+  directory: artifacts/challenge/distillation/b1_smoke_v0

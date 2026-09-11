@@ -92,6 +92,16 @@ def run_training(
             max_steps=max_steps,
             max_targets=max_targets,
             expected_version=expected_version,
+            expected_teacher_git_sha=(
+                str(cfg["teacher"]["git_sha"])
+                if dataset_cfg.get("verify_teacher_identity") else None
+            ),
+            expected_teacher_model_id=(
+                str(cfg["teacher"]["model_id"])
+                if dataset_cfg.get("verify_teacher_identity") else None
+            ),
+            asset_root=dataset_cfg.get("asset_root"),
+            require_rgb=bool(dataset_cfg.get("require_rgb", False)),
         )
         write_preflight_report(output_dir / "dataset_preflight.json", preflight)
         if not preflight["valid"]:
@@ -102,12 +112,22 @@ def run_training(
     train_records, val_records, dataset_version = _records(
         cfg, smoke=smoke, record_limit=50 if integration_smoke else None,
     )
+    quarantined = _audit_quarantined_hard_cases(cfg, smoke=smoke)
+    if quarantined:
+        (output_dir / "quarantined_hard_cases_audit.json").write_text(
+            json.dumps(_strict_json(quarantined), ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
     sample_weights = cfg["sampling"]["weights"]
     train_dataset = DistillationDataset(
         train_records, label_encoder=encoder, sample_weights=sample_weights,
+        asset_root=cfg["dataset"].get("asset_root"),
+        require_rgb=bool(cfg["dataset"].get("require_rgb", False)),
     )
     val_dataset = DistillationDataset(
         val_records, label_encoder=encoder, sample_weights=sample_weights,
+        asset_root=cfg["dataset"].get("asset_root"),
+        require_rgb=bool(cfg["dataset"].get("require_rgb", False)),
     )
     balance_cfg = cfg.get("class_balance", {})
     class_weights: dict[str, list[float]] = {}
@@ -293,6 +313,8 @@ def run_training(
         "device": str(device),
         "train_samples": len(train_dataset),
         "validation_samples": len(val_dataset),
+        "quarantined_hard_case_count": int(quarantined.get("count", 0)),
+        "quarantined_hard_case_reasons": quarantined.get("reasons", {}),
         "epochs_completed": len(history),
         "global_step": global_step,
         "selection_metric": selection_metric,
@@ -345,6 +367,52 @@ def _records(
         train_records = train_records[:record_limit]
         val_records = val_records[:record_limit]
     return train_records, val_records, str(dataset["version"])
+
+
+def _audit_quarantined_hard_cases(
+    cfg: Mapping[str, Any], *, smoke: bool,
+) -> dict[str, Any]:
+    path = cfg["dataset"].get("hard_cases_path")
+    if smoke or not path:
+        return {}
+    records = load_jsonl(path)
+    reasons: dict[str, int] = {}
+    sample_ids: list[str] = []
+    train_ids = {
+        str(record.get("sample_id"))
+        for manifest in (cfg["dataset"]["train_path"], cfg["dataset"]["val_path"])
+        for record in load_jsonl(manifest)
+    }
+    for record in records:
+        sample_id = str(record.get("sample_id", "")).strip()
+        if not sample_id:
+            raise ValueError("quarantined hard case is missing sample_id")
+        if sample_id in train_ids:
+            raise ValueError(f"quarantined hard case leaked into Train/Val: {sample_id}")
+        if str(record.get("dataset_version")) != str(cfg["dataset"]["version"]):
+            raise ValueError(f"hard case dataset version mismatch: {sample_id}")
+        metadata = record.get("metadata", {})
+        plan = record.get("teacher_plan", {})
+        if metadata.get("teacher_git_sha") != cfg["teacher"]["git_sha"]:
+            raise ValueError(f"hard case Teacher SHA mismatch: {sample_id}")
+        if (metadata.get("teacher_model_id") or plan.get("model_id")) != cfg["teacher"]["model_id"]:
+            raise ValueError(f"hard case Teacher model mismatch: {sample_id}")
+        policy = record.get("training_policy", {})
+        if policy.get("train_eligible") is not False:
+            raise ValueError(f"hard case must be excluded from ordinary training: {sample_id}")
+        if policy.get("policy_class") != "QUARANTINED_HARD_CASE":
+            raise ValueError(f"hard case policy_class is invalid: {sample_id}")
+        if policy.get("closed_loop_success") is not False:
+            raise ValueError(f"hard case must retain failed closed-loop evidence: {sample_id}")
+        # Resolve and hash-check the packaged image without adding this record to training.
+        DistillationDataset(
+            [record], asset_root=cfg["dataset"].get("asset_root"), require_rgb=True,
+        )[0]
+        for reason in policy.get("quarantine_reasons", ()):
+            key = str(reason)
+            reasons[key] = reasons.get(key, 0) + 1
+        sample_ids.append(sample_id)
+    return {"count": len(records), "sample_ids": sample_ids, "reasons": reasons}
 
 
 def _build_model(
@@ -401,6 +469,9 @@ def _validate_config(value: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _validate_frozen_identities(cfg: Mapping[str, Any]) -> None:
+    policy = str(cfg["teacher"].get("identity_policy", "frozen_manifest"))
+    if policy != "frozen_manifest":
+        raise ValueError(f"unsupported teacher identity_policy: {policy}")
     manifest_path = Path(__file__).resolve().parents[1] / "teacher_baseline_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     expected_teacher = {

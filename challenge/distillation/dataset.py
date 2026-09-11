@@ -30,11 +30,15 @@ class DistillationDataset:
         *,
         label_encoder: DistillationLabelEncoder | None = None,
         sample_weights: Mapping[str, float] | None = None,
+        asset_root: str | Path | None = None,
+        require_rgb: bool = False,
     ) -> None:
         self.records = tuple(dict(item) for item in records)
         if not self.records:
             raise ValueError("distillation dataset must not be empty")
         self.label_encoder = label_encoder or DistillationLabelEncoder()
+        self.asset_root = Path(asset_root).resolve() if asset_root else None
+        self.require_rgb = bool(require_rgb)
         weights = dict(SAMPLE_WEIGHTS)
         if sample_weights is not None:
             weights.update({str(key): float(value) for key, value in sample_weights.items()})
@@ -47,7 +51,9 @@ class DistillationDataset:
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         record = self.records[index]
-        request = _request(record)
+        request = _request(
+            record, asset_root=self.asset_root, require_rgb=self.require_rgb,
+        )
         plan = _plan(record)
         sample_class = _sample_class(record)
         if sample_class not in self.sample_weights:
@@ -183,11 +189,37 @@ def build_mock_records(count: int = 256) -> list[dict[str, Any]]:
     return records
 
 
-def _request(record: Mapping[str, Any]) -> dict[str, Any]:
+def _request(
+    record: Mapping[str, Any], *, asset_root: Path | None = None,
+    require_rgb: bool = False,
+) -> dict[str, Any]:
     value = record.get("input", record.get("model_request"))
     if not isinstance(value, Mapping):
         raise ValueError("record.input must contain ModelRequest V1")
-    return dict(value)
+    request = dict(value)
+    visual = record.get("visual_input")
+    if isinstance(visual, Mapping) and visual.get("rgb_sha256"):
+        if asset_root is None:
+            if require_rgb:
+                raise ValueError("dataset asset_root is required for packaged RGB")
+            return request
+        digest = str(visual["rgb_sha256"]).lower()
+        if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
+            raise ValueError("visual_input.rgb_sha256 must be a SHA256 hex digest")
+        matches = [asset_root / f"{digest}{suffix}" for suffix in (".jpg", ".jpeg", ".png")]
+        image_path = next((candidate for candidate in matches if candidate.is_file()), None)
+        if image_path is None:
+            raise ValueError(f"packaged RGB is missing for sha256={digest}")
+        actual = hashlib.sha256(image_path.read_bytes()).hexdigest()
+        if actual != digest:
+            raise ValueError(f"packaged RGB hash mismatch for {image_path}")
+        expected_size = visual.get("size_bytes")
+        if expected_size is not None and image_path.stat().st_size != int(expected_size):
+            raise ValueError(f"packaged RGB size mismatch for {image_path}")
+        request["rgb_ref"] = str(image_path)
+    elif require_rgb:
+        raise ValueError("visual_input.rgb_sha256 is required")
+    return request
 
 
 def _plan(record: Mapping[str, Any]) -> dict[str, Any]:
@@ -195,12 +227,19 @@ def _plan(record: Mapping[str, Any]) -> dict[str, Any]:
     value = teacher.get("maneuver_plan") if isinstance(teacher, Mapping) else None
     if value is None:
         value = record.get("maneuver_plan")
+    if value is None:
+        value = record.get("teacher_plan")
     if not isinstance(value, Mapping):
         raise ValueError("record.teacher.maneuver_plan must contain ManeuverPlan V2")
     return dict(value)
 
 
 def _sample_class(record: Mapping[str, Any]) -> str:
+    declared = record.get("sample_class")
+    if isinstance(declared, Mapping):
+        declared = declared.get("primary")
+    if declared:
+        return str(declared).strip().lower()
     metadata = record.get("metadata", {})
     if isinstance(metadata, Mapping) and metadata.get("sample_class"):
         return str(metadata["sample_class"])
