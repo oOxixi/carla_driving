@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "model_id": "student-v0-r3-fp32",
+  "source_git_sha": "d6f4f8c69e094f1d314abc45bbc1f4a56624297f",
+  "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
+  "config_id": "student-v0-r3-structure-20260911",
+  "precision": "fp32",
+  "input_shapes": {
+    "rgb": [
+      1,
+      3,
+      224,
+      224
+    ],
+    "text_tokens": [
+      1,
+      32
+    ],
+    "targets": [
+      1,
+      8,
+      14
+    ],
+    "state": [
+      1,
+      64
+    ]
+  },
+  "parameters": 23006581,
+  "trainable_parameters": 23006581,
+  "parameter_size_bytes_fp32": 92026324,
+  "macs_per_fixed_batch": 249320448,
+  "flops_per_fixed_batch": 498640896,
+  "teacher_model_id": "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
+  "teacher_non_embedding_active_parameters_lower_bound": 1409286144,
+  "teacher_flops_lower_bound_one_text_token": 2818572288,
+  "flops_ratio_student_over_teacher_lower_bound": 0.17691258021763392,
+  "ratio_target": 0.5,
+  "ratio_pass": true,
+  "counting_convention": "Conv2D/Linear only; 1 MAC = 2 FLOPs",
+  "teacher_bound_scope": "one text token; excludes vision and sequence work; not latency or board evidence",
+  "macs_by_module": {
+    "vision_encoder.features.0": 10838016,
+    "vision_encoder.features.2": 57802752,
+    "vision_encoder.features.4": 57802752,
+    "vision_encoder.features.6": 57802752,
+    "vision_encoder.features.8": 43352064,
+    "vision_encoder.projection": 1769472,
+    "text_encoder.layers.0": 16384,
+    "text_encoder.layers.2": 262144,
+    "target_encoder.layers.0": 57344,
+    "target_encoder.layers.2": 262144,
+    "state_encoder.layers.0": 32768,
+    "state_encoder.layers.2": 262144,
+    "fusion.0": 6291456,
+    "fusion.2": 9437184,
+    "fusion.4": 3145728,
+    "plan_length_head": 4096,
+    "behavior_head": 57344,
+    "target_pointer_head": 36864,
+    "target_lane_head": 24576,
+    "target_speed_head": 4096,
+    "completion_head": 32768,
+    "failure_head": 16384,
+    "confidence_head": 1024,
+    "confirmation_head": 1024,
+    "replan_head": 7168
+  }
+}
