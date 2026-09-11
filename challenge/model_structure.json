@@ -1,0 +1,133 @@
+{
+  "schema_version": "1.0",
+  "model_id": "student-v0-r3-fp32",
+  "source_git_sha": "d6f4f8c69e094f1d314abc45bbc1f4a56624297f",
+  "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
+  "config_id": "student-v0-r3-structure-20260911",
+  "parameters": 23006581,
+  "precision": "fp32",
+  "input_shapes": {
+    "rgb": [
+      1,
+      3,
+      224,
+      224
+    ],
+    "text_tokens": [
+      1,
+      32
+    ],
+    "targets": [
+      1,
+      8,
+      14
+    ],
+    "state": [
+      1,
+      64
+    ]
+  },
+  "status": "A1_STRUCTURE_READY_A3_WEIGHTS_PENDING",
+  "artifact": "student_v0_fp32.onnx",
+  "artifact_sha256": "36c4b6b30975bc79c034a94fa9017f298bea0db9cd5ba023b24ed2cf6e338af3",
+  "opset": 17,
+  "dynamic_axes": false,
+  "onnx_operators": [
+    "AveragePool",
+    "Concat",
+    "Constant",
+    "Conv",
+    "Flatten",
+    "Gemm",
+    "Identity",
+    "Mul",
+    "Relu",
+    "Reshape",
+    "Sigmoid"
+  ],
+  "modules": {
+    "vision_encoder": "TinyVisionEncoder(\n  (features): Sequential(\n    (0): Conv2d(3, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))\n    (1): ReLU()\n    (2): Conv2d(32, 64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))\n    (3): ReLU()\n    (4): Conv2d(64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))\n    (5): ReLU()\n    (6): Conv2d(128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))\n    (7): ReLU()\n    (8): Conv2d(256, 384, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))\n    (9): ReLU()\n  )\n  (pool): AvgPool2d(kernel_size=2, stride=2, padding=0)\n  (projection): Linear(in_features=3456, out_features=512, bias=True)\n  (activation): ReLU()\n)",
+    "text_encoder": "FixedVectorEncoder(\n  (layers): Sequential(\n    (0): Linear(in_features=32, out_features=512, bias=True)\n    (1): ReLU()\n    (2): Linear(in_features=512, out_features=512, bias=True)\n    (3): ReLU()\n  )\n)",
+    "target_encoder": "FixedVectorEncoder(\n  (layers): Sequential(\n    (0): Linear(in_features=112, out_features=512, bias=True)\n    (1): ReLU()\n    (2): Linear(in_features=512, out_features=512, bias=True)\n    (3): ReLU()\n  )\n)",
+    "state_encoder": "FixedVectorEncoder(\n  (layers): Sequential(\n    (0): Linear(in_features=64, out_features=512, bias=True)\n    (1): ReLU()\n    (2): Linear(in_features=512, out_features=512, bias=True)\n    (3): ReLU()\n  )\n)",
+    "fusion": "Sequential(\n  (0): Linear(in_features=2048, out_features=3072, bias=True)\n  (1): ReLU()\n  (2): Linear(in_features=3072, out_features=3072, bias=True)\n  (3): ReLU()\n  (4): Linear(in_features=3072, out_features=1024, bias=True)\n  (5): ReLU()\n)",
+    "plan_length_head": "Linear(in_features=1024, out_features=4, bias=True)",
+    "behavior_head": "Linear(in_features=1024, out_features=56, bias=True)",
+    "target_pointer_head": "Linear(in_features=1024, out_features=36, bias=True)",
+    "target_lane_head": "Linear(in_features=1024, out_features=24, bias=True)",
+    "target_speed_head": "Linear(in_features=1024, out_features=4, bias=True)",
+    "completion_head": "Linear(in_features=1024, out_features=32, bias=True)",
+    "failure_head": "Linear(in_features=1024, out_features=16, bias=True)",
+    "confidence_head": "Linear(in_features=1024, out_features=1, bias=True)",
+    "confirmation_head": "Linear(in_features=1024, out_features=1, bias=True)",
+    "replan_head": "Linear(in_features=1024, out_features=7, bias=True)"
+  },
+  "output_names": [
+    "plan_length_logits",
+    "behavior_logits",
+    "target_pointer_logits",
+    "target_lane_logits",
+    "target_speed_mps",
+    "completion_type_logits",
+    "on_failure_logits",
+    "confidence",
+    "requires_confirmation_logits",
+    "replan_condition_logits"
+  ],
+  "output_shapes": {
+    "plan_length_logits": [
+      1,
+      4
+    ],
+    "behavior_logits": [
+      1,
+      4,
+      14
+    ],
+    "target_pointer_logits": [
+      1,
+      4,
+      9
+    ],
+    "target_lane_logits": [
+      1,
+      4,
+      6
+    ],
+    "target_speed_mps": [
+      1,
+      4
+    ],
+    "completion_type_logits": [
+      1,
+      4,
+      8
+    ],
+    "on_failure_logits": [
+      1,
+      4,
+      4
+    ],
+    "confidence": [
+      1,
+      1
+    ],
+    "requires_confirmation_logits": [
+      1,
+      1
+    ],
+    "replan_condition_logits": [
+      1,
+      7
+    ]
+  },
+  "input_dtype": "float32",
+  "output_dtype": "float32",
+  "forbidden_outputs": [
+    "steer",
+    "throttle",
+    "brake",
+    "waypoints"
+  ],
+  "training_state": "random_initialization_for_export_smoke_only"
+}
