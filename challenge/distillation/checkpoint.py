@@ -67,9 +67,11 @@ def load_checkpoint(
     if rng.get("python") is not None:
         random.setstate(rng["python"])
     if rng.get("torch") is not None:
-        torch.set_rng_state(rng["torch"])
+        # ``map_location=cuda`` is correct for model/optimizer tensors but
+        # must never move the process-wide CPU generator state off CPU.
+        torch.set_rng_state(rng["torch"].cpu())
     if torch.cuda.is_available() and rng.get("torch_cuda") is not None:
-        torch.cuda.set_rng_state_all(rng["torch_cuda"])
+        torch.cuda.set_rng_state_all([state.cpu() for state in rng["torch_cuda"]])
     return payload
 
 

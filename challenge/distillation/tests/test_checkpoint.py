@@ -47,6 +47,27 @@ def test_checkpoint_restores_model_optimizer_and_progress(tmp_path: Path) -> Non
         assert torch.equal(value, expected[name])
 
 
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is unavailable")
+def test_checkpoint_loaded_on_cuda_keeps_rng_states_on_required_devices(tmp_path: Path) -> None:
+    model = torch.nn.Linear(3, 2).cuda()
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.01)
+    path = save_checkpoint(
+        tmp_path / "cuda-resume.pt", model=model, optimizer=optimizer,
+        epoch=0, global_step=1, best_metric=0.0,
+        metadata={"dataset_version": "mock-v1"},
+        extra_state={"data_generator_state": torch.Generator().get_state()},
+    )
+
+    restored = load_checkpoint(
+        path, model=model, optimizer=optimizer, map_location=torch.device("cuda"),
+    )
+
+    assert restored["rng"]["torch"].device.type == "cuda"
+    assert torch.get_rng_state().device.type == "cpu"
+    generator = torch.Generator()
+    generator.set_state(restored["extra_state"]["data_generator_state"].cpu())
+
+
 def test_epoch_boundary_resume_matches_uninterrupted_training(tmp_path: Path) -> None:
     config = yaml.safe_load(
         (DISTILLATION_ROOT / "train_config.yaml").read_text(encoding="utf-8")

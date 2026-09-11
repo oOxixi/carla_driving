@@ -209,7 +209,7 @@ def run_training(
         best_metric = float(restored["best_metric"])
         data_generator_state = restored.get("extra_state", {}).get("data_generator_state")
         if data_generator_state is not None:
-            generator.set_state(data_generator_state)
+            generator.set_state(data_generator_state.cpu())
 
     log_path = output_dir / "training.jsonl"
     best_path = output_dir / "student_fp32_best.pt"
