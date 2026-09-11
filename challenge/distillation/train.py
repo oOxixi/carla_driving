@@ -56,7 +56,7 @@ def run_training(
     if smoke and integration_smoke:
         raise ValueError("mock smoke and production integration smoke are mutually exclusive")
     cfg = _validate_config(deepcopy(config))
-    _validate_frozen_identities(cfg)
+    _validate_frozen_identities(cfg, integration_smoke=integration_smoke)
     if not smoke and not integration_smoke and _git_is_dirty():
         raise RuntimeError(
             "production A3 training requires a clean committed challenge worktree"
@@ -99,6 +99,14 @@ def run_training(
             expected_teacher_model_id=(
                 str(cfg["teacher"]["model_id"])
                 if dataset_cfg.get("verify_teacher_identity") else None
+            ),
+            expected_teacher_model_revision=(
+                str(cfg["teacher"]["model_revision"])
+                if dataset_cfg.get("require_pinned_teacher_provenance") else None
+            ),
+            expected_teacher_artifact_fingerprint_sha256=(
+                str(cfg["teacher"]["artifact_fingerprint_sha256"])
+                if dataset_cfg.get("require_pinned_teacher_provenance") else None
             ),
             asset_root=dataset_cfg.get("asset_root"),
             require_rgb=bool(dataset_cfg.get("require_rgb", False)),
@@ -183,6 +191,12 @@ def run_training(
         "teacher_git_sha": str(cfg["teacher"]["git_sha"]),
         "teacher_model_id": str(cfg["teacher"]["model_id"]),
         "teacher_model_revision": str(cfg["teacher"]["model_revision"]),
+        "teacher_artifact_fingerprint_sha256": str(
+            cfg["teacher"]["artifact_fingerprint_sha256"]
+        ),
+        "teacher_identity_policy": str(
+            cfg["teacher"].get("identity_policy", "frozen_manifest")
+        ),
         "model_id": str(cfg["model"]["model_id"]),
         "model_config_id": str(cfg["model"].get("config_id", cfg["config_id"])),
         "dataset_version": dataset_version,
@@ -468,9 +482,11 @@ def _validate_config(value: Mapping[str, Any]) -> dict[str, Any]:
     return cfg
 
 
-def _validate_frozen_identities(cfg: Mapping[str, Any]) -> None:
+def _validate_frozen_identities(
+    cfg: Mapping[str, Any], *, integration_smoke: bool = False,
+) -> None:
     policy = str(cfg["teacher"].get("identity_policy", "frozen_manifest"))
-    if policy != "frozen_manifest":
+    if policy not in {"frozen_manifest", "legacy_unpinned_smoke"}:
         raise ValueError(f"unsupported teacher identity_policy: {policy}")
     manifest_path = Path(__file__).resolve().parents[1] / "teacher_baseline_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -478,11 +494,25 @@ def _validate_frozen_identities(cfg: Mapping[str, Any]) -> None:
         "git_sha": manifest["git_sha"],
         "model_id": manifest["model_id"],
         "model_revision": manifest["model_revision"],
+        "artifact_fingerprint_sha256": manifest["artifact_fingerprint_sha256"],
     }
     actual_teacher = {
         key: cfg["teacher"].get(key) for key in expected_teacher
     }
-    if actual_teacher != expected_teacher:
+    if policy == "legacy_unpinned_smoke":
+        if not integration_smoke:
+            raise ValueError(
+                "legacy unpinned Teacher data is allowed only for integration smoke"
+            )
+        if actual_teacher["git_sha"] != expected_teacher["git_sha"]:
+            raise ValueError("legacy Smoke Teacher git_sha does not match frozen baseline")
+        if actual_teacher["model_id"] != expected_teacher["model_id"]:
+            raise ValueError("legacy Smoke Teacher model_id does not match frozen baseline")
+        if actual_teacher["model_revision"] != "NOT_RECORDED_BY_B1_SMOKE":
+            raise ValueError("legacy Smoke must not claim a model revision")
+        if actual_teacher["artifact_fingerprint_sha256"] != "NOT_RECORDED_BY_B1_SMOKE":
+            raise ValueError("legacy Smoke must not claim an artifact fingerprint")
+    elif actual_teacher != expected_teacher:
         raise ValueError(
             "teacher identity does not match challenge/teacher_baseline_manifest.json"
         )

@@ -5,6 +5,10 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
+TEACHER_SHA = "b" * 40
+TEACHER_REVISION = "d" * 40
+TEACHER_FINGERPRINT = "e" * 64
+
 from challenge.distillation.artifacts import (  # noqa: E402
     export_candidate_weights,
     promote_fp32_candidate,
@@ -17,6 +21,10 @@ def _evaluation(evaluation_id: str, value: float, *, split: str = "validation") 
         "evaluation_id": evaluation_id,
         "split": split,
         "dataset_version": "b1-v1",
+        "teacher_git_sha": TEACHER_SHA,
+        "teacher_model_id": "teacher",
+        "teacher_model_revision": TEACHER_REVISION,
+        "teacher_artifact_fingerprint_sha256": TEACHER_FINGERPRINT,
         "schema_validity": 1.0,
         "metrics": {
             "behavior_accuracy": value,
@@ -32,9 +40,11 @@ def _evaluation(evaluation_id: str, value: float, *, split: str = "validation") 
 def test_candidate_is_not_promoted_without_independent_gate(tmp_path: Path) -> None:
     identity = {
         "git_sha": "a" * 40,
-        "teacher_git_sha": "b" * 40,
+        "teacher_git_sha": TEACHER_SHA,
         "teacher_model_id": "teacher",
-        "teacher_model_revision": "teacher-revision",
+        "teacher_model_revision": TEACHER_REVISION,
+        "teacher_artifact_fingerprint_sha256": TEACHER_FINGERPRINT,
+        "teacher_identity_policy": "frozen_manifest",
         "model_id": "student-v0-r3-fp32",
         "model_config_id": "student-v0-r3-structure-20260911",
         "dataset_version": "b1-v1",
@@ -54,9 +64,11 @@ def test_candidate_is_not_promoted_without_independent_gate(tmp_path: Path) -> N
 def test_candidate_serializes_undefined_metrics_as_null(tmp_path: Path) -> None:
     identity = {
         "git_sha": "a" * 40,
-        "teacher_git_sha": "b" * 40,
+        "teacher_git_sha": TEACHER_SHA,
         "teacher_model_id": "teacher",
-        "teacher_model_revision": "teacher-revision",
+        "teacher_model_revision": TEACHER_REVISION,
+        "teacher_artifact_fingerprint_sha256": TEACHER_FINGERPRINT,
+        "teacher_identity_policy": "frozen_manifest",
         "model_id": "student-v0-r3-fp32",
         "model_config_id": "student-v0-r3-structure-20260911",
         "dataset_version": "mock-v1",
@@ -82,6 +94,11 @@ def test_fp32_gate_passes_small_drop_and_rejects_test_evidence(tmp_path: Path) -
         "model_id": "student-v0-r3-fp32",
         "config_id": "student-v0-r3-structure-20260911",
         "source_worktree_dirty": False,
+        "teacher_git_sha": TEACHER_SHA,
+        "teacher_model_id": "teacher",
+        "teacher_model_revision": TEACHER_REVISION,
+        "teacher_artifact_fingerprint_sha256": TEACHER_FINGERPRINT,
+        "teacher_identity_policy": "frozen_manifest",
     }
     student_evaluation = _evaluation("student-val", 0.94)
     student_evaluation["metrics"]["safety_critical_behavior_recall"] = 0.95
@@ -101,4 +118,14 @@ def test_fp32_gate_passes_small_drop_and_rejects_test_evidence(tmp_path: Path) -
             teacher_evaluation=_evaluation("teacher-test", 0.95, split="frozen_test"),
             student_evaluation=_evaluation("student-val", 0.94),
             output_path=tmp_path / "rejected.json",
+        )
+
+    mismatched = _evaluation("student-wrong-teacher", 0.94)
+    mismatched["teacher_artifact_fingerprint_sha256"] = "f" * 64
+    with pytest.raises(ValueError, match="fingerprint"):
+        promote_fp32_candidate(
+            candidate, weights_path=weights,
+            teacher_evaluation=_evaluation("teacher-val-2", 0.95),
+            student_evaluation=mismatched,
+            output_path=tmp_path / "mismatched.json",
         )

@@ -47,6 +47,10 @@ def export_candidate_weights(
         "teacher_git_sha": str(identity["teacher_git_sha"]),
         "teacher_model_id": str(identity["teacher_model_id"]),
         "teacher_model_revision": str(identity["teacher_model_revision"]),
+        "teacher_artifact_fingerprint_sha256": str(
+            identity["teacher_artifact_fingerprint_sha256"]
+        ),
+        "teacher_identity_policy": str(identity["teacher_identity_policy"]),
         "model_id": str(identity["model_id"]),
         "config_id": str(identity["model_config_id"]),
         "weights_file": weights_path.name,
@@ -78,6 +82,7 @@ def promote_fp32_candidate(
         raise ValueError("only a production candidate pending the A3 gate can be promoted")
     if candidate_manifest.get("source_worktree_dirty") is not False:
         raise ValueError("candidate must come from a clean committed challenge worktree")
+    _validate_pinned_teacher_candidate(candidate_manifest)
     actual_weights_sha = _sha256(Path(weights_path))
     if actual_weights_sha != candidate_manifest.get("weights_sha256"):
         raise ValueError("candidate weight SHA256 does not match the manifest")
@@ -134,6 +139,25 @@ def _validate_evaluation_identity(
         raise ValueError(f"{label} evaluation dataset_version does not match candidate")
     if not str(evaluation.get("evaluation_id", "")).strip():
         raise ValueError(f"{label} evaluation_id is required")
+    for field in (
+        "teacher_git_sha", "teacher_model_id", "teacher_model_revision",
+        "teacher_artifact_fingerprint_sha256",
+    ):
+        if evaluation.get(field) != candidate.get(field):
+            raise ValueError(f"{label} evaluation {field} does not match candidate")
+
+
+def _validate_pinned_teacher_candidate(candidate: Mapping[str, Any]) -> None:
+    if candidate.get("teacher_identity_policy") != "frozen_manifest":
+        raise ValueError("production candidate requires the pinned Teacher identity")
+    revision = str(candidate.get("teacher_model_revision", ""))
+    fingerprint = str(candidate.get("teacher_artifact_fingerprint_sha256", ""))
+    if len(revision) != 40 or any(char not in "0123456789abcdef" for char in revision.lower()):
+        raise ValueError("production candidate requires a full Teacher model revision")
+    if len(fingerprint) != 64 or any(
+        char not in "0123456789abcdef" for char in fingerprint.lower()
+    ):
+        raise ValueError("production candidate requires a valid Teacher artifact fingerprint")
 
 
 def _metrics(evaluation: Mapping[str, Any], label: str) -> Mapping[str, Any]:

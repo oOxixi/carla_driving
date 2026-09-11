@@ -35,7 +35,15 @@ Before loading them, the trainer validates all records, checks declared split
 and dataset version, and rejects duplicate sample IDs, request IDs, exact
 records, or Train/Validation overlap. Paths or record metadata containing
 `test`/`frozen` are rejected, so A3 cannot accidentally tune on B1's frozen
-Test set.
+Test set. Formal B1 records must also match the frozen Teacher identity in
+`challenge/teacher_baseline_manifest.json` exactly:
+
+- model: `Qwen/Qwen3.5-2B`
+- revision: `15852e8c16360a2fea060d615a32b45270f8a8fc`
+- artifact fingerprint: `4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa`
+
+Missing or mismatched per-record provenance fails preflight before a batch is
+created.
 
 Run dataset preflight without training:
 
@@ -44,6 +52,10 @@ python -m challenge.distillation.preflight \
   --train data/train.jsonl \
   --val data/validation.jsonl \
   --dataset-version b1-v1 \
+  --teacher-git-sha a05c8b76efcd4c176965223c661f40b153cb1836 \
+  --teacher-model-id Qwen/Qwen3.5-2B \
+  --teacher-model-revision 15852e8c16360a2fea060d615a32b45270f8a8fc \
+  --teacher-artifact-fingerprint-sha256 4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa \
   --output artifacts/challenge/distillation/preflight.json
 ```
 
@@ -66,11 +78,15 @@ python -m challenge.distillation.train \
 ```
 
 This path consumes B1's committed `training_view`, verifies the unified
-`Qwen/Qwen3.5-2B` Teacher identity, resolves
+`Qwen/Qwen3.5-2B` Teacher model ID, resolves
 packaged RGB by SHA256 instead of stale collector-host paths, checks B1's
 recorded target pointers against A1's encoder, and audits quarantined records
 without mixing them into ordinary supervision. Integration-smoke candidates
-remain `MOCK_ONLY` and cannot pass the production FP32 gate.
+remain `MOCK_ONLY` and cannot pass the production FP32 gate. That historical
+Smoke did not record an exact model revision or artifact fingerprint; its
+dedicated config preserves `NOT_RECORDED_BY_B1_SMOKE` and cannot be used for a
+formal run. It is deliberately not retroactively attributed to the pinned
+Teacher.
 
 A1 V0 r3 is already wired through `a1_student.py`; its frozen class order,
 target-pointer convention, Head names and four-modal input shapes are imported

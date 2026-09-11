@@ -34,6 +34,8 @@ def preflight_datasets(
     expected_version: str | None = None,
     expected_teacher_git_sha: str | None = None,
     expected_teacher_model_id: str | None = None,
+    expected_teacher_model_revision: str | None = None,
+    expected_teacher_artifact_fingerprint_sha256: str | None = None,
     asset_root: str | Path | None = None,
     require_rgb: bool = False,
     max_errors: int = 100,
@@ -46,10 +48,14 @@ def preflight_datasets(
     train = _scan_path(
         Path(train_path), "train", encoder, expected_version, max_errors,
         expected_teacher_git_sha, expected_teacher_model_id, resolved_assets, require_rgb,
+        expected_teacher_model_revision,
+        expected_teacher_artifact_fingerprint_sha256,
     )
     validation = _scan_path(
         Path(val_path), "validation", encoder, expected_version, max_errors,
         expected_teacher_git_sha, expected_teacher_model_id, resolved_assets, require_rgb,
+        expected_teacher_model_revision,
+        expected_teacher_artifact_fingerprint_sha256,
     )
     errors = [*train.pop("errors"), *validation.pop("errors")]
     warnings = [*train.pop("warnings"), *validation.pop("warnings")]
@@ -73,6 +79,14 @@ def preflight_datasets(
         "train_path": str(Path(train_path).resolve()),
         "validation_path": str(Path(val_path).resolve()),
         "expected_dataset_version": expected_version,
+        "expected_teacher_identity": {
+            "git_sha": expected_teacher_git_sha,
+            "model_id": expected_teacher_model_id,
+            "model_revision": expected_teacher_model_revision,
+            "artifact_fingerprint_sha256": (
+                expected_teacher_artifact_fingerprint_sha256
+            ),
+        },
         "train": _public_stats(train),
         "validation": _public_stats(validation),
         "errors": errors[:max_errors],
@@ -105,6 +119,8 @@ def _scan_path(
     expected_teacher_model_id: str | None,
     asset_root: Path | None,
     require_rgb: bool,
+    expected_teacher_model_revision: str | None,
+    expected_teacher_artifact_fingerprint_sha256: str | None,
 ) -> dict[str, Any]:
     result: dict[str, Any] = {
         "records": 0,
@@ -151,6 +167,8 @@ def _scan_path(
                     record, split, encoder, expected_version,
                     expected_teacher_git_sha, expected_teacher_model_id,
                     asset_root, require_rgb,
+                    expected_teacher_model_revision,
+                    expected_teacher_artifact_fingerprint_sha256,
                 )
             except (KeyError, TypeError, ValueError) as error:
                 result["errors"].append({
@@ -200,6 +218,8 @@ def _inspect_record(
     expected_teacher_model_id: str | None,
     asset_root: Path | None,
     require_rgb: bool,
+    expected_teacher_model_revision: str | None,
+    expected_teacher_artifact_fingerprint_sha256: str | None,
 ) -> dict[str, Any]:
     sample_id = str(record.get("sample_id", "")).strip()
     if not sample_id:
@@ -236,10 +256,36 @@ def _inspect_record(
     labels = encoder.encode(request, plan)
     teacher_sha = str(metadata.get("teacher_git_sha", ""))
     teacher_model = str(metadata.get("teacher_model_id") or plan.get("model_id") or "")
+    provenance = record.get("teacher_provenance", {})
+    if not isinstance(provenance, Mapping):
+        raise ValueError("teacher_provenance must be an object when present")
+    teacher_revision = str(
+        metadata.get("teacher_model_revision")
+        or provenance.get("model_revision")
+        or provenance.get("teacher_model_revision")
+        or ""
+    )
+    teacher_fingerprint = str(
+        metadata.get("teacher_artifact_fingerprint_sha256")
+        or provenance.get("artifact_fingerprint_sha256")
+        or provenance.get("teacher_artifact_fingerprint_sha256")
+        or ""
+    )
     if expected_teacher_git_sha and teacher_sha != expected_teacher_git_sha:
         raise ValueError(f"teacher_git_sha={teacher_sha!r} does not match expected")
     if expected_teacher_model_id and teacher_model != expected_teacher_model_id:
         raise ValueError(f"teacher_model_id={teacher_model!r} does not match expected")
+    if expected_teacher_model_revision and teacher_revision != expected_teacher_model_revision:
+        raise ValueError(
+            f"teacher_model_revision={teacher_revision!r} does not match expected"
+        )
+    if (
+        expected_teacher_artifact_fingerprint_sha256
+        and teacher_fingerprint != expected_teacher_artifact_fingerprint_sha256
+    ):
+        raise ValueError(
+            "teacher_artifact_fingerprint_sha256 does not match expected"
+        )
     quality = record.get("quality", {})
     if isinstance(quality, Mapping) and quality.get("schema_valid") is False:
         raise ValueError("quality.schema_valid is false")
@@ -353,6 +399,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--dataset-version")
     parser.add_argument("--teacher-git-sha")
     parser.add_argument("--teacher-model-id")
+    parser.add_argument("--teacher-model-revision")
+    parser.add_argument("--teacher-artifact-fingerprint-sha256")
     parser.add_argument("--asset-root")
     parser.add_argument("--require-rgb", action="store_true")
     parser.add_argument("--max-steps", type=int, default=4)
@@ -365,6 +413,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         expected_version=args.dataset_version,
         expected_teacher_git_sha=args.teacher_git_sha,
         expected_teacher_model_id=args.teacher_model_id,
+        expected_teacher_model_revision=args.teacher_model_revision,
+        expected_teacher_artifact_fingerprint_sha256=(
+            args.teacher_artifact_fingerprint_sha256
+        ),
         asset_root=args.asset_root, require_rgb=args.require_rgb,
         max_errors=args.max_errors,
     )

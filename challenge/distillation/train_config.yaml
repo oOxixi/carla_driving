@@ -4,7 +4,9 @@ seed: 20260910
 teacher:
   git_sha: a05c8b76efcd4c176965223c661f40b153cb1836
   model_id: Qwen/Qwen3.5-2B
-  model_revision: NOT_RECORDED_BY_B1_SMOKE
+  model_revision: 15852e8c16360a2fea060d615a32b45270f8a8fc
+  artifact_fingerprint_sha256: 4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa
+  identity_policy: frozen_manifest
 
 contract:
   max_steps: 4
@@ -14,6 +16,8 @@ dataset:
   version: PENDING_B1
   train_path: null
   val_path: null
+  verify_teacher_identity: true
+  require_pinned_teacher_provenance: true
   mock_samples: 8
   mock_train_fraction: 0.75
 

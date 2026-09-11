@@ -69,6 +69,8 @@ def test_real_data_integration_gate_preflights_and_limits_training(tmp_path: Pat
     write(val_path, records[24:], "validation")
     config["dataset"].update({
         "version": "b1-v1", "train_path": str(train_path), "val_path": str(val_path),
+        "verify_teacher_identity": False,
+        "require_pinned_teacher_provenance": False,
     })
     config["training"]["batch_size"] = 8
 

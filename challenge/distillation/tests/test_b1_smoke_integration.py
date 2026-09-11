@@ -9,7 +9,10 @@ yaml = pytest.importorskip("yaml")
 from challenge.distillation.a1_student import build_a1_input_packer  # noqa: E402
 from challenge.distillation.dataset import DistillationDataset, load_jsonl, make_collate_fn  # noqa: E402
 from challenge.distillation.preflight import preflight_datasets  # noqa: E402
-from challenge.distillation.train import _audit_quarantined_hard_cases  # noqa: E402
+from challenge.distillation.train import (  # noqa: E402
+    _audit_quarantined_hard_cases,
+    _validate_frozen_identities,
+)
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -22,16 +25,40 @@ def _config() -> dict:
 
 def test_teacher_identity_is_unified_across_manifest_config_and_b1() -> None:
     cfg = _config()
+    formal_cfg = yaml.safe_load(
+        (ROOT / "challenge" / "distillation" / "train_config.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
     manifest = json.loads(
         (ROOT / "challenge" / "teacher_baseline_manifest.json").read_text(encoding="utf-8")
     )
     assert manifest["model_id"] == "Qwen/Qwen3.5-2B"
     assert cfg["teacher"]["model_id"] == manifest["model_id"]
     assert cfg["teacher"]["git_sha"] == manifest["git_sha"]
-    assert cfg["teacher"]["model_revision"] == manifest["model_revision"]
+    assert cfg["teacher"]["identity_policy"] == "legacy_unpinned_smoke"
+    assert cfg["teacher"]["model_revision"] == "NOT_RECORDED_BY_B1_SMOKE"
+    assert formal_cfg["teacher"]["model_revision"] == manifest["model_revision"]
+    assert formal_cfg["teacher"]["artifact_fingerprint_sha256"] == (
+        manifest["artifact_fingerprint_sha256"]
+    )
     for split in ("train_path", "val_path", "hard_cases_path"):
         for record in load_jsonl(ROOT / cfg["dataset"][split]):
             assert record["metadata"]["teacher_model_id"] == manifest["model_id"]
+
+
+def test_legacy_smoke_identity_cannot_enter_formal_training() -> None:
+    cfg = _config()
+    with pytest.raises(ValueError, match="only for integration smoke"):
+        _validate_frozen_identities(cfg, integration_smoke=False)
+    _validate_frozen_identities(cfg, integration_smoke=True)
+
+    formal_cfg = yaml.safe_load(
+        (ROOT / "challenge" / "distillation" / "train_config.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    _validate_frozen_identities(formal_cfg, integration_smoke=False)
 
 
 def test_b1_smoke_preflight_and_rgb_use_a1_contract(monkeypatch: pytest.MonkeyPatch) -> None:

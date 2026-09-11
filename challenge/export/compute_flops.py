@@ -46,8 +46,9 @@ def analyze_model() -> dict[str, Any]:
     trainable_parameters = sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
     macs = sum(macs_by_module.values())
     # Conservative 2B-class lower bound retained for relative architecture
-    # sizing. Exact Qwen3.5-2B revision/config evidence is still pending, so
-    # this must not be presented as a model-revision-specific benchmark.
+    # sizing. The Teacher artifact identity is pinned, but this analytical
+    # lower bound has not been recomputed from that exact model config, so it
+    # must not be presented as a model-revision-specific benchmark.
     # hidden=2048, intermediate=6144, 16 query heads, 8 KV heads, 28 layers.
     # It counts one text token only and excludes embeddings, vision, attention
     # score products and all other input/output tokens. The real comparable
@@ -76,13 +77,15 @@ def analyze_model() -> dict[str, Any]:
         "macs_per_fixed_batch": macs,
         "flops_per_fixed_batch": flops,
         "teacher_model_id": "Qwen/Qwen3.5-2B",
+        "teacher_model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+        "teacher_artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
         "teacher_non_embedding_active_parameters_lower_bound": teacher_active_parameters_lower_bound,
         "teacher_flops_lower_bound_one_text_token": teacher_flops_lower_bound,
         "flops_ratio_student_over_teacher_lower_bound": flops / teacher_flops_lower_bound,
         "ratio_target": 0.5,
         "ratio_pass": flops / teacher_flops_lower_bound <= 0.5,
         "counting_convention": "Conv2D/Linear only; 1 MAC = 2 FLOPs",
-        "teacher_bound_scope": "2B-class conservative one-token bound; exact Qwen3.5-2B revision/config pending; excludes vision and sequence work; not latency or board evidence",
+        "teacher_bound_scope": "2B-class conservative one-token bound; Teacher identity is pinned but this is not an exact-model FLOPs calculation; excludes vision and sequence work; not latency or board evidence",
         "macs_by_module": macs_by_module,
     }
 

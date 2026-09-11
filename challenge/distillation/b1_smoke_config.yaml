@@ -5,7 +5,8 @@ teacher:
   git_sha: a05c8b76efcd4c176965223c661f40b153cb1836
   model_id: Qwen/Qwen3.5-2B
   model_revision: NOT_RECORDED_BY_B1_SMOKE
-  identity_policy: frozen_manifest
+  artifact_fingerprint_sha256: NOT_RECORDED_BY_B1_SMOKE
+  identity_policy: legacy_unpinned_smoke
 
 contract:
   max_steps: 4
@@ -19,6 +20,7 @@ dataset:
   asset_root: challenge/dataset/smoke_v0/rgb
   require_rgb: true
   verify_teacher_identity: true
+  require_pinned_teacher_provenance: false
 
 model:
   model_id: student-v0-r3-fp32
