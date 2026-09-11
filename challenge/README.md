@@ -34,3 +34,10 @@ Student 只有在权重 manifest 的模型 ID、SHA256 和 `A3_FP32_GATE_PASSED`
 才会报告 production-ready，不能通过手工布尔参数绕过 Gate。
 清单必须是 JSON 对象，所有必需字段为非空字符串，`git_sha` 为完整 40 位十六进制值；
 `config_id` 必须与当前模型配置一致。此校验检查交付身份与声明，不代替 B2/B3 独立验收。
+
+## A3 蒸馏
+
+A3 已在 `challenge/distillation/` 对接本 Student V0 r3 的四路输入、十个输出
+Head、固定类别映射和纯权重交付格式。入口、数据预检、训练、断点恢复、Hard-case
+和 FP32 Gate 说明见 `challenge/distillation/README.md`。Mock Smoke 产物始终标记
+为 `MOCK_ONLY`，不得作为可部署权重。

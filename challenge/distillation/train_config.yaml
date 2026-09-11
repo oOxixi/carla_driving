@@ -1,0 +1,71 @@
+config_id: a3-distillation-v1-a1-r3
+seed: 20260910
+
+teacher:
+  git_sha: a05c8b76efcd4c176965223c661f40b153cb1836
+  model_id: h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4
+  model_revision: f91db2369bd00e7ec20bf09b6a0080cdb26aefa5
+
+contract:
+  max_steps: 4
+  max_targets: 8
+
+dataset:
+  version: PENDING_B1
+  train_path: null
+  val_path: null
+  mock_samples: 8
+  mock_train_fraction: 0.75
+
+model:
+  model_id: student-v0-r3-fp32
+  config_id: student-v0-r3-structure-20260911
+  factory: challenge.distillation.a1_student:build_a1_student
+  options: {}
+
+input:
+  factory: challenge.distillation.a1_student:build_a1_input_packer
+  options: {}
+
+training:
+  device: auto
+  epochs: 1
+  batch_size: 2
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+  max_updates: 1
+  selection_metric: plan_sequence_accuracy
+  resume: null
+
+sampling:
+  weights:
+    normal: 1.0
+    complex: 1.5
+    safety_critical: 2.5
+
+# Disabled until B1 Train is available. Weights are derived from Train only.
+class_balance:
+  enabled: false
+  heads: [behavior]
+  smoothing: 1.0
+  max_weight: 5.0
+
+loss_weights:
+  behavior: 2.0
+  target_pointer: 1.5
+  target_lane: 0.5
+  target_speed: 0.5
+  completion: 0.5
+  on_failure: 0.3
+  confidence: 0.2
+  replan: 0.2
+  plan_length: 0.5
+  requires_confirmation: 0.2
+
+distillation:
+  soft_alpha: 0.0
+  temperature: 1.0
+
+output:
+  directory: artifacts/challenge/distillation/a1_r3_smoke
