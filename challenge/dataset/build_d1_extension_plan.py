@@ -35,8 +35,9 @@ def main():
     ap.add_argument("--base-dataset", default="artifacts/b1_d1_pinned_formal/dataset/d1_valid.jsonl")
     ap.add_argument("--base-provenance", default="artifacts/b1_d1_pinned_formal/provenance_manifest.json")
     ap.add_argument("--output", default="artifacts/b1_d1_extension_plan/d1_extension_plan_formal.json")
+    ap.add_argument("--minimum-total", type=int, default=200)
     ap.add_argument("--target-total", type=int, default=220)
-    ap.add_argument("--seed-offsets", type=int, nargs="+", default=[1000,2000,3000,4000,5000])
+    ap.add_argument("--seed-start", type=int, default=1000000)
     args = ap.parse_args()
 
     repo = Path(__file__).resolve().parents[2]
@@ -44,6 +45,13 @@ def main():
     base_ds = (repo / args.base_dataset).resolve()
     base_prov = (repo / args.base_provenance).resolve()
     out = (repo / args.output).resolve()
+
+    if args.minimum_total < 200:
+        raise RuntimeError("--minimum-total must be >= 200")
+    if args.target_total < args.minimum_total:
+        raise RuntimeError("--target-total must be >= --minimum-total")
+    if args.seed_start < 0:
+        raise RuntimeError("--seed-start must be non-negative")
 
     with reg.open("r", encoding="utf-8-sig", newline="") as f:
         registry = list(csv.DictReader(f))
@@ -72,25 +80,54 @@ def main():
         })
 
     needed = max(0, args.target_total - len(base_rows))
-    plan, used = [], set()
-    for offset in args.seed_offsets:
-        for r in eligible:
-            if len(plan) >= needed:
-                break
-            seed = r["base_seed"] + offset
-            eid = f'{r["scenario_id"]}__seed_{seed}'
-            if eid in used:
-                continue
-            used.add(eid)
-            plan.append({
-                "extension_id": eid, **r,
-                "extension_seed": seed,
-                "extension_type": "SEED_VARIANT",
-            })
+
+    # A split group is governed by scenario_family + map + route + seed.
+    # Therefore extension seeds are globally unique, rather than applying
+    # the same offset to every scenario.  We also avoid every seed already
+    # present in the formal base dataset.
+    base_seed_values = {
+        int((row.get("metadata") or {}).get("seed"))
+        for row in base_rows
+        if (row.get("metadata") or {}).get("seed") is not None
+    }
+
+    plan = []
+    used_extension_seeds = set()
+    candidate_seed = args.seed_start
+
+    for r in eligible:
         if len(plan) >= needed:
             break
+
+        while (
+            candidate_seed in base_seed_values
+            or candidate_seed in used_extension_seeds
+        ):
+            candidate_seed += 1
+
+        seed = candidate_seed
+        used_extension_seeds.add(seed)
+        candidate_seed += 1
+
+        eid = f'{r["scenario_id"]}__seed_{seed}'
+        plan.append({
+            "extension_id": eid,
+            **r,
+            "extension_seed": seed,
+            "extension_type": "SEED_VARIANT",
+        })
+
     if len(plan) < needed:
-        raise RuntimeError(f"insufficient legal extension capacity: needed={needed}, planned={len(plan)}")
+        raise RuntimeError(
+            f"insufficient legal extension capacity: "
+            f"needed={needed}, planned={len(plan)}"
+        )
+
+    if len(used_extension_seeds) != len(plan):
+        raise RuntimeError("extension seeds are not globally unique")
+
+    if base_seed_values & used_extension_seeds:
+        raise RuntimeError("extension seed overlaps formal base seed")
 
     payload = {
         "schema_version": "1.0",
@@ -103,16 +140,18 @@ def main():
         "base_config_id": prov.get("config_id"),
         "registry_path": str(reg.relative_to(repo)),
         "registry_file_sha256": sha256_file(reg),
+        "minimum_total": args.minimum_total,
         "target_total": args.target_total,
         "needed": needed,
         "planned_extensions": len(plan),
+        "seed_strategy": "GLOBAL_UNIQUE_HIGH_RANGE",
+        "seed_start": args.seed_start,
         "allowed_source_buckets": sorted(ALLOWED_BUCKETS),
         "allowed_policy_class": ALLOWED_POLICY,
         "protected_policy_classes": [
             "EXCLUDED_OFFICIAL","RESERVED_TEST_CANDIDATE","HARD_CASE",
             "SYSTEM_FAILURE","DEFERRED_LONG_RUN","NON_RUNNABLE_METADATA"
         ],
-        "seed_offsets": args.seed_offsets,
         "plan": plan,
     }
     payload["plan_canonical_sha256"] = canonical_json_sha256(payload)
@@ -120,9 +159,12 @@ def main():
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     print("BASE_DATASET_COUNT=" + str(len(base_rows)))
+    print("MINIMUM_TOTAL=" + str(args.minimum_total))
     print("TARGET_TOTAL=" + str(args.target_total))
     print("NEEDED=" + str(needed))
     print("PLANNED_EXTENSIONS=" + str(len(plan)))
+    print("SEED_STRATEGY=GLOBAL_UNIQUE_HIGH_RANGE")
+    print("SEED_START=" + str(args.seed_start))
     print("PLAN_CANONICAL_SHA256=" + payload["plan_canonical_sha256"])
     print("PLAN_FILE_SHA256=" + sha256_file(out))
     print("BUCKETS=" + json.dumps(dict(Counter(x["source_bucket"] for x in plan)), sort_keys=True))

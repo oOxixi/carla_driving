@@ -26,11 +26,24 @@ def verify_plan(path: Path):
     if not isinstance(rows, list):
         raise RuntimeError("plan list missing")
     seen = set()
+    seen_seeds = set()
+
     for r in rows:
         eid = str(r.get("extension_id") or "")
         if not eid or eid in seen:
             raise RuntimeError(f"bad extension_id {eid!r}")
         seen.add(eid)
+
+        seed = r.get("extension_seed")
+        if not isinstance(seed, int):
+            raise RuntimeError(
+                f"extension_seed must be int for {eid}: {seed!r}"
+            )
+        if seed in seen_seeds:
+            raise RuntimeError(
+                f"duplicate extension_seed in formal plan: {seed}"
+            )
+        seen_seeds.add(seed)
         if r.get("extension_type") != EXTENSION_TYPE:
             raise RuntimeError(f"unsupported extension_type: {eid}")
         if r.get("policy_class") != ALLOWED_POLICY:
@@ -127,6 +140,28 @@ def main():
         raise RuntimeError("base git SHA differs from plan")
     if base_prov.get("config_id") != plan.get("base_config_id"):
         raise RuntimeError("base config ID differs from plan")
+
+    base_seed_values = {
+        int((row.get("metadata") or {}).get("seed"))
+        for row in base_rows
+        if (row.get("metadata") or {}).get("seed") is not None
+    }
+    planned_seed_values = {
+        int(row["extension_seed"])
+        for row in plan["plan"]
+    }
+
+    seed_overlap = base_seed_values & planned_seed_values
+    if seed_overlap:
+        raise RuntimeError(
+            "extension plan reuses formal base seed values: "
+            + json.dumps(sorted(seed_overlap))
+        )
+
+    if len(planned_seed_values) != len(plan["plan"]):
+        raise RuntimeError(
+            "extension plan does not have globally unique seeds"
+        )
 
     teacher_manifest = base.load_teacher_manifest(repo)
     teacher_artifact_evidence = base.load_model_artifact_manifest(artifact_manifest)
@@ -229,6 +264,15 @@ def main():
     student_path = ds / "extension_student_eligible.jsonl"
     quarantine_path = ds / "extension_quarantine.jsonl"
     rejected_path = ds / "extension_rejected.jsonl"
+
+    # Stable delivery structure: zero-count outputs still exist as empty files.
+    for output_path in (
+        canonical_path,
+        student_path,
+        quarantine_path,
+        rejected_path,
+    ):
+        output_path.touch(exist_ok=True)
 
     ext_valid = len(base.read_jsonl(canonical_path))
 
@@ -406,8 +450,16 @@ def main():
         "extension_quarantined": len(base.read_jsonl(quarantine_path)),
         "extension_rejected": len(base.read_jsonl(rejected_path)),
         "combined_valid": len(base_rows) + len(base.read_jsonl(canonical_path)),
+        "minimum_total": int(plan.get("minimum_total", 200)),
+        "minimum_reached": (
+            len(base_rows) + len(base.read_jsonl(canonical_path))
+            >= int(plan.get("minimum_total", 200))
+        ),
         "target_total": int(plan["target_total"]),
-        "target_reached": len(base_rows) + len(base.read_jsonl(canonical_path)) >= int(plan["target_total"]),
+        "target_reached": (
+            len(base_rows) + len(base.read_jsonl(canonical_path))
+            >= int(plan["target_total"])
+        ),
         "runs_launched_this_invocation": launched,
         "failed_extensions": [
             k for k, v in state["runs"].items()
@@ -416,7 +468,20 @@ def main():
     }
     base.write_json(out / "extension_summary.json", summary)
     print("B1_D1_EXTENSION_SUMMARY=" + json.dumps(summary, ensure_ascii=False))
-    return 0 if not summary["failed_extensions"] else 3
+
+    if summary["failed_extensions"]:
+        return 3
+
+    # A bounded gate run (--max-runs) is diagnostic and is not expected
+    # to reach the final D1 minimum.  A complete formal run must.
+    if args.max_runs is None and not summary["minimum_reached"]:
+        print("D1_MINIMUM_GATE=FAIL")
+        return 4
+
+    if summary["minimum_reached"]:
+        print("D1_MINIMUM_GATE=PASS")
+
+    return 0
 
 if __name__ == "__main__":
     raise SystemExit(main())
