@@ -288,6 +288,208 @@ def choose_val_groups(
     return selected
 
 
+def choose_val_groups_stratified(
+    groups: dict[str, list[dict[str, Any]]],
+    val_ratio: float,
+    seed: int,
+    *,
+    trials: int = 50000,
+    min_val_groups: int = 12,
+) -> set[str]:
+    """
+    Deterministic randomized search over whole groups.
+
+    Hard constraints:
+      - validation sample count within target +/- 4;
+      - at least min_val_groups;
+      - every global sample class represented;
+      - every global source bucket represented;
+      - every global scenario family represented.
+
+    The objective then prefers distributions close to the full dataset.
+    """
+
+    rows = [
+        sample
+        for samples in groups.values()
+        for sample in samples
+    ]
+
+    total_samples = len(rows)
+
+    if total_samples < 2:
+        raise ValueError("dataset too small for stratified split")
+
+    target_val_samples = max(
+        1,
+        round(total_samples * val_ratio),
+    )
+
+    def sample_class(sample: dict[str, Any]) -> str:
+        value = sample.get("sample_class") or {}
+        if not isinstance(value, dict):
+            return "None"
+        return str(value.get("primary"))
+
+    def source_bucket(sample: dict[str, Any]) -> str:
+        metadata = get_metadata(sample)
+        return str(metadata.get("source_bucket"))
+
+    def scenario_family(sample: dict[str, Any]) -> str:
+        metadata = get_metadata(sample)
+        return str(metadata.get("scenario_family"))
+
+    global_classes = {
+        sample_class(sample)
+        for sample in rows
+    }
+
+    global_buckets = {
+        source_bucket(sample)
+        for sample in rows
+    }
+
+    global_families = {
+        scenario_family(sample)
+        for sample in rows
+    }
+
+    global_class_counts = Counter(
+        sample_class(sample)
+        for sample in rows
+    )
+
+    global_bucket_counts = Counter(
+        source_bucket(sample)
+        for sample in rows
+    )
+
+    global_family_counts = Counter(
+        scenario_family(sample)
+        for sample in rows
+    )
+
+    def selected_rows(
+        keys: list[str],
+    ) -> list[dict[str, Any]]:
+        return [
+            sample
+            for key in keys
+            for sample in groups[key]
+        ]
+
+    def objective(
+        keys: list[str],
+    ) -> float | None:
+        selected = selected_rows(keys)
+        count = len(selected)
+
+        if abs(count - target_val_samples) > 4:
+            return None
+
+        if len(keys) < min_val_groups:
+            return None
+
+        classes = Counter(
+            sample_class(sample)
+            for sample in selected
+        )
+
+        buckets = Counter(
+            source_bucket(sample)
+            for sample in selected
+        )
+
+        families = Counter(
+            scenario_family(sample)
+            for sample in selected
+        )
+
+        # Hard coverage constraints.
+        if set(classes) != global_classes:
+            return None
+
+        if set(buckets) != global_buckets:
+            return None
+
+        if set(families) != global_families:
+            return None
+
+        score = (
+            abs(count - target_val_samples)
+            * 10.0
+        )
+
+        for key, total in global_class_counts.items():
+            score += abs(
+                classes[key] / count
+                - total / total_samples
+            ) * 20.0
+
+        for key, total in global_bucket_counts.items():
+            score += abs(
+                buckets[key] / count
+                - total / total_samples
+            ) * 15.0
+
+        for key, total in global_family_counts.items():
+            score += abs(
+                families[key] / count
+                - total / total_samples
+            ) * 8.0
+
+        return score
+
+    group_keys = sorted(groups.keys())
+    rng = random.Random(seed)
+
+    best_keys: list[str] | None = None
+    best_score: float | None = None
+
+    for _ in range(trials):
+        shuffled = group_keys[:]
+        rng.shuffle(shuffled)
+
+        chosen: list[str] = []
+        current = 0
+
+        for key in shuffled:
+            size = len(groups[key])
+
+            if current < target_val_samples:
+                chosen.append(key)
+                current += size
+
+            elif (
+                current <= target_val_samples + 4
+                and rng.random() < 0.20
+            ):
+                chosen.append(key)
+                current += size
+
+            else:
+                break
+
+        score = objective(chosen)
+
+        if score is None:
+            continue
+
+        if (
+            best_score is None
+            or score < best_score
+        ):
+            best_score = score
+            best_keys = chosen[:]
+
+    if best_keys is None:
+        raise ValueError(
+            "NO_VALID_STRATIFIED_GROUP_SPLIT_FOUND"
+        )
+
+    return set(best_keys)
+
+
 def build_split(
     rows: list[dict[str, Any]],
     groups: dict[str, list[dict[str, Any]]],
@@ -454,6 +656,27 @@ def main() -> None:
         default="teacher_distill_v0.1_smoke",
     )
 
+    parser.add_argument(
+        "--strategy",
+        choices=[
+            "size_greedy",
+            "stratified",
+        ],
+        default="size_greedy",
+    )
+
+    parser.add_argument(
+        "--stratified-trials",
+        type=int,
+        default=50000,
+    )
+
+    parser.add_argument(
+        "--min-val-groups",
+        type=int,
+        default=12,
+    )
+
     args = parser.parse_args()
 
     if not 0.05 <= args.val_ratio <= 0.50:
@@ -473,11 +696,20 @@ def main() -> None:
 
     groups = validate_groups(rows)
 
-    val_groups = choose_val_groups(
-        groups,
-        args.val_ratio,
-        args.seed,
-    )
+    if args.strategy == "stratified":
+        val_groups = choose_val_groups_stratified(
+            groups,
+            args.val_ratio,
+            args.seed,
+            trials=args.stratified_trials,
+            min_val_groups=args.min_val_groups,
+        )
+    else:
+        val_groups = choose_val_groups(
+            groups,
+            args.val_ratio,
+            args.seed,
+        )
 
     train, val = build_split(
         rows,
@@ -565,6 +797,17 @@ def main() -> None:
         "source_dataset": str(input_path),
         "source_sha256": sha256_file(input_path),
         "seed": args.seed,
+        "strategy": args.strategy,
+        "stratified_trials": (
+            args.stratified_trials
+            if args.strategy == "stratified"
+            else None
+        ),
+        "min_val_groups": (
+            args.min_val_groups
+            if args.strategy == "stratified"
+            else None
+        ),
         "requested_val_ratio": args.val_ratio,
         "actual_val_ratio": (
             len(val) / len(rows)
@@ -585,6 +828,54 @@ def main() -> None:
         },
         "train_group_keys": train_groups,
         "val_group_keys": val_groups_sorted,
+        "coverage": {
+            "train_classes": dict(
+                group_class_counts(train)
+            ),
+            "val_classes": dict(
+                group_class_counts(val)
+            ),
+            "train_source_buckets": dict(
+                Counter(
+                    str(
+                        get_metadata(sample).get(
+                            "source_bucket"
+                        )
+                    )
+                    for sample in train
+                )
+            ),
+            "val_source_buckets": dict(
+                Counter(
+                    str(
+                        get_metadata(sample).get(
+                            "source_bucket"
+                        )
+                    )
+                    for sample in val
+                )
+            ),
+            "train_families": dict(
+                Counter(
+                    str(
+                        get_metadata(sample).get(
+                            "scenario_family"
+                        )
+                    )
+                    for sample in train
+                )
+            ),
+            "val_families": dict(
+                Counter(
+                    str(
+                        get_metadata(sample).get(
+                            "scenario_family"
+                        )
+                    )
+                    for sample in val
+                )
+            ),
+        },
         "leakage_checks": {
             "group_overlap": 0,
             "sample_id_overlap": 0,
@@ -608,6 +899,8 @@ def main() -> None:
         f"{len(val) / len(rows):.4f}"
     )
 
+    print(f"SPLIT_STRATEGY={args.strategy}")
+
     print()
     print("TRAIN_CLASSES")
 
@@ -621,6 +914,36 @@ def main() -> None:
 
     for key, value in sorted(
         group_class_counts(val).items()
+    ):
+        print(f"{key}={value}")
+
+    print()
+    print("VAL_SOURCE_BUCKETS")
+
+    for key, value in sorted(
+        Counter(
+            str(
+                get_metadata(sample).get(
+                    "source_bucket"
+                )
+            )
+            for sample in val
+        ).items()
+    ):
+        print(f"{key}={value}")
+
+    print()
+    print("VAL_FAMILIES")
+
+    for key, value in sorted(
+        Counter(
+            str(
+                get_metadata(sample).get(
+                    "scenario_family"
+                )
+            )
+            for sample in val
+        ).items()
     ):
         print(f"{key}={value}")
 
