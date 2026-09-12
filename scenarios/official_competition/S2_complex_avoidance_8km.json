@@ -21,7 +21,7 @@
     "topology_requirements": {
       "lane_corridors": [
         {"id": "S2_BUS_STOP_LANE", "relation": "LEFT", "start_s_m": 1040.0, "end_s_m": 1060.0, "junction_free": false},
-        {"id": "S2_OVERTAKE_CORRIDOR", "relation": "LEFT", "start_s_m": 2480.0, "end_s_m": 2680.0, "junction_free": true},
+        {"id": "S2_OVERTAKE_CORRIDOR", "relation": "LEFT", "start_s_m": 2480.0, "end_s_m": 2630.0, "junction_free": true},
         {"id": "S2_CUT_IN_SOURCE_LANE", "relation": "LEFT", "start_s_m": 5320.0, "end_s_m": 5340.0, "junction_free": false}
       ],
       "speed_windows": [
