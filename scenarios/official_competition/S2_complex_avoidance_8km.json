@@ -26,7 +26,7 @@
       ],
       "speed_windows": [
         {"id": "S2_P2_BUS_STOP", "start_s_m": 1010.0, "end_s_m": 1020.0, "minimum_speed_kph": 40.0, "max_lateral_accel_mps2": 2.5, "lookahead_m": 10.0},
-        {"id": "S2_P3_PEDESTRIAN_OVERTAKE_RETURN", "start_s_m": 2520.0, "end_s_m": 2530.0, "minimum_speed_kph": 30.1, "max_lateral_accel_mps2": 2.5, "lookahead_m": 10.0},
+        {"id": "S2_P3_PEDESTRIAN_OVERTAKE_RETURN", "start_s_m": 2500.0, "end_s_m": 2510.0, "minimum_speed_kph": 30.1, "max_lateral_accel_mps2": 2.5, "lookahead_m": 10.0},
         {"id": "S2_P4_BICYCLE_CLEARANCE", "start_s_m": 4430.0, "end_s_m": 4450.0, "minimum_speed_kph": 40.0, "max_lateral_accel_mps2": 2.5, "lookahead_m": 10.0},
         {"id": "S2_P5_INTERSECTION_MIXED_FLOW", "start_s_m": 5290.0, "end_s_m": 5310.0, "minimum_speed_kph": 40.0, "max_lateral_accel_mps2": 2.5, "lookahead_m": 10.0},
         {"id": "S2_P6_LATE_PEDESTRIAN_YIELD", "start_s_m": 7050.0, "end_s_m": 7070.0, "minimum_speed_kph": 40.0, "max_lateral_accel_mps2": 2.5, "lookahead_m": 10.0}
@@ -71,7 +71,7 @@
       "phase_id": "S2_P3_PEDESTRIAN_OVERTAKE_RETURN",
       "trigger": {"all": [
         {"type": "previous_command_terminal", "phase_id": "S2_P2_BUS_STOP"},
-        {"type": "route_progress_greater_than_m", "value": 2520.0},
+        {"type": "route_progress_greater_than_m", "value": 2500.0},
         {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 100.0},
         {"type": "ego_distance_to_actor_less_than_m", "actor_id": "slow_vehicle", "value": 100.0}
       ]}
@@ -184,8 +184,8 @@
         "start_time_s": 0.0,
         "speed_mps": 1.4,
         "trigger": {"all": [
-          {"type": "route_progress_greater_than_m", "value": 2520.0},
-          {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 70.0}
+          {"type": "route_progress_greater_than_m", "value": 2490.0},
+          {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 85.0}
         ]},
         "phase_id": "S2_EVT_PEDESTRIAN_CROSSING"
       }
@@ -362,7 +362,7 @@
       },
       "command_progress_windows_m": {
         "S2_P2_BUS_STOP": [1010.0, 1070.0],
-        "S2_P3_PEDESTRIAN_OVERTAKE_RETURN": [2520.0, 2580.0],
+        "S2_P3_PEDESTRIAN_OVERTAKE_RETURN": [2500.0, 2560.0],
         "S2_P4_BICYCLE_CLEARANCE": [4430.0, 4490.0],
         "S2_P5_INTERSECTION_MIXED_FLOW": [5290.0, 5330.0],
         "S2_P6_LATE_PEDESTRIAN_YIELD": [7050.0, 7110.0]
