@@ -149,15 +149,21 @@ def validate_all() -> dict[str, Any]:
     _require(required_s2.issubset(_actor_ids(s2)), f"S2: missing actors {sorted(required_s2 - _actor_ids(s2))}")
     bus = next(actor for actor in s2["actors"] if actor["actor_id"] == "bus_at_stop")
     _require(
-        bus["route_position"].get("lane_relation") == "RIGHT_ADJACENT"
+        bus["route_position"].get("lane_relation") == "LEFT_ADJACENT"
         and abs(float(bus["route_position"].get("lateral_offset_m", 0.0))) <= 1.0,
-        "S2: stopped bus must use the station-side adjacent lane topology",
+        "S2: stopped bus must use the route-compatible adjacent lane topology",
     )
     bicycle = next(actor for actor in s2["actors"] if actor["actor_id"] == "bicycle_right")
     _require(
-        bicycle["route_position"].get("lane_relation") == "RIGHT_ADJACENT"
+        bicycle["route_position"].get("lane_relation") == "CURRENT"
         and abs(float(bicycle["route_position"].get("lateral_offset_m", 0.0))) <= 1.0,
-        "S2: bicycle must use the right adjacent lane topology",
+        "S2: bicycle must occupy the ego lane for measurable following clearance",
+    )
+    topology_requirements = s2["route"].get("topology_requirements", {})
+    _require(
+        len(topology_requirements.get("lane_corridors", [])) >= 3
+        and len(topology_requirements.get("speed_windows", [])) >= 5,
+        "S2: route-relative lane and approach-speed compatibility is required",
     )
     _require(s2["extensions"]["sensor_profile"] == "competition_multiview", "S2: multiview profile required")
     _require({"front_rgb", "left_rgb", "right_rgb", "rear_rgb", "lidar"}.issubset(s2["sensors"]), "S2: sensor set incomplete")
@@ -208,7 +214,7 @@ def validate_all() -> dict[str, Any]:
         {
             "dynamic_out_and_back_route", "per_actor_minimum_distance_acceptance",
             "route_progress_actor_activation", "route_progress_actor_lifecycle",
-            "route_progress_speed_acceptance",
+            "route_progress_speed_acceptance", "compatible_topology_route",
         }.issubset(runtime_requirements),
         "S2: runtime requirements do not declare the member-3 route/distance owners",
     )

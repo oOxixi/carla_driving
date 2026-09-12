@@ -70,6 +70,7 @@ from integration.carla_runner import (
     _scenario_clean_world_on_start,
     _scenario_raw_control_fault,
     _scenario_requires_adjacent_lane_anchor,
+    _scenario_route_compatibility,
     _scenario_requires_target_lane_occupancy,
     _scenario_startup_maneuver,
     _scenario_actor_lanes_fit_route,
@@ -244,9 +245,24 @@ def test_resume_segment_keeps_only_unfinished_commands_and_live_actors() -> None
     proposed = resumed.extensions["proposed_acceptance"]
     assert proposed["qwen_request_count"] == 3
     assert proposed["actor_activation_progress_windows_m"]["bicycle_right"] == [
-        4099.0, 4101.0,
+        4330.0, 4350.0,
     ]
     assert "S2_P2_BUS_STOP" not in proposed["minimum_approach_speed_kph_by_phase"]
+
+
+def test_s2_route_compatibility_is_parsed_without_a_fixed_spawn_anchor() -> None:
+    spec = ScenarioSpec.load(
+        Path("scenarios/official_competition/S2_complex_avoidance_8km.json")
+    )
+
+    lane_corridors, speed_windows = _scenario_route_compatibility(spec)
+
+    assert len(lane_corridors) == 3
+    assert len(speed_windows) == 5
+    assert "route_anchor_spawn_index" not in spec.extensions
+    assert [item.minimum_speed_kph for item in speed_windows] == pytest.approx([
+        40.0, 30.1, 40.0, 40.0, 40.0,
+    ])
 
 
 def test_terminal_resume_keeps_no_commands_actors_or_qwen_contract() -> None:

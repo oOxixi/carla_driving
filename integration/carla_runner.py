@@ -67,10 +67,12 @@ from .route_planner import (
 from .route_geometry import project_route_progress_m, route_pose_at_s
 from .route_manager import (
     GlobalRoute,
+    LaneCorridorRequirement,
     RouteManager,
     RoutePlanningError,
     RouteRecoveryPolicy,
     RouteRecoveryTracker,
+    SpeedWindowRequirement,
 )
 from .scenario_builder import (
     ActorPlacementError,
@@ -533,6 +535,28 @@ def _scenario_maneuver(spec: ScenarioSpec) -> str:
 
 def _scenario_route_distance_m(spec: ScenarioSpec) -> float:
     return spec.route_distance_contract_m
+
+
+def _scenario_route_compatibility(
+    spec: ScenarioSpec,
+) -> tuple[tuple[LaneCorridorRequirement, ...], tuple[SpeedWindowRequirement, ...]]:
+    """Parse optional route-relative topology requirements from a scenario."""
+    raw = spec.route_contract.get("topology_requirements", {})
+    if not isinstance(raw, Mapping):
+        raise TypeError("route.topology_requirements must be an object")
+    raw_corridors = raw.get("lane_corridors", ())
+    raw_speeds = raw.get("speed_windows", ())
+    if (
+        not isinstance(raw_corridors, Sequence)
+        or isinstance(raw_corridors, (str, bytes))
+    ):
+        raise TypeError("route.topology_requirements.lane_corridors must be a list")
+    if not isinstance(raw_speeds, Sequence) or isinstance(raw_speeds, (str, bytes)):
+        raise TypeError("route.topology_requirements.speed_windows must be a list")
+    return (
+        tuple(LaneCorridorRequirement.from_mapping(item) for item in raw_corridors),
+        tuple(SpeedWindowRequirement.from_mapping(item) for item in raw_speeds),
+    )
 
 
 def _scenario_requires_adjacent_lane_anchor(spec: ScenarioSpec) -> bool:
@@ -3806,14 +3830,59 @@ def run(args: argparse.Namespace) -> None:
             )
             global_route_recovery = RouteRecoveryTracker(recovery_policy)
             try:
-                global_route = global_route_manager.plan_distance(
-                    route_anchor,
-                    _topology_planning_distance_m(
-                        spec.route_distance_contract_m,
-                        spec.finish_radius_m,
-                    ),
-                    args.default_speed_mps,
+                lane_corridors, speed_windows = _scenario_route_compatibility(spec)
+                planning_distance_m = _topology_planning_distance_m(
+                    spec.route_distance_contract_m,
+                    spec.finish_radius_m,
                 )
+                if lane_corridors or speed_windows:
+                    preferred_index = args.spawn_index % len(spawn_points)
+                    candidate_indices = tuple(range(preferred_index, len(spawn_points))) + tuple(
+                        range(0, preferred_index)
+                    )
+                    selected_offset, _compatible_route = (
+                        global_route_manager.plan_distance_compatible(
+                            tuple(spawn_points[index] for index in candidate_indices),
+                            spec.route_distance_contract_m,
+                            args.default_speed_mps,
+                            lane_corridors=lane_corridors,
+                            speed_windows=speed_windows,
+                        )
+                    )
+                    anchor_index = candidate_indices[selected_offset]
+                    route_anchor = spawn_points[anchor_index]
+                    # Select compatibility against the exact competition contract,
+                    # then retain the existing finish reserve used by distance
+                    # coverage. Coverage planning is deterministic, so the longer
+                    # route has the same validated contract prefix.
+                    global_route = global_route_manager.plan_distance(
+                        route_anchor,
+                        planning_distance_m,
+                        args.default_speed_mps,
+                    )
+                    global_route_manager.validate_compatibility(
+                        global_route,
+                        lane_corridors=lane_corridors,
+                        speed_windows=speed_windows,
+                    )
+                    route_metadata = dict(global_route.reference.metadata)
+                    route_metadata.update({
+                        "compatibility_candidate_index": selected_offset,
+                        "compatibility_spawn_index": anchor_index,
+                        "lane_corridor_count": len(lane_corridors),
+                        "speed_window_count": len(speed_windows),
+                        "compatibility_contract_distance_m": spec.route_distance_contract_m,
+                    })
+                    global_route = replace(
+                        global_route,
+                        reference=replace(global_route.reference, metadata=route_metadata),
+                    )
+                else:
+                    global_route = global_route_manager.plan_distance(
+                        route_anchor,
+                        planning_distance_m,
+                        args.default_speed_mps,
+                    )
             except RoutePlanningError as error:
                 print(json.dumps({
                     "record_type": "route_planning_failed",
@@ -3831,7 +3900,14 @@ def run(args: argparse.Namespace) -> None:
                 "record_type": "global_route_ready",
                 "planner": topology_route.metadata.get("planner"),
                 "planning_mode": "topology_coverage",
+                "spawn_index": anchor_index,
                 "requested_distance_m": spec.route_distance_contract_m,
+                "lane_corridor_count": topology_route.metadata.get(
+                    "lane_corridor_count", 0,
+                ),
+                "speed_window_count": topology_route.metadata.get(
+                    "speed_window_count", 0,
+                ),
                 **global_route.validation.to_dict(),
             }, ensure_ascii=False), flush=True)
         traffic_light_distance = _scenario_traffic_light_distance(spec)
