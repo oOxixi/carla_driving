@@ -21,7 +21,7 @@
     "topology_requirements": {
       "lane_corridors": [
         {"id": "S2_BUS_STOP_LANE", "relation": "LEFT", "start_s_m": 1040.0, "end_s_m": 1060.0, "junction_free": false},
-        {"id": "S2_OVERTAKE_CORRIDOR", "relation": "LEFT", "start_s_m": 2480.0, "end_s_m": 2630.0, "junction_free": true},
+        {"id": "S2_OVERTAKE_CORRIDOR", "relation": "LEFT", "start_s_m": 2480.0, "end_s_m": 2680.0, "junction_free": true},
         {"id": "S2_CUT_IN_SOURCE_LANE", "relation": "LEFT", "start_s_m": 5320.0, "end_s_m": 5340.0, "junction_free": false}
       ],
       "speed_windows": [
@@ -174,17 +174,17 @@
     {
       "actor_id": "crossing_pedestrian",
       "type": "walker.pedestrian",
-      "spawn": {"x": 2555.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
-      "route_position": {"s_m": 2555.0, "lateral_offset_m": 6.0},
+      "spawn": {"x": 2590.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
+      "route_position": {"s_m": 2590.0, "lateral_offset_m": 6.0},
       "activation_trigger": {"type": "route_progress_greater_than_m", "value": 2360.0},
-      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 2700.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 2760.0},
       "behavior": {
         "mode": "crossing",
-        "target_route_position": {"s_m": 2555.0, "lateral_offset_m": -6.0},
+        "target_route_position": {"s_m": 2590.0, "lateral_offset_m": -6.0},
         "start_time_s": 0.0,
         "speed_mps": 1.4,
         "trigger": {"all": [
-          {"type": "route_progress_greater_than_m", "value": 2500.0},
+          {"type": "route_progress_greater_than_m", "value": 2520.0},
           {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 70.0}
         ]},
         "phase_id": "S2_EVT_PEDESTRIAN_CROSSING"
@@ -194,10 +194,10 @@
       "actor_id": "slow_vehicle",
       "type": "vehicle",
       "blueprint_id": "vehicle.audi.tt",
-      "spawn": {"x": 2560.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
-      "route_position": {"s_m": 2560.0, "lateral_offset_m": 0.0, "lane_relation": "CURRENT"},
+      "spawn": {"x": 2600.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+      "route_position": {"s_m": 2600.0, "lateral_offset_m": 0.0, "lane_relation": "CURRENT"},
       "activation_trigger": {"type": "route_progress_greater_than_m", "value": 2360.0},
-      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 2700.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 2760.0},
       "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.5, "target_speed_mps": 1.5}
     },
     {
