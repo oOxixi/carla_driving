@@ -83,8 +83,8 @@ def test_official_command_boundary_fails_closed(tmp_path: Path) -> None:
 def test_agent_setup_resolves_task_two_profile_for_live_qwen_requests() -> None:
     agent = CarlaDrivingScenarioAgent("")
 
-    assert agent.qwen_profile.name == "qwen3vl-2b-int4"
-    assert agent.qwen_service_url == "http://127.0.0.1:8001"
+    assert agent.qwen_profile.name == "qwen3.5-2b"
+    assert agent.qwen_service_url == "http://127.0.0.1:8000"
 
 
 def test_official_agent_core_applies_live_qwen_action_through_safety() -> None:

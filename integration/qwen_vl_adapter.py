@@ -384,7 +384,7 @@ def assemble_action_choice(
             visual_valid=False,
         )
 
-    candidates = _explicit_target_candidates(context)
+    candidates = explicit_target_candidates(context)
     if candidates is not None:
         candidate_ids = {
             str(item["track_id"])
@@ -599,7 +599,7 @@ def _validate_target_reference(
         )
 
 
-def _explicit_target_candidates(
+def explicit_target_candidates(
     context: QwenInputContext,
 ) -> list[Mapping[str, Any]] | None:
     """Resolve only high-confidence Chinese target descriptions."""
@@ -690,7 +690,7 @@ def _ground_explicit_target(
     context: QwenInputContext,
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
     """Fuse Qwen action with a unique deterministic semantic target."""
-    candidates = _explicit_target_candidates(context)
+    candidates = explicit_target_candidates(context)
     if candidates is None:
         return dict(decision), None
     target = decision.get("target_track_id")
@@ -955,4 +955,5 @@ __all__ = [
     "build_action_choice_prompt",
     "build_strict_qwen_prompt",
     "crop_road_roi",
+    "explicit_target_candidates",
 ]

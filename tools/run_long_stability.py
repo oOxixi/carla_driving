@@ -13,7 +13,11 @@ import time
 from typing import Any
 
 from integration.qwen_boundary import QwenInputContext
-from integration.qwen_profiles import resolve_qwen_profile
+from integration.qwen_profiles import (
+    PRODUCTION_QWEN_MODEL,
+    PRODUCTION_QWEN_PROFILE,
+    resolve_qwen_profile,
+)
 from integration.qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from integration.qwen_vl_adapter import StrictQwenVLAdapter
 from integration.sensor_stability import run_sensor_probe
@@ -164,9 +168,9 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=2000)
     parser.add_argument("--gpu-index", type=int, default=0)
     parser.add_argument("--gpu-sample-seconds", type=float, default=5.0)
-    parser.add_argument("--qwen-model", required=True)
+    parser.add_argument("--qwen-model", default=PRODUCTION_QWEN_MODEL)
     parser.add_argument("--qwen-base-url")
-    parser.add_argument("--qwen-profile", default="qwen3vl-2b-int4")
+    parser.add_argument("--qwen-profile", default=PRODUCTION_QWEN_PROFILE)
     parser.add_argument("--qwen-image-root", required=True, type=Path)
     parser.add_argument("--qwen-image-ref", required=True)
     parser.add_argument("--qwen-interval-seconds", type=float, default=300.0)

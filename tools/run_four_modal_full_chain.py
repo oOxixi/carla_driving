@@ -16,6 +16,7 @@ from car_control_A.high_level_command import HighLevelCommandAdapter
 from car_control_D import SafetySupervisor
 from integration.qwen_command_adapter import build_high_level_command
 from integration.qwen_boundary import QwenInputContext
+from integration.qwen_profiles import PRODUCTION_QWEN_PROFILE
 from integration.qwen_profiles import resolve_qwen_profile
 from integration.qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from integration.qwen_vl_adapter import StrictQwenVLAdapter
@@ -420,7 +421,7 @@ def main() -> int:
     backend = parser.add_mutually_exclusive_group(required=True)
     backend.add_argument("--model-path", type=Path)
     backend.add_argument("--qwen-base-url")
-    parser.add_argument("--profile", default="qwen3vl-2b-int4")
+    parser.add_argument("--profile", default=PRODUCTION_QWEN_PROFILE)
     parser.add_argument("--asr-manifest", type=Path, required=True)
     parser.add_argument("--multimodal-cases", type=Path, required=True)
     parser.add_argument("--latency-manifest", type=Path, required=True)

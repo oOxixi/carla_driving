@@ -6,10 +6,16 @@ import argparse
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import os
 from pathlib import Path
 import socket
 from typing import Any
 
+from integration.qwen_profiles import (
+    PRODUCTION_QWEN_ARTIFACT_SHA256,
+    PRODUCTION_QWEN_MODEL,
+    PRODUCTION_QWEN_REVISION,
+)
 from .service import (
     DeterministicPlannerV2Backend,
     DeterministicTestBackend,
@@ -33,6 +39,19 @@ class QwenHTTPServer(ThreadingHTTPServer):
     def __init__(self, address: tuple[str, int], service: QwenDecisionService) -> None:
         super().__init__(address, QwenRequestHandler)
         self.service = service
+
+
+def create_server(
+    service: Any,
+    *,
+    host: str = "127.0.0.1",
+    port: int = 8765,
+) -> QwenHTTPServer:
+    """Build an HTTP server for either supported bounded service runtime."""
+    for method in ("health", "infer", "metrics"):
+        if not callable(getattr(service, method, None)):
+            raise TypeError(f"service must provide {method}()")
+    return QwenHTTPServer((host, port), service)
 
 
 class QwenRequestHandler(BaseHTTPRequestHandler):
@@ -69,7 +88,8 @@ class QwenRequestHandler(BaseHTTPRequestHandler):
             length = int(length_text or "0")
         except ValueError:
             length = -1
-        maximum = self.server.service.config.max_request_bytes
+        config = getattr(self.server.service, "config", None)
+        maximum = getattr(config, "max_request_bytes", 262_144)
         if length < 1 or length > maximum:
             self._send(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"status": "ERROR", "error_code": "REQUEST_SIZE_INVALID"})
             return
@@ -133,6 +153,19 @@ def build_service(args: argparse.Namespace) -> QwenDecisionService:
         )
     else:
         backend = UnavailableBackend()
+    model_revision = getattr(args, "model_revision", None)
+    artifact_sha256 = getattr(args, "model_artifact_sha256", None)
+    if args.vllm_base_url is not None and args.vllm_model == PRODUCTION_QWEN_MODEL:
+        if model_revision != PRODUCTION_QWEN_REVISION:
+            raise ValueError(
+                "production Qwen requires --model-revision="
+                f"{PRODUCTION_QWEN_REVISION}"
+            )
+        if artifact_sha256 != PRODUCTION_QWEN_ARTIFACT_SHA256:
+            raise ValueError(
+                "production Qwen requires the verified "
+                "--model-artifact-sha256"
+            )
     return QwenDecisionService(
         backend,
         config=QwenServiceConfig(
@@ -141,6 +174,10 @@ def build_service(args: argparse.Namespace) -> QwenDecisionService:
             max_request_bytes=args.max_request_bytes,
         ),
         qwen_mode=args.qwen_mode,
+        deployment_metadata={
+            "model_revision": model_revision,
+            "artifact_sha256": artifact_sha256,
+        },
     )
 
 
@@ -151,11 +188,25 @@ def main() -> None:
     parser.add_argument("--model-path", type=Path)
     parser.add_argument("--vllm-base-url",
                         help="existing OpenAI-compatible vLLM /v1 endpoint")
-    parser.add_argument("--vllm-model", help="exact model id served by vLLM")
+    parser.add_argument(
+        "--vllm-model",
+        default=PRODUCTION_QWEN_MODEL,
+        help="exact model id served by vLLM",
+    )
+    parser.add_argument(
+        "--model-revision",
+        default=os.environ.get("QWEN_MODEL_REVISION"),
+        help="immutable model commit verified on the deployment host",
+    )
+    parser.add_argument(
+        "--model-artifact-sha256",
+        default=os.environ.get("QWEN_MODEL_ARTIFACT_SHA256"),
+        help="deployment artifact fingerprint verified on this host",
+    )
     parser.add_argument("--image-root", type=Path)
     parser.add_argument("--deterministic-test-backend", action="store_true",
                         help="contract tests only; never production evidence")
-    parser.add_argument("--qwen-mode", choices=("atomic_v1", "planner_v2"), default="atomic_v1")
+    parser.add_argument("--qwen-mode", choices=("atomic_v1", "planner_v2"), default="planner_v2")
     parser.add_argument("--timeout-ms", type=float, default=300.0)
     parser.add_argument("--max-concurrency", type=int, default=1)
     parser.add_argument("--max-request-bytes", type=int, default=262_144)
@@ -169,7 +220,7 @@ def main() -> None:
     parser.add_argument("--jpeg-quality", type=int, default=75)
     args = parser.parse_args()
     service = build_service(args)
-    server = QwenHTTPServer((args.host, args.port), service)
+    server = create_server(service, host=args.host, port=args.port)
     print(json.dumps({
         "record_type": "qwen_service_start",
         "listen": f"http://{args.host}:{args.port}",

@@ -6,6 +6,16 @@
 python -m integration.carla_runner
 ```
 
+冻结或交付前可用一个命令生成评委可复查的静态验收报告：
+
+```bash
+python tools/validate_judge_readiness.py
+```
+
+报告写入 `artifacts/review/main_optimization_readiness.json` 和同名 Markdown。
+连接正式 Qwen 服务与 CARLA 后，加 `--require-live` 执行严格在线门禁；它会核对
+`Qwen/Qwen3.5-2B`、固定 revision、`planner_v2`、CARLA 可用性和全部静态门禁。
+
 正式主链为：语音/场景指令 + RGB/LiDAR/Radar/车辆状态 → Qwen3.5-2B 高层规划 →
 A 状态机 → B 横向控制 + C 纵向控制 → D 安全仲裁 → 唯一 `apply_control()`。
 Qwen 只能给出高层 `ManeuverPlan`，不能直接下发方向盘、油门或刹车，也不能绕过 D。
@@ -47,6 +57,7 @@ bash scripts/run_official_s2_member3.sh --run
 - [正式三场景说明](scenarios/official_competition/README.md)
 - [第二组运行手册](docs/runbooks/SECOND_GROUP.md)
 - [Qwen 远程服务说明](docs/runbooks/QWEN_REMOTE.md)
+- [main_optimization 优化审计](docs/reports/main_optimization_audit.md)
 - [2B 独立复现说明](docs/reproduction/QWEN2B_REPRODUCTION.md)
 - [接口契约](interfaces/README.md)
 

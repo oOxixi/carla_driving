@@ -48,7 +48,13 @@ def _request() -> dict:
 
 
 def test_service_returns_strict_high_level_plan_and_metrics() -> None:
-    service = QwenDecisionService(DeterministicTestBackend())
+    service = QwenDecisionService(
+        DeterministicTestBackend(),
+        deployment_metadata={
+            "model_revision": "fixed-revision",
+            "artifact_sha256": "fixed-artifact",
+        },
+    )
     try:
         result = service.infer(_request())
         assert result["behavior"] == "FOLLOW"
@@ -58,6 +64,8 @@ def test_service_returns_strict_high_level_plan_and_metrics() -> None:
         assert metrics["counts"]["success"] == 1
         assert metrics["latency_ms"]["count"] == 1
         assert service.health()["production_ready"] is False
+        assert service.health()["model_revision"] == "fixed-revision"
+        assert service.metrics()["artifact_sha256"] == "fixed-artifact"
     finally:
         service.close()
 

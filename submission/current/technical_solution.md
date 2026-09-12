@@ -10,7 +10,11 @@
 
 ## 3. 模型路线
 
-默认采用 Qwen3-VL-2B GPTQ INT4（revision `f91db2369bd00e7ec20bf09b6a0080cdb26aefa5`），固定 64 个视觉 token、256 图像边长和压缩提示词，通过 vLLM 的 Marlin INT4 线性核运行。FP8 2B 仅作为同规模复核路线。8 GB RTX 5070 负责验证链路和部署契约，A800 负责生成最终正式指标。
+正式模型统一为 `Qwen/Qwen3.5-2B`，固定 revision
+`15852e8c16360a2fea060d615a32b45270f8a8fc` 和已核验 artifact SHA-256
+`4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa`。
+模型使用 Planner V2 高层计划协议、64 个视觉 token 和 224 图像边长。旧
+Qwen3-VL GPTQ INT4/FP8 只作为 RTX 5070 历史诊断，不进入新的正式指标。
 
 ## 4. CUDA 13.2 可迁移部署
 

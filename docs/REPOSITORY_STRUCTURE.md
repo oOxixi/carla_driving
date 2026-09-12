@@ -38,7 +38,7 @@
 |---|---|
 | `integration/tests/` | 主链、Qwen 边界、场景合同和故障回归测试 |
 | `scenarios/official_competition/` | S1 5km、S2 8km、S3 6km 正式比赛场景 |
-| `scenarios/qwen_routing/` | 简单快路径、复杂 Qwen 路径和歧义拒绝 |
+| `scenarios/qwen_routing/` | 全指令 Qwen 路由、复杂规划和歧义拒绝 |
 | `scenarios/qwen_fullchain/` | Qwen 计划、编译、执行的全链合同 |
 | `scenarios/qwen_faults/` | 超时、非法输出、断线和 D 抢占 |
 | `scenarios/acceptance_suite/` | P0–P3 综合验收矩阵 |

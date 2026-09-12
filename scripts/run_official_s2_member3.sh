@@ -27,18 +27,14 @@ if [[ "$mode" != "--smoke" && "$mode" != "--run" ]]; then
   exit 2
 fi
 
-"$python_executable" - "$qwen_service_url" <<'PY'
-import json
-import sys
-from urllib.request import urlopen
-
-base_url = sys.argv[1].rstrip("/")
-with urlopen(base_url + "/health", timeout=10) as response:
-    health = json.load(response)
-if health.get("status") != "READY" or health.get("production_ready") is not True:
-    raise SystemExit("Qwen service is not production-ready: " + json.dumps(health, ensure_ascii=False))
-print("Qwen health PASS:", json.dumps(health, ensure_ascii=False))
-PY
+mkdir -p "$log_dir"
+"$python_executable" -m runtime.healthcheck \
+  --qwen-url "$qwen_service_url" \
+  --carla-host "$carla_host" \
+  --carla-port "$carla_port" \
+  --require-qwen \
+  --require-carla \
+  --output "$log_dir/S2_preflight_health.json"
 
 arguments=(
   -m integration.carla_runner

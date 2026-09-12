@@ -15,12 +15,16 @@ import time
 from typing import Any
 
 from integration.qwen_boundary import QwenInputContext
+from integration.qwen_profiles import (
+    PRODUCTION_QWEN_MODEL,
+    PRODUCTION_QWEN_REVISION,
+)
 from integration.qwen_remote_backend import OpenAICompatibleQwenVLBackend
 from integration.qwen_vl_adapter import StrictQwenVLAdapter
 
 
-DEFAULT_QWEN_MODEL = "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
-DEFAULT_QWEN_REVISION = "unverified-local-snapshot"
+DEFAULT_QWEN_MODEL = PRODUCTION_QWEN_MODEL
+DEFAULT_QWEN_REVISION = PRODUCTION_QWEN_REVISION
 
 
 def _percentile(values: list[float], quantile: float) -> float:
@@ -134,7 +138,7 @@ def _write_report(path: Path, report: Mapping[str, Any]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default=os.environ.get(
-        "QWEN_BASE_URL", "http://127.0.0.1:8002/v1"
+        "QWEN_BASE_URL", "http://127.0.0.1:8000/v1"
     ))
     parser.add_argument(
         "--model", default=os.environ.get("QWEN_MODEL", DEFAULT_QWEN_MODEL)

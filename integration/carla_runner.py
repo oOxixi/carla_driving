@@ -6786,7 +6786,7 @@ def main() -> None:
                         help="maximum simulation-time duration for the accepted runtime command")
     parser.add_argument("--qwen-max-tokens", type=int, default=1,
                         help="fixed one-token budget for the A-E decision choice")
-    parser.add_argument("--qwen-image-max-side", type=int, default=256,
+    parser.add_argument("--qwen-image-max-side", type=int, default=224,
                         help="square montage side sent to the remote Qwen model")
     parser.add_argument("--qwen-jpeg-quality", type=int, default=75)
     parser.add_argument("--qwen-image-dir", default="artifacts/runtime/qwen_live",
@@ -6829,8 +6829,8 @@ def main() -> None:
     parser.add_argument("--qwen-service-url",
                         help="enable canonical async routing and use this Qwen service URL")
     parser.add_argument(
-        "--qwen-mode", choices=("atomic_v1", "planner_v2"), default="atomic_v1",
-        help="atomic_v1 keeps the five-action baseline; planner_v2 expects ManeuverPlan V2",
+        "--qwen-mode", choices=("atomic_v1", "planner_v2"), default="planner_v2",
+        help="planner_v2 is the production ManeuverPlan V2 path; atomic_v1 is legacy compatibility",
     )
     parser.add_argument("--qwen-timeout-ms", type=float, default=300.0,
                         help="wall-clock deadline for one complex Qwen request")

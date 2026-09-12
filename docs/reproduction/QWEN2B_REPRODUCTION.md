@@ -1,10 +1,16 @@
-# Qwen 2B Reproduction Guide
+# Historical Qwen3-VL 2B Reproduction Guide
+
+This document preserves the RTX 5070 GPTQ/FP8 diagnostic package. Current
+production uses `Qwen/Qwen3.5-2B` at revision
+`15852e8c16360a2fea060d615a32b45270f8a8fc`; see
+`docs/runbooks/QWEN_REMOTE.md`. Results from the two model lines must not be
+combined.
 
 ## Scope
 
 Qwen model selection, CUDA 13.2/vLLM offline deployment, latency-first validation, and reproducible package entry points. No A800 result is inferred from RTX 5070 data.
 
-## Default Route
+## Default Route (Historical Package Only)
 
 `h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4` at revision `f91db2369bd00e7ec20bf09b6a0080cdb26aefa5`, GPTQ INT4 + Marlin, 64 visual tokens. The only alternate profile is the 2B FP8 revision `46485250d8854c0a9be4f1adbc67ca47e5bb6fa5`.
 

@@ -1142,6 +1142,7 @@ class QwenDecisionService:
         config: QwenServiceConfig | None = None,
         registry: InterfaceRegistry | None = None,
         qwen_mode: str = "atomic_v1",
+        deployment_metadata: Mapping[str, str | None] | None = None,
         clock_ns: Any = time.monotonic_ns,
     ) -> None:
         if not callable(getattr(backend, "infer", None)) or not callable(getattr(backend, "health", None)):
@@ -1150,6 +1151,7 @@ class QwenDecisionService:
         if qwen_mode not in {"atomic_v1", "planner_v2"}:
             raise ValueError("qwen_mode must be 'atomic_v1' or 'planner_v2'")
         self.qwen_mode = qwen_mode
+        self.deployment_metadata = dict(deployment_metadata or {})
         self.config = config or QwenServiceConfig()
         self.registry = registry or InterfaceRegistry()
         self.plan_validator = PlanValidator(
@@ -1259,6 +1261,8 @@ class QwenDecisionService:
             "schema_version": "1.0",
             "status": "READY" if healthy else "DEGRADED",
             "model_id": self.backend.model_id,
+            "model_revision": self.deployment_metadata.get("model_revision"),
+            "artifact_sha256": self.deployment_metadata.get("artifact_sha256"),
             "production_ready": bool(self.backend.production_ready and healthy),
             "reason": reason,
             "active_requests": active,
@@ -1276,6 +1280,8 @@ class QwenDecisionService:
         return {
             "schema_version": "1.0",
             "model_id": self.backend.model_id,
+            "model_revision": self.deployment_metadata.get("model_revision"),
+            "artifact_sha256": self.deployment_metadata.get("artifact_sha256"),
             "production_ready": bool(self.backend.production_ready),
             "qwen_mode": self.qwen_mode,
             "active_requests": active,

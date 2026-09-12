@@ -13,6 +13,12 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
+from integration.qwen_profiles import (
+    PRODUCTION_QWEN_ARTIFACT_SHA256,
+    PRODUCTION_QWEN_MODEL,
+    PRODUCTION_QWEN_PROFILE,
+    PRODUCTION_QWEN_REVISION,
+)
 from .interface_registry import INTERFACE_NAMES, InterfaceRegistry
 
 
@@ -109,6 +115,10 @@ def run_healthcheck(
     timeout_s: float,
     require_qwen: bool,
     require_carla: bool,
+    expected_qwen_model: str = PRODUCTION_QWEN_MODEL,
+    expected_qwen_revision: str = PRODUCTION_QWEN_REVISION,
+    expected_qwen_artifact_sha256: str = PRODUCTION_QWEN_ARTIFACT_SHA256,
+    expected_qwen_mode: str = "planner_v2",
 ) -> dict[str, Any]:
     checks: dict[str, Any] = {}
     try:
@@ -120,21 +130,50 @@ def run_healthcheck(
     checks["qwen"] = payload or {"status": "UNAVAILABLE", "reason": reason}
     checks["qwen"]["http_reachable"] = ok or payload is not None
     checks["qwen"]["http_result"] = reason
+    qwen_contract = {
+        "http_reachable": bool(checks["qwen"]["http_reachable"]),
+        "status_ready": checks["qwen"].get("status") == "READY",
+        "production_ready": checks["qwen"].get("production_ready") is True,
+        "model_exact": checks["qwen"].get("model_id") == expected_qwen_model,
+        "revision_exact": (
+            checks["qwen"].get("model_revision") == expected_qwen_revision
+        ),
+        "artifact_exact": (
+            checks["qwen"].get("artifact_sha256")
+            == expected_qwen_artifact_sha256
+        ),
+        "planner_mode": checks["qwen"].get("qwen_mode") == expected_qwen_mode,
+    }
+    checks["qwen"]["contract"] = qwen_contract
     checks["carla"] = _carla(carla_host, carla_port, timeout_s)
     failures = []
     if checks["interfaces"]["status"] != "PASS":
         failures.append("interfaces")
     if checks["dependencies"]["status"] != "PASS":
         failures.append("dependencies")
-    if require_qwen and not checks["qwen"].get("production_ready", False):
-        failures.append("qwen_production_ready")
+    if require_qwen:
+        failures.extend(
+            f"qwen_{name}"
+            for name, passed in qwen_contract.items()
+            if not passed
+        )
     if require_carla and checks["carla"]["status"] != "PASS":
         failures.append("carla")
     return {
         "schema_version": "1.0",
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "PASS" if not failures else "FAIL",
-        "required": {"qwen": require_qwen, "carla": require_carla},
+        "required": {
+            "qwen": require_qwen,
+            "carla": require_carla,
+            "qwen_contract": {
+                "profile": PRODUCTION_QWEN_PROFILE,
+                "model": expected_qwen_model,
+                "revision": expected_qwen_revision,
+                "artifact_sha256": expected_qwen_artifact_sha256,
+                "mode": expected_qwen_mode,
+            },
+        },
         "failed_checks": failures,
         "checks": checks,
     }
@@ -143,6 +182,20 @@ def run_healthcheck(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--qwen-url", default="http://127.0.0.1:8765")
+    parser.add_argument("--expected-qwen-model", default=PRODUCTION_QWEN_MODEL)
+    parser.add_argument(
+        "--expected-qwen-revision",
+        default=PRODUCTION_QWEN_REVISION,
+    )
+    parser.add_argument(
+        "--expected-qwen-artifact-sha256",
+        default=PRODUCTION_QWEN_ARTIFACT_SHA256,
+    )
+    parser.add_argument(
+        "--expected-qwen-mode",
+        choices=("atomic_v1", "planner_v2"),
+        default="planner_v2",
+    )
     parser.add_argument("--carla-host", default="127.0.0.1")
     parser.add_argument("--carla-port", type=int, default=2000)
     parser.add_argument("--timeout-s", type=float, default=3.0)
@@ -157,6 +210,10 @@ def main() -> int:
         timeout_s=args.timeout_s,
         require_qwen=args.require_qwen,
         require_carla=args.require_carla,
+        expected_qwen_model=args.expected_qwen_model,
+        expected_qwen_revision=args.expected_qwen_revision,
+        expected_qwen_artifact_sha256=args.expected_qwen_artifact_sha256,
+        expected_qwen_mode=args.expected_qwen_mode,
     )
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)

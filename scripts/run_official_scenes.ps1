@@ -16,6 +16,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$expectedQwenModel = 'Qwen/Qwen3.5-2B'
+$expectedQwenRevision = '15852e8c16360a2fea060d615a32b45270f8a8fc'
+$expectedQwenArtifact = '4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa'
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $scenePaths = [ordered]@{
     S1 = 'scenarios/official_competition/S1_basic_voice_control_5km.json'
@@ -55,6 +58,18 @@ if (-not $ValidateOnly) {
     }
     if (-not $AllowNonProductionQwen -and $qwenHealth.production_ready -ne $true) {
         throw 'Official evidence requires a production Qwen backend; deterministic test backend is forbidden.'
+    }
+    if (-not $AllowNonProductionQwen -and $qwenHealth.model_id -ne $expectedQwenModel) {
+        throw "Official evidence requires $expectedQwenModel; service reported $($qwenHealth.model_id)."
+    }
+    if (-not $AllowNonProductionQwen -and $qwenHealth.model_revision -ne $expectedQwenRevision) {
+        throw 'Qwen service did not report the pinned production revision.'
+    }
+    if (-not $AllowNonProductionQwen -and $qwenHealth.artifact_sha256 -ne $expectedQwenArtifact) {
+        throw 'Qwen service artifact fingerprint does not match the verified production artifact.'
+    }
+    if (-not $AllowNonProductionQwen -and $qwenHealth.qwen_mode -ne 'planner_v2') {
+        throw 'Official evidence requires the planner_v2 Qwen path.'
     }
 }
 

@@ -1,4 +1,8 @@
-# Independent Reproduction Guide
+# Historical RTX 5070 Package Reproduction Guide
+
+> 本文复现的是已提交的旧 Qwen3-VL GPTQ/FP8 诊断包及其原始证据。当前正式
+> CARLA 闭环使用固定 revision 的 `Qwen/Qwen3.5-2B`；启动和验收方法见
+> `docs/runbooks/QWEN_REMOTE.md`。两条路线的指标不得合并。
 
 ## Package Contents
 
@@ -23,7 +27,7 @@ metrics from temporary historical logs.
 
 ## Inputs
 
-The controller consumes frozen 16 kHz speech, RGB/LiDAR, vehicle state, weather/road context, and immutable scenario definitions under `/app/release_data`. The default model is Qwen3-VL 2B GPTQ INT4 with Marlin and a fixed 64-token visual budget. Input hashes are recorded by preflight.
+The historical package consumes frozen 16 kHz speech, RGB/LiDAR, vehicle state, weather/road context, and immutable scenario definitions under `/app/release_data`. Its packaged model is Qwen3-VL 2B GPTQ INT4 with Marlin and a fixed 64-token visual budget. Input hashes are recorded by preflight.
 
 ## Outputs
 
@@ -75,7 +79,7 @@ The official targets are speech parsing P95 `<= 50 ms`, end-to-end decision P95 
 
 `tools/build_submission_package.py check` must report missing weights, `image.tar`, PDF, or video instead of allowing an incomplete submission.
 
-## Model and Dataset Revisions
+## Historical Package Model and Dataset Revisions
 
 - Default INT4: `h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4`, revision `f91db2369bd00e7ec20bf09b6a0080cdb26aefa5`.
 - Optional FP8: `Qwen/Qwen3-VL-2B-Instruct-FP8`, revision `46485250d8854c0a9be4f1adbc67ca47e5bb6fa5`.

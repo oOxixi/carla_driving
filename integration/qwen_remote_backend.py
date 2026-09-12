@@ -12,7 +12,7 @@ from .qwen_profiles import (
     get_qwen_profile_by_model,
     resolve_qwen_profile,
 )
-from .qwen_vl_adapter import QwenVLActionChoice
+from .qwen_vl_adapter import QwenVLActionChoice, explicit_target_candidates
 
 
 class OpenAICompatibleQwenVLBackend:
@@ -167,11 +167,18 @@ class OpenAICompatibleQwenVLBackend:
 
         with Image.open(path) as image:
             image = image.convert("RGB")
+            explicit_targets = explicit_target_candidates(context) or []
+            priority_ids = {
+                str(item["track_id"])
+                for item in explicit_targets
+                if item.get("track_id") is not None
+            }
             image = _scene_focus_montage(
                 image,
                 context.perception.get("detected_objects", []),
                 size=self._image_max_side,
                 image_ops=ImageOps,
+                priority_ids=priority_ids,
             )
             self.last_visual_metadata = {
                 "strategy": "scene_plus_focus_montage",
@@ -179,6 +186,7 @@ class OpenAICompatibleQwenVLBackend:
                 "focus_regions": _valid_focus_count(
                     context.perception.get("detected_objects", [])
                 ),
+                "semantic_target_priority": sorted(priority_ids),
             }
 
             buffer = io.BytesIO()
@@ -209,8 +217,12 @@ def _first_token_confidence(choice: object, expected_code: str) -> float:
             for entry in entries
             if str(getattr(entry, "token", "")).strip().upper() == expected_code
         ),
-        entries[0],
+        None,
     )
+    if selected is None:
+        raise RuntimeError(
+            "Qwen response token is missing from returned token logprobs"
+        )
     value = getattr(selected, "logprob", None)
     if (
         type(value) not in (int, float)
@@ -231,6 +243,7 @@ def _scene_focus_montage(
     *,
     size: int,
     image_ops: Any,
+    priority_ids: set[str] | None = None,
 ) -> Any:
     from PIL import Image
 
@@ -247,7 +260,11 @@ def _scene_focus_montage(
         ((size - overview.width) // 2, (top_height - overview.height) // 2),
     )
 
-    focus_regions = _focus_regions(image, detected_objects)
+    focus_regions = _focus_regions(
+        image,
+        detected_objects,
+        priority_ids=priority_ids,
+    )
     if focus_regions:
         slot_width = size // len(focus_regions)
         for index, region in enumerate(focus_regions):
@@ -270,10 +287,18 @@ def _scene_focus_montage(
     return canvas
 
 
-def _focus_regions(image: Any, detected_objects: object) -> list[Any]:
+def _focus_regions(
+    image: Any,
+    detected_objects: object,
+    *,
+    priority_ids: set[str] | None = None,
+) -> list[Any]:
     if not isinstance(detected_objects, list):
         return []
-    ranked: list[tuple[float, float, tuple[float, float, float, float]]] = []
+    ranked: list[
+        tuple[int, float, float, tuple[float, float, float, float]]
+    ] = []
+    priorities = priority_ids or set()
     for item in detected_objects:
         if not isinstance(item, dict):
             continue
@@ -296,12 +321,14 @@ def _focus_regions(image: Any, detected_objects: object) -> list[Any]:
             and math.isfinite(float(confidence))
             else 0.0
         )
-        ranked.append((distance_key, confidence_key, box))
-    ranked.sort(key=lambda item: (item[0], item[1]))
+        track_id = str(item.get("track_id", ""))
+        priority_key = 0 if track_id in priorities else 1
+        ranked.append((priority_key, distance_key, confidence_key, box))
+    ranked.sort(key=lambda item: (item[0], item[1], item[2]))
 
     width, height = image.size
     regions = []
-    for _, __, (x1, y1, x2, y2) in ranked[:2]:
+    for _, __, ___, (x1, y1, x2, y2) in ranked[:2]:
         pad_x = (x2 - x1) * 0.12
         pad_y = (y2 - y1) * 0.12
         left = max(0, math.floor((x1 - pad_x) * width))

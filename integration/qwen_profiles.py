@@ -5,6 +5,14 @@ import os
 from dataclasses import dataclass
 
 
+PRODUCTION_QWEN_PROFILE = "qwen3.5-2b"
+PRODUCTION_QWEN_MODEL = "Qwen/Qwen3.5-2B"
+PRODUCTION_QWEN_REVISION = "15852e8c16360a2fea060d615a32b45270f8a8fc"
+PRODUCTION_QWEN_ARTIFACT_SHA256 = (
+    "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa"
+)
+
+
 @dataclass(frozen=True, slots=True)
 class QwenModelProfile:
     name: str
@@ -20,6 +28,18 @@ class QwenModelProfile:
 
 
 _PROFILES = {
+    PRODUCTION_QWEN_PROFILE: QwenModelProfile(
+        name=PRODUCTION_QWEN_PROFILE,
+        model=PRODUCTION_QWEN_MODEL,
+        revision=PRODUCTION_QWEN_REVISION,
+        quantization="bfloat16",
+        required_linear_kernel=None,
+        image_max_side=224,
+        visual_tokens=64,
+        port=8000,
+        prompt_style="compact-v2",
+        optional=False,
+    ),
     "qwen3vl-2b-int4": QwenModelProfile(
         name="qwen3vl-2b-int4",
         model="h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4",
@@ -30,7 +50,7 @@ _PROFILES = {
         visual_tokens=64,
         port=8001,
         prompt_style="compact-v2",
-        optional=False,
+        optional=True,
     ),
     "qwen3vl-2b-fp8": QwenModelProfile(
         name="qwen3vl-2b-fp8",
@@ -62,10 +82,16 @@ def get_qwen_profile_by_model(model: str) -> QwenModelProfile:
 
 
 def resolve_qwen_profile(name: str | None) -> QwenModelProfile:
-    return get_qwen_profile(name or os.getenv("QWEN_PROFILE", "qwen3vl-2b-int4"))
+    return get_qwen_profile(
+        name or os.getenv("QWEN_PROFILE", PRODUCTION_QWEN_PROFILE)
+    )
 
 
 __all__ = [
+    "PRODUCTION_QWEN_ARTIFACT_SHA256",
+    "PRODUCTION_QWEN_MODEL",
+    "PRODUCTION_QWEN_PROFILE",
+    "PRODUCTION_QWEN_REVISION",
     "QwenModelProfile",
     "get_qwen_profile",
     "get_qwen_profile_by_model",

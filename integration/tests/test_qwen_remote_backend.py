@@ -42,12 +42,16 @@ class FakeClient:
         self.closed = True
 
 
-def _context(detected_objects: list[dict[str, object]] | None = None) -> QwenInputContext:
+def _context(
+    detected_objects: list[dict[str, object]] | None = None,
+    *,
+    voice_command: str = "停车",
+) -> QwenInputContext:
     return QwenInputContext(
         request_id="remote-choice",
         frame=1,
         sim_time_s=0.05,
-        voice_command="停车",
+        voice_command=voice_command,
         rgb_ref=None,
         scene_state={"speed_mps": 2.0},
         perception={
@@ -126,6 +130,7 @@ def test_backend_requests_one_constrained_action_from_vllm(
         "strategy": "scene_plus_focus_montage",
         "output_size": [256, 256],
         "focus_regions": 2,
+        "semantic_target_priority": [],
     }
 
     backend.close()
@@ -151,14 +156,112 @@ def test_backend_defaults_to_qwen_2b_profile(
     )
 
     call = client.completions.calls[0]
-    assert call["model"] == "h2oai/Qwen3-VL-2B-Instruct-GPTQ-Int4"
+    assert call["model"] == "Qwen/Qwen3.5-2B"
     assert call["max_tokens"] == 1
     assert result.action == "STOP"
     content = call["messages"][0]["content"]  # type: ignore[index]
     data_url = content[0]["image_url"]["url"]
     prefix = "data:image/jpeg;base64,"
     with Image.open(io.BytesIO(base64.b64decode(data_url[len(prefix):]))) as encoded:
-        assert encoded.size == (256, 256)
+        assert encoded.size == (224, 224)
+
+
+def test_explicit_far_target_is_prioritized_in_visual_montage(
+    tmp_path: Path,
+) -> None:
+    image_path = tmp_path / "three-targets.png"
+    image = Image.new("RGB", (300, 100), (5, 5, 5))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((10, 20, 70, 80), fill=(10, 240, 10))
+    draw.rectangle((110, 20, 170, 80), fill=(10, 10, 240))
+    draw.rectangle((230, 20, 290, 80), fill=(240, 10, 10))
+    image.save(image_path)
+    objects = [
+        {
+            "track_id": "near-vehicle",
+            "class": "vehicle",
+            "relation": "center_ahead",
+            "confidence": 0.95,
+            "distance_m": 5.0,
+            "bbox_xyxy_norm": [0.033, 0.2, 0.233, 0.8],
+        },
+        {
+            "track_id": "near-pedestrian",
+            "class": "pedestrian",
+            "relation": "left_adjacent",
+            "confidence": 0.9,
+            "distance_m": 7.0,
+            "bbox_xyxy_norm": [0.367, 0.2, 0.567, 0.8],
+        },
+        {
+            "track_id": "named-far-pedestrian",
+            "class": "pedestrian",
+            "relation": "right_adjacent",
+            "confidence": 0.85,
+            "distance_m": 30.0,
+            "bbox_xyxy_norm": [0.767, 0.2, 0.967, 0.8],
+        },
+    ]
+    client = FakeClient("C")
+    backend = OpenAICompatibleQwenVLBackend(
+        base_url="http://example.invalid/v1",
+        api_key="unused",
+        client=client,
+    )
+
+    backend.generate_action(
+        prompt="choice prompt",
+        image_path=image_path,
+        context=_context(
+            objects,
+            voice_command="减速避让右侧相邻车道的行人",
+        ),
+    )
+
+    call = client.completions.calls[0]
+    content = call["messages"][0]["content"]  # type: ignore[index]
+    data_url = content[0]["image_url"]["url"]
+    prefix = "data:image/jpeg;base64,"
+    with Image.open(io.BytesIO(base64.b64decode(data_url[len(prefix):]))) as encoded:
+        encoded = encoded.convert("RGB")
+        named_target = encoded.getpixel((56, 190))
+        assert named_target[0] > named_target[1] * 4
+        assert named_target[0] > named_target[2] * 4
+    assert backend.last_visual_metadata == {
+        "strategy": "scene_plus_focus_montage",
+        "output_size": [224, 224],
+        "focus_regions": 2,
+        "semantic_target_priority": ["named-far-pedestrian"],
+    }
+
+
+def test_backend_rejects_confidence_for_a_different_token() -> None:
+    class MismatchedCompletions:
+        def create(self, **_: object) -> object:
+            return SimpleNamespace(
+                choices=[SimpleNamespace(
+                    message=SimpleNamespace(content="B"),
+                    logprobs=SimpleNamespace(content=[SimpleNamespace(
+                        token="A",
+                        logprob=math.log(0.99),
+                    )]),
+                )]
+            )
+
+    backend = OpenAICompatibleQwenVLBackend(
+        base_url="http://example.invalid/v1",
+        api_key="unused",
+        client=SimpleNamespace(
+            chat=SimpleNamespace(completions=MismatchedCompletions())
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="missing from returned token logprobs"):
+        backend.generate_action(
+            prompt="choice prompt",
+            image_path=None,
+            context=_context(),
+        )
 
 
 def test_backend_preserves_the_configured_2b_model_id() -> None:
