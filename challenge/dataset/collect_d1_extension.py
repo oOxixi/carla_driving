@@ -287,23 +287,41 @@ def main():
     }
 
     existing_extension_rows = base.read_jsonl(canonical_path)
-    extension_group_keys = {
-        group_key_of(row)
-        for row in existing_extension_rows
-        if group_key_of(row)
-    }
 
-    overlap = base_group_keys & extension_group_keys
-    if overlap:
-        raise RuntimeError(
-            "existing extension/base group overlap: "
-            + json.dumps(sorted(overlap), ensure_ascii=False)
-        )
+    # A split group may legitimately contain multiple command-level samples
+    # from the SAME scenario/seed extension.  What must be forbidden is
+    # ownership of one group_key by different extension_ids.
+    extension_group_owners = {}
 
-    if len(extension_group_keys) != len(existing_extension_rows):
-        raise RuntimeError(
-            "existing extension contains missing or duplicate group_key"
-        )
+    for row in existing_extension_rows:
+        meta = row.get("metadata") or {}
+        group_key = meta.get("group_key")
+        extension_id = meta.get("extension_id")
+
+        if not group_key:
+            raise RuntimeError(
+                "existing extension contains missing group_key"
+            )
+
+        if not extension_id:
+            raise RuntimeError(
+                "existing extension contains missing extension_id"
+            )
+
+        if group_key in base_group_keys:
+            raise RuntimeError(
+                "existing extension/base group overlap: "
+                + str(group_key)
+            )
+
+        owner = extension_group_owners.get(group_key)
+        if owner is not None and owner != extension_id:
+            raise RuntimeError(
+                "existing extension group has multiple owners: "
+                f"group={group_key} owners={owner},{extension_id}"
+            )
+
+        extension_group_owners[group_key] = extension_id
 
     launched = 0
 
@@ -411,15 +429,19 @@ def main():
                 })
                 continue
 
-            if group_key in extension_group_keys:
+            owner = extension_group_owners.get(group_key)
+
+            if owner is not None and owner != eid:
                 quar.append({
                     "extension_id": eid,
-                    "reason": "GROUP_OVERLAP_WITH_EXTENSION",
+                    "reason": "GROUP_OWNED_BY_DIFFERENT_EXTENSION",
                     "canonical_sample": sample,
                 })
                 continue
 
-            extension_group_keys.add(group_key)
+            # Multiple command-level samples belonging to the same extension
+            # and therefore the same split group are valid.
+            extension_group_owners[group_key] = eid
             canon.append(sample)
             stud.append(view)
 
