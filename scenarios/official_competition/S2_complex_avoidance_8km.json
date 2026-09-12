@@ -73,6 +73,7 @@
       "trigger": {"all": [
         {"type": "previous_command_terminal", "phase_id": "S2_P2_BUS_STOP"},
         {"type": "route_progress_greater_than_m", "value": 2500.0},
+        {"type": "ego_speed_greater_than_kph", "value": 30.1},
         {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 100.0},
         {"type": "ego_distance_to_actor_less_than_m", "actor_id": "slow_vehicle", "value": 100.0}
       ]}
@@ -89,6 +90,7 @@
       "trigger": {"all": [
         {"type": "previous_command_terminal", "phase_id": "S2_P3_PEDESTRIAN_OVERTAKE_RETURN"},
         {"type": "route_progress_greater_than_m", "value": 4430.0},
+        {"type": "ego_speed_greater_than_kph", "value": 30.1},
         {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bicycle_right", "value": 60.0}
       ]}
     },
@@ -104,6 +106,7 @@
       "trigger": {"all": [
         {"type": "previous_command_terminal", "phase_id": "S2_P4_BICYCLE_CLEARANCE"},
         {"type": "route_progress_greater_than_m", "value": 5290.0},
+        {"type": "ego_speed_greater_than_kph", "value": 30.1},
         {"type": "ego_distance_to_actor_less_than_m", "actor_id": "intersection_cut_in_car", "value": 120.0}
       ]}
     },
@@ -119,6 +122,7 @@
       "trigger": {"all": [
         {"type": "previous_command_terminal", "phase_id": "S2_P5_INTERSECTION_MIXED_FLOW"},
         {"type": "route_progress_greater_than_m", "value": 7050.0},
+        {"type": "ego_speed_greater_than_kph", "value": 30.1},
         {"type": "ego_distance_to_actor_less_than_m", "actor_id": "late_crossing_pedestrian", "value": 100.0}
       ]}
     }
