@@ -57,6 +57,7 @@
       "trigger": {"all": [
         {"type": "previous_command_terminal", "phase_id": "S2_P1_START"},
         {"type": "route_progress_greater_than_m", "value": 1010.0},
+        {"type": "ego_speed_greater_than_kph", "value": 30.1},
         {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bus_at_stop", "value": 100.0}
       ]}
     },

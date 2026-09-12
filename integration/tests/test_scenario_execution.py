@@ -28,6 +28,17 @@ def test_sensor_actor_trigger_requires_the_named_sensor_detection() -> None:
     )
 
 
+def test_ego_speed_trigger_uses_runtime_speed_and_kph_threshold() -> None:
+    trigger = {"type": "ego_speed_greater_than_kph", "value": 30.1}
+
+    assert not scenario_trigger_satisfied(
+        trigger, elapsed_s=1.0, context={"ego_speed_mps": 30.0 / 3.6},
+    )
+    assert scenario_trigger_satisfied(
+        trigger, elapsed_s=1.0, context={"ego_speed_mps": 30.1 / 3.6},
+    )
+
+
 SCENARIO_ROOT = Path(__file__).resolve().parents[2] / "scenarios"
 
 

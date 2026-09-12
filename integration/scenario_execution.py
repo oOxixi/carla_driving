@@ -347,6 +347,13 @@ def scenario_trigger_satisfied(
         return elapsed_s + 1e-9 >= float(trigger.get("time_s", 0.0))
     if trigger_type == "route_progress_greater_than_m":
         return float(values.get("route_progress_m", 0.0)) >= float(trigger.get("value", 0.0))
+    if trigger_type == "ego_speed_greater_than_kph":
+        threshold_kph = _finite_number(
+            trigger.get("value"),
+            "ego_speed_greater_than_kph.value",
+            minimum=0.0,
+        )
+        return float(values.get("ego_speed_mps", 0.0)) * 3.6 + 1e-9 >= threshold_kph
     if trigger_type in {"ego_distance_less_than_m", "ego_distance_to_actor_less_than_m"}:
         actor_id = str(trigger.get("actor_id", values.get("default_actor_id", "")))
         distances = values.get("actor_distances_m", {})
