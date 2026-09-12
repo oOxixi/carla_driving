@@ -174,13 +174,13 @@
     {
       "actor_id": "crossing_pedestrian",
       "type": "walker.pedestrian",
-      "spawn": {"x": 2590.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
-      "route_position": {"s_m": 2590.0, "lateral_offset_m": 6.0},
+      "spawn": {"x": 2580.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
+      "route_position": {"s_m": 2580.0, "lateral_offset_m": 6.0},
       "activation_trigger": {"type": "route_progress_greater_than_m", "value": 2360.0},
       "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 2760.0},
       "behavior": {
         "mode": "crossing",
-        "target_route_position": {"s_m": 2590.0, "lateral_offset_m": -6.0},
+        "target_route_position": {"s_m": 2580.0, "lateral_offset_m": -6.0},
         "start_time_s": 0.0,
         "speed_mps": 1.4,
         "trigger": {"all": [
