@@ -231,6 +231,36 @@ def main():
     rejected_path = ds / "extension_rejected.jsonl"
 
     ext_valid = len(base.read_jsonl(canonical_path))
+
+    def group_key_of(row):
+        meta = row.get("metadata") or {}
+        return meta.get("group_key")
+
+    base_group_keys = {
+        group_key_of(row)
+        for row in base_rows
+        if group_key_of(row)
+    }
+
+    existing_extension_rows = base.read_jsonl(canonical_path)
+    extension_group_keys = {
+        group_key_of(row)
+        for row in existing_extension_rows
+        if group_key_of(row)
+    }
+
+    overlap = base_group_keys & extension_group_keys
+    if overlap:
+        raise RuntimeError(
+            "existing extension/base group overlap: "
+            + json.dumps(sorted(overlap), ensure_ascii=False)
+        )
+
+    if len(extension_group_keys) != len(existing_extension_rows):
+        raise RuntimeError(
+            "existing extension contains missing or duplicate group_key"
+        )
+
     launched = 0
 
     for item in plan["plan"]:
@@ -241,7 +271,7 @@ def main():
 
         eid = item["extension_id"]
         prior = state["runs"].get(eid)
-        if isinstance(prior, dict) and prior.get("status") == "COMPLETED":
+        if isinstance(prior, dict) and prior.get("status") == "COLLECTED":
             print("SKIP_COMPLETED_EXTENSION=" + eid)
             continue
 
@@ -276,7 +306,7 @@ def main():
             "source_bucket": item["source_bucket"],
             "policy_class": item["policy_class"],
             "returncode": rc,
-            "status": "COMPLETED" if rc == 0 and log_path else "FAILED",
+            "status": "RUNNER_COMPLETED" if rc == 0 and log_path else "FAILED",
             "log_file": str(log_path) if log_path else None,
             "started_unix_s": started,
             "finished_unix_s": time.time(),
@@ -320,6 +350,32 @@ def main():
                 quar.append({"extension_id": eid, "reason": reason, "canonical_sample": sample})
                 continue
 
+            group_key = (sample.get("metadata") or {}).get("group_key")
+            if not group_key:
+                quar.append({
+                    "extension_id": eid,
+                    "reason": "GROUP_KEY_MISSING",
+                    "canonical_sample": sample,
+                })
+                continue
+
+            if group_key in base_group_keys:
+                quar.append({
+                    "extension_id": eid,
+                    "reason": "GROUP_OVERLAP_WITH_BASE",
+                    "canonical_sample": sample,
+                })
+                continue
+
+            if group_key in extension_group_keys:
+                quar.append({
+                    "extension_id": eid,
+                    "reason": "GROUP_OVERLAP_WITH_EXTENSION",
+                    "canonical_sample": sample,
+                })
+                continue
+
+            extension_group_keys.add(group_key)
             canon.append(sample)
             stud.append(view)
 
@@ -327,6 +383,13 @@ def main():
         append_jsonl(student_path, stud)
         append_jsonl(quarantine_path, quar)
         ext_valid += len(canon)
+
+        state["runs"][eid]["status"] = "COLLECTED"
+        state["runs"][eid]["accepted_count"] = len(canon)
+        state["runs"][eid]["quarantine_count"] = len(quar)
+        state["runs"][eid]["rejected_count"] = len(rejected_raw)
+        state["runs"][eid]["finished_unix_s"] = time.time()
+        base.save_run_state(state_path, state)
 
         print("CURRENT_EXTENSION_VALID=" + str(ext_valid))
         print("CURRENT_TOTAL_VALID=" + str(len(base_rows) + ext_valid))
