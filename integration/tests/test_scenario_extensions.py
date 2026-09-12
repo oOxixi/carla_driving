@@ -19,6 +19,16 @@ def test_all_declared_runtime_requirements_have_an_owner():
     assert missing_runtime_requirements(extensions) == ()
 
 
+def test_compatible_topology_route_has_a_runtime_owner() -> None:
+    runtime = ScenarioExtensionRuntime({
+        "runtime_support": {"requirements": ["compatible_topology_route"]},
+    })
+
+    assert runtime.extensions["runtime_support"]["requirements"] == [
+        "compatible_topology_route",
+    ]
+
+
 def test_event_command_waits_for_time_and_trigger():
     timeline = CommandTimeline((ScheduledCommand(
         5.0,

@@ -39,6 +39,7 @@ IMPLEMENTED_RUNTIME_REQUIREMENTS = frozenset({
     "route_progress_actor_activation", "route_progress_actor_lifecycle",
     "route_progress_speed_acceptance",
     "scenario_speed_limit", "stale_result_acceptance",
+    "compatible_topology_route",
     "target_lane_safety_check", "visibility_acceptance",
 })
 
