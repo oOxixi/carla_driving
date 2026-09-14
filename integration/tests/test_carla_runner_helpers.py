@@ -31,6 +31,7 @@ from integration.carla_runner import (
     _dynamic_return_destination_xy,
     _physical_actor_id_for_target,
     _maneuver_lane_label,
+    _mission_speed_after_maneuver,
     _retain_route_for_maneuver,
     _map_contract_name,
     _maneuver_target_distance_m,
@@ -2538,3 +2539,37 @@ def test_basic_scenario_rejects_runtime_health_fail_safe() -> None:
     assert not _runtime_health_completed({"WATCHDOG_ALERT"})
     assert not _runtime_health_completed({"INTEGRATION_FAILURE"})
     assert not _runtime_health_completed({"PERCEPTION_PERCEPTIONTIMEOUTERROR"})
+
+
+def test_mission_speed_after_maneuver_restores_original_without_persistent_speed():
+    assert _mission_speed_after_maneuver(
+        6.0,
+        None,
+    ) == pytest.approx(6.0)
+
+
+def test_mission_speed_after_maneuver_preserves_explicit_set_speed():
+    assert _mission_speed_after_maneuver(
+        6.0,
+        15.0 / 3.6,
+    ) == pytest.approx(15.0 / 3.6)
+
+
+def test_retain_route_for_must_finish_deferred_single_lane_change():
+    assert _retain_route_for_maneuver(
+        topology_coverage_planning=False,
+        dynamic_out_and_back=False,
+        must_finish_route=True,
+        lane_change_step_count=1,
+        route_behavior=None,
+    )
+
+
+def test_do_not_retain_route_for_deferred_single_lane_change_without_finish_contract():
+    assert not _retain_route_for_maneuver(
+        topology_coverage_planning=False,
+        dynamic_out_and_back=False,
+        must_finish_route=False,
+        lane_change_step_count=1,
+        route_behavior=None,
+    )

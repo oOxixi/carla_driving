@@ -1032,10 +1032,21 @@ def _maneuver_lane_label(
     return label
 
 
+def _mission_speed_after_maneuver(
+    original_mission_speed_mps: float,
+    persistent_speed_mps: float | None,
+) -> float:
+    """Restore route geometry without discarding an explicit SET_SPEED."""
+    if persistent_speed_mps is not None:
+        return float(persistent_speed_mps)
+    return float(original_mission_speed_mps)
+
+
 def _retain_route_for_maneuver(
     *,
     topology_coverage_planning: bool,
     dynamic_out_and_back: bool,
+    must_finish_route: bool = False,
     lane_change_step_count: int,
     route_behavior: str | None,
 ) -> bool:
@@ -1047,9 +1058,14 @@ def _retain_route_for_maneuver(
     to be planned from the vehicle's terminal pose. Dynamic out-and-back plans
     retain their original route until their explicit return leg completes.
     """
+    finite_route_maneuver = (
+        route_behavior is not None
+        or lane_change_step_count > 0
+    )
     return bool(
         (dynamic_out_and_back and lane_change_step_count >= 2)
         or (topology_coverage_planning and route_behavior is not None)
+        or (must_finish_route and finite_route_maneuver)
     )
 
 
@@ -3456,6 +3472,7 @@ def run(args: argparse.Namespace) -> None:
     maneuver_route_steps_applied: set[str] = set()
     maneuver_mission_route: RouteReference | None = None
     maneuver_mission_progress_m: float | None = None
+    maneuver_persistent_speed_mps: float | None = None
     maneuver_return_destination_xy: tuple[float, float] | None = None
     scenario_actor_progress_trackers: dict[str, RouteProgressTracker] = {}
     dynamic_out_and_back = _scenario_uses_dynamic_out_and_back(spec)
@@ -5617,6 +5634,7 @@ def run(args: argparse.Namespace) -> None:
                                     else None
                                 )
                                 maneuver_route_steps_applied.clear()
+                                maneuver_persistent_speed_mps = None
                                 maneuver_return_destination_xy = None
                                 maneuver_lane_ids = {"CURRENT": state.lane_id}
                                 plan_waypoint = world_map.get_waypoint(
@@ -5665,6 +5683,10 @@ def run(args: argparse.Namespace) -> None:
                                     if _retain_route_for_maneuver(
                                         topology_coverage_planning=topology_coverage_planning,
                                         dynamic_out_and_back=dynamic_out_and_back,
+                                        must_finish_route=(
+                                            spec is not None
+                                            and spec.expected.get("must_finish_route") is True
+                                        ),
                                         lane_change_step_count=len(lane_change_steps),
                                         route_behavior=route_behavior,
                                     )
@@ -6118,9 +6140,14 @@ def run(args: argparse.Namespace) -> None:
                                 if callable(synchronize_route_progress)
                                 else None
                             )
+                            restored_mission_speed_mps = _mission_speed_after_maneuver(
+                                maneuver_mission_route.target_speed_mps,
+                                maneuver_persistent_speed_mps,
+                            )
+                            runtime.requested_speed_mps = restored_mission_speed_mps
                             route = replace(
                                 maneuver_mission_route,
-                                target_speed_mps=runtime.requested_speed_mps,
+                                target_speed_mps=restored_mission_speed_mps,
                             )
                         restore_payload = {
                             "record_type": "qwen_mission_route_restored",
@@ -6144,6 +6171,7 @@ def run(args: argparse.Namespace) -> None:
                             extension_runtime.note_mission_route_restored()
                         maneuver_mission_route = None
                         maneuver_mission_progress_m = None
+                        maneuver_persistent_speed_mps = None
                         maneuver_return_destination_xy = None
                     started_route_step = (
                         maneuver_update.current_step
@@ -6199,6 +6227,11 @@ def run(args: argparse.Namespace) -> None:
                             )
                             if step_speed is not None:
                                 runtime.requested_speed_mps = float(step_speed)
+                                if started_route_step.behavior == "SET_SPEED":
+                                    # SET_SPEED is a persistent mission-state
+                                    # update. Finite maneuver target speeds are
+                                    # temporary execution speeds.
+                                    maneuver_persistent_speed_mps = float(step_speed)
                             route_step_applied = False
                             deferred_dynamic_lane_change = _is_deferred_dynamic_lane_change(
                                 started_route_step,
