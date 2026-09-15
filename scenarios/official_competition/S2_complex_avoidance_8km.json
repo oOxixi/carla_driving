@@ -356,7 +356,11 @@
       "all_phases_must_complete": true,
       "must_return_to_original_lane": true,
       "minimum_actor_distances_m": {"bicycle_right": 3.0},
-      "required_actor_trigger_ids": ["intersection_cut_in_car"],
+      "required_actor_trigger_ids": [
+        "crossing_pedestrian",
+        "intersection_cut_in_car",
+        "late_crossing_pedestrian"
+      ],
       "maximum_route_deviation_m": 1.0,
       "actor_activation_progress_windows_m": {
         "bus_at_stop": [910.0, 930.0],
