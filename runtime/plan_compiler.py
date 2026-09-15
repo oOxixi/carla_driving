@@ -94,7 +94,7 @@ class PlanCompiler:
     @staticmethod
     def _compile_change_lane(
         raw: Mapping[str, Any],
-    ) -> tuple[CompiledPlanStep, CompiledPlanStep]:
+    ) -> tuple[CompiledPlanStep, ...]:
         """Gate every ordinary lane change on a fresh, safe target-lane gap."""
         behavior = str(raw["behavior"])
         side = "LEFT" if behavior == "CHANGE_LANE_LEFT" else "RIGHT"
@@ -109,15 +109,6 @@ class PlanCompiler:
         timeout = float(raw["timeout_s"])
         failure = str(raw["on_failure"])
         return (
-            CompiledPlanStep(
-                f"{source_id}.gap", source_id, "WAIT_SAFE_GAP", target,
-                gated,
-                {
-                    "type": "HOLD_FRAMES", "value": None,
-                    "lane": target["target_lane"], "hold_frames": 3,
-                },
-                min(5.0, timeout), failure,
-            ),
             CompiledPlanStep(
                 source_id, source_id, behavior, target, gated,
                 dict(raw["completion"]), timeout, failure,
