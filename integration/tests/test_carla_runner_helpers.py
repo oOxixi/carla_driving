@@ -245,7 +245,7 @@ def test_resume_segment_keeps_only_unfinished_commands_and_live_actors() -> None
     proposed = resumed.extensions["proposed_acceptance"]
     assert proposed["qwen_request_count"] == 3
     assert proposed["actor_activation_progress_windows_m"]["bicycle_right"] == [
-        4330.0, 4350.0,
+        4460.0, 4480.0,
     ]
     assert "S2_P2_BUS_STOP" not in proposed["minimum_approach_speed_kph_by_phase"]
 

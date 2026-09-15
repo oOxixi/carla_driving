@@ -27,7 +27,7 @@
       "speed_windows": [
         {"id": "S2_P2_BUS_STOP", "start_s_m": 1010.0, "end_s_m": 1020.0, "minimum_speed_kph": 40.0, "max_lateral_accel_mps2": 2.5, "lookahead_m": 10.0},
         {"id": "S2_P3_PEDESTRIAN_OVERTAKE_RETURN", "start_s_m": 2500.0, "end_s_m": 2510.0, "minimum_speed_kph": 30.1, "max_lateral_accel_mps2": 2.5, "lookahead_m": 10.0},
-        {"id": "S2_P4_BICYCLE_CLEARANCE", "start_s_m": 4430.0, "end_s_m": 4450.0, "minimum_speed_kph": 40.0, "max_lateral_accel_mps2": 2.5, "lookahead_m": 10.0},
+        {"id": "S2_P4_BICYCLE_CLEARANCE", "start_s_m": 4490.0, "end_s_m": 4510.0, "minimum_speed_kph": 40.0, "max_lateral_accel_mps2": 2.5, "lookahead_m": 10.0},
         {"id": "S2_P5_INTERSECTION_MIXED_FLOW", "start_s_m": 5290.0, "end_s_m": 5310.0, "minimum_speed_kph": 40.0, "max_lateral_accel_mps2": 2.5, "lookahead_m": 10.0},
         {"id": "S2_P6_LATE_PEDESTRIAN_YIELD", "start_s_m": 7050.0, "end_s_m": 7070.0, "minimum_speed_kph": 40.0, "max_lateral_accel_mps2": 2.5, "lookahead_m": 10.0}
       ]
@@ -89,7 +89,7 @@
       "phase_id": "S2_P4_BICYCLE_CLEARANCE",
       "trigger": {"all": [
         {"type": "previous_command_terminal", "phase_id": "S2_P3_PEDESTRIAN_OVERTAKE_RETURN"},
-        {"type": "route_progress_greater_than_m", "value": 4430.0},
+        {"type": "route_progress_greater_than_m", "value": 4490.0},
         {"type": "ego_speed_greater_than_kph", "value": 30.1},
         {"type": "ego_distance_to_actor_less_than_m", "actor_id": "bicycle_right", "value": 60.0}
       ]}
@@ -209,10 +209,10 @@
       "actor_id": "bicycle_right",
       "type": "vehicle",
       "blueprint_id": "vehicle.bh.crossbike",
-      "spawn": {"x": 4490.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
-      "route_position": {"s_m": 4490.0, "lateral_offset_m": 0.0, "lane_relation": "CURRENT"},
-      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 4340.0},
-      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 4650.0},
+      "spawn": {"x": 4550.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+      "route_position": {"s_m": 4550.0, "lateral_offset_m": 0.0, "lane_relation": "CURRENT"},
+      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 4470.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 4750.0},
       "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.8, "target_speed_mps": 1.8}
     },
     {
@@ -361,14 +361,14 @@
         "bus_at_stop": [910.0, 930.0],
         "crossing_pedestrian": [2350.0, 2370.0],
         "slow_vehicle": [2350.0, 2370.0],
-        "bicycle_right": [4330.0, 4350.0],
+        "bicycle_right": [4460.0, 4480.0],
         "intersection_cut_in_car": [5170.0, 5190.0],
         "late_crossing_pedestrian": [6925.0, 6945.0]
       },
       "command_progress_windows_m": {
         "S2_P2_BUS_STOP": [1010.0, 1070.0],
         "S2_P3_PEDESTRIAN_OVERTAKE_RETURN": [2500.0, 2560.0],
-        "S2_P4_BICYCLE_CLEARANCE": [4430.0, 4490.0],
+        "S2_P4_BICYCLE_CLEARANCE": [4490.0, 4550.0],
         "S2_P5_INTERSECTION_MIXED_FLOW": [5290.0, 5330.0],
         "S2_P6_LATE_PEDESTRIAN_YIELD": [7050.0, 7110.0]
       },
@@ -400,7 +400,7 @@
     "phase_plan": ["S2_P1_START", "S2_P2_BUS_STOP", "S2_P3_PEDESTRIAN_OVERTAKE_RETURN", "S2_P4_BICYCLE_CLEARANCE", "S2_P5_INTERSECTION_MIXED_FLOW", "S2_P6_LATE_PEDESTRIAN_YIELD"]
   },
   "notes": [
-    "场景固定使用Town03_Opt；公交站、行人+慢车、非机动车、路口加塞、末段行人事件分别位于约1.0/2.6/4.5/5.3/7.1km；前两条事件在信号灯放行后的加速缓冲段触发，确保指令前正常车速大于30km/h。",
+    "场景固定使用Town03_Opt；公交站、行人+慢车、非机动车、路口加塞、末段行人事件分别位于约1.0/2.6/4.5/5.3/7.1km；每个减速事件都在路口或上一事件后的正常加速缓冲段触发，确保指令发出时实测车速大于30km/h。",
     "事件Actor按单调路线进度延迟生成，避免Town03_Opt长路线回绕导致远端事件提前出现或误触发。",
     "正常巡航目标40km/h；公交站及风险观察阶段目标30km/h；每条组合指令均要求风险解除后在同一Qwen计划内恢复40km/h。",
     "两次横穿行人均按自车到目标的实际距离启动，避免按里程提前横穿并在指令到达前离开车道。",
