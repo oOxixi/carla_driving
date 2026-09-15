@@ -639,6 +639,24 @@ def test_pedestrian_trigger_actor_is_trigger_evidence_not_qwen_target() -> None:
     assert result["passed"] is True
 
 
+def test_required_actor_trigger_ids_reject_missing_physical_event() -> None:
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_actor_trigger("intersection_cut_in_car", elapsed_s=10.0)
+
+    passed = runtime.evaluate(
+        {"required_actor_trigger_ids": ["intersection_cut_in_car"]},
+        expected_command_count=1,
+    )
+    assert passed["passed"] is True
+
+    missing = runtime.evaluate(
+        {"required_actor_trigger_ids": ["late_crossing_pedestrian"]},
+        expected_command_count=1,
+    )
+    assert missing["passed"] is False
+    assert missing["failed_keys"] == ["required_actor_trigger_ids"]
+
+
 def test_emergency_event_evidence_covers_trigger_to_control_chain() -> None:
     runtime = ScenarioExtensionRuntime({})
     runtime.note_actor_trigger("cut_in_vehicle", elapsed_s=10.00)

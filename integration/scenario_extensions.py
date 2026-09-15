@@ -1114,6 +1114,17 @@ class ScenarioExtensionRuntime:
             elif key == "pedestrian_trigger_actor_id":
                 actual_ids = set(evidence["actor_trigger_ids"])
                 add(key, str(required) in actual_ids, sorted(actual_ids), required)
+            elif key == "required_actor_trigger_ids":
+                if not isinstance(required, Sequence) or isinstance(required, (str, bytes)):
+                    raise TypeError("required_actor_trigger_ids must be an array")
+                required_ids = {str(item) for item in required}
+                actual_ids = set(evidence["actor_trigger_ids"])
+                add(
+                    key,
+                    bool(required_ids) and required_ids.issubset(actual_ids),
+                    sorted(actual_ids),
+                    sorted(required_ids),
+                )
             elif key == "required_emergency_event_ids":
                 required_ids = {str(item) for item in required}
                 actual_events = evidence["emergency_events"]

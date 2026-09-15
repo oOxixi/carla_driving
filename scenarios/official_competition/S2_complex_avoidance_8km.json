@@ -219,8 +219,8 @@
       "actor_id": "intersection_cut_in_car",
       "type": "vehicle",
       "blueprint_id": "vehicle.tesla.model3",
-      "spawn": {"x": 5330.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
-      "route_position": {"s_m": 5330.0, "lateral_offset_m": 0.0, "lane_relation": "LEFT_ADJACENT"},
+      "spawn": {"x": 5275.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+      "route_position": {"s_m": 5275.0, "lateral_offset_m": 0.0, "lane_relation": "LEFT_ADJACENT"},
       "activation_trigger": {"type": "route_progress_greater_than_m", "value": 5180.0},
       "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 5650.0},
       "behavior": {
@@ -356,6 +356,7 @@
       "all_phases_must_complete": true,
       "must_return_to_original_lane": true,
       "minimum_actor_distances_m": {"bicycle_right": 3.0},
+      "required_actor_trigger_ids": ["intersection_cut_in_car"],
       "maximum_route_deviation_m": 1.0,
       "actor_activation_progress_windows_m": {
         "bus_at_stop": [910.0, 930.0],

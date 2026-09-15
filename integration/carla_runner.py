@@ -3199,6 +3199,7 @@ def _build_resume_segment_spec(
         else:
             proposed.pop("minimum_actor_distances_m", None)
     for key in (
+        "required_actor_trigger_ids",
         "required_emergency_event_ids",
         "required_emergency_recovery_ids",
     ):
