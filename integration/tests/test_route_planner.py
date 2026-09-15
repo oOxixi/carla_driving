@@ -3,8 +3,10 @@ from types import SimpleNamespace
 
 import pytest
 
+from car_control_A.routing import RouteReference
 from integration.route_planner import (
     build_lane_change_route_reference,
+    build_retained_route_rejoin_reference,
     build_route_reference,
     command_turn_direction,
     select_heading_compatible_waypoint,
@@ -68,6 +70,46 @@ def _fork():
     right.children = [Waypoint(3, 4, 70)]
     root.children = [right, straight, left]
     return root
+
+
+def test_retained_route_rejoin_is_forward_bounded_and_stabilized() -> None:
+    mission = RouteReference(
+        tuple((float(x), 0.0) for x in range(101)),
+        curvature_per_m=0.0,
+        target_speed_mps=8.0,
+        route_id="mission-1",
+    )
+    ego = Actor(20.0, 3.5, 0.0)
+
+    route = build_retained_route_rejoin_reference(
+        ego,
+        mission,
+        8.0,
+        previous_progress_m=20.0,
+    )
+
+    assert route.points_xy_m[0] == pytest.approx((20.0, 3.5))
+    assert route.points_xy_m[-1] == pytest.approx((75.0, 0.0))
+    assert min(point[0] for point in route.points_xy_m) >= 20.0
+    assert route.metadata["planning_reason"] == "RETAINED_ROUTE_REJOIN"
+    assert route.metadata["rejoin_lateral_offset_m"] == pytest.approx(3.5)
+    assert route.metadata["maximum_step_m"] <= 2.5
+
+
+def test_retained_route_rejoin_rejects_arbitrary_distant_shortcut() -> None:
+    mission = RouteReference(
+        ((0.0, 0.0), (100.0, 0.0)),
+        curvature_per_m=0.0,
+        target_speed_mps=8.0,
+    )
+
+    with pytest.raises(ValueError, match="from retained route"):
+        build_retained_route_rejoin_reference(
+            Actor(20.0, 20.0, 0.0),
+            mission,
+            8.0,
+            previous_progress_m=20.0,
+        )
 
 
 @pytest.mark.parametrize(("direction", "expected_y"), [("LEFT", -2.0), ("STRAIGHT", 0.0), ("RIGHT", 2.0)])

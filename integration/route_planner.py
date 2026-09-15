@@ -13,6 +13,11 @@ from typing import Any, Callable, Iterable, Sequence
 from car_control_A.routing import RouteReference
 from car_control_B.path_utils import estimate_curvature
 
+from .route_geometry import (
+    cumulative_distances_m,
+    project_route_progress_m,
+    route_pose_at_s,
+)
 from .route_manager import RouteManager
 
 
@@ -558,6 +563,143 @@ def build_destination_route_reference(
     ).reference
 
 
+def build_retained_route_rejoin_reference(
+    anchor_or_transform: Any,
+    retained_route: RouteReference,
+    target_speed_mps: float,
+    *,
+    previous_progress_m: float | None = None,
+    merge_lookahead_m: float = 25.0,
+    stabilization_m: float = 30.0,
+    step_m: float = 1.0,
+    maximum_lateral_offset_m: float = 8.0,
+) -> RouteReference:
+    """Build a bounded forward connector back to a retained mission route.
+
+    This is a narrow recovery path for an explicit out-and-back manoeuvre.  It
+    is used only when CARLA's directed topology cannot connect two adjacent
+    lanes even though the ego remains close to the already validated mission
+    polyline.  The lateral bound and forward-only merge prevent this helper
+    from turning arbitrary unreachable destinations into unsafe shortcuts.
+    """
+    values = (
+        target_speed_mps,
+        merge_lookahead_m,
+        stabilization_m,
+        step_m,
+        maximum_lateral_offset_m,
+    )
+    if any(not math.isfinite(float(value)) for value in values):
+        raise ValueError("retained-route rejoin values must be finite")
+    if target_speed_mps < 0.0:
+        raise ValueError("target_speed_mps must be non-negative")
+    if min(merge_lookahead_m, stabilization_m, step_m, maximum_lateral_offset_m) <= 0.0:
+        raise ValueError("retained-route rejoin distances must be positive")
+
+    transform = (
+        anchor_or_transform.get_transform()
+        if hasattr(anchor_or_transform, "get_transform")
+        else anchor_or_transform
+    )
+    location = getattr(transform, "location", transform)
+    rotation = getattr(transform, "rotation", None)
+    current_xy = (float(location.x), float(location.y))
+    mission_progress_m = project_route_progress_m(
+        retained_route.points_xy_m,
+        *current_xy,
+        previous_s_m=previous_progress_m,
+    )
+    projected = route_pose_at_s(retained_route.points_xy_m, mission_progress_m)
+    lateral_offset_m = math.dist(current_xy, (projected.x_m, projected.y_m))
+    if lateral_offset_m > maximum_lateral_offset_m:
+        raise ValueError(
+            f"ego is {lateral_offset_m:.2f} m from retained route; "
+            f"maximum is {maximum_lateral_offset_m:.2f} m"
+        )
+
+    merge_pose = route_pose_at_s(
+        retained_route.points_xy_m,
+        mission_progress_m + merge_lookahead_m,
+    )
+    end_pose = route_pose_at_s(
+        retained_route.points_xy_m,
+        merge_pose.s_m + stabilization_m,
+    )
+    if merge_pose.s_m <= mission_progress_m + 1e-6:
+        raise ValueError("retained route has no forward merge point")
+
+    current_yaw_deg = (
+        float(rotation.yaw)
+        if rotation is not None and hasattr(rotation, "yaw")
+        else math.degrees(math.atan2(
+            merge_pose.y_m - current_xy[1],
+            merge_pose.x_m - current_xy[0],
+        ))
+    )
+    direct_distance_m = math.dist(current_xy, (merge_pose.x_m, merge_pose.y_m))
+    sample_count = max(8, int(math.ceil(direct_distance_m / step_m)))
+    tangent_scale_m = max(merge_lookahead_m, direct_distance_m) * 0.75
+    start_yaw_rad = math.radians(current_yaw_deg)
+    end_yaw_rad = math.radians(merge_pose.yaw_deg)
+    start_tangent = (
+        math.cos(start_yaw_rad) * tangent_scale_m,
+        math.sin(start_yaw_rad) * tangent_scale_m,
+    )
+    end_tangent = (
+        math.cos(end_yaw_rad) * tangent_scale_m,
+        math.sin(end_yaw_rad) * tangent_scale_m,
+    )
+    connector: list[tuple[float, float]] = []
+    for index in range(sample_count + 1):
+        t = index / sample_count
+        h00 = 2.0 * t ** 3 - 3.0 * t ** 2 + 1.0
+        h10 = t ** 3 - 2.0 * t ** 2 + t
+        h01 = -2.0 * t ** 3 + 3.0 * t ** 2
+        h11 = t ** 3 - t ** 2
+        connector.append((
+            h00 * current_xy[0] + h10 * start_tangent[0]
+            + h01 * merge_pose.x_m + h11 * end_tangent[0],
+            h00 * current_xy[1] + h10 * start_tangent[1]
+            + h01 * merge_pose.y_m + h11 * end_tangent[1],
+        ))
+
+    retained_cumulative = cumulative_distances_m(retained_route.points_xy_m)
+    suffix = [
+        point
+        for point, sample_s in zip(retained_route.points_xy_m, retained_cumulative)
+        if merge_pose.s_m < sample_s < end_pose.s_m
+    ]
+    points = tuple((*connector, *suffix, (end_pose.x_m, end_pose.y_m)))
+    maximum_step_m = max(
+        (math.dist(first, second) for first, second in zip(points, points[1:])),
+        default=0.0,
+    )
+    if maximum_step_m > step_m * 2.5:
+        raise ValueError(
+            f"retained-route rejoin step {maximum_step_m:.2f} m exceeds "
+            f"the {step_m * 2.5:.2f} m bound"
+        )
+    metadata = dict(retained_route.metadata)
+    metadata.update({
+        "planning_reason": "RETAINED_ROUTE_REJOIN",
+        "source_route_id": retained_route.route_id,
+        "rejoin_from_s_m": mission_progress_m,
+        "rejoin_merge_s_m": merge_pose.s_m,
+        "rejoin_lateral_offset_m": lateral_offset_m,
+        "maximum_step_m": maximum_step_m,
+    })
+    return RouteReference(
+        points,
+        _route_curvature(points),
+        float(target_speed_mps),
+        route_id=(
+            f"{retained_route.route_id or 'mission'}:rejoin:"
+            f"{mission_progress_m:.1f}:{merge_pose.s_m:.1f}"
+        ),
+        metadata=metadata,
+    )
+
+
 def select_topology_route_anchor(
     world_map: Any,
     spawn_points: Sequence[Any],
@@ -715,6 +857,7 @@ def command_turn_direction(command: dict[str, object] | None) -> str:
 __all__ = [
     "build_destination_route_reference",
     "build_lane_change_route_reference",
+    "build_retained_route_rejoin_reference",
     "build_route_reference",
     "build_scenario_route_reference",
     "command_turn_direction",

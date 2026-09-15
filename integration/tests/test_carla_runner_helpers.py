@@ -1104,6 +1104,15 @@ def test_dynamic_return_uses_retained_route_when_junction_renumbers_lane() -> No
         x_m=75.5,
         y_m=2.0,
         return_destination_xy=(75.0, 0.0),
+    ) == "1"
+    assert _maneuver_lane_label(
+        "1",
+        {"CURRENT": "-1", "RIGHT_ADJACENT": "-2"},
+        return_step,
+        mission,
+        x_m=75.4,
+        y_m=0.2,
+        return_destination_xy=(75.0, 0.0),
     ) == "CURRENT"
 
 

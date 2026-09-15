@@ -58,6 +58,7 @@ from .live_voice import LiveVoiceConfig, LiveVoiceSource
 from .route_planner import (
     build_destination_route_reference,
     build_lane_change_route_reference,
+    build_retained_route_rejoin_reference,
     build_route_reference,
     build_scenario_route_reference,
     command_turn_direction,
@@ -1049,7 +1050,7 @@ def _maneuver_lane_label(
         route_deviation_m(x_m, y_m, mission_route) <= return_tolerance_m
         or (
             return_destination_xy is not None
-            and math.dist((x_m, y_m), return_destination_xy) <= 2.5
+            and math.dist((x_m, y_m), return_destination_xy) <= return_tolerance_m
         )
     ):
         return "CURRENT"
@@ -6141,7 +6142,28 @@ def run(args: argparse.Namespace) -> None:
                     ):
                         synchronized_route_index = None
                         restore_source = "RETAINED_MISSION_ROUTE"
-                        if topology_coverage_planning:
+                        if topology_coverage_planning and dynamic_out_and_back:
+                            assert global_route_manager is not None
+                            assert global_route is not None
+                            # An explicit out-and-back manoeuvre has already
+                            # returned to the retained, validated mission
+                            # polyline. Replanning the remaining distance here
+                            # can project the same pose onto a crossing edge and
+                            # create an immediate route/watchdog discontinuity.
+                            route = replace(
+                                maneuver_mission_route,
+                                target_speed_mps=runtime.requested_speed_mps,
+                            )
+                            global_local_reference = None
+                            runtime.lateral.reset(preserve_steer=True)
+                            global_route_state = global_route_manager.state(
+                                global_route,
+                                state.x_m,
+                                state.y_m,
+                                previous_s_m=maneuver_mission_progress_m,
+                            )
+                            restore_source = "RETAINED_GLOBAL_ROUTE"
+                        elif topology_coverage_planning:
                             assert spec is not None
                             assert global_route_manager is not None
                             remaining_contract_m = max(
@@ -6359,12 +6381,22 @@ def run(args: argparse.Namespace) -> None:
                                         previous_progress_m=maneuver_mission_progress_m,
                                     )
                                     maneuver_return_destination_xy = destination_xy
-                                    route = build_destination_route_reference(
-                                        world_map,
-                                        ego.get_transform(),
-                                        destination_xy,
-                                        runtime.requested_speed_mps,
-                                    )
+                                    try:
+                                        route = build_destination_route_reference(
+                                            world_map,
+                                            ego.get_transform(),
+                                            destination_xy,
+                                            runtime.requested_speed_mps,
+                                        )
+                                    except RoutePlanningError:
+                                        route = build_retained_route_rejoin_reference(
+                                            ego.get_transform(),
+                                            maneuver_mission_route,
+                                            runtime.requested_speed_mps,
+                                            previous_progress_m=(
+                                                maneuver_mission_progress_m
+                                            ),
+                                        )
                                     end_location = ego.get_location()
                                     end_location.x, end_location.y = route.points_xy_m[-1]
                                     destination_waypoint = world_map.get_waypoint(
