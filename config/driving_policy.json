@@ -17,7 +17,7 @@
     "emergency_reaction_time_s": 0.35,
     "comfortable_deceleration_mps2": 3.5,
     "emergency_deceleration_mps2": 6.0,
-    "range_uncertainty_buffer_m": 1.0
+    "range_uncertainty_buffer_m": 2.0
   },
   "safety": {
     "minimum_front_distance_floor_m": 5.0,
@@ -30,6 +30,6 @@
     "low_confidence_threshold": 0.80,
     "emergency_reaction_time_s": 0.35,
     "emergency_deceleration_mps2": 6.0,
-    "range_uncertainty_buffer_m": 1.0
+    "range_uncertainty_buffer_m": 2.0
   }
 }
