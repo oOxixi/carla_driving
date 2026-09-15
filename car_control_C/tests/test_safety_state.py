@@ -131,6 +131,68 @@ def test_vru_caution_speed_cap_persists_through_a_short_visual_miss() -> None:
     assert held.recommended_speed_cap_mps == pytest.approx(1.8)
 
 
+def test_confirmed_lidar_hazard_cap_persists_through_curve_occlusion() -> None:
+    fusion = ConservativeSensorFusion(
+        SafetyStateParameters(front_hazard_occlusion_hold_s=3.0)
+    )
+    observed = None
+    for frame in range(1, 4):
+        observed = fusion.update(
+            frame=frame,
+            sim_time_s=frame * 0.05,
+            ego_speed_mps=1.8,
+            front_distance_m=5.7,
+            lidar_valid=True,
+        )
+    assert observed is not None
+    assert observed.recommended_action == "SLOW_DOWN"
+    assert observed.recommended_speed_cap_mps is not None
+
+    missing = fusion.update(
+        frame=4,
+        sim_time_s=0.20,
+        ego_speed_mps=1.8,
+        front_distance_m=None,
+        lidar_valid=True,
+    )
+    assert missing.recommended_action == "SLOW_DOWN"
+    assert missing.reason == "front_hazard_occlusion_hold"
+    assert missing.recommended_speed_cap_mps == pytest.approx(
+        observed.recommended_speed_cap_mps
+    )
+
+    switched = fusion.update(
+        frame=5,
+        sim_time_s=0.25,
+        ego_speed_mps=1.8,
+        front_distance_m=30.0,
+        lidar_valid=True,
+    )
+    assert switched.recommended_action == "SLOW_DOWN"
+    assert switched.reason == "front_hazard_occlusion_hold"
+
+
+def test_transient_lidar_return_does_not_arm_occlusion_hold() -> None:
+    fusion = ConservativeSensorFusion(
+        SafetyStateParameters(front_hazard_occlusion_hold_s=3.0)
+    )
+    fusion.update(
+        frame=1,
+        sim_time_s=0.05,
+        ego_speed_mps=1.8,
+        front_distance_m=5.7,
+        lidar_valid=True,
+    )
+    cleared = fusion.update(
+        frame=2,
+        sim_time_s=0.10,
+        ego_speed_mps=1.8,
+        front_distance_m=None,
+        lidar_valid=True,
+    )
+    assert cleared.recommended_action == "KEEP_SPEED"
+
+
 def test_missing_visual_semantics_are_explicit_and_not_invented() -> None:
     summary = ConservativeSensorFusion().update(
         frame=3,

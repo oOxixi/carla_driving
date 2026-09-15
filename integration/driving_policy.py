@@ -49,6 +49,9 @@ class DrivingPolicy:
             caution_ttc_s=_number(p, "caution_ttc_s"),
             emergency_ttc_s=_number(p, "emergency_ttc_s"),
             max_observation_gap_s=_number(p, "max_observation_gap_s"),
+            front_hazard_occlusion_hold_s=_number(
+                p, "front_hazard_occlusion_hold_s",
+            ),
             untracked_approach_speed_margin_mps=_number(
                 p, "untracked_approach_speed_margin_mps",
             ),

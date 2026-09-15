@@ -88,6 +88,10 @@ class SafetyStateParameters:
     caution_ttc_s: float = DEFAULT_STRATEGY.common.caution_ttc_s
     emergency_ttc_s: float = DEFAULT_STRATEGY.common.emergency_ttc_s
     max_observation_gap_s: float = DEFAULT_STRATEGY.perception_safety.max_observation_gap_s
+    # A narrow actor can briefly leave the front LiDAR corridor on a curve.
+    # Keep the last confirmed hazard speed cap through that occlusion instead
+    # of treating one empty/far return as proof that the path is clear.
+    front_hazard_occlusion_hold_s: float = 3.0
     # Temporal range differentiation is only a fallback when no aligned lead
     # velocity exists.  A nearest-return switch can otherwise look like an
     # impossible closing speed and manufacture a false sub-second TTC.
@@ -107,6 +111,7 @@ class SafetyStateParameters:
         for name in ("caution_distance_m", "emergency_distance_m", "vru_caution_distance_m",
                      "vru_emergency_distance_m", "vru_caution_speed_cap_mps", "vru_caution_hold_s",
                      "caution_ttc_s", "emergency_ttc_s", "max_observation_gap_s",
+                     "front_hazard_occlusion_hold_s",
                      "untracked_approach_speed_margin_mps",
                      "max_temporal_closing_speed_mps",
                      "temporal_closing_confirmation_tolerance_mps",
@@ -192,6 +197,9 @@ class ConservativeSensorFusion:
         self._previous_distance_m: float | None = None
         self._pending_temporal_closing_speed_mps: float | None = None
         self._vru_caution_until_s: float | None = None
+        self._front_hazard_streak = 0
+        self._front_hazard_hold_until_s: float | None = None
+        self._front_hazard_speed_cap_mps: float | None = None
 
     def reset(self) -> None:
         self._previous_frame = None
@@ -199,6 +207,9 @@ class ConservativeSensorFusion:
         self._previous_distance_m = None
         self._pending_temporal_closing_speed_mps = None
         self._vru_caution_until_s = None
+        self._front_hazard_streak = 0
+        self._front_hazard_hold_until_s = None
+        self._front_hazard_speed_cap_mps = None
 
     def update(
         self,
@@ -362,6 +373,41 @@ class ConservativeSensorFusion:
                 (2.0 * DEFAULT_STRATEGY.common.comfortable_decel_mps2 * available) ** 0.5,
             )
             sources["hazard_speed_cap"] = "DYNAMIC_SAFETY_DISTANCE"
+
+        observed_front_hazard = bool(
+            front_distance_m is not None
+            and action in {"SLOW_DOWN", "EMERGENCY_BRAKE"}
+        )
+        if observed_front_hazard:
+            self._front_hazard_streak += 1
+            if action == "EMERGENCY_BRAKE":
+                hazard_cap_mps = 0.0
+            else:
+                hazard_cap_mps = speed_cap_mps
+            if hazard_cap_mps is not None and (
+                action == "EMERGENCY_BRAKE" or self._front_hazard_streak >= 3
+            ):
+                self._front_hazard_hold_until_s = (
+                    sim_time_s + self.parameters.front_hazard_occlusion_hold_s
+                )
+                self._front_hazard_speed_cap_mps = hazard_cap_mps
+        else:
+            self._front_hazard_streak = 0
+
+        hazard_hold_active = bool(
+            self._front_hazard_hold_until_s is not None
+            and sim_time_s <= self._front_hazard_hold_until_s
+            and self._front_hazard_speed_cap_mps is not None
+        )
+        if hazard_hold_active and action == "KEEP_SPEED":
+            mode = "FRONT_HAZARD_OCCLUSION_HOLD"
+            action = "SLOW_DOWN"
+            reason = "front_hazard_occlusion_hold"
+            speed_cap_mps = min(
+                ego_speed_mps,
+                float(self._front_hazard_speed_cap_mps),
+            )
+            sources["hazard_speed_cap"] = "CONFIRMED_FRONT_HAZARD_OCCLUSION_HOLD"
 
         fused_valid = visual_valid and lidar_valid and front_distance_m is not None
         summary = SafetyStateSummary(
