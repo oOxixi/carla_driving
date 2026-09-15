@@ -3308,6 +3308,37 @@ def _import_carla_api() -> Any:
     )
 
 
+
+def _maneuver_junction_exited(
+    *,
+    junction_seen: bool,
+    current_is_junction: bool,
+    heading_change_deg: float,
+    distance_from_start_m: float,
+    behavior: str | None,
+) -> bool:
+    """Return whether an explicit turn maneuver has completed the junction.
+
+    Prefer CARLA's waypoint junction transition when it is available.  Some
+    valid turns do not expose a reliable ``is_junction`` transition, so an
+    explicit TURN_LEFT/TURN_RIGHT step may use a conservative geometric
+    fallback after a substantial heading change and forward displacement.
+    """
+    if (
+        junction_seen
+        and not current_is_junction
+        and heading_change_deg >= 25.0
+    ):
+        return True
+
+    return (
+        behavior in {"TURN_LEFT", "TURN_RIGHT"}
+        and not current_is_junction
+        and heading_change_deg >= 70.0
+        and distance_from_start_m >= 8.0
+    )
+
+
 def run(args: argparse.Namespace) -> None:
     driving_policy = load_driving_policy(getattr(args, "driving_policy", None))
     args.driving_policy = str(driving_policy.source_path)
@@ -6033,10 +6064,16 @@ def run(args: argparse.Namespace) -> None:
                             "speed_mps": state.speed_mps,
                             "lane": lane_label,
                             "lateral_error_m": scene.lane_offset_m or 0.0,
-                            "junction_exited": (
-                                maneuver_junction_seen
-                                and not current_is_junction
-                                and heading_change_deg >= 25.0
+                            "junction_exited": _maneuver_junction_exited(
+                                junction_seen=maneuver_junction_seen,
+                                current_is_junction=current_is_junction,
+                                heading_change_deg=heading_change_deg,
+                                distance_from_start_m=distance_from_plan_start_m,
+                                behavior=(
+                                    None
+                                    if maneuver_step_before_update is None
+                                    else maneuver_step_before_update.behavior
+                                ),
                             ),
                             "target_visible": target_visible,
                             "target_seen": maneuver_target_seen,
