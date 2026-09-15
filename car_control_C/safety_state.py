@@ -366,7 +366,8 @@ class ConservativeSensorFusion:
                 0.0,
                 front_distance_m
                 - DEFAULT_STRATEGY.safety_distance.standstill_gap_m
-                - envelope.sensor_margin_m,
+                - envelope.sensor_margin_m
+                - self.parameters.range_uncertainty_buffer_m,
             )
             speed_cap_mps = min(
                 ego_speed_mps,

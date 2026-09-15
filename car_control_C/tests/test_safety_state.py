@@ -193,6 +193,21 @@ def test_transient_lidar_return_does_not_arm_occlusion_hold() -> None:
     assert cleared.recommended_action == "KEEP_SPEED"
 
 
+def test_lidar_hazard_speed_cap_includes_range_uncertainty_buffer() -> None:
+    baseline = ConservativeSensorFusion(
+        SafetyStateParameters(range_uncertainty_buffer_m=1.0)
+    ).update(
+        frame=1,
+        sim_time_s=0.05,
+        ego_speed_mps=1.8,
+        front_distance_m=5.3,
+        lidar_valid=True,
+    )
+    assert baseline.recommended_action == "SLOW_DOWN"
+    assert baseline.recommended_speed_cap_mps is not None
+    assert baseline.recommended_speed_cap_mps < 1.8
+
+
 def test_missing_visual_semantics_are_explicit_and_not_invented() -> None:
     summary = ConservativeSensorFusion().update(
         frame=3,
