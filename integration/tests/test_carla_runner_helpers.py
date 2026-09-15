@@ -1116,6 +1116,27 @@ def test_dynamic_return_uses_retained_route_when_junction_renumbers_lane() -> No
     ) == "CURRENT"
 
 
+def test_dynamic_return_target_cannot_match_an_unrelated_overlapping_route_leg() -> None:
+    mission = RouteReference(
+        ((0.0, 0.0), (100.0, 0.0), (100.0, 2.0), (0.0, 2.0)),
+        target_speed_mps=8.0,
+    )
+    return_step = Namespace(
+        behavior="CHANGE_LANE_RIGHT",
+        target={"target_lane": "CURRENT"},
+    )
+
+    assert _maneuver_lane_label(
+        "2",
+        {"CURRENT": "1", "LEFT_ADJACENT": "2"},
+        return_step,
+        mission,
+        x_m=75.0,
+        y_m=2.0,
+        return_destination_xy=(75.0, 0.0),
+    ) == "LEFT_ADJACENT"
+
+
 def test_topology_route_is_retained_for_any_finite_maneuver() -> None:
     assert _retain_route_for_maneuver(
         topology_coverage_planning=True,

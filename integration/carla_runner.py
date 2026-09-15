@@ -1046,13 +1046,12 @@ def _maneuver_lane_label(
         and mission_route is not None
         and str(step.target.get("target_lane") or "").strip().upper() == "CURRENT"
     )
-    if returning_to_current and (
-        route_deviation_m(x_m, y_m, mission_route) <= return_tolerance_m
-        or (
-            return_destination_xy is not None
-            and math.dist((x_m, y_m), return_destination_xy) <= return_tolerance_m
-        )
-    ):
+    at_retained_route = (
+        math.dist((x_m, y_m), return_destination_xy) <= return_tolerance_m
+        if return_destination_xy is not None
+        else route_deviation_m(x_m, y_m, mission_route) <= return_tolerance_m
+    )
+    if returning_to_current and at_retained_route:
         return "CURRENT"
     return label
 
