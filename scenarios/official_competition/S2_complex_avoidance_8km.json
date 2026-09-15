@@ -212,7 +212,7 @@
       "spawn": {"x": 4550.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
       "route_position": {"s_m": 4550.0, "lateral_offset_m": 0.0, "lane_relation": "CURRENT"},
       "activation_trigger": {"type": "route_progress_greater_than_m", "value": 4470.0},
-      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 4750.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 4650.0},
       "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.8, "target_speed_mps": 1.8}
     },
     {
