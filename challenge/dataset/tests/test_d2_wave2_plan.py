@@ -289,3 +289,26 @@ def test_wave2_seed_namespace_does_not_overlap_wave1_namespace() -> None:
 
     assert min(wave2_seeds) == 2_100_000
     assert max(wave2_seeds) == 2_101_999
+
+
+def test_formal_builder_identity_path_can_be_json_serialized() -> None:
+    identity = {
+        "path": Path("challenge/dataset/build_d2_wave2_plan.py"),
+        "git_sha": "a" * 40,
+        "sha256": "b" * 64,
+        "tracked_matches_head": True,
+    }
+
+    normalized = dict(identity)
+
+    if isinstance(normalized.get("path"), Path):
+        normalized["path"] = str(normalized["path"])
+
+    payload = {
+        "builder_identity": normalized,
+    }
+
+    digest = wave2.canonical_json_sha256(payload)
+
+    assert isinstance(normalized["path"], str)
+    assert len(digest) == 64

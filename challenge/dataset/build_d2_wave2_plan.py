@@ -782,6 +782,9 @@ def main() -> int:
             repo,
             rel,
         )
+        builder_identity = dict(builder_identity)
+        if isinstance(builder_identity.get("path"), Path):
+            builder_identity["path"] = str(builder_identity["path"])
         formal_gate = True
         print("FORMAL_CODE_GATE=PASS")
 
