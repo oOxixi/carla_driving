@@ -1,0 +1,80 @@
+{
+  "backend": "onnxruntime",
+  "execution_provider": "CPUExecutionProvider",
+  "model": "challenge/student_v0_fp32.onnx",
+  "warmup_runs": 5,
+  "benchmark_runs": 20,
+  "latency_ms": {
+    "avg": 13.815624250082692,
+    "min": 11.704706999807968,
+    "max": 23.158437000347476
+  },
+  "inputs": {
+    "rgb": [
+      1,
+      3,
+      224,
+      224
+    ],
+    "text_tokens": [
+      1,
+      32
+    ],
+    "targets": [
+      1,
+      8,
+      14
+    ],
+    "state": [
+      1,
+      64
+    ]
+  },
+  "outputs": {
+    "plan_length_logits": [
+      1,
+      4
+    ],
+    "behavior_logits": [
+      1,
+      4,
+      14
+    ],
+    "target_pointer_logits": [
+      1,
+      4,
+      9
+    ],
+    "target_lane_logits": [
+      1,
+      4,
+      6
+    ],
+    "target_speed_mps": [
+      1,
+      4
+    ],
+    "completion_type_logits": [
+      1,
+      4,
+      8
+    ],
+    "on_failure_logits": [
+      1,
+      4,
+      4
+    ],
+    "confidence": [
+      1,
+      1
+    ],
+    "requires_confirmation_logits": [
+      1,
+      1
+    ],
+    "replan_condition_logits": [
+      1,
+      7
+    ]
+  }
+}
