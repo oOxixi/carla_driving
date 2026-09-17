@@ -697,6 +697,7 @@ def main() -> None:
         "phase": "D3",
         "wave": "WAVE1",
         "challenge_git_sha": repo_sha,
+        "formal_code_gate": True,
         "teacher": {
             "teacher_profile":
                 teacher["teacher_profile"],

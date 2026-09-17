@@ -60,3 +60,13 @@ def test_d3_safety_complex_pool_not_empty():
     }
 
     assert required <= plan.SAFETY_COMPLEX_HINTS
+
+
+def test_d3_wave1_builder_declares_formal_code_gate():
+    from pathlib import Path
+
+    source = Path(
+        "challenge/dataset/build_d3_wave1_plan.py"
+    ).read_text(encoding="utf-8")
+
+    assert '"formal_code_gate": True' in source
