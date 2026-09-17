@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """B1 D3 Wave1 Teacher-v4 expansion collector.
 
-Consumes the frozen Wave2 plan only. Historical Wave1 acquisition is never
+Consumes the frozen D3 Wave1 plan only. Historical acquisition is never
 modified. Acquisition resume is keyed by plan extension_id, not by final
 dataset sample_id.
 """
@@ -293,14 +293,14 @@ def verify_plan(
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     if not plan_path.is_file():
         raise RuntimeError(
-            f"Wave2 plan missing: {plan_path}"
+            f"D3 Wave1 plan missing: {plan_path}"
         )
 
     plan_file_sha = sha256_file(plan_path)
 
     if plan_file_sha != EXPECTED_PLAN_FILE_SHA256:
         raise RuntimeError(
-            "Wave2 plan file SHA mismatch: "
+            "D3 Wave1 plan file SHA mismatch: "
             f"{plan_file_sha} != {EXPECTED_PLAN_FILE_SHA256}"
         )
 
@@ -308,7 +308,7 @@ def verify_plan(
 
     if plan.get("plan_version") != EXPECTED_PLAN_VERSION:
         raise RuntimeError(
-            "Wave2 plan_version mismatch: "
+            "D3 Wave1 plan_version mismatch: "
             f"{plan.get('plan_version')!r}"
         )
 
@@ -320,7 +320,7 @@ def verify_plan(
 
     if plan.get("formal_code_gate") is not True:
         raise RuntimeError(
-            "Wave2 plan was not generated through formal code gate"
+            "D3 Wave1 plan was not generated through formal code gate"
         )
 
     embedded_canonical = plan.get(
@@ -341,7 +341,7 @@ def verify_plan(
         != EXPECTED_PLAN_CANONICAL_SHA256
     ):
         raise RuntimeError(
-            "Wave2 plan canonical hash mismatch: "
+            "D3 Wave1 plan canonical hash mismatch: "
             f"embedded={embedded_canonical} "
             f"recomputed={recomputed_canonical}"
         )
@@ -377,12 +377,12 @@ def verify_plan(
 
     if not isinstance(runs, list):
         raise RuntimeError(
-            "Wave2 plan[] missing"
+            "D3 Wave1 plan[] missing"
         )
 
     if len(runs) != EXPECTED_RUNS:
         raise RuntimeError(
-            f"Wave2 run count mismatch: "
+            f"D3 Wave1 run count mismatch: "
             f"{len(runs)} != {EXPECTED_RUNS}"
         )
 
@@ -404,7 +404,7 @@ def verify_plan(
         or len(ids) != len(set(ids))
     ):
         raise RuntimeError(
-            "Wave2 extension_id uniqueness failure"
+            "D3 Wave1 extension_id uniqueness failure"
         )
 
     if (
@@ -412,7 +412,7 @@ def verify_plan(
         or len(seeds) != len(set(seeds))
     ):
         raise RuntimeError(
-            "Wave2 extension_seed uniqueness failure"
+            "D3 Wave1 extension_seed uniqueness failure"
         )
 
     expected_seeds = list(
@@ -424,14 +424,14 @@ def verify_plan(
 
     if seeds != expected_seeds:
         raise RuntimeError(
-            "Wave2 seed namespace is not the exact frozen "
+            "D3 Wave1 seed namespace is not the exact frozen "
             f"{EXPECTED_SEED_START}..{EXPECTED_SEED_END}"
         )
 
     for row in runs:
         if row.get("policy_class") != "TRAIN_POSITIVE":
             raise RuntimeError(
-                "Non-TRAIN_POSITIVE row leaked into Wave2 plan: "
+                "Non-TRAIN_POSITIVE row leaked into D3 Wave1 plan: "
                 f"{row.get('extension_id')}"
             )
 
@@ -440,7 +440,7 @@ def verify_plan(
             "VARIANT",
         }:
             raise RuntimeError(
-                "Forbidden source bucket in Wave2: "
+                "Forbidden source bucket in D3 Wave1: "
                 f"{row.get('extension_id')} "
                 f"{row.get('source_bucket')!r}"
             )
@@ -1059,7 +1059,7 @@ def main() -> int:
 
     if args.dry_run:
         print(
-            "D2_WAVE2_COLLECTOR_DRY_RUN=PASS"
+            "D3_WAVE1_COLLECTOR_DRY_RUN=PASS"
         )
         return 0
 
