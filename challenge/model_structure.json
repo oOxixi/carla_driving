@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "model_id": "student-v0-r3-fp32",
-  "source_git_sha": "d6f4f8c69e094f1d314abc45bbc1f4a56624297f",
+  "source_git_sha": "f8e567ef8cd3cce592b920947dee9c6a2f3a9cf0",
   "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
   "config_id": "student-v0-r3-structure-20260911",
   "parameters": 23006581,
@@ -29,7 +29,7 @@
   },
   "status": "A1_STRUCTURE_READY_A3_WEIGHTS_PENDING",
   "artifact": "student_v0_fp32.onnx",
-  "artifact_sha256": "36c4b6b30975bc79c034a94fa9017f298bea0db9cd5ba023b24ed2cf6e338af3",
+  "artifact_sha256": "ffb1ed5e9b23aa7100343bb4f02c8cfef3da5049e9c5eba4c0e66247c96ee243",
   "opset": 17,
   "dynamic_axes": false,
   "onnx_operators": [
