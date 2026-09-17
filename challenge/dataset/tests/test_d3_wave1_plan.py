@@ -70,3 +70,30 @@ def test_d3_wave1_builder_declares_formal_code_gate():
     ).read_text(encoding="utf-8")
 
     assert '"formal_code_gate": True' in source
+
+
+def test_d3_wave1_builder_freezes_full_teacher_identity():
+    from pathlib import Path
+
+    source = Path(
+        "challenge/dataset/build_d3_wave1_plan.py"
+    ).read_text(encoding="utf-8")
+
+    assert '"teacher_identity": {' in source
+    assert '"teacher_profile": "b1-pinned-teacher-v4"' in source
+    assert (
+        '"teacher_baseline_git_sha": '
+        '"95e97b00def8ec36f12937da34ce8bb9082c4a04"'
+        in source
+    )
+    assert '"teacher_model_id": "Qwen/Qwen3.5-2B"' in source
+    assert (
+        '"teacher_model_revision": '
+        '"15852e8c16360a2fea060d615a32b45270f8a8fc"'
+        in source
+    )
+    assert (
+        '"teacher_model_artifact_sha256": '
+        '"4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa"'
+        in source
+    )

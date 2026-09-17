@@ -710,6 +710,13 @@ def main() -> None:
             "count": PLANNED_RUNS,
             "prior_seed_collision": 0,
         },
+        "teacher_identity": {
+            "teacher_profile": "b1-pinned-teacher-v4",
+            "teacher_baseline_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+            "teacher_model_id": "Qwen/Qwen3.5-2B",
+            "teacher_model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+            "teacher_model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+        },
         "d2_baseline": {
             "governed_assets": 3600,
             "train_samples": 2520,
