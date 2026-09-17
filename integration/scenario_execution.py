@@ -436,12 +436,30 @@ def resolve_scenario_command(
     if type(parameters) is not dict:
         raise TypeError("scenario command parameters must be an object")
 
+    # A target speed attached to a directional manoeuvre is an auxiliary
+    # parameter, not a replacement for the manoeuvre intent.  Historically
+    # these commands were collapsed to SET_SPEED, corrupting TURN/CHANGE_LANE
+    # supervision before ModelRequest construction.
+    directional_high_level = intent in {
+        "TURN_LEFT",
+        "TURN_RIGHT",
+        "CHANGE_LANE_LEFT",
+        "CHANGE_LANE_RIGHT",
+    }
+    if intent in {"TURN", "CHANGE_LANE"}:
+        direction = str(parameters.get("direction", "")).strip().upper()
+        directional_high_level = direction in {"LEFT", "RIGHT"}
+
+    preserve_command_semantics = (
+        preserve_high_level or directional_high_level
+    )
+
     target_speed_mps: float | None = None
-    if intent == "SLOW_DOWN" and not preserve_high_level:
+    if intent == "SLOW_DOWN" and not preserve_command_semantics:
         target_speed_mps = max(0.0, current_speed - step)
-    elif intent == "SPEED_UP" and not preserve_high_level:
+    elif intent == "SPEED_UP" and not preserve_command_semantics:
         target_speed_mps = current_speed + step
-    elif intent in ROUTE_FOLLOWING_INTENTS and not preserve_high_level:
+    elif intent in ROUTE_FOLLOWING_INTENTS and not preserve_command_semantics:
         if "target_speed_mps" in parameters:
             target_speed_mps = _finite_number(
                 parameters["target_speed_mps"], "target_speed_mps", minimum=0.0,

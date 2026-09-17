@@ -130,25 +130,48 @@ def test_trusted_smoke_shorthand_resolves_to_concrete_set_speed(
 
 
 @pytest.mark.parametrize(
-    ("relative_path", "expected_original_intent", "expected_speed"),
+    ("relative_path", "expected_intent", "expected_speed_kph"),
     [
-        ("lateral_B/B06_left_turn.json", "TURN_LEFT", 10.0 / 3.6),
-        ("lateral_B/B07_right_turn.json", "TURN_RIGHT", 10.0 / 3.6),
-        ("lateral_B/B08_lane_change_left.json", "CHANGE_LANE_LEFT", 15.0 / 3.6),
-        ("lateral_B/B09_lane_change_right.json", "CHANGE_LANE_RIGHT", 15.0 / 3.6),
-        ("safety_D/D01_red_light_stop.json", "KEEP_LANE", 20.0 / 3.6),
+        ("lateral_B/B06_left_turn.json", "TURN_LEFT", 10.0),
+        ("lateral_B/B07_right_turn.json", "TURN_RIGHT", 10.0),
+        ("lateral_B/B08_lane_change_left.json", "CHANGE_LANE_LEFT", 15.0),
+        ("lateral_B/B09_lane_change_right.json", "CHANGE_LANE_RIGHT", 15.0),
     ],
 )
-def test_trusted_route_manoeuvre_uses_scenario_route_and_concrete_speed(
+def test_trusted_directional_manoeuvre_preserves_high_level_semantics(
     relative_path: str,
-    expected_original_intent: str,
-    expected_speed: float,
+    expected_intent: str,
+    expected_speed_kph: float,
 ) -> None:
     spec = ScenarioSpec.load(SCENARIO_ROOT / relative_path)
-    resolved = resolve_scenario_command(spec.commands[0].envelope, requested_speed_mps=0.0)
+    resolved = resolve_scenario_command(
+        spec.commands[0].envelope,
+        requested_speed_mps=0.0,
+    )
+
+    assert resolved["intent"] == expected_intent
+    assert "scenario_original_intent" not in resolved
+    assert resolved["parameters"]["speed"] == pytest.approx(expected_speed_kph)
+    assert resolved["parameters"]["unit"] == "km/h"
+
+
+def test_trusted_keep_lane_route_command_still_resolves_to_concrete_speed() -> None:
+    spec = ScenarioSpec.load(
+        SCENARIO_ROOT / "safety_D" / "D01_red_light_stop.json"
+    )
+    original = spec.commands[0].envelope
+
+    resolved = resolve_scenario_command(
+        original,
+        requested_speed_mps=0.0,
+    )
+
     assert resolved["intent"] == "SET_SPEED"
-    assert resolved["scenario_original_intent"] == expected_original_intent
-    assert resolved["parameters"] == {"speed": pytest.approx(expected_speed), "unit": "m/s"}
+    assert resolved["scenario_original_intent"] == "KEEP_LANE"
+    assert resolved["parameters"] == {
+        "speed": pytest.approx(20.0 / 3.6),
+        "unit": "m/s",
+    }
 
 
 def test_qwen_scenario_preserves_visual_follow_for_complexity_routing() -> None:
@@ -178,3 +201,75 @@ def test_acceptance_v2_qwen_policy_preserves_high_level_command_contract() -> No
 
     assert resolved["intent"] == "SLOW_DOWN"
     assert resolved["confirm_required"] is True
+
+
+@pytest.mark.parametrize(
+    ("relative_path", "expected_intent", "expected_direction", "expected_speed"),
+    [
+        ("lateral_B/B06_left_turn.json", "TURN", "LEFT", 10.0 / 3.6),
+        ("lateral_B/B07_right_turn.json", "TURN", "RIGHT", 10.0 / 3.6),
+        (
+            "lateral_B/B08_lane_change_left.json",
+            "CHANGE_LANE",
+            "LEFT",
+            15.0 / 3.6,
+        ),
+        (
+            "lateral_B/B09_lane_change_right.json",
+            "CHANGE_LANE",
+            "RIGHT",
+            15.0 / 3.6,
+        ),
+        (
+            "regression/REG_004_advanced_rain_left_turn.json",
+            "TURN",
+            "LEFT",
+            10.0 / 3.6,
+        ),
+        (
+            "regression/REG_005_advanced_rain_right_turn.json",
+            "TURN",
+            "RIGHT",
+            10.0 / 3.6,
+        ),
+        (
+            "regression/REG_009_challenge_lane_change_left.json",
+            "CHANGE_LANE",
+            "LEFT",
+            15.0 / 3.6,
+        ),
+        (
+            "regression/REG_010_challenge_lane_change_right.json",
+            "CHANGE_LANE",
+            "RIGHT",
+            15.0 / 3.6,
+        ),
+    ],
+)
+def test_directional_scenario_command_reaches_canonical_boundary_without_semantic_loss(
+    relative_path: str,
+    expected_intent: str,
+    expected_direction: str,
+    expected_speed: float,
+) -> None:
+    from integration.canonical_bridge import (
+        voice_envelope_to_driving_command,
+    )
+
+    spec = ScenarioSpec.load(SCENARIO_ROOT / relative_path)
+
+    resolved = resolve_scenario_command(
+        spec.commands[0].envelope,
+        requested_speed_mps=0.0,
+    )
+
+    command = voice_envelope_to_driving_command(
+        resolved,
+        received_at_ns=1_000_000_000,
+    )
+
+    assert command["intent"] == expected_intent
+    assert command["parameters"]["direction"] == expected_direction
+    assert command["parameters"]["target_speed_mps"] == pytest.approx(
+        expected_speed
+    )

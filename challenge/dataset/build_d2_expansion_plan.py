@@ -11,20 +11,68 @@ from typing import Any
 
 from challenge.dataset import collect_d1_200 as base
 
-PLAN_VERSION = "b1_d2_expansion_wave1_v1"
+PLAN_VERSION = "b1_d2_expansion_wave1_v2"
 EXPECTED_REGISTRY_SHA256 = "263b878582c6bf3a041646b9859014696601694748a90e8156ca4481c69a866e"
 EXPECTED_PRIOR_D1_PLAN_SHA256 = "c4ea670c224376e6bd69f69be22e07d4e3f89ccf3978277ae028b13edcf1e166"
 SEED_START = 2_000_000
 
 QUOTAS = {
-    "BALANCED_SEEN": 450,
+    "BALANCED_SEEN": 470,
     "VARIANT": 220,
     "UNDERCOVERED_MANEUVER": 160,
     "QWEN_CHAIN_ROUTING": 70,
     "SAFETY_COMPLEX": 80,
-    "NON_TOWN03": 20,
+    "NON_TOWN03": 0,
 }
 PLANNED_RUNS = sum(QUOTAS.values())
+
+
+def scenario_file_path(repo: Path, row: dict[str, str]) -> Path:
+    rel = Path(row["scenario_path"])
+    if rel.parts and rel.parts[0] == "scenarios":
+        return repo / rel
+    return repo / "scenarios" / rel
+
+
+def seed_expansion_policy(
+    repo: Path,
+    row: dict[str, str],
+) -> tuple[bool, str]:
+    """Return whether arbitrary D2 extension-seed expansion is safe.
+
+    Route-generalization destination scenarios are fixed Route Manager
+    regression fixtures. carla_runner gives --seed structural semantics
+    by binding it to spawn_index, so arbitrary extension seeds can mutate
+    their start/route topology while leaving their authored destination
+    and distance contracts unchanged.
+
+    These fixtures remain valid benchmark/regression scenarios, but they
+    are not valid sources for arbitrary-seed Teacher acquisition.
+    """
+    path = scenario_file_path(repo, row)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+
+    raw_tags = payload.get("tags") or []
+    tags = {
+        str(tag).strip()
+        for tag in raw_tags
+        if str(tag).strip()
+    }
+
+    route = payload.get("route") or {}
+    planning_mode = str(route.get("planning_mode", "")).strip()
+
+    if (
+        "route_generalization" in tags
+        and planning_mode == "destination"
+    ):
+        return (
+            False,
+            "ROUTE_GENERALIZATION_DESTINATION_FIXED_FIXTURE",
+        )
+
+    return True, "SEED_EXPANSION_ELIGIBLE"
+
 
 PROCESS_FAILED_EXCLUDE = {
     "DEV_S2_BICYCLE_FOLLOW_TARGETED",
@@ -193,12 +241,17 @@ def tags_for(row: dict[str, str]) -> list[str]:
     return sorted(set(tags))
 
 
-def candidate_pool(rows: list[dict[str, str]], bucket: str) -> list[dict[str, str]]:
+def candidate_pool(
+    repo: Path,
+    rows: list[dict[str, str]],
+    bucket: str,
+) -> list[dict[str, str]]:
     allowed = [
         r for r in rows
         if r["policy_class"] == "TRAIN_POSITIVE"
         and r["source_bucket"] in {"SEEN", "VARIANT"}
         and r["scenario_id"] not in PROCESS_FAILED_EXCLUDE
+        and seed_expansion_policy(repo, r)[0]
     ]
     if bucket == "BALANCED_SEEN":
         return [r for r in allowed if r["source_bucket"] == "SEEN"]
@@ -215,7 +268,11 @@ def candidate_pool(rows: list[dict[str, str]], bucket: str) -> list[dict[str, st
     raise RuntimeError(f"unknown quota bucket {bucket}")
 
 
-def build_plan(rows: list[dict[str, str]], prior_seeds: set[int]) -> list[dict[str, Any]]:
+def build_plan(
+    repo: Path,
+    rows: list[dict[str, str]],
+    prior_seeds: set[int],
+) -> list[dict[str, Any]]:
     counts: Counter[str] = Counter()
     plan: list[dict[str, Any]] = []
     next_seed = SEED_START
@@ -225,7 +282,7 @@ def build_plan(rows: list[dict[str, str]], prior_seeds: set[int]) -> list[dict[s
     # exactly which pool is undersized before any allocation occurs.
     raw_capacity = {}
     for bucket, target in QUOTAS.items():
-        pool = candidate_pool(rows, bucket)
+        pool = candidate_pool(repo, rows, bucket)
         capacity = sum(cap_for(r) for r in pool)
         raw_capacity[bucket] = {
             "candidate_scenarios": len(pool),
@@ -242,8 +299,12 @@ def build_plan(rows: list[dict[str, str]], prior_seeds: set[int]) -> list[dict[s
 
     def allocate(bucket: str, target: int) -> None:
         nonlocal next_seed
+
+        if target == 0:
+            return
+
         pool = sorted(
-            candidate_pool(rows, bucket),
+            candidate_pool(repo, rows, bucket),
             key=lambda r: (
                 counts[r["scenario_id"]],
                 r.get("family", ""),
@@ -349,7 +410,7 @@ def main() -> int:
     )
     ap.add_argument(
         "--output-dir",
-        default="artifacts/b1_d2_expansion_plan_v1",
+        default="artifacts/b1_d2_expansion_plan_v2",
     )
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--allow-uncommitted-code", action="store_true")
@@ -409,8 +470,13 @@ def main() -> int:
     if missing_files:
         raise RuntimeError(f"scenario files missing: {missing_files[:20]}")
 
+    seed_expansion_policy_counts = Counter(
+        seed_expansion_policy(repo, row)[1]
+        for row in train_positive
+    )
+
     prior_seeds = load_prior_seed_values(repo, prior_plan_path)
-    plan = build_plan(train_positive, prior_seeds)
+    plan = build_plan(repo, train_positive, prior_seeds)
 
     bucket_counts = Counter(x["quota_bucket"] for x in plan)
     source_counts = Counter(x["source_bucket"] for x in plan)
@@ -419,9 +485,18 @@ def main() -> int:
     scenario_counts = Counter(x["scenario_id"] for x in plan)
     history_counts = Counter(x["historical_status"] for x in plan)
 
-    if dict(bucket_counts) != QUOTAS:
+    normalized_bucket_counts = {
+        bucket: bucket_counts.get(bucket, 0)
+        for bucket in QUOTAS
+    }
+    unexpected_buckets = sorted(set(bucket_counts) - set(QUOTAS))
+
+    if normalized_bucket_counts != QUOTAS or unexpected_buckets:
         raise RuntimeError(
-            f"quota mismatch expected={QUOTAS} actual={dict(bucket_counts)}"
+            "quota mismatch "
+            f"expected={QUOTAS} "
+            f"actual={normalized_bucket_counts} "
+            f"unexpected={unexpected_buckets}"
         )
     for sid, count in scenario_counts.items():
         row = next(r for r in train_positive if r["scenario_id"] == sid)
@@ -459,6 +534,12 @@ def main() -> int:
             "reserved_test_candidate": "FORBIDDEN",
             "seed_start": SEED_START,
             "process_failed_wave1_policy": "EXCLUDED",
+            "seed_expansion_policy": (
+                "ROUTE_GENERALIZATION_DESTINATION_FIXED_FIXTURE_EXCLUDED"
+            ),
+            "non_town03_wave1_policy": (
+                "NO_ELIGIBLE_SEED_EXPANSION_SAFE_SOURCE_IN_FROZEN_REGISTRY"
+            ),
             "historical_quarantine_policy": "CAP_4_PER_SCENARIO",
             "adaptive_strategy": (
                 "Wave 1 only. Re-audit yield/coverage/failure before Wave 2; "
@@ -468,7 +549,10 @@ def main() -> int:
         "quotas": QUOTAS,
         "counts": {
             "planned_runs": len(plan),
-            "quota_buckets": dict(sorted(bucket_counts.items())),
+            "quota_buckets": dict(sorted(normalized_bucket_counts.items())),
+            "seed_expansion_policy": dict(
+                sorted(seed_expansion_policy_counts.items())
+            ),
             "source_buckets": dict(sorted(source_counts.items())),
             "families": dict(sorted(family_counts.items())),
             "maps": dict(sorted(map_counts.items())),
@@ -486,7 +570,14 @@ def main() -> int:
     print("REGISTRY_SHA256=" + registry_sha)
     print("PRIOR_D1_PLAN_SHA256=" + prior_plan_sha)
     print("PLANNED_RUNS=" + str(len(plan)))
-    print("QUOTAS=" + json.dumps(dict(sorted(bucket_counts.items())), sort_keys=True))
+    print("QUOTAS=" + json.dumps(dict(sorted(normalized_bucket_counts.items())), sort_keys=True))
+    print(
+        "SEED_EXPANSION_POLICY_COUNTS="
+        + json.dumps(
+            dict(sorted(seed_expansion_policy_counts.items())),
+            sort_keys=True,
+        )
+    )
     print("SOURCE_BUCKETS=" + json.dumps(dict(sorted(source_counts.items())), sort_keys=True))
     print("FAMILIES=" + json.dumps(dict(sorted(family_counts.items())), sort_keys=True))
     print("MAPS=" + json.dumps(dict(sorted(map_counts.items())), sort_keys=True))

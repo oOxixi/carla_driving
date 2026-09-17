@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "teacher_profile": "b1-pinned-teacher-v3",
+  "teacher_git_sha": "1a363c15b9b1790534358c11acbd100a3011fa93",
+  "model_id": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+  "quantization": null,
+  "dtype": "bfloat16",
+  "max_model_len": 2048,
+  "qwen_mode": "planner_v2",
+  "serving": {
+    "vllm_version": "0.29.0",
+    "torch_version": "2.13.0+cu132",
+    "flashinfer_sampler": false,
+    "max_num_seqs": 1,
+    "gpu_memory_utilization": 0.7,
+    "image_max_side": 224
+  },
+  "verification": {
+    "models_api": "PASS",
+    "text_inference": "PASS",
+    "planner_adapter_health": "PASS",
+    "main_regression": "225 passed (v3 targeted regression)",
+    "qwf01_functional": "1/1 PASS (v3 regression, seed 2000000)",
+    "qwf02_functional": "1/1 PASS (v3 regression, seed 2000001)",
+    "internal_teacher_latency_probe": {
+      "budget_ms": 300,
+      "warm_runs": 6,
+      "warm_passed": 6,
+      "warm_max_sensor_to_model_ms": 237.540021,
+      "cold_start_observation": {
+        "status": "MODEL_TIMEOUT",
+        "sensor_to_model_ms": 312.618223
+      },
+      "note": "Internal Teacher runtime diagnostic only; not the official J6P challenge latency Gate."
+    },
+    "qwr05_turn_completion": "2/2 PASS (v3 regression, former failing seeds 2000001 and 2000006)"
+  },
+  "legacy_smoke_note": "Previous B1 Smoke used a shared local Qwen/Qwen3.5-2B service whose exact Hugging Face revision was not recorded. This pinned revision must not be retroactively attributed to the legacy Smoke dataset.",
+  "teacher_tag": "teacher-baseline-v3",
+  "previous_teacher_git_sha": "29df49e70e908dd1a0ecfdf1d59168a0c128cbfc"
+}

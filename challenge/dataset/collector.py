@@ -276,17 +276,19 @@ def classify_sample(
         and step.get("behavior") is not None
     ]
 
+    # Semantic safety class is determined by the planning context/behavior,
+    # not merely by transient downstream SafetySupervisor intervention.
+    safety_behaviors = {
+        "AVOID_OBSTACLE",
+        "YIELD",
+        "EMERGENCY_STOP",
+    }
+
     safety_critical = (
         risk in {"HIGH", "EMERGENCY"}
-        or bool(
-            closed_loop.get(
-                "safety_override_observed"
-            )
-        )
-        or bool(
-            closed_loop.get(
-                "collision_count"
-            )
+        or any(
+            behavior in safety_behaviors
+            for behavior in behaviors
         )
     )
 
@@ -318,6 +320,85 @@ def classify_sample(
         "primary": primary,
         "safety_critical": safety_critical,
     }
+
+
+def classify_training_role(
+    structurally_valid: bool,
+    closed_loop: dict[str, Any],
+) -> tuple[str, list[str]]:
+    """Separate structural validity from positive distillation eligibility."""
+
+    if not structurally_valid:
+        return "REJECTED", []
+
+    if not closed_loop.get("available"):
+        return "REJECTED", [
+            "CLOSED_LOOP_UNAVAILABLE",
+        ]
+
+    command_terminal = closed_loop.get(
+        "command_terminal_status"
+    )
+
+    plan_terminal = closed_loop.get(
+        "plan_terminal_state"
+    )
+
+    plan_reason = closed_loop.get(
+        "plan_terminal_reason"
+    )
+
+    # SafetySupervisor veto / emergency intervention is valuable evidence,
+    # but must not be used as ordinary positive Teacher supervision.
+    if (
+        command_terminal == "SAFETY_OVERRIDE"
+        or plan_terminal == "SAFETY_OVERRIDE"
+    ):
+        return "HARD_NEGATIVE", [
+            "SAFETY_OVERRIDE_TERMINAL",
+        ]
+
+    # Teacher execution itself did not complete successfully.
+    if (
+        command_terminal != "SUCCEEDED"
+        or plan_terminal != "SUCCEEDED"
+    ):
+        return "HARD_NEGATIVE", [
+            "TEACHER_EXECUTION_NOT_SUCCEEDED:"
+            + str(plan_reason or "UNKNOWN")
+        ]
+
+    # A nominally completed plan with serious closed-loop violations should
+    # also stay out of ordinary positive distillation.
+    if int(closed_loop.get("collision_count") or 0) > 0:
+        return "HARD_NEGATIVE", [
+            "CLOSED_LOOP_COLLISION",
+        ]
+
+    if int(closed_loop.get("route_deviation_count") or 0) > 0:
+        return "HARD_NEGATIVE", [
+            "CLOSED_LOOP_ROUTE_DEVIATION",
+        ]
+
+    if int(
+        closed_loop.get(
+            "red_light_violation_count"
+        )
+        or 0
+    ) > 0:
+        return "HARD_NEGATIVE", [
+            "CLOSED_LOOP_RED_LIGHT_VIOLATION",
+        ]
+
+    if closed_loop.get("scenario_acceptance_passed") is False:
+        return "HARD_NEGATIVE", [
+            "SCENARIO_ACCEPTANCE_FAILED",
+        ]
+
+    # Important: run_status itself is intentionally NOT required to be
+    # SUCCEEDED. A Teacher command/plan can be valid even if the enclosing
+    # scenario later fails for route/runtime reasons (e.g. QWF02).
+    return "POSITIVE", []
 
 
 def extract_closed_loop(
@@ -895,6 +976,13 @@ def build_sample(
             "safety_critical": False,
         }
 
+    training_role, training_exclusion_reasons = (
+        classify_training_role(
+            valid,
+            closed_loop,
+        )
+    )
+
     rgb_sha256 = None
     rgb_size_bytes = None
     rgb_rel = None
@@ -970,7 +1058,14 @@ def build_sample(
             resolve_disposition
             == "SLOW_READY"
         ),
-        "valid_for_training": valid,
+        "structurally_valid": valid,
+        "training_role": training_role,
+        "valid_for_training": (
+            training_role == "POSITIVE"
+        ),
+        "training_exclusion_reasons": (
+            training_exclusion_reasons
+        ),
         "rejection_reasons": (
             rejection_reasons
         ),
@@ -1459,7 +1554,7 @@ def collect_file(
             if sample[
                 "quality"
             ][
-                "valid_for_training"
+                "structurally_valid"
             ]:
                 accepted.append(
                     sample
