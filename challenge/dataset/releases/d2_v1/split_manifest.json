@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "split_version": "b1_d2_provisional_split_v1",
+  "status": "PASS",
+  "challenge_git_sha": "60463c20b32bed51017a4bd24b79da86792b316e",
+  "governed_assets": 3600,
+  "files": {
+    "train.jsonl": {
+      "sha256": "8f4cdc6c764416f0376eae8281025c8f138dcc776bdd9ca92666299ec739c019",
+      "bytes": 13417643
+    },
+    "val.jsonl": {
+      "sha256": "a13263c0019b65866a41b471e5e784c49588a3a2648854bff48655ff7fc3668d",
+      "bytes": 2888029
+    },
+    "reserved_test_candidates.jsonl": {
+      "sha256": "28987e807a612335d7485e7295cce7df6812225a8778f8477c60ee08437df3bc",
+      "bytes": 2883974
+    },
+    "split_assignments.jsonl": {
+      "sha256": "6cf3a000808ac474ea190dfed8171cc97c56edae738a3be5f24d3ad78c4b28a7",
+      "bytes": 887918
+    },
+    "split_report.json": {
+      "sha256": "4890cef17c3b2ab4d8414792aac9fb8ba572fca908e1b503a2fe0350e4034c34",
+      "bytes": 4229
+    }
+  },
+  "report_canonical_sha256": "e0990a04fbb5383e28bf1cea59b99ef39f2d190bdcf319442dd3da66b53a3094",
+  "manifest_canonical_sha256": "5c5119b645622c0e52d60e84f64e0d2d6e1c414c1fe4c3e733e26ac3ff2ae757"
+}
