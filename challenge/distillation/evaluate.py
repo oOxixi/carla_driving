@@ -33,8 +33,29 @@ def evaluate(
         )
         metrics["loss"] = float(total.item())
         metrics.update({f"loss_{key}": float(value.item()) for key, value in components.items()})
-        rows.append(metrics)
         weights = metric_denominators(moved["labels"], batch["sample_classes"])
+        # Emit every class for every batch, including absent classes with zero
+        # denominators. This keeps global aggregation correct across mixed batches.
+        for sample_class in ("normal", "complex", "safety_critical"):
+            selected = [
+                index for index, value in enumerate(batch["sample_classes"])
+                if value == sample_class
+            ]
+            subset_outputs = {name: value[selected] for name, value in outputs.items()}
+            subset_labels = {name: value[selected] for name, value in moved["labels"].items()}
+            subset_classes = [sample_class] * len(selected)
+            class_metrics = compute_batch_metrics(
+                subset_outputs, subset_labels, subset_classes,
+            )
+            class_weights = metric_denominators(subset_labels, subset_classes)
+            for name, value in class_metrics.items():
+                if name == "safety_critical_behavior_recall":
+                    # The global safety slice already reports this quantity.
+                    continue
+                key = f"{sample_class}_{name}"
+                metrics[key] = value
+                weights[key] = class_weights[name]
+        rows.append(metrics)
         batch_size = float(moved["labels"]["step_mask"].shape[0])
         weights.update({name: batch_size for name in metrics if name.startswith("loss")})
         weight_rows.append(weights)

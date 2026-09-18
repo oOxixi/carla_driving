@@ -57,6 +57,8 @@ def export_candidate_weights(
         "weights_sha256": weights_sha,
         "source_checkpoint_sha256": str(checkpoint_sha256),
         "dataset_version": str(identity["dataset_version"]),
+        "release_manifest_sha256": identity.get("release_manifest_sha256"),
+        "a3_view_manifest_sha256": identity.get("a3_view_manifest_sha256"),
         "gate_status": "MOCK_ONLY" if smoke else "PENDING_A3_FP32_GATE",
         "validation_metrics": dict(validation),
     }

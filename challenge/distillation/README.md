@@ -1,5 +1,17 @@
 # A3 Distillation
 
+For the current signed B1 D2 v1.1 release, the active data-preparation and
+integration-smoke procedure is in [D2_A3_PREP.md](D2_A3_PREP.md). Run
+`python -m challenge.distillation.audit_d2_view` to produce the fixed
+Train/Validation label-coverage report before comparing experiments. Run
+`python -m challenge.distillation.validate_a1_inputs` to decode and pack every
+Train/Validation RGB through A1's real four-modal input path. The targeted B1
+follow-up is in [B1_D2_COVERAGE_REQUEST.md](B1_D2_COVERAGE_REQUEST.md). The
+D2 mixed-cohort formal training entry now has its own signed-release policy
+and configuration, but has not yet been run; it requires a clean commit and
+does not authorize weight promotion. The promotion gate described below
+applies to the older single-frozen-Teacher contract, not this mixed-cohort run.
+
 This directory owns knowledge distillation and accuracy recovery only.  It does
 not modify the frozen CARLA A/B/C/D control chain, dataset splits, benchmark
 definitions, or deployment runtime.

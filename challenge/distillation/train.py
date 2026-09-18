@@ -27,6 +27,7 @@ from challenge.dataset.build_a3_d2_view import VIEW_VERSION
 
 from .class_balance import compute_class_weights
 from .artifacts import export_candidate_weights
+from .audit_d2_view import audit_view
 from .checkpoint import load_checkpoint, save_checkpoint, sha256_file
 from .dataset import (
     DistillationDataset,
@@ -97,7 +98,9 @@ def run_training(
             expected_teacher_git_sha=(
                 str(cfg["teacher"]["git_sha"])
                 if dataset_cfg.get("verify_teacher_identity")
-                and cfg["teacher"].get("identity_policy") != "signed_d2_release_smoke"
+                and cfg["teacher"].get("identity_policy") not in {
+                    "signed_d2_release_smoke", "signed_d2_release_formal",
+                }
                 else None
             ),
             expected_teacher_model_id=(
@@ -214,6 +217,16 @@ def run_training(
             "weights": class_weights,
         },
     }
+    if cfg["teacher"].get("identity_policy") in {
+        "signed_d2_release_smoke", "signed_d2_release_formal",
+    }:
+        repo = Path(__file__).resolve().parents[2]
+        metadata["release_manifest_sha256"] = canonical_text_sha256(
+            repo / str(cfg["dataset"]["release_manifest_path"])
+        )
+        metadata["a3_view_manifest_sha256"] = canonical_text_sha256(
+            repo / str(cfg["dataset"]["view_manifest_path"])
+        )
     start_epoch = 0
     global_step = 0
     best_metric = -math.inf
@@ -490,7 +503,10 @@ def _validate_frozen_identities(
     cfg: Mapping[str, Any], *, integration_smoke: bool = False,
 ) -> None:
     policy = str(cfg["teacher"].get("identity_policy", "frozen_manifest"))
-    if policy not in {"frozen_manifest", "legacy_unpinned_smoke", "signed_d2_release_smoke"}:
+    if policy not in {
+        "frozen_manifest", "legacy_unpinned_smoke", "signed_d2_release_smoke",
+        "signed_d2_release_formal",
+    }:
         raise ValueError(f"unsupported teacher identity_policy: {policy}")
     manifest_path = Path(__file__).resolve().parents[1] / "teacher_baseline_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -504,9 +520,11 @@ def _validate_frozen_identities(
         key: cfg["teacher"].get(key) for key in expected_teacher
     }
     dataset_cfg = cfg["dataset"]
-    if policy == "signed_d2_release_smoke":
-        if not integration_smoke:
+    if policy in {"signed_d2_release_smoke", "signed_d2_release_formal"}:
+        if policy == "signed_d2_release_smoke" and not integration_smoke:
             raise ValueError("signed D2 release policy is limited to integration smoke")
+        if policy == "signed_d2_release_formal" and integration_smoke:
+            raise ValueError("formal signed D2 policy cannot be used for integration smoke")
         if actual_teacher["git_sha"] != "MULTI_PINNED_B1_D2_V1_1":
             raise ValueError("signed D2 release must identify mixed Teacher baselines")
         for field in ("model_id", "model_revision", "artifact_fingerprint_sha256"):
@@ -543,6 +561,8 @@ def _validate_frozen_identities(
                 raise ValueError(f"Teacher cohort manifest changed: {relative}")
         if (repo / str(dataset_cfg["asset_root"])).resolve() != repo:
             raise ValueError("signed D2 release RGB asset_root must be repository root")
+        if policy == "signed_d2_release_formal":
+            audit_view(release_dir, view_path.parent)
     elif policy == "legacy_unpinned_smoke":
         if not integration_smoke:
             raise ValueError(

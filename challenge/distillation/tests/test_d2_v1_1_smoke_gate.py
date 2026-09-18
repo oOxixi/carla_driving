@@ -14,6 +14,7 @@ from challenge.distillation.train import _validate_frozen_identities  # noqa: E4
 
 ROOT = Path(__file__).resolve().parents[3]
 CONFIG = ROOT / "challenge" / "distillation" / "d2_v1_1_smoke_config.yaml"
+FORMAL_CONFIG = ROOT / "challenge" / "distillation" / "d2_v1_1_formal_config.yaml"
 RELEASE = ROOT / "challenge" / "dataset" / "releases" / "d2_v1_1"
 
 
@@ -33,3 +34,20 @@ def test_signed_d2_smoke_gate_checks_derived_view(tmp_path: Path) -> None:
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     with pytest.raises(ValueError, match="does not match signed B1 release"):
         _validate_frozen_identities(config, integration_smoke=True)
+
+
+def test_signed_d2_formal_gate_requires_complete_view_and_not_smoke(tmp_path: Path) -> None:
+    build_view(RELEASE, tmp_path)
+    config = yaml.safe_load(FORMAL_CONFIG.read_text(encoding="utf-8"))
+    config["dataset"]["train_path"] = str(tmp_path / "train.jsonl")
+    config["dataset"]["val_path"] = str(tmp_path / "val.jsonl")
+    config["dataset"]["view_manifest_path"] = str(tmp_path / "a3_view_manifest.json")
+    _validate_frozen_identities(config, integration_smoke=False)
+    with pytest.raises(ValueError, match="cannot be used for integration smoke"):
+        _validate_frozen_identities(config, integration_smoke=True)
+
+    excluded_path = tmp_path / "excluded_sample_ids.jsonl"
+    with excluded_path.open("a", encoding="utf-8") as stream:
+        stream.write("{}\n")
+    with pytest.raises(ValueError, match="view file changed"):
+        _validate_frozen_identities(config, integration_smoke=False)
