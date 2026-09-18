@@ -1,0 +1,130 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-09-18T10:08:35.438881+00:00",
+  "path": "D:\\nana\\carla_driving-new\\carla_driving-new\\challenge\\student_v0_fp32.onnx",
+  "sha256": "ffb1ed5e9b23aa7100343bb4f02c8cfef3da5049e9c5eba4c0e66247c96ee243",
+  "size_bytes": 92016431,
+  "ir_version": 8,
+  "opset": {
+    "ai.onnx": 17
+  },
+  "producer": "pytorch",
+  "inputs": {
+    "rgb": [
+      1,
+      3,
+      224,
+      224
+    ],
+    "text_tokens": [
+      1,
+      32
+    ],
+    "targets": [
+      1,
+      8,
+      14
+    ],
+    "state": [
+      1,
+      64
+    ]
+  },
+  "outputs": [
+    "plan_length_logits",
+    "behavior_logits",
+    "target_pointer_logits",
+    "target_lane_logits",
+    "target_speed_mps",
+    "completion_type_logits",
+    "on_failure_logits",
+    "confidence",
+    "requires_confirmation_logits",
+    "replan_condition_logits"
+  ],
+  "operators": [
+    "AveragePool",
+    "Concat",
+    "Constant",
+    "Conv",
+    "Flatten",
+    "Gemm",
+    "Identity",
+    "Mul",
+    "Relu",
+    "Reshape",
+    "Sigmoid"
+  ],
+  "forbidden_operators": [],
+  "metadata": {
+    "model_id": "student-v0-r3-fp32",
+    "weights_status": "random_initialization_for_export_smoke_only",
+    "export_seed": "20260911",
+    "python_version": "3.12",
+    "onnx_opset": "17",
+    "source_git_sha": "f8e567ef8cd3cce592b920947dee9c6a2f3a9cf0",
+    "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
+    "config_id": "student-v0-r3-structure-20260911",
+    "model_request_sha256": "7e68bc0d43ea2a37643c0dbf846766202b7f206190475d6b917471ffcd1a4ccf",
+    "maneuver_plan_sha256": "6fb4c94c73b493be107cda3abef64033efdec88918887a4ae0e66120aa72b0d7"
+  },
+  "reference_structure": "challenge\\model_structure.json",
+  "initializer_count": 40,
+  "initializer_bytes": 92001600,
+  "checks": [
+    {
+      "check": "onnx_checker",
+      "status": "PASS",
+      "detail": "model passes the ONNX checker"
+    },
+    {
+      "check": "opset",
+      "status": "PASS",
+      "detail": "opset=17, expected 17"
+    },
+    {
+      "check": "ir_version",
+      "status": "PASS",
+      "detail": "ir_version=8"
+    },
+    {
+      "check": "no_board_hostile_operators",
+      "status": "PASS",
+      "detail": "no dynamic-shape/control-flow operators"
+    },
+    {
+      "check": "single_batch_fixed_shape",
+      "status": "PASS",
+      "detail": "inputs={'rgb': [1, 3, 224, 224], 'text_tokens': [1, 32], 'targets': [1, 8, 14], 'state': [1, 64]}"
+    },
+    {
+      "check": "input_contract",
+      "status": "PASS",
+      "detail": "{'rgb': [1, 3, 224, 224], 'text_tokens': [1, 32], 'targets': [1, 8, 14], 'state': [1, 64]} vs expected {'rgb': [1, 3, 224, 224], 'text_tokens': [1, 32], 'targets': [1, 8, 14], 'state': [1, 64]}"
+    },
+    {
+      "check": "output_order",
+      "status": "PASS",
+      "detail": "output order matches OUTPUT_NAMES"
+    },
+    {
+      "check": "metadata_present",
+      "status": "PASS",
+      "detail": "metadata keys=['config_id', 'dataset_version', 'export_seed', 'maneuver_plan_sha256', 'model_id', 'model_request_sha256', 'onnx_opset', 'python_version', 'source_git_sha', 'weights_status']"
+    },
+    {
+      "check": "structure_sha256_matches",
+      "status": "PASS",
+      "detail": "ffb1ed5e9b23aa7100343bb4f02c8cfef3da5049e9c5eba4c0e66247c96ee243 vs ffb1ed5e9b23aa7100343bb4f02c8cfef3da5049e9c5eba4c0e66247c96ee243"
+    },
+    {
+      "check": "structure_operator_set_matches",
+      "status": "PASS",
+      "detail": "operator set matches the producer report"
+    }
+  ],
+  "failed": [],
+  "warned": [],
+  "passed": true,
+  "scope_note": "Structural and contract verification only. A pass says nothing about accuracy, latency, or board deployability; it only rules out the cheap, silent failure modes."
+}

@@ -1,0 +1,16 @@
+{
+  "columns": [
+    "run_id",
+    "round",
+    "sample_index",
+    "wall_time_utc",
+    "monotonic_ns",
+    "scope",
+    "source",
+    "probe_point",
+    "voltage_v",
+    "current_a",
+    "power_w",
+    "notes"
+  ]
+}

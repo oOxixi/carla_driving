@@ -1,0 +1,441 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-09-18T13:37:49.270401+00:00",
+  "seeds": [
+    0
+  ],
+  "repeats_per_seed": 1,
+  "per_scenario": {
+    "S00_chain_start": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": null,
+      "mean_run_sensor_to_control_avg_ms": 14.24,
+      "max_run_sensor_to_control_p95_ms": 16.0,
+      "max_run_sensor_to_control_p99_ms": 16.0,
+      "max_sensor_to_control_ms": 31.0
+    },
+    "S01_set_speed_20": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": 10.959446415626939,
+      "mean_run_sensor_to_control_avg_ms": 14.29,
+      "max_run_sensor_to_control_p95_ms": 16.0,
+      "max_run_sensor_to_control_p99_ms": 31.0,
+      "max_sensor_to_control_ms": 47.0
+    },
+    "S02_slow_down": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": 10.398843942235215,
+      "mean_run_sensor_to_control_avg_ms": 13.156666666666666,
+      "max_run_sensor_to_control_p95_ms": 16.0,
+      "max_run_sensor_to_control_p99_ms": 16.0,
+      "max_sensor_to_control_ms": 31.0
+    },
+    "S03_stop": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": null,
+      "mean_run_sensor_to_control_avg_ms": 13.244,
+      "max_run_sensor_to_control_p95_ms": 16.0,
+      "max_run_sensor_to_control_p99_ms": 16.0,
+      "max_sensor_to_control_ms": 16.0
+    },
+    "S04_emergency_stop": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": null,
+      "mean_run_sensor_to_control_avg_ms": 13.44,
+      "max_run_sensor_to_control_p95_ms": 16.0,
+      "max_run_sensor_to_control_p99_ms": 16.0,
+      "max_sensor_to_control_ms": 16.0
+    },
+    "D01_red_light_stop": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": null,
+      "mean_run_sensor_to_control_avg_ms": 12.34,
+      "max_run_sensor_to_control_p95_ms": 16.0,
+      "max_run_sensor_to_control_p99_ms": 16.0,
+      "max_sensor_to_control_ms": 31.0
+    },
+    "D02_pedestrian_crossing": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": 5.049079895019531,
+      "mean_run_sensor_to_control_avg_ms": 13.788571428571428,
+      "max_run_sensor_to_control_p95_ms": 16.0,
+      "max_run_sensor_to_control_p99_ms": 16.0,
+      "max_sensor_to_control_ms": 31.0
+    },
+    "D03_front_vehicle_brake": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": 4.972882270812988,
+      "mean_run_sensor_to_control_avg_ms": 13.79,
+      "max_run_sensor_to_control_p95_ms": 16.0,
+      "max_run_sensor_to_control_p99_ms": 31.0,
+      "max_sensor_to_control_ms": 32.0
+    },
+    "D04_lane_deviation": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": null,
+      "mean_run_sensor_to_control_avg_ms": 15.552,
+      "max_run_sensor_to_control_p95_ms": 31.0,
+      "max_run_sensor_to_control_p99_ms": 32.0,
+      "max_sensor_to_control_ms": 32.0
+    },
+    "D05_invalid_control_nan": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": null,
+      "mean_run_sensor_to_control_avg_ms": 13.28,
+      "max_run_sensor_to_control_p95_ms": 16.0,
+      "max_run_sensor_to_control_p99_ms": 16.0,
+      "max_sensor_to_control_ms": 16.0
+    },
+    "D06_throttle_brake_conflict": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": null,
+      "mean_run_sensor_to_control_avg_ms": 14.276666666666667,
+      "max_run_sensor_to_control_p95_ms": 16.0,
+      "max_run_sensor_to_control_p99_ms": 16.0,
+      "max_sensor_to_control_ms": 32.0
+    },
+    "D07_low_ttc_emergency_brake": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": 4.95461893081665,
+      "mean_run_sensor_to_control_avg_ms": 14.8725,
+      "max_run_sensor_to_control_p95_ms": 16.749999999999318,
+      "max_run_sensor_to_control_p99_ms": 31.0,
+      "max_sensor_to_control_ms": 32.0
+    },
+    "D08_command_conflict_red_light_continue": {
+      "runs": 1,
+      "seeds": [
+        0
+      ],
+      "succeeded": 1,
+      "success_rate": 1.0,
+      "collisions": 0,
+      "red_light_violations": 0,
+      "minimum_gap_m": null,
+      "mean_run_sensor_to_control_avg_ms": 12.748,
+      "max_run_sensor_to_control_p95_ms": 16.0,
+      "max_run_sensor_to_control_p99_ms": 16.0,
+      "max_sensor_to_control_ms": 31.0
+    }
+  },
+  "records": [
+    {
+      "scenario": "S00_chain_start",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\S00_chain_start\\seed_0\\run_01\\S00_chain_start_20260918_213151_522387.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": null,
+      "sensor_to_control_avg_ms": 14.24,
+      "sensor_to_control_p95_ms": 16.0,
+      "sensor_to_control_p99_ms": 16.0,
+      "sensor_to_control_max_ms": 31.0
+    },
+    {
+      "scenario": "S01_set_speed_20",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\S01_set_speed_20\\seed_0\\run_01\\S01_set_speed_20_20260918_213216_921205.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": 10.959446415626939,
+      "sensor_to_control_avg_ms": 14.29,
+      "sensor_to_control_p95_ms": 16.0,
+      "sensor_to_control_p99_ms": 31.0,
+      "sensor_to_control_max_ms": 47.0
+    },
+    {
+      "scenario": "S02_slow_down",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\S02_slow_down\\seed_0\\run_01\\S02_slow_down_20260918_213248_120038.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": 10.398843942235215,
+      "sensor_to_control_avg_ms": 13.156666666666666,
+      "sensor_to_control_p95_ms": 16.0,
+      "sensor_to_control_p99_ms": 16.0,
+      "sensor_to_control_max_ms": 31.0
+    },
+    {
+      "scenario": "S03_stop",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\S03_stop\\seed_0\\run_01\\S03_stop_20260918_213317_006675.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": null,
+      "sensor_to_control_avg_ms": 13.244,
+      "sensor_to_control_p95_ms": 16.0,
+      "sensor_to_control_p99_ms": 16.0,
+      "sensor_to_control_max_ms": 16.0
+    },
+    {
+      "scenario": "S04_emergency_stop",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\S04_emergency_stop\\seed_0\\run_01\\S04_emergency_stop_20260918_213343_622741.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": null,
+      "sensor_to_control_avg_ms": 13.44,
+      "sensor_to_control_p95_ms": 16.0,
+      "sensor_to_control_p99_ms": 16.0,
+      "sensor_to_control_max_ms": 16.0
+    },
+    {
+      "scenario": "D01_red_light_stop",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\D01_red_light_stop\\seed_0\\run_01\\D01_red_light_stop_20260918_213407_528202.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": null,
+      "sensor_to_control_avg_ms": 12.34,
+      "sensor_to_control_p95_ms": 16.0,
+      "sensor_to_control_p99_ms": 16.0,
+      "sensor_to_control_max_ms": 31.0
+    },
+    {
+      "scenario": "D02_pedestrian_crossing",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\D02_pedestrian_crossing\\seed_0\\run_01\\D02_pedestrian_crossing_20260918_213434_962514.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": 5.049079895019531,
+      "sensor_to_control_avg_ms": 13.788571428571428,
+      "sensor_to_control_p95_ms": 16.0,
+      "sensor_to_control_p99_ms": 16.0,
+      "sensor_to_control_max_ms": 31.0
+    },
+    {
+      "scenario": "D03_front_vehicle_brake",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\D03_front_vehicle_brake\\seed_0\\run_01\\D03_front_vehicle_brake_20260918_213509_245113.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": 4.972882270812988,
+      "sensor_to_control_avg_ms": 13.79,
+      "sensor_to_control_p95_ms": 16.0,
+      "sensor_to_control_p99_ms": 31.0,
+      "sensor_to_control_max_ms": 32.0
+    },
+    {
+      "scenario": "D04_lane_deviation",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\D04_lane_deviation\\seed_0\\run_01\\D04_lane_deviation_20260918_213543_270903.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": null,
+      "sensor_to_control_avg_ms": 15.552,
+      "sensor_to_control_p95_ms": 31.0,
+      "sensor_to_control_p99_ms": 32.0,
+      "sensor_to_control_max_ms": 32.0
+    },
+    {
+      "scenario": "D05_invalid_control_nan",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\D05_invalid_control_nan\\seed_0\\run_01\\D05_invalid_control_nan_20260918_213613_620343.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": null,
+      "sensor_to_control_avg_ms": 13.28,
+      "sensor_to_control_p95_ms": 16.0,
+      "sensor_to_control_p99_ms": 16.0,
+      "sensor_to_control_max_ms": 16.0
+    },
+    {
+      "scenario": "D06_throttle_brake_conflict",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\D06_throttle_brake_conflict\\seed_0\\run_01\\D06_throttle_brake_conflict_20260918_213635_309633.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": null,
+      "sensor_to_control_avg_ms": 14.276666666666667,
+      "sensor_to_control_p95_ms": 16.0,
+      "sensor_to_control_p99_ms": 16.0,
+      "sensor_to_control_max_ms": 32.0
+    },
+    {
+      "scenario": "D07_low_ttc_emergency_brake",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\D07_low_ttc_emergency_brake\\seed_0\\run_01\\D07_low_ttc_emergency_brake_20260918_213657_624951.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": 4.95461893081665,
+      "sensor_to_control_avg_ms": 14.8725,
+      "sensor_to_control_p95_ms": 16.749999999999318,
+      "sensor_to_control_p99_ms": 31.0,
+      "sensor_to_control_max_ms": 32.0
+    },
+    {
+      "scenario": "D08_command_conflict_red_light_continue",
+      "seed": 0,
+      "repeat": 1,
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "summary": "artifacts\\carla_matrix\\coverage_20260918\\D08_command_conflict_red_light_continue\\seed_0\\run_01\\D08_command_conflict_red_light_continue_20260918_213725_156672.summary.json",
+      "resumed": false,
+      "score": 25.0,
+      "collision_count": 0,
+      "red_light_violation_count": 0,
+      "route_deviation_count": 0,
+      "min_gap_m": null,
+      "sensor_to_control_avg_ms": 12.748,
+      "sensor_to_control_p95_ms": 16.0,
+      "sensor_to_control_p99_ms": 16.0,
+      "sensor_to_control_max_ms": 31.0
+    }
+  ]
+}

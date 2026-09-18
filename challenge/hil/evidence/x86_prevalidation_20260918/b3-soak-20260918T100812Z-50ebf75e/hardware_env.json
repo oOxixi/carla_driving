@@ -1,0 +1,140 @@
+{
+  "device_class": "X86_WORKSTATION",
+  "run_started_at_utc": "2026-09-18T10:08:15.696043+00:00",
+  "host": {
+    "hostname": "LAPTOP-RG7O496D",
+    "os": "Windows-11-10.0.26200-SP0",
+    "kernel": "10.0.26200",
+    "cpu_model": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "cpu_cores": 20,
+    "cpu_max_mhz": null
+  },
+  "memory_total_mib": null,
+  "background_load_cpu_percent": 6.2,
+  "power_source": "AC",
+  "cpu_frequency": {
+    "current_mhz": 2600.0,
+    "max_mhz": 2600.0
+  },
+  "cpu_calibration_ms": 3.9279,
+  "python": {
+    "version": "3.12.9",
+    "executable": "C:\\Users\\吴奕铭\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
+  },
+  "runtime_libraries": {
+    "torch": "2.6.0",
+    "onnxruntime": "1.27.0",
+    "onnx": "1.22.0",
+    "numpy": "2.4.6",
+    "Pillow": "12.3.0",
+    "jsonschema": "4.26.0",
+    "psutil": "7.2.2"
+  },
+  "clock": {
+    "source": "perf_counter_ns",
+    "resolution_ns": 100.0,
+    "platform_monotonic_resolution_ns": 15625000.0
+  },
+  "accelerator": {
+    "kind": "cpu",
+    "name": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "driver": null,
+    "runtime_version": "1.27.0"
+  },
+  "bpu": null,
+  "openexplorer": null,
+  "model_artifact": {
+    "path": null,
+    "sha256": null,
+    "size_bytes": null,
+    "format": null
+  },
+  "model_seed": 20260911,
+  "teacher_baselines": {
+    "v1": {
+      "label": "v1",
+      "manifest_path": "challenge/teacher_baseline_manifest.json",
+      "status": "PINNED",
+      "manifest_sha256": "0c506c080f950a968ee531787ab9362ed6dc3c3aaf779cd338fe0fa4da2ab6ad",
+      "baseline_id": "teacher-baseline-v1",
+      "git_sha": "a05c8b76efcd4c176965223c661f40b153cb1836",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "verification_status": "PINNED_ARTIFACT_VERIFIED_B2_BENCHMARK_PENDING",
+      "source_branch": "main",
+      "input_contract": {
+        "name": "ModelRequest V1",
+        "schema_version": "1.0",
+        "canonical_json_sha256": "7e68bc0d43ea2a37643c0dbf846766202b7f206190475d6b917471ffcd1a4ccf"
+      },
+      "output_contract": {
+        "name": "ManeuverPlan V2",
+        "schema_version": "2.0",
+        "canonical_json_sha256": "6fb4c94c73b493be107cda3abef64033efdec88918887a4ae0e66120aa72b0d7"
+      },
+      "serving": null,
+      "dtype": null,
+      "git_tag": {
+        "tag": "teacher-baseline-v1",
+        "sha": "a05c8b76efcd4c176965223c661f40b153cb1836",
+        "reason": null
+      }
+    },
+    "v4": {
+      "label": "v4",
+      "manifest_path": "challenge/teacher_pinned_manifest_v4.json",
+      "status": "PINNED",
+      "manifest_sha256": "852e4f4a7118d7638a2646e04dd1a6f5c25276973f897de2380a90fbd7521654",
+      "baseline_id": "b1-pinned-teacher-v4",
+      "git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "verification_status": null,
+      "source_branch": null,
+      "input_contract": null,
+      "output_contract": null,
+      "serving": {
+        "vllm_version": "0.29.0",
+        "torch_version": "2.13.0+cu132",
+        "flashinfer_sampler": false,
+        "max_num_seqs": 1,
+        "gpu_memory_utilization": 0.7,
+        "image_max_side": 224
+      },
+      "dtype": "bfloat16",
+      "git_tag": {
+        "tag": "teacher-baseline-v4",
+        "sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+        "reason": null
+      }
+    },
+    "active": "v4",
+    "model_identity_consistent": true,
+    "model_identity_fields": [
+      "model_id",
+      "model_revision",
+      "artifact_fingerprint_sha256"
+    ]
+  },
+  "identity": {
+    "git_sha": "f8e567ef8cd3cce592b920947dee9c6a2f3a9cf0",
+    "model_id": "student-v0-r3-fp32",
+    "model_sha256": "ffb1ed5e9b23aa7100343bb4f02c8cfef3da5049e9c5eba4c0e66247c96ee243",
+    "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
+    "config_id": "student-v0-r3-structure-20260911",
+    "gate_status": "NOT_PROVIDED",
+    "weights_manifest": null,
+    "complete": true,
+    "missing": []
+  },
+  "power_measurement": {
+    "method": "NOT_MEASURED",
+    "probe_point": "NOT_MEASURED",
+    "sampling_hz": 1.0,
+    "notes": ""
+  },
+  "thermal": null,
+  "cpu_governor": null
+}

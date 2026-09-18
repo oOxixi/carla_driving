@@ -1,0 +1,239 @@
+{
+  "schema_version": "1.0",
+  "run_id": "b3-20260918T100755Z-35051d77",
+  "created_at_utc": "2026-09-18T10:08:07.583174+00:00",
+  "claim_scope": "X86_PRE_VALIDATED",
+  "identity": {
+    "git_sha": "64577ea046ced0fef3a177f39d88280a82f45253",
+    "model_id": "student-v0-r3-fp32",
+    "model_sha256": "b4493f3fdb00f6673520bebd64f7915b37f5ecdc9d65737226046b12d74d434f",
+    "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
+    "config_id": "student-v0-r3-structure-20260911",
+    "gate_status": "NOT_PROVIDED",
+    "weights_manifest": null,
+    "complete": true,
+    "missing": []
+  },
+  "file_count": 29,
+  "files": {
+    "backend_consistency.json": {
+      "size_bytes": 130,
+      "sha256": "4b65aa578d391702b831787cb9609bde1cb26a743d67a104f26133a67e282ad9"
+    },
+    "consistency_report.json": {
+      "size_bytes": 17996,
+      "sha256": "7593e61087f85a42e51d94bb08ba6e314e0a5543df505d79e2a89a09730eee71"
+    },
+    "failure_cases/degenerate_deadline.json": {
+      "size_bytes": 2815,
+      "sha256": "cf14de184058ca975e2ed539f6d8ef19e1e2dcc840f6bffb297fd012a8405639"
+    },
+    "failure_cases/empty_source_text.json": {
+      "size_bytes": 2744,
+      "sha256": "550b3b5c0e7d4ebd950b7548a5780acd5c2fa30e9cb8e0810f5c79d0f18c798b"
+    },
+    "failure_cases/failure_summary.json": {
+      "size_bytes": 1540,
+      "sha256": "9bf6001fa6e85ed034b57bd85b24f9385c157fb6c4f5e50df3faa60c3a91a5f5"
+    },
+    "failure_cases/infinite_relative_speed.json": {
+      "size_bytes": 2801,
+      "sha256": "d87aad9a5b6082fd5aaecfd5bb5b1062f92237d13419f544882114769cdf5813"
+    },
+    "failure_cases/missing_rgb_file.json": {
+      "size_bytes": 2655,
+      "sha256": "6e11efbd64440b48f499fadf22374b73d4dae4e90ce0fb17ac05ed4673b33353"
+    },
+    "failure_cases/missing_rgb_ref.json": {
+      "size_bytes": 2641,
+      "sha256": "bfb356fc424649a7cd9b0dfad076c352818a82fb7beb992f9baf4602f92197ae"
+    },
+    "failure_cases/missing_targets_key.json": {
+      "size_bytes": 2461,
+      "sha256": "1bfe825ff2547b558530900282cd65a98a7f5bafea4dd77d5e2f581eee185245"
+    },
+    "failure_cases/must_stop_with_narrow_allowlist.json": {
+      "size_bytes": 2790,
+      "sha256": "8353a93974878e5f110c6d80b086e41a3dcc0a8548684d324479a898ca38370d"
+    },
+    "failure_cases/nan_target_distance.json": {
+      "size_bytes": 2768,
+      "sha256": "175acd42336848b9ca81065f974db8dc30a725a10bfea280515a6f42f0c967e7"
+    },
+    "failure_cases/source_text_over_32_chars.json": {
+      "size_bytes": 3042,
+      "sha256": "ee508fde22207edb026b7fb6af3f9584e8f855d214d75118548d91c896ed8079"
+    },
+    "failure_cases/targets_over_8.json": {
+      "size_bytes": 4979,
+      "sha256": "4d14b857bcfe002903e665360ca795d71e0f1c2b466850af3ad88092637bf59f"
+    },
+    "handoff/handoff.jsonl": {
+      "size_bytes": 21044,
+      "sha256": "3f2451b2b83fbaf4f06e4eab52e380a6c0e8b672a36470e995234dcf14d7e516"
+    },
+    "handoff/handoff_summary.json": {
+      "size_bytes": 907,
+      "sha256": "bef7fafcf9cab6ee525572819cd58dfd2ed16c7e451ec651a059d09ce3686beb"
+    },
+    "handoff/README.md": {
+      "size_bytes": 260,
+      "sha256": "ae5056f3fc6d78f481c9e671e4de2253cfdce18a03fcd8e7d73c6dd855b7e340"
+    },
+    "hardware_env.json": {
+      "size_bytes": 4750,
+      "sha256": "6c685dbba633de8c5b7eaa4d2810dacda3e024c426dec621d6f6feb5f452e18a"
+    },
+    "hil_replay.jsonl": {
+      "size_bytes": 285006,
+      "sha256": "2a63adeb46a02f229b7622b0faafc71dc01c360f440479766093c18b780025e2"
+    },
+    "hil_replay_plans.jsonl": {
+      "size_bytes": 744234,
+      "sha256": "a1992b26ca72c981c2038d19417378bffc31444678021c19993c1a25d458d64c"
+    },
+    "hil_replay_summary.json": {
+      "size_bytes": 709,
+      "sha256": "8ab9092fdf106c116f78889d9b823184143033749a48c966f335355b149df017"
+    },
+    "latency_model_only_raw.csv": {
+      "size_bytes": 48879,
+      "sha256": "31cd485516d47d06b4cd7211376ae78cc3de3b24727c6052b55730c8cb9f862b"
+    },
+    "latency_model_only_summary.json": {
+      "size_bytes": 66597,
+      "sha256": "116183fe5bddfc007a39fefc7d659c599dad5d90907e05676ea383db2f7b8576"
+    },
+    "latency_raw.csv": {
+      "size_bytes": 174403,
+      "sha256": "9a354d5b9f7aa513a23aa63ca75d625340852522929dc22fb405fddfdc2fbe19"
+    },
+    "latency_summary.json": {
+      "size_bytes": 11393,
+      "sha256": "042afe5431524a90d573960fd2866517445c0826efc16ece30245e264ac8b40f"
+    },
+    "memory_raw.csv": {
+      "size_bytes": 1435,
+      "sha256": "b860d52d90f7c2293ca3184eae0cfccc12a6ca775972148fda62014b3b5e2fcc"
+    },
+    "power_raw.csv": {
+      "size_bytes": 1751,
+      "sha256": "3cd244155ea22bd8e0634f02580e989725cdaab5c6482e5e2a12d238c4aac06f"
+    },
+    "schema/columns.json": {
+      "size_bytes": 2589,
+      "sha256": "becf4901bac249dbcca8331782f98a16bce55ab15fdaf5b0572f4f51be20d52c"
+    },
+    "utilization_raw.csv": {
+      "size_bytes": 1473,
+      "sha256": "d341270bba5236c487954ebcb520791ac68c3543a7069be0df22add56ee13ee8"
+    },
+    "x86_test_report.md": {
+      "size_bytes": 6338,
+      "sha256": "479eb52b671133b37fd125c1422d17d40d08f1da6b532029c745c9020373762e"
+    }
+  },
+  "j6p_status": "J6P_PENDING",
+  "capabilities": {
+    "full_chain": true,
+    "model_only": true,
+    "plan_validator": true,
+    "stage_source": "INSTRUMENTED",
+    "notes": [
+      "random-initialized weights (torch.manual_seed=20260911): structure/toolchain validation only"
+    ]
+  },
+  "replay_requests": {
+    "snapshot": "D:\\nana\\carla_driving-new\\carla_driving-new\\challenge\\hil\\frozen\\d2_v1_1_val",
+    "name": "d2_v1_1_val",
+    "case_set_digest_sha256": "003f0ed8e279fef8ac10b77844a73e8e1a5ad5a70e85d80af82435468641eb4d",
+    "cases": 100,
+    "rgb_resolved": 100,
+    "limit": 100
+  },
+  "teacher_baselines": {
+    "v1": {
+      "label": "v1",
+      "manifest_path": "challenge/teacher_baseline_manifest.json",
+      "status": "PINNED",
+      "manifest_sha256": "0c506c080f950a968ee531787ab9362ed6dc3c3aaf779cd338fe0fa4da2ab6ad",
+      "baseline_id": "teacher-baseline-v1",
+      "git_sha": "a05c8b76efcd4c176965223c661f40b153cb1836",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "verification_status": "PINNED_ARTIFACT_VERIFIED_B2_BENCHMARK_PENDING",
+      "source_branch": "main",
+      "input_contract": {
+        "name": "ModelRequest V1",
+        "schema_version": "1.0",
+        "canonical_json_sha256": "7e68bc0d43ea2a37643c0dbf846766202b7f206190475d6b917471ffcd1a4ccf"
+      },
+      "output_contract": {
+        "name": "ManeuverPlan V2",
+        "schema_version": "2.0",
+        "canonical_json_sha256": "6fb4c94c73b493be107cda3abef64033efdec88918887a4ae0e66120aa72b0d7"
+      },
+      "serving": null,
+      "dtype": null,
+      "git_tag": {
+        "tag": "teacher-baseline-v1",
+        "sha": "a05c8b76efcd4c176965223c661f40b153cb1836",
+        "reason": null
+      }
+    },
+    "v4": {
+      "label": "v4",
+      "manifest_path": "challenge/teacher_pinned_manifest_v4.json",
+      "status": "PINNED",
+      "manifest_sha256": "852e4f4a7118d7638a2646e04dd1a6f5c25276973f897de2380a90fbd7521654",
+      "baseline_id": "b1-pinned-teacher-v4",
+      "git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "verification_status": null,
+      "source_branch": null,
+      "input_contract": null,
+      "output_contract": null,
+      "serving": {
+        "vllm_version": "0.29.0",
+        "torch_version": "2.13.0+cu132",
+        "flashinfer_sampler": false,
+        "max_num_seqs": 1,
+        "gpu_memory_utilization": 0.7,
+        "image_max_side": 224
+      },
+      "dtype": "bfloat16",
+      "git_tag": {
+        "tag": "teacher-baseline-v4",
+        "sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+        "reason": null
+      }
+    },
+    "active": "v4",
+    "model_identity_consistent": true,
+    "model_identity_fields": [
+      "model_id",
+      "model_revision",
+      "artifact_fingerprint_sha256"
+    ]
+  },
+  "consistency": {
+    "passed": true,
+    "max_abs_diff_over_all_cases": 7.62939453125e-06,
+    "rtol": 0.0001,
+    "atol": 1e-05
+  },
+  "handoff": {
+    "semantic_failures": 0,
+    "trainable": 0,
+    "robustness_vectors": 10
+  },
+  "backend_consistency": {
+    "status": "PASS",
+    "backend": "StudentBackend.infer",
+    "instrumented": "harness stage path",
+    "plan_step_count": 1
+  }
+}

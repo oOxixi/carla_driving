@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-09-18T10:08:07.477547+00:00",
+  "run_id": "b3-20260918T100755Z-35051d77",
+  "counts": {
+    "semantic_failures": 0,
+    "trainable": 0,
+    "robustness_vectors": 10
+  },
+  "taxonomy_counts": {},
+  "source_snapshot": {
+    "frozen_snapshot": "challenge/hil/frozen/d2_v1_1_val"
+  },
+  "files": {
+    "handoff.jsonl": "D:\\nana\\carla_driving-new\\carla_driving-new\\challenge\\hil\\evidence\\x86_prevalidation_20260918\\b3-20260918T100755Z-35051d77\\handoff\\handoff.jsonl"
+  },
+  "join_key": "sample_id (falls back to case_id for synthetic vectors)",
+  "consumer": "A3 distillation / hard-case mining",
+  "rules": [
+    "only records with usable_for_training=true may enter the training set",
+    "robustness vectors validate fail-closed behaviour, not accuracy",
+    "frozen Test failures must never be used for training"
+  ]
+}

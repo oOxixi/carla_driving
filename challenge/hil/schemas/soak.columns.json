@@ -1,0 +1,14 @@
+{
+  "columns": [
+    "wall_time_utc",
+    "monotonic_ns",
+    "iteration",
+    "outcome",
+    "latency_ms",
+    "rss_kib",
+    "power_w",
+    "bpu_percent",
+    "temperature_c",
+    "notes"
+  ]
+}

@@ -1,0 +1,22 @@
+# B3 HIL / J6P independent measurement toolkit -- Python 3.12
+#
+# The repository already declares the runtime dependencies in
+# `challenge/requirements.txt`; this file records only what the B3 tooling
+# itself needs on top of a checkout that is otherwise already installed.
+#
+# Core (required for every measurement chain)
+numpy>=2,<3
+onnx>=1.17,<2
+onnxruntime>=1.20,<2
+Pillow>=10
+jsonschema>=4.20
+psutil>=5.9
+pytest>=8
+
+# Required only for the `inprocess` adapter and the torch side of the
+# torch-vs-ONNX equivalence check (`--adapter inprocess|both`, `consistency`).
+# Pinned to match challenge/requirements.txt.
+torch>=2.6,<2.7
+
+# `onnx` is used by `challenge/hil/artifact.py`; it is also required by A1's
+# `challenge/export/validate_artifacts.py`. PyYAML is not used by B3.

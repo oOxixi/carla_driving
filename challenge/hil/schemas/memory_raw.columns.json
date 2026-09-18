@@ -1,0 +1,14 @@
+{
+  "columns": [
+    "run_id",
+    "round",
+    "sample_index",
+    "wall_time_utc",
+    "monotonic_ns",
+    "scope",
+    "rss_kib",
+    "peak_rss_kib",
+    "source",
+    "notes"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "requested_duration_s": 15.0,
+  "observed_duration_s": 15.015000000000327,
+  "duration_met": true,
+  "iterations": 899,
+  "outcomes": {
+    "READY": 899
+  },
+  "error_count": 0,
+  "success_rate": 1.0,
+  "latency_ms": {
+    "first_window_p95": 24.24504,
+    "last_window_p95": 24.273400000000002,
+    "overall_p95": 24.15314,
+    "overall_max": 33.4698
+  },
+  "memory_drift_kib": 625.4831460674177,
+  "memory_drift_ratio": 0.0019550733500196668,
+  "recovery_probe": {
+    "requests": 10,
+    "outcomes": {
+      "READY": 10
+    },
+    "errors": 0,
+    "p95_ms": 19.198504999999994
+  },
+  "telemetry": {
+    "memory": {
+      "sample_count": 16,
+      "rss_kib_max": 320572.0,
+      "peak_rss_kib_max": 321756.0,
+      "peak_rss_mib_max": 314.21484375,
+      "source": "psutil"
+    },
+    "power": {
+      "sample_count": 0,
+      "power_w_mean": null,
+      "power_w_max": null,
+      "source": "NOT_APPLICABLE",
+      "probe_point": "NOT_MEASURED",
+      "measured": false
+    },
+    "utilization": {
+      "sample_count": 16,
+      "cpu_percent_max": 1428.1,
+      "bpu_percent_mean": null,
+      "bpu_percent_max": null,
+      "bpu_measured": false
+    },
+    "errors": []
+  },
+  "success": true,
+  "criteria": [
+    "wall-clock duration met",
+    "no failed request during the soak",
+    "recovery probe produced no failed request",
+    "no telemetry sampling error"
+  ],
+  "latency_note": "soak latency includes the per-iteration telemetry sampling used to detect drift; compare it with latency_raw.csv only as a trend, not as an absolute percentile"
+}

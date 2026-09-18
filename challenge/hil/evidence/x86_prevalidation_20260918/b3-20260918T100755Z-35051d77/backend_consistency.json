@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "backend": "StudentBackend.infer",
+  "instrumented": "harness stage path",
+  "plan_step_count": 1
+}
