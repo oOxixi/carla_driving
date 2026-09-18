@@ -1,0 +1,15 @@
+{
+  "columns": [
+    "run_id",
+    "round",
+    "sample_index",
+    "wall_time_utc",
+    "monotonic_ns",
+    "scope",
+    "source",
+    "cpu_percent",
+    "bpu_percent",
+    "ddr_bandwidth_gbps",
+    "notes"
+  ]
+}

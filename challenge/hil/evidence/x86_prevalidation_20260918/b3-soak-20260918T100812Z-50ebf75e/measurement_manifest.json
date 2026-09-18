@@ -1,0 +1,187 @@
+{
+  "schema_version": "1.0",
+  "run_id": "b3-soak-20260918T100812Z-50ebf75e",
+  "created_at_utc": "2026-09-18T10:08:31.908808+00:00",
+  "claim_scope": "X86_PRE_VALIDATED",
+  "identity": {
+    "git_sha": "f8e567ef8cd3cce592b920947dee9c6a2f3a9cf0",
+    "model_id": "student-v0-r3-fp32",
+    "model_sha256": "ffb1ed5e9b23aa7100343bb4f02c8cfef3da5049e9c5eba4c0e66247c96ee243",
+    "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
+    "config_id": "student-v0-r3-structure-20260911",
+    "gate_status": "NOT_PROVIDED",
+    "weights_manifest": null,
+    "complete": true,
+    "missing": []
+  },
+  "file_count": 5,
+  "files": {
+    "hardware_env.json": {
+      "size_bytes": 4604,
+      "sha256": "3addef7f2e35185c9765bf2b23c20fae046e613c8a84f9a79a2c69f96be0d66f"
+    },
+    "stability_logs/memory_during_soak.csv": {
+      "size_bytes": 2131,
+      "sha256": "d053652a5bf00006ac88f64f5544e1532adf3220f81748be9a42fd392f8f0f06"
+    },
+    "stability_logs/soak.jsonl": {
+      "size_bytes": 230809,
+      "sha256": "26707fad05671eacfa1b65f7709228fb5e17535f0f3e7168a4c55d9195fdcd5a"
+    },
+    "stability_logs/soak_summary.json": {
+      "size_bytes": 1621,
+      "sha256": "45ca518dc88f18cceb12ab794806d10e4c96955518e74c7364c3f8c61efd5b1f"
+    },
+    "x86_test_report.md": {
+      "size_bytes": 4323,
+      "sha256": "00258065efddf6f052022877e8431f3180cfc9ffe12d05df98c57afcbe1e6ac2"
+    }
+  },
+  "j6p_status": "J6P_PENDING",
+  "capabilities": {
+    "full_chain": true,
+    "model_only": true,
+    "plan_validator": false,
+    "stage_source": "INSTRUMENTED",
+    "notes": [
+      "model-only chain; adapter runs on host tensors converted from numpy",
+      "no PlanValidator: A4/J6P runtime owns the deployed validation step"
+    ]
+  },
+  "stability": {
+    "requested_duration_s": 15.0,
+    "observed_duration_s": 15.015000000000327,
+    "duration_met": true,
+    "iterations": 899,
+    "outcomes": {
+      "READY": 899
+    },
+    "error_count": 0,
+    "success_rate": 1.0,
+    "latency_ms": {
+      "first_window_p95": 24.24504,
+      "last_window_p95": 24.273400000000002,
+      "overall_p95": 24.15314,
+      "overall_max": 33.4698
+    },
+    "memory_drift_kib": 625.4831460674177,
+    "memory_drift_ratio": 0.0019550733500196668,
+    "recovery_probe": {
+      "requests": 10,
+      "outcomes": {
+        "READY": 10
+      },
+      "errors": 0,
+      "p95_ms": 19.198504999999994
+    },
+    "telemetry": {
+      "memory": {
+        "sample_count": 16,
+        "rss_kib_max": 320572.0,
+        "peak_rss_kib_max": 321756.0,
+        "peak_rss_mib_max": 314.21484375,
+        "source": "psutil"
+      },
+      "power": {
+        "sample_count": 0,
+        "power_w_mean": null,
+        "power_w_max": null,
+        "source": "NOT_APPLICABLE",
+        "probe_point": "NOT_MEASURED",
+        "measured": false
+      },
+      "utilization": {
+        "sample_count": 16,
+        "cpu_percent_max": 1428.1,
+        "bpu_percent_mean": null,
+        "bpu_percent_max": null,
+        "bpu_measured": false
+      },
+      "errors": []
+    },
+    "success": true,
+    "criteria": [
+      "wall-clock duration met",
+      "no failed request during the soak",
+      "recovery probe produced no failed request",
+      "no telemetry sampling error"
+    ],
+    "latency_note": "soak latency includes the per-iteration telemetry sampling used to detect drift; compare it with latency_raw.csv only as a trend, not as an absolute percentile"
+  },
+  "request_source": {
+    "snapshot": "D:\\nana\\carla_driving-new\\carla_driving-new\\challenge\\hil\\frozen\\d2_v1_1_val",
+    "name": "d2_v1_1_val",
+    "case_set_digest_sha256": "003f0ed8e279fef8ac10b77844a73e8e1a5ad5a70e85d80af82435468641eb4d",
+    "cases": 100,
+    "rgb_resolved": 100,
+    "limit": 100
+  },
+  "teacher_baselines": {
+    "v1": {
+      "label": "v1",
+      "manifest_path": "challenge/teacher_baseline_manifest.json",
+      "status": "PINNED",
+      "manifest_sha256": "0c506c080f950a968ee531787ab9362ed6dc3c3aaf779cd338fe0fa4da2ab6ad",
+      "baseline_id": "teacher-baseline-v1",
+      "git_sha": "a05c8b76efcd4c176965223c661f40b153cb1836",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "verification_status": "PINNED_ARTIFACT_VERIFIED_B2_BENCHMARK_PENDING",
+      "source_branch": "main",
+      "input_contract": {
+        "name": "ModelRequest V1",
+        "schema_version": "1.0",
+        "canonical_json_sha256": "7e68bc0d43ea2a37643c0dbf846766202b7f206190475d6b917471ffcd1a4ccf"
+      },
+      "output_contract": {
+        "name": "ManeuverPlan V2",
+        "schema_version": "2.0",
+        "canonical_json_sha256": "6fb4c94c73b493be107cda3abef64033efdec88918887a4ae0e66120aa72b0d7"
+      },
+      "serving": null,
+      "dtype": null,
+      "git_tag": {
+        "tag": "teacher-baseline-v1",
+        "sha": "a05c8b76efcd4c176965223c661f40b153cb1836",
+        "reason": null
+      }
+    },
+    "v4": {
+      "label": "v4",
+      "manifest_path": "challenge/teacher_pinned_manifest_v4.json",
+      "status": "PINNED",
+      "manifest_sha256": "852e4f4a7118d7638a2646e04dd1a6f5c25276973f897de2380a90fbd7521654",
+      "baseline_id": "b1-pinned-teacher-v4",
+      "git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "verification_status": null,
+      "source_branch": null,
+      "input_contract": null,
+      "output_contract": null,
+      "serving": {
+        "vllm_version": "0.29.0",
+        "torch_version": "2.13.0+cu132",
+        "flashinfer_sampler": false,
+        "max_num_seqs": 1,
+        "gpu_memory_utilization": 0.7,
+        "image_max_side": 224
+      },
+      "dtype": "bfloat16",
+      "git_tag": {
+        "tag": "teacher-baseline-v4",
+        "sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+        "reason": null
+      }
+    },
+    "active": "v4",
+    "model_identity_consistent": true,
+    "model_identity_fields": [
+      "model_id",
+      "model_revision",
+      "artifact_fingerprint_sha256"
+    ]
+  }
+}

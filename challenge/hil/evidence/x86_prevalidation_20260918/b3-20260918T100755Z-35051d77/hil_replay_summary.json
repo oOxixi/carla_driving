@@ -1,0 +1,19 @@
+{
+  "case_count": 300,
+  "ready": 300,
+  "rgb_resolved": 300,
+  "structural_pass": 300,
+  "ready_rate": 1.0,
+  "rgb_resolution_rate": 1.0,
+  "structural_pass_rate": 1.0,
+  "teacher_comparison": "DIAGNOSTIC_ONLY",
+  "teacher_comparison_reason": "Student weights are not A3-gated in this run; behaviour match is recorded for toolchain validation and must not be read as accuracy.",
+  "requests": {
+    "snapshot": "D:\\nana\\carla_driving-new\\carla_driving-new\\challenge\\hil\\frozen\\d2_v1_1_val",
+    "name": "d2_v1_1_val",
+    "case_set_digest_sha256": "003f0ed8e279fef8ac10b77844a73e8e1a5ad5a70e85d80af82435468641eb4d",
+    "cases": 100,
+    "rgb_resolved": 100,
+    "limit": 100
+  }
+}

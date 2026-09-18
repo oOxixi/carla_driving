@@ -1,0 +1,61 @@
+{
+  "case_count": 10,
+  "verdicts": {
+    "OBSERVED_FAIL_CLOSED": 10
+  },
+  "expectation_match": 10,
+  "expectation_mismatch": [],
+  "policy_note": "The harness records runtime behaviour on abnormal input; whether each verdict passes the gate is B2's decision.",
+  "cases": [
+    {
+      "case_id": "missing_rgb_ref",
+      "verdict": "OBSERVED_FAIL_CLOSED",
+      "outcome": "READY"
+    },
+    {
+      "case_id": "missing_rgb_file",
+      "verdict": "OBSERVED_FAIL_CLOSED",
+      "outcome": "READY"
+    },
+    {
+      "case_id": "source_text_over_32_chars",
+      "verdict": "OBSERVED_FAIL_CLOSED",
+      "outcome": "READY"
+    },
+    {
+      "case_id": "targets_over_8",
+      "verdict": "OBSERVED_FAIL_CLOSED",
+      "outcome": "READY"
+    },
+    {
+      "case_id": "nan_target_distance",
+      "verdict": "OBSERVED_FAIL_CLOSED",
+      "outcome": "READY"
+    },
+    {
+      "case_id": "infinite_relative_speed",
+      "verdict": "OBSERVED_FAIL_CLOSED",
+      "outcome": "READY"
+    },
+    {
+      "case_id": "missing_targets_key",
+      "verdict": "OBSERVED_FAIL_CLOSED",
+      "outcome": "ERROR"
+    },
+    {
+      "case_id": "empty_source_text",
+      "verdict": "OBSERVED_FAIL_CLOSED",
+      "outcome": "READY"
+    },
+    {
+      "case_id": "degenerate_deadline",
+      "verdict": "OBSERVED_FAIL_CLOSED",
+      "outcome": "READY"
+    },
+    {
+      "case_id": "must_stop_with_narrow_allowlist",
+      "verdict": "OBSERVED_FAIL_CLOSED",
+      "outcome": "READY"
+    }
+  ]
+}

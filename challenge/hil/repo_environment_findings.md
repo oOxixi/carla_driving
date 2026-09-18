@@ -1,0 +1,137 @@
+# B3 验证过程中发现的仓库环境问题
+
+> 记录人：B3（独立实测）　核对版本：`challenge` @ `64577ea0`　日期：2026-09-18
+>
+> 按团队约定，B3 **不修改已有文件**。本文件只记录现象、证据与建议修法，是否修复由
+> 仓库维护者决定；每一条都附带 B3 的实际绕行方式，便于他人复现。
+
+## F1. `scripts/run_scenario_runner.ps1` 的 PYTHONPATH 指向错误层级
+
+**现象**：按该脚本运行 ScenarioRunner 会在 import 阶段直接失败。
+
+```
+ModuleNotFoundError: No module named 'agents'
+```
+
+**根因**：第 15 行
+
+```powershell
+$env:PYTHONPATH = "$repoRoot\CARLA_0.9.16\PythonAPI;$ScenarioRoot;$repoRoot"
+```
+
+CARLA 的 `agents` 包实际位于 `PythonAPI\carla\agents\`，脚本却指向它的**父目录**。
+
+**证据**（同一 venv、同一份 ScenarioRunner，仅改 PYTHONPATH）：
+
+| PYTHONPATH | `import carla` | `import agents` |
+|---|---|---|
+| `<CARLA>\PythonAPI`（脚本现状） | 通过 | 失败：`ModuleNotFoundError` |
+| `<CARLA>\PythonAPI\carla` | 通过 | 通过 |
+
+**影响范围**：仅限该脚本（手工入口）。它被 `README.md:146` 引用，但**没有任何自动流程
+调用它**；主流程 `scripts/run_official_scenes.ps1` 与 Linux 的 `.sh` 脚本走的是
+`python -m integration.carla_runner`，那条路径不 import `agents`/`srunner`，因此不受影响
+（已用 S01 场景实测通过，见 `evidence/carla_smoke_20260918/`）。
+
+**失败模式**：fail-fast、非零退出、错误信息明确，**不会产生静默错误数据**。
+
+**建议修法**（一行）：
+
+```powershell
+# 现状（会导致 agents 找不到）
+$env:PYTHONPATH = "$repoRoot\CARLA_0.9.16\PythonAPI;$ScenarioRoot;$repoRoot"
+
+# 建议（指向包含 agents 的那一层）
+$env:PYTHONPATH = "$repoRoot\CARLA_0.9.16\PythonAPI\carla;$ScenarioRoot;$repoRoot"
+```
+
+**B3 绕行**：直接调用 `external/scenario_runner/scenario_runner.py`，自行设置正确的
+`PYTHONPATH`；或改用 `integration.carla_runner`（主流程路径）。
+
+## F2. ScenarioRunner 钉死的 `numpy==1.24.4` 无法在 Python 3.12 上安装
+
+**现象**：
+
+```
+Collecting numpy==1.24.4 (from -r external/scenario_runner/requirements.txt (line 2))
+  Getting requirements to build wheel: error
+  AttributeError: module 'pkgutil' has no attribute 'ImpImporter'
+```
+
+**根因**：numpy 1.24 早于 Python 3.12（1.26 才支持），只能源码构建，而构建在 3.12 上失败。
+其余 6 个钉死版本（`py-trees`、`Shapely`、`xmlschema`、`opencv-python`、`antlr4`、
+`networkx`）都可用。
+
+**影响范围**：任何想按 ScenarioRunner 官方 `requirements.txt` 安装的环境。它是外部仓库
+的约束，不是本仓库的问题，但会影响复现步骤。
+
+**B3 绕行**：在独立 venv 中用 `numpy==1.26.4` 替代，并把 `contourpy` 降到 `1.3.3`
+以避免 numpy 2.x ABI 冲突（`opencv-python==4.7.0.72` 是按 numpy 1.x 编译的，
+与 numpy 2.x 不兼容，会报 `numpy.core.multiarray failed to import`）。
+
+## F3. CARLA 路径假设与本机实际路径不一致
+
+**现象**：`docs/setup/CARLA.md` 写 `D:\CARLA_0.9.16\CarlaUE4.exe`，
+`scripts/run_scenario_runner.ps1` 写 `$repoRoot\CARLA_0.9.16\PythonAPI`，
+两者都不存在于本机；实际 CARLA 安装在 `D:\CARLA_Latest`。
+
+**影响范围**：所有需要 CARLA Python API 的脚本（主流程 `integration.carla_runner`
+本身只 import `carla`，因此只要解释器能 import carla 就不受影响）。
+
+**B3 绕行**：在仓库根建立 junction，使脚本预期的路径可用（`CARLA_0.9.16/` 已被
+`.gitignore` 覆盖，对版本库零改动）：
+
+```powershell
+New-Item -ItemType Junction -Path "<repo>\CARLA_0.9.16" -Target "D:\CARLA_Latest"
+```
+
+## F4. `run_scenario_runner.ps1` 使用 PATH 上的 `python`
+
+**现象**：脚本用 `$pythonExe = (Get-Command python -ErrorAction Stop).Source`，本机解析到
+**Python 3.10**，而 CARLA 0.9.16 的 wheel 是 **cp312**，3.10 下没有 `carla` 模块。
+
+对比：`scripts/run_official_scenes.ps1` 会先尝试 `py -3.12` 并校验版本，做法更稳。
+
+**影响范围**：仅该脚本。除非用户的 `python` 恰好指向装了 carla 的解释器，否则也会失败
+（即使修好 F1）。
+
+**B3 绕行**：显式使用 `py -3.12`（本机已装 `carla 0.9.16`），或在 venv 中激活后调用。
+
+## F5. 接入 Qwen 时 `--realtime` 不可省，否则请求会因 deadline 过期被拒
+
+**现象**：不带 `--realtime` 跑带 Qwen 的 CARLA 闭环时，Qwen 请求失败、车辆全程保持 HOLD、
+场景判定 FAILED。
+
+**证据**（同一条命令，仅差 `--realtime` 一个参数）：
+
+| 运行 | 服务端日志 | runner 日志 | 场景 |
+|---|---|---|---|
+| 不加 `--realtime` | `POST /infer → 408` | `TIMED_OUT` / `QWEN_TIMEOUT` | FAILED（`target_speed_kph`） |
+| 加 `--realtime` | `POST /infer → 200` | `SLOW_READY` → `PLAN_COMPLETE` | **SUCCEEDED 25/25** |
+
+**根因**：服务端返回的是 **408 `REQUEST_EXPIRED`**（不是 504 模型超时），即请求到达时它自己的
+`deadline_ns`（提交时刻 + 300 ms）已经过期。不加 `--realtime` 时主循环满速运行抢占 GIL，
+Qwen 工作线程拿不到时间片，导致 HTTP 请求发出过晚。
+
+**影响范围**：任何手工调用 `integration.carla_runner` 并接入 Qwen 的场景。官方脚本
+`scripts/run_official_scenes.ps1` 本身就带 `--realtime`，因此官方路径不受影响。
+
+**B3 绕行**：按官方参数加 `--realtime`。附带价值：这次失败顺带验证了 **fail-closed 的真实
+行为**——Qwen 超时后编排器没有放行推进，而是落到 HOLD 并保持制动（brake 0.55）。
+
+**建议**：若希望不带 `--realtime` 也能用于快速冒烟，需要在文档里明确这一约束，或说明
+`--qwen-timeout-ms` 与运行模式的关系。
+
+## F6（信息）B3 为 CARLA 准备的环境
+
+| 项 | 值 |
+|---|---|
+| venv | `D:\nana\carla_env`（Python 3.12.9，26 个包，296 MB） |
+| CARLA 客户端 | `0.9.16`（用 `D:\CARLA_Latest\PythonAPI\carla\dist` 里的 cp312 wheel） |
+| 关键替代 | `numpy 1.26.4`（替代钉死的 1.24.4）、`contourpy 1.3.3`、`opencv-python 4.7.0.72` |
+| ScenarioRunner | `external/scenario_runner` @ `94ff3b8af752bad2b9d464ad5105868906aa34c0` |
+| 依赖一致性 | `pip check` → No broken requirements found |
+| 冻结清单 | `D:\nana\carla_env\requirements-frozen.txt` |
+
+该环境与产出 B3 证据的解释器（系统 `py -3.12`）**完全隔离**：后者仍是
+`numpy 2.4.6` / `torch 2.6.0+cpu` / `onnxruntime 1.27.0`，未受任何影响。

@@ -1,0 +1,27 @@
+{
+  "columns": [
+    "run_id",
+    "round",
+    "case_id",
+    "sample_id",
+    "scenario_id",
+    "request_id",
+    "outcome",
+    "rgb_resolved",
+    "rgb_sha256",
+    "teacher_behavior_sequence",
+    "student_behavior_sequence",
+    "behavior_match_ratio",
+    "teacher_target_sequence",
+    "student_target_sequence",
+    "target_match_ratio",
+    "plan_step_count",
+    "structural_failures",
+    "diagnostic_only",
+    "model_id",
+    "model_sha256",
+    "config_id",
+    "dataset_version",
+    "git_sha"
+  ]
+}
