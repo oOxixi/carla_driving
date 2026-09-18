@@ -14,6 +14,7 @@ def write_training_report(
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     last_validation = history[-1].get("validation", {}) if history else {}
+    best_validation = summary.get("best_validation", {})
     lines = [
         "# A3 Training Run",
         "",
@@ -30,17 +31,26 @@ def write_training_report(
         f"- Candidate gate status: `{summary.get('candidate_gate_status')}`",
         f"- Validation hard cases: `{summary.get('hard_case_count')}`",
         "",
-        "## Last validation",
+        "## Selected best-checkpoint validation",
         "",
     ]
-    for name, value in sorted(last_validation.items()):
+    for name, value in sorted(best_validation.items()):
         lines.append(f"- {name}: `{_format(value)}`")
     lines.extend([
         "",
-        "Smoke and integration-gate values prove pipeline health only. They are not",
-        "competition accuracy and must not be used to tune against frozen Test data.",
+        "## Last epoch validation (may differ from selected checkpoint)",
         "",
     ])
+    for name, value in sorted(last_validation.items()):
+        lines.append(f"- {name}: `{_format(value)}`")
+    lines.append("")
+    if summary.get("smoke_only") or summary.get("integration_smoke_only"):
+        lines.append("Smoke values prove pipeline health only, not model accuracy.")
+    else:
+        lines.append(
+            "This is development Validation, not an independent unseen-scenario or competition score."
+        )
+    lines.extend(["Frozen Test data must never be used for A3 tuning.", ""])
     temporary = destination.with_name(destination.name + ".tmp")
     temporary.write_text("\n".join(lines), encoding="utf-8")
     temporary.replace(destination)

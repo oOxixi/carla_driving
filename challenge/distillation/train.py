@@ -319,6 +319,12 @@ def run_training(
     if not best_path.is_file():
         raise RuntimeError("training produced no finite validation candidate")
     load_checkpoint(best_path, model=model, map_location=device)
+    # The best categorical score can tie across epochs while regression heads
+    # continue changing. Candidate evidence must describe the loaded weights,
+    # not whichever epoch happened to run last.
+    best_validation = evaluate(
+        model, val_loader, loss_fn, device=device, max_targets=max_targets,
+    )
     hard_rows = []
     model.eval()
     with torch.no_grad():
@@ -336,7 +342,7 @@ def run_training(
         output_dir,
         model=model,
         identity=metadata,
-        validation=history[-1]["validation"] if history else {},
+        validation=best_validation,
         checkpoint_sha256=best_checkpoint_sha,
     )
     summary = {
@@ -350,6 +356,7 @@ def run_training(
         "global_step": global_step,
         "selection_metric": selection_metric,
         "best_metric": best_metric,
+        "best_validation": best_validation,
         "best_checkpoint": str(best_path),
         "best_checkpoint_sha256": best_checkpoint_sha,
         "candidate_weights": candidate["weights_path"],
