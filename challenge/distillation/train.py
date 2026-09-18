@@ -12,10 +12,14 @@ from copy import deepcopy
 import importlib
 import json
 import math
+import os
 from pathlib import Path
 import random
 import subprocess
 from typing import Any, Mapping
+
+# Required by CUDA deterministic GEMM; set before CUDA is initialized.
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
 
 import torch
 from torch.utils.data import DataLoader
@@ -209,6 +213,8 @@ def run_training(
         "dataset_version": dataset_version,
         "config_id": str(cfg["config_id"]),
         "seed": seed,
+        "deterministic_algorithms": True,
+        "cublas_workspace_config": os.environ["CUBLAS_WORKSPACE_CONFIG"],
         "smoke_only": bool(smoke),
         "integration_smoke_only": bool(integration_smoke),
         "class_balance": {
@@ -612,8 +618,13 @@ def _device(value: str) -> torch.device:
 
 
 def _seed_everything(seed: int) -> None:
+    if os.environ.get("CUBLAS_WORKSPACE_CONFIG") not in {":4096:8", ":16:8"}:
+        raise RuntimeError("deterministic CUDA training requires CUBLAS_WORKSPACE_CONFIG")
     random.seed(seed)
     torch.manual_seed(seed)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    torch.use_deterministic_algorithms(True)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 

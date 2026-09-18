@@ -8,8 +8,9 @@ Train/Validation label-coverage report before comparing experiments. Run
 Train/Validation RGB through A1's real four-modal input path. The targeted B1
 follow-up is in [B1_D2_COVERAGE_REQUEST.md](B1_D2_COVERAGE_REQUEST.md). The
 D2 mixed-cohort formal training entry now has its own signed-release policy
-and configuration, but has not yet been run; it requires a clean commit and
-does not authorize weight promotion. The promotion gate described below
+and configuration; its first baseline and shortcut diagnostics are recorded in
+[D2_FP32_BASELINE_FINDINGS.md](D2_FP32_BASELINE_FINDINGS.md). It requires a
+clean commit and does not authorize weight promotion. The promotion gate described below
 applies to the older single-frozen-Teacher contract, not this mixed-cohort run.
 
 This directory owns knowledge distillation and accuracy recovery only.  It does

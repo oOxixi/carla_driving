@@ -38,6 +38,8 @@ def test_mock_training_saves_reproducible_checkpoint_and_metrics(tmp_path: Path)
     assert summary["smoke_only"] is True
     assert summary["train_samples"] + summary["validation_samples"] == 64
     assert summary["epochs_completed"] == 2
+    assert summary["deterministic_algorithms"] is True
+    assert summary["cublas_workspace_config"] in {":4096:8", ":16:8"}
     assert summary["global_step"] > 0
     assert len(summary["best_checkpoint_sha256"]) == 64
     assert (tmp_path / "student_fp32_best.pt").is_file()

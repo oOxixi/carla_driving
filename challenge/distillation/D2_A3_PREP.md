@@ -44,6 +44,8 @@ A3 派生普通监督视图额外排除：
 
 当前正样本 Train/Val 还都没有 `YIELD`、`PULL_OVER`、`HOLD` Behavior 标签。针对总量、地图、安全切片、计划长度与缺失标签的具体 B1 补采请求见 [B1_D2_COVERAGE_REQUEST.md](B1_D2_COVERAGE_REQUEST.md)。这些不能通过复制样本、将 hard negative 当正例或手工扩写 Teacher plan 补足。
 
+首轮正式 FP32 基线已完成；当前 Val 与 Train 的指令文本/场景 ID 全部重合，纯文本查表可达到 97.55% 的同口径类别计划匹配，因此高 Val 分数不能作为泛化证明。基线指标、模态遮蔽、checkpoint SHA 和复现性证据见 [D2_FP32_BASELINE_FINDINGS.md](D2_FP32_BASELINE_FINDINGS.md)。
+
 ## 服务器路径与复现命令
 
 独立工作目录：`/home/tiaozhansai/carla-driving-challenge-a3-prep`。
@@ -72,17 +74,17 @@ python -m challenge.distillation.train \
 ```
 
 两步 Smoke 输出：`artifacts/challenge/distillation/d2_v1_1_smoke/integration_gate/`。
-策略 `signed_d2_release_smoke` 只允许 integration smoke，不能把 Smoke checkpoint 当正式 Student。另备 `d2_v1_1_formal_config.yaml` 与 `signed_d2_release_formal` 门禁：必须在干净提交上运行，检查 B1 release、A3 view 全部文件、样本分区、Teacher cohort manifests、全量 RGB/标签预检；训练产物带两个 manifest SHA 并保持 `PENDING_A3_FP32_GATE`。**目前只验证了正式门禁，尚未执行正式多轮训练，也未批准 FP32 晋级。**正式训练基线命令：
+策略 `signed_d2_release_smoke` 只允许 integration smoke，不能把 Smoke checkpoint 当正式 Student。`d2_v1_1_formal_config.yaml` 与 `signed_d2_release_formal` 门禁必须在干净提交上运行，检查 B1 release、A3 view 全部文件、样本分区、Teacher cohort manifests、全量 RGB/标签预检；训练产物带两个 manifest SHA 并保持 `PENDING_A3_FP32_GATE`。**正式多轮基线已在服务器完成，但未批准 FP32 晋级。**正式训练基线命令：
 
 ```bash
 python -m challenge.distillation.train \
   --config challenge/distillation/d2_v1_1_formal_config.yaml
 ```
 
-该命令必须等本轮代码完成审查并提交为干净版本后执行。混合 Teacher cohort 的独立 B2 评测与晋级证据契约仍待确认，不能用既有单 Teacher 晋级口径直接放行。
+该命令只能在经过审查的干净代码上执行。混合 Teacher cohort 的独立 B2 评测与晋级证据契约仍待确认，不能用既有单 Teacher 晋级口径直接放行。
 
 ## 之后如何分工
 
 所有实验使用同一份固定 Train/Val 和同一个派生视图 manifest，不要按人随机分拆样本后各报准确率。可并行分配损失权重、采样/类别平衡、模型容量或优化器实验；每个实验单独配置、随机种子、输出目录，提交代码 SHA、B1 release manifest SHA、A3 view manifest SHA、训练日志、各 Head Val 指标、安全关键召回、难例分类和 checkpoint SHA。Reserved 候选仅供 B1/B2 保管，不用于训练、调参或选 checkpoint。
 
-第一轮实验建议固定 A1 Student 结构、数据视图和优化器，只比较基线 loss 与安全类加权/类平衡；第二轮依据**同一 Val** 的各 Head 和安全切片确定优先修复项，不能因个别切片只有 1 条就宣布提升。每个候选先通过数据签名、全量预检、训练可复现及 B2 离线评测，达到条件后才能申报 `student_fp32_best`。正式入口现已实现但尚未执行；它只生成待审 Candidate，不自行判定精度门槛通过。
+首轮基线已跑通。由于当前 Val 模板完全重合，后续不应围绕它的 100% 类别准确率反复调参；先由 B1/B2 建立未见模板/场景的独立口径，再在固定 Train/Val 上比较安全加权、类平衡和速度难例处理。每个候选先通过数据签名、全量预检、训练可复现及 B2 离线评测，达到条件后才能申报 `student_fp32_best`。正式入口只生成待审 Candidate，不自行判定精度门槛通过。
