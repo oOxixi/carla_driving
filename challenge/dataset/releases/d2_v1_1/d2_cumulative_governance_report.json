@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "policy": "Cumulative D2 governance. Historical D1/Wave1 exclusions remain immutable; Teacher-v4 Wave2 corrected recollection is semantically audited before eligibility.",
+  "challenge_git_sha": "60463c20b32bed51017a4bd24b79da86792b316e",
+  "teacher_v4_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+  "sources": {
+    "previous_training_eligibility_report": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_teacher_v4_sync/artifacts/b1_training_eligibility_v4/training_eligibility_report.json",
+      "sha256": "83863dd2cc83a3764fb2e0b90781ba00cb87adfb68db372b43f2869e9087568a"
+    },
+    "wave2_valid_jsonl": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_teacher_v4_sync/artifacts/b1_d2_wave2_2000_teacher_v4/dataset/d2_valid.jsonl",
+      "sha256": "3d3fdf973865c18e21d341ed5360fb0275f39ca0a3107b7197f3bbcf707db961",
+      "rows": 2461
+    },
+    "wave2_freeze_manifest": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_teacher_v4_sync/artifacts/b1_d2_wave2_2000_teacher_v4/freeze_manifest.json",
+      "sha256": "81579e4fb393c1daf4fc4ca678454e8969c5c0aa9d2171a273be6f28c294b64c"
+    }
+  },
+  "wave2_semantic_gate": {
+    "directional_scenario_sample_counts": {
+      "B06_left_turn": 30,
+      "B07_right_turn": 30,
+      "B08_lane_change_left": 30,
+      "B09_lane_change_right": 30,
+      "REG_004_advanced_rain_left_turn": 30,
+      "REG_005_advanced_rain_right_turn": 30,
+      "REG_009_challenge_lane_change_left": 30,
+      "REG_010_challenge_lane_change_right": 30
+    },
+    "directional_unexpected_states": 0,
+    "directional_semantics_status": "PASS",
+    "teacher_v4_provenance_status": "PASS"
+  },
+  "counts": {
+    "historical": {
+      "d1_raw": 133,
+      "wave1_raw": 1198,
+      "historical_raw": 1331,
+      "historical_positive_eligible": 1075,
+      "historical_hard_negative_eligible": 64,
+      "historical_excluded": 192
+    },
+    "wave2": {
+      "raw": 2461,
+      "positive_raw": 2320,
+      "hard_negative_raw": 141,
+      "semantic_excluded": 0,
+      "positive_eligible": 2320,
+      "hard_negative_eligible": 141
+    },
+    "cumulative": {
+      "raw": 3792,
+      "positive_eligible": 3395,
+      "hard_negative_eligible": 205,
+      "total_governed_training_assets": 3600,
+      "excluded": 192
+    }
+  },
+  "status": {
+    "wave2_semantic_governance": "PASS",
+    "wave2_training_eligibility": "PASS",
+    "cumulative_d2_governance": "PASS",
+    "d2_raw_size_gate_3000_5000": "PASS"
+  },
+  "report_canonical_sha256": "674f573e5c4d93268c5cee7144a05d613651b822202fcffc2ee48158cabb2edd"
+}

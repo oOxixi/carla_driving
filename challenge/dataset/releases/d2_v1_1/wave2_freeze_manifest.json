@@ -1,0 +1,50 @@
+{
+  "challenge_git_sha": "444d97cea3a76f6b55a6524a52b0302febde223c",
+  "dataset_version": "teacher_distill_v0.4_d2_expansion_wave2_v4",
+  "executed_runs": 2000,
+  "freeze_name": "b1_d2_wave2_teacher_v4",
+  "freeze_status": "PASS",
+  "hard_negative_reason_counts": {
+    "CLOSED_LOOP_COLLISION": 65,
+    "SAFETY_OVERRIDE_TERMINAL": 25,
+    "SCENARIO_ACCEPTANCE_FAILED": 28,
+    "TEACHER_EXECUTION_NOT_SUCCEEDED:RUNTIME_ENDED": 4,
+    "TEACHER_EXECUTION_NOT_SUCCEEDED:STEP_TIMEOUT": 19
+  },
+  "hard_negative_samples": 141,
+  "log_jsonl_count": 2000,
+  "log_pair_count": 2000,
+  "log_summary_count": 2000,
+  "missing_visual_inputs": 0,
+  "planned_runs": 2000,
+  "positive_samples": 2320,
+  "rejected_samples": 0,
+  "route_regression": {
+    "NO_CANONICAL_SUBMIT": 0,
+    "ROUTE_UNREACHABLE": 0,
+    "distance_contract": 0
+  },
+  "runner_failed_count": 0,
+  "runner_success_count": 2000,
+  "sample_class_counts": {
+    "COMPLEX": 415,
+    "NORMAL": 1917,
+    "SAFETY_CRITICAL": 129
+  },
+  "sha256": {
+    "d2_rejected_jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "d2_valid_jsonl": "3d3fdf973865c18e21d341ed5360fb0275f39ca0a3107b7197f3bbcf707db961",
+    "formal_plan": "28bccc35cc76483b4d7bcfe4c989238eaabc147b99de399cfbdd439e9467a819",
+    "provenance_manifest": "3931262733107822e7d6648f4db99d9399c8df36713f5e32a101c9a34d195fec",
+    "run_state": "0cd19f5658211762c4f14f8ef60fe2e360602b7d3096d9f223339b11d9f45899"
+  },
+  "teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+  "teacher_profile": "b1-pinned-teacher-v4",
+  "unique_group_keys": 2000,
+  "unique_identity_tuples": 2461,
+  "unique_sample_ids": 2461,
+  "valid_samples": 2461,
+  "visual_input_count": 2461,
+  "visual_sha256_mismatch": 0,
+  "visual_size_mismatch": 0
+}

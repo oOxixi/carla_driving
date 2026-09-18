@@ -1,0 +1,136 @@
+{
+  "schema_version": "1.0",
+  "split_version": "b1_d2_provisional_split_v1",
+  "status": "PASS",
+  "policy": {
+    "split_unit": "group_key",
+    "group_atomicity": true,
+    "adjacent_frame_random_split": false,
+    "ratios": {
+      "TRAIN": 0.7,
+      "VAL": 0.15,
+      "RESERVED_TEST_CANDIDATE": 0.15
+    },
+    "role_preservation": true,
+    "historical_exclusions_preserved": true,
+    "note": "D2 provisional group-aware split. D3 later freezes final Train/Val/Test/Calibration/official-like assets."
+  },
+  "challenge_git_sha": "60463c20b32bed51017a4bd24b79da86792b316e",
+  "sources": {
+    "d1": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/artifacts/b1_d1_pinned_formal/dataset/d1_valid.jsonl",
+      "sha256": "5db4901d418e45c0cc392d8f42332ac08a0afea2ae934de2d2a7ea432a504c63",
+      "rows": 133
+    },
+    "wave1": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_gate_d2v2/artifacts/b1_d2_wave1_1000_teacher_v3/dataset/d2_valid.jsonl",
+      "sha256": "b9c79540f88cead950191f2ae28ff17223ccdc7677c0c03ac5cf0b6e45eb3c34",
+      "rows": 1198
+    },
+    "wave2": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_teacher_v4_sync/artifacts/b1_d2_wave2_2000_teacher_v4/dataset/d2_valid.jsonl",
+      "sha256": "3d3fdf973865c18e21d341ed5360fb0275f39ca0a3107b7197f3bbcf707db961",
+      "rows": 2461
+    },
+    "historical_eligibility_report": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_teacher_v4_sync/artifacts/b1_training_eligibility_v4/training_eligibility_report.json",
+      "sha256": "83863dd2cc83a3764fb2e0b90781ba00cb87adfb68db372b43f2869e9087568a"
+    },
+    "cumulative_governance_report": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_teacher_v4_sync/artifacts/b1_d2_cumulative_governance_v5/d2_cumulative_governance_report.json",
+      "sha256": "49310a3b8b6a8dea7b14c074049e8d1ac4674da253c836091e8a0ffb8f93ce9f"
+    }
+  },
+  "counts": {
+    "raw": 3792,
+    "governed_assets": 3600,
+    "positive": 3395,
+    "hard_negative": 205,
+    "excluded": 192,
+    "unique_groups": 2898,
+    "target_ratios": {
+      "TRAIN": 0.7,
+      "VAL": 0.15,
+      "RESERVED_TEST_CANDIDATE": 0.15
+    },
+    "actual_ratios": {
+      "TRAIN": 0.7,
+      "VAL": 0.15,
+      "RESERVED_TEST_CANDIDATE": 0.15
+    },
+    "ratio_deviation": {
+      "TRAIN": 0.0,
+      "VAL": 0.0,
+      "RESERVED_TEST_CANDIDATE": 0.0
+    },
+    "splits": {
+      "TRAIN": {
+        "samples": 2520,
+        "groups": 1818,
+        "positive": 2377,
+        "hard_negative": 143,
+        "sources": {
+          "D1": 94,
+          "D2_WAVE1": 733,
+          "D2_WAVE2": 1693
+        },
+        "scenario_families": {
+          "lateral_B": 428,
+          "qwen_fullchain": 42,
+          "qwen_routing": 73,
+          "regression": 725,
+          "safety_D": 517,
+          "smoke": 735
+        }
+      },
+      "VAL": {
+        "samples": 540,
+        "groups": 540,
+        "positive": 509,
+        "hard_negative": 31,
+        "sources": {
+          "D1": 14,
+          "D2_WAVE1": 132,
+          "D2_WAVE2": 394
+        },
+        "scenario_families": {
+          "lateral_B": 96,
+          "qwen_fullchain": 20,
+          "qwen_routing": 37,
+          "regression": 150,
+          "safety_D": 183,
+          "smoke": 54
+        }
+      },
+      "RESERVED_TEST_CANDIDATE": {
+        "samples": 540,
+        "groups": 540,
+        "positive": 509,
+        "hard_negative": 31,
+        "sources": {
+          "D1": 14,
+          "D2_WAVE1": 152,
+          "D2_WAVE2": 374
+        },
+        "scenario_families": {
+          "lateral_B": 105,
+          "qwen_fullchain": 18,
+          "qwen_routing": 35,
+          "regression": 132,
+          "safety_D": 207,
+          "smoke": 43
+        }
+      }
+    }
+  },
+  "gates": {
+    "raw_size_3000_5000": "PASS",
+    "all_eligible_assigned_once": "PASS",
+    "sample_overlap_zero": "PASS",
+    "group_overlap_zero": "PASS",
+    "split_ratio_within_2pct": "PASS",
+    "historical_exclusion_leakage_zero": "PASS",
+    "training_role_preserved": "PASS"
+  },
+  "report_canonical_sha256": "e0990a04fbb5383e28bf1cea59b99ef39f2d190bdcf319442dd3da66b53a3094"
+}

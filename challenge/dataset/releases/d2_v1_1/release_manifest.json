@@ -1,0 +1,88 @@
+{
+  "b1_signoff": {
+    "note": "This release manifest signs the portable release artifacts. source_split_manifest.json is retained only as historical split provenance.",
+    "scope": "D2 downstream release v1.1",
+    "status": "PASS"
+  },
+  "counts": {
+    "images": 3592,
+    "quarantined": 8,
+    "reserved_test_candidates": 540,
+    "total": 3592,
+    "train": 2513,
+    "val": 539
+  },
+  "files": {
+    "quarantine/d1_terminal_state_anomalies.jsonl": {
+      "bytes": 46407,
+      "rows": 8,
+      "sha256": "c332095acab3e9dd773843eca75e898c276a04ae388fa3d2d791412bc083a783"
+    },
+    "reserved_test_candidates.jsonl": {
+      "bytes": 2648804,
+      "rows": 540,
+      "sha256": "f5221930b1c6386105830043c83a7084d1a5a3001e0601660ae482df6b1ce651"
+    },
+    "reserved_test_candidates_sample_ids.txt": {
+      "bytes": 15120,
+      "sha256": "e21e0d2f06d83df085622df9af8830a6a5d2356a29e3b64a94d4dcd417fbc3a5"
+    },
+    "rgb_mapping.json": {
+      "bytes": 1020875,
+      "sha256": "f0de5af15d8b2befeec0bb10a7f45754710a6f4fc4bf517a10a597b5c5222af7"
+    },
+    "source_split_assignments.jsonl": {
+      "bytes": 887918,
+      "sha256": "6cf3a000808ac474ea190dfed8171cc97c56edae738a3be5f24d3ad78c4b28a7"
+    },
+    "source_split_manifest.json": {
+      "bytes": 1113,
+      "sha256": "81f86e39a06b8b465544e122165b6e61c9c18db3471f6a24a64a6e1232ffaff1"
+    },
+    "source_split_report.json": {
+      "bytes": 4229,
+      "sha256": "4890cef17c3b2ab4d8414792aac9fb8ba572fca908e1b503a2fe0350e4034c34"
+    },
+    "train.jsonl": {
+      "bytes": 12292146,
+      "rows": 2513,
+      "sha256": "a1a4d610f54ff28d69f4a78c5b75da3d7f518975f31947557ed9c48326f6fc86"
+    },
+    "train_sample_ids.txt": {
+      "bytes": 70364,
+      "sha256": "04f4f6f84ad698a4bb3952aefa9e7c0ada330299d08dbc748d8591dd9f9efe10"
+    },
+    "val.jsonl": {
+      "bytes": 2644429,
+      "rows": 539,
+      "sha256": "0e2bf42d25ddf4597f18043c097e0dfdcd418f4c38ce5a324abe7623c7df1333"
+    },
+    "val_sample_ids.txt": {
+      "bytes": 15092,
+      "sha256": "2f549bedaf41dff36d4608d53ba146d9b9a5fcd50dc899240d0bd6d7fc26bddc"
+    }
+  },
+  "generated_at_utc": "2026-09-18T06:15:38.641356+00:00",
+  "image_set": {
+    "canonical_format": "<filename>\\t<sha256>, sorted by filename, LF terminated",
+    "canonical_sha256": "4d90c5b581a1509b553f8d5117fe7dd8f0677e2ae5de1b41134a803d805627eb",
+    "count": 3592
+  },
+  "release_policy": {
+    "historical_split_manifest_preserved": true,
+    "portable_rgb_paths": true,
+    "quarantine_file": "quarantine/d1_terminal_state_anomalies.jsonl",
+    "terminal_state_exclusion_rule": "Exclude legacy D1 samples with run_status=FAILED while command_terminal_status=SUCCEEDED and plan_terminal_state=SUCCEEDED.",
+    "terminal_state_inconsistency_exclusions": 8
+  },
+  "release_version": "b1_d2_v1_1",
+  "schema_version": "1.0",
+  "source_release": "b1_d2_v1",
+  "source_split_challenge_git_sha": "60463c20b32bed51017a4bd24b79da86792b316e",
+  "source_split_version": "b1_d2_provisional_split_v1",
+  "status": "B1_SIGNED_PASS",
+  "teacher_v4": {
+    "git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+    "tag": "teacher-baseline-v4"
+  }
+}

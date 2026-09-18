@@ -1,0 +1,69 @@
+{
+  "acquisition": {
+    "invocation_failed_count": 0,
+    "invocation_selected_runs": 2000,
+    "invocation_success_count": 2000,
+    "max_runs": null,
+    "output_root": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_teacher_v4_sync/artifacts/b1_d2_wave2_2000_teacher_v4",
+    "resume": false,
+    "resume_already_succeeded": 0,
+    "start_index": 0,
+    "state_failed_runs": 0,
+    "state_path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_teacher_v4_sync/artifacts/b1_d2_wave2_2000_teacher_v4/run_state.json",
+    "state_recorded_runs": 2000,
+    "state_succeeded_runs": 2000
+  },
+  "collector": {
+    "challenge_branch": "fix/teacher-v4-semantic-sync",
+    "challenge_repo_git_sha": "444d97cea3a76f6b55a6524a52b0302febde223c",
+    "path": "challenge/dataset/collect_d2_wave2.py",
+    "sha256": "72a630db45d141ec417f2e33912a62e168ca975bcf5ef9f1434e135397f37e49"
+  },
+  "dataset_version": "teacher_distill_v0.4_d2_expansion_wave2_v4",
+  "plan": {
+    "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_teacher_v4_sync/artifacts/b1_d2_expansion_plan_wave2_v1/d2_expansion_plan_wave2.json",
+    "plan_canonical_sha256": "c20e997494c67f9238a200e359b81abcd5b7b51aaf365a8d16e7f60ebfddaea8",
+    "plan_file_sha256": "28bccc35cc76483b4d7bcfe4c989238eaabc147b99de399cfbdd439e9467a819",
+    "plan_repo_git_sha": "a5b0258eb3d2d184f053e62b5c382741217259d3",
+    "plan_version": "b1_d2_expansion_wave2_v1",
+    "planned_runs": 2000
+  },
+  "schema_version": "1.0",
+  "teacher": {
+    "teacher_execution_repo": {
+      "git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+      "repo_root": "/home/dcase_task2/dongfeng_voice/carla_main_teacher_refresh",
+      "tracked_worktree_clean": true
+    },
+    "teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+    "teacher_manifest_path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_teacher_v4_sync/challenge/teacher_pinned_manifest_v4.json",
+    "teacher_manifest_sha256": "82aef8a13649cffdd17c9cd64003e3967448773548c2b5fcb15fd3b0d5b08220",
+    "teacher_model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "teacher_model_id": "Qwen/Qwen3.5-2B",
+    "teacher_model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "teacher_profile": "b1-pinned-teacher-v4",
+    "teacher_qwen_mode": "planner_v2",
+    "teacher_runtime_health": {
+      "active_requests": 0,
+      "gpu": {
+        "available": true,
+        "device_index": 0,
+        "device_name": "NVIDIA GeForce RTX 3090",
+        "memory_allocated_bytes": 0,
+        "memory_free_bytes": 9961275392,
+        "memory_reserved_bytes": 0,
+        "memory_total_bytes": 25296044032
+      },
+      "max_concurrency": 1,
+      "model_id": "Qwen/Qwen3.5-2B",
+      "production_ready": true,
+      "qwen_mode": "planner_v2",
+      "reason": "vLLM planner endpoint configured: Qwen/Qwen3.5-2B",
+      "schema_version": "1.0",
+      "status": "READY",
+      "timeout_ms": 5000.0
+    },
+    "teacher_service_url": "http://127.0.0.1:18007",
+    "teacher_tag": "teacher-baseline-v4"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "policy": "Non-destructive derived training eligibility view. Historical D1/D2 JSONL assets remain immutable.",
+  "challenge_git_sha": "41d31542c6c51c2b252ae466c17159eaface8e2e",
+  "sources": {
+    "d1": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/artifacts/b1_d1_pinned_formal/dataset/d1_valid.jsonl",
+      "sha256": "5db4901d418e45c0cc392d8f42332ac08a0afea2ae934de2d2a7ea432a504c63",
+      "rows": 133
+    },
+    "d2": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_gate_d2v2/artifacts/b1_d2_wave1_1000_teacher_v3/dataset/d2_valid.jsonl",
+      "sha256": "b9c79540f88cead950191f2ae28ff17223ccdc7677c0c03ac5cf0b6e45eb3c34",
+      "rows": 1198
+    },
+    "directional_quarantine_ids": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_teacher_v4_sync/artifacts/b1_semantic_governance_v4/directional_quarantine_ids.txt",
+      "sha256": "cd5ebd78674b348a120c4120a9a6a1a955444acf0bacbe4efa14ecda44cd9594",
+      "rows": 189
+    }
+  },
+  "counts": {
+    "d1": {
+      "raw": 133,
+      "directional_quarantine": 8,
+      "legacy_hold": 3,
+      "directional_x_legacy_hold": 0,
+      "excluded_union": 11,
+      "positive_eligible": 122
+    },
+    "d2": {
+      "raw": 1198,
+      "positive_raw": 1134,
+      "hard_negative_raw": 64,
+      "directional_quarantine": 181,
+      "directional_x_positive": 181,
+      "directional_x_hard_negative": 0,
+      "positive_eligible": 953,
+      "hard_negative_eligible": 64
+    },
+    "cumulative": {
+      "positive_eligible": 1075,
+      "hard_negative_eligible": 64,
+      "total_governed_training_assets": 1139
+    }
+  },
+  "status": {
+    "semantic_governance": "PASS",
+    "training_eligibility_set_audit": "PASS"
+  },
+  "report_canonical_sha256": "737d9e24d598a7581fc7a15efb72593bcd46f5f8d595c2ab74bed4ef7ac19264"
+}
