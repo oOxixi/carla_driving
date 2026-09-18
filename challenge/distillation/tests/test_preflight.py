@@ -1,4 +1,5 @@
 from copy import deepcopy
+import hashlib
 import json
 from pathlib import Path
 
@@ -115,3 +116,34 @@ def test_preflight_enforces_pinned_teacher_provenance(tmp_path: Path) -> None:
         "artifact_fingerprint_sha256 does not match" in error["message"]
         for error in rejected["errors"]
     )
+
+
+def test_preflight_accepts_sample_named_portable_rgb(tmp_path: Path) -> None:
+    records = build_mock_records(2)
+    image = tmp_path / "images" / "sample-00000.jpg"
+    image.parent.mkdir()
+    image.write_bytes(b"portable-rgb-test")
+    visual = {
+        "rgb_ref": "images/sample-00000.jpg",
+        "rgb_sha256": hashlib.sha256(image.read_bytes()).hexdigest(),
+        "size_bytes": image.stat().st_size,
+    }
+    for record in records:
+        record["visual_input"] = visual
+        record["input"]["rgb_ref"] = visual["rgb_ref"]
+    train_path, val_path = tmp_path / "train.jsonl", tmp_path / "val.jsonl"
+    _write(train_path, records[:1], "train")
+    _write(val_path, records[1:], "val")
+
+    report = preflight_datasets(
+        train_path, val_path, asset_root=tmp_path, require_rgb=True,
+    )
+    assert report["valid"] is True
+
+    records[1]["visual_input"] = {**visual, "rgb_ref": "../outside.jpg"}
+    _write(val_path, records[1:], "val")
+    rejected = preflight_datasets(
+        train_path, val_path, asset_root=tmp_path, require_rgb=True,
+    )
+    assert rejected["valid"] is False
+    assert any("escapes asset_root" in e["message"] for e in rejected["errors"])

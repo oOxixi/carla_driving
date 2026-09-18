@@ -22,6 +22,8 @@ from torch.utils.data import DataLoader
 import yaml
 
 from challenge.student import StudentModelConfig, StudentPlannerV0
+from challenge.dataset.validate_d2_release import canonical_text_sha256, validate_release
+from challenge.dataset.build_a3_d2_view import VIEW_VERSION
 
 from .class_balance import compute_class_weights
 from .artifacts import export_candidate_weights
@@ -94,7 +96,9 @@ def run_training(
             expected_version=expected_version,
             expected_teacher_git_sha=(
                 str(cfg["teacher"]["git_sha"])
-                if dataset_cfg.get("verify_teacher_identity") else None
+                if dataset_cfg.get("verify_teacher_identity")
+                and cfg["teacher"].get("identity_policy") != "signed_d2_release_smoke"
+                else None
             ),
             expected_teacher_model_id=(
                 str(cfg["teacher"]["model_id"])
@@ -486,7 +490,7 @@ def _validate_frozen_identities(
     cfg: Mapping[str, Any], *, integration_smoke: bool = False,
 ) -> None:
     policy = str(cfg["teacher"].get("identity_policy", "frozen_manifest"))
-    if policy not in {"frozen_manifest", "legacy_unpinned_smoke"}:
+    if policy not in {"frozen_manifest", "legacy_unpinned_smoke", "signed_d2_release_smoke"}:
         raise ValueError(f"unsupported teacher identity_policy: {policy}")
     manifest_path = Path(__file__).resolve().parents[1] / "teacher_baseline_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -500,7 +504,46 @@ def _validate_frozen_identities(
         key: cfg["teacher"].get(key) for key in expected_teacher
     }
     dataset_cfg = cfg["dataset"]
-    if policy == "legacy_unpinned_smoke":
+    if policy == "signed_d2_release_smoke":
+        if not integration_smoke:
+            raise ValueError("signed D2 release policy is limited to integration smoke")
+        if actual_teacher["git_sha"] != "MULTI_PINNED_B1_D2_V1_1":
+            raise ValueError("signed D2 release must identify mixed Teacher baselines")
+        for field in ("model_id", "model_revision", "artifact_fingerprint_sha256"):
+            if actual_teacher[field] != expected_teacher[field]:
+                raise ValueError(f"signed D2 release Teacher {field} mismatch")
+        if dataset_cfg.get("verify_teacher_identity") is not True:
+            raise ValueError("signed D2 release must verify Teacher identity")
+        if dataset_cfg.get("require_pinned_teacher_provenance") is not True:
+            raise ValueError("signed D2 release must require pinned Teacher provenance")
+        if dataset_cfg.get("require_rgb") is not True:
+            raise ValueError("signed D2 release must verify RGB")
+        repo = Path(__file__).resolve().parents[2]
+        view_path = (repo / str(dataset_cfg["view_manifest_path"])).resolve()
+        view = json.loads(view_path.read_text(encoding="utf-8"))
+        if view.get("view_version") != VIEW_VERSION or dataset_cfg.get("version") != VIEW_VERSION:
+            raise ValueError("signed D2 release view version mismatch")
+        release_path = (repo / str(dataset_cfg["release_manifest_path"])).resolve()
+        release_dir = release_path.parent
+        release = json.loads(release_path.read_text(encoding="utf-8"))
+        if release.get("status") != "B1_SIGNED_PASS":
+            raise ValueError("B1 D2 release is not signed")
+        if canonical_text_sha256(release_path) != view.get("source_release_manifest_sha256"):
+            raise ValueError("A3 view does not match signed B1 release")
+        if not validate_release(release_dir)["valid"]:
+            raise ValueError("B1 D2 release integrity gate failed")
+        for split, config_key in (("train", "train_path"), ("val", "val_path")):
+            path = (repo / str(dataset_cfg[config_key])).resolve()
+            if path != view_path.parent / f"{split}.jsonl":
+                raise ValueError(f"A3 {split} path does not match signed view")
+            if canonical_text_sha256(path) != view["files"][f"{split}.jsonl"]["sha256"]:
+                raise ValueError(f"A3 {split} hash does not match signed view")
+        for relative, expected_sha in view["cohort_manifest_shas"].items():
+            if canonical_text_sha256(repo / relative) != expected_sha:
+                raise ValueError(f"Teacher cohort manifest changed: {relative}")
+        if (repo / str(dataset_cfg["asset_root"])).resolve() != repo:
+            raise ValueError("signed D2 release RGB asset_root must be repository root")
+    elif policy == "legacy_unpinned_smoke":
         if not integration_smoke:
             raise ValueError(
                 "legacy unpinned Teacher data is allowed only for integration smoke"

@@ -203,23 +203,38 @@ def _request(
             if require_rgb:
                 raise ValueError("dataset asset_root is required for packaged RGB")
             return request
-        digest = str(visual["rgb_sha256"]).lower()
-        if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
-            raise ValueError("visual_input.rgb_sha256 must be a SHA256 hex digest")
-        matches = [asset_root / f"{digest}{suffix}" for suffix in (".jpg", ".jpeg", ".png")]
-        image_path = next((candidate for candidate in matches if candidate.is_file()), None)
-        if image_path is None:
-            raise ValueError(f"packaged RGB is missing for sha256={digest}")
-        actual = hashlib.sha256(image_path.read_bytes()).hexdigest()
-        if actual != digest:
-            raise ValueError(f"packaged RGB hash mismatch for {image_path}")
-        expected_size = visual.get("size_bytes")
-        if expected_size is not None and image_path.stat().st_size != int(expected_size):
-            raise ValueError(f"packaged RGB size mismatch for {image_path}")
-        request["rgb_ref"] = str(image_path)
+        request["rgb_ref"] = str(resolve_packaged_rgb(visual, asset_root))
     elif require_rgb:
         raise ValueError("visual_input.rgb_sha256 is required")
     return request
+
+
+def resolve_packaged_rgb(visual: Mapping[str, Any], asset_root: Path) -> Path:
+    """Resolve either portable release paths or historical SHA-named RGB assets."""
+    digest = str(visual["rgb_sha256"]).lower()
+    if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
+        raise ValueError("visual_input.rgb_sha256 must be a SHA256 hex digest")
+    root = asset_root.resolve()
+    candidates: list[Path] = []
+    ref = visual.get("rgb_ref")
+    if isinstance(ref, str) and ref.strip():
+        relative = Path(ref)
+        if relative.is_absolute():
+            raise ValueError("portable RGB reference must be relative to asset_root")
+        portable = (root / relative).resolve()
+        if not portable.is_relative_to(root):
+            raise ValueError("portable RGB reference escapes asset_root")
+        candidates.append(portable)
+    candidates.extend(root / f"{digest}{suffix}" for suffix in (".jpg", ".jpeg", ".png"))
+    image_path = next((candidate for candidate in candidates if candidate.is_file()), None)
+    if image_path is None:
+        raise ValueError(f"packaged RGB is missing for sha256={digest}")
+    if hashlib.sha256(image_path.read_bytes()).hexdigest() != digest:
+        raise ValueError(f"packaged RGB hash mismatch for {image_path}")
+    expected_size = visual.get("size_bytes")
+    if expected_size is not None and image_path.stat().st_size != int(expected_size):
+        raise ValueError(f"packaged RGB size mismatch for {image_path}")
+    return image_path
 
 
 def _plan(record: Mapping[str, Any]) -> dict[str, Any]:

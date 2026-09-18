@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .label_encoder import BEHAVIORS, DistillationLabelEncoder
+from .dataset import resolve_packaged_rgb
 
 
 PROTECTED_SPLIT_TOKENS = ("test", "frozen")
@@ -369,15 +370,7 @@ def _validate_rgb(
         if require_rgb:
             raise ValueError("asset_root is required for packaged RGB")
         return
-    digest = str(visual["rgb_sha256"]).lower()
-    candidates = [asset_root / f"{digest}{suffix}" for suffix in (".jpg", ".jpeg", ".png")]
-    image = next((candidate for candidate in candidates if candidate.is_file()), None)
-    if image is None:
-        raise ValueError(f"packaged RGB is missing for sha256={digest}")
-    if hashlib.sha256(image.read_bytes()).hexdigest() != digest:
-        raise ValueError(f"packaged RGB hash mismatch for {image}")
-    if visual.get("size_bytes") is not None and image.stat().st_size != int(visual["size_bytes"]):
-        raise ValueError(f"packaged RGB size mismatch for {image}")
+    resolve_packaged_rgb(visual, asset_root)
 
 
 def _validate_recorded_pointers(
