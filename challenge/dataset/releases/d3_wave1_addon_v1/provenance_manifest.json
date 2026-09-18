@@ -1,0 +1,19 @@
+{
+  "base_release": "d2_v1_1",
+  "dataset_version": "b1_d3_wave1_addon_v1",
+  "raw_source_immutable": true,
+  "release_type": "additive",
+  "schema_version": "1.0",
+  "seed_range": [
+    2200000,
+    2201999
+  ],
+  "source_artifact": "artifacts/b1_d3_wave1_2000_teacher_v4",
+  "source_dataset_file": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_teacher_v4_sync/artifacts/b1_d3_wave1_2000_teacher_v4/dataset/d2_valid.jsonl",
+  "teacher_git_sha": [
+    "95e97b00def8ec36f12937da34ce8bb9082c4a04"
+  ],
+  "teacher_model_id": [
+    "Qwen/Qwen3.5-2B"
+  ]
+}

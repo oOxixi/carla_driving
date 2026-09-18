@@ -1,0 +1,35 @@
+{
+  "a3_feedback": {
+    "HOLD": 0,
+    "PULL_OVER": 0,
+    "Town03_Opt": 0,
+    "YIELD": 0,
+    "four_step": 0,
+    "new_scenario_id_vs_d2_v1_1": 0,
+    "new_source_text_vs_d2_v1_1": 0,
+    "scenario_disjoint_eval": "NOT_AVAILABLE_IN_WAVE1",
+    "template_disjoint_eval": "NOT_AVAILABLE_IN_WAVE1",
+    "terminal_state_false_positive": "FIXED_BY_GOVERNANCE",
+    "three_step": 0
+  },
+  "dataset_version": "b1_d3_wave1_addon_v1",
+  "hard_negative": 308,
+  "quarantine_scenarios": {
+    "ACC_A02_red_light_conflict": 1,
+    "ACC_A04_static_obstacle_stop": 17,
+    "SUP_A10_static_vehicle_center": 17
+  },
+  "schema_version": "1.0",
+  "source_runs": 2000,
+  "source_samples": 2398,
+  "strict_positive": 2055,
+  "strict_positive_rule": {
+    "closed_loop_quality.command_terminal_status": "SUCCEEDED",
+    "closed_loop_quality.plan_terminal_state": "SUCCEEDED",
+    "closed_loop_quality.run_status": "SUCCEEDED",
+    "closed_loop_quality.scenario_acceptance_passed": true,
+    "quality.training_role": "POSITIVE",
+    "quality.valid_for_training": true
+  },
+  "terminal_inconsistent_positive_quarantined": 35
+}

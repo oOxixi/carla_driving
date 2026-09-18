@@ -1,0 +1,26 @@
+{
+  "a3_dev_inputs": [
+    "challenge/dataset/releases/d2_v1_1/val.jsonl",
+    "challenge/dataset/releases/d3_wave1_addon_v1/val_addition.jsonl"
+  ],
+  "a3_training_inputs": [
+    "challenge/dataset/releases/d2_v1_1/train.jsonl",
+    "challenge/dataset/releases/d3_wave1_addon_v1/train_addition.jsonl"
+  ],
+  "addon_release": {
+    "immutable_after_publish": true,
+    "path": "challenge/dataset/releases/d3_wave1_addon_v1"
+  },
+  "base_release": {
+    "immutable": true,
+    "path": "challenge/dataset/releases/d2_v1_1"
+  },
+  "generalization_note": "D3 Wave1 adds training/development coverage only. It does not fix template/scenario-disjoint evaluation.",
+  "hard_negative_pool": "challenge/dataset/releases/d3_wave1_addon_v1/hard_negative_addition.jsonl",
+  "reserved_test_policy": {
+    "d2_v1_1_reserved_test_candidates": "not used for A3 tuning",
+    "d3_wave1_new_test": false
+  },
+  "schema_version": "1.0",
+  "view_id": "b1_d2_v1_1_plus_d3_wave1_v1"
+}
