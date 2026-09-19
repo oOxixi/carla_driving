@@ -1,0 +1,14 @@
+{
+  "dataset": "CARLA_language_benchmark_v1",
+  "version": "v1",
+  "records": 6192,
+  "generation": {
+    "generator_seed": 20260730,
+    "seed_type": "global_generation_seed",
+    "note": "The dataset was generated deterministically using a fixed global seed. Per-record seeds were not stored in the original release."
+  },
+  "sources": {
+    "ordinary_instruction": 5478,
+    "hard_cases": 714
+  }
+}
