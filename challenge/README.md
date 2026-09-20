@@ -54,3 +54,10 @@ A4 只接收身份完整且通过精度门禁的 INT8 candidate。OpenExplorer �
 审计、X86/J6P Runtime 接口、性能优化顺序、证据等级和 B3 交接要求见
 [`docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md`](../docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md)。
 当前随机初始化 FP32 ONNX 和全零输入 X86 计时仅是结构 Smoke，不代表 J6P 可部署或达标。
+
+## B3 独立实测
+
+B3 只测 A4 交付的同一 Runtime，不修改模型或维护第二套测试实现。HIL 回放、八阶段计时、
+Seen/Variant/Unseen、板端遥测、长稳、证据等级和最终门禁见
+[`docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](../docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md)。
+当前策展结果仅为随机初始化模型的 X86 机制预验证，不属于正式 J6P 结果。

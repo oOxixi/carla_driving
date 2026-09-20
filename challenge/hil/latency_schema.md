@@ -1,5 +1,8 @@
 # B3 延迟计时点与统计口径（D1 交付）
 
+> 本口径在完整 B3 独立实测流程中的使用方式见
+> [`docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](../../docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md)。
+
 > 状态：口径冻结候选。数值仅在 A4 Runtime 按本文件打点后才有意义。
 > 本文件定义"怎么量"，不定义"量到多少算过"（那是 B2 的 Gate 判据）。
 

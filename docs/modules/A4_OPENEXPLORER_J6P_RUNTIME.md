@@ -18,6 +18,7 @@ A4 不训练 Student、不决定 INT8 精度是否通过、不修改 ModelReques
 - [`challenge/A1_MODEL_INTERFACE.md`](../../challenge/A1_MODEL_INTERFACE.md)：固定四输入、十输出合同。
 - [`challenge/hil/a4_runtime_contract.md`](../../challenge/hil/a4_runtime_contract.md)：B3 可执行 Runtime 接口合同。
 - [`challenge/hil/README.md`](../../challenge/hil/README.md)：B3 独立测量工具、口径和当前阻塞。
+- [`B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](B3_HIL_J6P_INDEPENDENT_VALIDATION.md)：A4 交付后的独立实测和最终证据门禁。
 
 ## 2. 当前状态快照
 

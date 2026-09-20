@@ -1,5 +1,8 @@
 # B3 → A3 失败样本交接格式
 
+> 失败归因、冻结 Test 隔离和正式 B3 流程见
+> [`docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](../../docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md)。
+
 > 目的：把 B3 在回放与异常测试中发现的真实问题，变成 A3 能直接使用的输入。
 > 现状：`challenge/distillation/hard_cases.py` 只在训练内部挖验证集分歧，
 > **不接收外部失败样本**。本文件定义这条缺失的链路的格式与规则。

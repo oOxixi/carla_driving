@@ -24,6 +24,8 @@
   真实 FP32 导出、Calibration、PTQ、敏感层、QAT、INT8 Gate 与 A4/B3 交接合同。
 - [`modules/A4_OPENEXPLORER_J6P_RUNTIME.md`](modules/A4_OPENEXPLORER_J6P_RUNTIME.md)：
   OpenExplorer 转换、X86/J6P Runtime 合同、算子映射、性能优化与 B3 实测交接门禁。
+- [`modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md)：
+  HIL 回放、J6P 独立实测、延迟/内存/功耗/利用率口径、稳定性和最终证据门禁。
 
 架构边界分别见各模块的 `README.md` 或 `ARCHITECTURE.md`。正式场景定义与验收条件以
 `scenarios/` 为准；运行生成的日志、截图、点云和临时报告只放 `artifacts/`。

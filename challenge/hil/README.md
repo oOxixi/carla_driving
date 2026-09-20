@@ -1,5 +1,8 @@
 # B3：HIL 与 J6P 独立实测
 
+> B3 的前置输入、证据等级、正式测试矩阵、门禁和完成定义见
+> [`docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](../../docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md)。
+
 本目录是 B3 在挑战赛道的交付物：测量工具链、测量口径、跨组接口契约，以及一次
 X86 预验证的策展证据。
 
