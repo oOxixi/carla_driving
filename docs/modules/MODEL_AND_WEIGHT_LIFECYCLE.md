@@ -11,6 +11,8 @@ B2 独立评测。
 
 A2 的 Calibration、PTQ、敏感层、QAT 和 INT8 交付细则见
 [`A2_INT8_QUANTIZATION_AND_QAT.md`](A2_INT8_QUANTIZATION_AND_QAT.md)。
+A4 的 OpenExplorer 转换、Runtime 身份、J6P 产物和性能证据门禁见
+[`A4_OPENEXPLORER_J6P_RUNTIME.md`](A4_OPENEXPLORER_J6P_RUNTIME.md)。
 
 ## 2. 模型角色
 

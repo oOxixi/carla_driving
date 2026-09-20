@@ -98,7 +98,7 @@ py -3.12 -m challenge.hil.cli run `
 | 需要的文件 | 提供方 | 拿到后立刻能做什么 |
 |---|---|---|
 | 真实 FP32 权重 + `weights_manifest.json`（五标识 + `A3_FP32_GATE_PASSED`） | A3 | 第一次有意义的回放：行为/目标对比、`handoff` 开始产出 `usable_for_training=true` 的样本 |
-| 符合契约的 Runtime 入口（stdin `ModelRequest` → stdout `ManeuverPlan V2` + 打点） | A4 | 用 A4 的真实入口替换 B3 的自建适配器；缺口见 `a4_runtime_gap_report.md` |
+| 符合契约的 Runtime 入口（stdin `ModelRequest` → stdout `ManeuverPlan V2` + 打点） | A4 | 用 A4 的真实入口替换 B3 的自建适配器；缺口见 `a4_runtime_gap_report.md`，完整门禁见 [`A4_OPENEXPLORER_J6P_RUNTIME.md`](../../docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md) |
 | 板端 `.bin` 产物 + 启动脚本 + `contract_report.json` | A4 | 板端全部测量。契约检查已就绪，A4 可先自检 |
 | INT8 量化产物 + 校准配置与校准集说明 | A2 | 按 [`A2_INT8_QUANTIZATION_AND_QAT.md`](../../docs/modules/A2_INT8_QUANTIZATION_AND_QAT.md) 核对身份后，用 `consistency --baseline-onnx` 跑 INT8 vs FP32 逐输出偏差，再做量化后性能对照 |
 | 冻结 Benchmark case 清单 + 判定策略（**含"异构算力利用率"公式**） | B2 | Seen/Variant/Unseen 正式结论；公式到位后 `hardware_metrics_schema.md` 第 3 节可定稿 |

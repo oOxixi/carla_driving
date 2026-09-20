@@ -3,6 +3,8 @@
 > A2 的 INT8 输入产物、Calibration、PTQ/QAT 和精度 Gate 合同见
 > [`docs/modules/A2_INT8_QUANTIZATION_AND_QAT.md`](../../docs/modules/A2_INT8_QUANTIZATION_AND_QAT.md)。
 > A4 只接收通过该门禁且身份完整的候选；当前随机初始化 FP32 ONNX 仅用于工具链冒烟。
+> A4 的完整部署顺序、Runtime 接口、性能口径、证据等级和完成定义见
+> [`docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md`](../../docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md)。
 
 ## 1. Scope
 

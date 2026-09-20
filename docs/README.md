@@ -22,6 +22,8 @@
   独立 Validation、FP32 promotion、B2 Frozen Benchmark、证据合同与防泄露边界。
 - [`modules/A2_INT8_QUANTIZATION_AND_QAT.md`](modules/A2_INT8_QUANTIZATION_AND_QAT.md)：
   真实 FP32 导出、Calibration、PTQ、敏感层、QAT、INT8 Gate 与 A4/B3 交接合同。
+- [`modules/A4_OPENEXPLORER_J6P_RUNTIME.md`](modules/A4_OPENEXPLORER_J6P_RUNTIME.md)：
+  OpenExplorer 转换、X86/J6P Runtime 合同、算子映射、性能优化与 B3 实测交接门禁。
 
 架构边界分别见各模块的 `README.md` 或 `ARCHITECTURE.md`。正式场景定义与验收条件以
 `scenarios/` 为准；运行生成的日志、截图、点云和临时报告只放 `artifacts/`。

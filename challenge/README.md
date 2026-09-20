@@ -47,3 +47,10 @@ Head、固定类别映射和纯权重交付格式。入口、数据预检、训�
 A2 的正式输入必须是 Gate-passed FP32 权重及由该权重导出的 ONNX；当前仓库 ONNX 是
 随机初始化结构冒烟产物，不能用于正式 PTQ。Calibration、PTQ/QAT、INT8 Gate 和交接
 要求见 [`docs/modules/A2_INT8_QUANTIZATION_AND_QAT.md`](../docs/modules/A2_INT8_QUANTIZATION_AND_QAT.md)。
+
+## A4 部署
+
+A4 只接收身份完整且通过精度门禁的 INT8 candidate。OpenExplorer 转换、算子/fallback
+审计、X86/J6P Runtime 接口、性能优化顺序、证据等级和 B3 交接要求见
+[`docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md`](../docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md)。
+当前随机初始化 FP32 ONNX 和全零输入 X86 计时仅是结构 Smoke，不代表 J6P 可部署或达标。

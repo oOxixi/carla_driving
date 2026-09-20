@@ -1,5 +1,8 @@
 # A4 X86 运行时：与 B3 测量契约的差距
 
+> 当前部署目标、证据分级和关闭这些缺口的验收条件见
+> [`docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md`](../../docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md)。
+
 > 提出方：B3（独立实测）　核对版本：`challenge` @ `64577ea0`
 > 对照契约：`challenge/hil/a4_runtime_contract.md`
 > 本报告只列缺口与证据，不涉及对 A4 代码的修改。
