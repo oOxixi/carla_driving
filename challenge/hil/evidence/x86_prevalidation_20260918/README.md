@@ -102,8 +102,8 @@ in-process torch 链，100 例 × 3 轮（300 个有效样本），单位 ms：
 1. 权重随机初始化 → 无精度含义；`handoff` 因此产出 0 条可训练样本；
 2. 功耗与 BPU 利用率记为 `NOT_APPLICABLE`（本机无探针，未用估算值填充）；
 3. 长稳仅 15 秒冒烟，正式要求 30 分钟；
-4. 输入是 B1 D2 v1.1 的 **val** 划分；`reserved_test_candidates` 是 B2 的冻结基准，
-   B3 不自动使用它；
+4. 输入是 B1 D2 v1.1 的 **val** 划分；`reserved_test_candidates` 只是待 B2 治理的候选池，
+   不是最终 Frozen Test，B3 不自动使用它；
 5. A4 的 `challenge/runtime/student_x86.py` 目前不满足 B3 的运行时契约
    （见 `challenge/hil/a4_runtime_gap_report.md`），所以本批测量用的是 B3 自己的
    ONNX/in-process 适配器，不是 A4 的运行时入口。

@@ -18,6 +18,8 @@
   Student FP32、INT8 和 Runtime 的模型身份、权重状态机、晋级门禁与当前阻塞项。
 - [`modules/A3_TRAINING_AND_HARD_CASES.md`](modules/A3_TRAINING_AND_HARD_CASES.md)：A3 的
   运行等级、Loss、Validation、确定性恢复、产物语义和三类 Hard-case 闭环边界。
+- [`modules/B2_EVALUATION_AND_FP32_GATE.md`](modules/B2_EVALUATION_AND_FP32_GATE.md)：
+  独立 Validation、FP32 promotion、B2 Frozen Benchmark、证据合同与防泄露边界。
 
 架构边界分别见各模块的 `README.md` 或 `ARCHITECTURE.md`。正式场景定义与验收条件以
 `scenarios/` 为准；运行生成的日志、截图、点云和临时报告只放 `artifacts/`。

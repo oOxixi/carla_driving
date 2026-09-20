@@ -108,7 +108,7 @@ py -3.12 -m challenge.hil.cli run `
 
 | 曾经需要 | 现状 |
 |---|---|
-| B1 正式冻结请求集 | **已交付**：`challenge/dataset/releases/d2_v1_1/`（train 2513 / val 539 / reserved 540）。B3 已冻结为 `frozen/d2_v1_1_val`（539 例，digest `003f0ed8e279…`） |
+| 可重复的开发回放请求集 | **已交付**：`challenge/dataset/releases/d2_v1_1/`（train 2513 / val 539 / reserved candidates 540）。B3 已把开发 Val 冻结为 `frozen/d2_v1_1_val`（539 例，digest `003f0ed8e279…`）；这不是 B2 Frozen Test |
 | A4 X86 运行时 | **部分交付**：`challenge/runtime/student_x86.py` 可运行，但不满足测量契约（无请求入口、无打点、无身份查询）；差距清单见 `a4_runtime_gap_report.md` |
 | Teacher 基线 pin | **已就绪**：v1 与 v4 双 pin 自动记录，模型身份一致（`Qwen/Qwen3.5-2B` @ `15852e8c1636`） |
 | A1 结构产物 | **已在仓库**：`challenge/student_v0_fp32.onnx`（`ffb1ed5e…`），B3 独立校验通过 |

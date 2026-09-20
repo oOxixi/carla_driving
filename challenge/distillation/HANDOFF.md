@@ -57,6 +57,9 @@ A3 必须拒绝 split/group/RGB overlap、受保护 Test provenance、非法 tar
 
 ## A3 → B2：独立评测
 
+完整评价层级、JSON 合同、Gate 规则和 Frozen Benchmark 治理见
+[`docs/modules/B2_EVALUATION_AND_FP32_GATE.md`](../../docs/modules/B2_EVALUATION_AND_FP32_GATE.md)。
+
 A3 向 B2 交付待验 FP32 candidate 与 manifest，至少包括：
 
 - `git_sha`、Student factory/config ID；

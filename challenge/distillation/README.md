@@ -5,6 +5,8 @@
 > D3 Wave1 当前仍为 `B1_RELEASE_CANDIDATE`，不得直接替换下述已签发 D2 配置。
 > A3 的运行等级、Loss、checkpoint 选择、恢复语义和 Hard-case 闭环统一见
 > [`docs/modules/A3_TRAINING_AND_HARD_CASES.md`](../../docs/modules/A3_TRAINING_AND_HARD_CASES.md)。
+> 独立 Validation、FP32 promotion 与 B2 Frozen Benchmark 的边界统一见
+> [`docs/modules/B2_EVALUATION_AND_FP32_GATE.md`](../../docs/modules/B2_EVALUATION_AND_FP32_GATE.md)。
 
 For the current signed B1 D2 v1.1 release, the active data-preparation and
 integration-smoke procedure is in [D2_A3_PREP.md](D2_A3_PREP.md). Run
