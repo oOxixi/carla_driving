@@ -1,0 +1,202 @@
+# B1 数据发布到 A3 蒸馏接入
+
+## 1. 模块目标
+
+本模块把 B1 生成的真实 Qwen Teacher 数据转换成 A3 可以审计、训练和复现的 Student
+监督视图。它不负责采集数据、不修改 B1 原始发布包、不读取 Frozen Test，也不负责 B2
+最终判分。
+
+链路固定为：
+
+```text
+B1 immutable release
+  -> 发布完整性与 Teacher provenance 校验
+  -> A3 strict-positive 派生视图
+  -> A1 四模态输入与标签 Shape 校验
+  -> Train/Validation 预检
+  -> Student FP32 训练与 best checkpoint
+  -> 独立 Validation Teacher/Student 对比
+  -> A3_FP32_GATE_PASSED 或失败
+```
+
+任何一步没有可核验的 manifest 和 SHA256，后一步都不能把结果表述为正式训练或精度结论。
+
+## 2. 当前状态快照
+
+核对日期：2026-09-21。代码基线：`challenge` 提交
+`d09f4da2fcbcbe908a4a9bf0b5427108fe692c67`。
+
+| 数据发布 | 状态 | A3 当前允许用途 |
+|---|---|---|
+| `d2_v1_1` | `B1_SIGNED_PASS` | 已支持派生严格正样本视图、预检、Smoke 和正式基线训练 |
+| `d3_wave1_addon_v1` | `B1_RELEASE_CANDIDATE` | 仅允许清单、schema、切分和覆盖率审计；暂不进入正式训练 |
+| D2 reserved/test candidates | B1/B2 保留 | A3 不读取、不调参、不选 checkpoint |
+
+D3 Wave1 是叠加在 D2 v1.1 上的增量包，不覆盖也不重写 D2。发布中包含 1747 条 Train
+增量、308 条 Val 增量、308 条 hard negative、35 条隔离记录和 2363 张 RGB。当前本地
+为节省空间只同步了提交和清单，2363 张新增 RGB 未展开，因此本地也不能执行全量 RGB
+逐文件哈希和图像解码门禁。
+
+## 3. 上下游合同
+
+### 3.1 B1 必须交付
+
+正式发布至少包含：
+
+- 不可变的 Train、Validation 和隔离池 JSONL；
+- 每条记录唯一的 `sample_id`、`request_id` 和 `group_key`；
+- 合同有效的 `ModelRequest V1` 和 `ManeuverPlan V2`；
+- 可移植 RGB 路径、逐图 SHA256、映射清单和图片集合哈希；
+- `scenario_family + map + route_hash + seed` 的分组切分证据；
+- Teacher `model_id`、精确 revision、模型 artifact fingerprint 和采集代码身份；
+- run、command、plan、场景验收四类终态一致的闭环质量字段；
+- 发布 manifest 的文件字节数、SHA256、签发状态和数据版本。
+
+普通正监督必须同时满足：
+
+```text
+quality.valid_for_training == true
+quality.training_role == POSITIVE
+closed_loop_quality.run_status == SUCCEEDED
+closed_loop_quality.command_terminal_status == SUCCEEDED
+closed_loop_quality.plan_terminal_state == SUCCEEDED
+closed_loop_quality.scenario_acceptance_passed == true
+```
+
+不满足条件的记录必须进入 hard-negative 或 quarantine，不能通过 A3 本地过滤后悄悄混入
+普通正样本。
+
+### 3.2 A3 必须交付
+
+A3 不直接编辑 B1 发布文件，而是在 `artifacts/` 生成派生视图及其 manifest：
+
+- 固定 Train/Validation 成员关系；
+- 记录保留、排除的 sample ID 和原因；
+- 将 Teacher 精确身份补入每条派生记录；
+- 保存源 release manifest、各 Teacher cohort manifest 和派生文件 SHA256；
+- 验证 A1 的四路输入、TopK=8、`NONE=8`、最大四步和十个 Head 标签；
+- 拒绝 Train/Validation 的 sample、request、group 或规范化记录重叠；
+- 输出 checkpoint、纯 state dict、训练日志、逐 Head 指标和 hard cases；
+- 在 B2 提供独立 Validation 对比前保持 `PENDING_A3_FP32_GATE`。
+
+### 3.3 B2 与 B3 边界
+
+- B2 冻结独立评价样本和判分口径，A3 只接收聚合评价证据，不读取 Frozen Test 样本。
+- B3 消费带 `A3_FP32_GATE_PASSED` 的 FP32 权重与 manifest 做 x86/HIL 验证。
+- B3 对现有 D2 Val 的回放只能证明工具链可运行，不能替代 B2 独立泛化结论。
+
+## 4. 已完成的 D2 v1.1 路径
+
+当前生产代码只对 D2 v1.1 的单发布视图形成了闭环：
+
+| 责任 | 实现 |
+|---|---|
+| B1 发布校验 | `challenge/dataset/validate_d2_release.py` |
+| A3 严格正样本派生 | `challenge/dataset/build_a3_d2_view.py` |
+| 标签覆盖审计 | `challenge/distillation/audit_d2_view.py` |
+| A1 输入打包校验 | `challenge/distillation/validate_a1_inputs.py` |
+| 数据预检 | `challenge/distillation/preflight.py` |
+| 正式配置 | `challenge/distillation/d2_v1_1_formal_config.yaml` |
+| 训练、断点与候选导出 | `challenge/distillation/train.py` |
+| FP32 晋级 | `challenge/distillation/promote.py` |
+
+已验证的 A3 D2 严格正样本视图为 Train 2332、Val 489。该 Val 与 Train 的指令文本和
+场景 ID 高度重合，因此它只用于开发回归和同分布模型选择，不能证明未见指令或未见场景
+泛化。详细结果见 `challenge/distillation/D2_FP32_BASELINE_FINDINGS.md`。
+
+训练候选仍不能晋级：D2 正式配置写入的 `signed_d2_release_formal` 与 promotion 当前只
+接受的 `frozen_manifest` 不一致。该阻塞及修复完成定义见
+[`MODEL_AND_WEIGHT_LIFECYCLE.md`](MODEL_AND_WEIGHT_LIFECYCLE.md#6-fp32-晋级门禁)。
+
+标准复现顺序：
+
+```bash
+python -m challenge.dataset.validate_d2_release
+python -m challenge.dataset.build_a3_d2_view
+python -m challenge.distillation.audit_d2_view
+python -m challenge.distillation.validate_a1_inputs
+python -m challenge.distillation.train \
+  --config challenge/distillation/d2_v1_1_smoke_config.yaml \
+  --integration-smoke
+python -m challenge.distillation.train \
+  --config challenge/distillation/d2_v1_1_formal_config.yaml
+```
+
+正式训练要求干净 Git 提交、完整 RGB 和 CUDA/PyTorch 环境。没有这些条件时只运行只读
+清单审计，不生成可晋级权重。
+
+## 5. D3 Wave1 接入分析
+
+### 5.1 已经成立的部分
+
+- 发布采用 additive 语义，未修改 D2 v1.1。
+- Train/Val/hard-negative/quarantine 角色已分开。
+- 35 条终态不一致的伪正样本已隔离。
+- JSONL、RGB mapping、split、provenance 和 release manifest 已提供。
+- 文件数量和 Git blob 字节数与 `release_manifest.json` 中的声明一致。
+
+本地无训练依赖的只读复核结果：Train 1747 条、Val 308 条；两侧 `sample_id` 和
+`request_id` 均各自唯一，Train/Val `group_key` 重叠为 0，全部 2055 条都满足发布中
+声明的普通正样本与闭环成功条件。这是元数据复核，不等于 A1 标签编码、RGB 或正式 A3
+preflight 通过。
+
+### 5.2 当前阻塞项
+
+| 阻塞项 | 代码事实 | 影响 |
+|---|---|---|
+| 发布尚未签发 | D3 manifest 为 `B1_RELEASE_CANDIDATE`；A3 门禁要求 `B1_SIGNED_PASS` | 正式训练必须拒绝 |
+| A3 只认识 D2 单发布 | identity policy 仅有 `signed_d2_release_*`，view version 固定为 D2 v1.1 | 不能把 D3 文件直接写进现有 YAML |
+| 派生器 cohort 未登记 D3 | `build_a3_d2_view.py` 的 `COHORTS` 不含 `teacher_distill_v0.5_d3_expansion_wave1_v4` | 无法生成带完整 provenance 的 A3 视图 |
+| 精确 Teacher 身份未落到 D3 记录 | D3 记录有 model ID 和采集 SHA，但没有精确 model revision 与 artifact fingerprint | 现有 pinned provenance 预检会失败 |
+| 新 RGB 未在本地展开 | 本地稀疏同步跳过 `d3_wave1_addon_v1/images/` | 不能做全量图片存在性、SHA 和解码校验 |
+| 不是独立泛化集 | 新 source text=0、新 scenario ID=0 | D3 Val 不能作为 unseen/template-disjoint 评价 |
+| 关键覆盖仍为空 | Town03_Opt、YIELD、PULL_OVER、HOLD、三步、四步均为 0 | 不能宣称已补齐 A3 能力覆盖 |
+
+D3 采集记录中的 `metadata.teacher_git_sha` 为
+`95e97b00def8ec36f12937da34ce8bb9082c4a04`。该字段表示采集代码身份，不能直接替代
+`challenge/teacher_baseline_manifest.json` 中冻结的 Teacher 基线身份。B1 应明确提供
+对应 pinned manifest，A3 再把基线 SHA、模型 revision 和 artifact fingerprint 注入派生视图。
+
+### 5.3 Windows 文本哈希注意事项
+
+仓库当前继承全局 `core.autocrlf=true`。JSON/JSONL 在 Windows 工作区可能由 LF 转成
+CRLF，导致工作区原始字节 SHA256 与 Linux 生成的发布 manifest 不同；Git blob 字节数
+仍与发布声明一致。这不是允许忽略哈希，而是说明正式验证应在固定换行策略的干净工作区
+进行，或为发布数据声明 `.gitattributes` 的 `eol=lf` 后重新签发。不能把换行转换后的文件
+哈希失败误报成 B1 内容被修改。
+
+## 6. D3 正式接入的完成定义
+
+只有以下项目全部完成后，A3 才能开始 D2+D3 正式训练：
+
+1. B1 将 D3 状态签发为明确的通过状态，并补齐精确 Teacher revision、artifact
+   fingerprint 与采集代码 provenance。
+2. 完整同步 2363 张 RGB，逐文件 SHA256、图像集合哈希、解码和记录引用全部通过。
+3. 新增通用的 additive release 派生器，不修改 D2/D3 原包，并为多个源 release 绑定
+   manifest SHA256。
+4. 新派生视图完成 sample/request/group/record 四类 Train/Val 隔离检查。
+5. 新增独立配置 ID、数据版本、输出目录和自动化测试，禁止复用 D2 基线产物目录。
+6. 全量 A1 输入打包、标签编码、Smoke、断点恢复和重复运行一致性通过。
+7. D3 Val 只标记为 development validation；在 B2 交付独立 Seen/Variant/Unseen
+   评价前，不生成泛化通过结论。
+
+## 7. 当前可以做与不能做
+
+| 操作 | 当前结论 |
+|---|---|
+| 阅读 D3 README、manifest 和 JSONL | 可以 |
+| 核对条数、schema、终态治理和切分字段 | 可以 |
+| 分析标签覆盖和缺失类别 | 可以，但结论只针对候选发布 |
+| 使用 D2 v1.1 复现既有 A3 基线 | 可以 |
+| 用 D3 直接启动正式训练 | 不可以 |
+| 用 D3 Val 宣称泛化或比赛准确率 | 不可以 |
+| 用 reserved/test candidates 调参 | 不可以 |
+| 生成 `A3_FP32_GATE_PASSED` | 不可以，仍缺 B2 独立对比证据 |
+
+## 8. 文档维护规则
+
+- 数据状态只引用 release manifest，不根据聊天记录或文件夹名称推断。
+- 训练状态只引用 run summary、checkpoint SHA 和 candidate manifest。
+- “Smoke 通过”“训练完成”“FP32 Gate 通过”“B2 最终通过”必须分开表述。
+- 新 release 不覆盖旧文档中的历史数值；新增一节或新版本文档并记录提交 SHA。
+- 实现变化后同时更新本页、模块 README 和相关测试，禁止只改说明不改门禁。

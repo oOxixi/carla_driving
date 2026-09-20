@@ -1,5 +1,11 @@
 # A3 Distillation
 
+> 当前 B1 数据接入状态、D2 v1.1 与 D3 Wave1 的边界以及正式训练前必须满足的门禁，
+> 统一见 [`docs/modules/B1_TO_A3_DATA_PIPELINE.md`](../../docs/modules/B1_TO_A3_DATA_PIPELINE.md)。
+> D3 Wave1 当前仍为 `B1_RELEASE_CANDIDATE`，不得直接替换下述已签发 D2 配置。
+> A3 的运行等级、Loss、checkpoint 选择、恢复语义和 Hard-case 闭环统一见
+> [`docs/modules/A3_TRAINING_AND_HARD_CASES.md`](../../docs/modules/A3_TRAINING_AND_HARD_CASES.md)。
+
 For the current signed B1 D2 v1.1 release, the active data-preparation and
 integration-smoke procedure is in [D2_A3_PREP.md](D2_A3_PREP.md). Run
 `python -m challenge.distillation.audit_d2_view` to produce the fixed
@@ -113,8 +119,8 @@ target-pointer convention, Head names and four-modal input shapes are imported
 from `challenge.student` rather than duplicated. Every forward call is checked
 for required Head names, exact shapes, floating
 dtype, device alignment, and finite values before loss calculation. Non-finite
-losses or gradients fail closed. See [HANDOFF.md](HANDOFF.md) for the exact A1
-and B1 boundaries.
+losses or gradients fail closed. See [HANDOFF.md](HANDOFF.md) for the exact
+A1/B1/B2/B3 boundaries.
 
 Class balancing is disabled by default. When enabled in YAML, weights are
 computed from Train labels only, bounded by `max_weight`, and stored in the

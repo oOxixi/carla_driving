@@ -45,6 +45,7 @@
 | `docs/runbooks/` | 服务器运行和外部接入手册 |
 | `docs/reproduction/` | Qwen 2B 固定版本、证据范围和复现步骤 |
 | `docs/reports/` | 路线、场景、控制、安全和分支归并报告 |
+| `docs/modules/` | 按模块说明职责、上下游合同、门禁、证据和当前阻塞项 |
 | `metrics/reference_5070/` | 2B INT4 诊断基准、原始 JSON、日志和 SHA256 清单 |
 | `submission/current/` | 当前技术方案源文件 |
 | `submission/templates/` | 单次演示记录和机器可读证据索引模板 |
