@@ -42,6 +42,9 @@ bash scripts/run_official_s2_member3.sh --run
 
 ## 文档入口
 
+- [全项目三级功能导航与一致性审计](docs/architecture/README.md)
+- [全量源码、配置与命令索引](docs/architecture/SOURCE_INDEX.md)
+
 - [完整目录说明](docs/REPOSITORY_STRUCTURE.md)
 - [文档索引](docs/README.md)
 - [正式三场景说明](scenarios/official_competition/README.md)

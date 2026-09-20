@@ -1,0 +1,184 @@
+# watchdog：功能记录
+
+上级模块：[模块说明](../modules/vehicle-behavior.md) · 实现：[car_control_A/watchdog.py](../../../car_control_A/watchdog.py)
+
+## 业务语义与维护关联
+
+本页为逐文件实现记录。与该实现相关的运行语义、边界和修改判断见：
+
+- [授权、确认、过期与停车保持](command-lifecycle.md)
+- [前置条件锁存、步骤完成与重规划](maneuver-progress.md)
+
+## 功能职责与范围
+
+Narrow runtime health fail-safe, deliberately not D's safety arbiter.
+
+此页记录当前实现，不提出重构或改变行为。功能边界按实现文件组织；文件中的独立函数、方法在下面分别登记。内部局部函数不等于对外接口。
+
+## 数据结构与配置字段
+
+本文件没有静态类字段声明。输入对象字段需结合所属模块指向的 Schema、类型定义和调用方读取。
+
+## 功能入口：输入、输出与实现说明
+
+### `RuntimeWatchdog`
+
+源码位置：[car_control_A/watchdog.py 第 10 行](../../../car_control_A/watchdog.py#L10)。类型：`ClassDef`。
+
+源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+
+### `RuntimeWatchdog.__init__`
+
+源码位置：[car_control_A/watchdog.py 第 11 行](../../../car_control_A/watchdog.py#L11)。类型：`FunctionDef`。
+
+```python
+RuntimeWatchdog.__init__(self, *, timeout_s: float=1.0, required_modules: tuple[str, ...]=(), startup_grace_s: float=0.0, started_at_s: float=0.0) -> None
+```
+
+源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+
+### `RuntimeWatchdog._time`
+
+源码位置：[car_control_A/watchdog.py 第 24 行](../../../car_control_A/watchdog.py#L24)。类型：`FunctionDef`。
+
+```python
+RuntimeWatchdog._time(value: float, name: str) -> float
+```
+
+源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+
+### `RuntimeWatchdog.heartbeat`
+
+源码位置：[car_control_A/watchdog.py 第 30 行](../../../car_control_A/watchdog.py#L30)。类型：`FunctionDef`。
+
+```python
+RuntimeWatchdog.heartbeat(self, module: str, *, now_s: float) -> None
+```
+
+源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+
+### `RuntimeWatchdog.pause`
+
+源码位置：[car_control_A/watchdog.py 第 37 行](../../../car_control_A/watchdog.py#L37)。类型：`FunctionDef`。
+
+```python
+RuntimeWatchdog.pause(self, *, now_s: float) -> None
+```
+
+Exclude an external wait during which the controlled system is frozen.
+
+CARLA synchronous ``world.tick()`` can block in the renderer while
+simulation time does not advance.  Counting that wait as a B/C/D
+module outage creates a false permanent stop.  The caller must bracket
+only the simulator/pacing wait; control, perception and logging remain
+inside the active watchdog interval.
+
+### `RuntimeWatchdog.resume`
+
+源码位置：[car_control_A/watchdog.py 第 50 行](../../../car_control_A/watchdog.py#L50)。类型：`FunctionDef`。
+
+```python
+RuntimeWatchdog.resume(self, *, now_s: float) -> None
+```
+
+源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+
+### `RuntimeWatchdog.check`
+
+源码位置：[car_control_A/watchdog.py 第 62 行](../../../car_control_A/watchdog.py#L62)。类型：`FunctionDef`。
+
+```python
+RuntimeWatchdog.check(self, *, now_s: float) -> ControlOutput | None
+```
+
+源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+
+### `RuntimeWatchdog.module_failed`
+
+源码位置：[car_control_A/watchdog.py 第 72 行](../../../car_control_A/watchdog.py#L72)。类型：`FunctionDef`。
+
+```python
+RuntimeWatchdog.module_failed(self, module: str, error: BaseException) -> ControlOutput
+```
+
+源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+
+### `RuntimeWatchdog._full_brake`
+
+源码位置：[car_control_A/watchdog.py 第 78 行](../../../car_control_A/watchdog.py#L78)。类型：`FunctionDef`。
+
+```python
+RuntimeWatchdog._full_brake() -> ControlOutput
+```
+
+源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+
+## 内部调用与异常路径
+
+- `__init__` 调用：`ValueError`, `any`, `float`, `frozenset`, `type`.
+- `_time` 调用：`ValueError`, `float`, `math.isfinite`.
+- `heartbeat` 调用：`RuntimeError`, `ValueError`, `self._time`, `type`.
+- `pause` 调用：`RuntimeError`, `self._time`.
+- `resume` 调用：`RuntimeError`, `ValueError`, `self._time`, `tuple`.
+- `check` 调用：`RuntimeError`, `any`, `self._full_brake`, `self._heartbeats.values`, `self._time`.
+- `module_failed` 调用：`ValueError`, `self._full_brake`, `type`.
+- `_full_brake` 调用：`ControlOutput`.
+
+显式异常（仅 raise，未穷举依赖可能抛出的异常）：
+
+- `__init__`，第 14 行：`ValueError('timeout_s must be positive; grace and start must be non-negative')`。
+- `__init__`，第 16 行：`ValueError('required_modules must contain non-empty strings')`。
+- `_time`，第 27 行：`ValueError(f'{name} must be finite and non-negative')`。
+- `check`，第 64 行：`RuntimeError('cannot check watchdog while it is paused')`。
+- `heartbeat`，第 32 行：`ValueError('module must be a non-empty string')`。
+- `heartbeat`，第 34 行：`RuntimeError('cannot record a heartbeat while watchdog is paused')`。
+- `module_failed`，第 74 行：`ValueError('module must be a non-empty string')`。
+- `pause`，第 47 行：`RuntimeError('watchdog is already paused')`。
+- `resume`，第 52 行：`RuntimeError('watchdog is not paused')`。
+- `resume`，第 55 行：`ValueError('resume time must not precede pause time')`。
+
+调用清单是静态语法记录，不保证每条分支都会执行；回调、反射和跨进程调用需结合模块说明。
+
+
+## 上下游与关联验证
+
+静态导入的项目内实现：
+
+- [car_control_A/contracts.py](../../../car_control_A/contracts.py)
+
+静态 import 消费者（含测试）：
+
+- [car_control_A/tests/test_ac_integration.py](../../../car_control_A/tests/test_ac_integration.py)
+- [car_control_A/tests/test_watchdog.py](../../../car_control_A/tests/test_watchdog.py)
+- [integration/carla_runner.py](../../../integration/carla_runner.py)
+
+## 后续修改需要一起阅读
+
+- [上级模块](../modules/vehicle-behavior.md)：业务语义、单位、默认值、边界和验证入口。
+- [跨模块接口记录](../INTERFACES.md)：生产者、消费者与契约权威来源。
+- [已知现状记录](../AUDIT.md)：问题与风险不等于本轮已修复。
+- [源码索引](../SOURCE_INDEX.md)：全量文件归属；本页只说明当前功能实现。
+
+## 2026-09-20 源码契约复核
+
+基线 `fe1ba839`。以下从当前源码声明提取；用于补充原有语义说明。默认表达式不等于运行生效值，分支记录不覆盖被调用函数的全部异常。
+
+### `car_control_A/watchdog.py`
+
+来源 SHA256：`2954fbb542f2f43b57966369908859f02fcf5ceae6372f59d18cc3f9db32648e`。
+
+
+显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。
+
+| 入口 / 行 | 局部条件 | 抛出 |
+|---|---|---|
+| `RuntimeWatchdog.__init__` / 14 | `timeout_s <= 0.0 or startup_grace_s < 0.0 or started_at_s < 0.0` | `raise ValueError('timeout_s must be positive; grace and start must be non-negative')` |
+| `RuntimeWatchdog.__init__` / 16 | `any((type(module) is not str or not module for module in required_modules))` | `raise ValueError('required_modules must contain non-empty strings')` |
+| `RuntimeWatchdog._time` / 27 | `not math.isfinite(converted) or converted < 0.0` | `raise ValueError(f'{name} must be finite and non-negative')` |
+| `RuntimeWatchdog.heartbeat` / 32 | `type(module) is not str or not module` | `raise ValueError('module must be a non-empty string')` |
+| `RuntimeWatchdog.heartbeat` / 34 | `self._paused_at_s is not None` | `raise RuntimeError('cannot record a heartbeat while watchdog is paused')` |
+| `RuntimeWatchdog.pause` / 47 | `self._paused_at_s is not None` | `raise RuntimeError('watchdog is already paused')` |
+| `RuntimeWatchdog.resume` / 52 | `self._paused_at_s is None` | `raise RuntimeError('watchdog is not paused')` |
+| `RuntimeWatchdog.resume` / 55 | `resumed_at_s < self._paused_at_s` | `raise ValueError('resume time must not precede pause time')` |
+| `RuntimeWatchdog.check` / 64 | `self._paused_at_s is not None` | `raise RuntimeError('cannot check watchdog while it is paused')` |
+| `RuntimeWatchdog.module_failed` / 74 | `type(module) is not str or not module` | `raise ValueError('module must be a non-empty string')` |

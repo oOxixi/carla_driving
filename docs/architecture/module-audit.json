@@ -1,0 +1,22 @@
+{
+  "source_records": 491,
+  "file_pages": 358,
+  "python": 425,
+  "signatures_checked": 3635,
+  "cli": 739,
+  "guards": 1949,
+  "schema_fields": 201,
+  "missing_sources": [],
+  "hash_drift": [],
+  "signature_drift": [],
+  "environment_reads": 43,
+  "modules": 20,
+  "semantic_pages": 26,
+  "markdown_pages": 405,
+  "links_checked": 8820,
+  "broken_links": [],
+  "unreachable_pages": [],
+  "numeric_validation_calls": 213,
+  "shell_scripts": 21,
+  "encoding_issues": []
+}

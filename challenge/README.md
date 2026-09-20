@@ -1,5 +1,7 @@
 # 挑战赛道 A1：轻量 Student 结构
 
+全挑战赛道（B1 数据、A3 训练、A4 部署与 B3 HIL）统一导航见 [挑战赛道模块](../docs/architecture/modules/challenge.md)。本页主体保留 A1 结构交付说明，不代表整个挑战赛道只实现了 A1。
+
 本目录只替换高层 Planner：`ModelRequest V1 → PlannerBackend → ManeuverPlan V2`。
 现有 A/B/C/D 控制、安全接口和 CARLA 输入均保持不变。
 
