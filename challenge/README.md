@@ -41,3 +41,9 @@ A3 已在 `challenge/distillation/` 对接本 Student V0 r3 的四路输入、�
 Head、固定类别映射和纯权重交付格式。入口、数据预检、训练、断点恢复、Hard-case
 和 FP32 Gate 说明见 `challenge/distillation/README.md`。Mock Smoke 产物始终标记
 为 `MOCK_ONLY`，不得作为可部署权重。
+
+## A2 量化
+
+A2 的正式输入必须是 Gate-passed FP32 权重及由该权重导出的 ONNX；当前仓库 ONNX 是
+随机初始化结构冒烟产物，不能用于正式 PTQ。Calibration、PTQ/QAT、INT8 Gate 和交接
+要求见 [`docs/modules/A2_INT8_QUANTIZATION_AND_QAT.md`](../docs/modules/A2_INT8_QUANTIZATION_AND_QAT.md)。

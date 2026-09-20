@@ -9,6 +9,9 @@ A4/B3 Runtime 验收的模型身份和权重状态。目标是让每一个可执
 本模块不负责定义驾驶业务逻辑，不把模型输出直接转换为油门、刹车或方向盘，也不替代
 B2 独立评测。
 
+A2 的 Calibration、PTQ、敏感层、QAT 和 INT8 交付细则见
+[`A2_INT8_QUANTIZATION_AND_QAT.md`](A2_INT8_QUANTIZATION_AND_QAT.md)。
+
 ## 2. 模型角色
 
 | 层级 | 所有者 | 输入与输出 | 权威身份 | 当前状态 |

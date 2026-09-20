@@ -11,6 +11,7 @@
 | 模型与权重生命周期 | [`MODEL_AND_WEIGHT_LIFECYCLE.md`](MODEL_AND_WEIGHT_LIFECYCLE.md) | Teacher 与 Student 结构已固定；真实 FP32 Gate、INT8 和 J6P 仍未完成 |
 | A3 训练与 Hard-case 闭环 | [`A3_TRAINING_AND_HARD_CASES.md`](A3_TRAINING_AND_HARD_CASES.md) | D2 baseline 链路已运行；泛化证据、B3 回流接入与真实 FP32 Gate 仍未完成 |
 | B2 独立评测与 A3 FP32 Gate | [`B2_EVALUATION_AND_FP32_GATE.md`](B2_EVALUATION_AND_FP32_GATE.md) | promotion 基础规则已实现；B2 评价包、冻结 Benchmark 与真实 Gate 证据仍未交付 |
+| A2 INT8 量化与 QAT | [`A2_INT8_QUANTIZATION_AND_QAT.md`](A2_INT8_QUANTIZATION_AND_QAT.md) | 通用检查工具部分就绪；真实 FP32 导出、Calibration、PTQ/QAT 与 INT8 产物均未交付 |
 
 ## 统一结构
 

@@ -1,5 +1,9 @@
 # A4 Horizon Deployment
 
+> A2 的 INT8 输入产物、Calibration、PTQ/QAT 和精度 Gate 合同见
+> [`docs/modules/A2_INT8_QUANTIZATION_AND_QAT.md`](../../docs/modules/A2_INT8_QUANTIZATION_AND_QAT.md)。
+> A4 只接收通过该门禁且身份完整的候选；当前随机初始化 FP32 ONNX 仅用于工具链冒烟。
+
 ## 1. Scope
 
 A4 is responsible for the deployment/runtime layer of the Student model.
