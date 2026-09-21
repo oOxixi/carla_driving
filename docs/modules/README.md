@@ -14,6 +14,7 @@
 | A2 INT8 量化与 QAT | [`A2_INT8_QUANTIZATION_AND_QAT.md`](A2_INT8_QUANTIZATION_AND_QAT.md) | 通用检查工具部分就绪；真实 FP32 导出、Calibration、PTQ/QAT 与 INT8 产物均未交付 |
 | A4 OpenExplorer 与 J6P Runtime | [`A4_OPENEXPLORER_J6P_RUNTIME.md`](A4_OPENEXPLORER_J6P_RUNTIME.md) | X86 结构 Smoke 已有；生产 Runtime、固定工具链、J6P 产物与实机证据均未交付 |
 | B3 HIL 与 J6P 独立实测 | [`B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](B3_HIL_J6P_INDEPENDENT_VALIDATION.md) | 测量工具链和 X86 机制证据已就绪；正式 Runtime、Frozen Test、J6P 和遥测证据未交付 |
+| B4 复现与最终交付 | [`B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md`](B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md) | 有基础赛道打包工具可参考；挑战赛道台账、Release schema、Docker 和 Final 包均未建立 |
 
 ## 统一结构
 

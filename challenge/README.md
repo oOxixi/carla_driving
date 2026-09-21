@@ -61,3 +61,10 @@ B3 只测 A4 交付的同一 Runtime，不修改模型或维护第二套测试�
 Seen/Variant/Unseen、板端遥测、长稳、证据等级和最终门禁见
 [`docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](../docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md)。
 当前策展结果仅为随机初始化模型的 X86 机制预验证，不属于正式 J6P 结果。
+
+## B4 复现与交付
+
+B4 负责把代码、数据、模型、Runtime、B2/B3 原始证据和 Docker 绑定到唯一 Release
+Candidate，并在干净环境复现后生成 Final 包。详细状态机、Manifest、冻结和 G5 门禁见
+[`docs/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md`](../docs/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md)。
+当前基础赛道 Qwen 打包脚本不能替代挑战赛道 Student/J6P 发布链。
