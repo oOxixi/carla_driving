@@ -28,6 +28,8 @@
   HIL 回放、J6P 独立实测、延迟/内存/功耗/利用率口径、稳定性和最终证据门禁。
 - [`modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md`](modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md)：
   Candidate 台账、Release Manifest、Final Freeze、Docker、干净环境复现和提交包门禁。
+- [`modules/04_ROUTE_AND_LATERAL_CONTROL.md`](modules/04_ROUTE_AND_LATERAL_CONTROL.md)：
+  第 4 项顺序精读；覆盖全局/8 km 路线、单调里程、偏航重规划、局部参考窗和横向控制闭环。
 
 架构边界分别见各模块的 `README.md` 或 `ARCHITECTURE.md`。正式场景定义与验收条件以
 `scenarios/` 为准；运行生成的日志、截图、点云和临时报告只放 `artifacts/`。

@@ -15,6 +15,35 @@
 | A4 OpenExplorer 与 J6P Runtime | [`A4_OPENEXPLORER_J6P_RUNTIME.md`](A4_OPENEXPLORER_J6P_RUNTIME.md) | X86 结构 Smoke 已有；生产 Runtime、固定工具链、J6P 产物与实机证据均未交付 |
 | B3 HIL 与 J6P 独立实测 | [`B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](B3_HIL_J6P_INDEPENDENT_VALIDATION.md) | 测量工具链和 X86 机制证据已就绪；正式 Runtime、Frozen Test、J6P 和遥测证据未交付 |
 | B4 复现与最终交付 | [`B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md`](B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md) | 有基础赛道打包工具可参考；挑战赛道台账、Release schema、Docker 和 Final 包均未建立 |
+| 04 路线与横向控制 | [`04_ROUTE_AND_LATERAL_CONTROL.md`](04_ROUTE_AND_LATERAL_CONTROL.md) | 本轮精读完成；主链、合同、失败语义和测试入口已落位，5 项边界/加固工作保留 |
+
+## 按顺序精读进度
+
+本表只记录已经用当前 `challenge` 代码完成实现映射的模块；“本轮完成”不等于遗留阻塞全部关闭。
+
+| 顺序 | 模块 | 精读状态 |
+|---:|---|---|
+| 1 | 运行入口与帧控制 | 前序精读已完成；后续单独迁入本目录 |
+| 2 | 异步规划 | 前序精读已完成；后续单独迁入本目录 |
+| 3 | 命令与状态机 | 前序精读已完成；后续单独迁入本目录 |
+| 4 | 路线与横向控制 | **本轮完成**：真实调用链、参数、合同、失败语义、测试和 RLC-01～RLC-05 已落文档 |
+| 5 | 纵向控制 | 待按顺序精读 |
+| 6 | 感知 | 待按顺序精读 |
+| 7 | 安全仲裁 | 待按顺序精读 |
+| 8 | 场景执行与评分 | 待按顺序精读 |
+| 9 | 接口与坐标转换 | 待按顺序精读 |
+| 10 | Student 结构与预处理 | 待按顺序精读 |
+| 11 | Student Planner | 待按顺序精读 |
+| 12 | Teacher 数据治理 | 待按顺序精读 |
+| 13 | 蒸馏与晋级 | 待按顺序精读 |
+| 14 | 导出与部署 | 待按顺序精读 |
+| 15 | HIL 与测量 | 待按顺序精读 |
+| 16 | 语音链 | 待按顺序精读 |
+| 17 | Qwen 后端 | 待按顺序精读 |
+| 18 | 配置与场景合同 | 待按顺序精读 |
+| 19 | 运行环境与交付 | 待按顺序精读 |
+
+原任务为 20 项，但现有截图只显示到第 19 项；第 20 项名称在获得原索引下半页前保持 `UNKNOWN`，不得猜造。
 
 ## 统一结构
 
