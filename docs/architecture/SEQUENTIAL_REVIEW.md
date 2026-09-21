@@ -10,7 +10,7 @@
 | 4 | [路线与横向控制](modules/vehicle-lateral.md) | 本轮完成：14份实现页、119处占位改写、全局路线/恢复/横向有效参数索引；RLC问题保留 |
 | 5 | [纵向控制](modules/vehicle-longitudinal.md) | **本轮完成**：13份实现页、83处占位改写、生产链/参数/缺测/重置索引；M05-01与A07保留 |
 | 6 | [感知](modules/vehicle-perception.md) | **本轮完成**：12份实现页、10页96处占位改写、生产/参考链与来源索引；M06-01/M06-02保留 |
-| 7 | [安全仲裁](modules/vehicle-safety.md) | 待按顺序精读；保留既有静态复核结果 |
+| 7 | [安全仲裁](modules/vehicle-safety.md) | **本轮完成**：13份实现页、12页82处占位改写、双入口/仲裁/终态/评分证据索引；M07-01保留 |
 | 8 | [场景执行与评分](modules/vehicle-scenarios.md) | 待按顺序精读；保留既有静态复核结果 |
 | 9 | [接口与坐标转换](modules/vehicle-interfaces.md) | 待按顺序精读；保留既有静态复核结果 |
 | 10 | [Student 结构与预处理](modules/challenge-structure.md) | 待按顺序精读；保留既有静态复核结果 |
@@ -84,3 +84,11 @@
 - 纯Python复现M06-01重复上游track ID导致同帧身份冲突，以及M06-02 canonical按列表首项绑定lead speed导致目标速度/TTC错配；只登记问题，未修改业务代码。
 - 感知相关7份测试入口执行结果 **79 passed in 0.91s**；该结果不包含CARLA、真实ONNX、雨夜或真实传感器质量。
 - 下一项是第7模块“安全仲裁”；本轮不提前标记后续模块完成。
+
+## 第7模块完成记录
+
+- 核对13份 `car_control_D` 实现页；其中12页共82处泛用占位按函数体改写，包导出页保留实际导出边界。
+- 模块页明确生产 `ControlRuntime → SafetySupervisor` 与 canonical `DControlRuntime` 的适用范围，补齐 adapter/validator、仲裁优先级、动态安全距离、路线恢复、反馈终态、日志/benchmark/计分证据等级。
+- 纯 Python 定点复现 M07-01：同一 canonical command 首帧终态 safety override 后，次帧可恢复推进控制但 feedback 仍是旧终态；只登记边界，未修改业务代码，且不扩大为当前 live runner 故障。
+- D 相关测试入口执行结果 **35 passed in 0.53s**；不包含 CARLA、Qwen、真实传感器或官方评分一致性验收。
+- 下一项是第8模块“场景执行与评分”；本轮不提前标记后续模块完成。

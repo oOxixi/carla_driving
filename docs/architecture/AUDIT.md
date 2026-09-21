@@ -65,6 +65,10 @@
 
 **M06-02 / canonical实际转换已复现、未修复：前车速度按对象列表首项绑定。** [perception_frame_to_state](../../integration/canonical_bridge.py)仅给`index==0`对象写`scene.lead_speed_mps`，未按`lead_distance_m`、track或测距目标关联。构造side目标（无距离、列表第一）和lead目标（10 m、列表第二），自车10 m/s、lead speed 2 m/s，输出side为50 m/2 m/s/TTC 6.25 s，lead为10 m/0 m/s/TTC 1.0 s。字段均通过schema但对象语义错配；修复需明确range-track关联，并同时回归Qwen目标排序、Student pointer、NONE/缺测和多目标场景。
 
+### 第7模块：安全仲裁精读新增证据（基线3b05476b）
+
+**M07-01 / 直接 canonical 封装已复现、未修复：帧级控制可恢复推进，但命令反馈仍保持 safety 终态。** [DControlRuntime.apply](../../car_control_D/control_runtime.py)在 safety override 时调用 `ExecutionFeedbackTracker.safety_override`，把 command ID 永久置为终态；同一 ID 下一帧仍会重新仲裁和返回新的 `final_control`。用仓库 `control_command/perception_state` examples，首帧 `risk_level=EMERGENCY` 得 throttle=0/brake=1、feedback=`SAFETY_OVERRIDE`；次帧风险解除、50 m gap 后得到 reason=`NONE`、override=false、throttle=0.2/brake=0，但 feedback 仍为第一次 `SAFETY_OVERRIDE`，unfinished 为空。当前 CARLA live runner 直接调用 `SafetySupervisor`，不使用 `DControlRuntime`，故这不是当前实车故障证明。若未来接入 canonical D，需把覆盖定义为帧事件或命令终止二选一，并回归终态后控制授权、重试 attempt ID、评分和监控消费。
+
 
 ### 第2模块：异步规划精读新增证据（2026-09-20，基线fe1ba839）
 

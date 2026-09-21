@@ -32,7 +32,7 @@ Scoring utilities for D. Implements baseline 25/10/5 penalties and summaries.
 
 源码位置：[car_control_D/official_score.py 第 10 行](../../../car_control_D/official_score.py#L10)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+单场景仓库内计分结果，保存 ID、难度、基础分、扣分、非负最终分以及三类事件计数。dataclass 可变且不自行校验负计数或分数一致性，名称 `official` 不构成赛事官方规则证明。
 
 ### `ScoreBreakdown.to_dict`
 
@@ -42,7 +42,7 @@ Scoring utilities for D. Implements baseline 25/10/5 penalties and summaries.
 ScoreBreakdown.to_dict(self) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+通过 `dataclasses.asdict` 递归生成普通字典，不修改实例。当前字段均为标量；新增嵌套结构时会发生递归复制。
 
 ### `calculate_deduction`
 
@@ -52,7 +52,7 @@ ScoreBreakdown.to_dict(self) -> Dict[str, Any]
 calculate_deduction(result: Dict[str, Any]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按 `25*严重安全 + 10*严重偏航 + 5*未完成` 计算扣分。若存在 collision/red-light 字段，它们会额外加到 `serious_safety_events`；同时提供聚合字段和分项字段可能重复计数。所有值经 `int()` 转换，负值也未拒绝。
 
 ### `score_scenario`
 
@@ -62,7 +62,7 @@ calculate_deduction(result: Dict[str, Any]) -> float
 score_scenario(result: Dict[str, Any], base_score: float=25.0) -> ScoreBreakdown
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+使用 `calculate_deduction` 和默认基础分 25 生成 `ScoreBreakdown`，最终分下限为零。字段支持 difficulty/count 别名；结果中的展示计数与扣分函数的聚合逻辑并非同一条表达式，混合输入时应避免双计数。
 
 ### `weighted_completion_score`
 
@@ -72,7 +72,7 @@ score_scenario(result: Dict[str, Any], base_score: float=25.0) -> ScoreBreakdown
 weighted_completion_score(results: Iterable[Dict[str, Any]]) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 status 精确大写等于 `SUCCEEDED` 视为完成，按 basic/advanced/challenge 分桶；未知难度归 basic，空桶完成率为 0。三个桶固定按 0.30/0.40/0.30 加权并乘 25，因而未提供某难度也会贡献零分。
 
 ### `latency_report`
 
@@ -82,13 +82,13 @@ weighted_completion_score(results: Iterable[Dict[str, Any]]) -> Dict[str, Any]
 latency_report(command_records: Iterable[Dict[str, Any]]) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+收集数值 `e2e_latency_ms` 的数量/均值/最大值/≤150 ms 比例，并从整数纳秒时间戳计算 audio→ASR、ASR→intent 平均毫秒。未检查时间顺序、有限性或同一时钟域，负延迟和布尔值也会被数值分支接受。
 
 ### `OfficialScorer`
 
 源码位置：[car_control_D/official_score.py 第 92 行](../../../car_control_D/official_score.py#L92)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+无状态便捷封装，把单场景计分和多场景汇总暴露为对象方法。它不加载外部评分合同、版本或赛事配置，正式评价必须另行绑定规则来源。
 
 ### `OfficialScorer.score_scenario`
 
@@ -98,7 +98,7 @@ latency_report(command_records: Iterable[Dict[str, Any]]) -> Dict[str, Any]
 OfficialScorer.score_scenario(self, result: Dict[str, Any], base_score: float=25.0) -> ScoreBreakdown
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+直接转发到模块级 `score_scenario(result, base_score)`，没有额外验证、缓存或状态副作用。
 
 ### `OfficialScorer.summarize`
 
@@ -108,7 +108,7 @@ OfficialScorer.score_scenario(self, result: Dict[str, Any], base_score: float=25
 OfficialScorer.summarize(self, scenario_results: Iterable[Dict[str, Any]], command_records: Optional[Iterable[Dict[str, Any]]]=None) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+一次性物化场景 iterable，返回逐场景 score、固定难度权重完成率及可选 command 延迟报告。缺 command records 时使用空列表；不生成总扣分/总最终分，也不冻结输入身份。
 
 ## 内部调用与异常路径
 

@@ -29,7 +29,7 @@ Adapters that accept dicts or A/C dataclasses and convert them to D views.
 _as_mapping(obj: Any) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把异构输入收敛为普通字典：`None` 返回空字典，`dict` 浅拷贝，dataclass 使用 `asdict`，带 `to_dict()` 的对象调用该方法；其余对象枚举公开、非 callable 属性。最后一种反射路径会执行属性 getter，异常不会在此吞掉，且嵌套可变值并非深拷贝。
 
 ### `optional_float`
 
@@ -39,7 +39,7 @@ _as_mapping(obj: Any) -> Dict[str, Any]
 optional_float(value: Any) -> Optional[float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+将可选标量转换为有限 `float`；`None` 原样保留，布尔值、无法转换的值和 `NaN/Inf` 抛 `ValueError`。该函数不检查业务量纲或正负范围，距离、速度等限制由具体 adapter 继续执行。
 
 ### `_get`
 
@@ -49,7 +49,7 @@ optional_float(value: Any) -> Optional[float]
 _get(d: Dict[str, Any], *names: str, default: Any=None) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按给定别名顺序返回 mapping 中第一个“存在的键”的值，否则返回 `default`。显式值 `None` 仍会命中，不会继续回退到后续别名；调用方随后决定是否允许 `None`。
 
 ### `adapt_control`
 
@@ -59,7 +59,7 @@ _get(d: Dict[str, Any], *names: str, default: Any=None) -> Any
 adapt_control(obj: Any) -> ControlOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 mapping/dataclass/对象的 `throttle`、`brake`、`steer` 转成 `ControlOutput`；缺失或 `None` 以 `0.0` 处理，非有限值和布尔值由 `optional_float` 拒绝。这里只做形状和数值转换，不检查控制范围或油门制动冲突，必须再经过 `validate_control`。
 
 ### `adapt_command`
 
@@ -69,7 +69,7 @@ adapt_control(obj: Any) -> ControlOutput
 adapt_command(obj: Any) -> CommandView
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+将命令别名归一到 `CommandView`：字符串状态转大写，`confidence`/`intent_confidence` 互作后备，`parameters` 复制为字典，错误和警告复制为列表，缺失有效期取 5 秒。该入口不证明 intent、schema 或参数组合合法，后续由 `validate_command` 决定拒绝或告警。
 
 ### `adapt_vehicle_state`
 
@@ -79,7 +79,7 @@ adapt_command(obj: Any) -> CommandView
 adapt_vehicle_state(obj: Any) -> VehicleStateView
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把车辆状态及兼容别名转换成 `VehicleStateView`。速度、前向距离、停止线距离和传感器裕量不得为负，灯态被规范为大写且必须属于 `RED/YELLOW/GREEN/OFF/UNKNOWN`；其余坐标、偏移和曲率只要求有限。碰撞、闯灯和压线字段用 Python `bool()` 转换，字符串 `"false"` 因而会成为真值，调用者应传真实布尔量。
 
 ### `adapt_risk`
 
@@ -89,7 +89,7 @@ adapt_vehicle_state(obj: Any) -> VehicleStateView
 adapt_risk(obj: Any) -> RiskView
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 TTC、期望间距和紧急制动标志转换成 `RiskView`，接受 `time_to_collision_s`/`safe_distance_m` 等别名。TTC 与间距允许缺失但不得为负，标志使用 `bool()`；本函数不验证风险值与车辆距离、速度是否物理一致。
 
 ## 内部调用与异常路径
 

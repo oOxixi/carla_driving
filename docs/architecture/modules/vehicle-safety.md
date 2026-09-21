@@ -26,6 +26,37 @@ SafetyConfig多数默认来自DEFAULT_STRATEGY；emergency_reaction_time_s=0.35�
 
 安全覆盖、制动值和任务终态必须分别记录。低TTC、控制非法、碰撞与watchdog来源不同；先查首次原因，不能只看WATCHDOG_ALERT。修改阈值需联动感知风险、C规划、policy覆盖、反馈映射及场景验收。
 
+## 第7模块逐入口精读结论（2026-09-21）
+
+### 两条接线与控制权边界
+
+当前生产实时链是 `integration.ControlRuntime.step → SafetySupervisor.arbitrate → FrameResult.final_control`，外层负责 safety latch、告警清除、命令 FSM 和 CARLA apply；D 本身逐帧无状态。`DControlRuntime.apply` 是 canonical `ControlCommand/PerceptionState` 的另一层封装：它经 `InterfaceRegistry` 校验输入、生成 execution feedback，并测量仲裁时延/cadence，但当前 live runner 不调用它。两者共享 `SafetySupervisor`，测试其中一条不能替代另一条的闭环验收。
+
+最终安全决定包含 `raw_control` 与 `final_control`，便于证明覆盖前后差异。实时 runner 后仍存在 R05 所列“D 后启动宽限期全制动”执行例外；因此“D 是最后仲裁者”指正常控制授权边界，不应解释为此后绝无任何安全制动写入。
+
+### 输入收敛、单位与 fail-closed 顺序
+
+- control adapter 缺失三轴按 0 处理，但 validator 要求 steer `[-1,1]`、throttle/brake `[0,1]`，并以两者同时大于 `0.03` 判冲突。
+- vehicle view 使用 m、m/s、仿真秒和 1/m；距离/速度/传感器裕量不得为负。Risk 的 TTC 为秒、desired gap 为米。dataclass 本身只是容器，直接构造不会执行 adapter/validator 约束。
+- command adapter 支持兼容别名，但 command validator 只检查 schema、ID、intent、置信度及 CHANGE_LANE/SET_SPEED 的最低参数形状。UNKNOWN/歧义是 warning，进入 supervisor 后仍会停车等待或拒绝。
+- supervisor 的主 reason 按代码首个命中分支确定：非法控制/状态/风险、watchdog、碰撞/闯灯、命令停止或拒绝、风险急停、低 TTC、动态前距、停止线、路线/车道、caution TTC。`risk_metrics` 保存输入与动态阈值；多个风险同帧存在时不能只凭主 reason 推断其他风险未发生。
+
+动态前距取三者最大值：策略 `dynamic_safety_distance` 的 emergency distance、`SafetyConfig.min_front_distance_m`、以及本配置 `range buffer + v*reaction + v²/(2*deceleration)`。路线阈值随速度和曲率收紧；严重偏航分支只允许零油门和受限转向，不消费保留字段 `route_recovery_throttle/route_recovery_max_speed_mps` 来主动推进。
+
+### 命令终态、测量和评分证据等级
+
+`ExecutionFeedbackTracker` 在进程内保证同一 ID 最多一个终态；receipt→apply 使用单调纳秒并输出毫秒。重复终态返回第一次结果，`fail_unfinished` 才会在关停时补 FAILED。完整反馈由 `InterfaceRegistry` 验证；`validate_execution_feedback` 只是“ID + 终态枚举”的浅检查，不能替代 schema Gate。
+
+benchmark 只量测纯 Python 仲裁与无障碍直线 `ControlRuntime.step` 热路径；ScenarioRecorder 的 JSONL 是追加写、JSON 汇总是覆盖写，且没有原子提交或运行身份 manifest。`official_score.py` 实现仓库内 25/10/5 扣分和固定 30/40/30 完成率权重，未绑定赛事发布的评分版本，文件名不能作为官方一致性证明。
+
+### 已复现边界 M07-01（未修复）
+
+对同一 `command_id`，第一次 `DControlRuntime.apply` 因 emergency risk 生成终态 `SAFETY_OVERRIDE`；第二次在风险解除、仲裁 reason=`NONE` 时，`final_control` 可恢复为 throttle=0.2/brake=0，但 tracker 因“最多一个终态”仍返回第一次 `SAFETY_OVERRIDE`，且 unfinished 列表为空。即控制输出已经继续执行，生命周期却保持终态。当前 live runner 不使用该封装，所以不能扩大为已确认 CARLA 实车故障；若 canonical D 接入生产，必须明确安全覆盖是“命令永久终止”还是“帧级事件”，并据此禁止终态后推进或引入新的 command/attempt ID。
+
+### 修改联动清单
+
+改 `SafetyConfig`/优先级需同时核对 `config.strategy`、DrivingPolicy override、C 风险输出、runtime latch/恢复和场景 reason 断言；改 command view 需核对 canonical behavior、目标字段和 Qwen 多步计划；改 feedback 需核对 interface schema、终态监控和评分消费者；改日志/计分必须同步 manifest、原始事件和官方规则版本，不能通过重命名报告提升证据等级。
+
 ### [car_control_D/safety_supervisor.py](../../../car_control_D/safety_supervisor.py) 的入口与声明
 
 ```python
@@ -104,7 +135,7 @@ ControlRuntime.step(self, vehicle: RuntimeVehicleState, scene: PerceptionFrame, 
 
 `python -m pytest car_control_D/tests integration/tests/test_role_d_control_runtime.py integration/tests/test_basic_track_scorecard.py`
 
-Run from the worktree root. Listed commands are relevant checks, not claims that tests were executed. CARLA, remote-model and hardware acceptance require their actual environments and run manifests.
+2026-09-21 在工作树根目录执行上述入口：**35 passed in 0.53s**。结果覆盖当前 D 单元、canonical runtime 和基础评分回归，不包含 CARLA、远端模型、真实传感器、跨线程时序或赛事官方评分一致性。
 
 ## 功能小文档完整索引
 

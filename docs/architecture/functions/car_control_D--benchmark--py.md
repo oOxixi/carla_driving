@@ -29,7 +29,7 @@ Deterministic latency benchmark for D and the integrated control step.
 _percentile_ms(samples_ns: list[int], percentile: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+排序纳秒样本后使用 nearest-rank（`ceil(p*n)-1`）选择分位点，并换算为毫秒。调用方保证样本非空；空列表会索引失败，percentile 也未在此限制到 `[0,1]`。
 
 ### `_summary`
 
@@ -39,7 +39,7 @@ _percentile_ms(samples_ns: list[int], percentile: float) -> float
 _summary(samples_ns: list[int]) -> dict[str, float | int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+对非空纳秒样本生成数量、均值、P50/P95/P99 和最大值，所有时延字段输出毫秒。它不剔除异常值，也不保存原始样本或运行环境之外的负载信息。
 
 ### `_measure`
 
@@ -49,7 +49,7 @@ _summary(samples_ns: list[int]) -> dict[str, float | int]
 _measure(operation: Callable[[int], object], *, iterations: int, warmup: int) -> list[int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先调用 `operation(index)` 完成指定预热次数，再逐次用 `perf_counter_ns` 量测并返回每次耗时。operation 的返回值被丢弃，任何异常直接终止 benchmark；预热与正式迭代都从 index 0 重新开始。
 
 ### `run_control_safety_benchmark`
 
@@ -69,7 +69,7 @@ Benchmark CARLA-independent hot paths and return machine-readable evidence.
 run_control_safety_benchmark.arbitrate(index: int) -> object
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+局部热路径按 index 循环选择 5 组固定控制/状态/风险输入并调用同一 `SafetySupervisor`。样本覆盖正常、低 TTC、红灯、路线偏离和油门制动冲突，但不含传感器、命令生命周期或 CARLA IO。
 
 ### `run_control_safety_benchmark.integrated_step`
 
@@ -79,7 +79,7 @@ run_control_safety_benchmark.arbitrate(index: int) -> object
 run_control_safety_benchmark.integrated_step(index: int) -> object
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+每次构造 20 Hz、4 m/s 的无障碍车辆状态和空 `PerceptionFrame`，在固定直线路线上调用 `ControlRuntime.step`。其位置随 index 增长并封顶 39 m；这是纯 Python 热路径，不等于真实仿真帧同步或端到端时延。
 
 ## 内部调用与异常路径
 
