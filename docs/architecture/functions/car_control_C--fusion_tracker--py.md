@@ -33,7 +33,7 @@ C-role multi-sensor association and risk summary helpers.
 
 源码位置：[car_control_C/fusion_tracker.py 第 10 行](../../../car_control_C/fusion_tracker.py#L10)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的目标摘要，保存类别、距离、速度、置信度、来源及可选位置/ID/TTC/风险级别；它不是生产 `PerceptionFrame`，主要用于 C 交付辅助记录。
 
 ### `PerceptionTarget.__post_init__`
 
@@ -43,7 +43,7 @@ C-role multi-sensor association and risk summary helpers.
 PerceptionTarget.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求类别和来源去空白后非空、距离非负、置信度在 `[0,1]`。当前未显式检查速度、位置和 TTC 是否有限，调用方不能据构造成功推断所有数值都可靠。
 
 ### `PerceptionTarget.to_dict`
 
@@ -53,7 +53,7 @@ PerceptionTarget.__post_init__(self) -> None
 PerceptionTarget.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回 JSON-ready 目标字典，把位置组织为 `{x,y}` 并保留可空字段；不附 schema version，也不修改 tracker。
 
 ### `StableTargetTracker`
 
@@ -69,7 +69,7 @@ Assign stable target IDs using class and nearest-range continuity.
 StableTargetTracker.__init__(self, *, ego_speed_mps: float=4.0, road_curvature_per_m: float=0.0, sensor_margin_scale: float=1.0, max_association_distance_m: float=2.0) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存自车速度、曲率、传感器 margin scale 和最大距离关联阈值，ID 从 `C-001` 开始并创建内存轨迹表。构造器当前只转 float，未独立拒绝负值或非有限值。
 
 ### `StableTargetTracker.update`
 
@@ -79,7 +79,7 @@ StableTargetTracker.__init__(self, *, ego_speed_mps: float=4.0, road_curvature_p
 StableTargetTracker.update(self, target: PerceptionTarget) -> PerceptionTarget
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+优先复用显式已知 ID，否则按类别和最近距离连续性关联；未命中则分配新 ID。随后计算 TTC/风险，以 `replace` 返回富化目标并覆盖该 ID 的最新轨迹。
 
 ### `StableTargetTracker._match_target`
 
@@ -89,7 +89,7 @@ StableTargetTracker.update(self, target: PerceptionTarget) -> PerceptionTarget
 StableTargetTracker._match_target(self, target: PerceptionTarget) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+显式 target_id 已在轨迹表时直接复用；否则按插入顺序找第一个类别忽略大小写相同、距离差不超过阈值的轨迹。没有位置、速度或一对一全局匹配，邻近同类目标可能换 ID。
 
 ### `StableTargetTracker._ttc_s`
 
@@ -99,7 +99,7 @@ StableTargetTracker._match_target(self, target: PerceptionTarget) -> str | None
 StableTargetTracker._ttc_s(self, target: PerceptionTarget) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用固定构造时自车速度减目标速度得到接近速度；小于等于零返回 `None`，否则返回距离/接近速度并四舍五入到 3 位。不会随 update 自动刷新自车速度。
 
 ### `StableTargetTracker._risk_level`
 
@@ -109,7 +109,7 @@ StableTargetTracker._ttc_s(self, target: PerceptionTarget) -> float | None
 StableTargetTracker._risk_level(self, target: PerceptionTarget) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+结合 TTC 阈值与 `dynamic_safety_distance` 的 caution/emergency 距离，按 EMERGENCY→CAUTION→CLEAR 优先级分类；类别和 sensor margin 会影响动态包络，但结果只是摘要标签，不直接执行控制。
 
 ## 内部调用与异常路径
 

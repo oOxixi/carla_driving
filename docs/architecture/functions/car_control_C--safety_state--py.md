@@ -69,7 +69,7 @@ Auditable RGB/LiDAR safety-state fusion for member C.
 _optional_non_negative(name: str, value: float | None) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保留 `None` 表示测量缺失；非空值委托公共 `finite` 校验为有限非负浮点数，不把缺失转换成零。
 
 ### `_source`
 
@@ -79,7 +79,7 @@ _optional_non_negative(name: str, value: float | None) -> float | None
 _source(name: str, value: object) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求 exact string 且去空白后非空，返回 strip 后来源；用于证据来源字段，拒绝数字等可字符串化对象。
 
 ### `VisualObservation`
 
@@ -99,7 +99,7 @@ classification and prevents C from inventing visual evidence.
 VisualObservation.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+校验非负整数 frame、exact bool valid 和非空来源。无效观察必须同时没有类别/置信度；有效观察必须有非空类别和 `[0,1]` 置信度，并把类别标准化为大写。
 
 ### `VisualObservation.unavailable`
 
@@ -109,7 +109,7 @@ VisualObservation.__post_init__(self) -> None
 VisualObservation.unavailable(cls, frame: int, *, source: str='RGB_DETECTOR_UNAVAILABLE') -> 'VisualObservation'
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+构造 `valid=False` 且无语义字段的显式缺失观察，默认来源 `RGB_DETECTOR_UNAVAILABLE`；用于区分检测器不可用和有效 UNKNOWN 分类。
 
 ### `SafetyStateParameters`
 
@@ -125,7 +125,7 @@ C-side perception policy; distance thresholds are computed per frame.
 SafetyStateParameters.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+校验置信阈值 `[0,1]`、其余距离/时间/减速度参数严格为正、full brake 在 `(0,1]`；同时约束普通紧急距离不大于 caution、VRU 紧急距离不低于普通值且不超过 VRU caution、紧急 TTC 不大于 caution TTC。
 
 ### `SafetyStateSummary`
 
@@ -141,7 +141,7 @@ Serializable C output for Qwen/D/logging and on-site monitoring.
 SafetyStateSummary.fail_closed(self) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+只在 `recommended_action` 为 `FULL_BRAKE` 或 `EMERGENCY_BRAKE` 时为真；`SLOW_DOWN` 即使带速度 cap 也不算 fail-closed。
 
 ### `SafetyStateSummary.to_dict`
 
@@ -151,7 +151,7 @@ SafetyStateSummary.fail_closed(self) -> bool
 SafetyStateSummary.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把全部融合字段序列化为版本 `1.0` 字典，并复制只读安全距离组成与来源映射；保留 `None` 表示缺失测量/未计算包络。
 
 ### `ConservativeSensorFusion`
 
@@ -167,7 +167,7 @@ Fuse exact-frame RGB semantics with front LiDAR range conservatively.
 ConservativeSensorFusion.__init__(self, parameters: SafetyStateParameters | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存策略并初始化上一帧/时间/距离、待确认时序接近速度和 VRU caution 截止时间。实例有 episode 状态，不能跨重生复用而不 reset。
 
 ### `ConservativeSensorFusion.reset`
 
@@ -177,7 +177,7 @@ ConservativeSensorFusion.__init__(self, parameters: SafetyStateParameters | None
 ConservativeSensorFusion.reset(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+清除全部时序历史和 VRU 保守保持窗口；不会修改参数。
 
 ### `ConservativeSensorFusion.update`
 
@@ -187,7 +187,7 @@ ConservativeSensorFusion.reset(self) -> None
 ConservativeSensorFusion.update(self, *, frame: int, sim_time_s: float, ego_speed_mps: float, front_distance_m: float | None, lidar_valid: bool, visual: VisualObservation | None=None, lead_speed_mps: float | None=None, road_curvature_per_m: float=0.0, sensor_margin_scale: float=1.0, lidar_source: str='LIDAR_FRONT_CORRIDOR', lead_speed_source: str='LEAD_TRACKER') -> SafetyStateSummary
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求 frame/time 严格递增、RGB/LiDAR 同帧，并禁止无效 LiDAR 携带量测。优先用对齐 lead speed 算接近速度；无速度时对距离差分做物理上限和连续两次确认。随后生成动态安全距离，按 LiDAR 缺失、RGB 无距离危险、TTC/距离、VRU 保持依次决定 FULL_BRAKE/EMERGENCY_BRAKE/SLOW_DOWN/KEEP_SPEED，并记录每字段来源。
 
 ### `ConservativeSensorFusion.fail_closed_control`
 
@@ -197,7 +197,7 @@ ConservativeSensorFusion.update(self, *, frame: int, sim_time_s: float, ego_spee
 ConservativeSensorFusion.fail_closed_control(self) -> ControlOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回 `ControlOutput(throttle=0, brake=full_brake)`；它只是 C 侧可提交的原始制动，最终仍应进入 D 仲裁和事件记录。
 
 ### `ConservativeSensorFusion._range_action`
 
@@ -207,7 +207,7 @@ ConservativeSensorFusion.fail_closed_control(self) -> ControlOutput
 ConservativeSensorFusion._range_action(self, distance_m: float, ttc_s: float | None, mode: str, *, envelope: object, object_class: str | None=None) -> tuple[str, str, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求动态包络非空，以配置 floor 和包络较大值作为 caution/emergency 距离；判定优先级为紧急 TTC、紧急距离、caution TTC、caution 距离、包络外 KEEP_SPEED，并为 VRU 紧急距离使用专用 reason。
 
 ## 内部调用与异常路径
 

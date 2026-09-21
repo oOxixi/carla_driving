@@ -34,7 +34,7 @@ C-role RGB pipeline summary helpers.
 
 源码位置：[car_control_C/rgb_pipeline.py 第 16 行](../../../car_control_C/rgb_pipeline.py#L16)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的 RGB 检测摘要，保存类别、置信度、归一化 XYXY 框、来源和可选 track ID；真正运行时检测器位于 `integration.rgb_detector`。
 
 ### `RgbDetection.__post_init__`
 
@@ -44,7 +44,7 @@ C-role RGB pipeline summary helpers.
 RgbDetection.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求类别/来源非空、置信度在 `[0,1]`、框恰有四项且每项在 `[0,1]`。当前通过 `float()` 比较，未把字段规范化回 float，也未单独给非数值提供统一错误类型。
 
 ### `RgbDetection.to_dict`
 
@@ -54,13 +54,13 @@ RgbDetection.__post_init__(self) -> None
 RgbDetection.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回 JSON-ready 字典，把置信度与框坐标显式转 float，保留可空 track ID；不添加帧号或延迟。
 
 ### `RgbPipelineSummary`
 
 源码位置：[car_control_C/rgb_pipeline.py 第 47 行](../../../car_control_C/rgb_pipeline.py#L47)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+一帧交付摘要：Top-K 检测、可选 P95 延迟/30ms 判定及固定 ROI、跳帧保护说明。它是证据结构，不驱动生产检测调度。
 
 ### `RgbPipelineSummary.to_dict`
 
@@ -70,7 +70,7 @@ RgbDetection.to_dict(self) -> dict[str, object]
 RgbPipelineSummary.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+序列化为版本 `1.0` 字典并递归转换检测列表；可用 `None` 明确表示没有延迟样本，而不是把缺失当零毫秒。
 
 ### `_nearest_rank_p95`
 
@@ -80,7 +80,7 @@ RgbPipelineSummary.to_dict(self) -> dict[str, object]
 _nearest_rank_p95(values: Sequence[float]) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+空序列返回 `None`；否则排序浮点样本并取 `ceil(0.95*n)-1` 的 nearest-rank 元素。不检查负延迟或非有限值。
 
 ### `summarize_rgb_pipeline`
 
@@ -90,7 +90,7 @@ _nearest_rank_p95(values: Sequence[float]) -> float | None
 summarize_rgb_pipeline(*, frame_id: int, detections: Iterable[RgbDetection], top_k: int=5, latency_ms_samples: Sequence[float]=()) -> RgbPipelineSummary
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求 `top_k>=1`，按置信度降序截取检测，计算 nearest-rank P95，并以 `p95<=30ms` 生成可空门槛结果；ROI/跳帧字段写固定描述，未在此真正裁图或跟踪。
 
 ## 内部调用与异常路径
 

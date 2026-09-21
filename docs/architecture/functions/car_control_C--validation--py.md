@@ -28,7 +28,7 @@ Strict numeric validation shared by C's public control APIs.
 finite(name: str, value: object, *, minimum: float | None=None, maximum: float | None=None, positive: bool=False) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+纵向模块公共数值校验：只接受 exact `int/float`（拒绝 bool），转成有限 `float`，并按需执行严格正、下界和上界检查；返回规范化值，不夹取越界输入。
 
 ## 内部调用与异常路径
 

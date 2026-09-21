@@ -5,7 +5,7 @@
 GitHub。
 
 模型与权重的完整生命周期、身份字段和晋级门禁见
-[`docs/modules/MODEL_AND_WEIGHT_LIFECYCLE.md`](../docs/modules/MODEL_AND_WEIGHT_LIFECYCLE.md)。
+[`docs/architecture/modules/MODEL_AND_WEIGHT_LIFECYCLE.md`](../docs/architecture/modules/MODEL_AND_WEIGHT_LIFECYCLE.md)。
 
 ## 当前正式模型角色
 

@@ -8,7 +8,7 @@
 | 2 | [异步规划](modules/vehicle-planner.md) | 本轮完成：21份实现页、189处占位改写、具体参数索引；两项边界问题保留 |
 | 3 | [命令与状态机](modules/vehicle-behavior.md) | 本轮完成：10份实现页、137处占位改写、参数/状态/snapshot索引；M03问题保留 |
 | 4 | [路线与横向控制](modules/vehicle-lateral.md) | 本轮完成：14份实现页、119处占位改写、全局路线/恢复/横向有效参数索引；RLC问题保留 |
-| 5 | [纵向控制](modules/vehicle-longitudinal.md) | 待按顺序精读；保留既有静态复核结果 |
+| 5 | [纵向控制](modules/vehicle-longitudinal.md) | **本轮完成**：13份实现页、83处占位改写、生产链/参数/缺测/重置索引；M05-01与A07保留 |
 | 6 | [感知](modules/vehicle-perception.md) | 待按顺序精读；保留既有静态复核结果 |
 | 7 | [安全仲裁](modules/vehicle-safety.md) | 待按顺序精读；保留既有静态复核结果 |
 | 8 | [场景执行与评分](modules/vehicle-scenarios.md) | 待按顺序精读；保留既有静态复核结果 |
@@ -57,15 +57,22 @@
 
 10份实现页的Git blob SHA256与当前源码一致；132个已登记函数签名（含局部回调）经Python AST核对参数、注解和默认表达式无差异。模块/逐文件/语义/审计/进度页522条本地链接与函数锚点检查无缺失；10页无原占位句，`git diff --check`通过。4份examples实际依次经过HighLevelCommandAdapter与VoiceCommandAdapter：变道示例为valid/MULTIMODAL_DECISION/需确认，其余分别KEEP_LANE、SET_SPEED、SET_SPEED且无需确认；均只是适配成功，不是车辆执行验收。第3模块精读完成时改动仅16份文档；发布同步另行统一了全体系哈希口径。
 
-
 ## 第4模块完成记录
 
 - 覆盖14份实现记录和2份跨文件语义/专题页；13页共119处泛用占位按函数体改写，无占位的包导出页保留实际导出边界。
-- 模块页补全 RouteManager、场景兼容合同、两类 progress tracker、恢复策略和生产 Pure Pursuit 有效值；明确 `docs/modules/04_ROUTE_AND_LATERAL_CONTROL.md` 是专题证据，20模块页仍是统一入口。
+- 模块页补全 RouteManager、场景兼容合同、两类 progress tracker、恢复策略和生产 Pure Pursuit 有效值；明确 `docs/architecture/modules/04_ROUTE_AND_LATERAL_CONTROL.md` 是专题证据，20模块页仍是统一入口。
 - 区分终点 A*、距离覆盖、验收局部路线、纯几何变道和 CARLA 拓扑变道；区分路线投影、实际累计里程、任务绝对里程与重规划 local s。
 - RLC-01～RLC-05 继续作为接口重复、配置分散、长时状态上界、实车证据和浅不可变风险；本轮未修改实现，也未把历史 CARLA 报告升级为当前验收。
 - 下一项为第5模块“纵向控制”，本轮不提前标记后续模块完成。
 
 ### 第4模块文档校验结果
 
-14份实现页记录186个类/函数入口；119处旧占位清零，14个来源 Git blob SHA256 与当前源码一致，模块/实现/审计/进度文档中的471条本地链接无缺失。直接离线回归 `python -m pytest car_control_B/tests integration/tests/test_route_geometry.py integration/tests/test_route_manager.py integration/tests/test_route_planner.py integration/tests/test_runtime_stages.py -q` → **81 passed in 1.31s**；`git diff --check`通过。以上不包含CARLA闭环、远端模型或硬件验收。
+14份实现页记录186个类/函数入口；119处旧占位清零，14个来源 Git blob SHA256 与当前源码一致，模块/实现/审计/进度文档中的471条本地链接无缺失。直接离线回归 `python -m pytest car_control_B/tests integration/tests/test_route_geometry.py integration/tests/test_route_manager.py integration/tests/test_route_planner.py integration/tests/test_runtime_stages.py -q` → **81 passed in 1.31s**；`git diff --check`通过。以上不包含CARLA闭环、远端模型或硬件验收。专题文档现已迁入 `docs/architecture/modules/04_ROUTE_AND_LATERAL_CONTROL.md`。
+
+## 第5模块完成记录
+
+- 逐项核对 `car_control_C` 13份有声明的实现页，83处泛用占位已改为当前函数的参数消费、返回、状态、副作用、异常和调用关系；对应页面已无原占位句。
+- 纵向模块页补齐生产调用顺序、五类速度约束、停止状态边界、跟车/TTC缺测语义、融合确认、PID/episode重置、默认参数与 C→D 控制权。
+- 纯 Python 静态/边界核对确认 M05-01：DrivingPolicy 构造的五个动态包络字段未传入 `dynamic_safety_distance`，当前仍由 `DEFAULT_STRATEGY` 决定；只登记，不修改控制代码。
+- A07 重名测试发现问题继续保留。本机未提供 pytest，故本轮不声称离线套件或 CARLA 已重新运行。
+- 下一项是第6模块“感知”；本轮没有提前把后续模块标为完成。

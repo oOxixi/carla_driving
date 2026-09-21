@@ -33,7 +33,7 @@ Strict, serialisable configuration for C's local command safety policy.
 _finite(name: str, value: object, *, minimum: float | None=None, maximum: float | None=None, positive: bool=False) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+严格把 exact `int/float` 转成 `float`；拒绝 bool、非有限数以及违反 `positive`、`minimum`、`maximum` 的值。它只做数值边界校验，不负责单位换算或夹取。
 
 ### `FuzzyCommandPolicyConfig`
 
@@ -49,7 +49,7 @@ SI-only policy parameters; D remains the final safety authority.
 FuzzyCommandPolicyConfig.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+逐字段规范化为有限浮点数：置信度限制 `[0,1]`，制动比例限制 `(0,1]`，停车速度允许零，并要求舒适减速度不大于最大减速度。冻结 dataclass 通过 `object.__setattr__` 保存规范化值。
 
 ### `FuzzyCommandPolicyConfig.to_dict`
 
@@ -59,7 +59,7 @@ FuzzyCommandPolicyConfig.__post_init__(self) -> None
 FuzzyCommandPolicyConfig.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回包含固定 `schema_version=1.0` 与全部六个策略字段的普通字典；无文件写入，也不包含运行时状态。
 
 ### `FuzzyCommandPolicyConfig.from_dict`
 
@@ -69,7 +69,7 @@ FuzzyCommandPolicyConfig.to_dict(self) -> dict[str, object]
 FuzzyCommandPolicyConfig.from_dict(cls, payload: object) -> 'FuzzyCommandPolicyConfig'
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+只接受 plain dict、完全相等的七字段键集和版本 `1.0`；缺字段、未知字段或错版本均拒绝，再由构造器执行数值约束。这里不是宽松向后兼容解析器。
 
 ## 内部调用与异常路径
 

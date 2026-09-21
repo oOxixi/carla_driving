@@ -14,7 +14,7 @@ B2 如何在不泄露 Frozen Benchmark 的前提下给出最终验收结果。
 - [`MODEL_AND_WEIGHT_LIFECYCLE.md`](MODEL_AND_WEIGHT_LIFECYCLE.md)：权重身份和状态机。
 - [`B1_TO_A3_DATA_PIPELINE.md`](B1_TO_A3_DATA_PIPELINE.md)：数据发布与 split 边界。
 - [`B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](B3_HIL_J6P_INDEPENDENT_VALIDATION.md)：板端/HIL 原始实测与证据边界。
-- [`challenge/distillation/HANDOFF.md`](../../challenge/distillation/HANDOFF.md)：交接字段。
+- [`challenge/distillation/HANDOFF.md`](../../../challenge/distillation/HANDOFF.md)：交接字段。
 
 ## 2. 当前状态快照
 

@@ -113,6 +113,58 @@ SpeedPID.step(self, target_speed_mps: float, speed_mps: float, dt_s: float) -> f
 
 ## Dependencies and coordinated changes
 
+## 第5模块逐项精读结论（2026-09-21）
+
+本轮按当前 `challenge` 实现逐入口复核了 `car_control_C` 的13份有实际声明的功能页，原来的83处“需阅读函数体”占位说明均已替换为可检查的参数消费、返回值、状态变化、异常和调用关系。这里只记录代码已经具备的语义；没有把静态阅读写成 CARLA 闭环通过。
+
+### 生产调用链和控制权
+
+1. `integration.perception_bridge.longitudinal_request` 要求车辆与场景的 `frame`、`sim_time_s` 完全一致，并把交通灯、停止线和限速整理为 `TrafficConstraint`。只有距离而没有前车速度时，它保守地按前方物体静止处理，即 `closing_speed_mps = ego_speed_mps`；只有速度没有距离则拒绝。
+2. `ControlRuntime.step` 先把命令速度、交通灯接近速度和感知 `speed_cap_mps` 合并，再从局部路线窗计算曲率。需确认的命令先经过 `FuzzyCommandPolicy`；其余请求直接进入 `LongitudinalController.step`。
+3. `SpeedPlanner` 同时计算弯道、道路限速、停止点和前车间距四类硬上限，再与命令速度舒适斜坡取最小值。硬上限不会被命令斜坡抬高；`last_plan` 保留实际限制来源供日志解释。
+4. `LongitudinalController` 的优先顺序是停止线 `HOLD`、不可达停止点紧急制动、TTC 本地紧急制动、PID 与执行器变化率限制。油门和制动互斥，切换时先撤销另一执行器；输出仍是 C 的原始控制，不是最终车辆权限。
+5. `ControlRuntime` 可追加停车保持，随后把 C 的控制和 `RiskMetrics` 交给 D 的 `SafetySupervisor`。D 仍能覆盖最终油门/制动，因此诊断必须同时看 C 的 `state/reason/last_plan`、D 的 `reason_category` 以及最终实际 control。
+
+### 多约束速度规划
+
+| 约束 | 实际公式/条件 | 缺失时语义 |
+|---|---|---|
+| 弯道 | `sqrt(max_lateral_accel / abs(curvature))`；曲率近零为无穷上限 | 不限制目标速度，且无穷值不写入 `constraint_caps_mps` |
+| 道路限速 | 来自 `TrafficRulePlanner.speed_limit_mps` | 不加入硬上限 |
+| 停止点 | 舒适制动公式预留 `hold_distance + speed * dt`；近线切到 `CREEP/HOLD` | 无需停车时不限制 |
+| 前车 | `lead_speed + sqrt(2 * comfortable_decel * max(0, gap-desired_gap))` | 距离或接近速度缺失时不生成此 cap |
+| 命令速度 | 相对上一目标按 `command_accel/decel * dt` 斜坡 | 首帧以当前车速为斜坡起点 |
+
+`StopController` 的状态边界是：无停止距离为 `CRUISE`；距离不大于 `hold_distance` 且速度不大于 `hold_speed` 才 `HOLD`；距离不大于 `max(2 m, 3 * hold_distance)` 为 `CREEP`；否则 `DECELERATE`。当 `v² / (2 * usable_distance) >= max_decel` 时，外层控制器不再只依赖舒适速度上限，而返回满制动的 `stop_unreachable_fallback`。
+
+### 跟车、TTC 与缺测语义
+
+期望间距为 `standstill_gap + time_gap * ego_speed + sensor_base_margin + sensor_uncertainty_time * ego_speed`。只有距离和接近速度都存在且接近速度大于0时才计算 `TTC = distance / closing_speed`；`TTC is None` 的含义是当前局部函数无法计算，不等于已确认安全。生产桥接在“有距离、无速度”时采用静止障碍假设，因此该路径通常仍能给 C 生成保守 TTC；`FollowingController` 被单独调用时则保留 `None` 语义。
+
+`ConservativeSensorFusion` 是感知侧的另一套逐帧安全摘要：它强制帧号和仿真时间单调、RGB/LiDAR 同帧，LiDAR 无效却携带距离/速度会被拒绝。没有对齐前车速度时，LiDAR 距离差分必须经过幅值过滤和连续两次确认；目标切换造成的不可能接近速度会标记为 outlier。LiDAR 失效、只有 RGB 危险目标但无测距等情况会 fail closed。VRU 谨慎限速还有 `vru_caution_hold_s` 的时间保持，不能只看当前一帧是否仍有人。
+
+### PID、状态与重置
+
+- `SpeedPID` 校验有限值与正 `dt`，对积分做上下限裁剪；目标速度跳变超过 `pid_target_step_reset_mps` 时只保留原积分的25%，避免旧目标积累直接带入新目标。
+- `SpeedPlanner` 保存上一目标，`LongitudinalController` 保存上一油门/制动；两者都是 episode-local 状态。车辆重生或独立运行开始前必须调用 `LongitudinalController.reset()`，否则舒适斜坡和执行器变化率会继承旧 episode。
+- `FuzzyCommandPolicy` 对过期、低置信度、模糊或危险确认状态可直接生成纵向输出；它不是绕过 Qwen 的规划快路径，而是已收到命令后的本地安全确认层。
+
+### 当前生效的默认量级
+
+主策略来自 `config/strategy_config.yaml`：舒适/最大减速度为3/5 m/s²，停止保持制动0.55，紧急制动1.0，谨慎/紧急 TTC 为2.5/1.5 s；C 最大横向加速度2 m/s²，命令加减速斜坡1.5/3 m/s²，最大正加速度2.5 m/s²，控制量最大变化率2/s，蠕行0.5 m/s，停止保持距离0.8 m；PID 为 `1.2/0.15/0.02`，积分限幅4，目标跳变阈值3 m/s。跟车静止间距3 m、反应时间1 s，另叠加0.75 m基础传感器裕量和 `0.10 s * speed` 的速度裕量。
+
+这些是默认实例的来源，不代表所有 runner 都使用默认值。`integration.driving_policy` 会为 `ConservativeSensorFusion` 和 D 生成另一组场景策略；运行证据仍应记录实际策略文件及命令行覆盖。
+
+### 已确认边界与保留问题
+
+- **M05-01 / 配置生效缺口，未修复：** `DrivingPolicy.perception_parameters()` 会构造 `reaction_time_s`、`emergency_reaction_time_s`、`comfortable_deceleration_mps2`、`emergency_deceleration_mps2` 和 `range_uncertainty_buffer_m`，`SafetyStateParameters` 也验证这些字段；但 `ConservativeSensorFusion.update()` 调用 `dynamic_safety_distance()` 时没有把它们或等价 `StrategyConfig` 传入。动态包络实际读取模块导入时的 `DEFAULT_STRATEGY`，所以修改上述五个 perception 字段不会改变 `dynamic_caution_distance_m` / `dynamic_emergency_distance_m`。距离 floor、TTC、VRU 阈值等其他字段仍有各自消费路径，不能据此说整个 policy 都无效。
+- **A07 / 测试发现缺口继续保留：** `car_control_C/tests/test_safety_state.py` 有重复测试函数名，后定义覆盖前定义；文件中的函数数不等于 pytest 实际收集数。它属于既有审计问题，本轮没有用文档改写冒充修复。
+- `fusion_tracker.py`、`sensor_adapter.py`、`rgb_pipeline.py` 是 C 的交付/审计辅助件；生产 CARLA 感知主入口是 `integration/carla_perception.py`。单独辅助件测试通过不能证明生产 runner 使用了同一目标身份和时序。
+
+### 验证范围
+
+相关回归入口包括 `car_control_C/tests/test_longitudinal.py`、`test_fuzzy_command_policy.py`、`test_safety_state.py`、`test_strategy_generalization.py`、`integration/tests/test_perception_bridge.py`、`test_runtime_loop.py` 与 `test_role_c_perception.py`。本轮完成的是源码、逐文件说明、链接与纯 Python 边界核对；当前本机环境没有可用 pytest，因此不声明这些测试已重新执行，也未运行 CARLA、真实传感器或远端模型。
+
 
 ## Validation entry points
 

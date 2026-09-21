@@ -16,7 +16,7 @@ B4 只登记、核验和打包事实，不替其他成员补做实验，不修�
 - [`A2_INT8_QUANTIZATION_AND_QAT.md`](A2_INT8_QUANTIZATION_AND_QAT.md)：INT8 产物身份与 Gate。
 - [`A4_OPENEXPLORER_J6P_RUNTIME.md`](A4_OPENEXPLORER_J6P_RUNTIME.md)：J6P artifact 与 Runtime 交付。
 - [`B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](B3_HIL_J6P_INDEPENDENT_VALIDATION.md)：板端实测和原始证据。
-- [`submission/README.md`](../../submission/README.md)：现有基础赛道提交材料入口。
+- [`submission/README.md`](../../../submission/README.md)：现有基础赛道提交材料入口。
 
 ## 2. 当前状态快照
 

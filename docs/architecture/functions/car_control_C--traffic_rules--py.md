@@ -34,7 +34,7 @@ UNKNOWN is intentionally treated as a stopping constraint, never as green.
 TrafficRulePlanner.stop_required(self, traffic: TrafficConstraint | None) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+只接受 `TrafficConstraint` 或 `None`。只有存在停止线距离且信号为 RED/YELLOW/UNKNOWN 才要求停车；GREEN 或缺少距离不生成停止约束，UNKNOWN 明确按保守停车处理。
 
 ### `TrafficRulePlanner.speed_limit_mps`
 
@@ -44,7 +44,7 @@ TrafficRulePlanner.stop_required(self, traffic: TrafficConstraint | None) -> boo
 TrafficRulePlanner.speed_limit_mps(self, traffic: TrafficConstraint | None) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回交通合同中的可选道路限速；输入为空返回 `None`。不自行读取地图，也不把缺失限速解释成零。
 
 ### `TrafficRulePlanner.stop_distance_m`
 
@@ -54,7 +54,7 @@ TrafficRulePlanner.speed_limit_mps(self, traffic: TrafficConstraint | None) -> f
 TrafficRulePlanner.stop_distance_m(self, traffic: TrafficConstraint | None) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+复用 `stop_required`，仅在保守停车条件满足时透传停止线距离，否则返回 `None`；不改变原交通对象。
 
 ## 内部调用与异常路径
 

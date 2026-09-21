@@ -55,6 +55,10 @@
 
 - **M01-01 / 已复现、未修复**：[sensor_stability](functions/integration--sensor_stability--py.md)的run_sensor_probe预热失败后，测量while不进入但执行else，将success=True。实际函数mock边界复现frames=3/startup_frames=1、wait_for_frame=False得到success=true/aligned_frames=0。影响probe结果与CLI返回码的可信性；修复需检查循环成功条件并覆盖启动失败/测量失败/成功。该发现不等于CARLA真实传感器必然失效。
 
+### 第5模块：纵向控制精读新增证据（基线50bf1faa）
+
+**M05-01 / 静态接线与纯Python边界已确认、未修复：perception policy的五个动态包络字段未进入实际包络公式。** [DrivingPolicy.perception_parameters](../../integration/driving_policy.py)构造`reaction_time_s`、`emergency_reaction_time_s`、`comfortable_deceleration_mps2`、`emergency_deceleration_mps2`、`range_uncertainty_buffer_m`，且[SafetyStateParameters](functions/car_control_C--safety_state--py.md)验证并保存它们；但`ConservativeSensorFusion.update`调用[dynamic_safety_distance](../../config/strategy.py)时只传速度、接近速度、曲率、对象类型和margin scale，没有传这些字段或替代StrategyConfig。后者因此读取导入时的`DEFAULT_STRATEGY`。同一帧输入下仅改变上述五项，动态谨慎/紧急距离保持相同。此结论只针对动态包络；距离floor、TTC、VRU限速/保持等字段有独立消费路径，不能扩大为整个DrivingPolicy无效。修复前需先决定单一配置所有权，再补参数效果回归和runner实际配置身份记录。
+
 
 ### 第2模块：异步规划精读新增证据（2026-09-20，基线fe1ba839）
 
