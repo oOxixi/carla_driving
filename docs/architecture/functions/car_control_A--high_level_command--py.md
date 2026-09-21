@@ -21,6 +21,8 @@ Frozen high-level command boundary for Qwen/decision-module output.
 
 ## 功能入口：输入、输出与实现说明
 
+<a id="fn-is-high-level-command"></a>
+
 ### `is_high_level_command`
 
 源码位置：[car_control_A/high_level_command.py 第 46 行](../../../car_control_A/high_level_command.py#L46)。类型：`FunctionDef`。
@@ -31,11 +33,17 @@ is_high_level_command(payload: object) -> bool
 
 Return True for Qwen-style command JSON, not legacy voice envelopes.
 
+仅测试Mapping且有action、无intent；不校验schema/动作合法性。action与intent同时出现会走非高层识别路径，不能据False判断载荷一定符合voice协议。
+
+<a id="fn-highlevelcommandadapter"></a>
+
 ### `HighLevelCommandAdapter`
 
 源码位置：[car_control_A/high_level_command.py 第 51 行](../../../car_control_A/high_level_command.py#L51)。类型：`ClassDef`。
 
 Convert Qwen high-level JSON into A's command envelope contract.
+
+<a id="fn-highlevelcommandadapter---init--"></a>
 
 ### `HighLevelCommandAdapter.__init__`
 
@@ -45,7 +53,9 @@ Convert Qwen high-level JSON into A's command envelope contract.
 HighLevelCommandAdapter.__init__(self, *, default_ttl_s: float=3.0, default_slow_speed_mps: float=2.0) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+default_ttl_s默认3秒须有限正数；default_slow_speed_mps默认2m/s须有限非负。保存默认值，不加载模型或创建线程；与VoiceCommandAdapter的同名默认是两个独立实例配置。
+
+<a id="fn-highlevelcommandadapter-adapt"></a>
 
 ### `HighLevelCommandAdapter.adapt`
 
@@ -55,7 +65,9 @@ HighLevelCommandAdapter.__init__(self, *, default_ttl_s: float=3.0, default_slow
 HighLevelCommandAdapter.adapt(self, payload: Mapping[str, object]) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+输入须Mapping；顶层精确小写禁止字段命中则返回invalid envelope，版本非1.0也返回invalid。其余字段格式错误可直接抛TypeError/ValueError（非统一返回invalid）；动作规范化并组装voice风格envelope。复杂动作valid但强制确认，未知动作invalid；visual_valid=False只加warning，本层不强制停车。只保留明列字段，target_track_id不会复制到输出，见M03-03。
+
+<a id="fn-highlevelcommandadapter--runtime-fields"></a>
 
 ### `HighLevelCommandAdapter._runtime_fields`
 
@@ -65,7 +77,9 @@ HighLevelCommandAdapter.adapt(self, payload: Mapping[str, object]) -> dict[str, 
 HighLevelCommandAdapter._runtime_fields(self, action: str, payload: Mapping[str, object], warnings: list[dict[str, str]]) -> tuple[str, dict[str, object], bool]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+START映KEEP_LANE并加warning，EMERGENCY_BRAKE映EMERGENCY_STOP。SET_SPEED需要目标m/s，SLOW_DOWN缺速度用默认2m/s并告警；STOP/EMERGENCY_STOP/KEEP_LANE无参数。TURN*/CHANGE_LANE*提取方向，AVOID映AVOID_OBSTACLE，其余复杂枚举保留intent并要求确认；FOLLOW/YIELD等未列入集合则UNKNOWN。
+
+<a id="fn-highlevelcommandadapter--invalid-envelope"></a>
 
 ### `HighLevelCommandAdapter._invalid_envelope`
 
@@ -75,7 +89,9 @@ HighLevelCommandAdapter._runtime_fields(self, action: str, payload: Mapping[str,
 HighLevelCommandAdapter._invalid_envelope(self, payload: Mapping[str, object], intent: str, code: str, message: str) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+使用安全fallback ID/source，置status=invalid、confidence=0、ambiguity=INVALID_HIGH_LEVEL_COMMAND、空参数及指定errors；TTL使用本实例默认，坏timestamp宽容丢为None。不会直接返回A DrivingCommand或操纵车辆。
+
+<a id="fn--speed-parameters"></a>
 
 ### `_speed_parameters`
 
@@ -85,7 +101,9 @@ HighLevelCommandAdapter._invalid_envelope(self, payload: Mapping[str, object], i
 _speed_parameters(payload: Mapping[str, object], *, required: bool) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取target_speed_mps，required=False且None则空dict；其余须有限非负数，返回{speed:float,unit:m/s}。没有上限50m/s或道路限速检查，此处依赖其他边界。
+
+<a id="fn--direction-parameters"></a>
 
 ### `_direction_parameters`
 
@@ -95,7 +113,9 @@ _speed_parameters(payload: Mapping[str, object], *, required: bool) -> dict[str,
 _direction_parameters(action: str, prefix: str) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+去掉动作前缀并strip下划线，余串非空则写direction，否则空dict；不独立校验LEFT/RIGHT，调用方先按动作集合过滤。
+
+<a id="fn--source-text"></a>
 
 ### `_source_text`
 
@@ -105,7 +125,9 @@ _direction_parameters(action: str, prefix: str) -> dict[str, object]
 _source_text(payload: Mapping[str, object], action: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+优先非空source_text，其次reason再reason_zh，组合action: reason；全缺时生成Qwen high-level action加动作名。用于审计，不重新解析自然语言意图。
+
+<a id="fn--required-text"></a>
 
 ### `_required_text`
 
@@ -115,7 +137,9 @@ _source_text(payload: Mapping[str, object], action: str) -> str
 _required_text(data: Mapping[str, object], name: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求exact str且strip后非空，返回strip结果；与voice_adapter同名helper保留原空白的行为不同。
+
+<a id="fn--optional-text"></a>
 
 ### `_optional_text`
 
@@ -125,7 +149,9 @@ _required_text(data: Mapping[str, object], name: str) -> str
 _optional_text(data: Mapping[str, object], name: str) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+字段为非空str则strip返回，其余包括错误类型返回None；这是宽容可选元数据处理，不适用于必填ID。
+
+<a id="fn--safe-text"></a>
 
 ### `_safe_text`
 
@@ -135,7 +161,9 @@ _optional_text(data: Mapping[str, object], name: str) -> str | None
 _safe_text(value: object, default: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+非空str返回strip，其他取传入default，用于拒绝路径保留可审计身份；不生成UUID。
+
+<a id="fn--confidence"></a>
 
 ### `_confidence`
 
@@ -145,7 +173,9 @@ _safe_text(value: object, default: str) -> str
 _confidence(data: Mapping[str, object]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+优先confidence，键不存在才回intent_confidence，二者都缺默认0.0；显式None或坏数不回退，交有界校验报错。
+
+<a id="fn--bounded-confidence"></a>
 
 ### `_bounded_confidence`
 
@@ -155,7 +185,9 @@ _confidence(data: Mapping[str, object]) -> float
 _bounded_confidence(value: object) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先要求有限非负数，再拒绝>1，返回float；不根据阈值自动设确认，后续DrivingCommand属性处理低置信。
+
+<a id="fn--nonnegative-number"></a>
 
 ### `_nonnegative_number`
 
@@ -165,7 +197,9 @@ _bounded_confidence(value: object) -> float
 _nonnegative_number(name: str, value: object) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+exact int/float且非bool，有限>=0，返回float；拒绝字符串数值和NaN/Infinity。
+
+<a id="fn--positive-number"></a>
 
 ### `_positive_number`
 
@@ -175,7 +209,9 @@ _nonnegative_number(name: str, value: object) -> float
 _positive_number(name: str, value: object) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+在有限非负数检查后拒绝0，返回float；用于TTL，单位秒，不读取timestamp_ns换算时限。
+
+<a id="fn--optional-timestamp"></a>
 
 ### `_optional_timestamp`
 
@@ -185,7 +221,9 @@ _positive_number(name: str, value: object) -> float
 _optional_timestamp(data: Mapping[str, object], name: str) -> int | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+字段None/缺失返回None；否则须非负exact int（拒绝bool），原样返回纳秒值，不判断时间域或先后顺序。
+
+<a id="fn--optional-timestamp-lenient"></a>
 
 ### `_optional_timestamp_lenient`
 
@@ -195,7 +233,9 @@ _optional_timestamp(data: Mapping[str, object], name: str) -> int | None
 _optional_timestamp_lenient(data: Mapping[str, object], name: str) -> int | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+调用严格timestamp helper，TypeError/ValueError转None；用于invalid envelope审计，防止诊断时间坏值遮蔽主错误。
+
+<a id="fn--confirmation-requested"></a>
 
 ### `_confirmation_requested`
 
@@ -205,7 +245,7 @@ _optional_timestamp_lenient(data: Mapping[str, object], name: str) -> int | None
 _confirmation_requested(data: Mapping[str, object]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+合并requires_confirmation与confirm_required两个可选键，每个存在值须exact bool；返回any，全部缺失为False。一个False不能覆盖另一个True。
 
 ## 内部调用与异常路径
 
@@ -270,6 +310,8 @@ _confirmation_requested(data: Mapping[str, object]) -> bool
 ## 2026-09-20 源码契约复核
 
 基线 `fe1ba839`。以下从当前源码声明提取；用于补充原有语义说明。默认表达式不等于运行生效值，分支记录不覆盖被调用函数的全部异常。
+
+<a id="fn-car-control-a-high-level-command-py"></a>
 
 ### `car_control_A/high_level_command.py`
 

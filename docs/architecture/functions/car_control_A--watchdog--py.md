@@ -21,11 +21,15 @@ Narrow runtime health fail-safe, deliberately not D's safety arbiter.
 
 ## 功能入口：输入、输出与实现说明
 
+<a id="fn-runtimewatchdog"></a>
+
 ### `RuntimeWatchdog`
 
 源码位置：[car_control_A/watchdog.py 第 10 行](../../../car_control_A/watchdog.py#L10)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+A运行健康超时检测器，返回全刹或None，不是D SafetySupervisor，不负责感知碰撞规则。内部不锁存故障；外层ControlRuntime可将告警锁存，不能把两层恢复语义混用。
+
+<a id="fn-runtimewatchdog---init--"></a>
 
 ### `RuntimeWatchdog.__init__`
 
@@ -35,7 +39,9 @@ Narrow runtime health fail-safe, deliberately not D's safety arbiter.
 RuntimeWatchdog.__init__(self, *, timeout_s: float=1.0, required_modules: tuple[str, ...]=(), startup_grace_s: float=0.0, started_at_s: float=0.0) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+timeout_s默认1秒，required_modules默认空tuple，startup_grace_s/started_at_s默认0；检查timeout>0、其余>=0但未独立isfinite/type约束。required名字非空str并frozenset去重；启动截止=start+grace+timeout，无后台线程或预填心跳。
+
+<a id="fn-runtimewatchdog--time"></a>
 
 ### `RuntimeWatchdog._time`
 
@@ -45,7 +51,9 @@ RuntimeWatchdog.__init__(self, *, timeout_s: float=1.0, required_modules: tuple[
 RuntimeWatchdog._time(value: float, name: str) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先float转换，再要求有限非负秒；与其他exact数值契约不同，会接受可转换数字字符串/bool。仅校验单次值，不拒绝跨调用时钟回退。
+
+<a id="fn-runtimewatchdog-heartbeat"></a>
 
 ### `RuntimeWatchdog.heartbeat`
 
@@ -55,7 +63,9 @@ RuntimeWatchdog._time(value: float, name: str) -> float
 RuntimeWatchdog.heartbeat(self, module: str, *, now_s: float) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+module非空str；暂停中抛RuntimeError；否则保存经_time校验的now并覆盖旧值。非required模块也记录并参加后续超时检测，未来时间戳未额外拒绝。
+
+<a id="fn-runtimewatchdog-pause"></a>
 
 ### `RuntimeWatchdog.pause`
 
@@ -73,6 +83,10 @@ module outage creates a false permanent stop.  The caller must bracket
 only the simulator/pacing wait; control, perception and logging remain
 inside the active watchdog interval.
 
+要求此前未暂停，保存经_time校验的now；暂停中heartbeat/check都会抛错，不是静默忽略。resume以暂停时长平移心跳/启动截止，只适合系统被外部tick/pacing冻结的等待。
+
+<a id="fn-runtimewatchdog-resume"></a>
+
 ### `RuntimeWatchdog.resume`
 
 源码位置：[car_control_A/watchdog.py 第 50 行](../../../car_control_A/watchdog.py#L50)。类型：`FunctionDef`。
@@ -81,7 +95,9 @@ inside the active watchdog interval.
 RuntimeWatchdog.resume(self, *, now_s: float) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+必须已暂停，now有限非负且>=暂停点；将暂停时长加到启动截止和所有已记录心跳，清暂停标志。只应排除外部冻结等待，不应覆盖仍在工作的感知/控制/日志时间。
+
+<a id="fn-runtimewatchdog-check"></a>
 
 ### `RuntimeWatchdog.check`
 
@@ -91,7 +107,9 @@ RuntimeWatchdog.resume(self, *, now_s: float) -> None
 RuntimeWatchdog.check(self, *, now_s: float) -> ControlOutput | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+暂停中拒绝；达到启动截止（>=）且任一required从未心跳则全刹；任一已记录模块心跳年龄严格>timeout也全刹，包括非required模块。否则None；补回心跳后可恢复，函数自身不保持故障锁存。
+
+<a id="fn-runtimewatchdog-module-failed"></a>
 
 ### `RuntimeWatchdog.module_failed`
 
@@ -101,7 +119,9 @@ RuntimeWatchdog.check(self, *, now_s: float) -> ControlOutput | None
 RuntimeWatchdog.module_failed(self, module: str, error: BaseException) -> ControlOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+仅校验module名后返回全刹，error参数当前不读取/记录，也不修改心跳或故障状态；调用方必须保存异常证据并决定锁存。
+
+<a id="fn-runtimewatchdog--full-brake"></a>
 
 ### `RuntimeWatchdog._full_brake`
 
@@ -111,7 +131,7 @@ RuntimeWatchdog.module_failed(self, module: str, error: BaseException) -> Contro
 RuntimeWatchdog._full_brake() -> ControlOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回严格ControlOutput(throttle=0,brake=1,steer=0)；不直接调用CARLA apply_control，也不代表D已仲裁或车已停稳。
 
 ## 内部调用与异常路径
 
@@ -162,6 +182,8 @@ RuntimeWatchdog._full_brake() -> ControlOutput
 ## 2026-09-20 源码契约复核
 
 基线 `fe1ba839`。以下从当前源码声明提取；用于补充原有语义说明。默认表达式不等于运行生效值，分支记录不覆盖被调用函数的全部异常。
+
+<a id="fn-car-control-a-watchdog-py"></a>
 
 ### `car_control_A/watchdog.py`
 

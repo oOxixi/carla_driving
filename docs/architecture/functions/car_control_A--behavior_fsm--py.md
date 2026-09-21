@@ -24,29 +24,39 @@ Auditable command lifecycle and high-level behaviour state machine.
 
 ## 功能入口：输入、输出与实现说明
 
+<a id="fn-behaviorstate"></a>
+
 ### `BehaviorState`
 
 源码位置：[car_control_A/behavior_fsm.py 第 11 行](../../../car_control_A/behavior_fsm.py#L11)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+全局行为状态枚举：IDLE、LANE_FOLLOW、APPROACH_STOP、STOPPED、FOLLOWING、YIELDING、CONFIRMING、EMERGENCY_BRAKE、RECOVERING。状态不是ExecutionStatus终态；例如STOPPED是所有SUCCEEDED的统一落点，不证明该任务物理上已停车。
+
+<a id="fn-behaviorresult"></a>
 
 ### `BehaviorResult`
 
 源码位置：[car_control_A/behavior_fsm.py 第 24 行](../../../car_control_A/behavior_fsm.py#L24)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结返回值(state, feedback=None)。feedback=None可表示新请求被接纳、重复活动ID或确认后继续执行，不能仅据None判断发生了新的提交；存在feedback时是已存储的命令终态。
+
+<a id="fn--activecommand"></a>
 
 ### `_ActiveCommand`
 
 源码位置：[car_control_A/behavior_fsm.py 第 30 行](../../../car_control_A/behavior_fsm.py#L30)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存DrivingCommand与FSM接受时started_at_s；相对timeout从接受时间计，绝对有效期仍取command.expires_at_s。确认不会重置这两个时点。
+
+<a id="fn-behaviorfsm"></a>
 
 ### `BehaviorFSM`
 
 源码位置：[car_control_A/behavior_fsm.py 第 35 行](../../../car_control_A/behavior_fsm.py#L35)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+A内部命令生命周期状态机，维护一个全局行为状态、活动ID表与永久终态缓存。正常新命令会终结旧活动命令；不运行车辆、模型或计时线程，必须由调用方驱动submit/confirm/tick/complete。
+
+<a id="fn-behaviorfsm---init--"></a>
 
 ### `BehaviorFSM.__init__`
 
@@ -56,7 +66,9 @@ Auditable command lifecycle and high-level behaviour state machine.
 BehaviorFSM.__init__(self, *, command_timeout_s: float=15.0) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+command_timeout_s默认15秒，只检查>0再转float，未独立拒绝NaN/Infinity；初始化IDLE和空活动/终态字典。无终态淘汰策略、无锁，适合由单控制循环调用。
+
+<a id="fn-behaviorfsm-state"></a>
 
 ### `BehaviorFSM.state`
 
@@ -66,7 +78,9 @@ BehaviorFSM.__init__(self, *, command_timeout_s: float=15.0) -> None
 BehaviorFSM.state(self) -> BehaviorState
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回当前全局BehaviorState，不查询车辆速度或当前路由；不要从STOPPED字面推断真实车速为零。
+
+<a id="fn-behaviorfsm-submit"></a>
 
 ### `BehaviorFSM.submit`
 
@@ -76,7 +90,9 @@ BehaviorFSM.state(self) -> BehaviorState
 BehaviorFSM.submit(self, command: DrivingCommand, *, now_s: float) -> BehaviorResult
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+同ID已有终态则返回原反馈，已有活动记录则不替换payload也不重置计时。先检查输入命令到期，已到期立即EXPIRED；否则将已有活动命令结为FAILED/superseded（反馈缓存但本次不逐项返回），保存新命令并按requires_confirmation或action定状态。过期新ID分支会经_finish改变全局状态，却不清除其他活动ID，见M03-01。
+
+<a id="fn-behaviorfsm-confirm"></a>
 
 ### `BehaviorFSM.confirm`
 
@@ -86,7 +102,9 @@ BehaviorFSM.submit(self, command: DrivingCommand, *, now_s: float) -> BehaviorRe
 BehaviorFSM.confirm(self, command_id: str, *, approved: bool, now_s: float) -> BehaviorResult
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+未知ID返回当前状态及可能已有终态；活动ID先检查绝对到期/相对timeout，优先终结。approved为false则REJECTED，truthy则映射action状态；本方法未要求当前一定CONFIRMING、未强制approved为bool，也不修改原DrivingCommand的确认字段。ControlRuntime外层另校验bool并更新授权副本。
+
+<a id="fn-behaviorfsm-complete"></a>
 
 ### `BehaviorFSM.complete`
 
@@ -96,7 +114,9 @@ BehaviorFSM.confirm(self, command_id: str, *, approved: bool, now_s: float) -> B
 BehaviorFSM.complete(self, command_id: str, *, now_s: float, detail: str) -> ExecutionFeedback | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+未知ID返回None，已终态返回原对象；活动ID先检查到期/timeout，再保存SUCCEEDED。只接收调用者的完成判断，不自己测车速/路径，任何成功都会使全局状态STOPPED。
+
+<a id="fn-behaviorfsm-fail"></a>
 
 ### `BehaviorFSM.fail`
 
@@ -106,7 +126,9 @@ BehaviorFSM.complete(self, command_id: str, *, now_s: float, detail: str) -> Exe
 BehaviorFSM.fail(self, command_id: str, *, now_s: float, detail: str) -> ExecutionFeedback | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+活动命令先检查到期/timeout，仍有效才记录FAILED；已终态原样返回、未知ID为None。不能用fail覆盖已有EXPIRED/TIMED_OUT或成功结论。
+
+<a id="fn-behaviorfsm-safety-override"></a>
 
 ### `BehaviorFSM.safety_override`
 
@@ -118,6 +140,10 @@ BehaviorFSM.safety_override(self, command_id: str, *, now_s: float, detail: str)
 
 Terminate a command whose authority was pre-empted by D.
 
+已有终态原样返回、未知ID为None；活动ID仍先经过期/timeout检查，仍有效才保存SAFETY_OVERRIDE。故安全事件发生在到期后时，本接口可能返回EXPIRED，详细安全证据需另行记录。
+
+<a id="fn-behaviorfsm-tick"></a>
+
 ### `BehaviorFSM.tick`
 
 源码位置：[car_control_A/behavior_fsm.py 第 106 行](../../../car_control_A/behavior_fsm.py#L106)。类型：`FunctionDef`。
@@ -126,7 +152,9 @@ Terminate a command whose authority was pre-empted by D.
 BehaviorFSM.tick(self, *, now_s: float) -> tuple[ExecutionFeedback, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+遍历当前活动ID，调用_due_feedback并返回本轮新产生反馈tuple；没有后台自动tick。它只处理时限，不评估车辆完成、确认超时以外的安全或路线条件。
+
+<a id="fn-behaviorfsm--due-feedback"></a>
 
 ### `BehaviorFSM._due_feedback`
 
@@ -142,6 +170,10 @@ Every operation that could complete or alter an active command calls
 this first.  Thus callers cannot bypass a missed ``tick`` and report a
 stale command as successful or normally failed.
 
+绝对有效期先检查now>=expires，再检查now-started>command_timeout_s；若同时命中返回EXPIRED而非TIMED_OUT。超时边界严格大于，确认不重置started。该方法只在调用入口时执行，无自动定时器。
+
+<a id="fn-behaviorfsm--finish"></a>
+
 ### `BehaviorFSM._finish`
 
 源码位置：[car_control_A/behavior_fsm.py 第 130 行](../../../car_control_A/behavior_fsm.py#L130)。类型：`FunctionDef`。
@@ -150,7 +182,9 @@ stale command as successful or normally failed.
 BehaviorFSM._finish(self, command_id: str, status: ExecutionStatus, now_s: float, detail: str, command: DrivingCommand | None=None) -> BehaviorResult
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+若ID已终态直接返回原反馈；否则pop该ID，构建并缓存ExecutionFeedback，SUCCEEDED置STOPPED，其余状态置RECOVERING。可为不在活动表的ID建终态，且仍改全局状态；可选command参数当前未消费。不自动发布反馈给记录器。
+
+<a id="fn-behaviorfsm--state-for"></a>
 
 ### `BehaviorFSM._state_for`
 
@@ -160,7 +194,7 @@ BehaviorFSM._finish(self, command_id: str, status: ExecutionStatus, now_s: float
 BehaviorFSM._state_for(action: str) -> BehaviorState
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+STOP→APPROACH_STOP、EMERGENCY_BRAKE→EMERGENCY_BRAKE、KEEP_LANE/SET_SPEED→LANE_FOLLOW、FOLLOW→FOLLOWING、YIELD→YIELDING；其他字符串RECOVERING。不是动作合法性校验，不执行该动作。
 
 ## 内部调用与异常路径
 
@@ -205,6 +239,8 @@ BehaviorFSM._state_for(action: str) -> BehaviorState
 ## 2026-09-20 源码契约复核
 
 基线 `fe1ba839`。以下从当前源码声明提取；用于补充原有语义说明。默认表达式不等于运行生效值，分支记录不覆盖被调用函数的全部异常。
+
+<a id="fn-car-control-a-behavior-fsm-py"></a>
 
 ### `car_control_A/behavior_fsm.py`
 

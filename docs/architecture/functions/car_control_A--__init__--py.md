@@ -82,8 +82,14 @@
 
 基线 `fe1ba839`。以下从当前源码声明提取；用于补充原有语义说明。默认表达式不等于运行生效值，分支记录不覆盖被调用函数的全部异常。
 
+<a id="fn-car-control-a---init---py"></a>
+
 ### `car_control_A/__init__.py`
 
 来源 SHA256：`dd3f9ef4196584511464525d6dfa39d0507d900c371f973919fdb9f714646824`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。
+
+## 包导出与初始化副作用
+
+导出A/C契约、HighLevelCommandAdapter及识别函数、ActorRegistry/CarlaSession/SensorFrameBuffer/SynchronousWorld；BehaviorFSM、ManeuverFSM、RuntimeWatchdog、LatencyTrace需从对应子模块导入。包导入不连接CARLA、不spawn/tick或启动线程；contracts会导入DEFAULT_STRATEGY，因此确认阈值来自配置加载而不是运行时每次查询。

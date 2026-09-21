@@ -25,11 +25,15 @@ Route reference boundary owned by A; no lateral control algorithm lives here.
 
 ## 功能入口：输入、输出与实现说明
 
+<a id="fn-routereference"></a>
+
 ### `RouteReference`
 
 源码位置：[car_control_A/routing.py 第 10 行](../../../car_control_A/routing.py#L10)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+A到B的路线容器：points_xy_m点列、curvature_per_m有符号曲率、target_speed_mps速度、可空route_id、独立默认空metadata字典。冻结dataclass并不深冻结metadata，且不自带CARLA坐标转换或轨迹生成算法。
+
+<a id="fn-routereference---post-init--"></a>
 
 ### `RouteReference.__post_init__`
 
@@ -39,13 +43,17 @@ Route reference boundary owned by A; no lateral control algorithm lives here.
 RouteReference.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+仅检查points长度>=2及target_speed_mps不小于0；不逐点校验二维/数值/有限性，不限制曲率或验证route_id/metadata。NaN速度可绕过负值比较，不能据构造成功声称路线通过完整几何校验。
+
+<a id="fn-lateralcontroller"></a>
 
 ### `LateralController`
 
 源码位置：[car_control_A/routing.py 第 25 行](../../../car_control_A/routing.py#L25)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+runtime_checkable Protocol，仅声明steer(reference)->float接口。运行时协议匹配检查成员存在，不验证返回[-1,1]或算法安全；归一化范围与最终D约束由实现/集成消费者负责。
+
+<a id="fn-lateralcontroller-steer"></a>
 
 ### `LateralController.steer`
 
@@ -56,6 +64,8 @@ LateralController.steer(self, reference: RouteReference) -> float
 ```
 
 Return only a bounded steering command in [-1, 1].
+
+Protocol只声明reference入参和float返回，无默认算法/范围夹取；实现方应返回[-1,1]，调用方仍应验证。RouteReference不携带当前车辆状态，具体B适配器可能通过自身状态获取。
 
 ## 内部调用与异常路径
 
@@ -103,6 +113,8 @@ Return only a bounded steering command in [-1, 1].
 ## 2026-09-20 源码契约复核
 
 基线 `fe1ba839`。以下从当前源码声明提取；用于补充原有语义说明。默认表达式不等于运行生效值，分支记录不覆盖被调用函数的全部异常。
+
+<a id="fn-car-control-a-routing-py"></a>
 
 ### `car_control_A/routing.py`
 

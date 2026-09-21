@@ -6,7 +6,7 @@
 |---|---|---|
 | 1 | [运行入口与帧控制](modules/vehicle-entry.md) | 本轮完成：参数索引及98处占位补正；运行缺口仍保留 |
 | 2 | [异步规划](modules/vehicle-planner.md) | 本轮完成：21份实现页、189处占位改写、具体参数索引；两项边界问题保留 |
-| 3 | [命令与状态机](modules/vehicle-behavior.md) | 待按顺序精读；保留既有静态复核结果 |
+| 3 | [命令与状态机](modules/vehicle-behavior.md) | 本轮完成：10份实现页、137处占位改写、参数/状态/snapshot索引；M03问题保留 |
 | 4 | [路线与横向控制](modules/vehicle-lateral.md) | 待按顺序精读；保留既有静态复核结果 |
 | 5 | [纵向控制](modules/vehicle-longitudinal.md) | 待按顺序精读；保留既有静态复核结果 |
 | 6 | [感知](modules/vehicle-perception.md) | 待按顺序精读；保留既有静态复核结果 |
@@ -44,3 +44,15 @@
 ### 第2模块文档校验结果
 
 21份实现页的源码SHA256均与本轮基线记录一致；189个有签名入口按Python AST核对参数、注解和默认表达式无差异。模块、逐文件、语义页与进度/审计页的745条本地链接检查无缺失（后续补入的3个参数锚点也已检查）；21页无原占位句。`git diff --check`对已跟踪差异无错误；architecture仍为已有未跟踪目录，因此另外直接检查文档文件与锚点。以上为文档/静态契约校验和两项纯函数复现，未宣称运行整套回归或真实服务验收。
+
+## 第3模块完成记录
+
+- 覆盖10份实现记录、2份跨文件语义页，核对4份命令示例和A目录README/RUN的历史适用范围；9页137处占位按函数体改写，无占位的包导出页补实际导出/初始化边界。
+- 模块页补参数索引、两Adapter与两FSM的协议差异、状态迁移、完整snapshot字段来源及跨模块接线；区分建议输出与真实执行、直接FSM与ControlRuntime外层保护。
+- 已复现M03-01过期新ID影响全局状态、M03-02待重规划恢复原计划及计数重置、M03-03目标字段不透传；runner重规划/安全建议消费为静态核查，不宣称已重现实车后果。
+- 离线验证：`python -m pytest car_control_A/tests/test_behavior_fsm.py car_control_A/tests/test_maneuver_fsm.py car_control_A/tests/test_contracts.py car_control_A/tests/test_high_level_command.py car_control_A/tests/test_routing.py car_control_A/tests/test_simulator.py car_control_A/tests/test_telemetry.py car_control_A/tests/test_watchdog.py integration/tests/test_voice_adapter.py -q` → **113 passed**。未运行CARLA烟测或模型服务。
+- 下一项为第4模块“路线与横向控制”，本轮仅文档修改，不提前标记其他模块完成。
+
+### 第3模块文档校验结果
+
+10份实现页的来源SHA256与当前源码一致；132个已登记函数签名（含局部回调）经Python AST核对参数、注解和默认表达式无差异。模块/逐文件/语义/审计/进度页522条本地链接与函数锚点检查无缺失；10页无原占位句，`git diff --check`通过。4份examples实际依次经过HighLevelCommandAdapter与VoiceCommandAdapter：变道示例为valid/MULTIMODAL_DECISION/需确认，其余分别KEEP_LANE、SET_SPEED、SET_SPEED且无需确认；均只是适配成功，不是车辆执行验收。工作树改动仅16份文档，未提交。

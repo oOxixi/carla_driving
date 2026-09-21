@@ -32,3 +32,17 @@ NLU 识别出一句话不等于车辆已有执行授权。系统需要区分“�
 先看 voice envelope 是否已有可表达字段，再看 Adapter 输出的 `DrivingCommand.action`；然后检查 `submit_voice` 的 requested_speed/stop_hold、BehaviorFSM 的确认/终态以及 `_completion_feedback`。最后检查 D 是否仍可抢占。只改 NLU 枚举不能算功能完成。
 
 验证定位：[voice adapter tests](../../../integration/tests/test_voice_adapter.py)、[runtime loop tests](../../../integration/tests/test_runtime_loop.py)、[A tests](../../../car_control_A/tests)。至少区分合法命令、非法命令撞 ID、需确认、超时后不推进、停车成功后保持这几条路径。此处是后续修改的验证清单，不表示本轮新加了测试。
+
+## 第3模块精读补充：确认、去重与两种完成语义
+
+HighLevelCommandAdapter先将action JSON变成voice envelope，再由VoiceCommandAdapter变成A命令；canonical规划则有独立桥接，不应把高层adapter不支持FOLLOW误报为整个系统不支持FOLLOW。高层adapter的visual_valid=False只加warning，target_track_id不透传；目标执行与alias证据需独立追踪，详见M03-03。
+
+A命令绝对到期为now>=expires，相对FSM timeout为now-started>timeout，前者优先。confirm不重置计时；BehaviorFSM.confirm只改变全局状态，不更新不可变DrivingCommand的确认标志。ControlRuntime.confirm_voice另行替换授权副本、更新voice确认字段；若还是MULTIMODAL_DECISION，确认后会FAILED并停车，而不是自动生成复杂路线。
+
+重复活动ID在BehaviorFSM层不更新payload/计时；重复终态返回原反馈。ControlRuntime在调用FSM后还会保存自己的active_command，因此这两份状态必须一起核对，不能只根据FSM重复ID短路就推断全运行时payload完全未变。终态对象幂等也不等于外层日志一定只写一次。
+
+BehaviorFSM.complete只接收调用者判定，所有SUCCEEDED使全局状态STOPPED。真实车速并不由这个标签定义：ControlRuntime的SET_SPEED达到误差0.25m/s连续3帧也可成功，KEEP_LANE连续3次完成检查即成功；停车保持由stop_hold另管。ManeuverFSM.CONFIRMING是终态，与BehaviorFSM.CONFIRMING活动状态不同。
+
+直接使用BehaviorFSM时，提交过期新ID会将全局状态改RECOVERING却仍保留旧活动ID，已用纯函数复现（M03-01）。ControlRuntime通常先处理旧owner再提交，故该复现不证明生产入口同样残留；仍需保留直接接口的真实边界说明。
+
+详细参数、异常与跨模块接线见[模块3参数索引](../modules/vehicle-behavior.md)。

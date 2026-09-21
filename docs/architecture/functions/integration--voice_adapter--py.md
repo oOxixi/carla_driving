@@ -36,11 +36,15 @@ Translate the voice-group envelope into the A/C runtime command contract.
 
 ## 功能入口：输入、输出与实现说明
 
+<a id="fn-voicediagnostic"></a>
+
 ### `VoiceDiagnostic`
 
 源码位置：[integration/voice_adapter.py 第 35 行](../../../integration/voice_adapter.py#L35)。类型：`ClassDef`。
 
 Normalized diagnostic emitted by either voice pipeline revision.
+
+<a id="fn-voicecommandmetadata"></a>
 
 ### `VoiceCommandMetadata`
 
@@ -48,17 +52,25 @@ Normalized diagnostic emitted by either voice pipeline revision.
 
 Auditable voice fields which do not belong in A's minimal contract.
 
+<a id="fn-adaptedvoicecommand"></a>
+
 ### `AdaptedVoiceCommand`
 
 源码位置：[integration/voice_adapter.py 第 59 行](../../../integration/voice_adapter.py#L59)。类型：`ClassDef`。
 
 A command ready for A/C plus its immutable audit metadata.
 
+冻结dataclass只阻止属性重新绑定；metadata.parameters是可变dict的顶层拷贝，嵌套值仍可能共享。“immutable audit metadata”不能理解为深度不可变或持久化审计。
+
+<a id="fn-voicecommandadapter"></a>
+
 ### `VoiceCommandAdapter`
 
 源码位置：[integration/voice_adapter.py 第 68 行](../../../integration/voice_adapter.py#L68)。类型：`ClassDef`。
 
 Validate and safely adapt the JSON returned by ``voice_group.pipeline``.
+
+<a id="fn-voicecommandadapter---init--"></a>
 
 ### `VoiceCommandAdapter.__init__`
 
@@ -68,7 +80,9 @@ Validate and safely adapt the JSON returned by ``voice_group.pipeline``.
 VoiceCommandAdapter.__init__(self, *, default_ttl_s: float=3.0, default_slow_speed_mps: float=2.0) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+default_ttl_s默认3秒须有限正数；default_slow_speed_mps默认2m/s须有限非负。仿真接收时刻由adapt调用方提供，构造不读取宿主时间。
+
+<a id="fn-voicecommandadapter-adapt"></a>
 
 ### `VoiceCommandAdapter.adapt`
 
@@ -84,6 +98,10 @@ Create a CARLA-time command from a voice envelope.
 envelope.  It intentionally is not inferred from voice timestamps, since
 monotonic host time and CARLA simulation time have distinct origins.
 
+now_s在try之前要求有限非负，错误直接抛出；非Mapping envelope或内部TypeError/ValueError返回_rejected。这里只转换，不登记FSM；control_authorized代表输入未被拒绝，仍需尊重command.requires_confirmation。
+
+<a id="fn-voicecommandadapter--adapt-validated"></a>
+
 ### `VoiceCommandAdapter._adapt_validated`
 
 源码位置：[integration/voice_adapter.py 第 98 行](../../../integration/voice_adapter.py#L98)。类型：`FunctionDef`。
@@ -92,7 +110,9 @@ monotonic host time and CARLA simulation time have distinct origins.
 VoiceCommandAdapter._adapt_validated(self, envelope: Mapping[str, object], now: float) -> AdaptedVoiceCommand
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+校验版本1.0、ID/source/intent/status/ambiguity文本，parameters须plain dict，diagnostics须list，confidence与确认布尔合法。expiry=now+正TTL；status非valid、UNKNOWN或errors非空返回未授权NO_OP。合法输入按intent/compiled_maneuver映内部action，并保留语音纳秒元数据；control_authorized=True仍可能requires_confirmation=True，不等于可立即推进。
+
+<a id="fn-voicecommandadapter--rejected"></a>
 
 ### `VoiceCommandAdapter._rejected`
 
@@ -104,6 +124,10 @@ VoiceCommandAdapter._rejected(self, envelope: Mapping[str, object], now: float, 
 
 Return an auditable NO_OP without granting longitudinal authority.
 
+生成confidence=0、NO_OP、is_ambiguous=True和REJECTED反馈，control_authorized=False；errors追加VEHICLE_ADAPTER_REJECTED，坏TTL回默认、坏时间戳丢None。保留可用元数据但不应覆盖当前合法活动命令；ControlRuntime.submit_voice在此结果分支只缓存反馈即返回。
+
+<a id="fn-voicecommandadapter--runtime-fields"></a>
+
 ### `VoiceCommandAdapter._runtime_fields`
 
 源码位置：[integration/voice_adapter.py 第 190 行](../../../integration/voice_adapter.py#L190)。类型：`FunctionDef`。
@@ -112,7 +136,9 @@ Return an auditable NO_OP without granting longitudinal authority.
 VoiceCommandAdapter._runtime_fields(self, intent: str, parameters: Mapping[str, object], *, compiled_maneuver: bool=False) -> tuple[str, float | None, bool]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+EMERGENCY_STOP→EMERGENCY_BRAKE，STOP保持；SET_SPEED和带速度SLOW_DOWN→SET_SPEED(m/s)。SLOW_DOWN仅当mode=RELATIVE、action=DECELERATE且无speed时用默认2m/s；KEEP_LANE不带速度。复杂动作默认MULTIMODAL_DECISION并强制确认；compiled_maneuver=True时PULL_OVER→STOP、其他复杂动作→KEEP_LANE，不在此验证真实计划/路线授权，信任外层接线。
+
+<a id="fn--speed-command-fields"></a>
 
 ### `_speed_command_fields`
 
@@ -122,7 +148,9 @@ VoiceCommandAdapter._runtime_fields(self, intent: str, parameters: Mapping[str, 
 _speed_command_fields(intent_parameters: Mapping[str, object], intent: str) -> tuple[str, float, bool]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+SET_SPEED/SLOW_DOWN要求数值speed非bool；unit缺省km/h，支持km/h/kph/kmh/公里每小时斜杠写法、m/s/mps/米每秒斜杠写法，strip/lower/去空格后匹配；km/h除3.6。有限非负才返回(SET_SPEED,target,False)，未知单位拒绝，没有最大速度夹取。
+
+<a id="fn--required-text"></a>
 
 ### `_required_text`
 
@@ -132,7 +160,9 @@ _speed_command_fields(intent_parameters: Mapping[str, object], intent: str) -> t
 _required_text(data: Mapping[str, object], name: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求exact str且strip后非空，但返回原字符串；intent只upper、status只lower而不strip，带前后空白的枚举可能被拒绝。ID/source保留原始空白。
+
+<a id="fn--nonnegative-number"></a>
 
 ### `_nonnegative_number`
 
@@ -142,7 +172,9 @@ _required_text(data: Mapping[str, object], name: str) -> str
 _nonnegative_number(name: str, value: object) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+exact int/float、非bool、有限>=0，返回float；adapt的now_s在外层try之前校验，坏now会直接抛错，不生成NO_OP。
+
+<a id="fn--positive-number"></a>
 
 ### `_positive_number`
 
@@ -152,7 +184,9 @@ _nonnegative_number(name: str, value: object) -> float
 _positive_number(name: str, value: object) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+有限非负检查后拒绝0，返回float；用于默认TTL和envelope.valid_duration_s，单位仿真秒。
+
+<a id="fn--confidence"></a>
 
 ### `_confidence`
 
@@ -162,7 +196,9 @@ _positive_number(name: str, value: object) -> float
 _confidence(data: Mapping[str, object]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+优先confidence，缺键才取intent_confidence；两键都缺/显式None会报错，不像HighLevelCommandAdapter默认0。须有限[0,1]，低于配置阈值但格式合法的值保留给确认逻辑。
+
+<a id="fn--optional-bool"></a>
 
 ### `_optional_bool`
 
@@ -172,7 +208,9 @@ _confidence(data: Mapping[str, object]) -> float
 _optional_bool(data: Mapping[str, object], name: str, *, default: bool) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+缺键用调用者default，存在值必须exact bool；用于confirm_required/compiled_maneuver，不接受字符串true或整数1。
+
+<a id="fn--diagnostic-tuple"></a>
 
 ### `_diagnostic_tuple`
 
@@ -182,7 +220,9 @@ _optional_bool(data: Mapping[str, object], name: str, *, default: bool) -> bool
 _diagnostic_tuple(value: object, name: str) -> tuple[VoiceDiagnostic, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+仅接受list；非空字符串转(code=原串,message=原串)，Mapping项需非空字符串code及字符串message（允许空message）。坏项直接报错，返回VoiceDiagnostic tuple，不strip保存内容。
+
+<a id="fn--diagnostic-tuple-lenient"></a>
 
 ### `_diagnostic_tuple_lenient`
 
@@ -192,7 +232,9 @@ _diagnostic_tuple(value: object, name: str) -> tuple[VoiceDiagnostic, ...]
 _diagnostic_tuple_lenient(value: object) -> tuple[VoiceDiagnostic, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+None按空list，严格诊断转换失败时整组返回空tuple，不保留前面已成功元素；用于拒绝路径避免再次失败。
+
+<a id="fn--safe-text"></a>
 
 ### `_safe_text`
 
@@ -202,7 +244,9 @@ _diagnostic_tuple_lenient(value: object) -> tuple[VoiceDiagnostic, ...]
 _safe_text(value: object, default: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+非空str strip后返回，否则default；用于被拒绝输入的身份/源文字提取，不用于正常路径枚举校验。
+
+<a id="fn--optional-timestamp"></a>
 
 ### `_optional_timestamp`
 
@@ -212,7 +256,9 @@ _safe_text(value: object, default: str) -> str
 _optional_timestamp(data: Mapping[str, object], name: str) -> int | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+缺失/None返回None，其余为非负exact int；不核对audio/asr/intent先后，也不将宿主纳秒作为命令过期秒。
+
+<a id="fn--optional-timestamp-lenient"></a>
 
 ### `_optional_timestamp_lenient`
 
@@ -222,7 +268,7 @@ _optional_timestamp(data: Mapping[str, object], name: str) -> int | None
 _optional_timestamp_lenient(data: Mapping[str, object], name: str) -> int | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+严格时间戳校验失败转None，在NO_OP拒绝metadata里保留其余可用诊断；不会悄悄改变正常成功路径的校验标准。
 
 ## 内部调用与异常路径
 
@@ -291,6 +337,8 @@ _optional_timestamp_lenient(data: Mapping[str, object], name: str) -> int | None
 ## 2026-09-20 源码契约复核
 
 基线 `fe1ba839`。以下从当前源码声明提取；用于补充原有语义说明。默认表达式不等于运行生效值，分支记录不覆盖被调用函数的全部异常。
+
+<a id="fn-integration-voice-adapter-py"></a>
 
 ### `integration/voice_adapter.py`
 

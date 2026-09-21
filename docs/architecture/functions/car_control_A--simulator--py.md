@@ -21,6 +21,8 @@ CARLA lifecycle primitives owned by member A.
 
 ## 功能入口：输入、输出与实现说明
 
+<a id="fn--clone-world-settings"></a>
+
 ### `_clone_world_settings`
 
 源码位置：[car_control_A/simulator.py 第 17 行](../../../car_control_A/simulator.py#L17)。类型：`FunctionDef`。
@@ -37,11 +39,17 @@ and writable fields.  Reconstructing through the concrete settings class
 keeps this module CARLA-import-free and also works with the fake settings
 used in unit tests.
 
+枚举public非callable可读属性，优先type(settings)(**values)，TypeError/ValueError时改无参构造并逐项setattr，跳过不可写属性。避免CARLA Boost对象copy/pickle限制，但不保证所有隐藏设置被复制。
+
+<a id="fn-sensorframebuffer"></a>
+
 ### `SensorFrameBuffer`
 
 源码位置：[car_control_A/simulator.py 第 48 行](../../../car_control_A/simulator.py#L48)。类型：`ClassDef`。
 
 Thread-safe, bounded sensor callback storage keyed by CARLA frame number.
+
+<a id="fn-sensorframebuffer---init--"></a>
 
 ### `SensorFrameBuffer.__init__`
 
@@ -51,7 +59,9 @@ Thread-safe, bounded sensor callback storage keyed by CARLA frame number.
 SensorFrameBuffer.__init__(self, *, max_frames: int=32) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+max_frames默认32且须正exact int，容量按不同frame桶数计，不是消息条数。OrderedDict存帧→sensor_id→payload，consumed_through=-1；Condition负责并发push与等待唤醒，不启动采集线程。
+
+<a id="fn-sensorframebuffer-pending-frames"></a>
 
 ### `SensorFrameBuffer.pending_frames`
 
@@ -61,7 +71,9 @@ SensorFrameBuffer.__init__(self, *, max_frames: int=32) -> None
 SensorFrameBuffer.pending_frames(self) -> tuple[int, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+Condition锁内返回已缓存frame按数值排序的tuple；只读快照，不消费或证明每帧所需传感器齐全。
+
+<a id="fn-sensorframebuffer-push"></a>
 
 ### `SensorFrameBuffer.push`
 
@@ -71,7 +83,9 @@ SensorFrameBuffer.pending_frames(self) -> tuple[int, ...]
 SensorFrameBuffer.push(self, sensor_id: str, frame: int, payload: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+sensor_id非空str、frame非负exact int；已消费水位及以前的迟到帧直接丢弃。同帧同sensor覆盖payload引用；超容量删除最小frame而非最先到达回调，最后notify_all。不会复制measurement或检查其内部frame与参数相等。
+
+<a id="fn-sensorframebuffer-callback"></a>
 
 ### `SensorFrameBuffer.callback`
 
@@ -83,6 +97,8 @@ SensorFrameBuffer.callback(self, sensor_id: str) -> Callable[[Any], None]
 
 Return a CARLA sensor callback without importing CARLA itself.
 
+<a id="fn-sensorframebuffer-callback-receive"></a>
+
 ### `SensorFrameBuffer.callback.receive`
 
 源码位置：[car_control_A/simulator.py 第 90 行](../../../car_control_A/simulator.py#L90)。类型：`FunctionDef`。
@@ -91,7 +107,9 @@ Return a CARLA sensor callback without importing CARLA itself.
 SensorFrameBuffer.callback.receive(measurement: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+闭包保存sensor_id，从measurement.frame取帧号并调用push，原measurement作为payload保留；不吞属性/类型异常，也不做解码。
+
+<a id="fn-sensorframebuffer-pop-aligned"></a>
 
 ### `SensorFrameBuffer.pop_aligned`
 
@@ -101,7 +119,9 @@ SensorFrameBuffer.callback.receive(measurement: Any) -> None
 SensorFrameBuffer.pop_aligned(self, sensor_ids: Iterable[str], frame: int, *, timeout_s: float) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+委托pop_aligned_optional，optional为空、optional_grace_s=0；只返回请求frame的完整必需集合，timeout使用墙钟秒，不取最近帧代替。
+
+<a id="fn-sensorframebuffer-pop-aligned-optional"></a>
 
 ### `SensorFrameBuffer.pop_aligned_optional`
 
@@ -113,11 +133,17 @@ SensorFrameBuffer.pop_aligned_optional(self, required_sensor_ids: Iterable[str],
 
 Return exact-frame required data plus any bounded-wait optional data.
 
+required非空；两组sensor ID非空、唯一且互斥；frame非负整数，timeout与grace为非负数但未独立拒绝非有限值。required齐后最多再等optional_grace_s（默认0.01秒），受总timeout截止约束；返回已到可选数据。成功删除该帧及更旧帧并更新消费水位；TimeoutError不清理该帧、不推进水位。等待用Condition释放锁，计时用time.monotonic。
+
+<a id="fn-actorregistry"></a>
+
 ### `ActorRegistry`
 
 源码位置：[car_control_A/simulator.py 第 161 行](../../../car_control_A/simulator.py#L161)。类型：`ClassDef`。
 
 Owns spawned CARLA actors and releases them in safe reverse order.
+
+<a id="fn-actorregistry-track"></a>
 
 ### `ActorRegistry.track`
 
@@ -127,7 +153,9 @@ Owns spawned CARLA actors and releases them in safe reverse order.
 ActorRegistry.track(self, actor: Any) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+None拒绝，其余追加到拥有列表并原样返回；不校验actor类型、不按identity去重，所以同一对象重复track可能导致重复dispose。
+
+<a id="fn-actorregistry-release"></a>
 
 ### `ActorRegistry.release`
 
@@ -145,6 +173,10 @@ prevents ``cleanup()`` from destroying the same actor a second time.
 Identity comparison is intentional because CARLA actor wrappers do
 not promise useful equality semantics.
 
+按对象identity查找首个拥有项，先移除再best-effort dispose，找到返回True否则False。True只表示登记项已释放，不证明destroy成功；重复track时仍可能留下另一个相同对象项。
+
+<a id="fn-actorregistry-cleanup"></a>
+
 ### `ActorRegistry.cleanup`
 
 源码位置：[car_control_A/simulator.py 第 188 行](../../../car_control_A/simulator.py#L188)。类型：`FunctionDef`。
@@ -153,7 +185,9 @@ not promise useful equality semantics.
 ActorRegistry.cleanup(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先把拥有列表置空，再按逆注册顺序dispose全部actor；通常传感器后注册所以先释放。dispose吞stop/destroy异常，因此清理尽力完成但不提供全部成功证明，重复cleanup无操作。
+
+<a id="fn-actorregistry-dispose"></a>
 
 ### `ActorRegistry.dispose`
 
@@ -165,11 +199,17 @@ ActorRegistry.dispose(actor: Any) -> None
 
 Best-effort listener stop and actor destruction used on all failures.
 
+分别尝试可调用stop与destroy；每一步Exception独立吞掉，stop失败仍尝试destroy。不检查destroy返回值、不写失败日志；不应据cleanup正常返回判断CARLA无残留actor。
+
+<a id="fn-synchronousworld"></a>
+
 ### `SynchronousWorld`
 
 源码位置：[car_control_A/simulator.py 第 210 行](../../../car_control_A/simulator.py#L210)。类型：`ClassDef`。
 
 Temporarily makes one CARLA World synchronous; this is the sole tick API.
+
+<a id="fn-synchronousworld---init--"></a>
 
 ### `SynchronousWorld.__init__`
 
@@ -179,7 +219,9 @@ Temporarily makes one CARLA World synchronous; this is the sole tick API.
 SynchronousWorld.__init__(self, world: Any, *, traffic_manager: Any | None=None, fixed_delta_seconds: float=0.05, tm_previous_synchronous_mode: bool | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+world不得None；fixed_delta_seconds默认0.05且须int/float>0（未独立isfinite检查）。传traffic_manager时必须显式提供其之前同步状态bool，不能推断为False；初始化未active且不连接/改world。
+
+<a id="fn-synchronousworld---enter--"></a>
 
 ### `SynchronousWorld.__enter__`
 
@@ -189,7 +231,9 @@ SynchronousWorld.__init__(self, world: Any, *, traffic_manager: Any | None=None,
 SynchronousWorld.__enter__(self) -> SynchronousWorld
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+拒绝重复进入；克隆旧设置与新设置，设置同步和固定delta后apply，再启用TM同步。TM失败时尽力恢复TM和world并重抛；world首次apply发生在该try外，不能保证所有进入失败都自动回滚。成功后active=True并返回self。
+
+<a id="fn-synchronousworld-tick"></a>
 
 ### `SynchronousWorld.tick`
 
@@ -199,7 +243,9 @@ SynchronousWorld.__enter__(self) -> SynchronousWorld
 SynchronousWorld.tick(self, timeout_s: float | None=None) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+仅active上下文允许；timeout_s=None直接world.tick()，否则原样传timeout给world.tick，不额外校验/换算。此调用推进仿真，有外部副作用；不是只读获取当前frame。
+
+<a id="fn-synchronousworld---exit--"></a>
 
 ### `SynchronousWorld.__exit__`
 
@@ -209,13 +255,17 @@ SynchronousWorld.tick(self, timeout_s: float | None=None) -> int
 SynchronousWorld.__exit__(self, exc_type: object, exc: object, traceback: object) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先恢复TM再恢复克隆world设置，两步即使前者失败也尝试；finally清previous/active。上下文主体已有异常则保留主体异常，正常退出但恢复失败则抛首个恢复错误。
+
+<a id="fn-carlasession"></a>
 
 ### `CarlaSession`
 
 源码位置：[car_control_A/simulator.py 第 292 行](../../../car_control_A/simulator.py#L292)。类型：`ClassDef`。
 
 One owner for a synchronous world, its sensor actors, and world ticks.
+
+<a id="fn-carlasession---init--"></a>
 
 ### `CarlaSession.__init__`
 
@@ -225,7 +275,9 @@ One owner for a synchronous world, its sensor actors, and world ticks.
 CarlaSession.__init__(self, world: Any, **synchronous_world_options: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存world，**synchronous_world_options交SynchronousWorld，创建ActorRegistry与默认32帧SensorFrameBuffer；不在构造时spawn/tick或连接host，world由外部提供。
+
+<a id="fn-carlasession---enter--"></a>
 
 ### `CarlaSession.__enter__`
 
@@ -235,7 +287,9 @@ CarlaSession.__init__(self, world: Any, **synchronous_world_options: Any) -> Non
 CarlaSession.__enter__(self) -> CarlaSession
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先进入同步world，成功后设active=True并返回self；失败不宣称session已激活，不自动创建ego。
+
+<a id="fn-carlasession-track-actor"></a>
 
 ### `CarlaSession.track_actor`
 
@@ -245,7 +299,9 @@ CarlaSession.__enter__(self) -> CarlaSession
 CarlaSession.track_actor(self, actor: Any) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+必须active，委托actors.track并返回原actor；用于把调用方创建对象纳入清理，不验证是否真为本world对象。
+
+<a id="fn-carlasession-tick"></a>
 
 ### `CarlaSession.tick`
 
@@ -255,7 +311,9 @@ CarlaSession.track_actor(self, actor: Any) -> Any
 CarlaSession.tick(self, timeout_s: float | None=None) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+必须active，委托同步world.tick(timeout_s)；不读取传感器缓冲，不保证本次tick所需传感器回调已到齐。
+
+<a id="fn-carlasession-spawn-ego"></a>
 
 ### `CarlaSession.spawn_ego`
 
@@ -267,6 +325,10 @@ CarlaSession.spawn_ego(self, blueprint: Any, transform: Any) -> Any
 
 Spawn and register the sole ego vehicle for this session.
 
+需active，world.spawn_actor后交track_actor。方法名sole ego不构成数量约束，多次调用可生成多个ego；只有记录入registry的actor会在退出时清理。
+
+<a id="fn-carlasession-attach-sensor"></a>
+
 ### `CarlaSession.attach_sensor`
 
 源码位置：[car_control_A/simulator.py 第 323 行](../../../car_control_A/simulator.py#L323)。类型：`FunctionDef`。
@@ -277,6 +339,10 @@ CarlaSession.attach_sensor(self, blueprint: Any, transform: Any, parent: Any, se
 
 Spawn a sensor, register it, and wire its callback into frame alignment.
 
+需active且parent非None，先验证sensor_id并创建callback后spawn附着actor。无listen或listen抛异常立即dispose；listen成功才track。sensor_id重复不在此禁止，会共享同帧缓冲键。
+
+<a id="fn-carlasession---exit--"></a>
+
 ### `CarlaSession.__exit__`
 
 源码位置：[car_control_A/simulator.py 第 342 行](../../../car_control_A/simulator.py#L342)。类型：`FunctionDef`。
@@ -285,7 +351,7 @@ Spawn a sensor, register it, and wire its callback into frame alignment.
 CarlaSession.__exit__(self, exc_type: object, exc: object, traceback: object) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先cleanup所有拥有actor，finally清active并退出同步world以恢复设置；正常dispose是best-effort，恢复异常遵循SynchronousWorld规则。不销毁未登记的其他场景actor。
 
 ## 内部调用与异常路径
 
@@ -361,6 +427,8 @@ CarlaSession.__exit__(self, exc_type: object, exc: object, traceback: object) ->
 ## 2026-09-20 源码契约复核
 
 基线 `fe1ba839`。以下从当前源码声明提取；用于补充原有语义说明。默认表达式不等于运行生效值，分支记录不覆盖被调用函数的全部异常。
+
+<a id="fn-car-control-a-simulator-py"></a>
 
 ### `car_control_A/simulator.py`
 

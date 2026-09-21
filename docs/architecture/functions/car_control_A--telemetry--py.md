@@ -21,11 +21,15 @@ Monotonic, replay-friendly command latency tracing.
 
 ## 功能入口：输入、输出与实现说明
 
+<a id="fn-latencytrace"></a>
+
 ### `LatencyTrace`
 
 源码位置：[car_control_A/telemetry.py 第 11 行](../../../car_control_A/telemetry.py#L11)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+单命令内存纳秒时间戳表，可用任意非空stage字符串；不同于runtime.latency_trace的固定10阶段StageTrace，没有终态或分位数汇总字段，无锁。
+
+<a id="fn-latencytrace---init--"></a>
 
 ### `LatencyTrace.__init__`
 
@@ -35,7 +39,9 @@ Monotonic, replay-friendly command latency tracing.
 LatencyTrace.__init__(self, command_id: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+command_id要求exact str且非空（纯空白仍可通过）；初始化空marks。不会读时钟直到mark，也不打开文件。
+
+<a id="fn-latencytrace-mark"></a>
 
 ### `LatencyTrace.mark`
 
@@ -45,7 +51,9 @@ LatencyTrace.__init__(self, command_id: str) -> None
 LatencyTrace.mark(self, stage: str, *, timestamp_ns: int | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+stage非空且不能重复；timestamp_ns默认time.monotonic_ns，显式值须非负exact int，不可小于已有最大时间，允许相等。只限制时间单调，不限制阶段名顺序；不返回时间戳。
+
+<a id="fn-latencytrace-segment-ms"></a>
 
 ### `LatencyTrace.segment_ms`
 
@@ -55,7 +63,9 @@ LatencyTrace.mark(self, stage: str, *, timestamp_ns: int | None=None) -> None
 LatencyTrace.segment_ms(self, start_stage: str, end_stage: str) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+取end-start纳秒除1e6；缺stage抛KeyError，传反向阶段可返回负值，不自动排序或取绝对值。
+
+<a id="fn-latencytrace-end-to-end-ms"></a>
 
 ### `LatencyTrace.end_to_end_ms`
 
@@ -65,7 +75,9 @@ LatencyTrace.segment_ms(self, start_stage: str, end_stage: str) -> float
 LatencyTrace.end_to_end_ms(self) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+少于两个mark返回None，否则按插入顺序末项减首项再除1e6；不是自动识别audio_start/action_apply，也不统计已跳过的阶段。
+
+<a id="fn-latencytrace-to-dict"></a>
 
 ### `LatencyTrace.to_dict`
 
@@ -75,7 +87,9 @@ LatencyTrace.end_to_end_ms(self) -> float | None
 LatencyTrace.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回command_id、timestamps_ns顶层副本、可空end_to_end_ms；没有schema_version或path_type，不等价于模块2的LatencyCollector记录。
+
+<a id="fn-latencytrace-append-jsonl"></a>
 
 ### `LatencyTrace.append_jsonl`
 
@@ -85,7 +99,7 @@ LatencyTrace.to_dict(self) -> dict[str, object]
 LatencyTrace.append_jsonl(self, path: str | Path, *, extra: Mapping[str, object] | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+将trace与可选extra合并，extra不得覆盖三个保留字段；mkdir父目录，以UTF-8追加单行JSON（sort_keys、allow_nan=False）。不原子写、不加线程/进程锁、不去重；序列化失败可能已创建目录/打开文件但不会产生有效记录。
 
 ## 内部调用与异常路径
 
@@ -127,6 +141,8 @@ LatencyTrace.append_jsonl(self, path: str | Path, *, extra: Mapping[str, object]
 ## 2026-09-20 源码契约复核
 
 基线 `fe1ba839`。以下从当前源码声明提取；用于补充原有语义说明。默认表达式不等于运行生效值，分支记录不覆盖被调用函数的全部异常。
+
+<a id="fn-car-control-a-telemetry-py"></a>
 
 ### `car_control_A/telemetry.py`
 

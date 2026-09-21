@@ -32,23 +32,31 @@ Deterministic execution state machine for compiled ManeuverPlan V2 steps.
 
 ## 功能入口：输入、输出与实现说明
 
+<a id="fn-maneuverevent"></a>
+
 ### `ManeuverEvent`
 
 源码位置：[car_control_A/maneuver_fsm.py 第 35 行](../../../car_control_A/maneuver_fsm.py#L35)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结事件：event_type、command_id、plan_id、可空step_id、state、reason_code、now_s；时间是调用方传入的秒，事件自身没有校验或I/O。原计划用户ID与内部步骤ID分别保留。
+
+<a id="fn-maneuverupdate"></a>
 
 ### `ManeuverUpdate`
 
 源码位置：[car_control_A/maneuver_fsm.py 第 46 行](../../../car_control_A/maneuver_fsm.py#L46)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+每次调用返回state/current_step/events/safe_behavior/terminal；safe_behavior是建议动作或None，不是已施加控制。terminal由状态集合计算，CONFIRMING在本FSM也算终态，与BehaviorFSM待确认活动态不同。
+
+<a id="fn-maneuverfsm"></a>
 
 ### `ManeuverFSM`
 
 源码位置：[car_control_A/maneuver_fsm.py 第 54 行](../../../car_control_A/maneuver_fsm.py#L54)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+消费已编译计划和确定性snapshot，推进单个步骤；不连接Qwen、不生成B/C/D控制。前置条件进入后锁存，完成按连续update调用数计；没有按传感器frame去重，没有直接读取plan.valid_until_ns。
+
+<a id="fn-maneuverfsm---init--"></a>
 
 ### `ManeuverFSM.__init__`
 
@@ -58,7 +66,9 @@ Deterministic execution state machine for compiled ManeuverPlan V2 steps.
 ManeuverFSM.__init__(self, *, replan_cooldown_s: float=2.0, max_replans_per_command: int=2) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+replan_cooldown_s默认2秒且要求有限非负，max_replans_per_command默认2且为非负exact int；初始IDLE、无plan、index0、无开始/重规划时间，锁存与终态标志False、完成/重规划计数0。未启动线程。
+
+<a id="fn-maneuverfsm-current-step"></a>
 
 ### `ManeuverFSM.current_step`
 
@@ -68,7 +78,9 @@ ManeuverFSM.__init__(self, *, replan_cooldown_s: float=2.0, max_replans_per_comm
 ManeuverFSM.current_step(self) -> CompiledPlanStep | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+plan不存在或index超出steps时None，否则返回steps[index]对象引用；即使FSM处于失败终态，index未耗尽仍可能有current_step，因此先看terminal再决定是否执行。
+
+<a id="fn-maneuverfsm-replan-count"></a>
 
 ### `ManeuverFSM.replan_count`
 
@@ -78,7 +90,9 @@ ManeuverFSM.current_step(self) -> CompiledPlanStep | None
 ManeuverFSM.replan_count(self) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回本次start之后触发重规划的计数；冷却期suppressed不增加。start即使接收同一个command_id也清零，名字不保证跨计划替换的每命令累计额度。
+
+<a id="fn-maneuverfsm-start"></a>
 
 ### `ManeuverFSM.start`
 
@@ -88,7 +102,9 @@ ManeuverFSM.replan_count(self) -> int
 ManeuverFSM.start(self, plan: CompiledManeuverPlan, *, now_s: float) -> ManeuverUpdate
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+now须有限数，plan须CompiledManeuverPlan；旧计划非终态时先发SUPERSEDED终态事件，随后重置index/计时/锁存/完成计数/终态标志/重规划计数。按首步设状态并发plan_started与step_started。此处不再Schema验证、不查valid_until_ns、不保证steps非空；正常调用前需Validator/Compiler保证契约。
+
+<a id="fn-maneuverfsm-update"></a>
 
 ### `ManeuverFSM.update`
 
@@ -98,7 +114,9 @@ ManeuverFSM.start(self, plan: CompiledManeuverPlan, *, now_s: float) -> Maneuver
 ManeuverFSM.update(self, snapshot: Mapping[str, Any], *, now_s: float) -> ManeuverUpdate
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+顺序为无计划/终态短路→紧急风险→声明的replan条件→严格大于timeout→未锁存前置条件→完成连续计数→推进。红灯stop-line guard置WAIT_TRAFFIC_SIGNAL并每次重置step_started_s/完成计数、建议STOP；YIELD/SLOW_DOWN遇紧急风险保留任务但仍受原timeout限制，建议EMERGENCY_STOP；其他紧急风险终结SAFETY_OVERRIDE。前置未满足清计数并建议SLOW_DOWN（gap则WAIT_SAFE_GAP），满足后不逐帧重新检查；PASS_TARGET允许target_seen替代当前可见。详见本页snapshot参数表。
+
+<a id="fn-maneuverfsm-request-replan"></a>
 
 ### `ManeuverFSM.request_replan`
 
@@ -108,7 +126,9 @@ ManeuverFSM.update(self, snapshot: Mapping[str, Any], *, now_s: float) -> Maneuv
 ManeuverFSM.request_replan(self, reason_code: str, *, now_s: float) -> ManeuverUpdate
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+无计划/已终态返回快照；reason strip/upper后非空。距上次触发<cooldown时发suppressed且不加计数；达到额度则FAILED/REPLAN_LIMIT_EXCEEDED并建议STOP；否则加计数、记录时间、置REPLAN_PENDING并发triggered、建议SLOW_DOWN。不会调用模型，也不阻止下一次update在触发条件消失后继续原步骤。
+
+<a id="fn-maneuverfsm-fail"></a>
 
 ### `ManeuverFSM.fail`
 
@@ -118,7 +138,9 @@ ManeuverFSM.request_replan(self, reason_code: str, *, now_s: float) -> ManeuverU
 ManeuverFSM.fail(self, reason_code: str, *, now_s: float) -> ManeuverUpdate
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+reason转大写、校验now有限后调用_finish(FAILED, safe_behavior=STOP)。reason不strip/不强制非空；尚未start时_event断言plan非空会失败，因此不是无条件安全的初始化清理接口。
+
+<a id="fn-maneuverfsm--step-failure"></a>
 
 ### `ManeuverFSM._step_failure`
 
@@ -128,7 +150,9 @@ ManeuverFSM.fail(self, reason_code: str, *, now_s: float) -> ManeuverUpdate
 ManeuverFSM._step_failure(self, step: CompiledPlanStep, reason: str, now: float) -> ManeuverUpdate
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+step.on_failure=REPLAN则请求重规划；CONFIRM结为CONFIRMING并建议STOP；SAFE_STOP结FAILED且STOP；其他值结FAILED且KEEP_LANE。正常枚举由上游Schema限制，此方法不自行拒绝未知策略。
+
+<a id="fn-maneuverfsm--finish"></a>
 
 ### `ManeuverFSM._finish`
 
@@ -138,7 +162,9 @@ ManeuverFSM._step_failure(self, step: CompiledPlanStep, reason: str, now: float)
 ManeuverFSM._finish(self, state: str, reason: str, now: float, *, safe_behavior: str | None=None, events: list[ManeuverEvent] | None=None) -> ManeuverUpdate
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+设置终态，最多追加一次qwen_terminal；若已经终态且已发事件，只返回无新事件快照。保留plan/index，current_step可能仍非空；safe_behavior只在本次调用返回，后续普通update不自动重发上次建议。
+
+<a id="fn-maneuverfsm--replan-reason"></a>
 
 ### `ManeuverFSM._replan_reason`
 
@@ -148,7 +174,9 @@ ManeuverFSM._finish(self, state: str, reason: str, now: float, *, safe_behavior:
 ManeuverFSM._replan_reason(self, snapshot: Mapping[str, Any]) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+仅对plan.replan_conditions中已声明的原因检查snapshot。按TARGET_LOST、LANE_BLOCKED、ROUTE_MISMATCH、NEW_EMERGENCY_OBJECT、PROGRESS_STALLED、ROUTE_DEVIATION、PLAN_EXPIRING固定顺序，返回第一个truthy条件；PLAN_EXPIRING是输入布尔量，不自行比较有效期。
+
+<a id="fn-maneuverfsm--event"></a>
 
 ### `ManeuverFSM._event`
 
@@ -158,7 +186,9 @@ ManeuverFSM._replan_reason(self, snapshot: Mapping[str, Any]) -> str | None
 ManeuverFSM._event(self, event_type: str, now: float, reason: str, *, state: str | None=None) -> ManeuverEvent
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求plan已存在（assert），取当前command/plan/step身份生成事件；state参数None则使用当前FSM状态，否则用指定状态。step_id取创建事件时的游标，不能当作整个计划的唯一ID。
+
+<a id="fn-maneuverfsm--update"></a>
 
 ### `ManeuverFSM._update`
 
@@ -168,7 +198,9 @@ ManeuverFSM._event(self, event_type: str, now: float, reason: str, *, state: str
 ManeuverFSM._update(self, *, events: list[ManeuverEvent] | None=None, safe_behavior: str | None=None) -> ManeuverUpdate
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+构造ManeuverUpdate，将events列表转tuple，默认无事件/无安全建议；terminal状态集合是SUCCEEDED/FAILED/SAFETY_OVERRIDE/SUPERSEDED/CONFIRMING。不做副作用派发。
+
+<a id="fn-maneuverfsm--step-state"></a>
 
 ### `ManeuverFSM._step_state`
 
@@ -178,7 +210,9 @@ ManeuverFSM._update(self, *, events: list[ManeuverEvent] | None=None, safe_behav
 ManeuverFSM._step_state(step: CompiledPlanStep | None) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+WAIT_SAFE_GAP保持同名；TURN左右→TURNING、CHANGE_LANE左右→CHANGING_LANE、AVOID_OBSTACLE/PASS_TARGET→AVOIDING、RETURN_TO_LANE→RETURNING_TO_LANE、PULL_OVER→PULLING_OVER；其余PLAN_EXECUTING，无step返回SUCCEEDED。
+
+<a id="fn--time"></a>
 
 ### `_time`
 
@@ -188,7 +222,9 @@ ManeuverFSM._step_state(step: CompiledPlanStep | None) -> str
 _time(value: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+接受exact int/float并拒绝bool与非有限数，转float返回；不要求非负，也不检查相较上次时间是否回退，故调用方必须维持一致单调秒时钟。
+
+<a id="fn--precondition-satisfied"></a>
 
 ### `_precondition_satisfied`
 
@@ -198,7 +234,9 @@ _time(value: float) -> float
 _precondition_satisfied(condition: str, snapshot: Mapping[str, Any]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按10项固定映射读取snapshot并bool转换；PERCEPTION_FRESH默认not stale（stale缺失默认False），NO_EMERGENCY_RISK默认risk_level非EMERGENCY（缺省LOW），其余缺省False。未知条件抛KeyError；不校验snapshot键值一定为bool。进入后锁存，持续安全由update紧急分支及外层D负责。
+
+<a id="fn--completion-satisfied"></a>
 
 ### `_completion_satisfied`
 
@@ -208,7 +246,7 @@ _precondition_satisfied(condition: str, snapshot: Mapping[str, Any]) -> bool
 _completion_satisfied(completion: Mapping[str, Any], snapshot: Mapping[str, Any]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+SPEED_BELOW阈值加默认0.05m/s；SPEED_REACHED绝对误差<=默认0.6m/s；LANE_CENTERED需lane大写相等且横向误差<=默认0.3m；JUNCTION_EXITED/TARGET_PASSED读bool；TARGET_GAP_REACHED检查gap秒>=value；STOPPED速度<=默认0.1m/s；HOLD_FRAMES读取hold_condition默认True。缺速度/误差通常以∞导致不满足；未知类型抛ValueError。这里只判单次真假，连续次数与SLOW_DOWN观察时间在update中处理。
 
 ## 内部调用与异常路径
 
@@ -263,6 +301,8 @@ _completion_satisfied(completion: Mapping[str, Any], snapshot: Mapping[str, Any]
 
 基线 `fe1ba839`。以下从当前源码声明提取；用于补充原有语义说明。默认表达式不等于运行生效值，分支记录不覆盖被调用函数的全部异常。
 
+<a id="fn-car-control-a-maneuver-fsm-py"></a>
+
 ### `car_control_A/maneuver_fsm.py`
 
 来源 SHA256：`6f01cb59516fc099665d0790d20d260116ab29aef072726f1112b251cdbe334f`。
@@ -296,3 +336,27 @@ _completion_satisfied(completion: Mapping[str, Any], snapshot: Mapping[str, Any]
 | `ManeuverFSM.request_replan` / 246 | `not reason` | `raise ValueError('reason_code must be non-empty')` |
 | `_time` / 349 | `type(value) not in (int, float) or isinstance(value, bool) or (not math.isfinite(float(value)))` | `raise ValueError('now_s must be finite')` |
 | `_completion_satisfied` / 404 | `本地无直接if；检查上下文` | `raise ValueError(f'unsupported completion type: {kind}')` |
+
+## snapshot字段与完成判定参数表
+
+snapshot为Mapping，函数按需读取，没有完整Schema校验。布尔分支多用bool转换，字符串"false"会被当作真，调用方必须提供约定类型。
+
+| 字段 / 条件 | 缺省 / 单位 | 消费行为 |
+|---|---|---|
+| emergency / risk_level / emergency_reason | False / 空串 / EMERGENCY_PREEMPT | emergency truthy或risk_level=EMERGENCY进入安全分支；RED_LIGHT_STOP_LINE_GUARD暂停步骤 |
+| perception_fresh / stale | not stale / False | 仅未锁存入口前置判定，缺两项时被视为新鲜 |
+| no_emergency_risk | risk_level非EMERGENCY，缺省LOW | 前置条件默认推导；update另行持续检查紧急字段 |
+| left/right_lane_exists、left/right_gap_safe、target_visible、route_available、intersection_ahead、stop_line_clear | False | 对应前置条件；进入后锁存不复验 |
+| target_seen | False | PASS_TARGET在曾看到目标后可越过TARGET_VISIBLE前置限制 |
+| target_lost/lane_blocked/route_mismatch/new_emergency_object/progress_stalled/route_deviation/plan_expiring | False | 仅plan声明的replan_conditions生效；固定优先级见_replan_reason |
+| speed_mps / speed_below_tolerance_mps | ∞ / 0.05 m/s | SPEED_BELOW: speed<=value+tolerance |
+| speed_tolerance_mps | 0.6 m/s | SPEED_REACHED误差带；也用于SLOW_DOWN+TARGET_PASSED的实际降速门禁 |
+| lane / lateral_error_m / lane_center_tolerance_m | 空串 / ∞ / 0.3 m | LANE_CENTERED需目标lane匹配及绝对偏差不超限 |
+| junction_exited / target_passed | False | JUNCTION_EXITED/TARGET_PASSED单次事实 |
+| target_gap_s | -∞ s | TARGET_GAP_REACHED需>=completion.value |
+| stopped_threshold_mps | 0.1 m/s | STOPPED速度阈值；不同于ControlRuntime自身停车策略配置 |
+| hold_condition | True | HOLD_FRAMES每次update缺该键也算满足，连续计数不是实际frame去重 |
+
+completion.hold_frames控制连续update次数；不满足清零，一次调用最多推进一步。SLOW_DOWN+TARGET_PASSED还要求target_speed_mps非None、实际速度<=目标+speed_tolerance_mps，且now-step_started>=completion.value（缺值视0秒）。计时从进入步骤开始，包含前置等待；红灯分支会重置计时，不能解释为严格累计运动/观察时长。
+
+WAIT_SAFE_GAP成功后，紧接同source_step_id的CHANGE_LANE_LEFT/RIGHT/RETURN_TO_LANE继承锁存；其他下一步重新检查。start不会直接拒绝已过期plan，也不会检查时间单调性；外层期限/撤销与D安全仍必需。

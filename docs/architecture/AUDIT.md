@@ -86,3 +86,42 @@ assert report["observed"]["terminal_counts"] == {"one": 1}
 ```
 
 以上断言记录**现状问题**，不是期望修复后的测试规范。本轮已执行同等调用得到NaN分支差异及缺终态仍passed=True；未修改业务代码或现有测试。
+
+
+### 第3模块：命令与状态机精读新增证据（基线36baa428）
+
+**M03-01 / 直接接口已复现、未修复：过期新命令改变其他活动命令的全局状态。** [BehaviorFSM.submit](functions/car_control_A--behavior_fsm--py.md#fn-behaviorfsm-submit)在supersede旧owner之前处理新命令过期；_finish会改全局状态但只pop新ID。先提交有效KEEP_LANE(live,expires=100)，再在t=2提交STOP(expired,expires=1)，返回EXPIRED且state=RECOVERING；t=3仍可complete(live)得到SUCCEEDED。影响直接调用FSM时状态与owner一致性。ControlRuntime.submit_voice通常先fail旧命令，不能将此纯FSM复现扩大为已确认的实车故障。后续回归过期新ID、过期重复ID、旧owner计时与state保持。
+
+**M03-02 / 部分已复现、部分静态接线核对，未修复：重规划/安全建议输出不等于执行闭环。** [ManeuverFSM](functions/car_control_A--maneuver_fsm--py.md)请求重规划后，触发条件消失的update继续原步并可成功；start同command_id重置replan_count。实际调用得到REPLAN_PENDING→PLAN_EXECUTING→SUCCEEDED，重复start后count=0。静态核对[runner事件消费](../../integration/carla_runner.py#L304)：qwen_replan_triggered只记录monitor计数/事件，没有从该事件发起新推理的接线；runner未读取ManeuverUpdate.safe_behavior。后者不证明独立C/D安全链未停车，但说明FSM单测不能证明建议已下发。后续需明确待重规划是否冻结原步、跨plan预算归属、请求提交及结果替换，以及建议到控制的实际证据。
+
+**M03-03 / 已复现字段丢失、未修复：高层命令adapter不透传target_track_id。** [HighLevelCommandAdapter.adapt](functions/car_control_A--high_level_command--py.md#fn-highlevelcommandadapter-adapt)对带target_track_id=C-0001的合法STOP输出envelope，顶层无target_track_id且parameters={}。这说明上游Qwen决策有target不保证A命令仍带target；原decision/trace可能仍保存目标，canonical桥接也属于不同路径。不能仅凭此复现断定它就是Wave2 A04根因，需对具体run选用链路、extension evidence及alias消费做关联核验。
+
+复现入口（工作树根目录，无CARLA/模型服务）：
+
+```python
+from car_control_A.behavior_fsm import BehaviorFSM
+from car_control_A.contracts import DrivingCommand
+from car_control_A.high_level_command import HighLevelCommandAdapter
+from car_control_A.maneuver_fsm import ManeuverFSM
+from runtime.plan_compiler import CompiledPlanStep, CompiledManeuverPlan
+f = BehaviorFSM()
+f.submit(DrivingCommand("live", 0, 100, .99, "KEEP_LANE"), now_s=0)
+r = f.submit(DrivingCommand("expired", 0, 1, .99, "STOP"), now_s=2)
+assert r.state == "RECOVERING" and r.feedback.status == "EXPIRED"
+assert f.complete("live", now_s=3, detail="done").status == "SUCCEEDED"
+step = CompiledPlanStep("s", "s", "KEEP_LANE", {}, (),
+                       {"type": "HOLD_FRAMES", "hold_frames": 2}, 10, "SAFE_STOP")
+plan = CompiledManeuverPlan("c", "p", (step,), ("TARGET_LOST",), 100000000000)
+m = ManeuverFSM()
+m.start(plan, now_s=0)
+assert m.update({"target_lost": True}, now_s=1).state == "REPLAN_PENDING"
+assert m.update({}, now_s=1.1).state == "PLAN_EXECUTING"
+assert m.update({}, now_s=1.2).state == "SUCCEEDED"
+m.start(plan, now_s=2)
+assert m.replan_count == 0
+out = HighLevelCommandAdapter().adapt({"schema_version": "1.0", "command_id": "c",
+    "action": "STOP", "confidence": .99, "target_track_id": "C-0001"})
+assert "target_track_id" not in out and out["parameters"] == {}
+```
+
+以上断言描述现状而非期望修复行为。本轮9份相关离线测试文件执行结果113 passed；没有新增测试或修改业务逻辑，也未做CARLA/模型实测。现有测试通过不否定上述未覆盖边界。

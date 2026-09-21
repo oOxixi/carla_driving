@@ -61,6 +61,8 @@ Versioned, CARLA-independent contracts shared by A and C.
 
 ## 功能入口：输入、输出与实现说明
 
+<a id="fn--number"></a>
+
 ### `_number`
 
 源码位置：[car_control_A/contracts.py 第 23 行](../../../car_control_A/contracts.py#L23)。类型：`FunctionDef`。
@@ -69,7 +71,9 @@ Versioned, CARLA-independent contracts shared by A and C.
 _number(name: str, value: object, *, minimum: float | None=None) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+仅接受exact int/float（因此拒绝bool），转float后要求有限；minimum非None则包含下界检查。返回标准float，不接受数字字符串，单位由字段定义。
+
+<a id="fn--integer"></a>
 
 ### `_integer`
 
@@ -79,7 +83,9 @@ _number(name: str, value: object, *, minimum: float | None=None) -> float
 _integer(name: str, value: object, *, minimum: int | None=None) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求exact int，拒绝bool；minimum非None则检查包含下界，返回原整数。用于frame等索引，不做自动取整。
+
+<a id="fn--text"></a>
 
 ### `_text`
 
@@ -89,7 +95,9 @@ _integer(name: str, value: object, *, minimum: int | None=None) -> int
 _text(name: str, value: object) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求exact str且strip后非空，但返回原字符串而非strip结果；前后空白可保留在ID/action/lane_id中，调用方不能假定已规范化。
+
+<a id="fn--boolean"></a>
 
 ### `_boolean`
 
@@ -99,7 +107,9 @@ _text(name: str, value: object) -> str
 _boolean(name: str, value: object) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求exact bool，拒绝0/1或字符串；返回原值，不进行truthy转换。
+
+<a id="fn--payload"></a>
 
 ### `_payload`
 
@@ -109,7 +119,9 @@ _boolean(name: str, value: object) -> bool
 _payload(payload: object, fields: set[str]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求plain dict且键集恰等于指定fields加schema_version，未知/缺失键都报错；版本须exact str且为1.0。返回原dict，不复制；后续from_dict构造器才校验各字段。带默认值的dataclass字段在字典边界仍必须显式提供。
+
+<a id="fn-signalstate"></a>
 
 ### `SignalState`
 
@@ -117,11 +129,15 @@ _payload(payload: object, fields: set[str]) -> dict[str, Any]
 
 UNKNOWN deliberately denotes an uncertain perception result.
 
+<a id="fn-runtimevehiclestate"></a>
+
 ### `RuntimeVehicleState`
 
 源码位置：[car_control_A/contracts.py 第 77 行](../../../car_control_A/contracts.py#L77)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结帧状态：frame、sim_time_s、speed_mps、x/y/z_m、yaw_deg、lane_id。坐标字段只校验有限数，不在此转换CARLA与canonical坐标系；速度是非负模值、yaw为度。
+
+<a id="fn-runtimevehiclestate---post-init--"></a>
 
 ### `RuntimeVehicleState.__post_init__`
 
@@ -131,7 +147,9 @@ UNKNOWN deliberately denotes an uncertain perception result.
 RuntimeVehicleState.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+frame非负exact int；仿真秒和速度有限非负；位置/朝向有限可负；lane_id为非空字符串。通过object.__setattr__规范化数值，不连接CARLA。
+
+<a id="fn-runtimevehiclestate-to-dict"></a>
 
 ### `RuntimeVehicleState.to_dict`
 
@@ -141,7 +159,9 @@ RuntimeVehicleState.__post_init__(self) -> None
 RuntimeVehicleState.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+导出全部帧字段加schema_version=1.0，单位不变；创建新顶层dict，不隐式增加采集时间或传感器来源。
+
+<a id="fn-runtimevehiclestate-from-dict"></a>
 
 ### `RuntimeVehicleState.from_dict`
 
@@ -151,13 +171,17 @@ RuntimeVehicleState.to_dict(self) -> dict[str, object]
 RuntimeVehicleState.from_dict(cls, payload: object) -> RuntimeVehicleState
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先严格检查全部键和版本，再传给构造器执行数值/文本校验；不忽略未知字段，不为缺失坐标补零。
+
+<a id="fn-drivingcommand"></a>
 
 ### `DrivingCommand`
 
 源码位置：[car_control_A/contracts.py 第 107 行](../../../car_control_A/contracts.py#L107)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+A内部冻结命令，received/expires是仿真秒、target_speed_mps可None；action只要求非空文本，未在契约类限定枚举。不同于canonical JSON DrivingCommand，不能直接以同名互换。
+
+<a id="fn-drivingcommand---post-init--"></a>
 
 ### `DrivingCommand.__post_init__`
 
@@ -167,7 +191,9 @@ RuntimeVehicleState.from_dict(cls, payload: object) -> RuntimeVehicleState
 DrivingCommand.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+command_id/action非空；received/expires有限非负且expires>=received（允许相等）；confidence有限[0,1]；非空target_speed有限非负；两个确认标志须bool。只约束结构，不授予车辆执行权或限制最高车速。
+
+<a id="fn-drivingcommand-is-expired-at"></a>
 
 ### `DrivingCommand.is_expired_at`
 
@@ -177,7 +203,9 @@ DrivingCommand.__post_init__(self) -> None
 DrivingCommand.is_expired_at(self, sim_time_s: float) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+sim_time_s须有限非负，比较sim_time_s>=expires_at_s；到期边界包含相等，没有宽限期，也不检查是否早于received_at_s。
+
+<a id="fn-drivingcommand-requires-confirmation"></a>
 
 ### `DrivingCommand.requires_confirmation`
 
@@ -187,7 +215,9 @@ DrivingCommand.is_expired_at(self, sim_time_s: float) -> bool
 DrivingCommand.requires_confirmation(self) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+confirmation_requested或is_ambiguous为真，或confidence严格小于LOW_CONFIDENCE_THRESHOLD则True；阈值导入自DEFAULT_STRATEGY.common.command_confidence_threshold，当前配置0.80。属性无状态，不因BehaviorFSM.confirm自动改变。
+
+<a id="fn-drivingcommand-to-dict"></a>
 
 ### `DrivingCommand.to_dict`
 
@@ -197,7 +227,9 @@ DrivingCommand.requires_confirmation(self) -> bool
 DrivingCommand.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+输出版本及所有字段，包括target_speed_mps=None和False确认标志；不把expires秒换成deadline纳秒，也不映射action到canonical intent。
+
+<a id="fn-drivingcommand-from-dict"></a>
 
 ### `DrivingCommand.from_dict`
 
@@ -207,13 +239,17 @@ DrivingCommand.to_dict(self) -> dict[str, object]
 DrivingCommand.from_dict(cls, payload: object) -> DrivingCommand
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求全部8个数据字段加版本，即使可选字段有构造默认也不能在字典中省略；再由构造器校验。未知action文本可通过结构检查，执行支持需外层确认。
+
+<a id="fn-trafficconstraint"></a>
 
 ### `TrafficConstraint`
 
 源码位置：[car_control_A/contracts.py 第 157 行](../../../car_control_A/contracts.py#L157)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+交通约束容器：SignalState枚举、可空停止线距离m、可空速度上限m/s；UNKNOWN代表不确定感知，不等于GREEN。
+
+<a id="fn-trafficconstraint---post-init--"></a>
 
 ### `TrafficConstraint.__post_init__`
 
@@ -223,7 +259,9 @@ DrivingCommand.from_dict(cls, payload: object) -> DrivingCommand
 TrafficConstraint.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+signal_state必须SignalState实例（直接传字符串不接受）；非空distance与speed_limit须有限非负。None保留未知，不补0或默认绿灯。
+
+<a id="fn-trafficconstraint-to-dict"></a>
 
 ### `TrafficConstraint.to_dict`
 
@@ -233,7 +271,9 @@ TrafficConstraint.__post_init__(self) -> None
 TrafficConstraint.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+将枚举转字符串，保留两个可空字段并带版本；不推导是否必须停车，停车策略由消费者处理。
+
+<a id="fn-trafficconstraint-from-dict"></a>
 
 ### `TrafficConstraint.from_dict`
 
@@ -243,7 +283,9 @@ TrafficConstraint.to_dict(self) -> dict[str, object]
 TrafficConstraint.from_dict(cls, payload: object) -> TrafficConstraint
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+plain dict/完整键/版本检查后，signal_state必须字符串并转换枚举；未知枚举抛ValueError，构造器继续检查距离/速度。
+
+<a id="fn-longitudinalrequest"></a>
 
 ### `LongitudinalRequest`
 
@@ -255,6 +297,8 @@ Frame-aligned input for C's longitudinal controller.
 means the ego vehicle is approaching the lead vehicle; zero or a negative
 value must not trigger time-to-collision (TTC) braking calculations.
 
+<a id="fn-longitudinalrequest---post-init--"></a>
+
 ### `LongitudinalRequest.__post_init__`
 
 源码位置：[car_control_A/contracts.py 第 202 行](../../../car_control_A/contracts.py#L202)。类型：`FunctionDef`。
@@ -263,7 +307,9 @@ value must not trigger time-to-collision (TTC) braking calculations.
 LongitudinalRequest.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+vehicle须RuntimeVehicleState；requested_speed有限非负，curvature有限可有符号；traffic须TrafficConstraint或None。lead_distance_m与closing_speed_mps必须同时提供或同时None，距离非负、closing可负（ego-lead），正值才表示追近。
+
+<a id="fn-longitudinalrequest-to-dict"></a>
 
 ### `LongitudinalRequest.to_dict`
 
@@ -273,7 +319,9 @@ LongitudinalRequest.__post_init__(self) -> None
 LongitudinalRequest.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+递归序列化vehicle与可选traffic为各自带版本dict；保留前车距离/接近速度成对None，不计算TTC或目标加速度。
+
+<a id="fn-longitudinalrequest-from-dict"></a>
 
 ### `LongitudinalRequest.from_dict`
 
@@ -283,13 +331,17 @@ LongitudinalRequest.to_dict(self) -> dict[str, object]
 LongitudinalRequest.from_dict(cls, payload: object) -> LongitudinalRequest
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+严格检查顶层键，vehicle须plain dict、traffic须dict或None；递归各契约from_dict，再校验速度、曲率和前车字段配对，不接受任意对象代替嵌套载荷。
+
+<a id="fn-controloutput"></a>
 
 ### `ControlOutput`
 
 源码位置：[car_control_A/contracts.py 第 234 行](../../../car_control_A/contracts.py#L234)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结归一化控制量throttle/brake及默认steer=0.0；这个内部契约允许控制量，不代表高层模型接口也可输出它们。
+
+<a id="fn-controloutput---post-init--"></a>
 
 ### `ControlOutput.__post_init__`
 
@@ -299,7 +351,9 @@ LongitudinalRequest.from_dict(cls, payload: object) -> LongitudinalRequest
 ControlOutput.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+throttle/brake有限[0,1]，steer有限[-1,1]；油门和刹车不能同时>0，否则ValueError。允许二者都0；不检查车辆实际执行状态。
+
+<a id="fn-controloutput-to-dict"></a>
 
 ### `ControlOutput.to_dict`
 
@@ -309,7 +363,9 @@ ControlOutput.__post_init__(self) -> None
 ControlOutput.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回版本与三个归一化浮点量；不转换为CARLA VehicleControl，不调用apply_control。
+
+<a id="fn-controloutput-from-dict"></a>
 
 ### `ControlOutput.from_dict`
 
@@ -319,13 +375,17 @@ ControlOutput.to_dict(self) -> dict[str, object]
 ControlOutput.from_dict(cls, payload: object) -> ControlOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+完整键和版本校验后构造，故字典里steer不能因dataclass默认0而省略；范围和互斥由构造器验证。
+
+<a id="fn-riskmetrics"></a>
 
 ### `RiskMetrics`
 
 源码位置：[car_control_A/contracts.py 第 263 行](../../../car_control_A/contracts.py#L263)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+风险结果：可空ttc_s、期望间距desired_gap_m、emergency_brake_requested布尔值。ttc未知用None，不能用Infinity绕过严格数值边界。
+
+<a id="fn-riskmetrics---post-init--"></a>
 
 ### `RiskMetrics.__post_init__`
 
@@ -335,7 +395,9 @@ ControlOutput.from_dict(cls, payload: object) -> ControlOutput
 RiskMetrics.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+非空ttc有限非负，desired_gap有限非负，紧急制动请求须exact bool；并不保证ttc和期望间距符合某个安全模型。
+
+<a id="fn-riskmetrics-to-dict"></a>
 
 ### `RiskMetrics.to_dict`
 
@@ -345,7 +407,9 @@ RiskMetrics.__post_init__(self) -> None
 RiskMetrics.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+输出版本及三个字段，保留None；不自行计算TTC或安全制动强度。
+
+<a id="fn-riskmetrics-from-dict"></a>
 
 ### `RiskMetrics.from_dict`
 
@@ -355,13 +419,17 @@ RiskMetrics.to_dict(self) -> dict[str, object]
 RiskMetrics.from_dict(cls, payload: object) -> RiskMetrics
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+完整键与版本校验后构造；非有限ttc、负间距或非bool请求均拒绝，不自动修正风险值。
+
+<a id="fn-longitudinaloutput"></a>
 
 ### `LongitudinalOutput`
 
 源码位置：[car_control_A/contracts.py 第 285 行](../../../car_control_A/contracts.py#L285)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+C纵向输出，组合ControlOutput、target_accel_mps2、target_speed_mps、state/reason与RiskMetrics；加速度可正负，目标速度是非负模值。
+
+<a id="fn-longitudinaloutput---post-init--"></a>
 
 ### `LongitudinalOutput.__post_init__`
 
@@ -371,7 +439,9 @@ RiskMetrics.from_dict(cls, payload: object) -> RiskMetrics
 LongitudinalOutput.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+control/risk必须对应契约实例；加速度有限可负，速度有限非负，state/reason非空文本。state不是此类强制的枚举，语义由C控制器定义。
+
+<a id="fn-longitudinaloutput-to-dict"></a>
 
 ### `LongitudinalOutput.to_dict`
 
@@ -381,7 +451,9 @@ LongitudinalOutput.__post_init__(self) -> None
 LongitudinalOutput.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+递归导出control/risk及版本，保留目标加速度、速度与解释字段；不是D仲裁后的最终执行证明。
+
+<a id="fn-longitudinaloutput-from-dict"></a>
 
 ### `LongitudinalOutput.from_dict`
 
@@ -391,19 +463,25 @@ LongitudinalOutput.to_dict(self) -> dict[str, object]
 LongitudinalOutput.from_dict(cls, payload: object) -> LongitudinalOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+严格顶层字段和版本，control/risk须plain dict并递归解析；构造后再执行数值和文本校验，不接受已实例化对象代替字典载荷。
+
+<a id="fn-executionstatus"></a>
 
 ### `ExecutionStatus`
 
 源码位置：[car_control_A/contracts.py 第 315 行](../../../car_control_A/contracts.py#L315)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+六个A内部终态枚举：SUCCEEDED/FAILED/REJECTED/EXPIRED/TIMED_OUT/SAFETY_OVERRIDE。不包含RECEIVED/EXECUTING/CONFIRMING/SUPERSEDED；与canonical反馈和ManeuverFSM状态集合不同。
+
+<a id="fn-executionfeedback"></a>
 
 ### `ExecutionFeedback`
 
 源码位置：[car_control_A/contracts.py 第 325 行](../../../car_control_A/contracts.py#L325)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结终态反馈，含command_id、ExecutionStatus、completed_at_s仿真秒、非空detail。只有终态，没有逐帧执行中反馈；事件发布/去重由FSM和运行入口负责。
+
+<a id="fn-executionfeedback---post-init--"></a>
 
 ### `ExecutionFeedback.__post_init__`
 
@@ -413,7 +491,9 @@ LongitudinalOutput.from_dict(cls, payload: object) -> LongitudinalOutput
 ExecutionFeedback.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+command_id/detail非空文本；status必须ExecutionStatus实例；completed_at_s有限非负秒。直接字符串状态需先from_dict转换枚举。
+
+<a id="fn-executionfeedback-is-terminal"></a>
 
 ### `ExecutionFeedback.is_terminal`
 
@@ -423,7 +503,9 @@ ExecutionFeedback.__post_init__(self) -> None
 ExecutionFeedback.is_terminal(self) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+恒为True，因为该类型枚举仅包含终态；不是通过当前车辆动作计算是否结束。
+
+<a id="fn-executionfeedback-to-dict"></a>
 
 ### `ExecutionFeedback.to_dict`
 
@@ -433,7 +515,9 @@ ExecutionFeedback.is_terminal(self) -> bool
 ExecutionFeedback.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+输出版本，status转枚举值字符串，其余字段不变；没有canonical的terminal_reason/纳秒issued字段，跨边界需适配。
+
+<a id="fn-executionfeedback-from-dict"></a>
 
 ### `ExecutionFeedback.from_dict`
 
@@ -443,7 +527,7 @@ ExecutionFeedback.to_dict(self) -> dict[str, object]
 ExecutionFeedback.from_dict(cls, payload: object) -> ExecutionFeedback
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+plain dict完整键与版本检查，status须字符串且可转换到六终态枚举，然后构造校验ID/秒数/detail；未知或执行中状态拒绝。
 
 ## 内部调用与异常路径
 
@@ -516,6 +600,8 @@ ExecutionFeedback.from_dict(cls, payload: object) -> ExecutionFeedback
 ## 2026-09-20 源码契约复核
 
 基线 `fe1ba839`。以下从当前源码声明提取；用于补充原有语义说明。默认表达式不等于运行生效值，分支记录不覆盖被调用函数的全部异常。
+
+<a id="fn-car-control-a-contracts-py"></a>
 
 ### `car_control_A/contracts.py`
 
