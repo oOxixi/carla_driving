@@ -11,7 +11,7 @@
 | 5 | [纵向控制](modules/vehicle-longitudinal.md) | **本轮完成**：13份实现页、83处占位改写、生产链/参数/缺测/重置索引；M05-01与A07保留 |
 | 6 | [感知](modules/vehicle-perception.md) | **本轮完成**：12份实现页、10页96处占位改写、生产/参考链与来源索引；M06-01/M06-02保留 |
 | 7 | [安全仲裁](modules/vehicle-safety.md) | **本轮完成**：13份实现页、12页82处占位改写、双入口/仲裁/终态/评分证据索引；M07-01保留 |
-| 8 | [场景执行与评分](modules/vehicle-scenarios.md) | 待按顺序精读；保留既有静态复核结果 |
+| 8 | [场景执行与评分](modules/vehicle-scenarios.md) | **本轮完成**：9份实现页、8页98处占位改写，场景/扩展/证据/外部runner边界；M08-01保留 |
 | 9 | [接口与坐标转换](modules/vehicle-interfaces.md) | 待按顺序精读；保留既有静态复核结果 |
 | 10 | [Student 结构与预处理](modules/challenge-structure.md) | 待按顺序精读；保留既有静态复核结果 |
 | 11 | [Student Planner](modules/challenge-planner.md) | 待按顺序精读；保留既有静态复核结果 |
@@ -92,3 +92,11 @@
 - 纯 Python 定点复现 M07-01：同一 canonical command 首帧终态 safety override 后，次帧可恢复推进控制但 feedback 仍是旧终态；只登记边界，未修改业务代码，且不扩大为当前 live runner 故障。
 - D 相关测试入口执行结果 **35 passed in 0.53s**；不包含 CARLA、Qwen、真实传感器或官方评分一致性验收。
 - 下一项是第8模块“场景执行与评分”；本轮不提前标记后续模块完成。
+
+## 第8模块完成记录
+
+- 核对9份实现场景页和4份既有语义/诊断页；8页共98处泛用占位按函数体改写，`scoring_stage` 原已有独立说明无需替换。
+- 模块页区分合同/几何、主runner扩展、evidence/acceptance、外部固定 ScenarioRunner 四层，补齐命令调度阻塞语义、任务绝对/重规划局部坐标、泛化采样、事件时序、context覆盖及证据等级。
+- 纯 Python 定点复现 M08-01：外部 ScenarioRunner agent 两个含RGB帧触发两次同步 Qwen，但两个请求均无 rgb_ref、visual_valid=false；只登记该 adapter 能力缺口，不扩大为主 runner 故障。
+- 场景相关8份测试入口执行结果 **134 passed in 2.59s**；不包含真实 CARLA、外部 checkout、在线模型或官方评分验收。
+- 下一项是第9模块“接口与坐标转换”；本轮不提前标记后续模块完成。

@@ -46,7 +46,7 @@ Compatibility hook used by CARLA leaderboard-style loaders.
 
 源码位置：[integration/scenario_runner_agent.py 第 47 行](../../../integration/scenario_runner_agent.py#L47)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的外部 ScenarioRunner agent 配置：基础目标速度、LiDAR停车距离/走廊半宽、路线前视点数，以及互斥的离线 command file 或在线 Qwen profile/service/固定 voice command。默认速度4 m/s、停车6 m，不等同仓库主 runner 的 DrivingPolicy。
 
 ### `OfficialAgentConfig.load`
 
@@ -56,13 +56,13 @@ Compatibility hook used by CARLA leaderboard-style loaders.
 OfficialAgentConfig.load(cls, path: str | Path | None) -> 'OfficialAgentConfig'
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+空路径返回默认配置；否则读取 schema 1.0 JSON，拒绝未知字段，验证三个有限下界数、正整数前视点、路径/字符串，并把相对 command_file 解析到配置文件目录。离线 command file 与 qwen_service_url 禁止并用；文件存在性在每帧读取时才暴露。
 
 ### `OfficialSensorFrame`
 
 源码位置：[integration/scenario_runner_agent.py 第 118 行](../../../integration/scenario_runner_agent.py#L118)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的 agent 内部帧，只含估算速度 m/s、航向弧度、经纬度和 LiDAR XYZ ndarray。虽然 sensors 声明 front_rgb，此结构不携带 RGB、帧号或传感同步状态。
 
 ### `OfficialAgentCore`
 
@@ -78,7 +78,7 @@ CARLA-independent route following and fail-closed obstacle arbitration.
 OfficialAgentCore.__init__(self, config: OfficialAgentConfig) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存配置，创建默认 `SafetySupervisor` 并清空最近命令错误。core 无 PID 积分、命令缓存或跨帧安全锁存；速度估算和 Qwen client 位于外层 agent。
 
 ### `OfficialAgentCore.step`
 
@@ -88,7 +88,7 @@ OfficialAgentCore.__init__(self, config: OfficialAgentConfig) -> None
 OfficialAgentCore.step(self, frame: OfficialSensorFrame, global_plan: Sequence[tuple[Mapping[str, float], object]], *, high_level_command: Mapping[str, object] | None=None, qwen_error: BaseException | None=None) -> tuple[float, float, float, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析高层命令目标速度，取 LiDAR 前走廊最近距离和 GNSS 全局路线转向，用比例速度误差生成限幅 raw control，再将命令错误作为 watchdog 交 D 仲裁。最后额外执行可配置 LiDAR 距离全制动 guard（只会比 D 更严）。返回 throttle/brake/steer/reason，不写 evidence 或实际 apply 确认。
 
 ### `OfficialAgentCore._target_speed`
 
@@ -98,7 +98,7 @@ OfficialAgentCore.step(self, frame: OfficialSensorFrame, global_plan: Sequence[t
 OfficialAgentCore._target_speed(self, *, high_level_command: Mapping[str, object] | None, qwen_error: BaseException | None) -> tuple[float, bool]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+Qwen 异常立即记错并返回0/invalid；在线高层命令禁止低层控制字段、需确认命令，支持停止、SET_SPEED、SLOW_DOWN及有限路线动作。无在线命令时使用默认速度或每帧读取离线 JSON，离线再检查 status、置信≥0.8和参数。任何受控解析/IO错误均 fail closed 为0/invalid；不支持变道/转弯多步执行。
 
 ### `ScenarioRunnerAgent`
 
@@ -114,7 +114,7 @@ Concrete agent loaded by ``scenario_runner.py --agent``.
 ScenarioRunnerAgent.setup(self, path_to_conf_file: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+加载配置并解析 Qwen profile；若没有 command_file，就选择显式 URL 或 profile 默认端口创建 HTTP client，否则保持离线模式。初始化 core、接口错误和 GNSS/航向历史。setup 不做服务 health、模型身份或 CARLA 传感器可用性检查。
 
 ### `ScenarioRunnerAgent.sensors`
 
@@ -124,7 +124,7 @@ ScenarioRunnerAgent.setup(self, path_to_conf_file: str) -> None
 ScenarioRunnerAgent.sensors(self) -> list[dict[str, object]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+声明 front RGB 640×360@90°、32线 LiDAR（20 Hz、50 m、56k points/s）和 GNSS 三种 evaluator 传感器。当前 `_sensor_frame/_qwen_high_level_command` 实际只消费 GNSS 与 LiDAR，RGB 数据未送入 Qwen。
 
 ### `ScenarioRunnerAgent.run_step`
 
@@ -134,7 +134,7 @@ ScenarioRunnerAgent.sensors(self) -> list[dict[str, object]]
 ScenarioRunnerAgent.run_step(self, input_data: Mapping[str, tuple[int, Any]], timestamp: float) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+每个 evaluator tick 解析传感帧；在线模式每帧同步调用一次 Qwen，受控 Qwen异常转 fail-closed command error，再由 core+D 生成控制。接口 Key/Type/Value 错误直接全制动；返回 CARLA VehicleControl 或 CI fallback namespace。没有异步去重、命令事件门控或证据记录，网络耗时处于官方 agent 的逐帧路径。
 
 ### `ScenarioRunnerAgent._qwen_high_level_command`
 
@@ -144,7 +144,7 @@ ScenarioRunnerAgent.run_step(self, input_data: Mapping[str, tuple[int, Any]], ti
 ScenarioRunnerAgent._qwen_high_level_command(self, frame: OfficialSensorFrame, timestamp: float) -> Mapping[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+为当前 tick 生成 request ID/估算 frame，使用固定 voice command，scene 仅含 speed，perception 仅含 LiDAR前距且 `rgb_ref=None`、`visual_valid=False`、无检测目标；近障碍时给 safety recommended STOP，然后同步 `client.infer`。因此该路径经过 Qwen，但不是比赛要求的 RGB+LiDAR 多模态输入，也不是事件触发一次请求。
 
 ### `ScenarioRunnerAgent._sensor_frame`
 
@@ -154,7 +154,7 @@ ScenarioRunnerAgent._qwen_high_level_command(self, frame: OfficialSensorFrame, t
 ScenarioRunnerAgent._sensor_frame(self, input_data: Mapping[str, tuple[int, Any]], timestamp: float) -> OfficialSensorFrame
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求 input_data 有 gnss/lidar，转为 float64/float32 并检查形状和 timestamp/GNSS 有限；LiDAR只截前三列。速度由相邻 GNSS 位移除 dt 估算，位移≥2 cm 时用位移方向更新航向；首帧从全局路线 bearing 初始化。LiDAR坐标有限性不在这里整体拒绝，走廊函数逐点过滤。
 
 ### `_front_lidar_distance`
 
@@ -164,7 +164,7 @@ ScenarioRunnerAgent._sensor_frame(self, input_data: Mapping[str, tuple[int, Any]
 _front_lidar_distance(points: np.ndarray, *, corridor_half_width_m: float) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+空点云返回 None；筛选 XYZ 全有限、前方 x>0、横向绝对值不超走廊半宽、z在[-2.2,0.5]的点，返回最小 x 米。未验证 ndarray 至少三列，正常由 `_sensor_frame` 保证；没有聚类/地面分割，单个噪点可触发停车。
 
 ### `_route_steer`
 
@@ -174,7 +174,7 @@ _front_lidar_distance(points: np.ndarray, *, corridor_half_width_m: float) -> fl
 _route_steer(latitude: float, longitude: float, compass_rad: float, global_plan: Sequence[tuple[Mapping[str, float], object]], lookahead_points: int) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+无全局计划输出0；否则按经纬度平方差找最近 plan 点，从其后序列取 lookahead bearing，与当前 compass 做包角，乘0.9并限幅[-0.6,0.6]。经纬度距离未做纬度缩放，仅用于最近索引；没有转向变化率限制。
 
 ### `_route_steer.distance_sq`
 
@@ -184,7 +184,7 @@ _route_steer(latitude: float, longitude: float, compass_rad: float, global_plan:
 _route_steer.distance_sq(item: tuple[Mapping[str, float], object]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 plan item 的 lat/lon 与当前坐标计算度数空间平方差，供 `min` 选最近索引。缺键/不可转换/非有限值会传播或影响排序，不转换为米。
 
 ### `_route_bearing`
 
@@ -194,7 +194,7 @@ _route_steer.distance_sq(item: tuple[Mapping[str, float], object]) -> float
 _route_bearing(latitude: float, longitude: float, global_plan: Sequence[tuple[Mapping[str, float], object]], lookahead_points: int) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+空计划返回0；否则取索引 `min(last, lookahead_points)` 的目标，经球面局部近似得到 north/east，位移足够时返回 `atan2(east,north)`，近零返回0。lookahead 按点数而非米，负值未在 helper 内拒绝（配置 loader保证正数）。
 
 ### `_gps_offset_m`
 
@@ -204,7 +204,7 @@ _route_bearing(latitude: float, longitude: float, global_plan: Sequence[tuple[Ma
 _gps_offset_m(latitude: float, longitude: float, target_latitude: float, target_longitude: float) -> tuple[float, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用固定111,320 m/degree换算北向差，东向差再乘平均纬度余弦；适合短距离局部近似，不处理跨日期变更线、极区或高精度大地测量。
 
 ### `_finite`
 
@@ -214,7 +214,7 @@ _gps_offset_m(latitude: float, longitude: float, target_latitude: float, target_
 _finite(value: object, name: str, minimum: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求精确 int/float 且非 bool，转换后有限并不低于给定 minimum；类型错误与数值错误分别抛 TypeError/ValueError，返回 float。
 
 ## 内部调用与异常路径
 

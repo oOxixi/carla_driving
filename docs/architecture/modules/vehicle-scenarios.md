@@ -25,6 +25,43 @@ PerturbationCase列出生成所需全部参数，无声明默认项需要调用�
 
 基础验收输出checks/failed_keys；Qwen、extension与completion还会影响最终结果。修改expected必须查actual生产者，修改base要追全体GEN/selection，修改终态需查collector资格。
 
+## 第8模块逐入口精读结论（2026-09-21）
+
+### 四层职责不能混用
+
+1. `ScenarioSpec/scenario_builder/generalization_gate` 只负责加载合同、将局部路线变到世界坐标、合法放置 actor 和生成确定性扰动；它们不控制 CARLA，也不证明 actor 已成功生成。
+2. 仓库主运行链由 `carla_runner` 拥有 world tick、actor 生命周期和控制；`ScenarioExtensionRuntime` 只保存扩展触发/故障/phase/Qwen/安全响应状态，必须由 runner 每帧喂真实观测。
+3. `ScenarioEvidenceRecorder → evaluate_expected/build_acceptance_context` 把已完成运行事实写成 JSONL/summary 并判合同；expected/oracle/context 都是评价输入，禁止反向成为传感或控制真值。
+4. `official_scenario_runner` 只是固定外部 checkout `94ff3b8...` 的子进程边界；`ScenarioRunnerAgent` 是其独立、简化 agent，不等于主 runner，也不使用仓库场景 ID 来调参。
+
+### 场景身份、调度与泛化
+
+`ScenarioSpec.load` 要求 schema 1.0、basic/advanced/challenge、整数 seed、正仿真步长/时长、至少两个 local XY 点，并把命令按 time 排序。命令 ID 在排序前按 JSON 原 index 生成，所以场景文件仍应保持时间顺序；`CommandTimeline` 遇到首个未满足 trigger 会阻塞后续命令，以保证 phase 顺序而不是越过前置事件。
+
+泛化矩阵不是所有维度的笛卡尔积。`GeneralizationMatrix.cases` 用固定互质步长做 bounded Latin-cycle，生成 `samples_per_scenario` 个可复现 case。扰动会改地图、天气、seed、fixed delta、actor位置/速度/时间/数量和有限传感参数，但保持 commands/oracles 语义；被 commands/expected/qwen_expected/extensions 的 actor_id 引用的车辆不会因密度缩放删除。派生 JSON 可加载只是第一道门禁，仍需真实地图 actor spawn、路线与传感测试。
+
+### actor 与事件坐标
+
+actor spawn 优先使用任务路线弧长和 CARLA lane topology；相邻车道必须存在、为 DRIVING 且同向。旧 `spawn.y≈车道宽` 会转换成真实左右车道并只保留剩余横向偏移。重规划时只把 actor/target 的任务绝对 s 映射到局部 route s，激活/停用 trigger 继续使用任务绝对里程。候选还检查有限值、车道中心误差、航向、道路高度和与已占用位置的最小间距；这些检查仍不能替代 `world.try_spawn_actor` 的最终结果。
+
+`ScenarioExtensionRuntime` 是单场景有状态对象：每帧更新 actor最小距离、故障窗口、车道/速度/灯态/路线和 RSS，actor event 每次最多推进一项。紧急响应证据区分 danger、perception、decision、safety override、control effect 和 recovery；缺任一阶段保留 None，P95 仅基于完整 perception→control 样本。Qwen plan 的行为/目标提取是宽松递归证据，不等同 schema 验证。
+
+### 验收、终态和评分证据等级
+
+`evaluate_expected` 对未知 expected key 失败关闭；数值缺测/非有限也失败。`ScenarioEvidenceRecorder.complete` 没有 expected 时，有命令场景的默认 completion 是“任一最新终态为 SUCCEEDED”，不是“所有命令成功”；正式多命令场景必须同时提供 expected/extension/Qwen 合同。基础 metrics 中 context 在最后覆盖同名聚合值，因此 context 必须来自只读、可追溯的 scoring stage。
+
+JSONL 以 exclusive create 防止覆盖旧 run，每条 flush；summary 则覆盖写且不是原子文件，也没有自行签发运行 manifest/hash。仓库 `OfficialScorer` 仍是内部基线规则，不能因被 evidence 调用就称为赛事官方评分。
+
+### 外部 ScenarioRunner agent 的当前能力边界 M08-01（已复现、未修复）
+
+`ScenarioRunnerAgent.sensors` 声明 front RGB、LiDAR、GNSS，但 `OfficialSensorFrame` 只保存 GNSS/LiDAR，`_qwen_high_level_command` 固定 `rgb_ref=None`、`visual_valid=False`、`detected_objects=[]`。在线模式还在每个 `run_step` 同步调用一次 Qwen，没有事件触发、异步复用或命令生命周期缓存。使用两帧含 RGB 的合法 mock sensor 输入，实际得到 Qwen calls=2、两个 rgb_ref 均 None、visual_valid 均 false。该结论只针对外部 ScenarioRunner adapter；仓库主 `carla_runner` 的 RGB/LiDAR/Radar 与事件式 Qwen 链是另一实现，不能扩大为全项目没有多模态输入。
+
+在将该 agent 用作比赛外部/隐藏场景入口前，需要明确目标：若要求全链，应把 RGB asset/检测与同步来源送入 ModelRequest，改为事件触发异步请求并记录 request→plan→apply→terminal；若只作为未知路线安全 baseline，应在交付说明中明确它是 LiDAR+GNSS 控制和 Qwen 文本/结构 smoke，不能冒充完整 VLA。
+
+### 修改联动清单
+
+改场景 key 必须同步 `ScenarioSpec`、extension requirement、runner producer、evidence metric 和 acceptance；改 actor坐标需回归重规划 rebasing、任务绝对 trigger、泛化 offset 和真实 spawn；改 Qwen/phase 计数需同步 terminal/plan/resolution 三类事件；改评分 context 必须防止 oracle 泄漏并保存来源；改外部 agent 需同时验证 pinned ScenarioRunner loader、sensor contract、服务 profile 和 fail-closed 控制。
+
 ### [integration/scenario_evidence.py](../../../integration/scenario_evidence.py) 的入口与声明
 
 ```python
@@ -125,7 +162,7 @@ evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, object])
 
 `python -m pytest integration/tests/test_scenario_acceptance.py integration/tests/test_scenario_builder.py integration/tests/test_scenario_evidence.py integration/tests/test_scenario_execution.py integration/tests/test_scenario_extensions.py integration/tests/test_official_scenario_runner.py integration/tests/test_generalization_gate.py integration/tests/test_unseen_scenario_generalization.py`
 
-Run from the worktree root. Listed commands are relevant checks, not claims that tests were executed. CARLA, remote-model and hardware acceptance require their actual environments and run manifests.
+2026-09-21 在工作树根目录执行上述入口：**134 passed in 2.59s**。结果覆盖场景加载/调度、actor几何、evidence/acceptance、扩展、固定外部进程命令、泛化与 unseen agent 纯 Python 边界；不包含真实 CARLA actor spawn、外部 ScenarioRunner checkout 运行、在线 Qwen、多模态质量或官方评分一致性。
 
 ## 功能小文档完整索引
 

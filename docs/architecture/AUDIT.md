@@ -69,6 +69,10 @@
 
 **M07-01 / 直接 canonical 封装已复现、未修复：帧级控制可恢复推进，但命令反馈仍保持 safety 终态。** [DControlRuntime.apply](../../car_control_D/control_runtime.py)在 safety override 时调用 `ExecutionFeedbackTracker.safety_override`，把 command ID 永久置为终态；同一 ID 下一帧仍会重新仲裁和返回新的 `final_control`。用仓库 `control_command/perception_state` examples，首帧 `risk_level=EMERGENCY` 得 throttle=0/brake=1、feedback=`SAFETY_OVERRIDE`；次帧风险解除、50 m gap 后得到 reason=`NONE`、override=false、throttle=0.2/brake=0，但 feedback 仍为第一次 `SAFETY_OVERRIDE`，unfinished 为空。当前 CARLA live runner 直接调用 `SafetySupervisor`，不使用 `DControlRuntime`，故这不是当前实车故障证明。若未来接入 canonical D，需把覆盖定义为帧事件或命令终止二选一，并回归终态后控制授权、重试 attempt ID、评分和监控消费。
 
+### 第8模块：场景执行与评分精读新增证据（基线7d618af3）
+
+**M08-01 / 外部 ScenarioRunner agent 直接接口已复现、未修复：声明 RGB 但 Qwen 请求无图且逐帧同步调用。** [ScenarioRunnerAgent.sensors](../../integration/scenario_runner_agent.py)声明 `front_rgb/lidar/gnss`，但 `_sensor_frame` 只读取 GNSS/LiDAR，`OfficialSensorFrame` 没有图像字段，`_qwen_high_level_command` 固定 `rgb_ref=None`、`visual_valid=False`、`detected_objects=[]`；在线 `run_step` 每帧调用该方法。给 agent 注入计数 stub client，连续传两个含 front_rgb 的合法 sensor frame，得到 `qwen_calls=2`、两个 rgb_ref 均 None、两个 visual_valid 均 false。该 adapter 是外部固定 ScenarioRunner 的简化未知场景入口，主 `carla_runner` 使用另一套多模态/事件式链，因此不能扩大为全项目未使用 RGB 或所有 Qwen 都逐帧调用。若用于正式全链，需接入同步图像/检测、事件异步生命周期及 evidence；若只作安全 baseline，交付材料必须降级声明能力。
+
 
 ### 第2模块：异步规划精读新增证据（2026-09-20，基线fe1ba839）
 

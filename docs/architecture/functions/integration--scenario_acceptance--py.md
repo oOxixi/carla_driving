@@ -28,7 +28,7 @@ Strict evaluation of scenario ``expected`` contracts.
 _number(value: object) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+仅接受精确 int/float 且非 bool，转换为有限 float；类型不符或 NaN/Inf 返回 `None` 而非抛错。数值范围和单位由各具体验收项决定。
 
 ### `evaluate_expected`
 
@@ -38,7 +38,7 @@ _number(value: object) -> float | None
 evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, object]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+逐键把场景 `expected` 与 recorder/scoring context 的 metrics 比较，返回总 passed、每项 PASS/FAIL、failed_keys、unsupported_keys 和数量。支持启动/调用/路线/命令布尔项、误差/速度/间距阈值、安全事件、重规划、停止线及目标速度等；未知 key 必定失败关闭。函数信任 metrics 的来源，合同通过不等于这些值来自真实传感器或冻结运行。
 
 ### `evaluate_expected.add`
 
@@ -48,7 +48,7 @@ evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, object])
 evaluate_expected.add(key: str, passed: bool, actual: object, required: object, detail: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+向 checks 追加统一记录，status 只由传入 passed 转为 PASS/FAIL，并原样保存 actual、required、detail。闭包不去重，同一语义可因两个 expected key 生成两条检查。
 
 ### `evaluate_expected.maximum`
 
@@ -58,7 +58,7 @@ evaluate_expected.add(key: str, passed: bool, actual: object, required: object, 
 evaluate_expected.maximum(key: str, metric: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 metrics 指定值和 expected 当前 key 都经 `_number`，两者有效且 actual≤required 才通过；缺测、非法或 NaN 均失败，并在记录中保留转换后的 `None`。
 
 ### `evaluate_expected.minimum`
 
@@ -68,7 +68,7 @@ evaluate_expected.maximum(key: str, metric: str) -> None
 evaluate_expected.minimum(key: str, metric: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+与 maximum 对称，要求两个有限数存在且 actual≥required；用于最小前距、最短运行时间等下界合同，不自行解释单位。
 
 ## 内部调用与异常路径
 

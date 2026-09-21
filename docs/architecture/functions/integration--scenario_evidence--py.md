@@ -44,7 +44,7 @@ fabricating a latency value.
 FrameTiming.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求所有提供的时间戳为非负精确 int；simulator tick 起止必须成对，perception_start 必须同时有 sensor_ready，并按 tick-start→tick-end→perception-start→sensor-ready→decision-start→decision-end→apply 的已提供项保持单调。全部时间必须来自同一 monotonic 时钟域。
 
 ### `FrameTiming.to_dict`
 
@@ -54,7 +54,7 @@ FrameTiming.__post_init__(self) -> None
 FrameTiming.to_dict(self) -> dict[str, float | int | None]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保留原纳秒戳，并计算 simulator tick、perception acquire、pipeline active、sensor→decision、decision、decision→apply、sensor→control 毫秒；缺少对应可选边界时输出 None。它不包含帧排队前或车辆执行器响应时间。
 
 ### `_jsonable`
 
@@ -74,7 +74,7 @@ Convert controller contracts to strict JSON without lossy string reprs.
 _field(value: object, name: str, default: Any=None) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+统一从 Mapping.get 或对象属性读取字段，缺失返回 default。对象 property getter 异常会传播，mapping 键存在但值 None 不回退。
 
 ### `ScenarioEvidenceRecorder`
 
@@ -94,7 +94,7 @@ frames after a terminal record.
 ScenarioEvidenceRecorder.__init__(self, path: str | Path, *, scorer: OfficialScorer | None=None, clock_ns: Any=time.monotonic_ns) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+配置 JSONL 路径、同名 summary 路径、计分器和纳秒时钟，并初始化单次 run 的命令、终态、安全事件、路线恢复、时延、车速/位姿/横纵向等全部聚合状态。构造不创建文件；每个实例只能启动一次且不是线程安全容器。
 
 ### `ScenarioEvidenceRecorder.run_id`
 
@@ -104,7 +104,7 @@ ScenarioEvidenceRecorder.__init__(self, path: str | Path, *, scorer: OfficialSco
 ScenarioEvidenceRecorder.run_id(self) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+只读返回当前 run ID；start 前为 None，结束后仍保留，不表示文件句柄仍活动。
 
 ### `ScenarioEvidenceRecorder.start_run`
 
@@ -114,7 +114,7 @@ ScenarioEvidenceRecorder.run_id(self) -> str | None
 ScenarioEvidenceRecorder.start_run(self, *, scenario_id: str, difficulty: str='basic', config: Mapping[str, object] | None=None, expected_route_deviation: bool=False, run_id: str | None=None) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求实例尚未开始/终态且场景 ID、难度非空，创建父目录并以 exclusive `x` 模式新建 JSONL，生成或采用 run ID，然后写 sequence 0 的 run_start/config。目标已存在会失败而不会追加旧证据；expected-route-deviation 只影响后续严重偏航扣分。
 
 ### `ScenarioEvidenceRecorder.record_command`
 
@@ -124,7 +124,7 @@ ScenarioEvidenceRecorder.start_run(self, *, scenario_id: str, difficulty: str='b
 ScenarioEvidenceRecorder.record_command(self, command: Mapping[str, object], *, disposition: str, adapted_command: object | None=None, received_ns: int | None=None, submitted_sim_time_s: float | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+在活动 run 中要求非空 command ID 和非负 received 纳秒，严格 JSON 化原命令/适配命令，复制三项语音时间到记录根并计算阶段延迟，再以 ID 写入内存字典和 JSONL。重复 ID 会覆盖聚合字典但保留此前日志行；disposition 和 submitted sim time 未在此做枚举/有限性校验。
 
 ### `ScenarioEvidenceRecorder.record_qwen_event`
 
@@ -178,7 +178,7 @@ All terminal feedback carried by the frame is emitted exactly once.
 ScenarioEvidenceRecorder.record_feedback(self, feedback: object) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取字符串 command ID/status，以 `(ID,status)` 去重，更新该 ID 的“最新状态”，提取 safety_event reason 或 SAFETY_OVERRIDE terminal reason，并写 feedback。它不限制 status 必须终态，也不强制 RECEIVED→EXECUTING→terminal 顺序；乱序输入可覆盖 `_terminal_statuses`，调用方必须提供可信生命周期。
 
 ### `ScenarioEvidenceRecorder.record_canonical_routing`
 
@@ -208,7 +208,7 @@ Persist route-recovery lifecycle evidence and update aggregates.
 ScenarioEvidenceRecorder.complete(self, *, completion: bool | None=None, detail: str='', expected: Mapping[str, object] | None=None, acceptance_context: Mapping[str, object] | None=None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+确定 completion：显式值优先；否则有命令时只要任一最新状态为 SUCCEEDED 即真，无命令时有帧即真。提供 expected 后构造 metrics 并执行严格 acceptance，最终 completion 与报告 passed 相与。随后写 run_complete、覆盖 summary JSON 并关闭；默认“任一命令成功”不是“全部命令完成”，正式场景应提供 expected/扩展合同。
 
 ### `ScenarioEvidenceRecorder.fail`
 
@@ -218,7 +218,7 @@ ScenarioEvidenceRecorder.complete(self, *, completion: bool | None=None, detail:
 ScenarioEvidenceRecorder.fail(self, error: BaseException | str, *, detail: str='') -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+在活动 run 中把异常类型/文本或字符串错误写入 run_failed，生成 completion=false 的评分摘要、写 summary 并关闭。它保存失败证据但不会补所有未终态命令，也不会重新抛原异常。
 
 ### `ScenarioEvidenceRecorder.close`
 
@@ -238,7 +238,7 @@ Close an unterminated recorder as a failed run, preserving evidence.
 ScenarioEvidenceRecorder._summary(self, *, status: str, completion: bool, completion_basis: str, detail: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+汇总身份、状态/完成依据、帧/命令、终态、最小间距/TTC、安全/违规/路线恢复计数及多段时延均值/分位/最大值；若有 acceptance 则嵌入。最后调用 D 的仓库计分器生成 score/score_report。expected route deviation 会把 serious_route_deviation 置0，但原 route_deviation_count仍保留。
 
 ### `ScenarioEvidenceRecorder._acceptance_metrics`
 
@@ -248,7 +248,7 @@ ScenarioEvidenceRecorder._summary(self, *, status: str, completion: bool, comple
 ScenarioEvidenceRecorder._acceptance_metrics(self, expected: Mapping[str, object], context: Mapping[str, object]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+由累计帧/命令事实派生基础验收 metrics：横纵误差、转向率、位移/转向、运行时长、命令顺序与成功、停止延迟、风险事件、路线恢复等，并最后用 context 同名键覆盖。命令顺序按期望 `scenario_cmd_000...` 与提交顺序核对；duration 用首末帧差再补一个首帧间隔。context 属于评价输入，不能混入控制侧或无 provenance 的 oracle 值。
 
 ### `ScenarioEvidenceRecorder._route_recovery_succeeded`
 
@@ -258,7 +258,7 @@ ScenarioEvidenceRecorder._acceptance_metrics(self, expected: Mapping[str, object
 ScenarioEvidenceRecorder._route_recovery_succeeded(self) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+查找第一次 `REPLANNED`，只有其后出现 ON_ROUTE 或 DESTINATION_REACHED 才返回真；没有重规划或恢复状态出现在其前都返回假。
 
 ### `ScenarioEvidenceRecorder._write`
 
@@ -268,7 +268,7 @@ ScenarioEvidenceRecorder._route_recovery_succeeded(self) -> bool
 ScenarioEvidenceRecorder._write(self, record_type: str, **fields: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求文件已开始，组装 record type、schema、run ID、递增 sequence 和 UTC wall-clock，再经严格 `_jsonable`、`allow_nan=False`、排序键编码为单行并立即 flush。写入/flush 失败无事务回滚，sequence 只在成功执行到末尾后递增。
 
 ### `ScenarioEvidenceRecorder._write_summary`
 
@@ -278,7 +278,7 @@ ScenarioEvidenceRecorder._write(self, record_type: str, **fields: Any) -> None
 ScenarioEvidenceRecorder._write_summary(self, summary: Mapping[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+严格 JSON 化 summary 后以 UTF-8、排序键和两空格缩进覆盖相邻 `.summary.json`，结尾加换行。不是临时文件原子替换，也不写 manifest/hash。
 
 ### `ScenarioEvidenceRecorder._ensure_active`
 
@@ -288,7 +288,7 @@ ScenarioEvidenceRecorder._write_summary(self, summary: Mapping[str, Any]) -> Non
 ScenarioEvidenceRecorder._ensure_active(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+未 start 或句柄已关闭时抛“run has not started”；终态标志为真时抛“already terminal”。由于 `_finish` 同时清句柄，终态后的调用会先命中未开始消息。
 
 ### `ScenarioEvidenceRecorder._finish`
 
@@ -298,7 +298,7 @@ ScenarioEvidenceRecorder._ensure_active(self) -> None
 ScenarioEvidenceRecorder._finish(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+将 terminal 置真、断言句柄存在、关闭并清空句柄引用。它不清聚合状态、不删除部分文件，也不允许实例再次 start。
 
 ### `ScenarioEvidenceRecorder._minimum`
 
@@ -308,7 +308,7 @@ ScenarioEvidenceRecorder._finish(self) -> None
 ScenarioEvidenceRecorder._minimum(current: float | None, candidate: object) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+候选 None 时保留 current；否则转 float 并要求有限非负，返回首次值或历史最小值。bool 可被 float 接受为0/1，本 helper 未精确排除。
 
 ### `ScenarioEvidenceRecorder._average`
 
@@ -318,7 +318,7 @@ ScenarioEvidenceRecorder._minimum(current: float | None, candidate: object) -> f
 ScenarioEvidenceRecorder._average(values: list[float]) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+非空 float 列表返回算术平均，空列表返回 None；不做有限性、异常值或单位检查，依赖采集入口。
 
 ### `ScenarioEvidenceRecorder._percentile`
 
@@ -328,7 +328,7 @@ ScenarioEvidenceRecorder._average(values: list[float]) -> float | None
 ScenarioEvidenceRecorder._percentile(values: list[float], quantile: float) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+空列表返回 None；否则排序并按 `(n-1)*quantile` 在线性插值相邻样本。quantile 未限制 `[0,1]`，当前内部只传0.95/0.99。
 
 ### `ScenarioEvidenceRecorder._command_latency`
 
@@ -338,7 +338,7 @@ ScenarioEvidenceRecorder._percentile(values: list[float], quantile: float) -> fl
 ScenarioEvidenceRecorder._command_latency(command: Mapping[str, Any], received_ns: int) -> dict[str, float | None]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从 command 的 audio/asr/intent 纳秒戳与 received_ns 计算 ASR、intent 和 intent→submit 毫秒；每段只在两端精确 int 且非逆序时生成，否则该段为 None。它不要求四个阶段全部同一时钟域。
 
 ### `ScenarioEvidenceRecorder._latency_origin_ns`
 
@@ -348,7 +348,7 @@ ScenarioEvidenceRecorder._command_latency(command: Mapping[str, Any], received_n
 ScenarioEvidenceRecorder._latency_origin_ns(command_record: Mapping[str, Any]) -> int | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+优先返回嵌套 command 的精确 int `t_audio_start_ns`，否则返回记录根的精确 int `received_ns`，都缺失则 None；用于首次控制 apply 的 E2E 起点，未验证非负或时钟域。
 
 ## 内部调用与异常路径
 
