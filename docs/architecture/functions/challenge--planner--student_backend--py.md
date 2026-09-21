@@ -24,7 +24,7 @@ PyTorch Student backend implementing the frozen planner boundary.
 
 源码位置：[challenge/planner/student_backend.py 第 24 行](../../../challenge/planner/student_backend.py#L24)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+实现冻结 PlannerBackend 的 PyTorch Student 包装器，串联合同指纹、请求校验、预处理、模型、Adapter 和 PlanValidator。`production_ready` 只由通过 manifest 的权重加载置真，不阻止结构 smoke 调用 infer。
 
 ### `StudentBackend.__init__`
 
@@ -34,7 +34,7 @@ PyTorch Student backend implementing the frozen planner boundary.
 StudentBackend.__init__(self, model: StudentPlannerV0 | None=None, *, weights: str | Path | None=None, weights_manifest: str | Path | None=None, registry: InterfaceRegistry | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+使用给定模型或新建随机初始化 V0；manifest 不得脱离 weights。加载权重前可验证 manifest 身份/SHA/Gate，随后用 `torch.load(...,map_location="cpu",weights_only=True)` 加载纯 state_dict、切 eval，并构造 registry/validator/preprocessor/adapter。无权重或无合格manifest时保持非生产就绪，但对象仍可做结构推理。
 
 ### `StudentBackend.infer`
 
@@ -44,7 +44,7 @@ StudentBackend.__init__(self, model: StudentPlannerV0 | None=None, *, weights: s
 StudentBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按固定顺序执行 `model_request` Schema验证→四路预处理→`torch.inference_mode` 前向→Student adapter→PlanValidator。Validator绑定请求/命令ID，以 request.created_at 作为 now，并允许返回 requires_confirmation；调用者仍需执行确认策略。模型和输入默认留在CPU，本方法不自动迁移设备。
 
 ### `StudentBackend.health`
 
@@ -54,7 +54,7 @@ StudentBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 StudentBackend.health(self) -> tuple[bool, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+未通过权重 manifest 时返回 `(False, readiness_detail)`；通过时返回 `(True, "Student planner ready: <model_id>")`。这是加载身份门禁，不重新运行B2 Gate、数值评测或硬件健康检查。
 
 ### `validate_weight_manifest`
 
@@ -64,7 +64,7 @@ StudentBackend.health(self) -> tuple[bool, str]
 validate_weight_manifest(weights: str | Path, manifest_path: str | Path, *, expected_model_id: str, expected_config_id: str=StudentModelConfig().config_id) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析 JSON 对象并要求六个非空字符串字段；git SHA须完整40位十六进制，model/config与当前结构一致，gate_status须固定值，最后重算权重文件SHA256。成功返回原manifest；不验证dataset真实存在、git提交可获取、Gate签发者或报告哈希。
 
 ## 内部调用与异常路径
 

@@ -39,13 +39,13 @@ Versioned architectural values used to construct Student V0.
 StudentModelConfig.as_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+通过 `dataclasses.asdict` 返回配置快照，tuple 保持 tuple；用于结构/manifest 身份记录，不包含实际 state_dict、参数哈希、设备或运行 dtype。
 
 ### `TinyVisionEncoder`
 
 源码位置：[challenge/student/model.py 第 35 行](../../../challenge/student/model.py#L35)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+五级 stride-2 Conv+ReLU 视觉编码器，面向预处理后的 224×224 RGB。保留池化后的 3×3 粗空间格以区分左右目标；不是通用任意分辨率骨干。
 
 ### `TinyVisionEncoder.__init__`
 
@@ -55,7 +55,7 @@ StudentModelConfig.as_dict(self) -> dict[str, object]
 TinyVisionEncoder.__init__(self, output_width: int=512, channels: tuple[int, ...]=(3, 32, 64, 128, 256, 384)) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按相邻 `channels` 生成 3×3/stride2/pad1 卷积和非 inplace ReLU，随后固定 2×2/stride2 AvgPool，并把 `channels[-1]×3×3` 投影到 `output_width`。channels 首项必须与 RGB 通道一致，长度/分辨率改变会影响固定 projection 输入，但本方法不主动验证。
 
 ### `TinyVisionEncoder.forward`
 
@@ -65,13 +65,13 @@ TinyVisionEncoder.__init__(self, output_width: int=512, channels: tuple[int, ...
 TinyVisionEncoder.forward(self, rgb: Tensor) -> Tensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+依次执行卷积特征、平均池化、从维1展平、线性投影和 ReLU，输出 `[B,output_width]`。输入 shape/dtype/finite 值由调用方保证；不匹配时由 PyTorch 算子报错。
 
 ### `FixedVectorEncoder`
 
 源码位置：[challenge/student/model.py 第 61 行](../../../challenge/student/model.py#L61)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+文本、目标展平和状态三路共用的结构模板；各实例参数不共享。它把固定宽度 float 向量编码到统一融合宽度，不执行归一化或 mask。
 
 ### `FixedVectorEncoder.__init__`
 
@@ -81,7 +81,7 @@ TinyVisionEncoder.forward(self, rgb: Tensor) -> Tensor
 FixedVectorEncoder.__init__(self, input_width: int, output_width: int=512) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+构造 `input_width→output_width→output_width` 两层 Linear，每层后接非 inplace ReLU。宽度来自 contract；错误 shape 由 Linear 运行时报错。
 
 ### `FixedVectorEncoder.forward`
 
@@ -91,7 +91,7 @@ FixedVectorEncoder.__init__(self, input_width: int, output_width: int=512) -> No
 FixedVectorEncoder.forward(self, value: Tensor) -> Tensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+直接执行顺序 MLP，保留首维 batch，返回 `[B,output_width]`；不会自行展平，目标张量由 `StudentPlannerV0.forward` 在传入前展平。
 
 ### `StudentPlannerV0`
 
@@ -107,7 +107,7 @@ FixedVectorEncoder.forward(self, value: Tensor) -> Tensor
 StudentPlannerV0.__init__(self, contract: StudentShapeContract | None=None, config: StudentModelConfig | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存 contract/config，建立视觉、文本、目标和状态四个 512 维编码器，拼接后经 3072→3072→1024 融合层生成十个 Head，并立即执行统一初始化。自定义 contract/config 会改变结构；旧权重不因 Python 加载成功就自动兼容。
 
 ### `StudentPlannerV0.reset_parameters`
 
@@ -127,7 +127,7 @@ Apply the documented, seed-controlled initialization policy.
 StudentPlannerV0.forward(self, rgb: Tensor, text_tokens: Tensor, targets: Tensor, state: Tensor) -> dict[str, Tensor]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+以 RGB 首维作为 batch；编码四路输入并沿特征维拼接。分类/多标签 Head 返回 raw logits；速度和 confidence 经 sigmoid，速度再乘配置上限 50 m/s；confirmation 保留 logit。方法不做 shape、dtype、NaN 或跨路 batch 一致性显式校验。
 
 ## 内部调用与异常路径
 

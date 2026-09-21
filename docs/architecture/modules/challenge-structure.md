@@ -26,6 +26,32 @@
 
 改变任何维度/枚举时同步检查 label_encoder、losses、student_adapter、导出顺序、ONNX Runtime、HIL 和交付结构报告；变更 model_id/config_id 并重新训练/导出，不能继续使用旧权重。
 
+## 第10模块逐入口精读结论（2026-09-22）
+
+### 固定结构与输出语义
+
+- 默认四路输入是 float32 batch1；模型从 RGB 首维取得 batch，并假定其他三路一致。分类/完成/失败/重规划/确认均为 logits，只有 `target_speed_mps` 和 `confidence` 已经 sigmoid。
+- 视觉骨干的五次 stride-2 卷积和固定 2×2 pool 针对 224×224 形成 3×3 投影输入；修改分辨率不是单改 contract 字段即可兼容。
+- `max_target_speed_mps=50` 只是 Head 数值上界，Planner adapter 还会按 request speed limit/max target speed 收紧；它不是车辆控制许可速度。
+- 枚举顺序、目标候选顺序和 `OUTPUT_NAMES` 都属于权重语义。shape 相同但顺序变化仍必须更换 config/model/weights 身份并重训。
+
+### 预处理信息与损失边界
+
+| 输入 | 实际编码 | 截断/缺失 |
+|---|---|---|
+| RGB | letterbox 后 ImageNet 归一化 | 无路径/不存在返回全零；解码错误抛出 |
+| source_text | 每字符 code point 比例 | 32字符右截断、补零；不是 tokenizer |
+| targets | 原顺序前8个、14维手工特征 | 非list/非Mapping补零；第9个起丢弃 |
+| state | 摘要/约束/能力/hint/routing 写入固定槽位 | 当前槽63未用；部分值只限上界 |
+
+训练计划长度必须为 `[B]` 整数且1..4；step mask 才是 padding 的权威，PAD 类别值不得参与 loss。`masked_step_mean` 会把 mask 扩展到额外特征维，并对所有有效元素取均值。
+
+### 当前边界与联动
+
+- M10-01：contract 允许 `batch!=1`，但预处理除 RGB 外三路固定 batch1；见 [AUDIT](../AUDIT.md)。正式导出合同仍是 batch1，训练批处理应由 Dataset/collate 逐样本堆叠，而不是把该 runtime preprocessor 的 contract.batch 改大。
+- 预处理无独立 finite/shape 清洗；在线 `StudentBackend` 先做 ModelRequest Schema 校验，离线 Dataset 也必须通过同等 manifest/label gate。
+- 改任何槽位需同步 B1 数据发布、A3 label/loss、Student adapter、ONNX 输出顺序、A2量化、A4 runtime 与B3 HIL，且重新签发权重/配置 manifest。
+
 
 
 ## 模块接口与参数核对（2026-09-20）

@@ -24,7 +24,7 @@ Decode Student tensors into a strict, grounded ManeuverPlan V2.
 
 源码位置：[challenge/planner/student_adapter.py 第 23 行](../../../challenge/planner/student_adapter.py#L23)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+将 batch1 十个 Student Head 解码并约束修复为 ManeuverPlan V2。它会覆盖部分模型预测（可行行为、completion、速度上限、STOP截断），因此原始 Head 精度与最终计划通过率必须分别评估。
 
 ### `StudentPlanAdapter.__init__`
 
@@ -34,7 +34,7 @@ Decode Student tensors into a strict, grounded ManeuverPlan V2.
 StudentPlanAdapter.__init__(self, *, model_id: str='student-v0-r3-fp32') -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+只保存写入最终计划的 `model_id`，默认 `student-v0-r3-fp32`；不加载模型、权重或配置，也不验证该 ID 与 outputs 来源一致，身份绑定由 Backend manifest 承担。
 
 ### `StudentPlanAdapter.decode`
 
@@ -44,7 +44,7 @@ StudentPlanAdapter.__init__(self, *, model_id: str='student-v0-r3-fp32') -> None
 StudentPlanAdapter.decode(self, request: Mapping[str, Any], outputs: Mapping[str, Tensor]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先要求 outputs 的键与 `OUTPUT_NAMES` 完全一致，再仅解码 batch索引0。plan length argmax+1并夹到Head步数；must_stop强制单步STOP。每步按允许行为/能力筛选、恢复目标指针、限制速度、替换相容completion并组装前置条件；STOP/HOLD/PULL_OVER立即截断。confidence夹[0,1]，无可行动作、确认logit≥0或confidence<0.8触发确认；replan取非负logit前8项。deadline不晚于created时仅补1 ns。
 
 ### `_best_allowed`
 
@@ -54,7 +54,7 @@ StudentPlanAdapter.decode(self, request: Mapping[str, Any], outputs: Mapping[str
 _best_allowed(logits: Tensor, names: Sequence[str], allowed: set[str]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按 logits 降序返回第一个在 allowed 集合中的枚举；没有交集时回退 HOLD。调用方需据此设置 forced confirmation，否则 HOLD 可能并非请求原允许项。
 
 ### `_feasible_behaviors`
 
@@ -64,7 +64,7 @@ _best_allowed(logits: Tensor, names: Sequence[str], allowed: set[str]) -> str
 _feasible_behaviors(request: Mapping[str, Any], allowed: set[str]) -> set[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从已展开允许行为开始：无 targets 删除 FOLLOW/AVOID；缺相邻车道或 gap-safe 删除对应换道；无路线删除转弯/回原道；无路口删除转弯；available_lanes 不含 SHOULDER 删除 PULL_OVER。缺可选 capability 默认按不可行处理，属于保守降级。
 
 ### `_plan_id`
 
@@ -74,7 +74,7 @@ _feasible_behaviors(request: Mapping[str, Any], allowed: set[str]) -> set[str]
 _plan_id(request_id: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用完整 request_id 的 SHA256 前12位构造稳定后缀，并只保留 request_id 前80字符，生成 `student-<prefix>-<digest>`，使最大输入仍满足 plan_id 长度约束且降低前缀截断碰撞。
 
 ### `_bounded_speed`
 
@@ -84,7 +84,7 @@ _plan_id(request_id: str) -> str
 _bounded_speed(predicted: float, request: Mapping[str, Any]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把预测速度夹在0与代码上限50 m/s、request `speed_limit_mps`、`max_target_speed_mps` 的最小值之间；空值不加入限制。最终 `PlanValidator` 还应用独立默认13.888... m/s上限。
 
 ### `_compatible_completion`
 
@@ -94,7 +94,7 @@ _bounded_speed(predicted: float, request: Mapping[str, Any]) -> float
 _compatible_completion(behavior: str, predicted: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+对有明确完成语义的行为强制返回固定 completion：转弯/换道/停车/跟车/让行/靠边/保持/避障，以及速度类和回原道。只有未覆盖行为保留模型预测，防止不相容 Head 组合进入 Validator。
 
 ### `_step`
 
@@ -104,7 +104,7 @@ _compatible_completion(behavior: str, predicted: str) -> str
 _step(*, index: int, behavior: str, target: Mapping[str, Any] | None, predicted_lane: str, speed: float, completion: str, on_failure: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+组装单步 target、preconditions、completion、timeout 和 on_failure。换道/转弯/回原道强制车道与可观测前置条件；FOLLOW/AVOID才保留 target_id；速度仅给速度类/FOLLOW；PULL_OVER 只有模型预测 SHOULDER 时写车道，否则写 null（M11-01）。timeout按转弯30s、避障/回道20s、换道12s、其他10s。
 
 ## 内部调用与异常路径
 

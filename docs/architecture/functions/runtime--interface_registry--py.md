@@ -1,6 +1,6 @@
 # interface_registry：功能记录
 
-上级模块：[模块说明](../modules/vehicle-planner.md) · 实现：[runtime/interface_registry.py](../../../runtime/interface_registry.py)
+上级模块：[模块说明](../modules/vehicle-interfaces.md) · 实现：[runtime/interface_registry.py](../../../runtime/interface_registry.py)
 
 ## 业务语义与维护关联
 
@@ -8,6 +8,7 @@
 
 - [异步等待、旧结果拒绝与多层命令ID](async-plan-dispatch.md)
 - [计划可行性校验与内部步骤展开](plan-validation-compilation.md)
+- [版本、时间、坐标与适配语义](interface-versioning.md)
 
 ## 功能职责与范围
 
@@ -86,6 +87,13 @@ InterfaceRegistry._validator(self, name: str) -> Any
 ```
 
 锁内按 name 获取缓存；首次惰性导入 jsonschema、读取 name.schema.json、选择对应草案 validator 并检查 Schema，再缓存。缺库转 RuntimeError，文件/JSON/Schema 错误向上传播；文件后续改变不会自动使已有缓存失效。
+
+## 第9模块精读补充
+
+- `validate` 对 `iter_errors` 结果按 `absolute_path` 排序后只报告第一项；错误文本适合定位首个字段，不是完整错误清单。
+- 严格 JSON 往返发生在 Schema 校验之后；因此 Schema 接受但 JSON 不允许的 NaN、Infinity、自定义对象或非字符串键仍会被拒绝。成功返回的新对象也切断调用方之后的原地修改。
+- `warm` 只装载/检查 Schema 并缓存 validator，不校验任何业务 payload，也不证明下游 Planner、CARLA 或模型健康。
+- validator 缓存以 registry 实例和接口名为键。进程运行中修改 Schema 文件不会刷新已有缓存；正式证据必须固定代码/Schema 提交并重启或新建 registry。
 
 ## 内部调用与异常路径
 

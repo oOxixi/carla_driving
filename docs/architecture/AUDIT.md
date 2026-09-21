@@ -73,6 +73,18 @@
 
 **M08-01 / 外部 ScenarioRunner agent 直接接口已复现、未修复：声明 RGB 但 Qwen 请求无图且逐帧同步调用。** [ScenarioRunnerAgent.sensors](../../integration/scenario_runner_agent.py)声明 `front_rgb/lidar/gnss`，但 `_sensor_frame` 只读取 GNSS/LiDAR，`OfficialSensorFrame` 没有图像字段，`_qwen_high_level_command` 固定 `rgb_ref=None`、`visual_valid=False`、`detected_objects=[]`；在线 `run_step` 每帧调用该方法。给 agent 注入计数 stub client，连续传两个含 front_rgb 的合法 sensor frame，得到 `qwen_calls=2`、两个 rgb_ref 均 None、两个 visual_valid 均 false。该 adapter 是外部固定 ScenarioRunner 的简化未知场景入口，主 `carla_runner` 使用另一套多模态/事件式链，因此不能扩大为全项目未使用 RGB 或所有 Qwen 都逐帧调用。若用于正式全链，需接入同步图像/检测、事件异步生命周期及 evidence；若只作安全 baseline，交付材料必须降级声明能力。
 
+### 第9模块：接口与坐标转换精读新增证据（基线0bbbdc09）
+
+**M09-01 / 直接 adapter 已复现、未修复：未知 legacy 速度单位被静默当作 m/s。** [voice_envelope_to_driving_command](functions/integration--canonical_bridge--py.md#fn-voice-envelope-to-driving-command)只对 `km/h`、`kph`、`kmh` 及中文公里每小时除以3.6，其余单位进入原值分支。输入 `intent=SET_SPEED, speed=36, unit=mph` 后得到 `target_speed_mps=36.0`，而不是拒绝或换算为约16.09 m/s；输出仍通过 `driving_command` Schema。该结论只针对直接 legacy envelope adapter，不能扩大为所有正式语音生产者都会发送未知单位。修复需先冻结允许单位和错误语义，再联动旧客户端、Schema/Adapter测试与运行证据，避免静默速度放大。
+
+### 第10模块：Student结构与预处理精读新增证据（基线0bbbdc09）
+
+**M10-01 / 服务器 PyTorch 直接接口已复现、未修复：非默认 contract batch 产生四路不一致。** [StudentPreprocessor](functions/challenge--student--preprocess--py.md)在 `_rgb` 缺图分支按 `contract.input_shapes["rgb"]` 建 Tensor，但 `_text/_targets/_state` 都硬编码首维1。用 `StudentShapeContract(batch=2)` 和仓库 ModelRequest 示例复现得到 RGB `(2,3,224,224)`、文本 `(1,32)`、目标 `(1,8,14)`、状态 `(1,64)`；直接送入模型会在融合前形成 batch 不一致。当前正式导出合同固定 batch1，训练批次通常由 Dataset/collate 堆叠，因此不能扩大为默认线上推理故障。修复前需决定 runtime preprocessor 是否明确拒绝非1 batch，或全面支持批输入，并回归训练、导出和HIL。
+
+### 第11模块：Student Planner精读新增证据（基线0bbbdc09）
+
+**M11-01 / 服务器 PyTorch完整解码+Validator已复现、未修复：PULL_OVER可在无肩部目标车道时通过。** [StudentPlanAdapter._step](functions/challenge--planner--student_adapter--py.md)只有 `predicted_lane == "SHOULDER"` 才为 PULL_OVER 写 `target_lane`，否则写 null；[PlanValidator](../../runtime/plan_validator.py)只在非空 target_lane 为 SHOULDER 时校验车道可用，没有要求 PULL_OVER 必须指定 SHOULDER。构造只允许PULL_OVER、available_lanes含CURRENT/SHOULDER、行为Head选PULL_OVER而车道Head选CURRENT的请求，最终输出 `behavior=PULL_OVER,target_lane=None` 且 Validator 通过。该结论是Adapter/Validator合同缺口，不代表真实训练权重必然产生该组合。修复需统一训练标签、Adapter强制车道、Validator拒绝条件、Compiler和闭环靠边完成判定。
+
 
 ### 第2模块：异步规划精读新增证据（2026-09-20，基线fe1ba839）
 

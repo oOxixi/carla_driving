@@ -27,7 +27,7 @@ Deterministic fixed-shape preprocessing for ModelRequest V1.
 
 源码位置：[challenge/student/preprocess.py 第 32 行](../../../challenge/student/preprocess.py#L32)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的四路 Tensor 容器；字段顺序与 Student `forward(rgb,text_tokens,targets,state)` 一致。frozen 只阻止字段重新赋值，不使 Tensor 内容不可变。
 
 ### `TensorizedRequest.as_tuple`
 
@@ -37,13 +37,13 @@ Deterministic fixed-shape preprocessing for ModelRequest V1.
 TensorizedRequest.as_tuple(self) -> tuple[Tensor, Tensor, Tensor, Tensor]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按 RGB、文本、目标、状态顺序返回 tuple，供 PyTorch/导出入口位置调用；不复制 Tensor、不迁移设备、不校验 shape。
 
 ### `StudentPreprocessor`
 
 源码位置：[challenge/student/preprocess.py 第 42 行](../../../challenge/student/preprocess.py#L42)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把已通过 ModelRequest V1 校验的 Mapping 确定性编码为四路 float32 Tensor。它是特征约定而非通用数据清洗器；训练、评估和在线推理必须使用同一实现/版本。
 
 ### `StudentPreprocessor.__init__`
 
@@ -53,7 +53,7 @@ TensorizedRequest.as_tuple(self) -> tuple[Tensor, Tensor, Tensor, Tensor]
 StudentPreprocessor.__init__(self, contract: StudentShapeContract | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存给定 contract 或默认 `StudentShapeContract()`；不预加载图片、不验证非默认维度，也不设置设备。
 
 ### `StudentPreprocessor.__call__`
 
@@ -63,7 +63,7 @@ StudentPreprocessor.__init__(self, contract: StudentShapeContract | None=None) -
 StudentPreprocessor.__call__(self, request: Mapping[str, Any]) -> TensorizedRequest
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 `rgb_ref/source_text/targets` 及摘要、约束、能力、routing，分别调用四个编码器后组装 `TensorizedRequest`。缺必填键直接由 Mapping 抛 KeyError；通常应由 `InterfaceRegistry.validate(model_request)` 在上游拒绝。
 
 ### `StudentPreprocessor._rgb`
 
@@ -73,7 +73,7 @@ StudentPreprocessor.__call__(self, request: Mapping[str, Any]) -> TensorizedRequ
 StudentPreprocessor._rgb(self, reference: object) -> Tensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+无有效字符串路径或文件不存在时返回 contract RGB shape 的全零 float32。有效图像转 RGB、保持比例缩放到框内、以 ImageNet 均值色 letterbox，转 `[1,3,H,W]`/0..1 后做 ImageNet mean/std 归一化；PIL 解码错误向上传播。路径是本机文件边界，不读取 URL。
 
 ### `StudentPreprocessor._text`
 
@@ -83,7 +83,7 @@ StudentPreprocessor._rgb(self, reference: object) -> Tensor
 StudentPreprocessor._text(self, text: str) -> Tensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+创建 `[1,text_length]` float32；逐字符取 Unicode code point `%65535/65535`，超长右截断、短文本补零。它不是 Qwen tokenizer，也没有词边界、attention mask 或语言归一化。
 
 ### `StudentPreprocessor._targets`
 
@@ -93,7 +93,7 @@ StudentPreprocessor._text(self, text: str) -> Tensor
 StudentPreprocessor._targets(self, raw_targets: object) -> Tensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+创建 `[1,max_targets,14]`；只处理 list 前 N 个 Mapping 并保持原顺序。0..4 是类别 one-hot，5 是上限200 m的距离比例，6 是夹到±30 m/s的相对速度，7 是 confidence，8..12 是左右/中央/前/后关系词包含标志，13 表示未识别关系。类别查找区分大小写；数值下界和 confidence 不在此夹取，依赖上游 Schema。
 
 ### `StudentPreprocessor._state`
 
@@ -103,7 +103,7 @@ StudentPreprocessor._targets(self, raw_targets: object) -> Tensor
 StudentPreprocessor._state(self, request: Mapping[str, Any]) -> Tensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+创建 `[1,state_features]` 并写入 traffic/risk one-hot、gap/TTC/速度限制、must_stop、车道/间隙/路口能力、14类允许行为、目标数、command hint、routing disposition/score/reasons/safe-wait、返回方向与原车道状态。当前写到索引62，索引63保留为0；缩放只做上限或指定区间，输入合法性依赖 ModelRequest Schema。
 
 ### `_expanded_allowed_behaviors`
 
@@ -113,7 +113,7 @@ StudentPreprocessor._state(self, request: Mapping[str, Any]) -> Tensor
 _expanded_allowed_behaviors(request: Mapping[str, Any]) -> set[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`must_stop` 为真时强制只允许 STOP；否则把约束中的抽象 TURN/CHANGE_LANE 按 command hint direction 展开为左右具体行为，其他行为原样加入，空集合回退 HOLD。direction 在这里未 `.upper()`，因此应由上游合同保证大写；该集合同时进入 state 特征和 Planner adapter 可行性过滤。
 
 ## 内部调用与异常路径
 

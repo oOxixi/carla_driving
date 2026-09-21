@@ -39,7 +39,7 @@ execution chain.
 PlannerBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+协议要求实现接收已冻结语义的 ModelRequest V1 Mapping 并返回 ManeuverPlan V2 Mapping；具体实现负责两侧验证。该边界禁止输出 throttle/brake/steer 等低层控制，也不规定同步/异步或设备位置。
 
 ### `PlannerBackend.health`
 
@@ -49,7 +49,7 @@ PlannerBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 PlannerBackend.health(self) -> tuple[bool, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回 `(ready, detail)` 供编排层判断生产就绪。结构可推理、加载测试权重和通过正式 Gate 是不同状态；调用方不得只检查对象存在或 `infer` 可调用。
 
 ## 内部调用与异常路径
 

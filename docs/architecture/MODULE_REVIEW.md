@@ -71,3 +71,7 @@
 ## 顺序精读进度补充：第8模块
 
 [场景执行与评分](modules/vehicle-scenarios.md)已完成9份实现页复核和8页98处占位改写，区分场景合同/几何、主runner扩展、evidence/acceptance与外部固定 ScenarioRunner，补齐命令调度、actor坐标、泛化采样、事件时序、context和证据等级；134项相关离线测试通过，M08-01保留为外部 agent 的多模态/逐帧Qwen能力缺口。当前顺序精读完成8/20。
+
+## 顺序精读进度补充：第9～11模块
+
+[接口与坐标转换](modules/vehicle-interfaces.md)已核对7份Schema字段页、Registry、canonical bridge与版本语义，补齐验证层次、单位/坐标/ID/时钟和三类转换降级；43项离线测试通过，M09-01保留。[Student结构与预处理](modules/challenge-structure.md)完成5份实现页复核和23处占位改写，补齐四路张量、十Head、信息损失与mask，服务器23项测试通过并保留M10-01。[Student Planner](modules/challenge-planner.md)完成8份实现/语义页复核和22处占位改写，补齐双Backend、确定性修复、confirmation与权重就绪边界，服务器26项测试通过并保留M11-01。当前顺序精读完成11/20；以上均未修改业务代码，也不等于CARLA、正式权重或J6P验收。

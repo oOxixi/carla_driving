@@ -68,7 +68,7 @@ Reduce a per-step loss without letting padded slots affect training.
 _validate_plan_length(plan_length: Tensor, *, max_steps: int) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求 `plan_length` 为 rank-1 `[B]`、整数 dtype，且每项在闭区间 `[1,max_steps]`；依次抛 ValueError、TypeError 或范围 ValueError。它不验证 `max_steps` 自身为正，也不修改输入。
 
 ## 内部调用与异常路径
 

@@ -47,12 +47,42 @@ Schema单位/范围见下层Schema字段表；$ref和oneOf/anyOf条件不能只�
 
 ## Dependencies and coordinated changes
 
+## 第9模块逐入口精读结论（2026-09-22）
+
+### 权威边界与验证层次
+
+1. `interfaces/*.schema.json` 是七种跨模块 JSON 对象的结构权威；进程内 dataclass、示例 JSON 和 Adapter 均不能代替 Schema。
+2. [InterfaceRegistry](../../../runtime/interface_registry.py) 先按对应 Schema 校验，再以 `allow_nan=False` 做 JSON 往返；返回值是与调用方嵌套对象脱离的 `dict`。它只证明结构、枚举、范围和 JSON 可序列化性，不证明目标仍存在、坐标来源正确或动作可执行。
+3. [canonical_bridge](../../../integration/canonical_bridge.py) 是旧 CARLA 循环与冻结对象之间的表示转换，不是另一个业务规划器。其默认值、单位换算和字段降级会改变语义，必须在接口证据中记录转换前后对象。
+4. `PlanValidator`、`PlanCompiler`、安全仲裁和评分分别追加可执行性、内部步骤、安全和任务通过条件；任一后层 PASS 都不能倒推原始数据来源正确。
+
+### 三个转换入口的实际语义
+
+| 入口 | 关键转换 | 默认/降级 | 不能据此证明 |
+|---|---|---|---|
+| `voice_envelope_to_driving_command` | intent 归一化；左右后缀转 `direction`；`target_actor_id` 转 `target_id`；km/h 除以 3.6 | 非法 TTL 回退 3 s；非法 confidence 回退 0 并夹到 `[0,1]`；未知速度单位当前按 m/s 原值使用 | 未知单位已被拒绝、语音内容真实、命令可执行 |
+| `perception_frame_to_state` | RGB 框中心估 lateral；类别归一化；canonical 坐标采用前 x/左 y/上 z | 缺距离补 50 m；缺 track ID 生成 legacy 类别索引；只有列表首项取 `lead_speed_mps`，其余速度补 0 | 多目标速度关联正确、传感器真的有效、目标 ID 跨帧稳定 |
+| `control_command_to_voice_envelope` | 高层 behavior 映旧 runtime intent；复杂动作只允许已编译 `QWEN_DECISION_PLAN` | TTL 至少 0.1 s；FOLLOW 无速度时退 KEEP_LANE；目标 ID 不进入旧低层目标槽位 | 上游过期检查已完成、复杂动作已经被低层执行 |
+
+### 单位、坐标、ID 与时钟维护规则
+
+- 速度进入 canonical 合同后统一为 m/s；角度/转向仍需按具体 B 控制接口核对弧度和归一化 steering，不能靠字段名猜单位。
+- `perception_state.coordinate_frame` 固定 `ego_front_x_left_y_up_z_m`；CARLA 原生右手/右向 y 的翻转只能在明确 adapter 边界完成一次。
+- `request_id`、`command_id`、`plan_id`、`step_id` 与目标 `target_id` 各自承担不同关联关系；Student pointer 必须按同一请求的候选顺序还原，不能把动态 ID 训练成类别。
+- `received_at_ns`、`created_at_ns`、`deadline_ns`、`valid_until_ns` 是纳秒时间边界；`sim_time_s` 是仿真秒。到达截止时刻即过期，不得把 wall/monotonic/CARLA 时钟直接相减。
+
+### 当前边界与联动修改
+
+- M09-01：legacy voice envelope 的未知速度单位未被拒绝，见 [AUDIT](../AUDIT.md)。修复时需同时决定允许单位集合、旧客户端兼容、Schema/Adapter 错误语义及测试，不能只在一端静默换算。
+- M06-02 仍适用于本模块：perception 转换按对象列表首项绑定 lead speed。修复目标关联时须同步回归 Qwen 排序、Student target pointer、TTC 和 NONE/缺测。
+- 修改 Schema 必须更新 producer、consumer、示例、冻结指纹、Teacher 数据、Student 标签/预处理及版本迁移；只更新 hash 不构成兼容证明。
+
 
 ## Validation entry points
 
 `python -m pytest integration/tests/test_interface_schemas.py integration/tests/test_maneuver_plan_schema.py integration/tests/test_canonical_bridge.py`
 
-Run from the worktree root. Listed commands are relevant checks, not claims that tests were executed. CARLA, remote-model and hardware acceptance require their actual environments and run manifests.
+Run from the worktree root. 本轮执行结果为 **43 passed in 0.55s**；只覆盖离线 Schema/Adapter 行为，不包含 CARLA、远端模型或硬件验收。
 
 ## 功能小文档完整索引
 

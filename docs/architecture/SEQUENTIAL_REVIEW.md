@@ -12,9 +12,9 @@
 | 6 | [感知](modules/vehicle-perception.md) | **本轮完成**：12份实现页、10页96处占位改写、生产/参考链与来源索引；M06-01/M06-02保留 |
 | 7 | [安全仲裁](modules/vehicle-safety.md) | **本轮完成**：13份实现页、12页82处占位改写、双入口/仲裁/终态/评分证据索引；M07-01保留 |
 | 8 | [场景执行与评分](modules/vehicle-scenarios.md) | **本轮完成**：9份实现页、8页98处占位改写，场景/扩展/证据/外部runner边界；M08-01保留 |
-| 9 | [接口与坐标转换](modules/vehicle-interfaces.md) | 待按顺序精读；保留既有静态复核结果 |
-| 10 | [Student 结构与预处理](modules/challenge-structure.md) | 待按顺序精读；保留既有静态复核结果 |
-| 11 | [Student Planner](modules/challenge-planner.md) | 待按顺序精读；保留既有静态复核结果 |
+| 9 | [接口与坐标转换](modules/vehicle-interfaces.md) | **本轮完成**：7份Schema字段页、Registry与3个canonical转换入口；单位/坐标/ID/时钟及M09-01保留 |
+| 10 | [Student 结构与预处理](modules/challenge-structure.md) | **本轮完成**：5份实现页、23处占位改写，四路张量/十Head/预处理/训练mask及M10-01保留 |
+| 11 | [Student Planner](modules/challenge-planner.md) | **本轮完成**：8份实现页、22处占位改写，双Backend/解码/修复/就绪身份及M11-01保留 |
 | 12 | [Teacher 数据治理](modules/challenge-data.md) | 待按顺序精读；保留既有静态复核结果 |
 | 13 | [蒸馏与晋级](modules/challenge-training.md) | 待按顺序精读；保留既有静态复核结果 |
 | 14 | [导出与部署](modules/challenge-export.md) | 待按顺序精读；保留既有静态复核结果 |
@@ -100,3 +100,27 @@
 - 纯 Python 定点复现 M08-01：外部 ScenarioRunner agent 两个含RGB帧触发两次同步 Qwen，但两个请求均无 rgb_ref、visual_valid=false；只登记该 adapter 能力缺口，不扩大为主 runner 故障。
 - 场景相关8份测试入口执行结果 **134 passed in 2.59s**；不包含真实 CARLA、外部 checkout、在线模型或官方评分验收。
 - 下一项是第9模块“接口与坐标转换”；本轮不提前标记后续模块完成。
+
+## 第9模块完成记录
+
+- 核对7份 Schema 字段页、Registry、canonical bridge 和版本语义页；原页没有泛用占位句，本轮补充验证层次、三类转换的默认/降级、单位/坐标/ID/时钟边界及修改联动。
+- 纠正 Registry 与 bridge 实现页的上级模块导航；明确 Schema valid、Plan 可执行、安全仲裁和场景通过是不同证据层级。
+- 纯 Python 定点复现 M09-01：legacy `speed=36, unit=mph` 被输出为 36.0 m/s，未知单位当前未拒绝；只登记现状，未修改业务代码。
+- 接口相关3份测试入口执行结果 **43 passed in 0.55s**；不包含 CARLA、远端模型或板端。
+- 下一项是第10模块“Student 结构与预处理”；本轮不提前标记后续模块完成。
+
+## 第10模块完成记录
+
+- 核对5份 Student 实现页和预处理语义页；4页共23处泛用占位按函数体改写，包导出页保留实际导出说明。
+- 模块页补齐四路输入、CNN固定空间假设、十Head logits/数值语义、RGB/text/targets/state 信息损失，以及 padding/mask 权威规则。
+- 在服务器 PyTorch 环境定点复现 M10-01：`StudentShapeContract(batch=2)` 时 RGB 为 batch2，而 text/targets/state 仍为 batch1；只登记边界，不改运行代码。
+- 相关4份测试入口在服务器执行结果 **23 passed in 7.32s**；本机默认 Python 缺 torch，结果不包含 ONNX、CARLA、J6P 或正式权重验收。
+- 下一项是第11模块“Student Planner”；本轮不提前标记后续模块完成。
+
+## 第11模块完成记录
+
+- 核对8份 Planner 实现页和 Head 解码语义页；6页共22处泛用占位按函数体改写，包导出页保留实际导出说明。
+- 模块页补齐 Teacher/Student 共用验证边界、十Head到最终Plan的确定性修复、confirmation语义、权重manifest和 production-ready 证据层级。
+- 服务器 PyTorch 定点复现 M11-01：请求只允许 PULL_OVER 且存在 SHOULDER，模型车道预测 CURRENT 时最终行为仍为 PULL_OVER、target_lane=null，并通过当前 PlanValidator；只登记，未改业务代码。
+- A1与交付测试执行结果 **26 passed in 19.76s**；不包含正式权重、Teacher服务、CARLA、ONNX或J6P。
+- 下一项是第12模块“Teacher 数据治理”；本轮不提前标记后续模块完成。
