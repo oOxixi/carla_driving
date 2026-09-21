@@ -39,7 +39,7 @@ Stanley controller as a backup/comparison controller.
 
 源码位置：[car_control_B/stanley.py 第 15 行](../../../car_control_B/stanley.py#L15)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+不可变 Stanley 对照控制器参数；声明默认均来自 `DEFAULT_STRATEGY.lateral`，搜索窗默认 None。它与 Pure Pursuit 共用幅值、速度/曲率调度、变化率和 steer 符号约定。
 
 ### `StanleyParams.__post_init__`
 
@@ -49,13 +49,13 @@ Stanley controller as a backup/comparison controller.
 StanleyParams.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求数值有限、除 steer_sign 外非负，检查 steer 与变化率上下界、steer_sign 为 ±1、搜索窗为正整数或 None；非法配置在控制器运行前失败。
 
 ### `StanleyController`
 
 源码位置：[car_control_B/stanley.py 第 57 行](../../../car_control_B/stanley.py#L57)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+有状态对照控制器，保存上一 steer 和最近路线索引；当前生产链没有自动切换到该实现的逻辑。
 
 ### `StanleyController.__init__`
 
@@ -65,7 +65,7 @@ StanleyParams.__post_init__(self) -> None
 StanleyController.__init__(self, params: StanleyParams | None=None) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+采用传入或默认参数，并把 steer、最近索引清零；不维护 Pure Pursuit 的逐路线身份进度表。
 
 ### `StanleyController.reset`
 
@@ -75,7 +75,7 @@ StanleyController.__init__(self, params: StanleyParams | None=None) -> 未声明
 StanleyController.reset(self, *, preserve_steer: bool=False) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+严格校验 `preserve_steer` 为 bool；默认清零 steer，始终把最近点重置为 0，因此路线恢复时会按搜索窗从起点附近重新寻找。
 
 ### `StanleyController.step`
 
@@ -85,7 +85,7 @@ StanleyController.reset(self, *, preserve_steer: bool=False) -> None
 StanleyController.step(self, vehicle: VehiclePose, reference: RouteReference) -> LateralOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+寻找最近点，计算路线航向、带符号 CTE，并以曲率调度 Stanley CTE 增益；将航向项与横向误差项组合，经 CARLA 符号、速度/曲率幅值限制和每步变化率限制后返回 `OK/STANLEY`。目标点和 target_index 都是最近点，lookahead 固定 0；调用会更新最近点与上一 steer。
 
 ## 内部调用与异常路径
 

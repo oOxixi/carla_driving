@@ -28,7 +28,7 @@ Simple lane-change/local-offset path helpers for B.
 smoothstep5(t: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先把 `t` 截断到 `[0,1]`，再计算五次 smoothstep `10t³-15t⁴+6t⁵`；端点值和一、二阶导数连续，用作横向偏移比例。
 
 ### `offset_path`
 

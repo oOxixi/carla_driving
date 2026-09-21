@@ -125,3 +125,14 @@ assert "target_track_id" not in out and out["parameters"] == {}
 ```
 
 以上断言描述现状而非期望修复行为。本轮9份相关离线测试文件执行结果113 passed；没有新增测试或修改业务逻辑，也未做CARLA/模型实测。现有测试通过不否定上述未覆盖边界。
+
+
+### 第4模块：路线与横向控制精读新增证据（2026-09-21）
+
+- **RLC-01 / 接口边界**：生产全局路线使用 `car_control_A.routing.RouteReference`，B 控制器使用 `car_control_B.schemas.RouteReference`，由 `LateralController.step_any()` 显式适配。字段当前同形但不是同一类型；修改任一侧时需同时核对 adapter、缓存身份和接口 Schema。
+- **RLC-02 / 配置分散**：主控制参数来自 `config/strategy_config.yaml`，但 runner 在 `_acceptance_lateral_controller()` 固定最近点窗口 2、长期路线恢复窗口 50。调参或改变路线采样间隔时必须同时验证这两个按“点数”计的窗口。
+- **RLC-03 / 长时状态上界**：Pure Pursuit `_route_progress` 保留接触过的真实点容器，没有容量或淘汰策略；这是为避免地址复用和临时路线恢复错位的有意设计，但大量唯一临时路线下的内存上界尚未证明。
+- **RLC-04 / 证据等级**：历史路线泛化报告包含 CARLA 结果，本轮只执行静态精读与离线测试；没有固定当前提交、CARLA 版本、配置和原始日志重新实车验收。
+- **RLC-05 / 浅不可变**：B `RouteReference` 是 frozen dataclass，但 `points_xy_m` 与 `metadata` 仍为可变 list/dict。控制器与 adapter 缓存按点容器对象身份判断路线，原地修改可能在不触发路线切换的情况下改变几何。
+
+这些条目记录当前实现边界，不表示路线主链未实现。关闭时需补接口迁移/配置 schema/压力测试/实车证据或兼容 adapter，不能只删除文档条目。

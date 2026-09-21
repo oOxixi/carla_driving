@@ -25,7 +25,7 @@ Route-contract preparation stage, independent from CARLA actor mutation.
 
 源码位置：[integration/planning_stage.py 第 15 行](../../../integration/planning_stage.py#L15)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+不可变准备结果，成对保存控制用 `RouteReference` 与距离/连续性质量摘要 `RouteQuality`；不包含 actor mutation 或 CARLA 控制状态。
 
 ### `prepare_scenario_route`
 
@@ -35,7 +35,7 @@ Route-contract preparation stage, independent from CARLA actor mutation.
 prepare_scenario_route(spec: ScenarioSpec, route_anchor: Any, target_speed_mps: float, topology_route: RouteReference | None) -> PreparedScenarioRoute
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+优先采用拓扑路线并仅替换目标速度，否则从场景局部 world_route 构造参考线；计算距离合同质量，在 `must_finish_route=true` 且长度不足时拒绝，再验证所有 actor 的路线覆盖，最后返回路线与质量。该阶段不生成或移动 actor。
 
 ## 内部调用与异常路径
 

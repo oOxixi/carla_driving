@@ -37,7 +37,7 @@ Map-independent route geometry and route-relative scenario placement.
 _finite(value: object, name: str) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把非 bool 的数值转换为有限 float；类型不可转换或 NaN/Inf 时以带字段名的 `TypeError/ValueError` 拒绝。
 
 ### `polyline_length_m`
 
@@ -47,7 +47,7 @@ _finite(value: object, name: str) -> float
 polyline_length_m(points: Sequence[Point2D]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求至少两个点并累计相邻二维欧氏距离；重复点贡献 0，坐标有限性由 `cumulative_distances_m` 的逐坐标规范化保证。
 
 ### `cumulative_distances_m`
 
@@ -57,19 +57,19 @@ polyline_length_m(points: Sequence[Point2D]) -> float
 cumulative_distances_m(points: Sequence[Point2D]) -> tuple[float, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求至少两个点，从 0 开始累计相邻点距离并返回 tuple；逐个坐标经 `_finite` 校验，因此输出是有限、非递减弧长。
 
 ### `RoutePose`
 
 源码位置：[integration/route_geometry.py 第 44 行](../../../integration/route_geometry.py#L44)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+不可变路线姿态：世界坐标 x/y（米）、切向 yaw（度）和所在弧长 s（米）；它是几何插值结果，不含道路/车道拓扑身份。
 
 ### `RouteQuality`
 
 源码位置：[integration/route_geometry.py 第 52 行](../../../integration/route_geometry.py#L52)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+不可变路线质量摘要，记录请求/实际里程、点数、最大步长、占用网格唯一比例和是否达到距离合同；该布尔值不代表车辆完成行驶。
 
 ### `RouteQuality.to_dict`
 
@@ -79,7 +79,7 @@ cumulative_distances_m(points: Sequence[Point2D]) -> tuple[float, ...]
 RouteQuality.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按固定键导出质量字段，供日志/manifest 使用；不重新计算，也不附加版本号。
 
 ### `route_pose_at_s`
 
@@ -140,7 +140,7 @@ geometrically nearest segment.
 evaluate_route_quality(points: Sequence[Point2D], requested_distance_m: float, *, contract_tolerance_m: float | None=None, uniqueness_cell_m: float=2.0) -> RouteQuality
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+验证正的请求距离与唯一网格尺寸，计算折线总长、最大相邻步长和量化网格唯一率；默认容差为 `max(2m, 请求距离1%)`，或采用调用方给出的非负容差，最后仅据长度判定 `reached_contract`。
 
 ## 内部调用与异常路径
 

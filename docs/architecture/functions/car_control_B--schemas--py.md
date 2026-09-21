@@ -53,7 +53,7 @@ Raised when an input contract is invalid.
 _finite(name: str, value: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+拒绝 bool、非 int/float 和 NaN/Inf，返回规范化 float；所有 B 侧数值合同通过它产生一致的 `SchemaError`。
 
 ### `_point_list`
 
@@ -63,7 +63,7 @@ _finite(name: str, value: float) -> float
 _point_list(points: Sequence[Sequence[float]]) -> List[Point2D]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求至少两个二维点，逐点校验长度为 2、坐标有限，并复制为 `List[tuple[float,float]]`；不检查重复点、间距或路线连续性。
 
 ### `VehiclePose`
 
@@ -82,7 +82,7 @@ coordinate convention used by the route points.
 VehiclePose.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把位置、yaw、速度规范为有限 float，并拒绝负速度；`frame` 与 `sim_time_s` 在此不做类型或范围校验。
 
 ### `VehiclePose.to_dict`
 
@@ -92,7 +92,7 @@ VehiclePose.__post_init__(self) -> None
 VehiclePose.to_dict(self) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用 `asdict` 复制全部字段并附加 `schema_version=1.0`；不会改变单位或坐标系。
 
 ### `RouteReference`
 
@@ -111,7 +111,7 @@ target_speed_mps is advisory for gain scheduling only; C still owns speed.
 RouteReference.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+复制并验证路线点，规范化曲率与目标速度，拒绝负目标速度；route_id 和 metadata 不做深层 schema 校验，且 frozen dataclass 内的列表/字典仍可变。
 
 ### `RouteReference.to_dict`
 
@@ -121,7 +121,7 @@ RouteReference.__post_init__(self) -> None
 RouteReference.to_dict(self) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+递归转为普通字典并附加 schema 版本；结果是副本，修改结果不会更新原 dataclass。
 
 ### `LateralOutput`
 
@@ -141,7 +141,7 @@ calibration rather than inferred by a downstream consumer.
 LateralOutput.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+规范化 steer、CTE、航向误差和 lookahead，要求 steer 位于 `[-1,1]`、两个索引非负；不验证目标点坐标、索引是否落在路线范围内，也不限制 status/reason 枚举。
 
 ### `LateralOutput.to_dict`
 
@@ -151,7 +151,7 @@ LateralOutput.__post_init__(self) -> None
 LateralOutput.to_dict(self) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把输出字段复制为字典并附加 schema 版本，保留 steer、误差和索引的既有数值。
 
 ## 内部调用与异常路径
 

@@ -5,6 +5,7 @@
 以下功能页说明实现理由、分支、接口含义、改动联动与验证。先读这些内容，再按逐文件索引定位方法；不要用函数名推断业务语义。
 
 - [路线、跟踪控制与完成里程](../functions/route-control-progress.md)
+- [路线与横向控制专题精读](../../modules/04_ROUTE_AND_LATERAL_CONTROL.md)
 
 [Vehicle module](../modules/vehicle.md)
 
@@ -12,6 +13,46 @@
 
 LateralController.step consumes VehiclePose and RouteReference and returns LateralOutput; steer is normalized. CARLA local positive y and positive steer point right. Canonical perception y points left and requires explicit conversion. PurePursuit and Stanley are alternatives; lane_change generates transitions. RouteManager and planning_stage prepare/maintain routes. RouteProgressTracker measures route projection; DistanceCoverageTracker measures actual distance while rejecting teleport jumps. Their acceptance semantics differ.
 
+
+## 第4模块逐项精读：生产接线与参数索引
+
+本模块有两层路线实现。`RouteManager` 持有 CARLA 拓扑、任务全局弧长和重规划语义；`route_planner.py` 还提供验收场景的有界局部路线与变道构造。生产 runner 的终点/距离合同走 `RouteManager`，`build_destination_route_reference()` 只是兼容委托入口。Pure Pursuit 是生产横向控制器；Stanley 有独立实现和测试，但当前没有自动降级接线。
+
+### 全局路线与恢复入口
+
+| 入口 / 参数 | 声明默认或生产来源 | 单位与实际作用 |
+|---|---|---|
+| `RouteManager.sample_step_m` | `2.0`；runner 传 `spec.route_resample_interval_m` | m；拓扑边采样、连接和局部窗最小长度 |
+| `finish_radius_m` | `4.0`；runner 传 `spec.finish_radius_m` | m；需同时满足端点误差和剩余里程条件 |
+| `maximum_gap_m` | `None` → `max(5.0, 3*sample_step_m)` | m；相邻 waypoint/连接最大允许间距 |
+| `maximum_expansions` | `50_000` | A* 最大展开次数，不是路线点上限 |
+| `off_route_threshold_m` | `6.0` | m；未到终点且 CTE 超阈值时要求重规划 |
+| `state.previous_s_m` | `None` | m；传上一帧值才能在交叉/回环保持单调进度 |
+| `state.forward_window_m` | `80.0` | m；投影候选的最大前向弧长窗 |
+| `local_reference.lookbehind_m/lookahead_m` | `8.0 / 80.0` | m；从全局路线裁给控制器的局部窗口 |
+| `RouteRecoveryPolicy` | `6m / 0.5s / 5s / 3次` | 偏离阈值、确认时长、冷却和任务内尝试上限 |
+
+`plan()` 生成起点到终点的确定性拓扑 A* 路线；`plan_distance()` 生成允许重复合法拓扑的距离覆盖路线；`plan_distance_compatible()` 按调用者给定顺序选择首个满足车道走廊和速度窗口的起点。`mission_placement()` 将任务绝对 `route_s` 减去重规划累计 offset，已经错过或超出当前活动路线的事件不会重新触发。
+
+### 场景兼容与进度参数
+
+| 合同 / 参数 | 默认 | 约束与消费点 |
+|---|---:|---|
+| `LaneCorridorRequirement.relation` | 无 | 仅 LEFT/RIGHT，可兼容去掉 `_ADJACENT` 后缀 |
+| `start_s_m/end_s_m` | mapping 缺失时 0 | 必须有限、非负且 `end>=start`，不能越过路线总长 |
+| `junction_free` | `False` | 严格 bool；为 True 时源/邻道均不能进入 junction |
+| `SpeedWindowRequirement.max_lateral_accel_mps2` | `2.0` | m/s²；结合曲率计算窗口可支持速度 |
+| `SpeedWindowRequirement.lookahead_m` | `45.0` | m；每个 s 位置向前检查的曲率范围 |
+| `RouteProgressTracker.forward_window_m` | 动态 `max(20, speed*delta*8)` | 依赖上一进度的路线投影窗 |
+| `DistanceCoverageTracker.minimum_jump_gate_m` | `2.0` | 实际门限为 `max(2, speed*delta*3+1)`；超限位移按 teleport 忽略 |
+
+路线投影进度和实际累计里程承担不同合同。前者用于终点路线、事件和全局状态；后者用于长期距离覆盖，允许合法换道后继续累计，但过滤恢复 teleport。不得用其中一个数值替换另一个而不修改验收合同。
+
+### 生产横向有效配置
+
+`config/strategy_config.yaml` 的当前值为：轴距 2.8m，基础/最小/最大前视 2.5/2.5/8.0m，速度增益 0.45s，最大转向角尺度 0.60rad，归一化 steer 上限 0.60、下限 0.35，基础/最小/最大每步变化率 0.038/0.025/0.038，`steer_sign=1.0`。runner 另外固定 `nearest_search_window=2`、`route_reacquire_search_window=50`；这两个值尚未进入统一策略配置。
+
+`max_steer_delta_per_step` 是每次 `step()` 的变化量，不随 dt 自动归一化。改变控制频率会改变实际每秒转向变化能力。Pure Pursuit 按实际点容器对象保存各路线最近索引，临时路线恢复时可找回原进度；`reset(preserve_steer=True)` 会清路线进度但保留上一 steer，使下一条路线仍经过变化率限制。
 
 ## 模块接口与参数核对（2026-09-20）
 
@@ -148,6 +189,12 @@ StanleyController.step(self, vehicle: VehiclePose, reference: RouteReference) ->
 
 ## Dependencies and coordinated changes
 
+- 改 `RouteReference`、坐标符号或 `steer` 范围：联动 `car_control_A.routing`、B schemas/adapters、`runtime_loop`、D 安全仲裁、接口 Schema 和 runner 日志。
+- 改全局路线采样或 topology 搜索：联动 actor 路线放置、事件 `route_s`、局部参考窗、曲率限速、路线质量与场景 acceptance。
+- 改 progress/replan：联动任务累计 offset、临时机动恢复、actor tracker、距离覆盖完成条件和 `route_replanned` 证据。
+- 改 Pure Pursuit 参数：先确认配置 schema 与 runner 的 2/50 搜索窗覆盖关系，再覆盖直道、弯道、路口、重叠路线、临时路线返回和变化率测试。
+- `lane_change.py` 只做折线几何偏移；CARLA 生产变道必须继续检查拓扑、同向 Driving lane、车道线权限和 junction，不可把纯几何路径当合法性证据。
+- 历史 CARLA 报告只能证明其记录的提交/地图/配置。当前静态精读与离线测试不能替代真实闭环重跑。
 
 ## Validation entry points
 

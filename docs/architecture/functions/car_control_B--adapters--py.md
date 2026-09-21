@@ -28,7 +28,7 @@ Adapters that accept dicts or A-side dataclasses.
 _get(obj: Any, name: str, default: Any=None) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+统一读取 Mapping 键或对象属性；字段不存在时返回 `default`，本身不做类型转换或必填校验。
 
 ### `adapt_vehicle_pose`
 
@@ -51,7 +51,7 @@ some internal tests may use yaw_rad.
 adapt_route_reference(reference: Any) -> RouteReference
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从 `points_xy_m`（兼容别名 `points`）读取路线点，复制为 tuple 列表，并以 0.0、5.0、None、空字典补齐曲率、目标速度、route_id 和 metadata；缺少点集时抛出 `ValueError`，最终字段约束由 `RouteReference` 再验证。
 
 ## 内部调用与异常路径
 

@@ -47,7 +47,7 @@ Reset route-progress state, optionally retaining steering continuity.
 LateralController.step(self, vehicle: VehiclePose, reference: RouteReference) -> LateralOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+抽象逐帧接口；具体控制器必须消费已验证的 `VehiclePose` 与 `RouteReference` 并返回 `LateralOutput`。基类不提供降级控制，也不吞掉实现异常。
 
 ### `LateralController._adapt_reference_any`
 
@@ -57,7 +57,7 @@ LateralController.step(self, vehicle: VehiclePose, reference: RouteReference) ->
 LateralController._adapt_reference_any(self, reference: Any) -> RouteReference
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按原始点容器的对象身份复用适配后的路线，避免每帧复制；缓存保存源容器本身以规避 Python id 复用，超过 32 项时删除最旧项。未命中时调用 `adapt_route_reference`，因此别名、默认值和异常沿用适配器。
 
 ### `LateralController.step_any`
 
@@ -67,7 +67,7 @@ LateralController._adapt_reference_any(self, reference: Any) -> RouteReference
 LateralController.step_any(self, vehicle_state: Any, reference: Any) -> LateralOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先适配并缓存任意形态的路线，再把车辆 Mapping/对象适配为 `VehiclePose`，最后调用具体控制器 `step`；返回完整横向输出，不直接调用 CARLA。
 
 ### `LateralController.steer`
 

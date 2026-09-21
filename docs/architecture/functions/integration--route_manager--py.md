@@ -108,13 +108,13 @@ A route failure with a stable machine-readable reason code.
 RoutePlanningError.__init__(self, code: str, detail: str, *, context: Mapping[str, object] | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存稳定 `code`、人类可读 `detail` 和复制后的 context，并把异常消息格式化为 `CODE: detail`；调用方可按 code 分支而无需解析文本。
 
 ### `RouteSample`
 
 源码位置：[integration/route_manager.py 第 48 行](../../../integration/route_manager.py#L48)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+不可变拓扑采样，绑定世界姿态、全局弧长、道路/section/lane、junction 与左右邻道身份；是全局路线与场景放置/状态查询的对齐记录。
 
 ### `RouteSample.point_xy_m`
 
@@ -124,13 +124,13 @@ RoutePlanningError.__init__(self, code: str, detail: str, *, context: Mapping[st
 RouteSample.point_xy_m(self) -> Point2D
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回采样的 `(x_m,y_m)` tuple，不包含 z、yaw 或车道身份。
 
 ### `RouteValidation`
 
 源码位置：[integration/route_manager.py 第 67 行](../../../integration/route_manager.py#L67)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+不可变规划质量记录：总长、点数、最大相邻间距、终点误差、重复采样数和进入 junction 次数。
 
 ### `RouteValidation.to_dict`
 
@@ -140,13 +140,13 @@ RouteSample.point_xy_m(self) -> Point2D
 RouteValidation.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按稳定字段名导出规划质量；只序列化当前值，不重新执行路线验证。
 
 ### `GlobalRoute`
 
 源码位置：[integration/route_manager.py 第 87 行](../../../integration/route_manager.py#L87)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+全局路线聚合：控制参考线、逐点拓扑样本、验证摘要、起终点坐标及不参与 repr/compare 的原始 waypoint；这些序列按索引共同演进。
 
 ### `GlobalRoute.total_length_m`
 
@@ -156,13 +156,13 @@ RouteValidation.to_dict(self) -> dict[str, object]
 GlobalRoute.total_length_m(self) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+直接返回 `validation.total_length_m`，不从 reference 重新累计。
 
 ### `RouteState`
 
 源码位置：[integration/route_manager.py 第 101 行](../../../integration/route_manager.py#L101)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+单帧路线状态，包含绝对弧长、比例、剩余距离、最近点/误差、道路车道关系、终点与重规划判定；它描述路线关系，不等于最终安全状态。
 
 ### `RouteState.to_dict`
 
@@ -172,7 +172,7 @@ GlobalRoute.total_length_m(self) -> float
 RouteState.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+导出完整状态并把最近点 tuple 转为 JSON 友好的 list；reason 可为 None。
 
 ### `RoutePlacement`
 
@@ -194,7 +194,7 @@ Adjacent-lane topology that must exist over a mission-distance window.
 LaneCorridorRequirement.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+规范化 relation（去掉 `_ADJACENT`）并限制为 LEFT/RIGHT，要求非空 id、有限且有序的非负 s 区间以及严格 bool 的 junction_free；在 frozen 对象中写回规范值。
 
 ### `LaneCorridorRequirement.from_mapping`
 
@@ -204,7 +204,7 @@ LaneCorridorRequirement.__post_init__(self) -> None
 LaneCorridorRequirement.from_mapping(cls, value: Mapping[str, object]) -> 'LaneCorridorRequirement'
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从场景对象读取 id/phase_id、relation、起止 s 和 junction_free；缺失值按 0/False 补齐后交由构造校验，输入不是 Mapping 时拒绝。
 
 ### `SpeedWindowRequirement`
 
@@ -220,7 +220,7 @@ Minimum physically supportable speed over a route-distance window.
 SpeedWindowRequirement.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把距离、最低速度、横向加速度和 lookahead 规范为 float，要求 id 非空、值有限、区间有序且速度/加速度/lookahead 为正。
 
 ### `SpeedWindowRequirement.from_mapping`
 
@@ -230,7 +230,7 @@ SpeedWindowRequirement.__post_init__(self) -> None
 SpeedWindowRequirement.from_mapping(cls, value: Mapping[str, object]) -> 'SpeedWindowRequirement'
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从场景对象构造速度窗口，默认横向加速度 2.0 m/s²、lookahead 45 m；字段缺失产生的 0 值会由构造校验拒绝无效最低速度。
 
 ### `RouteRecoveryPolicy`
 
@@ -246,7 +246,7 @@ Map-independent hysteresis for automatic off-route recovery.
 RouteRecoveryPolicy.from_mapping(cls, value: Mapping[str, object] | None) -> 'RouteRecoveryPolicy'
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+None 返回默认策略；Mapping 只允许四个恢复字段，拒绝未知键，并把值转换为 float/int 后交由策略校验。
 
 ### `RouteRecoveryPolicy.__post_init__`
 
@@ -256,13 +256,13 @@ RouteRecoveryPolicy.from_mapping(cls, value: Mapping[str, object] | None) -> 'Ro
 RouteRecoveryPolicy.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求阈值/确认/冷却为有限数，off-route 阈值大于 0、两个时长非负，maximum_attempts 为非负严格整数；在不可变实例中保存规范化 float。
 
 ### `RouteRecoveryDecision`
 
 源码位置：[integration/route_manager.py 第 280 行](../../../integration/route_manager.py#L280)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+不可变恢复决策，记录状态、可空 reason、本帧是否应重规划和累计尝试次数；决策本身不执行 replan。
 
 ### `RouteRecoveryTracker`
 
@@ -278,7 +278,7 @@ Turn noisy per-frame deviation into deterministic recovery decisions.
 RouteRecoveryTracker.__init__(self, policy: RouteRecoveryPolicy | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+采用传入或默认恢复策略，初始化偏离起始时刻、上次尝试时刻和尝试计数；时间基准由后续 sim_time_s 提供。
 
 ### `RouteRecoveryTracker.attempts`
 
@@ -288,7 +288,7 @@ RouteRecoveryTracker.__init__(self, policy: RouteRecoveryPolicy | None=None) -> 
 RouteRecoveryTracker.attempts(self) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+只读返回当前任务已触发的重规划次数。
 
 ### `RouteRecoveryTracker.observe`
 
@@ -298,7 +298,7 @@ RouteRecoveryTracker.attempts(self) -> int
 RouteRecoveryTracker.observe(self, route_state: RouteState, sim_time_s: float, *, recovery_suppressed: bool=False) -> RouteRecoveryDecision
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+将单帧 RouteState 和仿真时间转为带确认时长、冷却和次数上限的确定性决策；到达/回归/主动机动抑制会清除连续偏离计时，只有确认完成且未冷却/耗尽时增加 attempts 并返回 should_replan=True。
 
 ### `RouteRecoveryTracker.note_replan_succeeded`
 
@@ -308,7 +308,7 @@ RouteRecoveryTracker.observe(self, route_state: RouteState, sim_time_s: float, *
 RouteRecoveryTracker.note_replan_succeeded(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+清除连续偏离起始时刻，但保留 attempts 和 cooldown 时间，因此成功一次不会恢复尝试额度。
 
 ### `RouteRecoveryTracker.reset_mission`
 
@@ -318,19 +318,19 @@ RouteRecoveryTracker.note_replan_succeeded(self) -> None
 RouteRecoveryTracker.reset_mission(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+清除偏离时刻、冷却时刻和尝试数，只应在新任务边界调用。
 
 ### `_TopologyEdge`
 
 源码位置：[integration/route_manager.py 第 370 行](../../../integration/route_manager.py#L370)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+内部不可变拓扑边，保存稳定索引、入口/出口 waypoint、采样 waypoint 序列和边长。
 
 ### `_LaneChangeTransition`
 
 源码位置：[integration/route_manager.py 第 379 行](../../../integration/route_manager.py#L379)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+内部合法变道连接，保存源/目标边、左右方向及候选 waypoint 对；候选不参与 repr/compare。
 
 ### `_BlendedWaypoint`
 
@@ -346,7 +346,7 @@ Waypoint-shaped route sample used inside a smooth legal lane change.
 _BlendedWaypoint.__init__(self, source: Any, target: Any, *, x_m: float, y_m: float, z_m: float, yaw_deg: float, target_weight: float) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+在源/目标 waypoint 之间构造 waypoint 形状的平滑采样；位置/yaw 由调用方给定，target_weight 达 0.5 后采用目标车道身份，并保留基础 waypoint 供邻道查询。
 
 ### `_BlendedWaypoint.get_left_lane`
 
@@ -356,7 +356,7 @@ _BlendedWaypoint.__init__(self, source: Any, target: Any, *, x_m: float, y_m: fl
 _BlendedWaypoint.get_left_lane(self) -> Any | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把左邻道查询转发给当前基础 waypoint；缺少可调用 getter 时返回 None。
 
 ### `_BlendedWaypoint.get_right_lane`
 
@@ -366,7 +366,7 @@ _BlendedWaypoint.get_left_lane(self) -> Any | None
 _BlendedWaypoint.get_right_lane(self) -> Any | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把右邻道查询转发给当前基础 waypoint；缺少可调用 getter 时返回 None。
 
 ### `_location`
 
@@ -376,7 +376,7 @@ _BlendedWaypoint.get_right_lane(self) -> Any | None
 _location(value: Any) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+兼容 actor/location/transform/waypoint：优先调用 `get_location()`，其次取 `transform.location`，再取 `location` 属性，最后把输入本身视为位置。
 
 ### `_transform`
 
@@ -386,7 +386,7 @@ _location(value: Any) -> Any
 _transform(value: Any) -> Any | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+优先调用 `get_transform()`；否则仅当对象同时有 location 与 rotation 时返回对象本身，无法解析时返回 None。
 
 ### `_xy`
 
@@ -396,7 +396,7 @@ _transform(value: Any) -> Any | None
 _xy(value: Any) -> Point2D
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+经 `_location` 解析后把 x/y 转成 float tuple；缺字段或不可转换异常原样传播。
 
 ### `_distance`
 
@@ -406,7 +406,7 @@ _xy(value: Any) -> Point2D
 _distance(first: Any, second: Any) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析两个对象的二维坐标并返回欧氏距离，忽略 z。
 
 ### `_wrap_degrees`
 
@@ -416,7 +416,7 @@ _distance(first: Any, second: Any) -> float
 _wrap_degrees(angle: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把角度规范到 `[-180,180)`，用于航向差和拓扑排序。
 
 ### `_yaw`
 
@@ -426,7 +426,7 @@ _wrap_degrees(angle: float) -> float
 _yaw(waypoint: Any) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 `waypoint.transform.rotation.yaw` 并转为 float；只接受 waypoint 形态对象。
 
 ### `_is_driving_lane`
 
@@ -436,7 +436,7 @@ _yaw(waypoint: Any) -> float
 _is_driving_lane(waypoint: Any | None) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+None 返回 False；否则取 lane_type 枚举文本末段并大小写无关地与 DRIVING 比较，缺省 lane_type 按 Driving 处理。
 
 ### `_lane_identity`
 
@@ -446,7 +446,7 @@ _is_driving_lane(waypoint: Any | None) -> bool
 _lane_identity(waypoint: Any) -> tuple[int | None, int | None, int | None]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回 `(road_id, section_id, lane_id)`，字段缺失以 None 表示；用于把 waypoint 归入同一拓扑车道。
 
 ### `_visit_key`
 
@@ -456,7 +456,7 @@ _lane_identity(waypoint: Any) -> tuple[int | None, int | None, int | None]
 _visit_key(waypoint: Any) -> tuple[object, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+优先用道路/section/lane 与四舍五入到 0.01 的 lane s 标识访问点；拓扑字段不足时退化为 0.01 m 的 x/y 与 0.1° yaw，供去重和覆盖路线访问计数。
 
 ### `_same_direction`
 
@@ -466,7 +466,7 @@ _visit_key(waypoint: Any) -> tuple[object, ...]
 _same_direction(first: Any, second: Any, tolerance_deg: float=60.0) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+比较两个 waypoint 的环绕 yaw 差，绝对值不超过 tolerance（默认 60°）即视为同向。
 
 ### `_lane_change_allowed`
 
@@ -486,7 +486,7 @@ Read CARLA lane-marking permissions without importing the CARLA module.
 _curvature(points: Sequence[Point2D], index: int) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+在夹到内部范围的索引周围取三点，以三角形面积/边长计算无符号曲率；点不足或退化边返回 0。
 
 ### `RouteManager`
 
@@ -502,7 +502,7 @@ Plan and query one global destination route for a CARLA map.
 RouteManager.__init__(self, world_map: Any, *, sample_step_m: float=2.0, finish_radius_m: float=4.0, maximum_gap_m: float | None=None, maximum_expansions: int=50000, off_route_threshold_m: float=6.0) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+验证采样步长、终点半径、A* 展开上限和偏离阈值；maximum_gap 未提供时取 `max(5m, 3*sample_step)`。初始化惰性拓扑缓存与变道连接表，不读取场景特定 ID。
 
 ### `RouteManager.plan`
 
@@ -512,7 +512,7 @@ RouteManager.__init__(self, world_map: Any, *, sample_step_m: float=2.0, finish_
 RouteManager.plan(self, start: Any, destination: Any, target_speed_mps: float) -> GlobalRoute
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把起终点投影为驾驶 waypoint，构建/复用拓扑图，以 A* 搜索边路径并组装 waypoint；若某条变道连接无法形成完整合法走廊，则屏蔽该连接后重新搜索，最终构造并验证 GlobalRoute。
 
 ### `RouteManager.plan_distance`
 
@@ -560,7 +560,7 @@ Reject route/event combinations that are physically inconsistent.
 RouteManager._validate_lane_corridor(self, route: GlobalRoute, cumulative: Sequence[float], requirement: LaneCorridorRequirement) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把声明的 s 区间映射到 waypoint 索引，逐点要求指定左右邻道存在；区间超路线、邻道缺失或 junction_free 窗口触及 junction 时分别以稳定 RoutePlanningError code 拒绝。
 
 ### `RouteManager._validate_speed_window`
 
@@ -570,7 +570,7 @@ RouteManager._validate_lane_corridor(self, route: GlobalRoute, cumulative: Seque
 RouteManager._validate_speed_window(self, route: GlobalRoute, cumulative: Sequence[float], requirement: SpeedWindowRequirement) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+在声明窗口内逐点查看未来 lookahead 的最大曲率，按 `sqrt(max_lateral_accel/curvature)` 估算可支持速度；窗口越界或低于 minimum_speed_kph 时拒绝。
 
 ### `RouteManager.state`
 
@@ -580,7 +580,7 @@ RouteManager._validate_speed_window(self, route: GlobalRoute, cumulative: Sequen
 RouteManager.state(self, route: GlobalRoute, x_m: float, y_m: float, *, previous_s_m: float | None=None, forward_window_m: float=80.0) -> RouteState
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用 previous_s 和 80m 默认前向窗投影单调 route_s，解析最近路线姿态与车辆 map waypoint，判定 CURRENT/LEFT/RIGHT/UNKNOWN；同时计算剩余、端点误差和无符号 CTE，并以 finish_radius 与 off_route_threshold 产生到达、偏离和 replan 状态。
 
 ### `RouteManager.placement`
 
@@ -630,7 +630,7 @@ Rebuild a route from the current map pose after an off-route event.
 RouteManager._project_xy_like(self, sample_waypoint: Any, x_m: float, y_m: float) -> Any | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+尝试用 world_map.get_waypoint 将 x/y 投影到与样本相同的地图位置类型；无法构造 location、缺少 API 或投影异常时返回 None，而不把查询失败升级为规划错误。
 
 ### `RouteManager._future_novel_capacity`
 
@@ -640,7 +640,7 @@ RouteManager._project_xy_like(self, sample_waypoint: Any, x_m: float, y_m: float
 RouteManager._future_novel_capacity(self, waypoint: Any, visits: Mapping[tuple[object, ...], int], *, depth: int, branch_seen: frozenset[tuple[object, ...]]=frozenset()) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从某 waypoint 递归查看有限 depth 的后继，按 visit 次数惩罚已走点并选择最大未来新颖容量；用于距离覆盖分支排序，不修改 visits。
 
 ### `RouteManager._project_endpoint`
 
@@ -650,7 +650,7 @@ RouteManager._future_novel_capacity(self, waypoint: Any, visits: Mapping[tuple[o
 RouteManager._project_endpoint(self, value: Any, code: str) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把任意起终点解析为 location，并调用 map.get_waypoint 投影到驾驶车道；缺接口、调用失败、返回 None 或非 Driving 时转换为带指定 code 的 RoutePlanningError。
 
 ### `RouteManager._topology_graph`
 
@@ -660,7 +660,7 @@ RouteManager._project_endpoint(self, value: Any, code: str) -> Any
 RouteManager._topology_graph(self) -> tuple[tuple[_TopologyEdge, ...], dict[int, tuple[int, ...]]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+首次调用读取 map topology、采样每条边、计算长度并建立 `_TopologyEdge`；随后连接自然后继与合法变道边并缓存。空拓扑或没有有效边时拒绝，后续调用复用缓存。
 
 ### `RouteManager._sample_edge`
 
@@ -670,7 +670,7 @@ RouteManager._topology_graph(self) -> tuple[tuple[_TopologyEdge, ...], dict[int,
 RouteManager._sample_edge(self, entry: Any, exit_waypoint: Any) -> tuple[Any, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+沿 entry.next(sample_step) 选择保持目标车道身份且同向、最接近 exit 的 waypoint，直到到达出口或步数上限；检测循环、断路和异常 gap，并确保出口加入采样。
 
 ### `RouteManager._connect_edges`
 
@@ -680,7 +680,7 @@ RouteManager._sample_edge(self, entry: Any, exit_waypoint: Any) -> tuple[Any, ..
 RouteManager._connect_edges(self, edges: tuple[_TopologyEdge, ...]) -> dict[int, tuple[int, ...]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按车道身份和端点邻近关系建立自然有向连接；再扫描非 junction waypoint 的车道线权限与连续邻道，验证可构造平滑变道连接后加入邻接表，并保留候选最多的同源目标 transition。
 
 ### `RouteManager._locate_edge`
 
@@ -690,7 +690,7 @@ RouteManager._connect_edges(self, edges: tuple[_TopologyEdge, ...]) -> dict[int,
 RouteManager._locate_edge(self, waypoint: Any, edges: tuple[_TopologyEdge, ...], code: str) -> _TopologyEdge
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+优先在同车道身份的边中按 waypoint 最小距离、入口 yaw 差和边索引排序，找不到同车道时回退全图；最近距离超过 maximum_gap 时按调用方 code 拒绝。
 
 ### `RouteManager._search`
 
@@ -700,7 +700,7 @@ RouteManager._locate_edge(self, waypoint: Any, edges: tuple[_TopologyEdge, ...],
 RouteManager._search(self, start_index: int, goal_index: int, destination: Any, edges: tuple[_TopologyEdge, ...], adjacency: Mapping[int, tuple[int, ...]], *, blocked_connections: set[tuple[int, int]] | frozenset[tuple[int, int]]=frozenset()) -> tuple[int, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+在拓扑边图上执行有展开上限的 A*；代价为边长并对变道加 25m 惩罚，可跳过 blocked_connections。无法到达目标边时抛 `ROUTE_UNREACHABLE`，成功时从 parents 回溯边索引序列。
 
 ### `RouteManager._assemble_waypoints`
 
@@ -710,7 +710,7 @@ RouteManager._search(self, start_index: int, goal_index: int, destination: Any, 
 RouteManager._assemble_waypoints(self, edge_path: Sequence[int], start: Any, destination: Any, edges: tuple[_TopologyEdge, ...]) -> tuple[Any, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按边路径裁起终点并去重采样；遇到变道边时在足够前进距离后选择可完成的合法平滑 connector。倒退序列、不可用变道或不足两个点使用稳定 code 失败。
 
 ### `RouteManager._build_lane_change_connector`
 
@@ -730,7 +730,7 @@ Build a smooth, permission-checked connector between parallel lanes.
 RouteManager._build_global_route(self, waypoints: Sequence[Any], start: Any, destination: Any, target_speed_mps: float, *, allow_repeated_samples: bool=False) -> GlobalRoute
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从 waypoint 生成点集、累计弧长、RouteSample 与验证摘要；拒绝过大 gap、非允许重复、非驾驶车道和终点误差。计算最大曲率、变道数与坐标指纹 route_id，并返回索引对齐的 GlobalRoute。
 
 ### `RouteManager._route_sample`
 
@@ -740,7 +740,7 @@ RouteManager._build_global_route(self, waypoints: Sequence[Any], start: Any, des
 RouteManager._route_sample(waypoint: Any, s_m: float) -> RouteSample
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把单个 waypoint 与累计 s 转成 RouteSample，同时查询合法同向左右邻道 ID；保留 road/section/lane、junction、z 和 yaw。
 
 ### `RouteManager._adjacent_lane`
 
@@ -750,7 +750,7 @@ RouteManager._route_sample(waypoint: Any, s_m: float) -> RouteSample
 RouteManager._adjacent_lane(waypoint: Any, side: str) -> Any | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按 LEFT/RIGHT 调用相应邻道 getter，只返回 Driving 且与源 waypoint 同向的邻道，否则返回 None。
 
 ## 内部调用与异常路径
 

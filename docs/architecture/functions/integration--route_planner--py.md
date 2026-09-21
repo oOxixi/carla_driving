@@ -26,7 +26,7 @@ CARLA waypoint route generation shared by the acceptance runner.
 
 源码位置：[integration/route_planner.py 第 28 行](../../../integration/route_planner.py#L28)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+地图级不可变空间索引，保存 world_map、生成 waypoint 的步长和按 5m 网格分桶的 waypoint；全局缓存以 map 对象 id 为键。
 
 ### `_wrap_degrees`
 
@@ -36,7 +36,7 @@ CARLA waypoint route generation shared by the acceptance runner.
 _wrap_degrees(angle: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把角度规范到 `[-180,180)`。
 
 ### `_yaw`
 
@@ -46,7 +46,7 @@ _wrap_degrees(angle: float) -> float
 _yaw(waypoint: Any) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 waypoint transform yaw 并转 float。
 
 ### `_branch_delta`
 
@@ -66,7 +66,7 @@ CARLA uses a left-handed frame: positive yaw turns to the right.
 _choose_branch(current: Any, candidates: Iterable[Any], direction: str) -> Any | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+过滤候选后按 CARLA 左手系航向差选择 LEFT/RIGHT/STRAIGHT 分支；无候选返回 None，方向非法由调用前约束或排序分支处理。
 
 ### `_waypoint_visit_key`
 
@@ -106,7 +106,7 @@ Choose the requested branch while preferring novel, non-dead-end lanes.
 _route_curvature(points: tuple[tuple[float, float], ...]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+遍历点列，以 `estimate_curvature(..., stride=2)` 返回最大绝对曲率；少量点由底层函数返回 0。
 
 ### `_route_length`
 
@@ -116,7 +116,7 @@ _route_curvature(points: tuple[tuple[float, float], ...]) -> float
 _route_length(points: Sequence[tuple[float, float]]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+累计相邻二维点欧氏距离；空或单点返回 0。
 
 ### `_heading`
 
@@ -126,7 +126,7 @@ _route_length(points: Sequence[tuple[float, float]]) -> float
 _heading(first: tuple[float, float], second: tuple[float, float]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回两点连线的 `atan2` 弧度航向。
 
 ### `_route_yaw_change`
 
@@ -136,7 +136,7 @@ _heading(first: tuple[float, float], second: tuple[float, float]) -> float
 _route_yaw_change(points: Sequence[tuple[float, float]]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+累加相邻线段间经 wrap 的绝对航向变化并转为度；少于三点返回 0，用于限制过度绕行。
 
 ### `_is_driving_lane`
 
@@ -146,7 +146,7 @@ _route_yaw_change(points: Sequence[tuple[float, float]]) -> float
 _is_driving_lane(waypoint: Any | None) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+None 为 False；否则把 lane_type 枚举/文本末段与 DRIVING 比较，缺省按 Driving。
 
 ### `_same_direction`
 
@@ -156,7 +156,7 @@ _is_driving_lane(waypoint: Any | None) -> bool
 _same_direction(first: Any, second: Any, tolerance_deg: float=45.0) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用 waypoint yaw 环绕差判断同向，默认容差 45°。
 
 ### `_ego_yaw_deg`
 
@@ -176,7 +176,7 @@ Return actor/transform yaw without guessing it from a bare Location.
 _waypoint_distance_m(waypoint: Any, location: Any) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 waypoint.transform.location 与给定 location 的 x/y，返回平面距离。
 
 ### `warm_heading_waypoint_cache`
 
@@ -196,7 +196,7 @@ Build a process-local spatial index outside the active control loop.
 _nearby_indexed_waypoints(world_map: Any, location: Any, *, search_radius_m: float, search_step_m: float) -> tuple[Any, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从空间索引中搜索以 location 所在格为中心的若干邻格，返回落在 radius 内的 `(距离, waypoint)`，并按距离与 visit key 稳定排序。
 
 ### `select_heading_compatible_waypoint`
 
@@ -222,7 +222,7 @@ actor routes always apply this direction gate.
 _next_straight(waypoint: Any, step_m: float) -> Any | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 `waypoint.next(step_m)` 并调用 `_choose_branch(..., STRAIGHT)`；没有合法候选返回 None。
 
 ### `_advance_waypoint`
 
@@ -232,7 +232,7 @@ _next_straight(waypoint: Any, step_m: float) -> Any | None
 _advance_waypoint(waypoint: Any, distance_m: float, step_m: float) -> Any | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按最多 `ceil(distance/step)` 次直行推进，每步不超过剩余距离；中途无后继返回 None，成功返回推进后的 waypoint。
 
 ### `_adjacent_driving_lane`
 
@@ -242,7 +242,7 @@ _advance_waypoint(waypoint: Any, distance_m: float, step_m: float) -> Any | None
 _adjacent_driving_lane(waypoint: Any, direction: str) -> Any | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按 LEFT/RIGHT 取邻道，要求 Driving 且同向；方向不匹配、缺 getter 或非法邻道返回 None。
 
 ### `_hermite_lane_change`
 

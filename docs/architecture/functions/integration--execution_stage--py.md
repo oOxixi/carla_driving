@@ -28,7 +28,7 @@ Stateful execution helpers kept outside the CARLA orchestration shell.
 
 源码位置：[integration/execution_stage.py 第 12 行](../../../integration/execution_stage.py#L12)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存全局路线点与当前弧长进度的可变跟踪器；`progress_m` 初始 0，路线点由调用方提供且构造时不复制。
 
 ### `RouteProgressTracker.update`
 
@@ -38,7 +38,7 @@ Stateful execution helpers kept outside the CARLA orchestration shell.
 RouteProgressTracker.update(self, x_m: float, y_m: float, *, speed_mps: float, delta_s: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把车辆位置投影到可能自交的路线，并以已有进度禁止回退；前向候选窗取 `max(20m, speed*delta*8)`。速度和 delta 未在本层单独校验，投影函数负责坐标及路线有效性。调用会覆盖并返回 `progress_m`。
 
 ### `DistanceCoverageTracker`
 
@@ -60,7 +60,7 @@ satisfy the contract.
 DistanceCoverageTracker.update(self, x_m: float, y_m: float, *, speed_mps: float, delta_s: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+首帧只保存有限位置；后续计算实际位移，跳跃门限为 `max(minimum_jump_gate_m, max(speed,0)*max(delta,0)*3+1)`，只有不超过门限才累计。无论是否累计都更新 previous 位置，因此一次 teleport 不会在下一帧重复计入。
 
 ## 内部调用与异常路径
 

@@ -47,7 +47,7 @@ Pure Pursuit lateral controller for CARLA.
 
 源码位置：[car_control_B/pure_pursuit.py 第 24 行](../../../car_control_B/pure_pursuit.py#L24)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+不可变控制参数集合；除 `cross_track_gain=0.8`、`cross_track_softening_speed_mps=1.0` 和两个搜索窗默认 None 外，参数来自 `DEFAULT_STRATEGY.lateral`。这些是构造默认，实际实例可整体覆盖。
 
 ### `PurePursuitParams.__post_init__`
 
@@ -57,13 +57,13 @@ Pure Pursuit lateral controller for CARLA.
 PurePursuitParams.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+验证所有数值参数为有限 int/float、除 `steer_sign` 外幅值非负，并检查 lookahead、steer、转向变化率上下界、符号只能 ±1，以及两个搜索窗只能为正整数或 None；失败直接阻止控制器构造。
 
 ### `PurePursuitController`
 
 源码位置：[car_control_B/pure_pursuit.py 第 83 行](../../../car_control_B/pure_pursuit.py#L83)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+主用有状态横向控制器；状态包含上一帧 steer、当前最近点、当前路线对象和按路线点容器身份保存的进度。路线切换与恢复依赖同一个点容器对象，而非 route_id 文本。
 
 ### `PurePursuitController.__init__`
 
@@ -73,7 +73,7 @@ PurePursuitParams.__post_init__(self) -> None
 PurePursuitController.__init__(self, params: PurePursuitParams | None=None) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+采用传入参数或构造默认参数；将 steer/最近点清零，并初始化活动路线和逐路线进度表。进度表没有容量淘汰，长时创建大量不同路线时会持续增长。
 
 ### `PurePursuitController.reset`
 
@@ -83,7 +83,7 @@ PurePursuitController.__init__(self, params: PurePursuitParams | None=None) -> �
 PurePursuitController.reset(self, *, preserve_steer: bool=False) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求 `preserve_steer` 为严格 bool；默认清零上一 steer，传 True 时保留转向连续性。无论取值都清除最近点、活动路线、适配状态和全部逐路线进度。
 
 ### `PurePursuitController.synchronize_route_progress`
 
@@ -108,7 +108,7 @@ the exact route slot without a global nearest-point snap.
 PurePursuitController._lookahead(self, speed_mps: float, curvature_per_m: float=0.0, cross_track_error_m: float=0.0, heading_error_rad: float=0.0) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+以基础距离加速度增益形成原始 lookahead，再按局部曲率、CTE 和航向误差缩短，最后夹在配置最小/最大值之间；返回单位为米。
 
 ### `PurePursuitController._steer_limit`
 
@@ -118,7 +118,7 @@ PurePursuitController._lookahead(self, speed_mps: float, curvature_per_m: float=
 PurePursuitController._steer_limit(self, speed_mps: float, curvature_per_m: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从最大归一化 steer 中扣除随速度增加的限制、加入随曲率增加的余量，并夹在 `min_steer_limit..max_steer`，形成本帧幅值上限。
 
 ### `PurePursuitController._steer_delta_limit`
 
@@ -128,7 +128,7 @@ PurePursuitController._steer_limit(self, speed_mps: float, curvature_per_m: floa
 PurePursuitController._steer_delta_limit(self, speed_mps: float, curvature_per_m: float, cross_track_error_m: float, heading_error_rad: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+以基础每步变化率乘低速增益和几何误差增益，再夹在配置的最小与自适应最大变化率之间；该限制按调用步数生效，不按秒归一化。
 
 ### `PurePursuitController.step`
 
@@ -138,7 +138,7 @@ PurePursuitController._steer_delta_limit(self, speed_mps: float, curvature_per_m
 PurePursuitController.step(self, vehicle: VehiclePose, reference: RouteReference) -> LateralOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按路线点容器身份恢复或初始化最近点，在配置窗口内更新单调局部进度；计算切向航向误差、带符号 CTE 和前方局部最大曲率，据此选择 lookahead 与目标点。目标在车后时输出受变化率约束的 0 目标并标记 `INVALID/TARGET_BEHIND_EGO`；否则组合 Pure Pursuit 前馈与 CTE 反馈，经符号、幅值和每步变化率限制后返回 `OK/PURE_PURSUIT`。本方法会更新 steer 和路线进度状态。
 
 ## 内部调用与异常路径
 

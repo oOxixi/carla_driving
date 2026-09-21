@@ -28,7 +28,7 @@ Path utilities for member B lateral control.
 clamp(value: float, low: float, high: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回 `max(low, min(high, value))`；调用方负责保证上下界顺序和数值有限，本函数不做校验。
 
 ### `wrap_angle_rad`
 
@@ -48,7 +48,7 @@ Wrap angle to [-pi, pi].
 distance(p1: Point2D, p2: Point2D) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用 `math.hypot` 计算两个二维点的欧氏距离；坐标单位由调用合同决定，在本模块生产路径中为米。
 
 ### `cumulative_lengths`
 
@@ -58,7 +58,7 @@ distance(p1: Point2D, p2: Point2D) -> float
 cumulative_lengths(points: Sequence[Point2D]) -> List[float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从 0 开始累计相邻点欧氏距离，返回与输入点数相同的弧长表；少于两点立即拒绝，重复点会产生相同的相邻累计值。
 
 ### `resample_path`
 
@@ -94,7 +94,7 @@ provides one; the default searches the whole path.
 find_lookahead_index(points: Sequence[Point2D], start_index: int, current_xy: Point2D, lookahead_distance_m: float) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从截断为非负的 `start_index` 向后扫描，返回首个与当前车辆位置的直线距离达到 lookahead 的点；若全程不足则返回末点，lookahead 非正时拒绝。该量是车辆到点距离，不是沿线弧长。
 
 ### `compute_path_heading`
 
@@ -104,7 +104,7 @@ find_lookahead_index(points: Sequence[Point2D], start_index: int, current_xy: Po
 compute_path_heading(points: Sequence[Point2D], index: int) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把索引夹在有效范围内，用当前点到下一点的切向计算 `atan2`；末点改用前一段。少于两点拒绝，重复相邻点会得到 0 航向而不单独报错。
 
 ### `signed_cross_track_error`
 
