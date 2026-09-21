@@ -53,6 +53,6 @@ Bounded Qwen high-level decision service; it never emits vehicle controls.
 
 ### `qwen_service/__init__.py`
 
-来源 SHA256：`a91196a912653a250a373ccf7762c7c0ad260210709db39bc5c24a6ed505c903`。
+来源 SHA256：`3174951f41fb6074bddc8dc5e0e347c69f15b870b0f08d2b9f7c029e564d10e6`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

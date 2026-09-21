@@ -299,7 +299,7 @@ main() -> int
 
 ### `challenge/distillation/train.py`
 
-来源 SHA256：`acf57890f6eb3e5cd13907ecd52011d982ea4164d3584a6bc4a23bcca388e134`。
+来源 SHA256：`bc9064760072de951233034a0e848dcec3547fab00017e3592895157d7136876`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

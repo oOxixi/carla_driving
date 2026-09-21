@@ -432,7 +432,7 @@ CarlaSession.__exit__(self, exc_type: object, exc: object, traceback: object) ->
 
 ### `car_control_A/simulator.py`
 
-来源 SHA256：`afe4fb6a19d4fa0dd0d7c86a103f12a9072258941cb2547abe53556ef233942c`。
+来源 SHA256：`cca87f77453cef00f286ece49ce53d4c8fa8ee53f8df3c6ad21b96b804c597d5`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

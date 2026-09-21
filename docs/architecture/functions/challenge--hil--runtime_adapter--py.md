@@ -318,7 +318,7 @@ BoardCliRuntime.close(self) -> None
 
 ### `challenge/hil/runtime_adapter.py`
 
-来源 SHA256：`16022211e515486ca39acc819c3d3eba0cc5dfe7f09e1569e5226e20a6e867f3`。
+来源 SHA256：`86e01d8bfcb87bc497b1b4102d3dd08d2602029efd7844c27b30cfe63bf66e10`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

@@ -149,7 +149,7 @@ main() -> int
 
 ### `tools/run_qwen_latency_gate.py`
 
-来源 SHA256：`e885962925c57b47454ce3b152622821a577926853f76dd76c1420f723e8c8f0`。
+来源 SHA256：`362e92939401831b399876f572093c49afb43a6f6155380fe44c1b73d7b1a04d`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

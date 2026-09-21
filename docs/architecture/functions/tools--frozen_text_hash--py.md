@@ -81,6 +81,6 @@ frozen_text_sha256(path: Path) -> str
 
 ### `tools/frozen_text_hash.py`
 
-来源 SHA256：`a9683ccaf0dec16c913ad4d1335e213a95caba6a01aa8b746db347f419ad66dd`。
+来源 SHA256：`cf8f786bc01a2ea43b9d30879bd6c91179112afce2d1a69bb52e72463bdcce35`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

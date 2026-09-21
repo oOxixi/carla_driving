@@ -52,7 +52,7 @@ verify-stack
 
 ### `docker/scripts/verify-stack.ps1`
 
-来源 SHA256：`0a2a8566dbc6bf5bcf432ac8171ea6f3bbf931121fc0b4bb3c690c00d5e4f240`。
+来源 SHA256：`70088f2078a5398fa3d8387ca3e5f591914a0d23018245bd1dd7ff51d01bbbe8`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。
 

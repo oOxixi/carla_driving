@@ -142,7 +142,7 @@ _category_index(values: Sequence[str], value: object, field_name: str) -> int
 
 ### `challenge/distillation/label_encoder.py`
 
-来源 SHA256：`22cc09bd11285a32827e3f4fea02808a2dacbdf539ff42f61da94800d77c7305`。
+来源 SHA256：`8cddfba5f86a2b37bcc74065c12fc4a75a9028c62406a854ba4193dea9f09482`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

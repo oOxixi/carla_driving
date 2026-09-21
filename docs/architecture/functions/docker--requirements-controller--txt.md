@@ -50,6 +50,6 @@ requirements-controller
 
 ### `docker/requirements-controller.txt`
 
-来源 SHA256：`d211ee5f857258841f7ca9375991b81c682b4bd7bee7fb709a70833342afad03`。
+来源 SHA256：`c17fad2ca9079cb83f92a89140c2e85c0408cc4c588bcfb2d6af93d40b1ae44b`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

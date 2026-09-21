@@ -98,6 +98,6 @@ main() -> None
 
 ### `car_control_B/demo_fake_lateral.py`
 
-来源 SHA256：`587a5a7463f7c4fa19b81bc2dee0448c377b8ccfc4e03cb58b98aa6656be45b3`。
+来源 SHA256：`173246dddda537703e31a5707b21f4ef4fc71fa064ed3060122ae49cfaded50d`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

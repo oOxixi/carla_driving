@@ -50,6 +50,6 @@ schema
 
 ### `datasets/multimodal_v1/schema.json`
 
-来源 SHA256：`75850ba199d994b4251b01c18ba7465a38c3f985cdd5acc549ba50210e41a196`。
+来源 SHA256：`fe4c5f034f264196653f1e9b736dd34661e81701e035bf7c649009f10b633a96`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

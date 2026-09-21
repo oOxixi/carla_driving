@@ -81,7 +81,7 @@ main() -> int
 
 ### `tools/analyze_asr_consistency.py`
 
-来源 SHA256：`11976930b3ca12812a0b6a62353e595487af1fee15fceb6dec9aed59c3bdc35f`。
+来源 SHA256：`1c59a7f474d8c59f1fabae35c2cd551c414e03987ffaadd670c490d0682cb6f5`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

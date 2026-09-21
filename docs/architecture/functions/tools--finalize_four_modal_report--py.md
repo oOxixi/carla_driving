@@ -68,7 +68,7 @@ main() -> int
 
 ### `tools/finalize_four_modal_report.py`
 
-来源 SHA256：`da64caf26970104180dcd7a6a4c13982a304ae16961847afad1ea5016b830ac6`。
+来源 SHA256：`e6935edd5b6084b716e95c4ada6ec7bfd70ce9f1412a4fcf2348cf432a5340df`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

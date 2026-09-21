@@ -53,6 +53,6 @@ B2 slot extraction and command packaging module.
 
 ### `voice_group/nlu_b2/__init__.py`
 
-来源 SHA256：`fda168f32521924e3d723a9b77b2110052acc95939be4c8525c805e18059208e`。
+来源 SHA256：`b7d78107e71f35e127d3ac776f331b3dc39a9ead6b59f22961059b895019c941`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

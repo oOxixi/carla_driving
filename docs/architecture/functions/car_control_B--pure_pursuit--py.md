@@ -202,7 +202,7 @@ PurePursuitController.step(self, vehicle: VehiclePose, reference: RouteReference
 
 ### `car_control_B/pure_pursuit.py`
 
-来源 SHA256：`c5003f9e37769a7a4f753db86425dbb49f7ee3f35cf3f0ff1dcdd174bf4b24a2`。
+来源 SHA256：`b430bb860b3de1afdd56413823f7ce448778782f818ce44d71645163e1cae835`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

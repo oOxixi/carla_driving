@@ -160,7 +160,7 @@ main() -> None
 
 ### `tools/validate_official_scenes.py`
 
-来源 SHA256：`23737f37e3e9a41a0feec28a8f0415f0dfa7b5e4bee666b3fd6f6604c0b70de2`。
+来源 SHA256：`12ce1fe95d4722119d861f9665590e795e1a27fbd9ebc5eda3fb8d3b739de0a0`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

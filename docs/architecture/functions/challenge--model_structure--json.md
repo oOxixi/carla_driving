@@ -63,6 +63,6 @@ model_structure
 
 ### `challenge/model_structure.json`
 
-来源 SHA256：`8f76148777e4ac0bdabf776b9e5767d83f0f6dd16e3da269e16fb9f5148c9b04`。
+来源 SHA256：`971c6e70b42ac338190bb1779875bb2da89e9d23d8a480963a3a35a266f493fb`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

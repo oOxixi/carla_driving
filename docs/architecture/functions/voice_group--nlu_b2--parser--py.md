@@ -388,7 +388,7 @@ _optional_lower(value: Any) -> str | None
 
 ### `voice_group/nlu_b2/parser.py`
 
-来源 SHA256：`41ce217b6f05795a14cc8fbbf8275561b732251630577e300ae69ded9a670eed`。
+来源 SHA256：`4c81d0246c76320c62ce263e869111cae29af1588ee7fb19460d5e8f0a848424`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

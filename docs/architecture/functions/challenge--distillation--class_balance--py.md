@@ -67,7 +67,7 @@ Compute bounded inverse-frequency weights from Train labels only.
 
 ### `challenge/distillation/class_balance.py`
 
-来源 SHA256：`e3dd6d077852231a45055fd8ae4dd06dbb1f85569150571760f5f9094f4e89d5`。
+来源 SHA256：`f786ac6467a6e78e3d293371bb087057b2dea34e23ebcfd0d73588dc2ef991b0`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

@@ -104,7 +104,7 @@ Persist soak evidence under ``stability_logs/``.
 
 ### `challenge/hil/stability.py`
 
-来源 SHA256：`079fa2771cee2ba626cc53b4a239e7b9faddf8d5de8cacbae6a7bfbe87b83016`。
+来源 SHA256：`c294ad19156e4d2e5df5accd694dd9ee649f5e97e8f93472e55cc16e8af00267`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

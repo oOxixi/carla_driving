@@ -157,7 +157,7 @@ main.materialize(ids_in_order: list[str], split: str) -> list[dict[str, Any]]
 
 ### `challenge/dataset/materialize_d2_student_split.py`
 
-来源 SHA256：`44b008d1c8ea8f6cc1d8341f2301a615949f389717bc45ea35fa869dd5e36f60`。
+来源 SHA256：`4e6f134aab580c021ae6be39adff5779322b1e1769a8674a37960aebd15fdde0`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

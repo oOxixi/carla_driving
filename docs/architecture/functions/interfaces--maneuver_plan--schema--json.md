@@ -50,7 +50,7 @@ maneuver_plan.schema
 
 ### `interfaces/maneuver_plan.schema.json`
 
-来源 SHA256：`fb994ab58e4d44cb33ba10246d83bc8b4e79a4d99cafc3a772c91b4c189ac3df`。
+来源 SHA256：`9434c571cb78e6e2e19455a263708dc8463f65b694de4906479b3b4f82f93a49`。
 
 
 Schema 字段与约束：$ref需解析到对应定义；required只表示本层必填，不能代替分支条件判断。

@@ -54,6 +54,6 @@ A3 knowledge-distillation training boundary.
 
 ### `challenge/distillation/__init__.py`
 
-来源 SHA256：`58d1ac1a8fcac92f77efa319464164d431418893b032e687cec65cf1eaf09fea`。
+来源 SHA256：`9025461a2ce62f02dd80959b2603a90374c20bfc9091d97689f6a0c8c4f461be`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

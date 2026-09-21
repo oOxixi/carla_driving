@@ -157,7 +157,7 @@ QwenImageStager._measurement_image(self, measurement: Any) -> Any
 
 ### `integration/qwen_image_stager.py`
 
-来源 SHA256：`d07359abf70bda0538e297e6ad9770764e5c36e520b43920d7a820beb1fe9901`。
+来源 SHA256：`e8386164efdc7646c5b6c5f5ad94339d69c9f17689e5b58b5dd707b3c618bf80`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

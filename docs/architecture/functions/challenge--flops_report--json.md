@@ -65,6 +65,6 @@ flops_report
 
 ### `challenge/flops_report.json`
 
-来源 SHA256：`7130ae55151ec12632acb7aff01587747b82e3743063561d94f85de9b614019d`。
+来源 SHA256：`2f323e307aeb4426dbb15d7ec63935222f3c62b04df8b21fbfd00cdf2f24a9c0`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

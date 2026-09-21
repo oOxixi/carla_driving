@@ -168,7 +168,7 @@ main() -> int
 
 ### `tools/evaluate_voice_audio.py`
 
-来源 SHA256：`bf874062cd9a07a17c9447c43556275bac8532368858519622796ee071044d7a`。
+来源 SHA256：`8429c0ed701ab073844032f6d213c983a209335cb732b218d556fdce4490fc67`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

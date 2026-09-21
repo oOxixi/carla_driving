@@ -181,7 +181,7 @@ main() -> int
 
 ### `tools/build_qwen_four_modal_stress_set.py`
 
-来源 SHA256：`56b14ba6050ef8ec9925f2c9effaa1484e36d031f80cf0ac07fcd1fbb92ba0cd`。
+来源 SHA256：`1e6d5d6afb7ca9045bc01833c6a5ef628c32a093248d04c62917b53643e2e7ad`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

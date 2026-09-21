@@ -134,7 +134,7 @@ StanleyController.step(self, vehicle: VehiclePose, reference: RouteReference) ->
 
 ### `car_control_B/stanley.py`
 
-来源 SHA256：`1af91bcc12293c692f1dd39d4b018b13aa5c8f8047f30af8c59af77aff070262`。
+来源 SHA256：`856dbeabc8b4257d1bc1cc641828ed46e288f682cd7334feafc7ac4aa3ded27b`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

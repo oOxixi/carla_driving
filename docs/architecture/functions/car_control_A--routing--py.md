@@ -118,7 +118,7 @@ Protocol只声明reference入参和float返回，无默认算法/范围夹取；
 
 ### `car_control_A/routing.py`
 
-来源 SHA256：`800816447deb3e014076fd17c5649ea88bd8a0b96ad405240d2adabbbd0cc2c0`。
+来源 SHA256：`2f4e3d4363ac85da679b48cb23a8662c03d6fb3058e8b919ee35dae6a1cf2e32`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

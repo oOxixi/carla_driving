@@ -65,6 +65,6 @@ Build evaluator inputs without mutating any control-side object.
 
 ### `integration/scoring_stage.py`
 
-来源 SHA256：`a934f6a3111dd2a37765125950f05333f35f4249d40a31452d8bb5c1b29d5808`。
+来源 SHA256：`abf12585e09d9bded5ec2da821116f50c605731c44d8d26b453e79a8550a6f0d`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

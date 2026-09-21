@@ -45,7 +45,7 @@ fetch_scenario_runner
 
 ### `scripts/fetch_scenario_runner.ps1`
 
-来源 SHA256：`4648dce80dbf3942a731de26378c9391c45f0135d1a5b76664cd7d66341b051f`。
+来源 SHA256：`6791375c53ce33c5e67efdc375b4e7892de32c4481221778b0e8153afe59bd17`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。
 

@@ -155,7 +155,7 @@ main() -> None
 
 ### `challenge/dataset/build_dataset.py`
 
-来源 SHA256：`43aab666b8785abc7560d170d6e4c116cb97da641542737148d2d5e1d1d07f88`。
+来源 SHA256：`80a848bbbaeb17e43a34102998b1268b1dab9537cb97fda2df481958bff66249`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

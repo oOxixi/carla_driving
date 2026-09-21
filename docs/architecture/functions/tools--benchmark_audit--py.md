@@ -103,7 +103,7 @@ main() -> int
 
 ### `tools/benchmark_audit.py`
 
-来源 SHA256：`5f2362d2710aba6d5abbe03d7017657565b157d8cb3cc41ae84a909bdf5120ee`。
+来源 SHA256：`b273f42c5006130407caebfed9d4df607385a019fb8687491c34c3694e2668dc`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

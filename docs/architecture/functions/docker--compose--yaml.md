@@ -113,6 +113,6 @@ compose
 
 ### `docker/compose.yaml`
 
-来源 SHA256：`baf8759b9b88baeb28f88a17d15348e1ebe4ad69acaf69441abf855d56a5102b`。
+来源 SHA256：`939c2547f2a76167b717ae5fdf6093ad00e8a06f5d92245b0166dbd19f70c4f3`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

@@ -305,7 +305,7 @@ SPEED_BELOW阈值加默认0.05m/s；SPEED_REACHED绝对误差<=默认0.6m/s；LA
 
 ### `car_control_A/maneuver_fsm.py`
 
-来源 SHA256：`6f01cb59516fc099665d0790d20d260116ab29aef072726f1112b251cdbe334f`。
+来源 SHA256：`48463dea955caf3cfc05e25e7d44b2aa7cd5342835f1f47db93eb17a437fc35a`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

@@ -53,6 +53,6 @@ Start the bounded Qwen decision service.
 
 ### `qwen_service/__main__.py`
 
-来源 SHA256：`5576a1d54173b9a18e1a3c2d070c26bcf6a3ce3f77a9ff1ffcf5592bc00b52c6`。
+来源 SHA256：`7a4edbc47ff1bf62310dd31ec2bad607c582ff9c1109cdda97d0a704f486d493`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

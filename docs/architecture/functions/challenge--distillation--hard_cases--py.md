@@ -87,7 +87,7 @@ write_hard_case_bundle(directory: str | Path, rows: list[Mapping[str, Any]]) -> 
 
 ### `challenge/distillation/hard_cases.py`
 
-来源 SHA256：`4eef70e2b711101a697d91f61e14a10dc5662e9f471110234714c929c4eb2dbf`。
+来源 SHA256：`849288298b2ae2928b1cb55986659e28e14719d3291d3e25e39cd6e4f36561c1`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

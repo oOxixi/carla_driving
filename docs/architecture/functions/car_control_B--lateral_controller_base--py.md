@@ -118,6 +118,6 @@ Compatibility helper for A handoff wording.
 
 ### `car_control_B/lateral_controller_base.py`
 
-来源 SHA256：`31a209253270a694c818dcd5744f854c58f402d32311cc04c71fb2b946c03ff3`。
+来源 SHA256：`e642b43a48f0f736b151e2a31bc88ac928a90ab40269ad3b9d6b485f9c91cd66`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

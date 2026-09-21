@@ -64,6 +64,6 @@ main() -> 未声明返回类型
 
 ### `CARLA-Language-Benchmark/tools/normalize_carla_benchmark_schema_v1.py`
 
-来源 SHA256：`d8016fb3d433671d6f821138ff0ce6e897ecb6e98121f70f7bb68d40be14a7fb`。
+来源 SHA256：`e008e435fc9352c39e862772f24f7739ea5306c9a5b2aa54d4e98d2c0e5f397a`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

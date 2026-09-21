@@ -46,7 +46,7 @@ stop
 
 ### `stop.ps1`
 
-来源 SHA256：`2cd6ec643df0c1c5ed458df5c89864ad6617b4a2755baa896be13c7b52ccb24d`。
+来源 SHA256：`353fe0696536911f764af559ad831e9f4974f5369f737c433cb80bebf6fbfea3`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。
 

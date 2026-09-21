@@ -80,7 +80,7 @@ main() -> int
 
 ### `tools/validate_four_modal_dataset.py`
 
-来源 SHA256：`c0de9649bded0c376b8eb2ecd105edcc5dc940947ea3478e5f854150fee63dc1`。
+来源 SHA256：`8cd307996fce8c215c052a9535cbc59bfa69149c8793bb0c2e1e4baae03b13e8`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

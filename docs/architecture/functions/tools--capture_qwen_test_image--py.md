@@ -159,7 +159,7 @@ main() -> None
 
 ### `tools/capture_qwen_test_image.py`
 
-来源 SHA256：`c73a93c566d4c8b137046f2ec2bb769984169af8851afa63431e4389e7c1bfa7`。
+来源 SHA256：`e8fbc2a114f3315dd0cd58f717f8cc426f7d2b0568a22f1b061fae4fe97c2382`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

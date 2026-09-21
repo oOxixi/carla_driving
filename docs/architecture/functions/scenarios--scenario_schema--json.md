@@ -48,6 +48,6 @@ scenario_schema
 
 ### `scenarios/scenario_schema.json`
 
-来源 SHA256：`17a3c1cdbf6f0764d2e1841f8b8653d28c28adf830164a3d6df0f5d0371a8b3d`。
+来源 SHA256：`203817ae5c2b13dfb4ac7b87e912493cc1c8a7bca9b7c56af8abffe33b2b7414`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

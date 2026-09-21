@@ -122,7 +122,7 @@ _require_frozen_shape(*, max_steps: int, max_targets: int) -> None
 
 ### `challenge/distillation/a1_student.py`
 
-来源 SHA256：`8838ed1268253129bf3e16f5d85dc3e7b95da62fb64c07d1464c3f23faff30fb`。
+来源 SHA256：`0b2f26c3de511ac142acde9e5713067cc132bb0f3b58c5f849c0675e1196a60c`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

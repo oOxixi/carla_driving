@@ -54,6 +54,6 @@ B3 HIL / J6P independent measurement toolkit.
 
 ### `challenge/hil/__init__.py`
 
-来源 SHA256：`07b4f0d61090ac038fab83cf2507930976cf2df8d13fb6d60a0311f5123f4cb1`。
+来源 SHA256：`60fa814d119ffc85538df1a4bda5e9a6b3e63343054781b0e8795f5257684a7a`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

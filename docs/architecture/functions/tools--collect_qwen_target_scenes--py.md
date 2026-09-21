@@ -217,7 +217,7 @@ main() -> int
 
 ### `tools/collect_qwen_target_scenes.py`
 
-来源 SHA256：`b728b254971333d500ff6329ba1abecdd3b5dbea05ddae58f8a0f785e4946c0b`。
+来源 SHA256：`02c38c5c6c17d0958ab4e8180cf78c035af07b3a3edc7d6eaf195536ce26692e`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

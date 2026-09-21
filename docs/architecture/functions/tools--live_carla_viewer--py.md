@@ -221,7 +221,7 @@ main() -> None
 
 ### `tools/live_carla_viewer.py`
 
-来源 SHA256：`c9e24befde6e627f4ec7c39105fa46b1e5c1fc8580e0e7f9de1ec0d734e1b95c`。
+来源 SHA256：`c23cba367068116891ae69837e065da936ab68f3ceb07dca41f6262bd740658f`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

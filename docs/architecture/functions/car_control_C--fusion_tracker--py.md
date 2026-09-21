@@ -154,7 +154,7 @@ StableTargetTracker._risk_level(self, target: PerceptionTarget) -> str
 
 ### `car_control_C/fusion_tracker.py`
 
-来源 SHA256：`d22f8c5ab9efd9fa0459c6f145ab6f7e5e73d97c4152759983a1c8d1468c501d`。
+来源 SHA256：`34dd6f42313ebcb9685d6c790039bf25996f312b29270131f71984b01fb60085`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

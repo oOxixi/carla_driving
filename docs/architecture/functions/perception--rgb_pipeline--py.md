@@ -215,7 +215,7 @@ RGBPipeline._propagate(self, frame_id: int) -> None
 
 ### `perception/rgb_pipeline.py`
 
-来源 SHA256：`3117ad9c468d6766c8004b4cebb0d797a1746b034fca64eb5b3cd1397ba614fc`。
+来源 SHA256：`c242c9e10094fdc419264e1f7c31610d6466d04a6718db57a31c85d07146d67c`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

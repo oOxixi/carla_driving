@@ -72,6 +72,6 @@ main() -> None
 
 ### `integration/demo_offline.py`
 
-来源 SHA256：`291f48534bba2c87df103e37af455c1891ccc738f744f04ad68fd5986f7e7362`。
+来源 SHA256：`0e3276834da446e2f4eb625404c29747d966d8f2546b43bce70e550652e3369e`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

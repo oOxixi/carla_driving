@@ -97,7 +97,7 @@ DistanceCoverageTracker.update(self, x_m: float, y_m: float, *, speed_mps: float
 
 ### `integration/execution_stage.py`
 
-来源 SHA256：`9c9a0483a7ce9aff10798028d678ca1340376cb1c4a64582fbf199467f12cde5`。
+来源 SHA256：`9b2776d784310f4e34efa880b65023df975a0ea99cdd46651b0c8e411d43f5fb`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

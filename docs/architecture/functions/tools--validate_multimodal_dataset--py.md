@@ -125,7 +125,7 @@ main() -> int
 
 ### `tools/validate_multimodal_dataset.py`
 
-来源 SHA256：`0eb8d6b155bd0b3e9f7b3d971a516715b262f741092b76775670c5547d645cb7`。
+来源 SHA256：`e2cb74ad8cc9574a49329ef35931aa1ee3d4513c7e3c18ef6fd90d63d0d32eea`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

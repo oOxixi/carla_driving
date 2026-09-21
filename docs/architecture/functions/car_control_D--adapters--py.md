@@ -138,7 +138,7 @@ adapt_risk(obj: Any) -> RiskView
 
 ### `car_control_D/adapters.py`
 
-来源 SHA256：`a3c451fe22f10fdb7c511d02e09011d29f17114c2158f4eb425904634fcf7f6e`。
+来源 SHA256：`251f39f53bc721d4a493bec44a46ff1a0ca34fc8c9b7ec7d65fef7a9924345ee`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

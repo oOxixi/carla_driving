@@ -343,7 +343,7 @@ _parse_command(raw: object, index: int) -> ScheduledCommand
 
 ### `integration/scenario_execution.py`
 
-来源 SHA256：`ab1e5430d65459292fd8f6980f7a6953140cbddd1562e2c67ef786b952958bee`。
+来源 SHA256：`af5a3422416868b0acf70008336ed8fc5c8604159c1d99841d5d6dca06491b10`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

@@ -207,7 +207,7 @@ _normalized_box(value: object) -> tuple[float, float, float, float] | None
 
 ### `integration/qwen_remote_backend.py`
 
-来源 SHA256：`9a8ee3f95f04ee73be32a24c51279d7868deef24e3227dd1c3a19d116121e69c`。
+来源 SHA256：`ae267dcbe507f8fddbd3aa4765c533c0a74765759d0ec0e240425dc55126faba`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

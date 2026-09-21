@@ -206,7 +206,7 @@ LateralOutput.to_dict(self) -> Dict[str, Any]
 
 ### `car_control_B/schemas.py`
 
-来源 SHA256：`ec49c1ffdf9f76e0ac5cf367826b8e82c83dc0f9c2ea0f4a0aef9a2c6a1dcf93`。
+来源 SHA256：`10bbf17b66dea2ca56989fcc200d6a35c552be4acde57e4d5901c3821fecd0c3`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

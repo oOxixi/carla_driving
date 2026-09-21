@@ -101,7 +101,7 @@ main() -> int
 
 ### `tools/build_four_modal_cases_v2.py`
 
-来源 SHA256：`199f3a10071e304410417a2071f531631d9f911e13c72a0c3b8644217bd41ebf`。
+来源 SHA256：`5f4ca847b5b5e516b29e7bbc7a789c301ff9a403aae509753fa592b6d06ff1dd`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

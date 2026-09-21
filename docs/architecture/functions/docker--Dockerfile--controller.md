@@ -73,6 +73,6 @@ Dockerfile
 
 ### `docker/Dockerfile.controller`
 
-来源 SHA256：`f8855c41ac9941486ba2cbbe169f8ba9d01c55dab582b62b32543cfbbd502316`。
+来源 SHA256：`c0c0d0c274ad672cd228d08898f64b7cb3728b1025c13ac371554ae660cdc9eb`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

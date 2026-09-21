@@ -53,6 +53,6 @@ Compatibility entry point for the repository-wide benchmark audit.
 
 ### `CARLA-Language-Benchmark/tools/audit_global_benchmark_v1.py`
 
-来源 SHA256：`d779fd4cea4a5e8084d3a019f021f49836e3b601b8781f8fa28e197f3fa3e6c7`。
+来源 SHA256：`7c423ddcc1bf9f4acdd2dc3dfb012609d70bff6125151b3e99090621adece767`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

@@ -108,7 +108,7 @@ FuzzyCommandPolicy._safe_output(self, request: LongitudinalRequest, state: str, 
 
 ### `car_control_C/fuzzy_command_policy.py`
 
-来源 SHA256：`54301a413ee9b9c1dad25ebeb889586b11be594369dd606db15c6dd1c6e04ea4`。
+来源 SHA256：`c277076536d1dbad2cff109ab7add99f1ae9bc13c1868614b359b1d1131e7c66`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

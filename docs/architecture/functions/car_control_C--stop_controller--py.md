@@ -136,7 +136,7 @@ StopController.required_decel_mps2(self, speed_mps: float, distance_m: float | N
 
 ### `car_control_C/stop_controller.py`
 
-来源 SHA256：`83282b0926a85405b033f545fd1fa6cc573b0004a42439c7c61f9b7ebb9aa89f`。
+来源 SHA256：`04524f8b585141c155333e657b0093a2ca0bfdee70228df24c2383f0a058c465`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

@@ -66,7 +66,7 @@ main() -> None
 
 ### `tools/qwen_remote_smoke.py`
 
-来源 SHA256：`96dac3b770740bb08846f837afaa8b59ee9578e61a0f02b141f9b915a99fa3f9`。
+来源 SHA256：`3b072fb81a2752b91e6a1eebeda2c95c22ffa9f8f3ce211284a47b2372861a84`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。
 

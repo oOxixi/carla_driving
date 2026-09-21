@@ -58,6 +58,6 @@ generalization_matrix
 
 ### `config/generalization_matrix.json`
 
-来源 SHA256：`0ecfa645ee6cddf297906693bd74fc1275151a98b3d4b400a12c85b59120c32d`。
+来源 SHA256：`38f725fef717550ae36323c305725a62d535e18c9cc20f044196d1cb5c9b51db`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

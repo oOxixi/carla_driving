@@ -79,7 +79,7 @@ D needs a numeric lane id, unlike A's arbitrary string identifier.
 
 ### `integration/perception_bridge.py`
 
-来源 SHA256：`69e103880f4c0ca1674cf5cfc6ed124d1deed72a5583712d3ae9c49782b04857`。
+来源 SHA256：`71f6faad1dbe0b64674fe245b865c821489c909f0195eaac35432cca21742cef`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

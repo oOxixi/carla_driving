@@ -47,6 +47,6 @@ requirements-qwen-vllm
 
 ### `requirements-qwen-vllm.txt`
 
-来源 SHA256：`8a5cb53c0bd1998ad44aeaf80ae536eb419c19380bc69ff07be653782163e502`。
+来源 SHA256：`9052ebb6b3c221bed1bd8d933fcc27d9d0a4e53f11bf50cab1d260cce7718639`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

@@ -67,6 +67,6 @@ main() -> None
 
 ### `car_control_D/demo_fake_integration.py`
 
-来源 SHA256：`8edb00adeefbe27b4bc4a8ca56cdb44cd1b77a93e5b3c90af0d4b015ef155802`。
+来源 SHA256：`dcff0281d43ddc2e6a8c7a99a48a60abe297450bec008fce2b0bb14fe661ad23`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

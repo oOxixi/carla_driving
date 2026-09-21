@@ -50,7 +50,7 @@ decision_plan.schema
 
 ### `interfaces/decision_plan.schema.json`
 
-来源 SHA256：`d53a3024663729e39e9cb8d7d52cb18f976e58c0c689645b312d2fa04601a697`。
+来源 SHA256：`417bb0425b52d0b9c7dd2204fa6e03c286325e8f36a7b6c10146bb2b247ccf20`。
 
 
 Schema 字段与约束：$ref需解析到对应定义；required只表示本层必填，不能代替分支条件判断。

@@ -63,7 +63,7 @@ Role-A runtime infrastructure for the frozen second-group pipeline.
 
 ### `runtime/__init__.py`
 
-来源 SHA256：`00089491d8ec8ec1dbff5c6581d32b7a41853f22020d4638ac8538e2dd48318f`。
+来源 SHA256：`923e294c9ca542d4eae17f44e9a585a1663522086de007ee7063b4cc12d21893`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。
 

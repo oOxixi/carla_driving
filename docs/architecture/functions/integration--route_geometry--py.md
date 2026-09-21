@@ -197,7 +197,7 @@ evaluate_route_quality(points: Sequence[Point2D], requested_distance_m: float, *
 
 ### `integration/route_geometry.py`
 
-来源 SHA256：`650f6e0b87716a81de5a892bec5bb01701a543edbe5357be168ec1de2d4ef114`。
+来源 SHA256：`0cdc7ae63530badde4c6a8551e359d8827632342b409629631dbdf3b18649f4b`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

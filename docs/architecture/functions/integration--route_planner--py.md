@@ -416,7 +416,7 @@ Extract only an explicit route direction; all other commands go straight.
 
 ### `integration/route_planner.py`
 
-来源 SHA256：`1795f9f737718b88d276197ddc0d8cda62bd05bb7deab13e4e6a2ac278442855`。
+来源 SHA256：`d307b433d13e5dd6a1ba68c1dacf78ceb8f514fd56500c497d9a11ecbea47706`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

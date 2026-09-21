@@ -421,7 +421,7 @@ ScenarioExtensionRuntime.evaluate.add(key: str, passed: bool, actual: object, re
 
 ### `integration/scenario_extensions.py`
 
-来源 SHA256：`049e90321c41484094e48989561c9d1c93ed7eca4a808f421c2c7b9579b0d7bd`。
+来源 SHA256：`f6fa9be04c2111e33063d2346889b3aa2202a00641d494863ddba4b2da6f6dd9`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

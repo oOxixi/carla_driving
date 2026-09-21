@@ -198,7 +198,7 @@ _forbidden_paths(value: Any, path: str='<root>') -> list[str]
 
 ### `integration/qwen_scenario_monitor.py`
 
-来源 SHA256：`adeb5cc388cdf36003aeade1549e56db3bdb0e8a13485990773070140f6aa3b7`。
+来源 SHA256：`36d681ed43f25e871ab29adec01a86dbbcac2a26ebf9f1cede827c20ca925d23`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

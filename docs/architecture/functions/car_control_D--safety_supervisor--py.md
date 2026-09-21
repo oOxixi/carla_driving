@@ -179,7 +179,7 @@ SafetySupervisor.arbitrate.recover_route() -> SafetyDecision
 
 ### `car_control_D/safety_supervisor.py`
 
-来源 SHA256：`cef680cc734c4bca97f2aac0bfc9ba11af671113f2465252094bebdabbb95596`。
+来源 SHA256：`11fe9ca85123f81344f1ba1f0333309e5a205cea34372e398cda3c16d8d163a0`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

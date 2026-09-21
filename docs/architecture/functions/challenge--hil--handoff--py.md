@@ -120,6 +120,6 @@ load_handoff(path: str | Path) -> list[dict[str, Any]]
 
 ### `challenge/hil/handoff.py`
 
-来源 SHA256：`cadbf94c168482bdffd7a049ea459625cd1c6dee0d2c62aeaf6d7e24965b4bf7`。
+来源 SHA256：`c6a80c7362d882271ab024390d0b9f42260d861b08a4fb75284ccb564e69ee13`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

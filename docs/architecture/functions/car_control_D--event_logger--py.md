@@ -87,6 +87,6 @@ write_json(path: str | Path, record: Dict[str, Any]) -> None
 
 ### `car_control_D/event_logger.py`
 
-来源 SHA256：`7ea6dca5945ef2c558ddfbb796c15b9677165c60983d67025e6f0debdb99841b`。
+来源 SHA256：`cad15ce91d13c3bc8a6629bfeb99acc5eccfdfc27deece7829e8e5e18c7899be`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

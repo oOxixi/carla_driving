@@ -142,7 +142,7 @@ main() -> int
 
 ### `challenge/dataset/build_d2_training_pool.py`
 
-来源 SHA256：`18f74f0fc38088d58187427fbbdefdb1ced272f783f72062486985f3f9aac1c6`。
+来源 SHA256：`3c3e7e22ea7066339b9f4478f0b457c8680dcfe9c4882767938fbfa48eb24802`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

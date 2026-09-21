@@ -96,7 +96,7 @@ main() -> int
 
 ### `tools/run_qwen_vl_decision.py`
 
-来源 SHA256：`d8597a5e68248ee2ec635b8e0aa73650e5b7235942550b97b191cc9c8493a9fc`。
+来源 SHA256：`b6d29a3998c97cde7bb34c19437a1cf8e326feb42a9b8e9ae9d625ac0dab46aa`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

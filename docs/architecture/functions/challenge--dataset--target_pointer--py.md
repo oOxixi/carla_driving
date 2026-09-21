@@ -127,7 +127,7 @@ main() -> None
 
 ### `challenge/dataset/target_pointer.py`
 
-来源 SHA256：`57748670c14d0f0f9010ee2181e219f4102382a42aa567d2954b834322aaa000`。
+来源 SHA256：`28b2ace096876f1a7b66813846765612324164a2588fcbe996b14a6777d73738`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

@@ -348,7 +348,7 @@ BackgroundMonitor.summary.values(rows: list[dict[str, Any]], key: str) -> list[f
 
 ### `challenge/hil/samplers.py`
 
-来源 SHA256：`035e80c0e9a119d2e33ca748ebf3f5925426b533e9b7067ef24655e53c4d072f`。
+来源 SHA256：`e440b2ed7877e9ec950155d292e3394e569d9ee39be274241d2a51c6a533d7c1`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

@@ -55,6 +55,6 @@ Stable planner backends shared by Teacher and Student.
 
 ### `challenge/planner/__init__.py`
 
-来源 SHA256：`6fcc875b22ca81a355ff80ad0dde9e1ad7261696597b34a56edc0e55d10022ca`。
+来源 SHA256：`bb6ea2f93b28eea05d458364b0a6912da34ced6352eb4063d3f4f010f81b26f6`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

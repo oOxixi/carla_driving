@@ -56,6 +56,6 @@ requirements-cu132-build
 
 ### `docker/requirements-cu132-build.txt`
 
-来源 SHA256：`f5f78a074eca793dc61bc9beebd2d21cda8307d64c9c63ec67ae3e8ef33f4616`。
+来源 SHA256：`61216231d421cee965b64fe0a1c24f0bb53a8b94149beb7d938ace3538fc71f0`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

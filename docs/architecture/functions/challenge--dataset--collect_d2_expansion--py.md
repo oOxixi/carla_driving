@@ -149,7 +149,7 @@ main() -> 未声明返回类型
 
 ### `challenge/dataset/collect_d2_expansion.py`
 
-来源 SHA256：`37fb00511f1517b66bcc518d1e08ad37e689954824666e923175062f02b8d956`。
+来源 SHA256：`375e17bf86fbb1d7dd02b0d85509aff14d97ab06120e9251acdfe618454d1740`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

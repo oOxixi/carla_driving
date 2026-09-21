@@ -270,7 +270,7 @@ ConservativeSensorFusion._range_action(self, distance_m: float, ttc_s: float | N
 
 ### `car_control_C/safety_state.py`
 
-来源 SHA256：`d8dc7eae60d99cad885b3d655c9c66ad4cc27d7b11f44278efb08abbd463f2e1`。
+来源 SHA256：`e51e4859fb9715f89cd5f5a56c66bd98a4b3dbb455c4cff75c356fc8d4b3f3fb`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

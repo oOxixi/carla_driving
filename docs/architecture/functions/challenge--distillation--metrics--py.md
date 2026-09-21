@@ -120,7 +120,7 @@ _recall(predicted: Tensor, truth: Tensor) -> float
 
 ### `challenge/distillation/metrics.py`
 
-来源 SHA256：`ee4374378b8fc9b5648f01cab6d52b39895baa12a149549092e29767b92da3fa`。
+来源 SHA256：`dc25b486830cdc708792bc2b3c1ed0f1cbad3b6b181cbb04ed09b5ef1dd01d3d`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

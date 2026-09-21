@@ -134,7 +134,7 @@ main() -> int
 
 ### `tools/calibrate_whisper_confidence.py`
 
-来源 SHA256：`7bb1619a4830026dcb936fa4786eb98b0eb2cb876cb748edb6793460dcad7960`。
+来源 SHA256：`ad0272ef1c4b6bde6cffe25d8e0773414ee7a112a7d67943a2f5fe966a13dde0`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

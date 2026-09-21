@@ -53,6 +53,6 @@ Package-safe access to CARLA Language Benchmark tooling.
 
 ### `CARLA_Language_Benchmark/__init__.py`
 
-来源 SHA256：`245e1dca88ebb2c828182c22e00e67512c8238c8a921eab9121eddda42c8190d`。
+来源 SHA256：`f8931c4cca4cfe1e717a1ae77aeeb4cf9db21fb9ffc56259ed000e4c0fbc6af1`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

@@ -110,7 +110,7 @@ audit_control_sources(source_by_field: Mapping[str, str], *, strict_sensor_mode:
 
 ### `integration/perception_stage.py`
 
-来源 SHA256：`8c50761847d753f2587d55d6af6e31eb6dbf0edcd498a4646bc7ee1ceb249b93`。
+来源 SHA256：`3832192dc2d594f776e545fd5424481b125bd637a38a76581a2ae88337fd30d4`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

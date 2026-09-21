@@ -313,7 +313,7 @@ LiveVoiceSource._recognition_loop(self) -> None
 
 ### `integration/live_voice.py`
 
-来源 SHA256：`af3fe7fed596da3fb2ff3553955eb9510eb525b5ff5999fd88900b7f799f9688`。
+来源 SHA256：`bba789cb9edb887ca38652f02792c803f7866cb949c16fc7247dc308da7a5874`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

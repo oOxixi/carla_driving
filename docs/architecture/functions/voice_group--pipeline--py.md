@@ -127,6 +127,6 @@ t_audio_start_ns: 实时场景传入采音起始时刻(time.monotonic_ns)，更�
 
 ### `voice_group/pipeline.py`
 
-来源 SHA256：`2ba622d9270101dcf56ed276f018a90fdc8367f874c71304ff2e1a3236ead84b`。
+来源 SHA256：`79617349fd05b17153659bf28d5cb41c5785e38f50cb7c042cbbd0cd3a2e1e01`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

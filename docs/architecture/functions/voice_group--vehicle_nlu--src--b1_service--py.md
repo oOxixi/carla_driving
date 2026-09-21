@@ -88,7 +88,7 @@ B1 对外统一接口。
 
 ### `voice_group/vehicle_nlu/src/b1_service.py`
 
-来源 SHA256：`5650e5d60f07e0d49635432ca45090edb321b00fd90032b65effea9dd73e5254`。
+来源 SHA256：`1f85b0153b974b7146d257cb881d2efbf6e4e5234f4379ee965dcb095f399e1d`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

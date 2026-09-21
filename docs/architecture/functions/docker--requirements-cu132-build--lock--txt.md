@@ -86,6 +86,6 @@ requirements-cu132-build.lock
 
 ### `docker/requirements-cu132-build.lock.txt`
 
-来源 SHA256：`881f22358f6f8aa725623a0bb13901809910b07b57634ffa58c16195fa93a228`。
+来源 SHA256：`614b8f3b71223d7772f44a6f09516e8ebb3b17f9c3d7813a14cad518380b6287`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

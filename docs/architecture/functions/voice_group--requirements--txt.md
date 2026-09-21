@@ -53,6 +53,6 @@ requirements
 
 ### `voice_group/requirements.txt`
 
-来源 SHA256：`ff7aa5a78f8498f13d31bd83ca1616c631b3331c85656df08b1ac67d021713d4`。
+来源 SHA256：`9fd02a8b6bb00d283a01d5197666ba49ffb7ac5647932282fc434c35eb21aa83`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

@@ -123,7 +123,7 @@ main() -> int
 
 ### `challenge/dataset/build_d1_scenario_registry.py`
 
-来源 SHA256：`9957074386ce29cf09cce9f90d7a0e9c61fa4b802dfdafe7a7f5961a10a3893a`。
+来源 SHA256：`c8cf0e25b85825e4147ba5ae5d60a6429c9d0d9383674e5f6b690af4a1a96bde`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

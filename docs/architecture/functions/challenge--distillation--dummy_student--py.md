@@ -96,7 +96,7 @@ build_dummy_student(config: Mapping[str, Any] | None=None) -> DummyStudent
 
 ### `challenge/distillation/dummy_student.py`
 
-来源 SHA256：`5ceb93b568f812f48198b357f9fde5d78e90b21dc605126879801d7208767e00`。
+来源 SHA256：`4c2e7e4589d1a8d8c0f454d37e1e30af89288665f4b6c7fa61e722b211ace07f`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

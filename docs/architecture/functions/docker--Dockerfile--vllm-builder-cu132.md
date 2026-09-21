@@ -62,6 +62,6 @@ Dockerfile
 
 ### `docker/Dockerfile.vllm-builder-cu132`
 
-来源 SHA256：`bf613126d53bfe5325a6b2ed841bf0b0b8980fa553e389ed13485b4f7c9c7631`。
+来源 SHA256：`241fc6138ed606bbf1d4c0b089b06aa5e9d1a98ba42af0646f34c11879731558`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

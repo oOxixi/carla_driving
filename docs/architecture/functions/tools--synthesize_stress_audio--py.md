@@ -92,7 +92,7 @@ main() -> int
 
 ### `tools/synthesize_stress_audio.py`
 
-来源 SHA256：`670d7d2fb74175c26aeacb2f04306c47bbe19c92c9ddca002e180acc7fcb9a66`。
+来源 SHA256：`3bf0ef09963365ec767367114008723b8271ca70b66a4a49b81a3c316f7c6312`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

@@ -400,7 +400,7 @@ main(argv: Sequence[str] | None=None) -> int
 
 ### `challenge/hil/cli.py`
 
-来源 SHA256：`061018dae6e9741d60e1f05b4cd91561755e6665563cdd115c48a29cbdd82617`。
+来源 SHA256：`5feedabc06b981b0f8fd089fd043ef45f40b78f984c1993ea97229f8723ea2b5`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

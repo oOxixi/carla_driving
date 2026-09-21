@@ -53,6 +53,6 @@ Challenge-track Student planner package.
 
 ### `challenge/__init__.py`
 
-来源 SHA256：`e4db25eb52640829d30f97a8a38c7e4663c0a66a11c22721ce0951f21e6ccf47`。
+来源 SHA256：`8944e2ee85da8d968261932482188248810690fa192407ff702d5e78da2684a2`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

@@ -200,7 +200,7 @@ _weighted_multilabel_bce(logits: Tensor, targets: Tensor, sample_weight: Tensor)
 
 ### `challenge/distillation/losses.py`
 
-来源 SHA256：`258b1b65b78200e9a4d8cfc8208771d7b4e20f4bc9390e4c5e6184511fa290f8`。
+来源 SHA256：`8d514eb5df2f2cb30200e39697fbbaf5fe57323b663b4df69441a4178502e4ee`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

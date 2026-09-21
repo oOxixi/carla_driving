@@ -93,7 +93,7 @@ main() -> int
 
 ### `tools/verify_release_lock.py`
 
-来源 SHA256：`194dce3417501a43ddfe8ebd4f93f2754311c288026ade043b7bcd765486eb2d`。
+来源 SHA256：`08eff5605027d8f0ef548e890ccf0f110653cc69a6432440a4af3be86f778424`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

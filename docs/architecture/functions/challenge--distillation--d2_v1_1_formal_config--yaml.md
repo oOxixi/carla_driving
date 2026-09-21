@@ -105,6 +105,6 @@ d2_v1_1_formal_config
 
 ### `challenge/distillation/d2_v1_1_formal_config.yaml`
 
-来源 SHA256：`41b9420989eda0abc79b63182fbf4100651b4c9b87f0eb7b4c84b6a8e536d05c`。
+来源 SHA256：`b05d90f408ec59fe6fe08a80e0654a9dc0674231e82588a4e999e931d159e51e`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

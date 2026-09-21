@@ -117,7 +117,7 @@ resolve_qwen_profile(name: str | None) -> QwenModelProfile
 
 ### `integration/qwen_profiles.py`
 
-来源 SHA256：`8e65641153e3ab93448fd4d80cd3f658696aa6a0146035fb420c161fef0537bb`。
+来源 SHA256：`3ee053181287770affee80945813c1a151f81f07f064a66d95e2f6130a38c8b3`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

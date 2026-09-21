@@ -102,7 +102,7 @@ main() -> int
 
 ### `tools/build_basic_track_scorecard.py`
 
-来源 SHA256：`4ed0ba2ac1c1d8ce854924a3a6205b9e76ece56600f42287de36e82cf26d0851`。
+来源 SHA256：`ae388581682ca40ba6e60ba310b5b1153e5b89e8f22239d4a06c017df98e3bf7`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

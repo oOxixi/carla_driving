@@ -258,7 +258,7 @@ _torch() -> Any
 
 ### `challenge/distillation/dataset.py`
 
-来源 SHA256：`fb680b919ad01e281576d89f8699a5ceb4bf5db3c9354a87cc71dcd36d2fdaee`。
+来源 SHA256：`ece75291822715607f0b0ca49b65492c686722fce88ddbadb572cb6bc35589b1`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

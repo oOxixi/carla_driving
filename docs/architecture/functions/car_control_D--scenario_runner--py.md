@@ -83,6 +83,6 @@ ScenarioRunner.run(self, scenario_id: str, difficulty: str, fn: Callable[[], Dic
 
 ### `car_control_D/scenario_runner.py`
 
-来源 SHA256：`78c0c093c7cc95ab1e0c7539641eeda29a8284a4b85b2de78a35c86091c0dc8f`。
+来源 SHA256：`a01ebd8956d156a8a33e6c80b82fcb8727cf83d593ca405330e9aa9c21616a99`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

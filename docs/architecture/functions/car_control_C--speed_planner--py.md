@@ -136,7 +136,7 @@ Forget target history at the start of an independent episode.
 
 ### `car_control_C/speed_planner.py`
 
-来源 SHA256：`1b597b9f4017bd876494b2fc4d4e0eba59f192feafa1c80fc7ede336ef6b0fea`。
+来源 SHA256：`736e91a084a1b8d02a1018dc5b345a4c2573c67ac2990d4cb1d5404972d13bdc`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

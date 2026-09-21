@@ -64,6 +64,6 @@ main() -> int
 
 ### `tools/verify_voice_weights.py`
 
-来源 SHA256：`c8c6cbf6ce8514c91e612551af75a2f4c1fc314ed0a42b743046cc3a2f690dd9`。
+来源 SHA256：`2dbeb1a417a29286c5ecef14f31fba5d650c1942fb5a17da983e6ee239bde10a`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

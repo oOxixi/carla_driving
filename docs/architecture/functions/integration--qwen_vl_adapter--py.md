@@ -506,7 +506,7 @@ top_ratio=.04/bottom_ratio=.08，各有限范围[0,.5)且总和<.5；要求Pillo
 
 ### `integration/qwen_vl_adapter.py`
 
-来源 SHA256：`f071affaac2aee60fd3b27c4dff137aa8ea0e45f98a28e0a8fab4377e76b6c0b`。
+来源 SHA256：`57d03e867248896005caca3fd1bb55276c0a7e36b1944a93a8c27d0283180f22`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

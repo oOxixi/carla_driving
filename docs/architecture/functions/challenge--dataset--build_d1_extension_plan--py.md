@@ -113,7 +113,7 @@ main() -> 未声明返回类型
 
 ### `challenge/dataset/build_d1_extension_plan.py`
 
-来源 SHA256：`89096d7df9ed587188829173f7866e34c077d4495e04544834e765a8b3ef21e8`。
+来源 SHA256：`f0fb5e40122d6e17fc8eedf5b72a79e7e442555f472c5919190c98173321fe17`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

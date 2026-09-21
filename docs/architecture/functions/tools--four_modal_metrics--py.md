@@ -191,7 +191,7 @@ summarize_records.ratio(subset: list[dict[str, Any]], predicate: Callable[[dict[
 
 ### `tools/four_modal_metrics.py`
 
-来源 SHA256：`17dc5a4026ca5a12426f84a0508814ef6871c5aff6479ddc36c133c3e919fb4e`。
+来源 SHA256：`6f0ac44b85735e5fefb5280bdb3592d0a335785548c40897eb90e14498335771`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

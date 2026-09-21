@@ -180,7 +180,7 @@ compare_sources(reference: OutputSource, candidate: OutputSource, requests: Sequ
 
 ### `challenge/hil/consistency.py`
 
-来源 SHA256：`23caab1c54e17bb8bbe812e9ff0e11bab5e2a21c11bab979851b05f2a6ac75cd`。
+来源 SHA256：`a5429e73f64cab1f4fec83dbdf7a008115a52ccebb86cd140072d973a8d41412`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

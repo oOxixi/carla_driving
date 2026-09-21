@@ -110,7 +110,7 @@ SensorObjectTracker._best_match(self, detection: DetectedObject, available: set[
 
 ### `integration/object_tracker.py`
 
-来源 SHA256：`2611fc06b60900a5ab66d0e8edae936e353108a33d412d48588496278bb5ab0b`。
+来源 SHA256：`a5b699aac863dc833a56e0c71bcbfd768600f4356cd8692a052f769bef0db09f`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

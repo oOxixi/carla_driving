@@ -79,7 +79,7 @@ main() -> int
 
 ### `tools/benchmark_perception_pipeline.py`
 
-来源 SHA256：`8724c4367ca48477dc041f60c0006bcd322a63eb12c659690170637d7099fb57`。
+来源 SHA256：`b7f6912165aede022f8c4e07eb04b3c92c6c2aa0ac35b0acc125cde2c6f2df07`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

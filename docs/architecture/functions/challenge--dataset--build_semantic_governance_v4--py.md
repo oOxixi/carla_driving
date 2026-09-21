@@ -163,7 +163,7 @@ main() -> None
 
 ### `challenge/dataset/build_semantic_governance_v4.py`
 
-来源 SHA256：`70df51311d06ef5987c638525b08af59d44366701f3e86e34c96a66faee77704`。
+来源 SHA256：`688b3405225caec859cc378ff16a40241efcc378236aaf608ddc3ce19b454285`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

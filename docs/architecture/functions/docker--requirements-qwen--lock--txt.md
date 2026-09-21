@@ -237,6 +237,6 @@ requirements-qwen.lock
 
 ### `docker/requirements-qwen.lock.txt`
 
-来源 SHA256：`605b641698beaef386c77c2a2f0198d1729c0dd132b25edc38f4a3c21528c2d1`。
+来源 SHA256：`8182d5601ef7ec4e8b86122e97f9884c90394f1fafd494e19f704962ddfb57d3`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

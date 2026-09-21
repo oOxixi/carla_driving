@@ -105,7 +105,7 @@ SET_SPEED/SLOW_DOWN需速度，FOLLOW映SLOW_DOWN或KEEP_LANE；STOP/HOLD映STOP
 
 ### `integration/canonical_bridge.py`
 
-来源 SHA256：`f6b5ba676f6297ee0f9928ab5ce5ed180b978bcba04626b8091072c1a83c13e9`。
+来源 SHA256：`a41b64cb8e394866880c711e177282f002ace0f9d556b54f9e718faf92b62236`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

@@ -303,7 +303,7 @@ main() -> None
 
 ### `challenge/dataset/collector.py`
 
-来源 SHA256：`a357867e7bc92470dc60f9c1985f1f7bad262d5e2526bf0f3ab4a1791a81c3cc`。
+来源 SHA256：`792528d5564130ed8982f552e1207e3fa97eaaea3b992cdaaeea0370de002485`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

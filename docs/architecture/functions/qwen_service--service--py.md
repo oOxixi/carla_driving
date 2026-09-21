@@ -648,7 +648,7 @@ _planner_scene(request: Mapping[str, Any]) -> dict[str, Any]
 
 ### `qwen_service/service.py`
 
-来源 SHA256：`6a269ce74e44bfe970225b67b6669185a3ec0036999c600709bbaa9c2fa7196f`。
+来源 SHA256：`da46a5617c89b3ca149666b0dbdda3fc9a02a0afa3d06e2701fa3da74bbfd72a`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

@@ -129,7 +129,7 @@ DControlRuntime._command_view(command: Mapping[str, Any]) -> dict[str, Any]
 
 ### `car_control_D/control_runtime.py`
 
-来源 SHA256：`3dc4e6ebe9e1af1fafc62e61da1d35b2ac80dc9997e2c2549398a56e31d627f1`。
+来源 SHA256：`5ed964862ba1dc6e1b362e94556ca81978c6c87bc8466cc608946c9559a64dd2`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

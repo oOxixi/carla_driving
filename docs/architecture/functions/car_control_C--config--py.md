@@ -117,7 +117,7 @@ FuzzyCommandPolicyConfig.from_dict(cls, payload: object) -> 'FuzzyCommandPolicyC
 
 ### `car_control_C/config.py`
 
-来源 SHA256：`0522094c7807c485e850cd0c6efeb71559ad70416d4412829a3a960e6228c440`。
+来源 SHA256：`1a7dea242958860fcbdbb641dea1d2f9321202bc4e0a509a97ac7294fff4b956`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

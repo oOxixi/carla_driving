@@ -328,7 +328,7 @@ main() -> int
 
 ### `challenge/dataset/collect_d3_wave1.py`
 
-来源 SHA256：`05e1f9d0ff4525d1148db840d5dd44a675ad1ef3c777df42a94f2785c0ceb7a7`。
+来源 SHA256：`f86a76e7bdfe66030f99a474d5111c6cbc723c39d921ef53fd4d50a67c7c0df0`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

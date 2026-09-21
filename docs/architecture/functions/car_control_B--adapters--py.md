@@ -90,7 +90,7 @@ adapt_route_reference(reference: Any) -> RouteReference
 
 ### `car_control_B/adapters.py`
 
-来源 SHA256：`85d593dd7c5d432cbd46e5215fadaa6a0a03565f869c1b0ea79bec2607e5264e`。
+来源 SHA256：`1fc2bffe4e8cc9f84c8941977f1c9bfe0e8d3285d079288237a7412cf454ec5b`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

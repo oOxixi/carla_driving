@@ -134,7 +134,7 @@ summarize_rgb_pipeline(*, frame_id: int, detections: Iterable[RgbDetection], top
 
 ### `car_control_C/rgb_pipeline.py`
 
-来源 SHA256：`3a9264cf143e9ebb7d3ae9fbe912607d74dad76737782df02e410a9cead6979b`。
+来源 SHA256：`8b4d600b007f5a3aa09d15fe1696e4ebbc0700624433980b8d7caa3f8f99cefe`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

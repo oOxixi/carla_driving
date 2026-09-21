@@ -100,7 +100,7 @@ main() -> int
 
 ### `challenge/distillation/validate_a1_inputs.py`
 
-来源 SHA256：`661c534374e5f275f32782d4f2ddeecbf9d85fec54b4fbca7cb304001b7da6db`。
+来源 SHA256：`6bd7217d6c8d3b35ff546c82e8eb77f92bd640df263895f4ea4e076d9153c218`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

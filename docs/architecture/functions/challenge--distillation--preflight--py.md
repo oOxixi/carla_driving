@@ -206,7 +206,7 @@ main(argv: Sequence[str] | None=None) -> int
 
 ### `challenge/distillation/preflight.py`
 
-来源 SHA256：`d07f93f910cc4d83f0fc6827f4c3be6fe75532db30fbec55834df5b15da9fb23`。
+来源 SHA256：`f4e90110a514ece237560865c15c500de7c25f94446412d0447b79b2031e5d09`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

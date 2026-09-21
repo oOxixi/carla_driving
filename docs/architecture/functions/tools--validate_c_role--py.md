@@ -136,7 +136,7 @@ main() -> int
 
 ### `tools/validate_c_role.py`
 
-来源 SHA256：`cad39958c3279c4d4f0447b7ee369000a0aefd9e38f4957cb2bb0e2c40886de8`。
+来源 SHA256：`1334795803be3ba1f2c59eda58dc637410d0cbaea4aac03273f1c7e73ee0b099`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

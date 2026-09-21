@@ -68,6 +68,6 @@ main() -> None
 
 ### `tools/validate_control_generalization.py`
 
-来源 SHA256：`558d5ad69c152e0b84078729ff3f2f0cd69f6b295a854639ea8dafad6a32217a`。
+来源 SHA256：`660e0651f4e571ea431caa8f2c4e4219fc10fb374da65edc09bb66dbf9a633fa`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

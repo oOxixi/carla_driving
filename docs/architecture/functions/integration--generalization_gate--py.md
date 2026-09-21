@@ -202,7 +202,7 @@ Return an in-memory variant without changing semantic commands/oracles.
 
 ### `integration/generalization_gate.py`
 
-来源 SHA256：`e5ac61b9dc77ee444fec051b89b32ba0026255f6a28a12faab968aeb13a6320e`。
+来源 SHA256：`8aec79afe64e3d891f56446df85f5e05c154784d155b8f9d6ccbdc9df5f832b7`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

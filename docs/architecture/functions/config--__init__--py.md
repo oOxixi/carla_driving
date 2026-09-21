@@ -54,6 +54,6 @@ Versioned runtime configuration and validated strategy policies.
 
 ### `config/__init__.py`
 
-来源 SHA256：`a1ebfc396f537e6045749430b83817d10188d29eba398eb43aae1a7bbbb05a5a`。
+来源 SHA256：`23404be01675e6744cfa1eeae554a961c8557fca5a9aae822a0212b3c67ced34`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

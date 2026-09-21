@@ -77,7 +77,7 @@ check_runtime_contract(runtime: PlannerRuntime, requests: Sequence[Mapping[str, 
 
 ### `challenge/hil/contract.py`
 
-来源 SHA256：`886085fb903beb467fc5a36d16e92995b08384d52afde2ea8058d36f0347bf17`。
+来源 SHA256：`0b993acf127ea6c772ef0b71003e6022645374cc49ef1ff95fe133083c62d4ec`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

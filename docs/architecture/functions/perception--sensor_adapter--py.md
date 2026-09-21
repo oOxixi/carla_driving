@@ -332,7 +332,7 @@ SensorReplayer.__iter__(self) -> 未声明返回类型
 
 ### `perception/sensor_adapter.py`
 
-来源 SHA256：`3f1f8c5a52158a89f211c368df7afa314ea1e33a60e6b7e7eaf3a085abf45f86`。
+来源 SHA256：`8ae061ecdc6a99ff154e7b28dce410cb1fd4a5721072afd6f1e7749ac442c43a`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

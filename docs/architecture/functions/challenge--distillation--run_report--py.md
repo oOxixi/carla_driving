@@ -77,6 +77,6 @@ _format(value: object) -> str
 
 ### `challenge/distillation/run_report.py`
 
-来源 SHA256：`775969fb8d2446bb39deb613301159622f1d84d377dcd3477e16d5182a9b5020`。
+来源 SHA256：`ef24a95b6d9a679a71956edc791540553a9f8ad4f1699bd0c78a9723142e5df1`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

@@ -110,7 +110,7 @@ evaluate_expected.minimum(key: str, metric: str) -> None
 
 ### `integration/scenario_acceptance.py`
 
-来源 SHA256：`c978f8c2ee07e5270f2b621602206f2cc11c16a71fd299d2f5a40448ccbe9865`。
+来源 SHA256：`06794959dbb83a7ee0097dd0d7fec2c3b6516e065224b046fb5123f6467af564`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。
 

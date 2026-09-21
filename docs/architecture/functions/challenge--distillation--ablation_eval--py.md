@@ -99,7 +99,7 @@ main() -> int
 
 ### `challenge/distillation/ablation_eval.py`
 
-来源 SHA256：`f2d828ee9e0fe7108876ab397fc50a61d575cbe122e3b45182a09e23af47a552`。
+来源 SHA256：`aa22a8e9fd2b9faf6cf2ca1a9731a1f96c0f3a1daac29297ca2d67fb34a5a38c`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

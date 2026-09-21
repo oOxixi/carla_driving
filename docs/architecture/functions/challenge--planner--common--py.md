@@ -65,6 +65,6 @@ validation_scene(request: Mapping[str, Any]) -> dict[str, Any]
 
 ### `challenge/planner/common.py`
 
-来源 SHA256：`6a70bf679eb27e14185e6922648e54f441a7e49eca5e17db7ae6208a2f03cdc9`。
+来源 SHA256：`bc7c95bdf2adf8ebc244b9d0cf7d0cb44f3897b77aea6458a9bb5b0806b5c5e4`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

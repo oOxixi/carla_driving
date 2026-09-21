@@ -73,7 +73,7 @@ finite(name: str, value: object, *, minimum: float | None=None, maximum: float |
 
 ### `car_control_C/validation.py`
 
-来源 SHA256：`a6cff8e903cffdef393bb2fd38ec245474cbd3fc0b0ae914ab6fc5cd6204bb05`。
+来源 SHA256：`481fe98716e701f177cbfac8c948269eac6f349206a1c6cbeb8010d8cbb7ac18`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

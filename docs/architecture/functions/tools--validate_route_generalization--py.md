@@ -134,7 +134,7 @@ main() -> int
 
 ### `tools/validate_route_generalization.py`
 
-来源 SHA256：`c92da7b4fa5c943aafcfc83d812d6414780a7a18d7ed40bae864415a65ad83bc`。
+来源 SHA256：`adb90dd72b2b802c15ce821271f50af95addefe09d7c85d8246af595280e6d89`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

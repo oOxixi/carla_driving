@@ -262,7 +262,7 @@ main() -> int
 
 ### `tools/build_multimodal_dataset.py`
 
-来源 SHA256：`7fbcceba488998d98738e3d116534756fc849d16503ca040d6c6e54bf7c03d83`。
+来源 SHA256：`fa8bfbcf354e8fa4a7ac4b3e799402901a781071c8b65b3b39f8ddfd007afc3f`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

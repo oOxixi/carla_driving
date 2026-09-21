@@ -51,6 +51,6 @@ strategy_config
 
 ### `config/strategy_config.yaml`
 
-来源 SHA256：`56dcd0723e2dc63eba322028f6809a91fc954bb34b8ac917106dcc986e561584`。
+来源 SHA256：`455c0c826e43f62c11998b1b8acfb200cfa95e6d7f746dcf7c9ad28d89a5600f`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

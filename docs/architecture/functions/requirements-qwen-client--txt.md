@@ -46,6 +46,6 @@ requirements-qwen-client
 
 ### `requirements-qwen-client.txt`
 
-来源 SHA256：`b24f0f07b5fb518b8e085b3973e63bc2b7fde2f89d10781ccf8b3ad273c36e6b`。
+来源 SHA256：`d2dff516fa5a2ed5e54128360c5d169c23da7f4c7c5a88c9cc99d52a95f7fbf9`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

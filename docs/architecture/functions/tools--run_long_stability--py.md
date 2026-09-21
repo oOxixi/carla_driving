@@ -139,7 +139,7 @@ main() -> int
 
 ### `tools/run_long_stability.py`
 
-来源 SHA256：`c24ebdf7cfef1c6f81fb6f98d20758f2a7c71da8d67ab30c406a7a0b4128ef3c`。
+来源 SHA256：`e78b7e3886eff48105dbc490196141c629a12c851a6cf87ace302f323ea85505`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

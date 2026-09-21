@@ -210,7 +210,7 @@ main(argv: Sequence[str] | None=None, *, runner: CommandRunner=run_command) -> i
 
 ### `tools/repro_cli.py`
 
-来源 SHA256：`22ba76f6596b033d1205dab24a495e0ad71f52020da05e4c4b30164808733a5d`。
+来源 SHA256：`5c57bc46cd29f20e2d54e25406909c88ef0836be462907034e2b77a3f016f705`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

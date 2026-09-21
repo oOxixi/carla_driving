@@ -518,7 +518,7 @@ Acquire a frame or raise a fail-closed ``PerceptionAcquisitionError``.
 
 ### `integration/carla_perception.py`
 
-来源 SHA256：`c244a8018f973ffe9556d4b38a1b531c302b4f1ec88ee9f50d99d5e2683074a8`。
+来源 SHA256：`337d3e9dfb6c572c83fd480ba2edd1cba2e75dc34f82e271c9554e0869b758c8`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

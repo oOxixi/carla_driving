@@ -104,7 +104,7 @@ main() -> None
 
 ### `tools/evaluate_saved_asr_nlu.py`
 
-来源 SHA256：`4bf34346f73402344383b066ad3e3d658764d189ce8529eb94dc3e709b6df15f`。
+来源 SHA256：`6e9e2c9127f2ee83d810b402653ed90d29e0538c7039d62b2512c27d04eada5e`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

@@ -84,7 +84,7 @@ main() -> int
 
 ### `tools/probe_s2_route_anchor.py`
 
-来源 SHA256：`82a265de0ea504886e2d7800c04a9d8ad1e5ad172c6182589bc57f41a3327b81`。
+来源 SHA256：`eb4be74aa6ccd626ad94d15657884f463e3b6f1313b71220d50b46aa0b6b8b0a`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

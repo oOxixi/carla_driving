@@ -84,7 +84,7 @@ main(argv: list[str] | None=None) -> int
 
 ### `tools/replay_acceptance.py`
 
-来源 SHA256：`e048e2c5fd14551564c1a9564e9352f1459e7ee2f9ba67332ca3f401e83af907`。
+来源 SHA256：`e39a36fcdb147976130dbf00ab63fe176c7fb67635aae537b8097ece554d95c0`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

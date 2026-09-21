@@ -79,6 +79,6 @@ move_batch_to_device(batch: dict[str, Any], device: torch.device) -> dict[str, A
 
 ### `challenge/distillation/evaluate.py`
 
-来源 SHA256：`089089bdf88762b754de347f4c00c27004d3d9e907d63883f73925b23aaba256`。
+来源 SHA256：`38b6c9c26eedc12da7463a1b897ccd83dc37199928fa04c952fb9f544edf5004`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

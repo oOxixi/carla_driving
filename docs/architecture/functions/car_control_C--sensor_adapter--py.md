@@ -121,7 +121,7 @@ build_sensor_audit(*, frame_id: int, sim_time_s: float, stamps: Mapping[str, Sen
 
 ### `car_control_C/sensor_adapter.py`
 
-来源 SHA256：`6fdab658a360c8a31e0a51fad34046a221b3058405cdafc966a8ffc85fcd3b6b`。
+来源 SHA256：`43e5b99bd073a4f7b913c9dcc88e738201c3c0d9f50e847a27cc216d76a75834`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

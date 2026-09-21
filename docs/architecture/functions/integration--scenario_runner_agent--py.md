@@ -289,7 +289,7 @@ _finite(value: object, name: str, minimum: float) -> float
 
 ### `integration/scenario_runner_agent.py`
 
-来源 SHA256：`11152bd983e79c83cda96d9cc8d23abbe98389fd9cc9330b42fc821116d3d9a4`。
+来源 SHA256：`5d2cfb1ba0108e3eb77a699eeb9f867f92af7b551fb90a81b9badf392adc182e`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

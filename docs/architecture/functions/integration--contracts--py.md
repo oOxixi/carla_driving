@@ -168,7 +168,7 @@ Auditable output of one control frame; only ``final_control`` reaches CARLA.
 
 ### `integration/contracts.py`
 
-来源 SHA256：`7510d426fcc2b3deb82a3c09aad04a61231477fc7d7d0dc04dcec29e431fd3d0`。
+来源 SHA256：`93a58ab38400950a32988cec1cdb65a15433f3731d2eee05494f788485fce10c`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

@@ -200,7 +200,7 @@ main() -> int
 
 ### `tools/run_qwen_expanded_instruction_benchmark.py`
 
-来源 SHA256：`105109e9f042fd7f69602c02e3e689ab528d207ab986c4eb696faa169b17ae1e`。
+来源 SHA256：`0bbf749c0d16307bfc6a17135f5e445c3d9a5969b0f7d72c23c91f71d13c30dd`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

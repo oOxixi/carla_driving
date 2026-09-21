@@ -2,7 +2,7 @@
 
 当前逐入口精读进度见[顺序精读记录](SEQUENTIAL_REVIEW.md)。前述全量静态复核不代表20模块已全部消除占位说明。
 
-范围：`.worktrees/challenge-a1`，起始代码为 `fe1ba839`（已合入远端 `d09f4da2`），审计日期 2026-09-20。
+范围：原始精读工作树为 `.worktrees/challenge-a1`，起始代码为 `fe1ba839`；发布前已在 2026-09-21 将文档重放到 `team/challenge@155515cf` 并复核源码入口。逐文件“来源 SHA256”统一表示 Git blob 原始字节的 SHA256，不受 Windows/Linux checkout 换行转换影响。`inventory.json` 是 2026-09-20 的静态文件清单；目标分支之后新增的 B1–B4 及路线/横向控制专题文档由现有 `docs/README.md` 与 `docs/modules/README.md` 继续索引。
 本文档用于继续开发：记录真实执行关系、接口语义、历史兼容原因和改动联动。不把尚未跑过的训练、CARLA、J6P 功能标记为已验收。本轮只整理文档，没有修复业务实现或增加开发门禁。
 仓库根工作区及其他 worktree 不在此快照范围内。
 

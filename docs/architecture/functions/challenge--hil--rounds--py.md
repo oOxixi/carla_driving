@@ -127,7 +127,7 @@ run_rounds.emit(message: str) -> None
 
 ### `challenge/hil/rounds.py`
 
-来源 SHA256：`9eb1c5c004730c44a5bc59e69b927936d015fb05aa68a53f1bfce860c07621d0`。
+来源 SHA256：`ca9f945dcd4ee0b4d01c7f5759347feff55ae3a62a85dbafd59c942bb8f9b1f0`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

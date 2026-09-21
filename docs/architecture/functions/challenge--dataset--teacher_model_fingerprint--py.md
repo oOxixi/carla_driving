@@ -93,7 +93,7 @@ main() -> int
 
 ### `challenge/dataset/teacher_model_fingerprint.py`
 
-来源 SHA256：`6d91e00b18f13ac7771d4df074e2f9fa43c8a3f4560a1bcbf1df21c83bc0c9cf`。
+来源 SHA256：`8b3a6b35d5bedaff6fec1a6b9311de662eeb6c5560f3dd6a53efc0a8d1d80e44`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

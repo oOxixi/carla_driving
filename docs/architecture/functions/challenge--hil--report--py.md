@@ -124,7 +124,7 @@ build_report(*, run_id: str, identity: CandidateIdentity, capabilities: Mapping[
 
 ### `challenge/hil/report.py`
 
-来源 SHA256：`6c0923deaf49246a0f65d1aa1f72b79fcb3054f231e55fe4f666788af6531ea4`。
+来源 SHA256：`5917e2ba0a7c16f3b0f1c82dd651b89de0769bf837881fc37c6b8e600a86f4b7`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。
 

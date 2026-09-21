@@ -77,7 +77,7 @@ main() -> 未声明返回类型
 
 ### `tools/validate_scenarios.py`
 
-来源 SHA256：`10d676c7e49ccc466085fe3293d4420df34b1dce1fe55d298e87cf3c3cc0e030`。
+来源 SHA256：`2073703287dc2225365265b3459c2f7359dcc07a450fbb97b9e7f30b37c1f2a7`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

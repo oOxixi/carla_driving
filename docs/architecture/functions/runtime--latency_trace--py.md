@@ -229,7 +229,7 @@ records中每项需trace_id/path_type；按STAGES顺序取timestamps_ns并int转
 
 ### `runtime/latency_trace.py`
 
-来源 SHA256：`6c1ff66170246619c27f32a882803dc43ba9693182beb49bf6891a039cb63686`。
+来源 SHA256：`e5123cbd98fa24b8d75e01967b918b929dc3f421c79a7adcfac2291a4b1b59a4`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

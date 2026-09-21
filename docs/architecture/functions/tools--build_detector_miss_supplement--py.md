@@ -79,7 +79,7 @@ main() -> int
 
 ### `tools/build_detector_miss_supplement.py`
 
-来源 SHA256：`df1ab8055c9bb4c7bf5c1d11f1c461f4b4917daa8490d65f2765f898697c936b`。
+来源 SHA256：`094898f5ffc994ae1202d043d255c7edd8cd589969aaa20ee96812044c4e4baf`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

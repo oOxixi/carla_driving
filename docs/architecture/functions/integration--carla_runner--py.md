@@ -1857,7 +1857,7 @@ main() -> None
 
 ### `integration/carla_runner.py`
 
-来源 SHA256：`6d91a753ba9b0938fb6e243406a26a00bdd5f6cb70063dc28e6d90e44afc72c4`。
+来源 SHA256：`102e4f28c0ac32445fe7ad75f184ccf6e9b986406770b74bcba9bbb9477d913a`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

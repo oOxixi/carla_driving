@@ -179,7 +179,7 @@ identity_from_artifact(artifact: str | Path, *, model_id: str=UNRESOLVED, config
 
 ### `challenge/hil/identity.py`
 
-来源 SHA256：`ad2362bfacfe7c484da977364af72841e27eb7b50830ee81ee1274ae9193f199`。
+来源 SHA256：`fec144fc4f6e5f76ead2fa148949a43ab6dae3d523689ca6000b4c2c4da926fa`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

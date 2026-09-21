@@ -81,7 +81,7 @@ main() -> int
 
 ### `tools/verify_wheelhouse_lock.py`
 
-来源 SHA256：`38b56ee211b8b1348070183294721b530b4775ab78b28587dc8e3431af75b022`。
+来源 SHA256：`6fac93c45f2ee98e19fea91becd8bac9726df7bf4c79adce675db7082ceecc90`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

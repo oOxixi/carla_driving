@@ -81,7 +81,7 @@ main() -> 未声明返回类型
 
 ### `challenge/runtime/student_x86.py`
 
-来源 SHA256：`b6100456bed975c17522eb118095e2a60cb04e37e93e5cf6893045a1eeae1dc6`。
+来源 SHA256：`15f5f6ec1dfd98d3579005c0078fb55871c1b1941d70e29acc7228177c6c0b07`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

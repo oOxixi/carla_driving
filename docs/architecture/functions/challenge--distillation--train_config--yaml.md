@@ -108,6 +108,6 @@ train_config
 
 ### `challenge/distillation/train_config.yaml`
 
-来源 SHA256：`c3d46170df9008f2beb684d6b9ea918a8dc7fe08935cc4df1e59bfb83caf96af`。
+来源 SHA256：`409badb1ffb5143caae8649f17963f1ad30e02b8df985cff7d8e177f48a0276e`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

@@ -82,7 +82,7 @@ Return runtime evidence only for the unique complete ready launch block.
 
 ### `tools/verify_qwen_kernel.py`
 
-来源 SHA256：`e5b74bab0873e4470bd2138fe6ae1b767cb454afd8dda8f2b4275260cc41cad2`。
+来源 SHA256：`0327945c2589b9ef9f2bcb74857d2e04216f05c9b062984d0e4402240d061077`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

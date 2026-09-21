@@ -160,7 +160,7 @@ _summary(raw: Any) -> str
 
 ### `integration/qwen_plan_adapter.py`
 
-来源 SHA256：`ea8087cd7d502053b63a2c538b903208551543c55ea895324f544a4cf3f2ca4e`。
+来源 SHA256：`b7be19769f4be42877a3262a59bf0d3969af2c52e164e1e8613e50e515bbce7e`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

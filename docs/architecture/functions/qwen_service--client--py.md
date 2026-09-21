@@ -129,7 +129,7 @@ QwenServiceClient.__call__(self, request: Mapping[str, Any]) -> dict[str, Any]
 
 ### `qwen_service/client.py`
 
-来源 SHA256：`1ba76aaf5a2f7109c1b8c2587e64b2564f87c7f7c7347364cf6e022245ca8bde`。
+来源 SHA256：`f517ba029b9138369bb537b94d3fc833ca265e17acdaafbe152275b1446ee58b`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

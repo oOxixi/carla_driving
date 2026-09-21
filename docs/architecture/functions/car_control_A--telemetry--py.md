@@ -146,7 +146,7 @@ LatencyTrace.append_jsonl(self, path: str | Path, *, extra: Mapping[str, object]
 
 ### `car_control_A/telemetry.py`
 
-来源 SHA256：`a3f50b71343baa631bdc269b3aca4a57b38c6eccbc37b31084f2f08c72bf1951`。
+来源 SHA256：`0284d8760b8eb1a4a95f006efb5f7a6340fe66e7d67f24e51fc6c2a31661045f`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

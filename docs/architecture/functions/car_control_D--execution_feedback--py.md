@@ -218,7 +218,7 @@ ExecutionFeedbackTracker._now(self, value: int | None) -> int
 
 ### `car_control_D/execution_feedback.py`
 
-来源 SHA256：`08947a0b8bc9b48781a954294417bb7ca227df5be56ae9959a6cbee70897b35b`。
+来源 SHA256：`fe2f8d50c26cf1c57f35d5e5521018764f93b93a39a86252e0e64aead0c63f75`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

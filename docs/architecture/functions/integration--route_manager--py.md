@@ -895,7 +895,7 @@ RouteManager._adjacent_lane(waypoint: Any, side: str) -> Any | None
 
 ### `integration/route_manager.py`
 
-来源 SHA256：`ba00b3fc331f8221b92573dfedce58dc3624e48fdbd3d2696ed14732f8655176`。
+来源 SHA256：`b224ff2111f5b7a64f750deff29fed8e04fc37226e76bc1d820214b8c0ba24f6`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

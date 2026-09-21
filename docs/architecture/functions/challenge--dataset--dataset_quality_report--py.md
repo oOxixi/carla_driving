@@ -161,7 +161,7 @@ main() -> None
 
 ### `challenge/dataset/dataset_quality_report.py`
 
-来源 SHA256：`a7751982c65d631eacbd8c7f854997e76e7d67c034af504d13718cb7b6e9a3ba`。
+来源 SHA256：`acb02a7c528c1828f26a37f345108aa911cb3ea63b25785406a417fd53faf38d`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

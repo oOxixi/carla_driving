@@ -229,7 +229,7 @@ main() -> int
 
 ### `tools/run_qwen_carla_closed_loop.py`
 
-来源 SHA256：`0ad89c5aec4789c7df262809d5d22af7f256ec8bc4dd1c80ceae4fa6cfde299c`。
+来源 SHA256：`de2444af9cf37d412464037bcc38d15cad61ff8fbbd21b3b906a2ce0054f5833`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

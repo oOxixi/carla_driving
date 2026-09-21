@@ -85,7 +85,7 @@ PlannerBackend.health(self) -> tuple[bool, str]
 
 ### `challenge/planner/backend.py`
 
-来源 SHA256：`ecb492b358c1deef67a7a9583b112f2f1a89ec25c8f4f9f18ce79c51d803226d`。
+来源 SHA256：`e8efd847141550a8d03b0a4fceba4809c9dce575756b29ce21eb9a50e05b7270`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

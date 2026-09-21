@@ -43,6 +43,6 @@ Notebook 包含 9 个单元；运行顺序、环境与代码见原文件。单�
 
 ### `notebooks/voice_to_carla_runbook.ipynb`
 
-来源 SHA256：`b2a35ec62262e0fc86cea3f8a22a9e8f28f8e603b5b793bc69c91ded5d4c10b6`。
+来源 SHA256：`24acf7726779dd2371c6a7b586399bde2fdd3473fa2bed432daea9d0ce5033ac`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

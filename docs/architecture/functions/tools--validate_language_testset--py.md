@@ -90,7 +90,7 @@ main() -> int
 
 ### `tools/validate_language_testset.py`
 
-来源 SHA256：`6a1dc057d1fc78362b6c0b18f698e0118500dd2c2cde303ebf14dc04b8e8c869`。
+来源 SHA256：`3247988c7b4a837eb5aea0c3fa870731c3e7055618c7e7260bb906963b0018b6`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

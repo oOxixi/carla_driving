@@ -74,7 +74,7 @@ normalize_text(text: str) -> str
 
 ### `voice_group/vehicle_nlu/src/normalizer.py`
 
-来源 SHA256：`1c19a88e5cfa95be99f8a3493dae8c8c3dcbc371e572ebd17e587553817e4956`。
+来源 SHA256：`b0ef1813fcda938542a9949b95a76e0ead277e505d54e3815b6f3c1df4763df4`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

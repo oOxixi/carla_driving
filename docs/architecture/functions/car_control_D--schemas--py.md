@@ -232,7 +232,7 @@ ScenarioResult.to_dict(self) -> Dict[str, Any]
 
 ### `car_control_D/schemas.py`
 
-来源 SHA256：`b8a0250f8cb9c214ea3e6feeff041df1a4059636f2576c30006f1bde59c29f3b`。
+来源 SHA256：`a4bd560ee89db4744cceef73ce98cb007ce3c849d0d795e0842d2a3103b54105`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

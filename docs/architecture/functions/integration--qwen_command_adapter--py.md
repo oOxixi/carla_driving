@@ -90,7 +90,7 @@ Build the frozen A-runtime envelope from a validated Qwen decision.
 
 ### `integration/qwen_command_adapter.py`
 
-来源 SHA256：`9eb2f56541ca864f1673a5547acec9a6a4fbe6b9c50b1583389a124db278a01c`。
+来源 SHA256：`8001c8042be543dfae846b60ece228aafbd8fdb32d78ef626decb6cbfcd64284`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

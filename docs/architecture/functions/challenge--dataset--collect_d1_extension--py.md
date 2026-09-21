@@ -167,7 +167,7 @@ main.group_key_of(row) -> 未声明返回类型
 
 ### `challenge/dataset/collect_d1_extension.py`
 
-来源 SHA256：`f7c937b0aca7078f1e91946a64bfef19ff55d4babc84125727267951e85ccd41`。
+来源 SHA256：`c85b9f8b5088fd077c708b9593aefaeeb2dc98d2b94ce5aaa94c1a366188bfd1`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

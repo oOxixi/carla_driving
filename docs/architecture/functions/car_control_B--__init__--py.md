@@ -56,6 +56,6 @@ __init__
 
 ### `car_control_B/__init__.py`
 
-来源 SHA256：`8b4e0a3558d59b90c8c736defd13f85676e417de1d9fd68d45ec8af162b1edc7`。
+来源 SHA256：`1998231866fa76b206564b53ba247ec34866c1601c0114ac65dccfbde8b3114c`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

@@ -185,7 +185,7 @@ main() -> None
 
 ### `qwen_service/server.py`
 
-来源 SHA256：`20cc84fd16b1f2eeccf84f6435b4e8229c7f647c46c75be2d3cd1c1a53959554`。
+来源 SHA256：`02edd7cb10e3a3c960318f24c93084846b4bf92e8330960d84b71cf6cc47afc9`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

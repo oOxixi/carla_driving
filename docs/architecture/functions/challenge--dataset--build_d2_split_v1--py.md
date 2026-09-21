@@ -192,7 +192,7 @@ main() -> None
 
 ### `challenge/dataset/build_d2_split_v1.py`
 
-来源 SHA256：`72e5d6efaba228815ee0c12f947fbd4f01d3e46841cd68e02d936b2722212d8d`。
+来源 SHA256：`4d10773fe145a9de997772441bc521c9d58adf80b6ab29fe6293542483e1b3dc`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

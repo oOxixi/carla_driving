@@ -85,7 +85,7 @@ main(argv: Sequence[str] | None=None) -> int
 
 ### `challenge/distillation/promote.py`
 
-来源 SHA256：`362e6522308225eec5522254c2ed140e61de71c24cec8e1a28bf72d269c6b91a`。
+来源 SHA256：`d844625cc5459e32be47fa2f52623b3a1af2d3d2f42e86bcf02b37d0f129606b`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

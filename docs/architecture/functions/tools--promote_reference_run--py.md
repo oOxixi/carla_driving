@@ -96,7 +96,7 @@ main() -> int
 
 ### `tools/promote_reference_run.py`
 
-来源 SHA256：`23a0f78c793e6780fcd27442d97f0990896a65bcbb1199bd648416c0a751a243`。
+来源 SHA256：`351e7bcfa35c0534620c0919aeb83f4f04547c501131622a22d5ee3d66b21bfe`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

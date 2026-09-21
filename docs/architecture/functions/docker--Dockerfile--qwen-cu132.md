@@ -61,6 +61,6 @@ Dockerfile
 
 ### `docker/Dockerfile.qwen-cu132`
 
-来源 SHA256：`6be72e12049cdb943809429e4a65aa14315ff8380358248384635b1a1eb5b6bf`。
+来源 SHA256：`2b7336302c10a6b09b8e42059cae701d3366bbd311bc1b66aac7a625fb8da9aa`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

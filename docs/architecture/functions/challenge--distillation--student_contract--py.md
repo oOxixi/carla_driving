@@ -97,7 +97,7 @@ Call either the frozen A1 four-input model or the D1 mapping-style dummy.
 
 ### `challenge/distillation/student_contract.py`
 
-来源 SHA256：`b26b01307b2d19a33319834b5c5392eecf99b863ce0a406bdbaaaedb6e1afa47`。
+来源 SHA256：`2d78bcedf7ce387aede71e0fbcb1646208d4352f15e3cb821eb9f118bfaf2579`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

@@ -217,7 +217,7 @@ main() -> int
 
 ### `tools/run_group1_voice_text_regression.py`
 
-来源 SHA256：`ab6d1ee2c5a0bc599c4dd2d9af41a3a7f7b50bdc2cbc207bacdd2c23f4065ccb`。
+来源 SHA256：`31ec663331a1ad1adc0dc95ec02271d14856da0190da89f68ee8e8efa7ecd0af`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

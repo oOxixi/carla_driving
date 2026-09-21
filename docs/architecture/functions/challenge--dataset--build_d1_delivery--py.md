@@ -184,7 +184,7 @@ main() -> int
 
 ### `challenge/dataset/build_d1_delivery.py`
 
-来源 SHA256：`b46dd25a6ef5c8fa646f2ac80b20a988efda1a7a3650d72f7971ffd042fb4db4`。
+来源 SHA256：`b7d70ae30e26394f64872bd5bf175ca38489773f95e53837bad19da879000a1d`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

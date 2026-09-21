@@ -342,7 +342,7 @@ _optional_timestamp_lenient(data: Mapping[str, object], name: str) -> int | None
 
 ### `integration/voice_adapter.py`
 
-来源 SHA256：`d92c880f3c8a5d01b8ba200ded5652b37a07803927b2a55e85c64e2dcd13c6c8`。
+来源 SHA256：`b543f58a3dfaea27cd30ee217710c1ff3ea8607216c53e7b7759635174a3e782`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

@@ -46,6 +46,6 @@ requirements-whisper-gpu-windows
 
 ### `voice_group/requirements-whisper-gpu-windows.txt`
 
-来源 SHA256：`ed91cf9fca873c2cca0aef84ac8e7634b2fe2cd8a402cbff36976b33200bcdd8`。
+来源 SHA256：`423794f2a1e03d846a52a5a25c52ba40fe9f31827eac9a61189179e659ab97fa`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

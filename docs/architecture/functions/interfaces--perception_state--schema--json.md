@@ -50,7 +50,7 @@ perception_state.schema
 
 ### `interfaces/perception_state.schema.json`
 
-来源 SHA256：`a4cc34630735cffaf25dce28ff9fa929cd48c5421bf28f8369caf94fcda7897b`。
+来源 SHA256：`e3d3ecb439b6f355e228a58c406aa80e28adf8601114066e6cb25b2886b56e16`。
 
 
 Schema 字段与约束：$ref需解析到对应定义；required只表示本层必填，不能代替分支条件判断。

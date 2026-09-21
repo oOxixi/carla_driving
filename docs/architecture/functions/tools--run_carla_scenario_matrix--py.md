@@ -99,7 +99,7 @@ main() -> int
 
 ### `tools/run_carla_scenario_matrix.py`
 
-来源 SHA256：`245552fa4b660c02622740d2345e1cdb44244e4d0dc8c5c6dc97b5b91cfad7f9`。
+来源 SHA256：`4fc299c1ed3b82fc3d399cd8aa27f06c43fde5cdaad475fa67fd28de3b72163e`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

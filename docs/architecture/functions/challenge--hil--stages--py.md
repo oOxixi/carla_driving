@@ -289,7 +289,7 @@ LatencyCollector._outcome_counts(self) -> dict[str, int]
 
 ### `challenge/hil/stages.py`
 
-来源 SHA256：`397eddc12f867e3f6c680d633df519634f8c0db0e18deb475afd77ace1c5d9a6`。
+来源 SHA256：`b7ff6483f80369afffa63c427b5e69a78955c3da7afeb61fe7f89ce42d389e43`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

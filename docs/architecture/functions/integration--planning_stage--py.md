@@ -75,7 +75,7 @@ prepare_scenario_route(spec: ScenarioSpec, route_anchor: Any, target_speed_mps: 
 
 ### `integration/planning_stage.py`
 
-来源 SHA256：`5eb57c94e534d419dd2fe17a2c6d0fa8672ffba239083cbd94d9f9083d624529`。
+来源 SHA256：`d8b4bdb1f4927837b1725ea71b3886714618bb25c19c9647234fbce7279c32f5`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

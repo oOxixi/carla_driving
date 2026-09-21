@@ -126,7 +126,7 @@ main() -> int
 
 ### `challenge/distillation/shortcut_probe.py`
 
-来源 SHA256：`096d9ebf1c427223901381843489293d02185c8f94450f6f90293f179456e651`。
+来源 SHA256：`2c1b27087321495e33c224bea5cfb32ff24bee4fea28f55a5cf9ef259ad2f519`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

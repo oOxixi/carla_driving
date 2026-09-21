@@ -336,7 +336,7 @@ write_replay_report(report: ReplayReport, path: str | Path) -> None
 
 ### `integration/offline_replay.py`
 
-来源 SHA256：`6e84d75b2482e601909375b89738f26f24b0488f0d5edd1d90939a81b5bc10ee`。
+来源 SHA256：`84cc29af18c9cd9c03978596fbf13ae26dae43cca8a3ad565aef7b5ee565d1a2`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

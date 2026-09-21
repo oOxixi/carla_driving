@@ -331,7 +331,7 @@ stopping the vehicle inside the intersection.
 
 ### `integration/runtime_loop.py`
 
-来源 SHA256：`16bf2f58765df9cc8332faad43bcebdd114b8e4611b2a84d2b9f2a67a71c87c3`。
+来源 SHA256：`70ce57169a76b7edc6e58d8fd09ed6c94d4df4a670aa8eab6a92c0b3c70b3aaa`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

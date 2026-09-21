@@ -442,7 +442,7 @@ ScenarioEvidenceRecorder._latency_origin_ns(command_record: Mapping[str, Any]) -
 
 ### `integration/scenario_evidence.py`
 
-来源 SHA256：`fdda95ac59bb7644ac2fc068b57801d99762f0d829bbe44641fcc31d983e3ff8`。
+来源 SHA256：`b4920a45a1526990beaf5ce9c53ef2e2dad9595b4bbdcf6d64d5d51267c9ac03`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

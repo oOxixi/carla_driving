@@ -90,7 +90,7 @@ main() -> int
 
 ### `tools/benchmark_control_runtime.py`
 
-来源 SHA256：`0c1cc646a4aef1ed36184c25dc84daef87774b2e6d8094fb602d73cba1778266`。
+来源 SHA256：`4f6bc5a1fbac140934cd77d553053b2d113db7bce3ff6338ba14890955c47407`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

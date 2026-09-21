@@ -52,6 +52,6 @@ requirements
 
 ### `challenge/hil/requirements.txt`
 
-来源 SHA256：`c6d2e000a9719f96774375e3454c30ca61400a0c2299899de1dc59ec6ba514f5`。
+来源 SHA256：`2e5ddc1bb45cdb071f93db62adc6f8a799a363920be2cd8aaa36f3bf6f322908`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

@@ -193,7 +193,7 @@ _copy_step(raw: Mapping[str, Any]) -> CompiledPlanStep
 
 ### `runtime/plan_compiler.py`
 
-来源 SHA256：`c7a7f3f5cacc003c30bbdf9a651b45081c4b5ba01ff611553f79e43bcb2c7a40`。
+来源 SHA256：`4ee22cfd30a6b6bf9cdcf2bb899d76e6d4c7f64c81fac9b8349df0fec02aa16b`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

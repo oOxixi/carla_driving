@@ -50,6 +50,6 @@ requirements-qwen
 
 ### `requirements-qwen.txt`
 
-来源 SHA256：`a1db2f44c5ccb4a2ccf1e164fe433911cb1ae7fe7d3ae5214ba51482493455ef`。
+来源 SHA256：`8524945e0af1e9be2bd5d306e45b4d2ced725a89b3c7bb4b3efcec1f3b6ba222`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

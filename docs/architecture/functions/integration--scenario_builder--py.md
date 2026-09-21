@@ -288,7 +288,7 @@ Fail before CARLA mutation if an actor lies outside the route contract.
 
 ### `integration/scenario_builder.py`
 
-来源 SHA256：`f5b0a45ddbfc8ec614729f4130321f8b402d20745dd124c3692781c738399047`。
+来源 SHA256：`c4e4e8c06cfa2e446f5b64c513a00637b6ae7859526f1a1a508eb91b743537ec`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

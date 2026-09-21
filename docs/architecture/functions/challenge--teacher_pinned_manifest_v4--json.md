@@ -57,6 +57,6 @@ teacher_pinned_manifest_v4
 
 ### `challenge/teacher_pinned_manifest_v4.json`
 
-来源 SHA256：`852e4f4a7118d7638a2646e04dd1a6f5c25276973f897de2380a90fbd7521654`。
+来源 SHA256：`82aef8a13649cffdd17c9cd64003e3967448773548c2b5fcb15fd3b0d5b08220`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

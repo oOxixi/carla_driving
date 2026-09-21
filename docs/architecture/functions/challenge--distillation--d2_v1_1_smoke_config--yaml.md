@@ -105,6 +105,6 @@ d2_v1_1_smoke_config
 
 ### `challenge/distillation/d2_v1_1_smoke_config.yaml`
 
-来源 SHA256：`79459d56f578d5a46dabec28c79f6db7d82e9ca7a0acc7d5e30bc82c94cff0e6`。
+来源 SHA256：`d69e95e2967de7a9c18827e96fb6b2e26c44464748972d2643858a8f9973db44`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

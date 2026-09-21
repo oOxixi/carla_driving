@@ -48,7 +48,7 @@ export-images
 
 ### `docker/scripts/export-images.ps1`
 
-来源 SHA256：`b245e8cda65f726d8b88c5f2af92de806901ac6f08005d6c279039fd04fdded1`。
+来源 SHA256：`0fd61f45732bc91fc4088b0de2f1669742487b734e9791ce6bb4db4a51bb951f`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。
 

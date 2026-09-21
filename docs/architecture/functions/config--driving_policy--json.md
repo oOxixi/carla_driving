@@ -46,6 +46,6 @@ driving_policy
 
 ### `config/driving_policy.json`
 
-来源 SHA256：`9918fcfbf9c8c8dfd96917f1ab47f65921e7e07a548c6a685578110c3de4ec27`。
+来源 SHA256：`a29645b226206273a78cd40a24fdc329b11679154c9657b9a2be7ec681f2d9da`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

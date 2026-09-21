@@ -128,7 +128,7 @@ main() -> None
 
 ### `tools/validate_s3_member4_evidence.py`
 
-来源 SHA256：`9764bb845fdd1ba44719fb80892edd383d35be3b4583d36f13570fdba69e26ed`。
+来源 SHA256：`0c2e720fef57bfe6d5911c7020da2bcaf0235003acd703a3c42f9427b703a11a`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

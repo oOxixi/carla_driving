@@ -122,7 +122,7 @@ main() -> int
 
 ### `tools/run_qwen_batch_benchmark.py`
 
-来源 SHA256：`c25537a9f480a8abd0518f2613e8ca319a175831476bb00eb3819bdd00dee8a7`。
+来源 SHA256：`f4df7287f2b1fee0f6a1cff88194a26fc642745949bc6f192593b74a2f048525`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

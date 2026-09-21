@@ -86,7 +86,7 @@ main() -> 未声明返回类型
 
 ### `CARLA-Language-Benchmark/tools/merge_carla_language_benchmark_v1.py`
 
-来源 SHA256：`c221401dd2edb763e92c22abfb747b90cac56b2a4fa991a66c4479b805a1e781`。
+来源 SHA256：`75f9326b0eb8a6ccefb9fa66ab72f13e50835dc7fed5c85cd2ebe1242b540349`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

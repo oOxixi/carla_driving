@@ -96,7 +96,7 @@ TrafficRulePlanner.stop_distance_m(self, traffic: TrafficConstraint | None) -> f
 
 ### `car_control_C/traffic_rules.py`
 
-来源 SHA256：`ce68fdb7caf8a190fc0230ac0569d3c131b4cf881d43cf32bfa6b6c4a8ed2f89`。
+来源 SHA256：`c031d33364d8872477384dde0510f71c5667ba68afe1092d95b673112dd6681b`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

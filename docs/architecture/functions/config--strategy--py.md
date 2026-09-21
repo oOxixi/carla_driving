@@ -301,7 +301,7 @@ Return a kinematic, speed/curvature/sensor/actor-aware envelope.
 
 ### `config/strategy.py`
 
-来源 SHA256：`14428704c7aa41151bcff450e38aee514c9f0ec6c3f943ccb4646c9792f8085b`。
+来源 SHA256：`e5d794f808b6d759b07da5dea5f29ccfc75e03ec8de407544ff6f7e75477a680`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

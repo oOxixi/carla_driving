@@ -111,7 +111,7 @@ main() -> int
 
 ### `challenge/dataset/collect_pinned_mini_smoke.py`
 
-来源 SHA256：`c2d3ff83723f6f00998cc6c8f0ab8a5ec02365584777f0dd225d81dc33877bfb`。
+来源 SHA256：`c182aa258be64950871c2c69a3b90efcc5925d4202448ac3009688bfc323f506`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

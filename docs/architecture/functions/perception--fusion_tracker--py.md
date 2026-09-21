@@ -238,7 +238,7 @@ FusionTracker._object_payload(item: FusedObject) -> dict[str, Any]
 
 ### `perception/fusion_tracker.py`
 
-来源 SHA256：`8711a0f2db966262d3bdbe1cd63cee41d774b7c75846bd5c877484912de23864`。
+来源 SHA256：`757e6feda187bfbf5db97f3b2be63464b750e58ac16cd79c395376ff439a67bd`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

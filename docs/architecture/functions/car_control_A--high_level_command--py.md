@@ -315,7 +315,7 @@ _confirmation_requested(data: Mapping[str, object]) -> bool
 
 ### `car_control_A/high_level_command.py`
 
-来源 SHA256：`d8d8cbd8ee6f21660569d0dfd7ca9ac56da31794d289d3d73e3e8a555b48b293`。
+来源 SHA256：`c482598ce6cbf9fba96d5038e6c730cb2eb05d5977f6225c32aec9113fb9b0b7`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

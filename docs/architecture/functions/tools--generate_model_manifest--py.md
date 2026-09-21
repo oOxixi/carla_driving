@@ -81,7 +81,7 @@ main() -> int
 
 ### `tools/generate_model_manifest.py`
 
-来源 SHA256：`53f3314a3223ad7b0aad1f8b66a5d44b7b5b3f006c0961c9c8e65510801587c5`。
+来源 SHA256：`e809271a67f0ff616b878b3e59753246d5779afe525f093e42c1c2a46d7e05cd`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

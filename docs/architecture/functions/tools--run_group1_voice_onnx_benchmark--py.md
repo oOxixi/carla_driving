@@ -238,7 +238,7 @@ main() -> int
 
 ### `tools/run_group1_voice_onnx_benchmark.py`
 
-来源 SHA256：`19660a124cb72b293efdba5284aff685dde41974dac7df6ece66329b6f1413df`。
+来源 SHA256：`bebf8991ae869becaa21a35de99a1c81f7dc503284ad0d84b836f2bb4f30743e`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

@@ -210,7 +210,7 @@ _torch_gpu_stats() -> dict[str, object]
 
 ### `qwen_service/runtime.py`
 
-来源 SHA256：`afe584d18d3c43f40594a5939d2aa94518702fd2652cb2a58dfa0167be04c6bb`。
+来源 SHA256：`3fa489772d095fb58b99b6fbe717f08d19cddaf2cf90398566135fedacd57f0b`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

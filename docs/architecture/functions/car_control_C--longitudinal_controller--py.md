@@ -143,7 +143,7 @@ Forget all episode-local histories before a CARLA respawn/reset.
 
 ### `car_control_C/longitudinal_controller.py`
 
-来源 SHA256：`02bf9a712ebbe931d44a52d30c06d83db5af9bad127e12ba186eb3e6729d6202`。
+来源 SHA256：`155e160aae626c838e9c7a24eecffe0738721aea570755b0c70f4b79d16d06e8`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

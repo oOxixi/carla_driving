@@ -127,7 +127,7 @@ run_control_safety_benchmark.integrated_step(index: int) -> object
 
 ### `car_control_D/benchmark.py`
 
-来源 SHA256：`9274c0aa8232f1d076cd9f1cc535568cd01f328a9ce298dd3d3b1c92f196e1aa`。
+来源 SHA256：`2d71dc57e1d375d358ac0d343f4dc394058ffa608232e90f9c49124cb60f407b`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

@@ -81,7 +81,7 @@ main(argv: list[str] | None=None) -> int
 
 ### `tools/run_control_safety_benchmark.py`
 
-来源 SHA256：`438270e097522c1ac211494143f8ed24e98ff202fc324747e30d843029ee3082`。
+来源 SHA256：`b5304f113763676f7d0657229229a8069576968c9041edcaf4dd7a65b73a2b25`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

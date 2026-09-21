@@ -306,7 +306,7 @@ main() -> None
 
 ### `challenge/dataset/split_dataset.py`
 
-来源 SHA256：`1eee5fd3e7892832a074e778ba7f9d34448788d808dac7824a289254bc6fb1fd`。
+来源 SHA256：`629f3cd61994c9a5255c47b9d17c26ca0e5e84e34f0c4e9b3177098904e75768`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

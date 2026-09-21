@@ -92,7 +92,7 @@ main() -> None
 
 ### `challenge/dataset/validate_dataset.py`
 
-来源 SHA256：`d84efa2532dd3c6cfc467bdffc1bc56d72a0b2d405fdb95f451b1b88bbdd0a5c`。
+来源 SHA256：`a976b358c3ce18bd3d80747bcb4eb2d17e38a6bd673f9a2df2385135fda12ecf`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

@@ -93,7 +93,7 @@ main() -> None
 
 ### `challenge/dataset/build_manifest.py`
 
-来源 SHA256：`87bc86dc8582a1a3220f9606fa7b4030829a4682277db772b0a94529b333a84b`。
+来源 SHA256：`8050345bc26ff16c8cb9ae35eba8feb58b24a434d0c6b01a454df8ff31677bf1`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

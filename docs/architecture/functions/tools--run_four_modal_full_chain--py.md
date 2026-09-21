@@ -312,7 +312,7 @@ main() -> int
 
 ### `tools/run_four_modal_full_chain.py`
 
-来源 SHA256：`d1c7e59b649ecf3db93289035f87a8dac1de57cec35034f0b423a6a02c531b11`。
+来源 SHA256：`34de295c1f99a2d6a07b1731f12b05440dd815fca18eb98df33fd6ffcbc37131`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

@@ -53,6 +53,6 @@ audit_global_benchmark_v1
 
 ### `CARLA_Language_Benchmark/tools/audit_global_benchmark_v1.py`
 
-来源 SHA256：`57be6e20964567435c457a15b90ab7ec4f8ac0b4b1c54a7830c2af7fb2d3ab16`。
+来源 SHA256：`ba508e7d60da7a7cc0a1ba695f84a932eec4e7bc30673f8fd56af5958c6d8a7b`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

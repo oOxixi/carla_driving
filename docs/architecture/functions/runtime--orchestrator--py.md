@@ -651,7 +651,7 @@ PipelineOrchestrator._put_latest(self, queue: Queue[Any], value: Any, queue_name
 
 ### `runtime/orchestrator.py`
 
-来源 SHA256：`014ea7ca4b7201945d4f48b0ca6631e6da090d37af33e213036606dac57ef7db`。
+来源 SHA256：`92b0e09d23ccaaa2e663f9163916f31ebe1ed2427ffa60409b81d88cc92e8e27`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

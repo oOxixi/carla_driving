@@ -56,6 +56,6 @@ Role-C synchronized multi-modal perception and fault degradation.
 
 ### `perception/__init__.py`
 
-来源 SHA256：`7b827f9a2989de97c76307349ac4ac349943733c431c70f1fb027de75c21aa9b`。
+来源 SHA256：`be086de72eb56d23cda694ebb35525542a8dbc10c84bb0f24ba2b0d4affb49a1`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

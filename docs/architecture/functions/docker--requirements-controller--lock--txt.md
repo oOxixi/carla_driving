@@ -248,6 +248,6 @@ requirements-controller.lock
 
 ### `docker/requirements-controller.lock.txt`
 
-来源 SHA256：`3063cbde0bcafc6aa4b2a520cf0e66f2cd96b2a6eb0a8c7166dbe68a79bc0a07`。
+来源 SHA256：`2b920f99cef80fa7bf78349bd407bf637e8764fd143de6c43361bbdb9dc7ecfd`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

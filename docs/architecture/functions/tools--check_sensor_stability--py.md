@@ -53,6 +53,6 @@ CLI entry point for the current-world CARLA sensor stability probe.
 
 ### `tools/check_sensor_stability.py`
 
-来源 SHA256：`cdffa1227dfe5fb65331e39f314f96a154dfec6fc39d57c8856589133a9a4336`。
+来源 SHA256：`49c3b02e835b8fb3c3653f26fd45af373689061fb8c625763f9a800d87d9d70e`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

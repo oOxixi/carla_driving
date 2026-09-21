@@ -127,7 +127,7 @@ main() -> None
 
 ### `tools/verify_vllm_cu132_inputs.py`
 
-来源 SHA256：`7ae43d67b800eeb288b22b03e5a62369c7822ce334be64b306837f3456741f24`。
+来源 SHA256：`8441dc5af83b41de5cd04ebf60c79d8d4f8163ffc8b2863ea33bb5eec9fbc80c`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

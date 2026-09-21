@@ -116,7 +116,7 @@ ScenarioQwenFaultInjector.__call__(self, request: Mapping[str, Any]) -> Mapping[
 
 ### `integration/qwen_fault_injection.py`
 
-来源 SHA256：`e71a274834fabff5705e624fc3b4b9ff739687232cc3cbd6d0f14bb6dbf92315`。
+来源 SHA256：`8a9b0c2b7fe4f428ebcb7962e7d1d4d3fd09e73d6491d72778c558f20a982bf1`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

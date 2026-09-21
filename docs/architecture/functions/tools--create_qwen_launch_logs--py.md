@@ -79,7 +79,7 @@ main() -> int
 
 ### `tools/create_qwen_launch_logs.py`
 
-来源 SHA256：`d10e2ecfc03690620a9d36798143df5a1f6afae7e45f42897c5cccb54e02b7fb`。
+来源 SHA256：`5fd239bfdb5c72d3b8a52eca0097cd8840acdcd8aeaa2ebeec8a5518c20f6d8d`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

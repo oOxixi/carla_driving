@@ -325,7 +325,7 @@ main.resolve_arg(raw: str) -> Path
 
 ### `challenge/dataset/build_d2_wave2_plan.py`
 
-来源 SHA256：`97fb895c5e42632c63d762799bdca5f53847771d6dcd3b4d104ea2a389173165`。
+来源 SHA256：`a34b32b8142f97bd9cb66db84b0c8c136d3fb61b832331f50395197879b723b3`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

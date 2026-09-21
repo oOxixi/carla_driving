@@ -84,7 +84,7 @@ main() -> int
 
 ### `tools/run_generalization_gate.py`
 
-来源 SHA256：`b9d40a4bdc5d208c23ceaf4502960dd8ddafba89f58e6499a96abe7dec7b2895`。
+来源 SHA256：`5165cffa84abb7938a42f8f3ed51a38e3377580c8c3f4ac3214b6cec211fbb2d`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

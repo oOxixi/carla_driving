@@ -58,6 +58,6 @@ teacher_baseline_manifest
 
 ### `challenge/teacher_baseline_manifest.json`
 
-来源 SHA256：`0c506c080f950a968ee531787ab9362ed6dc3c3aaf779cd338fe0fa4da2ab6ad`。
+来源 SHA256：`937c32a0f67b708430e6080cb667b4227e0626b16a832a1dfa4b2188b999cc26`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

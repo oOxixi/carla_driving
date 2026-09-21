@@ -92,7 +92,7 @@ map coordinate convention.
 
 ### `car_control_B/lane_change.py`
 
-来源 SHA256：`b36906578f418bedf121fa1ce9cc9bb25fa27c94fcb0f873fe30bb6e250671e5`。
+来源 SHA256：`4b251978bbf2ea21a00bf5a95ed438fbc999ac6ca42baaf9bdb1d06f3efd2a1b`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

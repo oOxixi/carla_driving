@@ -97,7 +97,7 @@ main() -> int
 
 ### `perception/fault_injection.py`
 
-来源 SHA256：`c017e4a7ffb96bbf946dad03ce003f8743cac500af915a0a34639f1585222e00`。
+来源 SHA256：`7293778bd4de00320795674f0b0fbd8c300f18820ff5a6668e2e474555ef3248`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

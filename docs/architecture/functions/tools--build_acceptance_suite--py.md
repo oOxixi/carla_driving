@@ -185,7 +185,7 @@ main() -> int
 
 ### `tools/build_acceptance_suite.py`
 
-来源 SHA256：`c8db29ba52541c59da16133656b88742f5321d839b16497d28b2517df49de888`。
+来源 SHA256：`1777d37563e78ecadec58f76b122271782c9199fc8ed3a4ae20c0eb9fe89eeb0`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

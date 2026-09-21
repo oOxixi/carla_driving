@@ -51,7 +51,7 @@ driving_command.schema
 
 ### `interfaces/driving_command.schema.json`
 
-来源 SHA256：`91bc78f58c65840155b9ccdc4d32d7606af2490db8a05fac3dcd24a66af2a364`。
+来源 SHA256：`527000618dd245166eaa8fceaeaa86a4783a2a970de5fc3257afb32ce0be30ba`。
 
 
 Schema 字段与约束：$ref需解析到对应定义；required只表示本层必填，不能代替分支条件判断。

@@ -167,7 +167,7 @@ _response_json(response: HTTPResponse) -> dict[str, Any]
 
 ### `integration/qwen_service_client.py`
 
-来源 SHA256：`c457375b430378d7a5bade26e6fef158fbed045295e7903d3d2ab07c9974b0c3`。
+来源 SHA256：`8823858138ae9643c585458d203b2187f47e506099d59f50ae7c7d9501337c0f`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

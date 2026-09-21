@@ -221,7 +221,7 @@ main.allocate(bucket: str, target: int) -> None
 
 ### `challenge/dataset/build_d3_wave1_plan.py`
 
-来源 SHA256：`532a2f968555f3188e6604490b817a9e565271e3780a9a48a5bffc234e634376`。
+来源 SHA256：`ce7973b221c4398567605540e207daa911ed461b00cd71bddd9ffef5a005d26a`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

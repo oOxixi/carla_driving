@@ -50,7 +50,7 @@ model_request.schema
 
 ### `interfaces/model_request.schema.json`
 
-来源 SHA256：`3ef806ea5bdb15716e5bc0957fd31bdc10780f3c2632e40ea7b1c2c30e0c5b64`。
+来源 SHA256：`3a3604b0d8a6e977792713fce514a4c6e415e54961571a17732ffe3e14d4313e`。
 
 
 Schema 字段与约束：$ref需解析到对应定义；required只表示本层必填，不能代替分支条件判断。

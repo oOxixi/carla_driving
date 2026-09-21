@@ -143,7 +143,7 @@ CLI默认Qwen URL http://127.0.0.1:8765、CARLA host127.0.0.1/port2000、timeout
 
 ### `runtime/healthcheck.py`
 
-来源 SHA256：`ebeb1b0042df7d4861535c26990402c733ae00c9d2587a94a9a9b8c67df60f0d`。
+来源 SHA256：`1f886dc25826a59a7e623c7a385cab16e2961d7acde48c2dddd1041456b62df3`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

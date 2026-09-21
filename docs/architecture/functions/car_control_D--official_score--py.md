@@ -153,7 +153,7 @@ OfficialScorer.summarize(self, scenario_results: Iterable[Dict[str, Any]], comma
 
 ### `car_control_D/official_score.py`
 
-来源 SHA256：`67e1bc1fa53f8de1edf7b6f9fed2cd23a94eea2e8e3b226726a11806c6588552`。
+来源 SHA256：`34d8c1c52d88cc0f8773f07ddd88d10f2608ff9cd17501b84529e90250ad99f4`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

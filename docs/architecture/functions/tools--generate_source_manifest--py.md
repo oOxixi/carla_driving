@@ -79,7 +79,7 @@ main() -> int
 
 ### `tools/generate_source_manifest.py`
 
-来源 SHA256：`8ed90fd7e6daee96ba501caa806ecf48aa0cdf6d2ee0d656a7f77d75dd9b76d4`。
+来源 SHA256：`0b6d79c3ae69c727e7cd6be70fe474d1567c51b0216dbcbd2ded7031d7f250d7`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

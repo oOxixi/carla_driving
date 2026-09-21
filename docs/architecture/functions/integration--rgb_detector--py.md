@@ -213,7 +213,7 @@ audit, but no longer request longitudinal emergency braking by themselves.
 
 ### `integration/rgb_detector.py`
 
-来源 SHA256：`f7c87ef178087f04e8835de02748f566db4729dfb2e2d95fb4c172433b0ebca2`。
+来源 SHA256：`34f6e960280ed43e803e16a2be9b772e74e8bbc34ae0a31bdcead073109d7440`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

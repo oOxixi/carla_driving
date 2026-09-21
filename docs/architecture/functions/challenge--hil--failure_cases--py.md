@@ -99,7 +99,7 @@ run_failure_cases(runtime: PlannerRuntime, cases: Sequence[FailureCase], *, run_
 
 ### `challenge/hil/failure_cases.py`
 
-来源 SHA256：`1f4020ec462b5fa060f81f178ceb82be04993449febff3c64134aefe7040bb59`。
+来源 SHA256：`90d0714e9ac7a80a077a8d60bc0086ba54d57ad25928c7bb91f596fdc5a7b1bb`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

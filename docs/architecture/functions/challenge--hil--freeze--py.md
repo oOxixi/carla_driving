@@ -102,7 +102,7 @@ Read a snapshot back into replay cases, verifying every recorded hash.
 
 ### `challenge/hil/freeze.py`
 
-来源 SHA256：`d2e9c84264052eb13a5a314e55a34409cd3b4fe019933437a01462d8fccdda8d`。
+来源 SHA256：`179d9d98095a9ee5290377f4b3f4ffa63cb440ffeebc9b94038a3e23c545132e`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

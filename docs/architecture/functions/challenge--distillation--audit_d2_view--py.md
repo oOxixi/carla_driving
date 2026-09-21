@@ -113,7 +113,7 @@ main() -> int
 
 ### `challenge/distillation/audit_d2_view.py`
 
-来源 SHA256：`70c6d1dba50b90ae1b4835acad0a37c46348cd47b82b45cd1018ef1766982636`。
+来源 SHA256：`60c4f3a1beb422d3b8403c26f4bb2421b7d751cf70e89ca1c29845b2835ce074`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

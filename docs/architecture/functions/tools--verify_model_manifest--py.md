@@ -115,7 +115,7 @@ main() -> int
 
 ### `tools/verify_model_manifest.py`
 
-来源 SHA256：`b784d8992760d07f1449415dd29734f44ab2b337c4b1c9fb81eb48f7edb95039`。
+来源 SHA256：`b7c2f0b02ed3d6aedc3f9dc6f5b4dfb443906c82c17dc3c7c8901b192c7993f5`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

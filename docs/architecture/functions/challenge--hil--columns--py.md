@@ -56,6 +56,6 @@ Single source of truth for every raw evidence file column set.
 
 ### `challenge/hil/columns.py`
 
-来源 SHA256：`6bd9d4f81b8bcdb6b80a86c1ad21f266758b6ef0c91d5e72923115643c4dcdb4`。
+来源 SHA256：`e0df040fe0b8470f4fdb2874e916e6d9db0b36a3c28236dad473d3e7ce564544`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

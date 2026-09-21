@@ -138,7 +138,7 @@ ASR.transcribe(self, audio, correct=True, t_audio_start_ns=None) -> 未声明返
 
 ### `voice_group/asr_vad.py`
 
-来源 SHA256：`b1ebdcc0d69ef0fd7eb13db102db8b9e9f297774a73f7116708e25a0710819ac`。
+来源 SHA256：`e195cdaf6cf240c999cb81d36526f49a7243de347d902fa6699aadb98cdc39a6`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

@@ -90,7 +90,7 @@ main() -> None
 
 ### `challenge/dataset/build_d2_wave2_freeze.py`
 
-来源 SHA256：`82665128f49ff13c98e618b281bc4e826c5830eaee678a4c4a05c57d231d7768`。
+来源 SHA256：`4ef629c3ea46b7f4b6fef61cfea86c273a00d6f46e30383101f2107f9e1dfd09`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

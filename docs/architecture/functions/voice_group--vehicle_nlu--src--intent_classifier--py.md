@@ -189,7 +189,7 @@ classify_intent(text: str) -> dict
 
 ### `voice_group/vehicle_nlu/src/intent_classifier.py`
 
-来源 SHA256：`fc8c1230295c83b6a8f5b66ca7354442c70257624ca4be162c73c5571c482d8a`。
+来源 SHA256：`dc618efcdb03b24c397d1f8f33bd0cfe8322dc2a961bc190db4459b2cc5c99bf`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

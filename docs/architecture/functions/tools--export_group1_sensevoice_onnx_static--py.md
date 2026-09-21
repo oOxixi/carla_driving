@@ -114,7 +114,7 @@ main() -> int
 
 ### `tools/export_group1_sensevoice_onnx_static.py`
 
-来源 SHA256：`888e8d09b2faa4633114f5183fbbbbda6db137d196841e390f08ec918be968b1`。
+来源 SHA256：`01a7717de528e7a77d07861e21089f13564833bb26217e1ac448d42b2483b8e0`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

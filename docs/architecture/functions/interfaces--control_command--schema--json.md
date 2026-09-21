@@ -50,7 +50,7 @@ control_command.schema
 
 ### `interfaces/control_command.schema.json`
 
-来源 SHA256：`db60cf6eb12ba29b67e887a8c6c3f9305814d59386a9d2cf963536b4ff51b50b`。
+来源 SHA256：`746f1a8c85795e9d34a1e7804053bbcf16e013140f11c6b2b167ab8319b59a28`。
 
 
 Schema 字段与约束：$ref需解析到对应定义；required只表示本层必填，不能代替分支条件判断。

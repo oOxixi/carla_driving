@@ -122,7 +122,7 @@ Atomically supplement immutable-at-start provenance after validation.
 
 ### `integration/run_manifest.py`
 
-来源 SHA256：`d5c91ffb35321fb393119d0e400f22f558cdd37d06bc64a5d505ef5cc5256b4b`。
+来源 SHA256：`1d7804dea57ede16c0367720c5ddfd2ddab8cf329358d7b5d449914f9ac07993`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

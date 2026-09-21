@@ -454,7 +454,7 @@ main() -> int
 
 ### `challenge/dataset/collect_d1_200.py`
 
-来源 SHA256：`d9ddfae0f98b80a4272961891a7a862cf123a9eee684e177bd4c007cdfd5ea74`。
+来源 SHA256：`888a8e257a18f1d3ed0effae58ce4e57a293e75fc96495f0c2c3c31ab29fb5d4`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

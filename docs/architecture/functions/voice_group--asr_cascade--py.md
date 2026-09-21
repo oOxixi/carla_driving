@@ -218,7 +218,7 @@ Fail into the confirmation gate rather than silently bypass verification.
 
 ### `voice_group/asr_cascade.py`
 
-来源 SHA256：`066b3cb4eb6aeac109bcf535bca05472a7930e5e7d3e7eeab7da1f800bd77cad`。
+来源 SHA256：`75371967d8aba3114976c09c69e3e2d3fd84817bbd16e40d98314ca9f66be750`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

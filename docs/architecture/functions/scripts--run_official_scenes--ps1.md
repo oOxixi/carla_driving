@@ -47,7 +47,7 @@ run_official_scenes
 
 ### `scripts/run_official_scenes.ps1`
 
-来源 SHA256：`cd82f13eacaba9ed46a44491b643ce1b9c505bf730ebb412a680fd8fa2ebf9a3`。
+来源 SHA256：`97f80184fcb26d446f1176ab374423b7e6b4c7b79d1b3f6e651d6067f4bf3628`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。
 

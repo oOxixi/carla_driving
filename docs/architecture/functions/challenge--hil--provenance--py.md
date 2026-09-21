@@ -104,6 +104,6 @@ Backwards-compatible accessor: the active pin.
 
 ### `challenge/hil/provenance.py`
 
-来源 SHA256：`0daa5db47efaf4d60c97272f9cd0445a0d14794480fd76d72a01df1e750e9bb4`。
+来源 SHA256：`0d8a4ca4a737b0dbfc30562442933515a5e101ed8bfb91291a1d4162989b1294`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

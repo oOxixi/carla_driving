@@ -55,6 +55,6 @@ pytest
 
 ### `pytest.ini`
 
-来源 SHA256：`4efa1fe4f7ecece9f28ff53174cb9405f01eae69c0a9e98e65a8e4d9a7565fc0`。
+来源 SHA256：`970876b927dc386c1a56123487a98e2882ec3ca27c1ab9dd16e22b049d44cf23`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

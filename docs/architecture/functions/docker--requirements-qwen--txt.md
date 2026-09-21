@@ -50,6 +50,6 @@ requirements-qwen
 
 ### `docker/requirements-qwen.txt`
 
-来源 SHA256：`7976ce6cff50211d06a53780a5984f98bf6ffcd805de1e19f0416436aad515a2`。
+来源 SHA256：`d1178e3bd67ab85c5cc4a6984b0ad3f80a18f5f494aeb9a0fce28a3ac5c311a7`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

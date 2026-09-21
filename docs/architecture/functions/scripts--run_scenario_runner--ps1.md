@@ -47,7 +47,7 @@ run_scenario_runner
 
 ### `scripts/run_scenario_runner.ps1`
 
-来源 SHA256：`06a323bef8f48024ef7ea64051c178bc10b733a428124326ef9b7a2dc0a333de`。
+来源 SHA256：`dcd5fb7b3c72b7287fffe1ceb13f3907b0e1783720b65a0dd160f0d6bf3a88b2`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。
 

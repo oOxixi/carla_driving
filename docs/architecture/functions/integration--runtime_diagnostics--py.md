@@ -100,7 +100,7 @@ diagnose_runtime_failure(error: BaseException) -> RuntimeFailureDiagnosis
 
 ### `integration/runtime_diagnostics.py`
 
-来源 SHA256：`fe7becb72177c0e97d9193da6f70b297bc474a8e57d7f1482850f78574ac7408`。
+来源 SHA256：`e9a35d2445910e81d6ccffd4e8c5a9240a6faffd1e4b725127ad25544ade3cc1`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

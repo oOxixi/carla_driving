@@ -244,7 +244,7 @@ STOP→APPROACH_STOP、EMERGENCY_BRAKE→EMERGENCY_BRAKE、KEEP_LANE/SET_SPEED�
 
 ### `car_control_A/behavior_fsm.py`
 
-来源 SHA256：`5a3217e46a97f9a109fdd4edb45d2e5e4678ebfd074127f780d6d08a924658c0`。
+来源 SHA256：`0aead9bd63573bb55cc7d46465b23657bab83bbf1f6538d5a70432595337da4d`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

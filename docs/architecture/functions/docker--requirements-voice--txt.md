@@ -57,6 +57,6 @@ requirements-voice
 
 ### `docker/requirements-voice.txt`
 
-来源 SHA256：`c28abb23b38d9d5e86147bc1904e4d1f822a9bd50d0854b26ae1645b0e6130e9`。
+来源 SHA256：`45376202c513e45001b9696c7533cc5a64fefda2829f4380446ad99ffdbea827`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

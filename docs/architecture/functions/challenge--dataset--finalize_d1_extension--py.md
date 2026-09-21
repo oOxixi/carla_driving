@@ -98,7 +98,7 @@ main() -> 未声明返回类型
 
 ### `challenge/dataset/finalize_d1_extension.py`
 
-来源 SHA256：`51fdb0989a64e22e78acc0d08b18ffec75dc7cc4ac5688202f27d96a06f075db`。
+来源 SHA256：`013e3cd5583ae2087750b4e01f663750c9ca570c8109e40c11234ded93144b0e`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

@@ -89,7 +89,7 @@ verify_onnx_artifact.check(name: str, passed: bool, detail: str, *, fatal: bool=
 
 ### `challenge/hil/artifact.py`
 
-来源 SHA256：`8d0646199cf9f9f7da05f94d725001fccaa491592161e393df0ac6948b78afee`。
+来源 SHA256：`224855bcce4aa7e7ae2833c2b18a9edb35d65fc3ee491d31b4824cd8cf4f0731`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

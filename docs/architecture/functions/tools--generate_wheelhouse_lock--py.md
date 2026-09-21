@@ -82,7 +82,7 @@ main() -> int
 
 ### `tools/generate_wheelhouse_lock.py`
 
-来源 SHA256：`5ec1aac5363f56b428ea0d49ca5eecc31ba9e8cde56c458da517886db919d6b0`。
+来源 SHA256：`077013a4e7334d4b0dae993c61f31fd8caecff476d920fca4e67acd9a41a046d`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

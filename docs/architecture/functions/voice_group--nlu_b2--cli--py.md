@@ -83,7 +83,7 @@ _load_payload(args: argparse.Namespace) -> dict[str, Any]
 
 ### `voice_group/nlu_b2/cli.py`
 
-来源 SHA256：`8e98f3d9bf03c91538f8d7ebab5a4e93fa02b2f445f3aef1fe3e9c1974a504c9`。
+来源 SHA256：`f9060dd000487db4e8510cb33f9273aeab7fb955db9cd89cfeac87e87310e23e`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

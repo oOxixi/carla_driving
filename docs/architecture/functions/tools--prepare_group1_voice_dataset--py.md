@@ -235,7 +235,7 @@ main() -> int
 
 ### `tools/prepare_group1_voice_dataset.py`
 
-来源 SHA256：`d699cd88e845b35491f342fc2d278b5fdb77e76b1e340513f7c803b63625f2b7`。
+来源 SHA256：`276fb3426e782eb74288dacf7434dcb84f49181604b0151d1c6a0bab2e52ab06`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

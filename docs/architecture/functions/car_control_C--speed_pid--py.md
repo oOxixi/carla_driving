@@ -116,7 +116,7 @@ SpeedPID.step(self, target_speed_mps: float, speed_mps: float, dt_s: float) -> f
 
 ### `car_control_C/speed_pid.py`
 
-来源 SHA256：`b515fed45d29ea8b39edeb440503d388ccd6ac6cdc2e1212d61ddbafc4b794bb`。
+来源 SHA256：`80aff5978a0acc6afb97aaf9484433c143f4514bb557c304389dd2ad7ad53227`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

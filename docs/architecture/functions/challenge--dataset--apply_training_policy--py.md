@@ -115,7 +115,7 @@ main() -> None
 
 ### `challenge/dataset/apply_training_policy.py`
 
-来源 SHA256：`2e86d5c3c689bd43efd6c664bf97170e4022eb247c277a8506db594ee98619d1`。
+来源 SHA256：`951148ce6f9a5f62d7bef299dd3508cf4bc24d56d1f26d8861074a6bf6964aba`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

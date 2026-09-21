@@ -53,7 +53,7 @@ run
 
 ### `run.ps1`
 
-来源 SHA256：`a0287c9c4394d58bc0c5eaf99a9b26e26da520cd9dd76982d0134a64d5c44252`。
+来源 SHA256：`92abf80dec753326fea307cfeef5008d8c8ad8a0aa182592d3bea12af6043db3`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。
 

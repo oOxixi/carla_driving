@@ -89,7 +89,7 @@ sha256_file(path: str | Path) -> str
 
 ### `challenge/distillation/checkpoint.py`
 
-来源 SHA256：`edf3d3417f3e29a7af2ab313f7c3ebf021e12ece57885a35c22862a36f3abb72`。
+来源 SHA256：`22a54c20d031a3aaf5e6568044419530226a4210d938f6804c840bc66ea1a209`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

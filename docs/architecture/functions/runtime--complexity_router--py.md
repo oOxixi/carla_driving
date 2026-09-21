@@ -263,7 +263,7 @@ _safe_wait_behavior(perception: Mapping[str, Any], runtime: Mapping[str, Any]) -
 
 ### `runtime/complexity_router.py`
 
-来源 SHA256：`6f4fd2c67d46fbccb4e167aca6daa94e7a0399aa3e9805adb66395861c039c32`。
+来源 SHA256：`d1785c61f636ebba3fa8b848c67502fd630c352a6ed4feb664546d76d5408a1c`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

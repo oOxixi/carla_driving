@@ -206,7 +206,7 @@ curve without carrying that constraint across kilometres of road.
 
 ### `car_control_B/path_utils.py`
 
-来源 SHA256：`a72293b830140085b29f312aa4278131dcff3b6fcb5af043a37b3e698b0387c2`。
+来源 SHA256：`c6b78247c753abfb4d33729f50cf1a47df952a430a32ee6d477852ae1aa0ec80`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

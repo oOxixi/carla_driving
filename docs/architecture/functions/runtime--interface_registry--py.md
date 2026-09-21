@@ -146,7 +146,7 @@ InterfaceRegistry._validator(self, name: str) -> Any
 
 ### `runtime/interface_registry.py`
 
-来源 SHA256：`7cdc9747a16c78d20aaea1e355cfde18e15cf8bce12b776e2ef34c6247a437d8`。
+来源 SHA256：`8463cc9681576af1abc1a47d7e2ce623b6e3cd76810f3a6f3090654b1db23e26`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

@@ -123,7 +123,7 @@ path=None读取仓库config/driving_policy.json；显式路径expanduser并resol
 
 ### `integration/driving_policy.py`
 
-来源 SHA256：`628dd367f8071e2b4f36a3f78654885a464ee91177cfb8c8e0441a637b071026`。
+来源 SHA256：`e61b44fadaf7e4e6677ec889675257d0fa0f3a3ea00b58999887dc44ac357d67`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

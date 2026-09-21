@@ -64,7 +64,7 @@ Explicit adapters that compose the independently delivered control modules.
 
 ### `integration/__init__.py`
 
-来源 SHA256：`6df7db60a2a11088f3d2536cd9291a502c2bbd6fa96e0cedf0a2c34374cc74c1`。
+来源 SHA256：`67b1e9b14958f36ab1f6a911ef94c836b5e6e357961bd080a93523fcfc76b955`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。
 

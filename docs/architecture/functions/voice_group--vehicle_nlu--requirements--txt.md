@@ -46,6 +46,6 @@ requirements
 
 ### `voice_group/vehicle_nlu/requirements.txt`
 
-来源 SHA256：`4ae47bc8f8f7a9e35af779e9d272ed0163a24afe3e61f6092e06d0b32d2d305f`。
+来源 SHA256：`9bcac7d4fc3eb589fa9c55d90085535014ec6bc6ac61c00a9666e7f4f3bd84cb`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

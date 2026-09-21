@@ -256,7 +256,7 @@ Schema验证execution_feedback，仅终态填terminal_reason；action时间/late
 
 ### `integration/second_group_runtime.py`
 
-来源 SHA256：`1e66d4101d8c9ebfee02d475b3a84fef70e69674e3d2c93a06240325ce1814b2`。
+来源 SHA256：`0500ed0ecc6014690c7e48143a90b491fbd9d419e2f59d2c6ac44dfa0de1bbe5`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

@@ -53,6 +53,6 @@ CARLA Language Benchmark audit tools.
 
 ### `CARLA_Language_Benchmark/tools/__init__.py`
 
-来源 SHA256：`f95f1bdffc16047f11f1cc7c50845bef8e26a0575c25e6e62cca3fcf4681ec33`。
+来源 SHA256：`091e52eb06154428a72919efff81525d9351ff6698491bdf95d210864cf27cc7`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

@@ -51,7 +51,7 @@ execution_feedback.schema
 
 ### `interfaces/execution_feedback.schema.json`
 
-来源 SHA256：`a727000e618e0d5f2b08318352f679f02a65dbe16f674e748f06aa121b444d2b`。
+来源 SHA256：`211b47e342e1389ab341cbbc79cc61ec91afc52dd6b621adbca47f54eee4a8d1`。
 
 
 Schema 字段与约束：$ref需解析到对应定义；required只表示本层必填，不能代替分支条件判断。

@@ -128,6 +128,6 @@ ScenarioRecorder.write_score_report(self, scenario_results: List[Dict[str, Any]]
 
 ### `car_control_D/metrics.py`
 
-来源 SHA256：`00689e44d37e77480a7a681f6bff01665556296ac638ecf7b362a7f5f319e6a8`。
+来源 SHA256：`a7bdd671c3465e1bda94a5aefcd29ceb90c857a94402b1de1d9ddda0942d1857`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

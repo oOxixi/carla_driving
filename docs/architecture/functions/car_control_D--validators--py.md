@@ -100,6 +100,6 @@ validate_execution_feedback(feedback: Any) -> ValidationResult
 
 ### `car_control_D/validators.py`
 
-来源 SHA256：`574948ccb43cda13321a7b6b9bfaf91e1d5d70d45f572b7dc66fb96d8849a3ef`。
+来源 SHA256：`007b928e235616ba5b9d4522d0ac2a3934df7f962c3cfb708467664c4d8f2975`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

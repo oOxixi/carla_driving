@@ -605,7 +605,7 @@ plain dict完整键与版本检查，status须字符串且可转换到六终态�
 
 ### `car_control_A/contracts.py`
 
-来源 SHA256：`ba5628ff0ac255061bc16f4bd59670ad02fbad4b82187cde578ddf801e3ba638`。
+来源 SHA256：`cea24191d13e1083eb4f4ad64e42a4226dfb79b40cbb368b81ff0b730ec38222`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

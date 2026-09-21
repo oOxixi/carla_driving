@@ -328,7 +328,7 @@ main() -> int
 
 ### `challenge/dataset/collect_d2_wave2.py`
 
-来源 SHA256：`c578440ba6d70b0584cc897dd23fd4074ab58526c5ee02786b4bad8c9619a6d5`。
+来源 SHA256：`72a630db45d141ec417f2e33912a62e168ca975bcf5ef9f1434e135397f37e49`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

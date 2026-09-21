@@ -256,7 +256,7 @@ _bounded_number(value: object, name: str, minimum: float, maximum: float) -> flo
 
 ### `integration/qwen_boundary.py`
 
-来源 SHA256：`23dd086c241a003018850d270e5d5381d32115e4c0efa8a3f3366ca1d3ccb41e`。
+来源 SHA256：`e6cad5cda70a1cea55ad7f0243b9e74fbbb490ef779ca1f21dea6fbaee8b6d3c`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

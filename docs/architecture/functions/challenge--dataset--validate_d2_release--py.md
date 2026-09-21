@@ -116,7 +116,7 @@ main() -> int
 
 ### `challenge/dataset/validate_d2_release.py`
 
-来源 SHA256：`64fe2261da7933db3ead847ea9f7b77b005fc676fff877b7204f3b58bebb6303`。
+来源 SHA256：`b4272a7b5afac019d406a7bcdcabb187e2a52a3866ced3a5c64a252fada4a43b`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

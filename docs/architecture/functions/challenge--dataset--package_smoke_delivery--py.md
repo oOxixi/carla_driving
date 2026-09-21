@@ -124,7 +124,7 @@ main() -> None
 
 ### `challenge/dataset/package_smoke_delivery.py`
 
-来源 SHA256：`8dd882923c14ff2456a1b19034ab75a576bf93d17c45d4d9e7ec3baf528ffb88`。
+来源 SHA256：`888457f041f32bb72c77caa8bf072ed4221d40ac3b523d2c6d3a58bdb6c66fc2`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

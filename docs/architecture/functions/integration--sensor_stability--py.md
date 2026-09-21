@@ -322,7 +322,7 @@ main(argv: Sequence[str] | None=None) -> int
 
 ### `integration/sensor_stability.py`
 
-来源 SHA256：`6a59ec090929047df376b6f45957ecdd96f229fb9c19c9051aeabba0f8128855`。
+来源 SHA256：`7364fa54eed0dfef5af9db7ebea6a07ab337450229f6ddae00eab8b83da77ba9`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

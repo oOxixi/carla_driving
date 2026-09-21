@@ -71,6 +71,6 @@ Member C: deterministic longitudinal planning and control.
 
 ### `car_control_C/__init__.py`
 
-来源 SHA256：`c843075e51ae79116920c7a313b68233b99f5c8072e9e8fdb922a81a6f459640`。
+来源 SHA256：`ecfacbbdc04da1449c7d77f458c3ca759683e0e5d214ae63124ef1f62d46b912`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。

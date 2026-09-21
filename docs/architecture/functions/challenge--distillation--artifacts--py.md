@@ -170,7 +170,7 @@ _sha256(path: Path) -> str
 
 ### `challenge/distillation/artifacts.py`
 
-来源 SHA256：`74830f77b6c44d2ea08521712942ecb8359b9d35803670ae25c739641ca67fc1`。
+来源 SHA256：`4984eb81fffecee7895121a3319daea8a921a0d7c168887a60c418f7b5c56cd4`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

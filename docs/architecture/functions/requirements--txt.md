@@ -51,6 +51,6 @@ requirements
 
 ### `requirements.txt`
 
-来源 SHA256：`8202f648dabb66240775e749f824e24ab3f0c3cf3689fc1c72299b160663b41b`。
+来源 SHA256：`64e994d9021b49684b8a230dceba1d31db51d473cc32b95138c6bd50f9922c86`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

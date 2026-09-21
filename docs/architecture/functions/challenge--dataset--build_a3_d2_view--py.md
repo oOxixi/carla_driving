@@ -134,7 +134,7 @@ main() -> int
 
 ### `challenge/dataset/build_a3_d2_view.py`
 
-来源 SHA256：`63b24f449ba5ccf660210a3048d57d4a08185f33a3b2c48cb58e7120ea11d163`。
+来源 SHA256：`d8271728201f1765afb282102895c66db68ea43885b5781942a48f74eacec7a9`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

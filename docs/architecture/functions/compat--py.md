@@ -57,7 +57,7 @@ Small runtime compatibility helpers for the local validation environment.
 
 ### `compat.py`
 
-来源 SHA256：`8fbce84fa021e6dd073336bfcf4a01d63b748fbb8af99ab11e85bcbd78f8cae7`。
+来源 SHA256：`79ba38a2c611944d12538491d6cad28aad8e2bb2d00cd72197eef661fd820800`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。
 

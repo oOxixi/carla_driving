@@ -114,7 +114,7 @@ main() -> None
 
 ### `challenge/dataset/build_training_eligibility_v4.py`
 
-来源 SHA256：`68c1a8a718958f27333af32d30807262511803e8dc895ca2ea678721596a75c3`。
+来源 SHA256：`54c36fafb9ed186d2370accecfbc40c7cc05fdb2844ee2261f8de03e196dc25b`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

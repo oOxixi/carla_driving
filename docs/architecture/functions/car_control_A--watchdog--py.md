@@ -187,7 +187,7 @@ RuntimeWatchdog._full_brake() -> ControlOutput
 
 ### `car_control_A/watchdog.py`
 
-来源 SHA256：`2954fbb542f2f43b57966369908859f02fcf5ceae6372f59d18cc3f9db32648e`。
+来源 SHA256：`a3bf6559d19b0d587411d9cd18559355a8a45080a3c2a331daf56d07f5ff8630`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

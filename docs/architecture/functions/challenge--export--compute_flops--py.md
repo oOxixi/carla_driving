@@ -101,7 +101,7 @@ main() -> int
 
 ### `challenge/export/compute_flops.py`
 
-来源 SHA256：`206b74ca6202c5c92eaff9641e91b7303f8503e3a7979e309180ea5af2480a0f`。
+来源 SHA256：`cdae058df9a1afd47287585b221666fcb7e285bfbf186bb93ca1f6e94bab1f88`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

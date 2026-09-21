@@ -43,6 +43,6 @@ Notebook 包含 5 个单元；运行顺序、环境与代码见原文件。单�
 
 ### `notebooks/reproduce.ipynb`
 
-来源 SHA256：`d5b53a8e61ceba2ae6336a2a14a0e410e6eb35cb51fd5a5a9f3ac8112301dbe9`。
+来源 SHA256：`db3c6f977cebe508a0ab58190f275cd59c4e6c5e023b7b3d3ab6beee095c5d22`。
 
 非Python/Schema资源：已核对内容指纹与来源存在性；参数生效和业务语义不能由指纹证明，参见所属模块与原资源记录。

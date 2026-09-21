@@ -235,7 +235,7 @@ _available_lanes(scene: Mapping[str, Any]) -> set[str] | None
 
 ### `runtime/plan_validator.py`
 
-来源 SHA256：`fb02d5b1339c63e83269896a788c174436d5c4153b31477cfdcc83396d1d30b5`。
+来源 SHA256：`e059390fd241b036a4fef16ccd63ce68c7b6b22a4d7157e6d9caba4f3c0a78da`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

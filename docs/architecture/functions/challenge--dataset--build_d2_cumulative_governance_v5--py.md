@@ -125,7 +125,7 @@ main() -> None
 
 ### `challenge/dataset/build_d2_cumulative_governance_v5.py`
 
-来源 SHA256：`0be211015de3c96f21396cee3b1459fba65abe3fb3c48e4f804df71acc47ca5e`。
+来源 SHA256：`08061b30dd13eb898eb951b64bbfba1923d69b59827e104ebb932cd215f7b324`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

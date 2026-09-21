@@ -120,7 +120,7 @@ Run the verified external orchestrator without using a shell.
 
 ### `integration/official_scenario_runner.py`
 
-来源 SHA256：`5d464376f8661192bc3cbfcbb33d0277ce488c7b7004cc940a36d4c2f6b52126`。
+来源 SHA256：`26b0ef87fcce07ca976bb050aed11ee6347456b4ecb3467169c8d3f5b33f2715`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

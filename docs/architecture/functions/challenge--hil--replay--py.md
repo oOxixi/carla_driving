@@ -189,7 +189,7 @@ failure_row_detail(trace: StageTrace) -> dict[str, Any]
 
 ### `challenge/hil/replay.py`
 
-来源 SHA256：`3bf68b998c6399940c07b3b36886ad622e34a0f13c6d60b463666d1a92aa97da`。
+来源 SHA256：`f6858214f9622804160d89038b71cebee5a8c4f62e94bd217d67dfcbb1c482be`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

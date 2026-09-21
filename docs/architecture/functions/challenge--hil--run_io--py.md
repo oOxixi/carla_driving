@@ -201,7 +201,7 @@ RunDir.build_manifest(self, *, identity: CandidateIdentity, claim_scope: str, ex
 
 ### `challenge/hil/run_io.py`
 
-来源 SHA256：`a53679482dc33547a06c3db453976a640e5c7c0fd1a4b29d4df58ae749c6257c`。
+来源 SHA256：`3845e9b8e2dc47c8832aaed5b5c1ba3bacce4a44d0255d9b24e930a33ef25f81`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。

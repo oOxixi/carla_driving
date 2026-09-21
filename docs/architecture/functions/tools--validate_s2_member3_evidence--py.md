@@ -128,7 +128,7 @@ main() -> None
 
 ### `tools/validate_s2_member3_evidence.py`
 
-来源 SHA256：`f3f49b17b2901dd4135a4d8169c365dedfddf4d6ebe45b2064edf7e1f718f8cc`。
+来源 SHA256：`b5bda9e090b5888220b7141a91cdd4e0d27edf03fb04a1401bb54fe6c222325c`。
 
 
 CLI 参数声明：未写 default 时遵循 argparse/action 语义；choices/required/action 与 default 一起读取。字符串帮助不是额外约束。

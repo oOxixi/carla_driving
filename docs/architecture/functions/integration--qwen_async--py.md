@@ -236,7 +236,7 @@ _sim_time(value: float) -> float
 
 ### `integration/qwen_async.py`
 
-来源 SHA256：`38454086cafe4c0305a9735c57ef689d8b8cb3596ecb80698157326e925268c1`。
+来源 SHA256：`8b07006b19e3778cb222088a3341119ec0eacebd187e243c3d8c559bbd1c313f`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：

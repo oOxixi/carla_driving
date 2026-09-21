@@ -128,7 +128,7 @@ FollowingController.speed_cap_mps(self, *, ego_speed_mps: float, lead_distance_m
 
 ### `car_control_C/following_controller.py`
 
-来源 SHA256：`40db5626b7a6ffb99fb63dcfb8afc81dd8cfbc999929c5c802906d92eec19955`。
+来源 SHA256：`fc9925c97c9ed262479bd3f2c9314e5c1131ca9c93524b366b38f474e38fe447`。
 
 
 字段类型与声明默认（完整类级注解字段；含内部状态，不全部是可配置项）：
