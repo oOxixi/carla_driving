@@ -9,7 +9,7 @@
 | 3 | [命令与状态机](modules/vehicle-behavior.md) | 本轮完成：10份实现页、137处占位改写、参数/状态/snapshot索引；M03问题保留 |
 | 4 | [路线与横向控制](modules/vehicle-lateral.md) | 本轮完成：14份实现页、119处占位改写、全局路线/恢复/横向有效参数索引；RLC问题保留 |
 | 5 | [纵向控制](modules/vehicle-longitudinal.md) | **本轮完成**：13份实现页、83处占位改写、生产链/参数/缺测/重置索引；M05-01与A07保留 |
-| 6 | [感知](modules/vehicle-perception.md) | 待按顺序精读；保留既有静态复核结果 |
+| 6 | [感知](modules/vehicle-perception.md) | **本轮完成**：12份实现页、10页96处占位改写、生产/参考链与来源索引；M06-01/M06-02保留 |
 | 7 | [安全仲裁](modules/vehicle-safety.md) | 待按顺序精读；保留既有静态复核结果 |
 | 8 | [场景执行与评分](modules/vehicle-scenarios.md) | 待按顺序精读；保留既有静态复核结果 |
 | 9 | [接口与坐标转换](modules/vehicle-interfaces.md) | 待按顺序精读；保留既有静态复核结果 |
@@ -76,3 +76,11 @@
 - 纯 Python 静态/边界核对确认 M05-01：DrivingPolicy 构造的五个动态包络字段未传入 `dynamic_safety_distance`，当前仍由 `DEFAULT_STRATEGY` 决定；只登记，不修改控制代码。
 - A07 重名测试发现问题继续保留。本机未提供 pytest，故本轮不声称离线套件或 CARLA 已重新运行。
 - 下一项是第6模块“感知”；本轮没有提前把后续模块标为完成。
+
+## 第6模块完成记录
+
+- 核对12份实现页；10页共96处泛用占位按函数体改写，包导出和shell页保留无占位的实际入口说明。
+- 模块页补齐三种sensor profile、同帧获取、LiDAR/Radar门限、前车短时保持、RGB控制走廊、地图灯态、目标ID和来源审计；明确生产bridge与独立perception benchmark管线的边界。
+- 纯Python复现M06-01重复上游track ID导致同帧身份冲突，以及M06-02 canonical按列表首项绑定lead speed导致目标速度/TTC错配；只登记问题，未修改业务代码。
+- 感知相关7份测试入口执行结果 **79 passed in 0.91s**；该结果不包含CARLA、真实ONNX、雨夜或真实传感器质量。
+- 下一项是第7模块“安全仲裁”；本轮不提前标记后续模块完成。

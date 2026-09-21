@@ -55,7 +55,7 @@ Small integration-only contracts shared by the runtime adapters.
 _finite_or_none(name: str, value: float | None) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 `None` 原样保留；其余值只接受非布尔的 `int/float` 且必须有限，成功后统一转为 `float`。类型、NaN 和无穷值都抛 `ValueError`；是否允许负数由调用该助手的字段再判断。
 
 ### `DetectedObject`
 
@@ -71,7 +71,7 @@ One RGB road-user detection, optionally fused with a sensor distance.
 DetectedObject.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结对象的构造门禁：`class_id` 必须为非负整数，类别名非空，置信度在 `[0,1]`；归一化框必须是长度4的 tuple、各坐标在 `[0,1]` 且宽高为正。距离可空但非空时须非负，track ID 可空但非空时必须是非空字符串；通过后置信度、框和距离被标准化为 float。
 
 ### `PerceptionFrame`
 
@@ -91,7 +91,7 @@ control contract; it is retained only by the scoring/oracle stage.
 PerceptionFrame.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+校验控制侧一帧事实：帧号和仿真时间非负，距离/速度/偏移等可空数值必须有限，其中前车距离/速度、停止线距离和限速不得为负；灯态只允许四个枚举值，三个违规标记必须为 bool，目标必须是 `DetectedObject` tuple。该合同不携带来源，因此生产端还必须同时保留 `PerceptionSample.source_by_field`。
 
 ### `FrameResult`
 

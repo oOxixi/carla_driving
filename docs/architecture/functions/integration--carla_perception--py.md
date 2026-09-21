@@ -85,13 +85,13 @@ Configured RGB inference failed, so normal control is unsafe.
 
 源码位置：[integration/carla_perception.py 第 75 行](../../../integration/carla_perception.py#L75)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的 CARLA 安装位姿：x/y/z 为米，pitch/yaw/roll 为度，随后直接构造成 CARLA Location/Rotation。该 dataclass 本身没有有限值或范围校验，生产默认来自固定 sensor specs。
 
 ### `CarlaSensorSpec`
 
 源码位置：[integration/carla_perception.py 第 85 行](../../../integration/carla_perception.py#L85)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+描述一个传感器逻辑ID、CARLA blueprint、安装位姿、字符串属性及其是否逐帧连续。`continuous=False` 的碰撞/压线事件不进入 frame buffer；字段合法性主要在 attach 时由 blueprint 和重复ID检查。
 
 ### `sensor_specs_for_profile`
 
@@ -101,7 +101,7 @@ Configured RGB inference failed, so normal control is unsafe.
 sensor_specs_for_profile(profile: str) -> tuple[CarlaSensorSpec, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 profile 去空白转小写，从只读映射返回 `default`、`low` 或 `competition_multiview` 的固定 spec tuple；未知名称抛 ValueError。返回的是共享冻结对象，不会复制传感器规格。
 
 ### `EventLedger`
 
@@ -117,7 +117,7 @@ Thread-safe exact-frame storage for sparse CARLA safety events.
 EventLedger.__init__(self, *, retain_frames: int=64) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求保留帧数为正整数，创建碰撞/压线两个 frame set 和线程锁。保留上限按两类事件帧的并集计算，不是每类各64帧。
 
 ### `EventLedger.collision_callback`
 
@@ -127,7 +127,7 @@ EventLedger.__init__(self, *, retain_frames: int=64) -> None
 EventLedger.collision_callback(self, event: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+CARLA 回调薄包装，把事件帧写入碰撞集合；无有效非负整数 frame 的事件会由 `_record` 静默忽略。
 
 ### `EventLedger.lane_invasion_callback`
 
@@ -137,7 +137,7 @@ EventLedger.collision_callback(self, event: Any) -> None
 EventLedger.lane_invasion_callback(self, event: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+CARLA 回调薄包装，把事件帧写入压线集合；不解析 crossed lane markings，也不产生违规严重度。
 
 ### `EventLedger._record`
 
@@ -147,7 +147,7 @@ EventLedger.lane_invasion_callback(self, event: Any) -> None
 EventLedger._record(self, target: set[int], event: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从任意事件读取 `frame`，无效值直接返回；锁内加入目标集合。两类事件帧并集超过上限时，以排序后的最近第N帧为下界，同时裁剪两个集合，因此同帧重复事件天然去重。
 
 ### `EventLedger.flags_for_frame`
 
@@ -168,7 +168,7 @@ frame N+1 instead of being discarded forever.
 
 源码位置：[integration/carla_perception.py 第 269 行](../../../integration/carla_perception.py#L269)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+附着结果只包含逻辑ID到 actor 的映射和事件账本；actor 生命周期仍归 `CarlaSession` registry，不能只丢弃此对象来完成清理。
 
 ### `PerceptionSample`
 
@@ -184,7 +184,7 @@ Controller frame plus auditable provenance and aligned raw payloads.
 _make_transform(carla_api: Any, mount: SensorMount) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 `SensorMount` 逐字段映射到注入的 CARLA API `Location`、`Rotation` 和 `Transform`；不做坐标符号转换或单位换算。
 
 ### `_configured_blueprint`
 
@@ -194,7 +194,7 @@ _make_transform(carla_api: Any, mount: SensorMount) -> Any
 _configured_blueprint(world: Any, spec: CarlaSensorSpec) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从 world blueprint library 按 ID 查找并逐项设置字符串属性；找不到 blueprint 或声明了不支持的属性会抛 LookupError。若 mock blueprint 没有 `has_attribute`，则跳过支持性检查而仍调用 `set_attribute`。
 
 ### `attach_default_sensors`
 
@@ -228,7 +228,7 @@ Attach collision/lane-invasion sensors without RGB/LiDAR streams.
 _xyz(value: Any) -> tuple[float, float, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取对象的 x/y/z 属性并转 float tuple；缺属性或不可转换值直接传播异常，不检查有限性。
 
 ### `_speed_mps`
 
@@ -238,7 +238,7 @@ _xyz(value: Any) -> tuple[float, float, float]
 _speed_mps(actor: Any) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 actor 三维速度但只用 `hypot(x,y)` 形成平面速度 m/s，忽略 z 分量；依赖 CARLA 速度单位和 `_xyz` 转换。
 
 ### `_lidar_xyz`
 
@@ -285,13 +285,13 @@ Return LiDAR-grounded left/right adjacent-lane obstacle ranges.
 adjacent_lidar_distances_m.distance(mask: np.ndarray) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+相邻车道局部助手：在共同前向/高度过滤后应用左右横向 mask；少于 `minimum_points` 返回 None，否则对 xy 欧氏距离取10百分位。CARLA 传感器 y 向右，因此左侧 mask 使用负 y。
 
 ### `FrontRadarTarget`
 
 源码位置：[integration/carla_perception.py 第 474 行](../../../integration/carla_perception.py#L474)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+前向雷达候选的不可变二元组：到 ego 原点的前向距离和 CARLA 径向相对速度。径向速度可为负；后续用 `ego_speed + closing_speed_mps` 估计绝对前车速度。
 
 ### `TemporalLeadTracker`
 
@@ -314,7 +314,7 @@ phantom.
 TemporalLeadTracker.reset(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+清空距离、速度、更新时间、最后观测和观测后自车行驶距离；新 episode 或 hold 过期时使用。重置后下一次观测不能立即从距离差分估速。
 
 ### `TemporalLeadTracker.update`
 
@@ -350,7 +350,7 @@ derived later from ego speed plus that signed relative velocity.
 _normalise_light_state(value: Any) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把枚举/字符串按点号取最后段并大写，只保留 RED/YELLOW/GREEN，其余统一 UNKNOWN；不会把未知状态默认成 GREEN。
 
 ### `_upcoming_traffic_light`
 
@@ -370,7 +370,7 @@ Find the nearest same-lane stop waypoint before CARLA marks it active.
 traffic_light_and_stop_distance(ego: Any, traffic_lights: Iterable[Any]=(), *, world_map: Any | None=None) -> tuple[str, float | None, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+优先结合 ego 当前灯和地图 stop waypoints，返回 `(灯态, 前保险杠到停止线距离或None, 来源)`。没有 active light 时可用前方同车道 upcoming waypoint；active light 优先最近未越过 stop waypoint，缺 waypoint 时才使用 trigger volume 近似。停止线已越过或没有候选会保留灯态但距离为 None，并用来源标签区分原因。
 
 ### `actor_speed_limit_mps`
 
@@ -416,7 +416,7 @@ Convert one exact CARLA sensor frame into the controller contract.
 CarlaPerceptionBridge.__init__(self, world: Any, world_map: Any, ego: Any, session: CarlaSession, sensors: AttachedCarlaSensors, detector: Any | None=None, *, visual_provider: Callable[[Any], VisualObservation] | None=None, fusion: ConservativeSensorFusion | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存 world/map/ego/session/传感器，检测器和 visual_provider 互斥，否则拒绝；未注入融合器时新建 `ConservativeSensorFusion`，并新建对象与前车时序 tracker。构造阶段快照 world 中所有 traffic-light actors，后续动态新建的灯不会自动加入该 tuple。
 
 ### `CarlaPerceptionBridge.acquire`
 

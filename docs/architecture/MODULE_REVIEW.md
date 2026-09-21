@@ -59,3 +59,7 @@
 ## 顺序精读进度补充：第4、5模块
 
 [路线与横向控制](modules/vehicle-lateral.md)逐项整理完成：14份实现页、119处占位改写，补齐全局拓扑路线、场景局部路线、进度/恢复、坐标和生产 Pure Pursuit 有效参数；[专题页](modules/04_ROUTE_AND_LATERAL_CONTROL.md)纳入统一目录，RLC-01～RLC-05 保留为未关闭工程边界。[纵向控制](modules/vehicle-longitudinal.md)已完成13份实现页和83处占位改写，补齐生产链、速度约束、缺测、状态与重置边界，并登记M05-01配置生效缺口。当前顺序精读完成5/20，详见[进度表](SEQUENTIAL_REVIEW.md)。
+
+## 顺序精读进度补充：第6模块
+
+[感知](modules/vehicle-perception.md)已完成12份实现页复核和10页96处占位改写，区分runner生产bridge、C安全融合及独立perception benchmark管线，补齐帧同步、传感器门限、目标身份、canonical近似与来源审计；79项相关离线测试通过，M06-01/M06-02保留为未修复边界。当前顺序精读完成6/20。

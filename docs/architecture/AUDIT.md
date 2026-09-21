@@ -59,6 +59,12 @@
 
 **M05-01 / 静态接线与纯Python边界已确认、未修复：perception policy的五个动态包络字段未进入实际包络公式。** [DrivingPolicy.perception_parameters](../../integration/driving_policy.py)构造`reaction_time_s`、`emergency_reaction_time_s`、`comfortable_deceleration_mps2`、`emergency_deceleration_mps2`、`range_uncertainty_buffer_m`，且[SafetyStateParameters](functions/car_control_C--safety_state--py.md)验证并保存它们；但`ConservativeSensorFusion.update`调用[dynamic_safety_distance](../../config/strategy.py)时只传速度、接近速度、曲率、对象类型和margin scale，没有传这些字段或替代StrategyConfig。后者因此读取导入时的`DEFAULT_STRATEGY`。同一帧输入下仅改变上述五项，动态谨慎/紧急距离保持相同。此结论只针对动态包络；距离floor、TTC、VRU限速/保持等字段有独立消费路径，不能扩大为整个DrivingPolicy无效。修复前需先决定单一配置所有权，再补参数效果回归和runner实际配置身份记录。
 
+### 第6模块：感知精读新增证据（基线5c46eb7d）
+
+**M06-01 / 直接接口已复现、未修复：上游显式track ID可在同帧重复。** [SensorObjectTracker.update](functions/integration--object_tracker--py.md)优先采用非空`detection.track_id`，没有检查该ID是否已被本帧另一目标使用。输入两个分别位于画面左右、但都带`track_id="dup"`的合法DetectedObject，输出ID为`["dup","dup"]`，内部`_tracks["dup"]`最终只保留后一个。当前生产OnnxYoloDetector输出ID为空，bridge通常由tracker分配`C-xxxx`，所以这是公开接口/未来带ID上游的身份边界，不应扩大为已确认历史run都重复。
+
+**M06-02 / canonical实际转换已复现、未修复：前车速度按对象列表首项绑定。** [perception_frame_to_state](../../integration/canonical_bridge.py)仅给`index==0`对象写`scene.lead_speed_mps`，未按`lead_distance_m`、track或测距目标关联。构造side目标（无距离、列表第一）和lead目标（10 m、列表第二），自车10 m/s、lead speed 2 m/s，输出side为50 m/2 m/s/TTC 6.25 s，lead为10 m/0 m/s/TTC 1.0 s。字段均通过schema但对象语义错配；修复需明确range-track关联，并同时回归Qwen目标排序、Student pointer、NONE/缺测和多目标场景。
+
 
 ### 第2模块：异步规划精读新增证据（2026-09-20，基线fe1ba839）
 

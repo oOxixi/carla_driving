@@ -29,13 +29,13 @@ Sensor-only temporal IDs for detected road users.
 _center(detection: DetectedObject) -> tuple[float, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回归一化检测框两条边的算术中心 `(x,y)`；不重新校验框，依赖 `DetectedObject` 构造时已保证坐标合法。
 
 ### `_Track`
 
 源码位置：[integration/object_tracker.py 第 16 行](../../../integration/object_tracker.py#L16)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+内部可变记录，只保存最新 `DetectedObject` 和最后出现帧；生命周期、ID分配和淘汰均由 `SensorObjectTracker` 管理，不是跨进程合同。
 
 ### `SensorObjectTracker`
 
@@ -51,7 +51,7 @@ Greedy class/range/image association with opaque stable IDs.
 SensorObjectTracker.__init__(self, *, maximum_frame_gap: int=5, maximum_center_shift: float=0.25, minimum_range_gate_m: float=3.0) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+建立空 track 表并从 `C-0001` 开始编号。只显式要求 `maximum_frame_gap >= 1`；中心位移阈值和最小测距门限直接转 float，当前构造器没有对负值或非有限值做独立拒绝。
 
 ### `SensorObjectTracker.update`
 
@@ -61,7 +61,7 @@ SensorObjectTracker.__init__(self, *, maximum_frame_gap: int=5, maximum_center_s
 SensorObjectTracker.update(self, frame: int, detections: Sequence[DetectedObject]) -> tuple[DetectedObject, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先删除超过最大帧间隔的历史 track，再按输入顺序为每个检测复用自带 ID、贪心匹配一个尚未占用的历史 ID，或分配新 `C-xxxx` ID；同帧一个历史 ID 最多匹配一次。返回顺序保持输入顺序，并用当前检测覆盖 track 的最后状态；函数本身不验证帧单调或检测元素类型。
 
 ### `SensorObjectTracker._best_match`
 
@@ -71,7 +71,7 @@ SensorObjectTracker.update(self, frame: int, detections: Sequence[DetectedObject
 SensorObjectTracker._best_match(self, detection: DetectedObject, available: set[str]) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+只比较类别名大小写一致的候选；归一化中心的 L1 位移不能超过阈值。两侧都有测距时再用 `max(minimum_range_gate_m, previous_distance*0.25)` 作距离门限并加入归一化代价，最后选总代价最小的可用 ID；距离缺失不会单独阻止匹配。
 
 ## 内部调用与异常路径
 
