@@ -33,7 +33,7 @@ A valid planner record cannot be represented by the Student contract.
 
 源码位置：[challenge/distillation/label_encoder.py 第 43 行](../../../challenge/distillation/label_encoder.py#L43)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`DistillationLabelEncoder` 蒸馏训练类，封装Dataset、模型、标签、loss或错误合同；Head顺序、shape与训练身份受冻结Student契约约束。
 
 ### `DistillationLabelEncoder.__post_init__`
 
@@ -43,7 +43,7 @@ A valid planner record cannot be represented by the Student contract.
 DistillationLabelEncoder.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__post_init__` 固化本对象的训练结构、配置或依赖，并执行源码中的初始一致性检查；后续批次仍必须保持shape、device、dtype和身份一致。
 
 ### `DistillationLabelEncoder.vocabulary`
 
@@ -53,7 +53,7 @@ DistillationLabelEncoder.__post_init__(self) -> None
 DistillationLabelEncoder.vocabulary(self) -> dict[str, tuple[str, ...]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`vocabulary` 把Teacher计划和当前ModelRequest候选编码为冻结Student标签；pointer按原targets顺序，越界、ID不匹配或超长计划必须拒绝。
 
 ### `DistillationLabelEncoder.encode`
 
@@ -63,7 +63,7 @@ DistillationLabelEncoder.vocabulary(self) -> dict[str, tuple[str, ...]]
 DistillationLabelEncoder.encode(self, request: Mapping[str, Any], plan: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`encode` 把Teacher计划和当前ModelRequest候选编码为冻结Student标签；pointer按原targets顺序，越界、ID不匹配或超长计划必须拒绝。
 
 ### `DistillationLabelEncoder._target_pointer`
 
@@ -73,7 +73,7 @@ DistillationLabelEncoder.encode(self, request: Mapping[str, Any], plan: Mapping[
 DistillationLabelEncoder._target_pointer(self, target_id: object, target_positions: Mapping[str, int]) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_target_pointer` 把Teacher计划和当前ModelRequest候选编码为冻结Student标签；pointer按原targets顺序，越界、ID不匹配或超长计划必须拒绝。
 
 ### `_category_index`
 
@@ -83,7 +83,7 @@ DistillationLabelEncoder._target_pointer(self, target_id: object, target_positio
 _category_index(values: Sequence[str], value: object, field_name: str) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_category_index` 把Teacher计划和当前ModelRequest候选编码为冻结Student标签；pointer按原targets顺序，越界、ID不匹配或超长计划必须拒绝。
 
 ## 内部调用与异常路径
 

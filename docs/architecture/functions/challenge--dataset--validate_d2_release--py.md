@@ -28,7 +28,7 @@ Read-only integrity gate for the portable B1 D2 release.
 _sha256(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_sha256` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `_canonical_text_bytes`
 
@@ -48,7 +48,7 @@ Match Git's LF-normalized text blob on both Windows and Linux.
 canonical_text_sha256(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`canonical_text_sha256` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `validate_release`
 
@@ -58,7 +58,7 @@ canonical_text_sha256(path: Path) -> str
 validate_release(release_dir: Path, *, check_images: bool=True) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_release` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `main`
 
@@ -68,7 +68,7 @@ validate_release(release_dir: Path, *, check_images: bool=True) -> dict[str, Any
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ## 内部调用与异常路径
 

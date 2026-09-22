@@ -28,7 +28,7 @@ Freeze a request set into a self-contained replay snapshot.
 _canonical_sha256(payload: Any) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_canonical_sha256` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `_extension`
 
@@ -38,7 +38,7 @@ _canonical_sha256(payload: Any) -> str
 _extension(path: str | None) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_extension` 读取冻结输入、配置、图像或provenance；路径解析必须保持发布边界，缺失资源不能静默当作成功样本。
 
 ### `freeze_snapshot`
 
@@ -48,7 +48,7 @@ _extension(path: str | None) -> str
 freeze_snapshot(*, delivery_root: str | Path | None, out_root: str | Path, name: str, requests_path: str | Path | None=None, repo_root: str | Path | None=None, limit: int | None=None, copy_rgb: bool=True) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`freeze_snapshot` 写出冻结快照、handoff、trace、遥测或报告产物；文件必须绑定候选身份、输入哈希和环境，写盘成功不是Gate通过。
 
 ### `load_frozen_snapshot`
 

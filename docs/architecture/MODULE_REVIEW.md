@@ -75,3 +75,7 @@
 ## 顺序精读进度补充：第9～11模块
 
 [接口与坐标转换](modules/vehicle-interfaces.md)已核对7份Schema字段页、Registry、canonical bridge与版本语义，补齐验证层次、单位/坐标/ID/时钟和三类转换降级；43项离线测试通过，M09-01保留。[Student结构与预处理](modules/challenge-structure.md)完成5份实现页复核和23处占位改写，补齐四路张量、十Head、信息损失与mask，服务器23项测试通过并保留M10-01。[Student Planner](modules/challenge-planner.md)完成8份实现/语义页复核和22处占位改写，补齐双Backend、确定性修复、confirmation与权重就绪边界，服务器26项测试通过并保留M11-01。当前顺序精读完成11/20；以上均未修改业务代码，也不等于CARLA、正式权重或J6P验收。
+
+## 顺序精读进度补充：第12～15模块
+
+[Teacher数据治理](modules/challenge-data.md)完成33份实现页和301处占位改写，明确run/sample/release/view、身份/切分/排除证据；数据测试暴露M12-01外部冻结计划缺失。[蒸馏与晋级](modules/challenge-training.md)完成25份实现/配置页和103处占位改写，明确标签/mask/loss/checkpoint/纯权重/Gate，65项测试通过且A01保留。[导出与部署](modules/challenge-export.md)完成6份实现页和13处占位改写，artifact validator实际PASS，但R01/R03仍阻断真实权重到J6P闭环。[HIL与测量](modules/challenge-hil.md)完成20份实现/资源页和139处占位改写，71项测试通过且A02/A03/R02保留。当前顺序精读完成15/20；未训练正式Student或运行真实J6P。

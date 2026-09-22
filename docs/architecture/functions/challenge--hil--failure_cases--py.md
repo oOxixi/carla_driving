@@ -28,7 +28,7 @@ Deterministic abnormal-input suite.
 
 源码位置：[challenge/hil/failure_cases.py 第 22 行](../../../challenge/hil/failure_cases.py#L22)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`FailureCase` HIL协议类，封装runtime、能力、身份、trace、回放、轮次或采样状态；默认字段不是实测结果，必须随证据序列化。
 
 ### `_jsonable`
 
@@ -38,7 +38,7 @@ Deterministic abnormal-input suite.
 _jsonable(value: Any) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_jsonable` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `build_failure_cases`
 
@@ -48,7 +48,7 @@ _jsonable(value: Any) -> Any
 build_failure_cases(base_request: Mapping[str, Any]) -> list[FailureCase]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_failure_cases` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `run_failure_cases`
 
@@ -58,7 +58,7 @@ build_failure_cases(base_request: Mapping[str, Any]) -> list[FailureCase]
 run_failure_cases(runtime: PlannerRuntime, cases: Sequence[FailureCase], *, run_id: str, output_dir: str | Path, latency_budget_ms: float=1000.0) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`run_failure_cases` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ## 内部调用与异常路径
 

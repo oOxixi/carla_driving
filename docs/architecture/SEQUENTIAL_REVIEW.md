@@ -15,10 +15,10 @@
 | 9 | [接口与坐标转换](modules/vehicle-interfaces.md) | **本轮完成**：7份Schema字段页、Registry与3个canonical转换入口；单位/坐标/ID/时钟及M09-01保留 |
 | 10 | [Student 结构与预处理](modules/challenge-structure.md) | **本轮完成**：5份实现页、23处占位改写，四路张量/十Head/预处理/训练mask及M10-01保留 |
 | 11 | [Student Planner](modules/challenge-planner.md) | **本轮完成**：8份实现页、22处占位改写，双Backend/解码/修复/就绪身份及M11-01保留 |
-| 12 | [Teacher 数据治理](modules/challenge-data.md) | 待按顺序精读；保留既有静态复核结果 |
-| 13 | [蒸馏与晋级](modules/challenge-training.md) | 待按顺序精读；保留既有静态复核结果 |
-| 14 | [导出与部署](modules/challenge-export.md) | 待按顺序精读；保留既有静态复核结果 |
-| 15 | [HIL 与测量](modules/challenge-hil.md) | 待按顺序精读；保留既有静态复核结果 |
+| 12 | [Teacher 数据治理](modules/challenge-data.md) | **本轮完成**：33份实现页、301处占位改写，采集/release/view/切分/身份与M12-01保留 |
+| 13 | [蒸馏与晋级](modules/challenge-training.md) | **本轮完成**：25份实现/配置页、19页103处占位改写，标签/loss/checkpoint/Gate与A01保留 |
+| 14 | [导出与部署](modules/challenge-export.md) | **本轮完成**：6份实现页、4页13处占位改写，随机ONNX/真实权重/X86/J6P边界与R01/R03保留 |
+| 15 | [HIL 与测量](modules/challenge-hil.md) | **本轮完成**：20份实现/资源页、17页139处占位改写，Runtime/trace/身份/证据与A02/A03/R02保留 |
 | 16 | [语音链](modules/support-voice.md) | 待按顺序精读；保留既有静态复核结果 |
 | 17 | [Qwen 后端](modules/support-qwen.md) | 待按顺序精读；保留既有静态复核结果 |
 | 18 | [配置与场景合同](modules/support-config-scenarios.md) | 待按顺序精读；保留既有静态复核结果 |
@@ -124,3 +124,29 @@
 - 服务器 PyTorch 定点复现 M11-01：请求只允许 PULL_OVER 且存在 SHOULDER，模型车道预测 CURRENT 时最终行为仍为 PULL_OVER、target_lane=null，并通过当前 PlanValidator；只登记，未改业务代码。
 - A1与交付测试执行结果 **26 passed in 19.76s**；不包含正式权重、Teacher服务、CARLA、ONNX或J6P。
 - 下一项是第12模块“Teacher 数据治理”；本轮不提前标记后续模块完成。
+
+## 第12模块完成记录
+
+- 核对33份数据实现页与发布/视图语义页，301处泛用占位按采集、身份、切分、发布和治理职责改写。
+- 模块页明确原始run、canonical sample、冻结release与A3 view四层证据，补齐Teacher/target/终态关联、group防泄漏、文本/图像hash口径和D3接入边界。
+- 原测试集合为 **59 passed、1 failed**；M12-01确认D3 provenance测试依赖被忽略且缺失的artifact。排除该外部产物依赖后 **59 passed、1 deselected**。
+- 下一项是第13模块“蒸馏与晋级”。
+
+## 第13模块完成记录
+
+- 核对25份实现/配置页；19个Python实现页共103处占位改写，补齐preflight→标签→loss→训练→checkpoint→候选→promote顺序。
+- 明确soft蒸馏只覆盖两个Head、mask/分母、max_updates=0、checkpoint与纯权重区别，以及A01 Student评估身份缺口。
+- 服务器distillation、A1与交付测试 **65 passed in 43.00s**；未运行正式训练或精度Gate。
+- 下一项是第14模块“导出与部署”。
+
+## 第14模块完成记录
+
+- 核对6份导出/运行实现页，4页13处占位改写；区分随机结构ONNX、真实A3权重ONNX、X86前向与J6P交付。
+- 当前artifact validator实际PASS，记录ONNX SHA、23,006,581参数、算子、shape和十Head顺序；R01/R03仍保留，不能升级为生产部署通过。
+- 下一项是第15模块“HIL与测量”。
+
+## 第15模块完成记录
+
+- 核对20份HIL实现/资源页；17页139处占位改写，补齐三类Runtime能力、StageTrace、轮次、身份、冻结/回放/soak/采样/报告证据边界。
+- 服务器HIL测试 **71 passed in 1.85s**；A02重复mark、A03绕过真实infer、R02 full_chain语义仍未修复，未做真实J6P测试。
+- 下一项是第16模块“语音链”；本轮不提前标记后续模块完成。

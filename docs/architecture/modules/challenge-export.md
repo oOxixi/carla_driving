@@ -26,6 +26,26 @@
 
 修改模型或真实权重导出时同步 metadata、weights_status、dataset_version、config_id、结构状态、ONNX SHA、FLOPs 口径、ORT 一致性及 B3 产物身份；PyTorch 权重 SHA 与 ONNX SHA 必须分别保留。
 
+## 第14模块逐入口精读结论（2026-09-22）
+
+### 产物层级不能混称
+
+| 产物 | 当前实现能证明 | 不能证明 |
+|---|---|---|
+| `student_v0_fp32.onnx` | 固定结构、十Head顺序、opset17、batch1可校验 | 已加载A3训练权重 |
+| `model_structure.json` / `flops_report.json` | 参数量、shape、算子与记录身份一致 | 预测精度、数值对齐、J6P性能 |
+| X86 profile | ORT CPU零输入前向可运行及宿主耗时 | ModelRequest→Plan全链、板端功耗/时延 |
+| A4/J6P产物 | 当前尚未形成正式编译与实机证据 | 不得由X86或随机ONNX代替 |
+
+R01仍是主阻塞：`export_student_v0`始终新建随机Student且没有weights参数。真实出口必须读取A3纯权重及manifest，核对model/config/weights SHA和dataset/view身份，导出后做PyTorch↔ONNX逐Head数值对齐，再单独签发ONNX SHA；不能把PT SHA复制成ONNX SHA。
+
+### 固定合同和验证结果
+
+- Wrapper只按 `OUTPUT_NAMES` 把dict转位置tuple；修改Head必须同步contract、export、ORT、A4和HIL。
+- 当前无dynamic axes，输入固定RGB `[1,3,224,224]`、text `[1,32]`、targets `[1,8,14]`、state `[1,64]`。
+- R03保留：X86输入shape独立硬编码；结构变化需改为读取同一contract或在门禁中拒绝漂移。
+- 服务器直接运行artifact validator为 **PASS**：ONNX SHA `ffb1ed5e...ee243`、参数量23,006,581、11种允许算子、四路shape和十Head顺序一致。该PASS明确属于随机结构smoke；相关A1/交付测试包含在第13模块65项结果中。
+
 
 
 ## 模块接口与参数核对（2026-09-20）

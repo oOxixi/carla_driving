@@ -34,7 +34,7 @@ Masked, risk-weighted multi-head distillation objective.
 
 源码位置：[challenge/distillation/losses.py 第 14 行](../../../challenge/distillation/losses.py#L14)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`LossWeights` 蒸馏训练类，封装Dataset、模型、标签、loss或错误合同；Head顺序、shape与训练身份受冻结Student契约约束。
 
 ### `LossWeights.from_mapping`
 
@@ -44,7 +44,7 @@ Masked, risk-weighted multi-head distillation objective.
 LossWeights.from_mapping(cls, value: Mapping[str, Any] | None) -> 'LossWeights'
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`from_mapping` 定义蒸馏训练使用的模型、Dataset、标签器、loss或错误类型；字段和Head顺序受Student contract约束，修改后必须重训并更新身份。
 
 ### `MultiHeadDistillationLoss`
 
@@ -60,7 +60,7 @@ Compute hard-label losses and optional Teacher probability KL terms.
 MultiHeadDistillationLoss.__init__(self, weights: LossWeights | None=None, *, soft_alpha: float=0.0, temperature: float=1.0, class_weights: Mapping[str, Any] | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化本对象的训练结构、配置或依赖，并执行源码中的初始一致性检查；后续批次仍必须保持shape、device、dtype和身份一致。
 
 ### `MultiHeadDistillationLoss.forward`
 
@@ -70,7 +70,7 @@ MultiHeadDistillationLoss.__init__(self, weights: LossWeights | None=None, *, so
 MultiHeadDistillationLoss.forward(self, outputs: Mapping[str, Tensor], labels: Mapping[str, Tensor]) -> tuple[Tensor, dict[str, Tensor]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`forward` 执行Student前向并按冻结Head合同返回或校验具名Tensor；训练路径还需检查shape、device、有限值和梯度，不能只看模型调用成功。
 
 ### `MultiHeadDistillationLoss._class_weight`
 
@@ -80,7 +80,7 @@ MultiHeadDistillationLoss.forward(self, outputs: Mapping[str, Tensor], labels: M
 MultiHeadDistillationLoss._class_weight(self, name: str, logits: Tensor) -> Tensor | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_class_weight` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ### `MultiHeadDistillationLoss._mix_soft`
 
@@ -90,7 +90,7 @@ MultiHeadDistillationLoss._class_weight(self, name: str, logits: Tensor) -> Tens
 MultiHeadDistillationLoss._mix_soft(self, hard_loss: Tensor, logits: Tensor, teacher_probs: Tensor | None, mask: Tensor, sample_weight: Tensor) -> Tensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_mix_soft` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ### `_masked_cross_entropy`
 
@@ -100,7 +100,7 @@ MultiHeadDistillationLoss._mix_soft(self, hard_loss: Tensor, logits: Tensor, tea
 _masked_cross_entropy(logits: Tensor, targets: Tensor, mask: Tensor, sample_weight: Tensor, class_weight: Tensor | None=None) -> Tensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_masked_cross_entropy` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ### `_masked_smooth_l1`
 
@@ -110,7 +110,7 @@ _masked_cross_entropy(logits: Tensor, targets: Tensor, mask: Tensor, sample_weig
 _masked_smooth_l1(predicted: Tensor, target: Tensor, mask: Tensor, sample_weight: Tensor) -> Tensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_masked_smooth_l1` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ### `_weighted_mean`
 
@@ -120,7 +120,7 @@ _masked_smooth_l1(predicted: Tensor, target: Tensor, mask: Tensor, sample_weight
 _weighted_mean(values: Tensor, mask: Tensor, sample_weight: Tensor) -> Tensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_weighted_mean` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ### `_weighted_vector_cross_entropy`
 
@@ -130,7 +130,7 @@ _weighted_mean(values: Tensor, mask: Tensor, sample_weight: Tensor) -> Tensor
 _weighted_vector_cross_entropy(logits: Tensor, targets: Tensor, sample_weight: Tensor, class_weight: Tensor | None=None) -> Tensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_weighted_vector_cross_entropy` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ### `_weighted_multilabel_bce`
 
@@ -140,7 +140,7 @@ _weighted_vector_cross_entropy(logits: Tensor, targets: Tensor, sample_weight: T
 _weighted_multilabel_bce(logits: Tensor, targets: Tensor, sample_weight: Tensor) -> Tensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_weighted_multilabel_bce` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ## 内部调用与异常路径
 

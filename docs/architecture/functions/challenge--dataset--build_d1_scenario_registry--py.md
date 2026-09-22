@@ -28,7 +28,7 @@ build_d1_scenario_registry
 load_json(path: Path) -> tuple[dict[str, Any] | None, str | None]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_json` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `runnable_reason`
 
@@ -38,7 +38,7 @@ load_json(path: Path) -> tuple[dict[str, Any] | None, str | None]
 runnable_reason(data: dict[str, Any]) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`runnable_reason` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `source_bucket`
 
@@ -48,7 +48,7 @@ runnable_reason(data: dict[str, Any]) -> str | None
 source_bucket(rel: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`source_bucket` 按当前策略把场景或样本映射到治理类别、配额或状态；分类结果会影响训练资格和切分，修改规则需版本化并重建报告。
 
 ### `family`
 
@@ -58,7 +58,7 @@ source_bucket(rel: str) -> str
 family(rel: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`family` 按当前策略把场景或样本映射到治理类别、配额或状态；分类结果会影响训练资格和切分，修改规则需版本化并重建报告。
 
 ### `classify`
 
@@ -68,7 +68,7 @@ family(rel: str) -> str
 classify(rel: str, data: dict[str, Any]) -> tuple[str, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`classify` 按当前策略把场景或样本映射到治理类别、配额或状态；分类结果会影响训练资格和切分，修改规则需版本化并重建报告。
 
 ### `main`
 
@@ -78,7 +78,7 @@ classify(rel: str, data: dict[str, Any]) -> tuple[str, str]
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ## 内部调用与异常路径
 

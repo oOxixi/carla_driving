@@ -85,6 +85,10 @@
 
 **M11-01 / 服务器 PyTorch完整解码+Validator已复现、未修复：PULL_OVER可在无肩部目标车道时通过。** [StudentPlanAdapter._step](functions/challenge--planner--student_adapter--py.md)只有 `predicted_lane == "SHOULDER"` 才为 PULL_OVER 写 `target_lane`，否则写 null；[PlanValidator](../../runtime/plan_validator.py)只在非空 target_lane 为 SHOULDER 时校验车道可用，没有要求 PULL_OVER 必须指定 SHOULDER。构造只允许PULL_OVER、available_lanes含CURRENT/SHOULDER、行为Head选PULL_OVER而车道Head选CURRENT的请求，最终输出 `behavior=PULL_OVER,target_lane=None` 且 Validator 通过。该结论是Adapter/Validator合同缺口，不代表真实训练权重必然产生该组合。修复需统一训练标签、Adapter强制车道、Validator拒绝条件、Compiler和闭环靠边完成判定。
 
+### 第12模块：Teacher数据治理精读新增证据（基线47d2ad3b）
+
+**M12-01 / 干净服务器checkout已复现、未修复：D3冻结计划provenance测试依赖被忽略的运行产物。** [test_d3_wave1_collector](../../challenge/dataset/tests/test_d3_wave1_collector.py)直接读取 `collect_d3_wave1.DEFAULT_PLAN` 指向的 `artifacts/b1_d3_expansion_plan_wave1_v1/d3_expansion_plan_wave1.json`，但仓库 `.gitignore` 排除 `/artifacts/*` 且该文件当前不存在。完整相关测试得到 `1 failed, 195 passed`，单独数据套件排除该项为 `59 passed, 1 deselected`。这不证明D3计划内容错误，只证明干净checkout不能按现有测试独立复核其固定SHA/provenance。应将最小冻结计划或签名manifest纳入可复现发布，或让测试从明确外部artifact输入读取并在缺失时报告独立环境门禁。
+
 
 ### 第2模块：异步规划精读新增证据（2026-09-20，基线fe1ba839）
 

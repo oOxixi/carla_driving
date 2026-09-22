@@ -28,7 +28,7 @@ materialize_d2_student_split
 sha256_file(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sha256_file` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `read_jsonl`
 
@@ -38,7 +38,7 @@ sha256_file(path: Path) -> str
 read_jsonl(path: Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`read_jsonl` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `write_jsonl`
 
@@ -48,7 +48,7 @@ read_jsonl(path: Path) -> list[dict[str, Any]]
 write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_jsonl` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `write_json`
 
@@ -58,7 +58,7 @@ write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None
 write_json(path: Path, obj: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_json` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `main`
 
@@ -68,7 +68,7 @@ write_json(path: Path, obj: Any) -> None
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ### `main.materialize`
 
@@ -78,7 +78,7 @@ main() -> int
 main.materialize(ids_in_order: list[str], split: str) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`materialize` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ## 内部调用与异常路径
 

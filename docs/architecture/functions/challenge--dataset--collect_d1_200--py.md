@@ -28,7 +28,7 @@ collect_d1_200
 read_json(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`read_json` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `read_jsonl`
 
@@ -38,7 +38,7 @@ read_json(path: Path) -> dict[str, Any]
 read_jsonl(path: Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`read_jsonl` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `write_json`
 
@@ -48,7 +48,7 @@ read_jsonl(path: Path) -> list[dict[str, Any]]
 write_json(path: Path, value: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_json` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `write_jsonl`
 
@@ -58,7 +58,7 @@ write_json(path: Path, value: Any) -> None
 write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_jsonl` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `count_jsonl`
 
@@ -68,7 +68,7 @@ write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> None
 count_jsonl(path: Path) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`count_jsonl` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `sha256_file`
 
@@ -78,7 +78,7 @@ count_jsonl(path: Path) -> int
 sha256_file(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sha256_file` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `canonical_json_sha256`
 
@@ -88,7 +88,7 @@ sha256_file(path: Path) -> str
 canonical_json_sha256(value: Any) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`canonical_json_sha256` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `git`
 
@@ -98,7 +98,7 @@ canonical_json_sha256(value: Any) -> str
 git(repo: Path, *args: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`git` 处理运行环境、仓库或路径边界；其结果用于可复现性与失败清理，不等同于样本质量或发布Gate。
 
 ### `current_head`
 
@@ -108,7 +108,7 @@ git(repo: Path, *args: str) -> str
 current_head(repo: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`current_head` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `current_branch`
 
@@ -118,7 +118,7 @@ current_head(repo: Path) -> str
 current_branch(repo: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`current_branch` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `verify_tracked_file_matches_head`
 
@@ -128,7 +128,7 @@ current_branch(repo: Path) -> str
 verify_tracked_file_matches_head(repo: Path, relative_path: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`verify_tracked_file_matches_head` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `load_registry`
 
@@ -138,7 +138,7 @@ verify_tracked_file_matches_head(repo: Path, relative_path: str) -> dict[str, An
 load_registry(path: Path) -> list[dict[str, str]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_registry` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `teacher_health`
 
@@ -148,7 +148,7 @@ load_registry(path: Path) -> list[dict[str, str]]
 teacher_health(service_url: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`teacher_health` 从日志、请求或Teacher计划提取或评估训练语义；ID、target顺序、终态与时间字段必须来自同一命令链，缺失时返回或隔离而非猜测。
 
 ### `load_teacher_manifest`
 
@@ -158,7 +158,7 @@ teacher_health(service_url: str) -> dict[str, Any]
 load_teacher_manifest(repo: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_teacher_manifest` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `load_model_artifact_manifest`
 
@@ -168,7 +168,7 @@ load_teacher_manifest(repo: Path) -> dict[str, Any]
 load_model_artifact_manifest(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_model_artifact_manifest` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `runner_preflight`
 
@@ -178,7 +178,7 @@ load_model_artifact_manifest(path: Path) -> dict[str, Any]
 runner_preflight(runner_python: str, repo: Path) -> dict[str, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`runner_preflight` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `carla_port_preflight`
 
@@ -188,7 +188,7 @@ runner_preflight(runner_python: str, repo: Path) -> dict[str, str]
 carla_port_preflight(host: str, port: int) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`carla_port_preflight` 处理运行环境、仓库或路径边界；其结果用于可复现性与失败清理，不等同于样本质量或发布Gate。
 
 ### `sort_key`
 
@@ -198,7 +198,7 @@ carla_port_preflight(host: str, port: int) -> None
 sort_key(row: dict[str, str]) -> tuple[int, int, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sort_key` 参与分组、候选或确定性切分与分配；必须保持同组不跨split、seed可复现并记录未满足配额，不能靠重跑挑选有利结果。
 
 ### `build_positive_plan`
 
@@ -208,7 +208,7 @@ sort_key(row: dict[str, str]) -> tuple[int, int, str]
 build_positive_plan(registry: list[dict[str, str]]) -> list[dict[str, str]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_positive_plan` 从显式输入构造版本化样本、计划、清单或派生视图；保持原始记录不变，并把默认、排除原因与来源身份写入新产物。
 
 ### `write_plan`
 
@@ -218,7 +218,7 @@ build_positive_plan(registry: list[dict[str, str]]) -> list[dict[str, str]]
 write_plan(plan: list[dict[str, str]], out_dir: Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_plan` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `load_run_state`
 
@@ -228,7 +228,7 @@ write_plan(plan: list[dict[str, str]], out_dir: Path) -> None
 load_run_state(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_run_state` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `save_run_state`
 
@@ -238,7 +238,7 @@ load_run_state(path: Path) -> dict[str, Any]
 save_run_state(path: Path, state: dict[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`save_run_state` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `log_files_for_scenario`
 
@@ -248,7 +248,7 @@ save_run_state(path: Path, state: dict[str, Any]) -> None
 log_files_for_scenario(log_dir: Path, scenario_id: str) -> list[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`log_files_for_scenario` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `run_scenario`
 
@@ -258,7 +258,7 @@ log_files_for_scenario(log_dir: Path, scenario_id: str) -> list[str]
 run_scenario(*, repo: Path, runner_python: str, scenario_path: str, service_url: str, log_dir: Path, image_prefix: str, host: str, port: int, timeout_ms: int) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`run_scenario` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `collect_from_logs`
 
@@ -268,7 +268,7 @@ run_scenario(*, repo: Path, runner_python: str, scenario_path: str, service_url:
 collect_from_logs(*, repo: Path, python: str, log_dir: Path, dataset_dir: Path) -> tuple[int, int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`collect_from_logs` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `referenced_target_ids`
 
@@ -278,7 +278,7 @@ collect_from_logs(*, repo: Path, python: str, log_dir: Path, dataset_dir: Path) 
 referenced_target_ids(plan: dict[str, Any]) -> list[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`referenced_target_ids` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `primary_sample_class`
 
@@ -288,7 +288,7 @@ referenced_target_ids(plan: dict[str, Any]) -> list[str]
 primary_sample_class(sample: dict[str, Any]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`primary_sample_class` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `enrich_canonical`
 
@@ -298,7 +298,7 @@ primary_sample_class(sample: dict[str, Any]) -> str
 enrich_canonical(sample: dict[str, Any], *, collection_head: str, teacher_manifest: dict[str, Any], registry_by_scenario: dict[str, dict[str, str]]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`enrich_canonical` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `student_view_or_reason`
 
@@ -308,7 +308,7 @@ enrich_canonical(sample: dict[str, Any], *, collection_head: str, teacher_manife
 student_view_or_reason(sample: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`student_view_or_reason` 从日志、请求或Teacher计划提取或评估训练语义；ID、target顺序、终态与时间字段必须来自同一命令链，缺失时返回或隔离而非猜测。
 
 ### `rebuild_outputs`
 
@@ -318,7 +318,7 @@ student_view_or_reason(sample: dict[str, Any]) -> tuple[dict[str, Any] | None, s
 rebuild_outputs(*, raw_path: Path, dataset_dir: Path, collection_head: str, teacher_manifest: dict[str, Any], registry_by_scenario: dict[str, dict[str, str]]) -> dict[str, int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`rebuild_outputs` 从显式输入构造版本化样本、计划、清单或派生视图；保持原始记录不变，并把默认、排除原因与来源身份写入新产物。
 
 ### `validate_canonical`
 
@@ -328,7 +328,7 @@ rebuild_outputs(*, raw_path: Path, dataset_dir: Path, collection_head: str, teac
 validate_canonical(repo: Path, python: str, path: Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_canonical` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `capture_provenance`
 
@@ -338,7 +338,7 @@ validate_canonical(repo: Path, python: str, path: Path) -> None
 capture_provenance(*, repo: Path, out_path: Path, health: dict[str, Any], teacher_manifest: dict[str, Any], teacher_artifact_evidence: dict[str, Any], runner_info: dict[str, str], service_url: str, registry_path: Path, collector_identity: dict[str, Any] | None, config_id: str, formal_code_gate: bool) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`capture_provenance` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `main`
 
@@ -348,7 +348,7 @@ capture_provenance(*, repo: Path, out_path: Path, health: dict[str, Any], teache
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ## 内部调用与异常路径
 

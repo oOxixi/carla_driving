@@ -29,7 +29,7 @@ Decode every A3 D2 Train/Val sample through A1's real four-modal packer.
 check_packed_batch(batch: Mapping[str, Any], expected_size: int) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`check_packed_batch` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `validate_inputs`
 
@@ -39,7 +39,7 @@ check_packed_batch(batch: Mapping[str, Any], expected_size: int) -> None
 validate_inputs(release_dir: Path, view_dir: Path, asset_root: Path, *, batch_size: int=8, max_errors: int=20) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_inputs` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `main`
 
@@ -49,7 +49,7 @@ validate_inputs(release_dir: Path, view_dir: Path, asset_root: Path, *, batch_si
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析训练、评测或晋级命令行参数，调用对应门禁并用退出码表达成功/拒绝；生成报告或候选不自动等于通过独立Validation或Frozen Test。
 
 ## 内部调用与异常路径
 

@@ -25,7 +25,7 @@ Dataset boundary for A3 distillation experiments.
 
 源码位置：[challenge/distillation/dataset.py 第 26 行](../../../challenge/distillation/dataset.py#L26)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`DistillationDataset` 蒸馏训练类，封装Dataset、模型、标签、loss或错误合同；Head顺序、shape与训练身份受冻结Student契约约束。
 
 ### `DistillationDataset.__init__`
 
@@ -35,7 +35,7 @@ Dataset boundary for A3 distillation experiments.
 DistillationDataset.__init__(self, records: Sequence[Mapping[str, Any]], *, label_encoder: DistillationLabelEncoder | None=None, sample_weights: Mapping[str, float] | None=None, asset_root: str | Path | None=None, require_rgb: bool=False) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化本对象的训练结构、配置或依赖，并执行源码中的初始一致性检查；后续批次仍必须保持shape、device、dtype和身份一致。
 
 ### `DistillationDataset.__len__`
 
@@ -45,7 +45,7 @@ DistillationDataset.__init__(self, records: Sequence[Mapping[str, Any]], *, labe
 DistillationDataset.__len__(self) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__len__` 实现Dataset、批处理、过滤或报告辅助转换；它保留训练语义但不单独完成发布完整性、身份或泛化门禁。
 
 ### `DistillationDataset.__getitem__`
 
@@ -55,7 +55,7 @@ DistillationDataset.__len__(self) -> int
 DistillationDataset.__getitem__(self, index: int) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__getitem__` 实现Dataset、批处理、过滤或报告辅助转换；它保留训练语义但不单独完成发布完整性、身份或泛化门禁。
 
 ### `load_jsonl`
 
@@ -65,7 +65,7 @@ DistillationDataset.__getitem__(self, index: int) -> dict[str, Any]
 load_jsonl(path: str | Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_jsonl` 读取配置、数据、checkpoint或资源引用；返回内容保持来源身份，缺失/不匹配由本页异常条件拒绝而不是自动补齐。
 
 ### `make_collate_fn`
 
@@ -75,7 +75,7 @@ load_jsonl(path: str | Path) -> list[dict[str, Any]]
 make_collate_fn(*, feature_dim: int=32, input_packer: Callable[[Sequence[Mapping[str, Any]]], Mapping[str, Any]] | None=None) -> Callable[[Sequence[Mapping[str, Any]]], dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`make_collate_fn` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ### `make_collate_fn.collate`
 
@@ -85,7 +85,7 @@ make_collate_fn(*, feature_dim: int=32, input_packer: Callable[[Sequence[Mapping
 make_collate_fn.collate(samples: Sequence[Mapping[str, Any]]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`collate` 实现Dataset、批处理、过滤或报告辅助转换；它保留训练语义但不单独完成发布完整性、身份或泛化门禁。
 
 ### `build_mock_records`
 
@@ -105,7 +105,7 @@ Create contract-valid unit-test records, never production training data.
 _request(record: Mapping[str, Any], *, asset_root: Path | None=None, require_rgb: bool=False) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_request` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ### `resolve_packaged_rgb`
 
@@ -125,7 +125,7 @@ Resolve either portable release paths or historical SHA-named RGB assets.
 _plan(record: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_plan` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ### `_sample_class`
 
@@ -135,7 +135,7 @@ _plan(record: Mapping[str, Any]) -> dict[str, Any]
 _sample_class(record: Mapping[str, Any]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_sample_class` 实现Dataset、批处理、过滤或报告辅助转换；它保留训练语义但不单独完成发布完整性、身份或泛化门禁。
 
 ### `_mock_request_features`
 
@@ -145,7 +145,7 @@ _sample_class(record: Mapping[str, Any]) -> str
 _mock_request_features(request: Mapping[str, Any], feature_dim: int) -> list[float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_mock_request_features` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ### `_mock_request`
 
@@ -155,7 +155,7 @@ _mock_request_features(request: Mapping[str, Any], feature_dim: int) -> list[flo
 _mock_request(request_id: str, command_id: str, behavior: str, targets: list[dict[str, Any]], index: int) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_mock_request` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ### `_mock_plan`
 
@@ -165,7 +165,7 @@ _mock_request(request_id: str, command_id: str, behavior: str, targets: list[dic
 _mock_plan(request_id: str, command_id: str, behavior: str, targets: list[dict[str, Any]], index: int) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_mock_plan` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ### `_torch`
 
@@ -175,7 +175,7 @@ _mock_plan(request_id: str, command_id: str, behavior: str, targets: list[dict[s
 _torch() -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_torch` 实现本文件对应的蒸馏、评测或候选处理子步骤；具体输入、mask、拒绝条件和副作用见本页签名/异常/调用表。
 
 ## 内部调用与异常路径
 

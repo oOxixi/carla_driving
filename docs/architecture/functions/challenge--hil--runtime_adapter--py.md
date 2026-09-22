@@ -37,7 +37,7 @@ The adapter could not be constructed or driven.
 
 源码位置：[challenge/hil/runtime_adapter.py 第 39 行](../../../challenge/hil/runtime_adapter.py#L39)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`RuntimeCapabilities` HIL协议类，封装runtime、能力、身份、trace、回放、轮次或采样状态；默认字段不是实测结果，必须随证据序列化。
 
 ### `RuntimeCapabilities.to_dict`
 
@@ -47,13 +47,13 @@ The adapter could not be constructed or driven.
 RuntimeCapabilities.to_dict(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`to_dict` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `PlannerRuntime`
 
 源码位置：[challenge/hil/runtime_adapter.py 第 56 行](../../../challenge/hil/runtime_adapter.py#L56)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`PlannerRuntime` HIL协议类，封装runtime、能力、身份、trace、回放、轮次或采样状态；默认字段不是实测结果，必须随证据序列化。
 
 ### `PlannerRuntime.infer`
 
@@ -63,7 +63,7 @@ RuntimeCapabilities.to_dict(self) -> dict[str, Any]
 PlannerRuntime.infer(self, request: Mapping[str, Any], *, case_id: str, round_index: int, phase: str='measured') -> tuple[Mapping[str, Any] | None, StageTrace]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`infer` 执行一次被测推理、输出抓取或外部探针读取；返回计划、Head或遥测必须与对应capability、stage_source和clock_domain一起解释。
 
 ### `PlannerRuntime.close`
 
@@ -73,7 +73,7 @@ PlannerRuntime.infer(self, request: Mapping[str, Any], *, case_id: str, round_in
 PlannerRuntime.close(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`close` 释放runtime、会话、线程或子进程资源；应在异常路径也调用，关闭成功不补齐此前缺失的trace或证据。
 
 ### `_RepoModules`
 
@@ -89,7 +89,7 @@ Lazy import of the challenge-side modules under test.
 _RepoModules.__init__(self, repo_root: str | Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化runtime、trace、身份、采样器或结果容器的依赖和初始状态，并执行源码中的参数约束；运行证据还需完整identity与时钟域。
 
 ### `_RepoModules.get`
 
@@ -99,7 +99,7 @@ _RepoModules.__init__(self, repo_root: str | Path) -> None
 _RepoModules.get(self, dotted: str) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`get` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `_RepoModules.has`
 
@@ -109,7 +109,7 @@ _RepoModules.get(self, dotted: str) -> Any
 _RepoModules.has(self, dotted: str) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`has` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `state_dict_fingerprint`
 
@@ -140,7 +140,7 @@ Full-chain measurement reusing A1/A3 objects with B3 timestamps.
 InProcessStudentRuntime.__init__(self, repo_root: str | Path, *, weights: str | Path | None=None, weights_manifest: str | Path | None=None, dataset_version: str=UNRESOLVED, seed: int | None=20260911) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化runtime、trace、身份、采样器或结果容器的依赖和初始状态，并执行源码中的参数约束；运行证据还需完整identity与时钟域。
 
 ### `InProcessStudentRuntime.infer`
 
@@ -150,7 +150,7 @@ InProcessStudentRuntime.__init__(self, repo_root: str | Path, *, weights: str | 
 InProcessStudentRuntime.infer(self, request: Mapping[str, Any], *, case_id: str, round_index: int, phase: str='measured') -> tuple[Mapping[str, Any] | None, StageTrace]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`infer` 执行一次被测推理、输出抓取或外部探针读取；返回计划、Head或遥测必须与对应capability、stage_source和clock_domain一起解释。
 
 ### `InProcessStudentRuntime.verify_consistency`
 
@@ -170,7 +170,7 @@ Prove the instrumented path equals ``StudentBackend.infer`` output.
 InProcessStudentRuntime.close(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`close` 释放runtime、会话、线程或子进程资源；应在异常路径也调用，关闭成功不补齐此前缺失的trace或证据。
 
 ### `OnnxModelRuntime`
 
@@ -186,7 +186,7 @@ Model-only chain: the X86 stand-in for `hrt_model_exec perf`.
 OnnxModelRuntime.__init__(self, repo_root: str | Path, onnx_path: str | Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化runtime、trace、身份、采样器或结果容器的依赖和初始状态，并执行源码中的参数约束；运行证据还需完整identity与时钟域。
 
 ### `OnnxModelRuntime.infer`
 
@@ -196,7 +196,7 @@ OnnxModelRuntime.__init__(self, repo_root: str | Path, onnx_path: str | Path) ->
 OnnxModelRuntime.infer(self, request: Mapping[str, Any], *, case_id: str, round_index: int, phase: str='measured') -> tuple[Mapping[str, Any] | None, StageTrace]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`infer` 执行一次被测推理、输出抓取或外部探针读取；返回计划、Head或遥测必须与对应capability、stage_source和clock_domain一起解释。
 
 ### `OnnxModelRuntime.bench_model_only`
 
@@ -216,7 +216,7 @@ Pure forward-pass timing, matching the `perf` tool convention.
 OnnxModelRuntime.close(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`close` 释放runtime、会话、线程或子进程资源；应在异常路径也调用，关闭成功不补齐此前缺失的trace或证据。
 
 ### `BoardCliRuntime`
 
@@ -238,7 +238,7 @@ host-measured envelope is available.
 BoardCliRuntime.__init__(self, command: str | Sequence[str], *, artifact: str | Path | None=None, model_id: str=UNRESOLVED, config_id: str=UNRESOLVED, dataset_version: str=UNRESOLVED, timeout_s: float=30.0) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化runtime、trace、身份、采样器或结果容器的依赖和初始状态，并执行源码中的参数约束；运行证据还需完整identity与时钟域。
 
 ### `BoardCliRuntime.infer`
 
@@ -248,7 +248,7 @@ BoardCliRuntime.__init__(self, command: str | Sequence[str], *, artifact: str | 
 BoardCliRuntime.infer(self, request: Mapping[str, Any], *, case_id: str, round_index: int, phase: str='measured') -> tuple[Mapping[str, Any] | None, StageTrace]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`infer` 执行一次被测推理、输出抓取或外部探针读取；返回计划、Head或遥测必须与对应capability、stage_source和clock_domain一起解释。
 
 ### `BoardCliRuntime.close`
 
@@ -258,7 +258,7 @@ BoardCliRuntime.infer(self, request: Mapping[str, Any], *, case_id: str, round_i
 BoardCliRuntime.close(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`close` 释放runtime、会话、线程或子进程资源；应在异常路径也调用，关闭成功不补齐此前缺失的trace或证据。
 
 ## 内部调用与异常路径
 

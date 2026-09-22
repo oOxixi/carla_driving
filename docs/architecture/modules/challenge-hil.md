@@ -43,6 +43,25 @@ InProcessStudentRuntime 复用 A1 模型/预处理/Adapter，可带 PlanValidato
 
 修改阶段需同步列定义/JSON schema、板端契约、采样器、报告和历史证据兼容策略；修改 Adapter/预处理时比较真实 infer 路径；修改 Gate/身份时联动 A3 候选、ONNX 元数据和 evidence manifest。
 
+## 第15模块逐入口精读结论（2026-09-22）
+
+### 三类Runtime实际测量范围
+
+| Runtime | 推理对象 | PlanValidator | 阶段来源/主要限制 |
+|---|---|---|---|
+| InProcessStudentRuntime | PyTorch预处理+模型+Adapter | 可包含 | 宿主单时钟；consistency当前绕过真实infer路径（A03） |
+| OnnxModelRuntime | ORT模型+宿主预后处理 | 当前不包含 | 虽声明full_chain但plan_validator=false（R02） |
+| BoardCliRuntime | 外部命令stdin/stdout协议 | 由板端声明 | host envelope与board trace可能重复mark、时钟域不可直接拼接（A02） |
+
+### Trace、轮次和证据判定
+
+- `STAGES` 顺序是唯一权威；同一trace重复、倒序或时间回退应失败。失败前未到达阶段保持missing，不能补0进入P50/P95。
+- warmup与measured分开，READY/ERROR/TIMEOUT均保留；延时统计只在声明测量范围内解释。30 s子进程timeout与1000 ms合同预算不是同一阈值。
+- model-only、full-chain、plan-validator、stage-source和clock-domain必须一起写入证据；READY只表示该adapter返回，不等于计划安全、精度或板端Gate通过。
+- 冻结输入、hard case、soak、功耗/内存采样、报告和handoff都要绑定git/model/artifact/dataset/config；随机结构测试必须显式标注。
+
+服务器HIL测试执行结果 **71 passed in 1.85s**。它覆盖StageTrace、合同、身份、IO、回放、报告和fake runtime；没有实际J6P、真实功耗探针或板端时钟对齐，因此A02/A03/R02仍保持未修复。
+
 
 ## 模块接口与参数核对（2026-09-20）
 

@@ -28,7 +28,7 @@ Command line entry points for the B3 measurement toolkit.
 _build_hardware_env(args: argparse.Namespace, identity: CandidateIdentity, artifact: str | Path | None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_build_hardware_env` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `version_of`
 
@@ -38,7 +38,7 @@ _build_hardware_env(args: argparse.Namespace, identity: CandidateIdentity, artif
 version_of(module_name: str) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`version_of` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `package_version`
 
@@ -68,7 +68,7 @@ Every library whose version can change a measurement.
 _probe_from_args(command: str | None, fields: str | None, name: str) -> ProbeCommand | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_probe_from_args` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `_telemetry_spec`
 
@@ -78,7 +78,7 @@ _probe_from_args(command: str | None, fields: str | None, name: str) -> ProbeCom
 _telemetry_spec(args: argparse.Namespace) -> TelemetrySpec
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_telemetry_spec` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `_build_runtime`
 
@@ -88,7 +88,7 @@ _telemetry_spec(args: argparse.Namespace) -> TelemetrySpec
 _build_runtime(args: argparse.Namespace) -> PlannerRuntime
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_build_runtime` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `command_schema`
 
@@ -98,7 +98,7 @@ _build_runtime(args: argparse.Namespace) -> PlannerRuntime
 command_schema(args: argparse.Namespace) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`command_schema` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `command_selftest`
 
@@ -108,7 +108,7 @@ command_schema(args: argparse.Namespace) -> int
 command_selftest(_: argparse.Namespace) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`command_selftest` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `_add_shared_args`
 
@@ -128,7 +128,7 @@ Arguments every measurement subcommand needs, defined exactly once.
 build_parser() -> argparse.ArgumentParser
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_parser` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `_warn_if_busy`
 
@@ -138,7 +138,7 @@ build_parser() -> argparse.ArgumentParser
 _warn_if_busy(hardware_env: Mapping[str, Any], log: Any, threshold: float=20.0) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_warn_if_busy` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `_load_cases`
 
@@ -148,7 +148,7 @@ _warn_if_busy(hardware_env: Mapping[str, Any], log: Any, threshold: float=20.0) 
 _load_cases(args: argparse.Namespace) -> tuple[list[Any], dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_load_cases` 读取冻结输入、配置、图像或provenance；路径解析必须保持发布边界，缺失资源不能静默当作成功样本。
 
 ### `command_freeze`
 
@@ -158,7 +158,7 @@ _load_cases(args: argparse.Namespace) -> tuple[list[Any], dict[str, Any]]
 command_freeze(args: argparse.Namespace) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`command_freeze` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `command_consistency`
 
@@ -168,7 +168,7 @@ command_freeze(args: argparse.Namespace) -> int
 command_consistency(args: argparse.Namespace) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`command_consistency` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `command_handoff`
 
@@ -178,7 +178,7 @@ command_consistency(args: argparse.Namespace) -> int
 command_handoff(args: argparse.Namespace) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`command_handoff` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `command_artifact`
 
@@ -188,7 +188,7 @@ command_handoff(args: argparse.Namespace) -> int
 command_artifact(args: argparse.Namespace) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`command_artifact` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `command_contract`
 
@@ -198,7 +198,7 @@ command_artifact(args: argparse.Namespace) -> int
 command_contract(args: argparse.Namespace) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`command_contract` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `command_soak`
 
@@ -208,7 +208,7 @@ command_contract(args: argparse.Namespace) -> int
 command_soak(args: argparse.Namespace) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`command_soak` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `command_soak.log`
 
@@ -218,7 +218,7 @@ command_soak(args: argparse.Namespace) -> int
 command_soak.log(message: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`log` 写出冻结快照、handoff、trace、遥测或报告产物；文件必须绑定候选身份、输入哈希和环境，写盘成功不是Gate通过。
 
 ### `command_run`
 
@@ -228,7 +228,7 @@ command_soak.log(message: str) -> None
 command_run(args: argparse.Namespace) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`command_run` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `command_run.log`
 
@@ -238,7 +238,7 @@ command_run(args: argparse.Namespace) -> int
 command_run.log(message: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`log` 写出冻结快照、handoff、trace、遥测或报告产物；文件必须绑定候选身份、输入哈希和环境，写盘成功不是Gate通过。
 
 ### `main`
 
@@ -248,7 +248,7 @@ command_run.log(message: str) -> None
 main(argv: Sequence[str] | None=None) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析HIL命令与子命令参数，构造runtime、冻结集、采样器或报告流程并传播退出状态；CLI成功不等于板端时延、稳定性或一致性门禁通过。
 
 ## 内部调用与异常路径
 

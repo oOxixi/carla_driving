@@ -28,7 +28,7 @@ dataset_quality_report
 read_jsonl(path: Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`read_jsonl` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `read_json`
 
@@ -38,7 +38,7 @@ read_jsonl(path: Path) -> list[dict[str, Any]]
 read_json(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`read_json` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `sha256_file`
 
@@ -48,7 +48,7 @@ read_json(path: Path) -> dict[str, Any]
 sha256_file(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sha256_file` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `get_dict`
 
@@ -58,7 +58,7 @@ sha256_file(path: Path) -> str
 get_dict(sample: dict[str, Any], key: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`get_dict` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `sample_class`
 
@@ -68,7 +68,7 @@ get_dict(sample: dict[str, Any], key: str) -> dict[str, Any]
 sample_class(sample: dict[str, Any]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sample_class` 定义本脚本使用的数据或状态封装；字段含义由构造处和消费者共同约束，不能脱离发布版本解释。
 
 ### `rejection_counts`
 
@@ -78,7 +78,7 @@ sample_class(sample: dict[str, Any]) -> str
 rejection_counts(rows: list[dict[str, Any]]) -> Counter
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`rejection_counts` 定义本脚本使用的数据或状态封装；字段含义由构造处和消费者共同约束，不能脱离发布版本解释。
 
 ### `append_counter`
 
@@ -88,7 +88,7 @@ rejection_counts(rows: list[dict[str, Any]]) -> Counter
 append_counter(lines: list[str], counter: Counter) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`append_counter` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `main`
 
@@ -98,7 +98,7 @@ append_counter(lines: list[str], counter: Counter) -> None
 main() -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ## 内部调用与异常路径
 

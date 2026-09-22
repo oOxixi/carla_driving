@@ -29,7 +29,7 @@ CLI for the evidence-gated A3 FP32 weight manifest.
 _read(path: str | Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_read` 读取配置、数据、checkpoint或资源引用；返回内容保持来源身份，缺失/不匹配由本页异常条件拒绝而不是自动补齐。
 
 ### `main`
 
@@ -39,7 +39,7 @@ _read(path: str | Path) -> dict[str, Any]
 main(argv: Sequence[str] | None=None) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析训练、评测或晋级命令行参数，调用对应门禁并用退出码表达成功/拒绝；生成报告或候选不自动等于通过独立Validation或Frozen Test。
 
 ## 内部调用与异常路径
 

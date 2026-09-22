@@ -40,7 +40,7 @@ Repeat a frozen configuration several times and keep every raw sample.
 
 源码位置：[challenge/hil/rounds.py 第 17 行](../../../challenge/hil/rounds.py#L17)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`RoundResult` HIL协议类，封装runtime、能力、身份、trace、回放、轮次或采样状态；默认字段不是实测结果，必须随证据序列化。
 
 ### `RoundResult.to_dict`
 
@@ -50,13 +50,13 @@ Repeat a frozen configuration several times and keep every raw sample.
 RoundResult.to_dict(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`to_dict` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `RunResult`
 
 源码位置：[challenge/hil/rounds.py 第 41 行](../../../challenge/hil/rounds.py#L41)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`RunResult` HIL协议类，封装runtime、能力、身份、trace、回放、轮次或采样状态；默认字段不是实测结果，必须随证据序列化。
 
 ### `RunResult.summary`
 
@@ -66,7 +66,7 @@ RoundResult.to_dict(self) -> dict[str, Any]
 RunResult.summary(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`summary` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `run_rounds`
 
@@ -86,7 +86,7 @@ Warm up once, then run `rounds` identical measurement windows.
 run_rounds.emit(message: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`emit` 写出冻结快照、handoff、trace、遥测或报告产物；文件必须绑定候选身份、输入哈希和环境，写盘成功不是Gate通过。
 
 ## 内部调用与异常路径
 

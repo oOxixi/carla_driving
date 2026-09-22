@@ -28,7 +28,7 @@ Build B1 Teacher-distillation samples from ScenarioEvidenceRecorder JSONL.
 canonical_json(value: Any) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`canonical_json` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `sha256_bytes`
 
@@ -38,7 +38,7 @@ canonical_json(value: Any) -> str
 sha256_bytes(data: bytes) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sha256_bytes` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `sha256_file`
 
@@ -48,7 +48,7 @@ sha256_bytes(data: bytes) -> str
 sha256_file(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sha256_file` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `stable_route_hash`
 
@@ -58,7 +58,7 @@ sha256_file(path: Path) -> str
 stable_route_hash(route: Any) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`stable_route_hash` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `read_jsonl`
 
@@ -68,7 +68,7 @@ stable_route_hash(route: Any) -> str | None
 read_jsonl(path: Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`read_jsonl` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `load_scenario`
 
@@ -78,7 +78,7 @@ read_jsonl(path: Path) -> list[dict[str, Any]]
 load_scenario(repo_root: Path, config_path: str | None) -> dict[str, Any] | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_scenario` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `index_rows`
 
@@ -88,7 +88,7 @@ load_scenario(repo_root: Path, config_path: str | None) -> dict[str, Any] | None
 index_rows(rows: list[dict[str, Any]]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`index_rows` 从日志、请求或Teacher计划提取或评估训练语义；ID、target顺序、终态与时间字段必须来自同一命令链，缺失时返回或隔离而非猜测。
 
 ### `extract_model_request`
 
@@ -98,7 +98,7 @@ index_rows(rows: list[dict[str, Any]]) -> dict[str, Any]
 extract_model_request(row: dict[str, Any]) -> dict[str, Any] | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`extract_model_request` 从日志、请求或Teacher计划提取或评估训练语义；ID、target顺序、终态与时间字段必须来自同一命令链，缺失时返回或隔离而非猜测。
 
 ### `extract_teacher_plan`
 
@@ -108,7 +108,7 @@ extract_model_request(row: dict[str, Any]) -> dict[str, Any] | None
 extract_teacher_plan(row: dict[str, Any]) -> dict[str, Any] | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`extract_teacher_plan` 从日志、请求或Teacher计划提取或评估训练语义；ID、target顺序、终态与时间字段必须来自同一命令链，缺失时返回或隔离而非猜测。
 
 ### `extract_model_timing`
 
@@ -118,7 +118,7 @@ extract_teacher_plan(row: dict[str, Any]) -> dict[str, Any] | None
 extract_model_timing(row: dict[str, Any]) -> dict[str, Any] | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`extract_model_timing` 从日志、请求或Teacher计划提取或评估训练语义；ID、target顺序、终态与时间字段必须来自同一命令链，缺失时返回或隔离而非猜测。
 
 ### `get_disposition`
 
@@ -128,7 +128,7 @@ extract_model_timing(row: dict[str, Any]) -> dict[str, Any] | None
 get_disposition(row: dict[str, Any]) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`get_disposition` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `find_rgb`
 
@@ -138,7 +138,7 @@ get_disposition(row: dict[str, Any]) -> str | None
 find_rgb(repo_root: Path, rgb_ref: Any) -> tuple[Path | None, bool]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`find_rgb` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `classify_sample`
 
@@ -148,7 +148,7 @@ find_rgb(repo_root: Path, rgb_ref: Any) -> tuple[Path | None, bool]
 classify_sample(model_request: dict[str, Any], teacher_plan: dict[str, Any], closed_loop: dict[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`classify_sample` 按当前策略把场景或样本映射到治理类别、配额或状态；分类结果会影响训练资格和切分，修改规则需版本化并重建报告。
 
 ### `classify_training_role`
 
@@ -168,7 +168,7 @@ Separate structural validity from positive distillation eligibility.
 extract_closed_loop(run_complete: dict[str, Any] | None, command_id: str, maneuver_events: list[dict[str, Any]]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`extract_closed_loop` 从日志、请求或Teacher计划提取或评估训练语义；ID、target顺序、终态与时间字段必须来自同一命令链，缺失时返回或隔离而非猜测。
 
 ### `validate_pair`
 
@@ -178,7 +178,7 @@ extract_closed_loop(run_complete: dict[str, Any] | None, command_id: str, maneuv
 validate_pair(model_request: dict[str, Any] | None, teacher_plan: dict[str, Any] | None, rgb_exists: bool, resolve_disposition: str | None) -> tuple[bool, list[str]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_pair` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `target_grounding`
 
@@ -188,7 +188,7 @@ validate_pair(model_request: dict[str, Any] | None, teacher_plan: dict[str, Any]
 target_grounding(model_request: dict[str, Any], teacher_plan: dict[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`target_grounding` 从日志、请求或Teacher计划提取或评估训练语义；ID、target顺序、终态与时间字段必须来自同一命令链，缺失时返回或隔离而非猜测。
 
 ### `build_sample`
 
@@ -198,7 +198,7 @@ target_grounding(model_request: dict[str, Any], teacher_plan: dict[str, Any]) ->
 build_sample(*, repo_root: Path, log_path: Path, run_start: dict[str, Any] | None, run_complete: dict[str, Any] | None, submit: dict[str, Any], resolve: dict[str, Any], maneuver_events: list[dict[str, Any]], scenario_data: dict[str, Any] | None, dataset_version: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_sample` 从显式输入构造版本化样本、计划、清单或派生视图；保持原始记录不变，并把默认、排除原因与来源身份写入新产物。
 
 ### `build_run_level_rejection`
 
@@ -208,7 +208,7 @@ build_sample(*, repo_root: Path, log_path: Path, run_start: dict[str, Any] | Non
 build_run_level_rejection(*, log_path: Path, dataset_version: str, run_start: dict[str, Any] | None, failure: dict[str, Any] | None, reason: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_run_level_rejection` 从显式输入构造版本化样本、计划、清单或派生视图；保持原始记录不变，并把默认、排除原因与来源身份写入新产物。
 
 ### `collect_file`
 
@@ -218,7 +218,7 @@ build_run_level_rejection(*, log_path: Path, dataset_version: str, run_start: di
 collect_file(*, repo_root: Path, log_path: Path, dataset_version: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`collect_file` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `write_jsonl`
 
@@ -228,7 +228,7 @@ collect_file(*, repo_root: Path, log_path: Path, dataset_version: str) -> tuple[
 write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_jsonl` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `main`
 
@@ -238,7 +238,7 @@ write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None
 main() -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ## 内部调用与异常路径
 

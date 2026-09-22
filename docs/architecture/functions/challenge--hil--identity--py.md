@@ -34,7 +34,7 @@ Candidate identity (the five mandatory identifiers) and hashing helpers.
 sha256_file(path: str | Path, chunk_size: int=1 << 20) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sha256_file` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `git_head`
 
@@ -63,7 +63,7 @@ is never allowed to appear in a report that claims a gate result.
 CandidateIdentity.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__post_init__` 固化runtime、trace、身份、采样器或结果容器的依赖和初始状态，并执行源码中的参数约束；运行证据还需完整identity与时钟域。
 
 ### `CandidateIdentity.complete`
 
@@ -73,7 +73,7 @@ CandidateIdentity.__post_init__(self) -> None
 CandidateIdentity.complete(self) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`complete` 检查runtime合同、artifact、输出一致性、结构或身份完整性；结果只覆盖声明能力，model-only与full-chain、宿主与板端证据不得混写。
 
 ### `CandidateIdentity.missing`
 
@@ -83,7 +83,7 @@ CandidateIdentity.complete(self) -> bool
 CandidateIdentity.missing(self) -> tuple[str, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`missing` 检查runtime合同、artifact、输出一致性、结构或身份完整性；结果只覆盖声明能力，model-only与full-chain、宿主与板端证据不得混写。
 
 ### `CandidateIdentity.to_dict`
 
@@ -93,7 +93,7 @@ CandidateIdentity.missing(self) -> tuple[str, ...]
 CandidateIdentity.to_dict(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`to_dict` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `identity_from_weight_manifest`
 
@@ -116,7 +116,7 @@ from the artifact on disk.
 identity_from_artifact(artifact: str | Path, *, model_id: str=UNRESOLVED, config_id: str=UNRESOLVED, dataset_version: str=UNRESOLVED, git_sha: str=UNRESOLVED) -> CandidateIdentity
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`identity_from_artifact` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ## 内部调用与异常路径
 

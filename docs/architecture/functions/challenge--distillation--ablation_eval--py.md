@@ -29,7 +29,7 @@ Read-only A3 Validation modality ablations for an existing FP32 checkpoint.
 masked_batches(batches: Iterable[dict[str, Any]], modality: str) -> Iterable[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`masked_batches` 实现Dataset、批处理、过滤或报告辅助转换；它保留训练语义但不单独完成发布完整性、身份或泛化门禁。
 
 ### `run_ablation`
 
@@ -39,7 +39,7 @@ masked_batches(batches: Iterable[dict[str, Any]], modality: str) -> Iterable[dic
 run_ablation(config_path: Path, output_dir: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`run_ablation` 执行评测、探针、hard-case收集或候选晋级步骤；结果必须区分Head指标、Adapter计划、闭环安全与独立数据角色。
 
 ### `main`
 
@@ -49,7 +49,7 @@ run_ablation(config_path: Path, output_dir: Path) -> dict[str, Any]
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析训练、评测或晋级命令行参数，调用对应门禁并用退出码表达成功/拒绝；生成报告或候选不自动等于通过独立Validation或Frozen Test。
 
 ## 内部调用与异常路径
 

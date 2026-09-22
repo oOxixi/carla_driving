@@ -42,7 +42,7 @@ mistake it for board evidence.
 claim_scope(*, device_class: str, power_measured: bool, bpu_measured: bool) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`claim_scope` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `_table`
 
@@ -52,7 +52,7 @@ claim_scope(*, device_class: str, power_measured: bool, bpu_measured: bool) -> d
 _table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> list[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_table` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `_number`
 
@@ -62,7 +62,7 @@ _table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> list[str]
 _number(value: Any, digits: int=3) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_number` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `_latency_table`
 
@@ -72,7 +72,7 @@ _number(value: Any, digits: int=3) -> str
 _latency_table(metrics: Mapping[str, Any]) -> list[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_latency_table` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `build_report`
 
@@ -82,7 +82,7 @@ _latency_table(metrics: Mapping[str, Any]) -> list[str]
 build_report(*, run_id: str, identity: CandidateIdentity, capabilities: Mapping[str, Any], hardware_env: Mapping[str, Any], latency_report: Mapping[str, Any], replay_summary: Mapping[str, Any] | None, telemetry: Mapping[str, Any] | None, failure_summary: Mapping[str, Any] | None, run_summary: Mapping[str, Any] | None, blocked_on: Sequence[str], extra_notes: Sequence[str]=(), stability_summary: Mapping[str, Any] | None=None) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_report` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ## 内部调用与异常路径
 

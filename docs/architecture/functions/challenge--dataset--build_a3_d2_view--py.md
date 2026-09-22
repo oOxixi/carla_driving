@@ -28,7 +28,7 @@ Derive strict positive A3 supervision from B1's signed D2 v1.1 release.
 _rows(path: Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_rows` 实现本文件对应的数据治理子步骤；具体参数消费、返回、拒绝条件和文件副作用已列在本页签名、调用与异常章节，修改时须同步manifest和下游消费者。
 
 ### `_write_jsonl`
 
@@ -38,7 +38,7 @@ _rows(path: Path) -> list[dict[str, Any]]
 _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_write_jsonl` 实现本文件对应的数据治理子步骤；具体参数消费、返回、拒绝条件和文件副作用已列在本页签名、调用与异常章节，修改时须同步manifest和下游消费者。
 
 ### `_cohort_identity`
 
@@ -48,7 +48,7 @@ _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None
 _cohort_identity(repo: Path, row: dict[str, Any]) -> dict[str, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_cohort_identity` 实现本文件对应的数据治理子步骤；具体参数消费、返回、拒绝条件和文件副作用已列在本页签名、调用与异常章节，修改时须同步manifest和下游消费者。
 
 ### `_exclusion_reason`
 
@@ -58,7 +58,7 @@ _cohort_identity(repo: Path, row: dict[str, Any]) -> dict[str, str]
 _exclusion_reason(row: dict[str, Any]) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_exclusion_reason` 实现本文件对应的数据治理子步骤；具体参数消费、返回、拒绝条件和文件副作用已列在本页签名、调用与异常章节，修改时须同步manifest和下游消费者。
 
 ### `build_view`
 
@@ -68,7 +68,7 @@ _exclusion_reason(row: dict[str, Any]) -> str | None
 build_view(release_dir: Path, output_dir: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_view` 从显式输入构造版本化样本、计划、清单或派生视图；保持原始记录不变，并把默认、排除原因与来源身份写入新产物。
 
 ### `main`
 
@@ -78,7 +78,7 @@ build_view(release_dir: Path, output_dir: Path) -> dict[str, Any]
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ## 内部调用与异常路径
 

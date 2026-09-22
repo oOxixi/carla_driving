@@ -28,7 +28,7 @@ Independent verification of a model artifact (FP32 or INT8 ONNX).
 _shape_of(value: Any) -> list[int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_shape_of` 实现本文件对应的HIL测量辅助步骤；具体输入、阶段、副作用和异常见本页签名/调用/拒绝表，修改时须同步schema与报告。
 
 ### `verify_onnx_artifact`
 
@@ -38,7 +38,7 @@ _shape_of(value: Any) -> list[int]
 verify_onnx_artifact(onnx_path: str | Path, *, repo_root: str | Path | None=None, reference_structure: str | Path | None=None, expected_opset: int | None=17) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`verify_onnx_artifact` 检查runtime合同、artifact、输出一致性、结构或身份完整性；结果只覆盖声明能力，model-only与full-chain、宿主与板端证据不得混写。
 
 ### `verify_onnx_artifact.check`
 
@@ -48,7 +48,7 @@ verify_onnx_artifact(onnx_path: str | Path, *, repo_root: str | Path | None=None
 verify_onnx_artifact.check(name: str, passed: bool, detail: str, *, fatal: bool=True) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`check` 检查runtime合同、artifact、输出一致性、结构或身份完整性；结果只覆盖声明能力，model-only与full-chain、宿主与板端证据不得混写。
 
 ## 内部调用与异常路径
 

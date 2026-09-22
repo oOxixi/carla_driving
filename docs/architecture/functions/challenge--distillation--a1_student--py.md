@@ -25,7 +25,7 @@ A1 Student V0 construction and fixed four-modal batch packing for A3.
 
 源码位置：[challenge/distillation/a1_student.py 第 12 行](../../../challenge/distillation/a1_student.py#L12)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`A1StudentInputPacker` 蒸馏训练类，封装Dataset、模型、标签、loss或错误合同；Head顺序、shape与训练身份受冻结Student契约约束。
 
 ### `A1StudentInputPacker.__init__`
 
@@ -35,7 +35,7 @@ A1 Student V0 construction and fixed four-modal batch packing for A3.
 A1StudentInputPacker.__init__(self, *, max_steps: int=4, max_targets: int=8) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化本对象的训练结构、配置或依赖，并执行源码中的初始一致性检查；后续批次仍必须保持shape、device、dtype和身份一致。
 
 ### `A1StudentInputPacker.__call__`
 
@@ -45,7 +45,7 @@ A1StudentInputPacker.__init__(self, *, max_steps: int=4, max_targets: int=8) -> 
 A1StudentInputPacker.__call__(self, requests: Sequence[Mapping[str, Any]]) -> dict[str, torch.Tensor]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__call__` 实现本文件对应的蒸馏、评测或候选处理子步骤；具体输入、mask、拒绝条件和副作用见本页签名/异常/调用表。
 
 ### `build_a1_input_packer`
 
@@ -55,7 +55,7 @@ A1StudentInputPacker.__call__(self, requests: Sequence[Mapping[str, Any]]) -> di
 build_a1_input_packer(config: Mapping[str, Any] | None=None) -> A1StudentInputPacker
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_a1_input_packer` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ### `build_a1_student`
 
@@ -65,7 +65,7 @@ build_a1_input_packer(config: Mapping[str, Any] | None=None) -> A1StudentInputPa
 build_a1_student(config: Mapping[str, Any] | None=None) -> StudentPlannerV0
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_a1_student` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ### `_require_frozen_shape`
 
@@ -75,7 +75,7 @@ build_a1_student(config: Mapping[str, Any] | None=None) -> StudentPlannerV0
 _require_frozen_shape(*, max_steps: int, max_targets: int) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_require_frozen_shape` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ## 内部调用与异常路径
 

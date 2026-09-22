@@ -29,7 +29,7 @@ Human-readable, versioned summary for each A3 training run.
 write_training_report(path: str | Path, summary: Mapping[str, Any], history: Sequence[Mapping[str, Any]]) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_training_report` 写出训练报告、checkpoint、hard-case或纯权重候选；写盘成功不代表候选可部署，仍需SHA、manifest和独立Gate绑定。
 
 ### `_format`
 
@@ -39,7 +39,7 @@ write_training_report(path: str | Path, summary: Mapping[str, Any], history: Seq
 _format(value: object) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_format` 实现Dataset、批处理、过滤或报告辅助转换；它保留训练语义但不单独完成发布完整性、身份或泛化门禁。
 
 ## 内部调用与异常路径
 

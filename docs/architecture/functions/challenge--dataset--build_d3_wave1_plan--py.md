@@ -28,7 +28,7 @@ build_d3_wave1_plan
 sha256_file(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sha256_file` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `canonical_sha256`
 
@@ -38,7 +38,7 @@ sha256_file(path: Path) -> str
 canonical_sha256(obj: object) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`canonical_sha256` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `load_json`
 
@@ -48,7 +48,7 @@ canonical_sha256(obj: object) -> str
 load_json(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_json` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `load_jsonl`
 
@@ -58,7 +58,7 @@ load_json(path: Path) -> dict[str, Any]
 load_jsonl(path: Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_jsonl` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `row_family`
 
@@ -68,7 +68,7 @@ load_jsonl(path: Path) -> list[dict[str, Any]]
 row_family(row: dict[str, Any]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`row_family` 参与分组、候选或确定性切分与分配；必须保持同组不跨split、seed可复现并记录未满足配额，不能靠重跑挑选有利结果。
 
 ### `row_source`
 
@@ -78,7 +78,7 @@ row_family(row: dict[str, Any]) -> str
 row_source(row: dict[str, Any]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`row_source` 参与分组、候选或确定性切分与分配；必须保持同组不跨split、seed可复现并记录未满足配额，不能靠重跑挑选有利结果。
 
 ### `plan_seed_values`
 
@@ -88,7 +88,7 @@ row_source(row: dict[str, Any]) -> str
 plan_seed_values(payload: dict[str, Any]) -> set[int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`plan_seed_values` 参与分组、候选或确定性切分与分配；必须保持同组不跨split、seed可复现并记录未满足配额，不能靠重跑挑选有利结果。
 
 ### `validate_teacher_manifest`
 
@@ -98,7 +98,7 @@ plan_seed_values(payload: dict[str, Any]) -> set[int]
 validate_teacher_manifest(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_teacher_manifest` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `main`
 
@@ -108,7 +108,7 @@ validate_teacher_manifest(path: Path) -> dict[str, Any]
 main() -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ### `main.pool`
 
@@ -118,7 +118,7 @@ main() -> None
 main.pool(bucket: str) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`pool` 定义本脚本使用的数据或状态封装；字段含义由构造处和消费者共同约束，不能脱离发布版本解释。
 
 ### `main.allocation_key`
 
@@ -128,7 +128,7 @@ main.pool(bucket: str) -> list[dict[str, Any]]
 main.allocation_key(row: dict[str, Any], bucket: str) -> tuple
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`allocation_key` 参与分组、候选或确定性切分与分配；必须保持同组不跨split、seed可复现并记录未满足配额，不能靠重跑挑选有利结果。
 
 ### `main.allocate`
 
@@ -138,7 +138,7 @@ main.allocation_key(row: dict[str, Any], bucket: str) -> tuple
 main.allocate(bucket: str, target: int) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`allocate` 定义本脚本使用的数据或状态封装；字段含义由构造处和消费者共同约束，不能脱离发布版本解释。
 
 ## 内部调用与异常路径
 
