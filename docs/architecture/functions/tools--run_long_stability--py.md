@@ -28,7 +28,7 @@ Run a wall-clock CARLA sensor soak with GPU and periodic Qwen evidence.
 _percentile(values: list[float], quantile: float) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_percentile】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_gpu_sample`
 
@@ -38,7 +38,7 @@ _percentile(values: list[float], quantile: float) -> float | None
 _gpu_sample(gpu_index: int) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_gpu_sample】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_monitor_gpu`
 
@@ -48,7 +48,7 @@ _gpu_sample(gpu_index: int) -> dict[str, Any]
 _monitor_gpu(stop: threading.Event, records: list[dict[str, Any]], errors: list[str], *, gpu_index: int, interval_s: float) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_monitor_gpu】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_qwen_context`
 
@@ -58,7 +58,7 @@ _monitor_gpu(stop: threading.Event, records: list[dict[str, Any]], errors: list[
 _qwen_context(image_ref: str, index: int) -> QwenInputContext
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_qwen_context】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_run_qwen_periodically`
 
@@ -68,7 +68,7 @@ _qwen_context(image_ref: str, index: int) -> QwenInputContext
 _run_qwen_periodically(stop: threading.Event, records: list[dict[str, Any]], adapter: StrictQwenVLAdapter, *, image_ref: str, interval_s: float, timeout_budget_s: float) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_run_qwen_periodically】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `main`
 
@@ -78,7 +78,7 @@ _run_qwen_periodically(stop: threading.Event, records: list[dict[str, Any]], ada
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

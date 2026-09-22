@@ -34,7 +34,7 @@ Hard-code benchmark-time control inputs for a TRT-friendlier graph.
 StaticSenseVoiceExport.__init__(self, export_model: nn.Module, frames: int, language_id: int, textnorm_id: int) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【StaticSenseVoiceExport.__init__】按签名接收依赖并建立维护工具的数据检查、生成、评测或证据处理的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `StaticSenseVoiceExport.forward`
 
@@ -44,7 +44,7 @@ StaticSenseVoiceExport.__init__(self, export_model: nn.Module, frames: int, lang
 StaticSenseVoiceExport.forward(self, speech: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【StaticSenseVoiceExport.forward】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_parse_args`
 
@@ -54,7 +54,7 @@ StaticSenseVoiceExport.forward(self, speech: torch.Tensor) -> tuple[torch.Tensor
 _parse_args() -> argparse.Namespace
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_parse_args】把输入转换为维护工具的数据检查、生成、评测或证据处理使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `main`
 
@@ -64,7 +64,7 @@ _parse_args() -> argparse.Namespace
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

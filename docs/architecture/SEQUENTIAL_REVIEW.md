@@ -19,11 +19,11 @@
 | 13 | [蒸馏与晋级](modules/challenge-training.md) | **本轮完成**：25份实现/配置页、19页103处占位改写，标签/loss/checkpoint/Gate与A01保留 |
 | 14 | [导出与部署](modules/challenge-export.md) | **本轮完成**：6份实现页、4页13处占位改写，随机ONNX/真实权重/X86/J6P边界与R01/R03保留 |
 | 15 | [HIL 与测量](modules/challenge-hil.md) | **本轮完成**：20份实现/资源页、17页139处占位改写，Runtime/trace/身份/证据与A02/A03/R02保留 |
-| 16 | [语音链](modules/support-voice.md) | 待按顺序精读；保留既有静态复核结果 |
-| 17 | [Qwen 后端](modules/support-qwen.md) | 待按顺序精读；保留既有静态复核结果 |
-| 18 | [配置与场景合同](modules/support-config-scenarios.md) | 待按顺序精读；保留既有静态复核结果 |
-| 19 | [运行环境与交付](modules/support-delivery.md) | 待按顺序精读；保留既有静态复核结果 |
-| 20 | [维护工具](modules/support-tools.md) | 待按顺序精读；保留既有静态复核结果 |
+| 16 | [语音链](modules/support-voice.md) | **本轮完成**：14份实现/语义页、50处占位改写，音频/文本分层、级联复核、授权与声学证据边界；A09保留 |
+| 17 | [Qwen 后端](modules/support-qwen.md) | **本轮完成**：8份实现/语义页、78处占位改写，HTTP/服务/backend、三层超时、规则组装与身份边界；A04/A05保留 |
+| 18 | [配置与场景合同](modules/support-config-scenarios.md) | **本轮完成**：9份配置/场景/语义页、14处占位改写，配置优先级、坐标、证据等级与校验边界 |
+| 19 | [运行环境与交付](modules/support-delivery.md) | **本轮完成**：37份容器/依赖/数据/交付页、4处占位改写，镜像入口、身份、发布hash与交付门禁；A06保留 |
+| 20 | [维护工具](modules/support-tools.md) | **本轮完成**：70份工具/脚本/语义页、342处占位改写，副作用分层、参数、cwd与证据边界；A06/A09保留 |
 
 ## 第1模块完成记录
 
@@ -149,4 +149,13 @@
 
 - 核对20份HIL实现/资源页；17页139处占位改写，补齐三类Runtime能力、StageTrace、轮次、身份、冻结/回放/soak/采样/报告证据边界。
 - 服务器HIL测试 **71 passed in 1.85s**；A02重复mark、A03绕过真实infer、R02 full_chain语义仍未修复，未做真实J6P测试。
-- 下一项是第16模块“语音链”；本轮不提前标记后续模块完成。
+- 第15模块完成时下一项为第16模块“语音链”；后续完成情况见下节，未用本条提前标记。
+
+## 第16～20模块完成记录
+
+- 第16模块核对14份语音实现/语义页，50处泛用占位改写；明确音频与文本证据分层、SenseVoice→B1→B2→可选faster-whisper复核、进程级缓存、命令授权和声学校准边界。服务器相关测试 **97 passed in 1.03s**。
+- 第17模块核对8份Qwen实现/语义页，78处占位改写；明确client/HTTP/service/backend边界、三层超时、atomic/planner差异、vLLM choice+规则组装和模型身份。服务器当前接口测试 **195 passed in 5.81s**；旧 `test_server.py` collect-only仍因删除的 `create_server` 失败，A04/A05没有被文档掩盖。
+- 第18模块核对9份配置/场景页，14处占位改写；明确strategy/policy/override的非简单覆盖、local/world坐标和静态合同与CARLA证据分层。服务器场景/配置/交付组合回归中的对应集合纳入 **174 passed in 1.76s**；`validate_scenarios.py` 为 **155 checked, 0 failed**，official validator为PASS。
+- 第19模块核对37份容器、依赖、数据和交付页，4处占位改写；明确镜像默认入口、模型/数据/发布hash、干净环境交付顺序与A06旧脚本cwd问题。
+- 第20模块核对70份工具/脚本/语义页，342处占位改写；明确只读校验、派生写入和外部执行三类副作用，以及CLI/cwd/退出码/原始产物的证据要求。
+- 本轮合计核对138份关联页、改写488处原占位，20/20模块均完成当前代码基线的逐入口精读。完成状态不关闭AUDIT问题，也不代表真实ASR/Qwen/CARLA/Docker/J6P全链已经运行。

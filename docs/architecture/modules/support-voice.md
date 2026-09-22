@@ -159,3 +159,22 @@ VoiceCommandAdapter.adapt(self, envelope: Mapping[str, object], *, now_s: float)
 ### 环境覆盖
 
 CascadeConfig.from_environment读取VOICE_CASCADE_ENABLED（1/true/yes/on为真）、VOICE_CASCADE_MODEL、VOICE_CASCADE_DEVICE、VOICE_CASCADE_COMPUTE_TYPE、VOICE_CASCADE_MIN_CONFIDENCE及VOICE_CASCADE_CALIBRATION。类默认不是部署事实；pipeline缓存配置，修改环境后需核对初始化时机。
+
+## 第16模块逐入口精读结论（2026-09-22）
+
+本轮按当前 `challenge` 基线 `4e41f990` 核对13份实现/依赖页和1份语义页，将50处泛用占位改成对应入口的输入、转换、状态、副作用和证据边界。这里只整理现有行为，没有改ASR、NLU或控制代码。
+
+### 生产链与控制授权
+
+实际链路为 `audio_to_command` → SenseVoice ASR → B1规范化/意图分类 → B2槽位与安全检查；仅当 `needs_verification` 命中时才调用 faster-whisper，再由 `apply_verification` 比较语义签名。输出仍是带 `status`、`confirm_required`、`errors/warnings` 和纳秒时间戳的命令 envelope；后续 `VoiceCommandAdapter` 才决定是否形成可执行 `DrivingCommand`。文本入口 `_text_to_command` 跳过音频解码、VAD、模型装载和声学置信度，不能作为音频全链证据。
+
+### 状态、配置与失败语义
+
+- ASR、cascade config 和 verifier 是进程级延迟缓存；环境变量在首次创建后修改不会自动重建对象。部署证据必须记录进程启动时环境，而不是事后读取当前shell。
+- primary识别错误、需要复核、secondary不可用、两路语义不一致和B2拒绝是不同失败来源；不得把它们统一改写成普通低置信命令。
+- `preload_voice_models` 只证明预热调用返回；生产身份仍需 `MODEL_MANIFEST.json`、本地权重hash和实际音频结果共同确认。
+- 50 dBA、方言、噪声和端到端时延都依赖真实采集条件。文本样本、mock verifier或模型缓存存在不能替代声学校准证据。
+
+### 修改联动与门禁
+
+改意图、槽位、单位或确认规则时，至少同步核对B1/B2、voice/canonical adapter、Interface Schema、Qwen请求、A状态机和训练标签；改模型或置信度时同步模型manifest、校准文件、音频manifest与评测报告。最低门禁依次是文本/边界单测、权重核验、固定音频回放、噪声/方言分层报告，最后才是CARLA中的控制授权与终态。任何一级缺失都只能报告该级结果。

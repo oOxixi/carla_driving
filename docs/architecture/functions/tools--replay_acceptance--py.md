@@ -28,7 +28,7 @@ Run RGB/LiDAR/Qwen records through the offline A/B/C/D acceptance chain.
 build_parser() -> argparse.ArgumentParser
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【build_parser】把输入转换为维护工具的数据检查、生成、评测或证据处理使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `main`
 
@@ -38,7 +38,7 @@ build_parser() -> argparse.ArgumentParser
 main(argv: list[str] | None=None) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

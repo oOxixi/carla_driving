@@ -79,3 +79,7 @@
 ## 顺序精读进度补充：第12～15模块
 
 [Teacher数据治理](modules/challenge-data.md)完成33份实现页和301处占位改写，明确run/sample/release/view、身份/切分/排除证据；数据测试暴露M12-01外部冻结计划缺失。[蒸馏与晋级](modules/challenge-training.md)完成25份实现/配置页和103处占位改写，明确标签/mask/loss/checkpoint/纯权重/Gate，65项测试通过且A01保留。[导出与部署](modules/challenge-export.md)完成6份实现页和13处占位改写，artifact validator实际PASS，但R01/R03仍阻断真实权重到J6P闭环。[HIL与测量](modules/challenge-hil.md)完成20份实现/资源页和139处占位改写，71项测试通过且A02/A03/R02保留。当前顺序精读完成15/20；未训练正式Student或运行真实J6P。
+
+## 顺序精读收口：第16～20模块
+
+[语音链](modules/support-voice.md)、[Qwen后端](modules/support-qwen.md)、[配置与场景合同](modules/support-config-scenarios.md)、[运行环境与交付](modules/support-delivery.md)和[维护工具](modules/support-tools.md)已完成138份关联页复核与488处占位改写。服务器三组离线回归分别为97、195、174项通过；场景静态校验155/155、三份official场景合同PASS。A04、A05、A06、A09继续保留，真实ASR/Qwen/CARLA/Docker/J6P未因文档完成而升级证据。当前20/20模块均完成当前基线的逐入口精读，下一阶段是修复AUDIT问题并执行各环境门禁。

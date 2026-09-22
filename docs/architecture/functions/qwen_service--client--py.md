@@ -24,7 +24,7 @@ Strict stdlib client suitable for runtime.PipelineOrchestrator.
 
 源码位置：[qwen_service/client.py 第 14 行](../../../qwen_service/client.py#L14)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceClient】定义Qwen请求、后端推理或HTTP服务所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `QwenServiceClient.__init__`
 
@@ -34,7 +34,7 @@ Strict stdlib client suitable for runtime.PipelineOrchestrator.
 QwenServiceClient.__init__(self, base_url: str='http://127.0.0.1:8765', *, timeout_s: float=0.35, request_transform: Callable[[Mapping[str, Any]], Mapping[str, Any]] | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceClient.__init__】按签名接收依赖并建立Qwen请求、后端推理或HTTP服务的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `QwenServiceClient.infer`
 
@@ -44,7 +44,7 @@ QwenServiceClient.__init__(self, base_url: str='http://127.0.0.1:8765', *, timeo
 QwenServiceClient.infer(self, request: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceClient.infer】消费签名中的输入并执行Qwen请求、后端推理或HTTP服务的核心推理路径；返回结构、置信度、超时和降级来源必须随结果保留，模型未加载或远端不可达不得记为成功。
 
 ### `QwenServiceClient.health`
 
@@ -54,7 +54,7 @@ QwenServiceClient.infer(self, request: Mapping[str, Any]) -> dict[str, Any]
 QwenServiceClient.health(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceClient.health】汇总Qwen请求、后端推理或HTTP服务的健康或就绪状态；调用方必须区分配置完成、依赖可达、模型/数据身份匹配和生产门禁，不能只凭布尔值扩大结论。
 
 ### `QwenServiceClient.metrics`
 
@@ -64,7 +64,7 @@ QwenServiceClient.health(self) -> dict[str, Any]
 QwenServiceClient.metrics(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceClient.metrics】是Qwen请求、后端推理或HTTP服务的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `QwenServiceClient.pop_timing`
 
@@ -84,7 +84,7 @@ Return and retire client-side timing for one completed request.
 QwenServiceClient.__call__(self, request: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceClient.__call__】是Qwen请求、后端推理或HTTP服务的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

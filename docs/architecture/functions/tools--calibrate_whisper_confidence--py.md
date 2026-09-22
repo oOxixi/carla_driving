@@ -28,7 +28,7 @@ Fit and evaluate a provisional faster-whisper confidence calibration.
 normalize(value: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【normalize】把输入转换为维护工具的数据检查、生成、评测或证据处理使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `sigmoid`
 
@@ -38,7 +38,7 @@ normalize(value: str) -> str
 sigmoid(values: np.ndarray) -> np.ndarray
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【sigmoid】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `fit_platt`
 
@@ -48,7 +48,7 @@ sigmoid(values: np.ndarray) -> np.ndarray
 fit_platt(raw_probabilities: list[float], labels: list[bool], *, regularization: float=1.0) -> tuple[float, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【fit_platt】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `calibrate`
 
@@ -58,7 +58,7 @@ fit_platt(raw_probabilities: list[float], labels: list[bool], *, regularization:
 calibrate(raw_probability: float, intercept: float, slope: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【calibrate】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `metrics`
 
@@ -68,7 +68,7 @@ calibrate(raw_probability: float, intercept: float, slope: float) -> float
 metrics(probabilities: list[float], labels: list[bool]) -> dict
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【metrics】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `main`
 
@@ -78,7 +78,7 @@ metrics(probabilities: list[float], labels: list[bool]) -> dict
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

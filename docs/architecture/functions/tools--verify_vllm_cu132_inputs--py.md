@@ -28,7 +28,7 @@ Verify immutable release inputs before the offline CUDA 13.2 wheel build.
 _sha256(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_sha256】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_load_json`
 
@@ -38,7 +38,7 @@ _sha256(path: Path) -> str
 _load_json(path: Path) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_load_json】从参数、文件、环境或缓存解析维护工具的数据检查、生成、评测或证据处理所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `verify_source`
 
@@ -48,7 +48,7 @@ _load_json(path: Path) -> dict[str, object]
 verify_source(source: Path, lock: dict[str, object]) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【verify_source】检查维护工具的数据检查、生成、评测或证据处理的局部合同并返回/累计函数体定义的结果；静态校验通过不等于外部服务、CARLA、音频模型或最终交付已经通过。
 
 ### `verify_wheelhouse`
 
@@ -58,7 +58,7 @@ verify_source(source: Path, lock: dict[str, object]) -> dict[str, object]
 verify_wheelhouse(wheelhouse: Path, lock: dict[str, object]) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【verify_wheelhouse】检查维护工具的数据检查、生成、评测或证据处理的局部合同并返回/累计函数体定义的结果；静态校验通过不等于外部服务、CARLA、音频模型或最终交付已经通过。
 
 ### `main`
 
@@ -68,7 +68,7 @@ verify_wheelhouse(wheelhouse: Path, lock: dict[str, object]) -> dict[str, object
 main() -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

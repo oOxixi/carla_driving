@@ -28,7 +28,7 @@ Generate member C's deterministic pre-CARLA acceptance evidence.
 _write_csv(path: Path, rows: list[dict[str, object]]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_write_csv】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_distance_ttc_samples`
 
@@ -38,7 +38,7 @@ _write_csv(path: Path, rows: list[dict[str, object]]) -> None
 _distance_ttc_samples() -> list[dict[str, object]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_distance_ttc_samples】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_voice_stop`
 
@@ -48,7 +48,7 @@ _distance_ttc_samples() -> list[dict[str, object]]
 _voice_stop() -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_voice_stop】释放维护工具的数据检查、生成、评测或证据处理持有的线程、客户端或服务资源；调用顺序需与资源创建方匹配，不能把关闭完成当作此前请求成功。
 
 ### `_stop_curve`
 
@@ -58,7 +58,7 @@ _voice_stop() -> dict[str, object]
 _stop_curve() -> list[dict[str, object]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_stop_curve】释放维护工具的数据检查、生成、评测或证据处理持有的线程、客户端或服务资源；调用顺序需与资源创建方匹配，不能把关闭完成当作此前请求成功。
 
 ### `_fault_injection`
 
@@ -68,7 +68,7 @@ _stop_curve() -> list[dict[str, object]]
 _fault_injection() -> list[dict[str, object]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_fault_injection】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `validate`
 
@@ -78,7 +78,7 @@ _fault_injection() -> list[dict[str, object]]
 validate(output_dir: Path) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【validate】检查维护工具的数据检查、生成、评测或证据处理的局部合同并返回/累计函数体定义的结果；静态校验通过不等于外部服务、CARLA、音频模型或最终交付已经通过。
 
 ### `main`
 
@@ -88,7 +88,7 @@ validate(output_dir: Path) -> dict[str, object]
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

@@ -38,7 +38,7 @@ Assign an entire sequence/scenario/seed group without frame leakage.
 load_capture_records(path: Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【load_capture_records】从参数、文件、环境或缓存解析维护工具的数据检查、生成、评测或证据处理所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `build_dataset`
 
@@ -48,7 +48,7 @@ load_capture_records(path: Path) -> list[dict[str, Any]]
 build_dataset(capture_paths: Iterable[Path], *, dataset_root: Path, output_root: Path, defaults: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【build_dataset】按函数体组合维护工具的数据检查、生成、评测或证据处理的中间对象或产物；输入筛选、排序、身份和失败项必须保留，生成成功不代表后续运行或评分门禁通过。
 
 ### `build_record`
 
@@ -58,7 +58,7 @@ build_dataset(capture_paths: Iterable[Path], *, dataset_root: Path, output_root:
 build_record(payload: Mapping[str, Any], *, dataset_root: Path, defaults: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【build_record】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_media_ref`
 
@@ -68,7 +68,7 @@ build_record(payload: Mapping[str, Any], *, dataset_root: Path, defaults: Mappin
 _media_ref(value: object, dataset_root: Path) -> dict[str, Any] | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_media_ref】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_objects`
 
@@ -78,7 +78,7 @@ _media_ref(value: object, dataset_root: Path) -> dict[str, Any] | None
 _objects(value: object) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_objects】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_file_sha256`
 
@@ -88,7 +88,7 @@ _objects(value: object) -> list[dict[str, Any]]
 _file_sha256(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_file_sha256】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_sha_text`
 
@@ -98,7 +98,7 @@ _file_sha256(path: Path) -> str
 _sha_text(value: object, name: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_sha_text】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_text`
 
@@ -108,7 +108,7 @@ _sha_text(value: object, name: str) -> str
 _text(value: object, name: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_text】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_integer`
 
@@ -118,7 +118,7 @@ _text(value: object, name: str) -> str
 _integer(value: object, name: str, minimum: int | None=None) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_integer】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_number`
 
@@ -128,7 +128,7 @@ _integer(value: object, name: str, minimum: int | None=None) -> int
 _number(value: object, name: str, *, minimum: float | None=None, maximum: float | None=None) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_number】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_optional_number`
 
@@ -138,7 +138,7 @@ _number(value: object, name: str, *, minimum: float | None=None, maximum: float 
 _optional_number(value: object, *, minimum: float | None=None) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_optional_number】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_lane_id`
 
@@ -148,7 +148,7 @@ _optional_number(value: object, *, minimum: float | None=None) -> float | None
 _lane_id(value: object) -> int | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_lane_id】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_action_or_none`
 
@@ -158,7 +158,7 @@ _lane_id(value: object) -> int | None
 _action_or_none(value: object) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_action_or_none】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `main`
 
@@ -168,7 +168,7 @@ _action_or_none(value: object) -> str | None
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

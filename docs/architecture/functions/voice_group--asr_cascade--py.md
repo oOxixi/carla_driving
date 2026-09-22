@@ -39,7 +39,7 @@ Expose pip-installed NVIDIA runtime DLLs to CTranslate2 on Windows.
 
 源码位置：[voice_group/asr_cascade.py 第 52 行](../../../voice_group/asr_cascade.py#L52)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CascadeConfig】定义语音识别、复核或命令解释所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `CascadeConfig.from_environment`
 
@@ -49,7 +49,7 @@ Expose pip-installed NVIDIA runtime DLLs to CTranslate2 on Windows.
 CascadeConfig.from_environment(cls) -> 'CascadeConfig'
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CascadeConfig.from_environment】从参数、文件、环境或缓存解析语音识别、复核或命令解释所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `ConfidenceCalibrator`
 
@@ -65,7 +65,7 @@ Apply a stored Platt calibration without inventing a fallback score.
 ConfidenceCalibrator.__init__(self, path: Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【ConfidenceCalibrator.__init__】按签名接收依赖并建立语音识别、复核或命令解释的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `ConfidenceCalibrator.transform`
 
@@ -75,7 +75,7 @@ ConfidenceCalibrator.__init__(self, path: Path) -> None
 ConfidenceCalibrator.transform(self, raw_probability: float | None) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【ConfidenceCalibrator.transform】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `FasterWhisperVerifier`
 
@@ -91,7 +91,7 @@ Lazy faster-whisper adapter; model loading occurs only on first trigger.
 FasterWhisperVerifier.__init__(self, config: CascadeConfig | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【FasterWhisperVerifier.__init__】按签名接收依赖并建立语音识别、复核或命令解释的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `FasterWhisperVerifier._get_model`
 
@@ -101,7 +101,7 @@ FasterWhisperVerifier.__init__(self, config: CascadeConfig | None=None) -> None
 FasterWhisperVerifier._get_model(self) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【FasterWhisperVerifier._get_model】从参数、文件、环境或缓存解析语音识别、复核或命令解释所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `FasterWhisperVerifier.warmup`
 
@@ -111,7 +111,7 @@ FasterWhisperVerifier._get_model(self) -> 未声明返回类型
 FasterWhisperVerifier.warmup(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【FasterWhisperVerifier.warmup】根据紧邻签名和函数体完成语音识别、复核或命令解释中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `FasterWhisperVerifier.transcribe`
 
@@ -121,7 +121,7 @@ FasterWhisperVerifier.warmup(self) -> None
 FasterWhisperVerifier.transcribe(self, audio: Any) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【FasterWhisperVerifier.transcribe】消费签名中的输入并执行语音识别、复核或命令解释的核心推理路径；返回结构、置信度、超时和降级来源必须随结果保留，模型未加载或远端不可达不得记为成功。
 
 ### `needs_verification`
 

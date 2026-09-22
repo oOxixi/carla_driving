@@ -28,7 +28,7 @@ Build the 83-scenario Dongfeng-track acceptance suite.
 command(time_s: float, text: str, intent: str, *, speed_kph: float | None=None, parameters: dict[str, Any] | None=None, status: str='valid', confirm_required: bool=False, phase_id: str | None=None, trigger: dict[str, Any] | None=None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【command】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `vehicle`
 
@@ -38,7 +38,7 @@ command(time_s: float, text: str, intent: str, *, speed_kph: float | None=None, 
 vehicle(actor_id: str, x: float, y: float=0.0, *, speed_mps: float=0.0, brake_at_s: float | None=None, target_speed_mps: float | None=None, blueprint_id: str='vehicle.audi.tt', behavior_mode: str='lead_vehicle', behavior_events: list[dict[str, Any]] | None=None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【vehicle】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `walker`
 
@@ -48,7 +48,7 @@ vehicle(actor_id: str, x: float, y: float=0.0, *, speed_mps: float=0.0, brake_at
 walker(actor_id: str, x: float, start_y: float=-3.0, end_y: float=3.0, *, start_time_s: float=4.0, speed_mps: float=1.4, trigger: dict[str, Any] | None=None, phase_id: str | None=None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【walker】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `prop`
 
@@ -58,7 +58,7 @@ walker(actor_id: str, x: float, start_y: float=-3.0, end_y: float=3.0, *, start_
 prop(actor_id: str, x: float, y: float, yaw_deg: float=0.0) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【prop】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `red_light`
 
@@ -68,7 +68,7 @@ prop(actor_id: str, x: float, y: float, yaw_deg: float=0.0) -> dict[str, Any]
 red_light(distance_m: float=18.0) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【red_light】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `fault`
 
@@ -78,7 +78,7 @@ red_light(distance_m: float=18.0) -> dict[str, Any]
 fault(fault_id: str, fault_type: str, time_s: float, duration_s: float, **values: Any) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【fault】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `scenario`
 
@@ -88,7 +88,7 @@ fault(fault_id: str, fault_type: str, time_s: float, duration_s: float, **values
 scenario(scenario_id: str, folder: str, *, priority: str, category: str, level: str, capability: str, description: str, commands: list[dict[str, Any]], route: list[list[float]] | None=None, route_values: dict[str, Any] | None=None, actors: list[dict[str, Any]] | None=None, expected: dict[str, Any] | None=None, weather: str='ClearNoon', seed: int=0, duration_s: float=35.0, ego_y: float=0.0, oracle_behaviors: list[str] | None=None, expected_target_actor_id: str | None=None, faults: list[dict[str, Any]] | None=None, proposed_acceptance: dict[str, Any] | None=None, extension_requirements: list[str] | None=None, extension_values: dict[str, Any] | None=None, notes: list[str] | None=None, suite_group: str | None=None, extra_tags: list[str] | None=None) -> tuple[str, dict[str, Any], dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【scenario】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `build_scenarios`
 
@@ -98,7 +98,7 @@ scenario(scenario_id: str, folder: str, *, priority: str, category: str, level: 
 build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【build_scenarios】按函数体组合维护工具的数据检查、生成、评测或证据处理的中间对象或产物；输入筛选、排序、身份和失败项必须保留，生成成功不代表后续运行或评分门禁通过。
 
 ### `matrix`
 
@@ -108,7 +108,7 @@ build_scenarios() -> list[tuple[str, dict[str, Any], dict[str, Any]]]
 matrix(entries: list[dict[str, Any]]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【matrix】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `render_json`
 
@@ -118,7 +118,7 @@ matrix(entries: list[dict[str, Any]]) -> dict[str, Any]
 render_json(data: dict[str, Any]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【render_json】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `render_build_summary`
 
@@ -128,7 +128,7 @@ render_json(data: dict[str, Any]) -> str
 render_build_summary(entries: list[dict[str, Any]]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【render_build_summary】按函数体组合维护工具的数据检查、生成、评测或证据处理的中间对象或产物；输入筛选、排序、身份和失败项必须保留，生成成功不代表后续运行或评分门禁通过。
 
 ### `main`
 
@@ -138,7 +138,7 @@ render_build_summary(entries: list[dict[str, Any]]) -> str
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

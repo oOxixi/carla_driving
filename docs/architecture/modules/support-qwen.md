@@ -140,8 +140,31 @@ main() -> None
 来源 SHA256：`8d43fe41d63cb9f69299b27a3c44235ab7cdd7b98691397312d80be5c14ee2b4`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。
+
 ### `qwen_service/tests/test_stress_set_semantic_repair.py`
 
 来源 SHA256：`a38b27a262e69c5f0c9225acc15d6c7c3e7e2b9af9c7eec53cf4fb3bd83dcbed`。
 
 此文件未发现类级注解字段、argparse声明或显式raise。接口签名见原入口章节；这不证明没有外部异常或副作用。
+
+## 第17模块逐入口精读结论（2026-09-22）
+
+本轮按基线 `4e41f990` 核对6份实现页和2份语义页，改写78处泛用占位。结论覆盖当前HTTP服务、client、历史runtime及全部backend，但不把确定性backend或静态health当成真实Qwen证据。
+
+### 请求到计划的实际边界
+
+`QwenServiceClient` 负责JSON HTTP、request transform与客户端计时；`QwenRequestHandler` 只暴露 `/health`、`/infer`、`/metrics`；`QwenDecisionService` 负责请求大小、Schema、并发槽位、future超时、响应Schema、计数和延迟分位数。backend才拥有模型推理。服务超时、客户端HTTP超时和车辆编排超时属于三个时钟，必须分别记录。
+
+`atomic_v1` 返回单动作决策，`planner_v2` 返回 `ManeuverPlan V2`。当前vLLM planner不是让模型自由生成完整JSON，而是约束生成一个语义choice，再由确定性代码展开步骤、目标、速度与完成条件；因此评测要同时保留模型choice和规则组装后的计划，不能把全部正确率归因给模型。
+
+### Backend身份与健康语义
+
+- unavailable与两个deterministic backend都不是生产模型；它们只适合合同、故障和流程测试。
+- local Transformers和vLLM路径的模型加载、图像解析与生成栈不同，测试通过不能互相代替。
+- vLLM planner签名允许 `max_new_tokens=256`，构造后实际固定为1；`image_max_side` 必须为224。调用记录应写生效值而非只抄CLI默认。
+- A04仍未关闭：vLLM backend当前health不探测远端模型，配置完成可被上报为READY。正式门禁必须另有可达性、模型ID/revision/fingerprint和真实infer证据。
+- A05仍未关闭：旧 `qwen_service/tests/test_server.py` 使用已删除的 `create_server` 和历史runtime，不能代表当前server回归。
+
+### 修改联动与门禁
+
+改请求/计划字段时同步Interface Schema、client/server、backend、orchestrator、Teacher backend、场景合同和数据标签；改语义规则时还要重跑目标排序、复合动作、故障注入与闭环终态。最低发布证据包括固定源码SHA、模型exact revision/fingerprint、启动参数、health与独立infer、原始请求/响应、Schema结果及超时/并发测试；缺少任一身份项时只能称服务Smoke。

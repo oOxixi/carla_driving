@@ -24,7 +24,7 @@ Read-only CARLA chase camera with live command subtitles.
 
 源码位置：[tools/live_carla_viewer.py 第 21 行](../../../tools/live_carla_viewer.py#L21)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【FrameStore】定义维护工具的数据检查、生成、评测或证据处理所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `FrameStore.__init__`
 
@@ -34,7 +34,7 @@ Read-only CARLA chase camera with live command subtitles.
 FrameStore.__init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【FrameStore.__init__】按签名接收依赖并建立维护工具的数据检查、生成、评测或证据处理的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `FrameStore.publish`
 
@@ -44,7 +44,7 @@ FrameStore.__init__(self) -> None
 FrameStore.publish(self, jpeg: bytes) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【FrameStore.publish】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `FrameStore.wait_after`
 
@@ -54,13 +54,13 @@ FrameStore.publish(self, jpeg: bytes) -> None
 FrameStore.wait_after(self, sequence: int, timeout: float=2.0) -> tuple[int, bytes | None]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【FrameStore.wait_after】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `CommandStore`
 
 源码位置：[tools/live_carla_viewer.py 第 40 行](../../../tools/live_carla_viewer.py#L40)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandStore】定义维护工具的数据检查、生成、评测或证据处理所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `CommandStore.__init__`
 
@@ -70,7 +70,7 @@ FrameStore.wait_after(self, sequence: int, timeout: float=2.0) -> tuple[int, byt
 CommandStore.__init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandStore.__init__】按签名接收依赖并建立维护工具的数据检查、生成、评测或证据处理的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `CommandStore.publish`
 
@@ -80,7 +80,7 @@ CommandStore.__init__(self) -> None
 CommandStore.publish(self, record: dict[str, Any], log_file: Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandStore.publish】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `CommandStore.snapshot`
 
@@ -90,7 +90,7 @@ CommandStore.publish(self, record: dict[str, Any], log_file: Path) -> None
 CommandStore.snapshot(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandStore.snapshot】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `ego_vehicle`
 
@@ -100,7 +100,7 @@ CommandStore.snapshot(self) -> dict[str, Any]
 ego_vehicle(world: carla.World) -> carla.Vehicle | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【ego_vehicle】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `encode_frame`
 
@@ -110,7 +110,7 @@ ego_vehicle(world: carla.World) -> carla.Vehicle | None
 encode_frame(image: carla.Image, ego: carla.Vehicle) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【encode_frame】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_latest_log`
 
@@ -120,7 +120,7 @@ encode_frame(image: carla.Image, ego: carla.Vehicle) -> None
 _latest_log(log_dir: Path, scenario_id: str) -> Path | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_latest_log】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `watch_commands`
 
@@ -130,13 +130,13 @@ _latest_log(log_dir: Path, scenario_id: str) -> Path | None
 watch_commands(log_dir: Path, scenario_id: str, command_log: Path | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【watch_commands】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `Handler`
 
 源码位置：[tools/live_carla_viewer.py 第 187 行](../../../tools/live_carla_viewer.py#L187)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【Handler】定义维护工具的数据检查、生成、评测或证据处理所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `Handler.log_message`
 
@@ -146,7 +146,7 @@ watch_commands(log_dir: Path, scenario_id: str, command_log: Path | None=None) -
 Handler.log_message(self, _format: str, *_args: object) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【Handler.log_message】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `Handler.do_GET`
 
@@ -156,7 +156,7 @@ Handler.log_message(self, _format: str, *_args: object) -> None
 Handler.do_GET(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【Handler.do_GET】从参数、文件、环境或缓存解析维护工具的数据检查、生成、评测或证据处理所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `main`
 
@@ -166,7 +166,7 @@ Handler.do_GET(self) -> None
 main() -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

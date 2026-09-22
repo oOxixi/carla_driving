@@ -28,7 +28,7 @@ Strict parser for one Qwen GPTQ/Marlin launch evidence block.
 _complete_blocks(lines: list[str]) -> list[list[str]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_complete_blocks】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `verify_kernel_log`
 

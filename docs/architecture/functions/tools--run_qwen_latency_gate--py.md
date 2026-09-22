@@ -28,7 +28,7 @@ Run only the Qwen-VL latency gate; never starts a correctness suite.
 _percentile(values: list[float], quantile: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_percentile】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `summarize_latency_gate`
 
@@ -38,7 +38,7 @@ _percentile(values: list[float], quantile: float) -> float
 summarize_latency_gate(latencies_ms: list[float], *, threshold_ms: float) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【summarize_latency_gate】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `latency_gate_exit_code`
 
@@ -48,7 +48,7 @@ summarize_latency_gate(latencies_ms: list[float], *, threshold_ms: float) -> dic
 latency_gate_exit_code(report: Mapping[str, object]) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【latency_gate_exit_code】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_context`
 
@@ -58,7 +58,7 @@ latency_gate_exit_code(report: Mapping[str, object]) -> int
 _context(image_name: str, index: int) -> QwenInputContext
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_context】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_gpu_snapshot`
 
@@ -68,7 +68,7 @@ _context(image_name: str, index: int) -> QwenInputContext
 _gpu_snapshot() -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_gpu_snapshot】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_write_report`
 
@@ -78,7 +78,7 @@ _gpu_snapshot() -> dict[str, object]
 _write_report(path: Path, report: Mapping[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_write_report】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `main`
 
@@ -88,7 +88,7 @@ _write_report(path: Path, report: Mapping[str, Any]) -> None
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

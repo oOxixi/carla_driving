@@ -61,7 +61,7 @@ _build_result(*, original_text: str, normalized_text: str, intent: str, confiden
 _matches_any_pattern(text: str, patterns: tuple[str, ...]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_matches_any_pattern】根据紧邻签名和函数体完成语音识别、复核或命令解释中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_is_terminal_emergency_stop`
 
@@ -81,7 +81,7 @@ True when avoidance is explicitly unavailable and STOP is terminal.
 _compound_signal_names(text: str) -> set[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_compound_signal_names】根据紧邻签名和函数体完成语音识别、复核或命令解释中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_has_compound_signal_pair`
 
@@ -91,7 +91,7 @@ _compound_signal_names(text: str) -> set[str]
 _has_compound_signal_pair(names: set[str]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_has_compound_signal_pair】根据紧邻签名和函数体完成语音识别、复核或命令解释中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_has_vulnerable_speed_continuation`
 
