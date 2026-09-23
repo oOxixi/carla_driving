@@ -28,10 +28,12 @@ import yaml
 from challenge.student import StudentModelConfig, StudentPlannerV0
 from challenge.dataset.validate_d2_release import canonical_text_sha256, validate_release
 from challenge.dataset.build_a3_d2_view import VIEW_VERSION
+from challenge.dataset.build_a3_cumulative_view import CUMULATIVE_VIEW_VERSION
 
 from .class_balance import compute_class_weights
 from .artifacts import export_candidate_weights
 from .audit_d2_view import audit_view
+from .audit_cumulative_view import audit_cumulative_view
 from .checkpoint import load_checkpoint, save_checkpoint, sha256_file
 from .dataset import (
     DistillationDataset,
@@ -104,6 +106,7 @@ def run_training(
                 if dataset_cfg.get("verify_teacher_identity")
                 and cfg["teacher"].get("identity_policy") not in {
                     "signed_d2_release_smoke", "signed_d2_release_formal",
+                    "signed_cumulative_release_formal",
                 }
                 else None
             ),
@@ -225,14 +228,30 @@ def run_training(
     }
     if cfg["teacher"].get("identity_policy") in {
         "signed_d2_release_smoke", "signed_d2_release_formal",
+        "signed_cumulative_release_formal",
     }:
         repo = Path(__file__).resolve().parents[2]
-        metadata["release_manifest_sha256"] = canonical_text_sha256(
-            repo / str(cfg["dataset"]["release_manifest_path"])
-        )
         metadata["a3_view_manifest_sha256"] = canonical_text_sha256(
             repo / str(cfg["dataset"]["view_manifest_path"])
         )
+        if cfg["teacher"].get("identity_policy") == "signed_cumulative_release_formal":
+            view = json.loads(
+                (repo / str(cfg["dataset"]["view_manifest_path"])).read_text(encoding="utf-8")
+            )
+            metadata["release_manifest_sha256"] = view["source_evidence"]["d3"][
+                "release_manifest_sha256"
+            ]
+            metadata["d2_release_manifest_sha256"] = view["source_evidence"]["d2"][
+                "release_manifest_sha256"
+            ]
+            metadata["b1_signature_sha256"] = view["source_evidence"]["d3"][
+                "b1_signature_sha256"
+            ]
+            metadata["source_evidence_sha256"] = view["source_evidence_sha256"]
+        else:
+            metadata["release_manifest_sha256"] = canonical_text_sha256(
+                repo / str(cfg["dataset"]["release_manifest_path"])
+            )
     start_epoch = 0
     global_step = 0
     best_metric = -math.inf
@@ -518,7 +537,7 @@ def _validate_frozen_identities(
     policy = str(cfg["teacher"].get("identity_policy", "frozen_manifest"))
     if policy not in {
         "frozen_manifest", "legacy_unpinned_smoke", "signed_d2_release_smoke",
-        "signed_d2_release_formal",
+        "signed_d2_release_formal", "signed_cumulative_release_formal",
     }:
         raise ValueError(f"unsupported teacher identity_policy: {policy}")
     manifest_path = Path(__file__).resolve().parents[1] / "teacher_baseline_manifest.json"
@@ -533,13 +552,21 @@ def _validate_frozen_identities(
         key: cfg["teacher"].get(key) for key in expected_teacher
     }
     dataset_cfg = cfg["dataset"]
-    if policy in {"signed_d2_release_smoke", "signed_d2_release_formal"}:
+    if policy in {
+        "signed_d2_release_smoke", "signed_d2_release_formal",
+        "signed_cumulative_release_formal",
+    }:
         if policy == "signed_d2_release_smoke" and not integration_smoke:
             raise ValueError("signed D2 release policy is limited to integration smoke")
-        if policy == "signed_d2_release_formal" and integration_smoke:
-            raise ValueError("formal signed D2 policy cannot be used for integration smoke")
-        if actual_teacher["git_sha"] != "MULTI_PINNED_B1_D2_V1_1":
-            raise ValueError("signed D2 release must identify mixed Teacher baselines")
+        if policy in {"signed_d2_release_formal", "signed_cumulative_release_formal"} and integration_smoke:
+            raise ValueError("formal signed release policy cannot be used for integration smoke")
+        expected_multi_teacher = (
+            "MULTI_PINNED_B1_D2_V1_1_PLUS_D3_WAVE1"
+            if policy == "signed_cumulative_release_formal"
+            else "MULTI_PINNED_B1_D2_V1_1"
+        )
+        if actual_teacher["git_sha"] != expected_multi_teacher:
+            raise ValueError("signed release must identify the exact mixed Teacher cohorts")
         for field in ("model_id", "model_revision", "artifact_fingerprint_sha256"):
             if actual_teacher[field] != expected_teacher[field]:
                 raise ValueError(f"signed D2 release Teacher {field} mismatch")
@@ -552,6 +579,30 @@ def _validate_frozen_identities(
         repo = Path(__file__).resolve().parents[2]
         view_path = (repo / str(dataset_cfg["view_manifest_path"])).resolve()
         view = json.loads(view_path.read_text(encoding="utf-8"))
+        if policy == "signed_cumulative_release_formal":
+            if (
+                view.get("view_version") != CUMULATIVE_VIEW_VERSION
+                or dataset_cfg.get("version") != CUMULATIVE_VIEW_VERSION
+            ):
+                raise ValueError("signed cumulative release view version mismatch")
+            d2_dir = (repo / str(dataset_cfg["d2_release_dir_path"])).resolve()
+            d3_dir = (repo / str(dataset_cfg["d3_release_dir_path"])).resolve()
+            for split, config_key in (("train", "train_path"), ("val", "val_path")):
+                path = (repo / str(dataset_cfg[config_key])).resolve()
+                if path != view_path.parent / f"{split}.jsonl":
+                    raise ValueError(f"A3 cumulative {split} path does not match signed view")
+                if canonical_text_sha256(path) != view["files"][f"{split}.jsonl"]["sha256"]:
+                    raise ValueError(f"A3 cumulative {split} hash does not match signed view")
+            for relative, expected_sha in view["cohort_manifest_shas"].items():
+                if canonical_text_sha256(repo / relative) != expected_sha:
+                    raise ValueError(f"Teacher cohort manifest changed: {relative}")
+            if (repo / str(dataset_cfg["asset_root"])).resolve() != repo:
+                raise ValueError("signed cumulative release RGB asset_root must be repository root")
+            audit_cumulative_view(d2_dir, d3_dir, view_path.parent, check_images=True)
+            if cfg["model"].get("model_id") == StudentPlannerV0.model_id:
+                if cfg["model"].get("config_id") != StudentModelConfig().config_id:
+                    raise ValueError("Student config_id does not match A1 V0 r3")
+            return
         if view.get("view_version") != VIEW_VERSION or dataset_cfg.get("version") != VIEW_VERSION:
             raise ValueError("signed D2 release view version mismatch")
         release_path = (repo / str(dataset_cfg["release_manifest_path"])).resolve()

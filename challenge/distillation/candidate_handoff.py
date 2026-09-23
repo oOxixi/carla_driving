@@ -71,6 +71,14 @@ def build_candidate_handoff(
                 "release_manifest_sha256": candidate["release_manifest_sha256"],
                 "a3_view_manifest_sha256": candidate["a3_view_manifest_sha256"],
                 "teacher_identity_policy": candidate["teacher_identity_policy"],
+                **({
+                    field: candidate[field]
+                    for field in (
+                        "d2_release_manifest_sha256", "b1_signature_sha256",
+                        "source_evidence_sha256",
+                    )
+                    if candidate.get(field) is not None
+                }),
             },
             "training_evidence": {
                 "source_checkpoint_sha256": candidate["source_checkpoint_sha256"],
@@ -111,7 +119,9 @@ def _validate_candidate(
         raise ValueError("handoff requires a candidate pending the A3 FP32 gate")
     if candidate.get("source_worktree_dirty") is not False:
         raise ValueError("candidate must originate from a clean worktree")
-    if candidate.get("teacher_identity_policy") != "signed_d2_release_formal":
+    if candidate.get("teacher_identity_policy") not in {
+        "signed_d2_release_formal", "signed_cumulative_release_formal",
+    }:
         raise ValueError("handoff requires the formal signed-release identity policy")
     for field, length in (
         ("git_sha", 40),
@@ -121,6 +131,12 @@ def _validate_candidate(
         ("a3_view_manifest_sha256", 64),
     ):
         _require_hex(str(candidate.get(field, "")), length, field)
+    if candidate.get("teacher_identity_policy") == "signed_cumulative_release_formal":
+        for field in (
+            "d2_release_manifest_sha256", "b1_signature_sha256",
+            "source_evidence_sha256",
+        ):
+            _require_hex(str(candidate.get(field, "")), 64, field)
     for field in ("model_id", "config_id", "dataset_version"):
         if not str(candidate.get(field, "")).strip():
             raise ValueError(f"candidate requires {field}")
@@ -150,6 +166,13 @@ def _validate_candidate(
             raise ValueError(
                 f"candidate {candidate_field} does not match training summary {summary_field}"
             )
+    if candidate.get("teacher_identity_policy") == "signed_cumulative_release_formal":
+        for field in (
+            "d2_release_manifest_sha256", "b1_signature_sha256",
+            "source_evidence_sha256",
+        ):
+            if candidate.get(field) != summary.get(field):
+                raise ValueError(f"candidate {field} does not match training summary {field}")
     if summary.get("smoke_only") is not False or summary.get("integration_smoke_only") is not False:
         raise ValueError("Smoke or integration-only training cannot enter the B2 handoff")
     if preflight.get("valid") is not True or preflight.get("error_count") != 0:

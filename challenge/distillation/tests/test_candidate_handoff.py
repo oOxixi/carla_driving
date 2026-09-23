@@ -88,6 +88,33 @@ def test_build_candidate_handoff_is_hash_bound_and_pending(tmp_path: Path) -> No
     assert written["gate_status"] == "PENDING_A3_FP32_GATE"
 
 
+def test_build_cumulative_candidate_handoff_preserves_signed_evidence(tmp_path: Path) -> None:
+    source = _source(tmp_path)
+    candidate_path = source / "student_v0_fp32_candidate.json"
+    summary_path = source / "training_summary.json"
+    candidate = json.loads(candidate_path.read_text())
+    summary = json.loads(summary_path.read_text())
+    updates = {
+        "teacher_git_sha": "MULTI_PINNED_B1_D2_V1_1_PLUS_D3_WAVE1",
+        "teacher_identity_policy": "signed_cumulative_release_formal",
+        "d2_release_manifest_sha256": "1" * 64,
+        "b1_signature_sha256": "2" * 64,
+        "source_evidence_sha256": "3" * 64,
+    }
+    candidate.update(updates)
+    summary.update(updates)
+    _write_json(candidate_path, candidate)
+    _write_json(summary_path, summary)
+    manifest = build_candidate_handoff(
+        source,
+        tmp_path / "cumulative-handoff",
+        config_snapshot=b"config_id: cumulative\n",
+        config_source={"git_sha": "a" * 40, "path": "cumulative.yaml"},
+    )
+    assert manifest["candidate_identity"]["b1_signature_sha256"] == "2" * 64
+    assert manifest["candidate_identity"]["source_evidence_sha256"] == "3" * 64
+
+
 @pytest.mark.parametrize(
     ("mutation", "message"),
     (

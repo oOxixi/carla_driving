@@ -22,7 +22,13 @@ CORE_METRICS = (
 )
 SAFETY_METRICS = ("safety_critical_behavior_recall",)
 SIGNED_D2_FORMAL_POLICY = "signed_d2_release_formal"
+SIGNED_CUMULATIVE_FORMAL_POLICY = "signed_cumulative_release_formal"
+FORMAL_SIGNED_POLICIES = {
+    SIGNED_D2_FORMAL_POLICY,
+    SIGNED_CUMULATIVE_FORMAL_POLICY,
+}
 SIGNED_D2_MULTI_TEACHER_ID = "MULTI_PINNED_B1_D2_V1_1"
+SIGNED_CUMULATIVE_MULTI_TEACHER_ID = "MULTI_PINNED_B1_D2_V1_1_PLUS_D3_WAVE1"
 FORMAL_GATE_TEACHER_V4 = {
     "teacher_profile": "b1-pinned-teacher-v4",
     "teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
@@ -72,6 +78,9 @@ def export_candidate_weights(
         "dataset_version": str(identity["dataset_version"]),
         "release_manifest_sha256": identity.get("release_manifest_sha256"),
         "a3_view_manifest_sha256": identity.get("a3_view_manifest_sha256"),
+        "d2_release_manifest_sha256": identity.get("d2_release_manifest_sha256"),
+        "b1_signature_sha256": identity.get("b1_signature_sha256"),
+        "source_evidence_sha256": identity.get("source_evidence_sha256"),
         "gate_status": "MOCK_ONLY" if smoke else "PENDING_A3_FP32_GATE",
         "validation_metrics": dict(validation),
     }
@@ -141,7 +150,7 @@ def promote_fp32_candidate(
         "teacher_evaluation_id": teacher_evaluation.get("evaluation_id"),
         "student_evaluation_id": student_evaluation.get("evaluation_id"),
     }
-    if candidate_manifest.get("teacher_identity_policy") == SIGNED_D2_FORMAL_POLICY:
+    if candidate_manifest.get("teacher_identity_policy") in FORMAL_SIGNED_POLICIES:
         report["gate_evidence"] = {
             "benchmark_manifest_sha256": teacher_evaluation["benchmark_manifest_sha256"],
             "policy_manifest_sha256": teacher_evaluation["policy_manifest_sha256"],
@@ -169,7 +178,7 @@ def _validate_evaluation_identity(
         raise ValueError(f"{label} evaluation dataset_version does not match candidate")
     if not str(evaluation.get("evaluation_id", "")).strip():
         raise ValueError(f"{label} evaluation_id is required")
-    if candidate.get("teacher_identity_policy") == SIGNED_D2_FORMAL_POLICY:
+    if candidate.get("teacher_identity_policy") in FORMAL_SIGNED_POLICIES:
         for field, expected in FORMAL_GATE_TEACHER_V4.items():
             if evaluation.get(field) != expected:
                 raise ValueError(
@@ -190,10 +199,10 @@ def _validate_evaluation_identity(
 
 def _validate_pinned_teacher_candidate(candidate: Mapping[str, Any]) -> None:
     policy = str(candidate.get("teacher_identity_policy", ""))
-    if policy not in {"frozen_manifest", SIGNED_D2_FORMAL_POLICY}:
+    if policy not in {"frozen_manifest", *FORMAL_SIGNED_POLICIES}:
         raise ValueError(
             "production candidate requires frozen_manifest or "
-            "signed_d2_release_formal Teacher identity"
+            "a formal signed-release Teacher identity"
         )
     revision = str(candidate.get("teacher_model_revision", ""))
     fingerprint = str(candidate.get("teacher_artifact_fingerprint_sha256", ""))
@@ -210,9 +219,14 @@ def _validate_pinned_teacher_candidate(candidate: Mapping[str, Any]) -> None:
             "frozen_manifest candidate requires a full Teacher Git SHA",
         )
         return
-    if candidate.get("teacher_git_sha") != SIGNED_D2_MULTI_TEACHER_ID:
+    expected_multi_teacher = (
+        SIGNED_CUMULATIVE_MULTI_TEACHER_ID
+        if policy == SIGNED_CUMULATIVE_FORMAL_POLICY
+        else SIGNED_D2_MULTI_TEACHER_ID
+    )
+    if candidate.get("teacher_git_sha") != expected_multi_teacher:
         raise ValueError(
-            "signed D2 candidate requires the fixed multi-cohort Teacher identity"
+            "signed candidate requires the fixed multi-cohort Teacher identity"
         )
     for field in ("release_manifest_sha256", "a3_view_manifest_sha256"):
         _require_hex(
@@ -220,6 +234,15 @@ def _validate_pinned_teacher_candidate(candidate: Mapping[str, Any]) -> None:
             64,
             f"signed D2 candidate requires a valid {field}",
         )
+    if policy == SIGNED_CUMULATIVE_FORMAL_POLICY:
+        for field in (
+            "d2_release_manifest_sha256", "b1_signature_sha256",
+            "source_evidence_sha256",
+        ):
+            _require_hex(
+                str(candidate.get(field, "")), 64,
+                f"signed cumulative candidate requires a valid {field}",
+            )
 
 
 def _validate_formal_evaluation_pair(
@@ -227,10 +250,16 @@ def _validate_formal_evaluation_pair(
     teacher: Mapping[str, Any],
     student: Mapping[str, Any],
 ) -> None:
-    if candidate.get("teacher_identity_policy") != SIGNED_D2_FORMAL_POLICY:
+    if candidate.get("teacher_identity_policy") not in FORMAL_SIGNED_POLICIES:
         return
     for evaluation, label in ((teacher, "Teacher"), (student, "Student")):
-        for field in ("release_manifest_sha256", "a3_view_manifest_sha256"):
+        evidence_fields = ["release_manifest_sha256", "a3_view_manifest_sha256"]
+        if candidate.get("teacher_identity_policy") == SIGNED_CUMULATIVE_FORMAL_POLICY:
+            evidence_fields.extend([
+                "d2_release_manifest_sha256", "b1_signature_sha256",
+                "source_evidence_sha256",
+            ])
+        for field in evidence_fields:
             if evaluation.get(field) != candidate.get(field):
                 raise ValueError(f"{label} evaluation {field} does not match candidate")
         for field in (
