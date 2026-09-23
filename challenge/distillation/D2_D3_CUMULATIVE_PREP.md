@@ -72,9 +72,39 @@ MAE 1.1539 m/s，而第三轮已降到 0.5215 m/s。通用选模已改为主指�
 从 1.0932 降到 0.6108，但 safety-critical 从 1.2356 上升到 1.6626 m/s。该结果说明普通和
 复杂样本有改善，但安全关键速度回归仍需 B2 独立数据复核，不能据此直接晋级。
 
-当前 B2 待验包位于服务器：
+v2 诊断包保留在服务器：
 
 ```text
 /home/tiaozhansai/carla-driving-challenge/
   artifacts/challenge/distillation/a3_d2_d3_fp32_candidate_handoff_v2/
 ```
+
+## 风险优先 FP32 v3 与当前候选
+
+同一 D2 Val 回放表明，v2 虽然总体速度 MAE 较低，但 safety-critical 从 D2-only 的
+1.2356 退化到 1.6626 m/s。v3 不改模型和数据，只将 safety-critical 样本权重从 2.5
+提高到 4.0，并在结构指标同分后依次优先 safety recall 和安全关键速度 MAE。
+
+| D2 Val 指标 | D2-only | 累积 v2 | 风险优先 v3 |
+|---|---:|---:|---:|
+| plan sequence accuracy | 1.000 | 1.000 | 1.000 |
+| safety behavior recall | 1.000 | 1.000 | 1.000 |
+| overall speed MAE (m/s) | 0.980 | 0.548 | 0.754 |
+| normal speed MAE (m/s) | 0.884 | 0.309 | 0.703 |
+| complex speed MAE (m/s) | 1.093 | 0.611 | 0.786 |
+| safety-critical speed MAE (m/s) | 1.236 | 1.663 | 0.952 |
+
+v3 相对 D2-only 在所有速度分层都改善，没有用 normal 的收益掩盖 safety-critical 退化，
+因此替代 v2 成为当前待 B2 独立验证候选。v3 训练提交为
+`151efbbfa0c8920bfc78e29262d984bcfae1877f`，权重 SHA256 为
+`1afb8ebd11e401d4d7e6181d244ed39438421183c5303f1ce4a4391cee8cc68c`。
+
+当前待验包：
+
+```text
+/home/tiaozhansai/carla-driving-challenge/
+  artifacts/challenge/distillation/a3_d2_d3_fp32_candidate_handoff_v3/
+```
+
+该比较仍是同分布 development diagnostic。最终是否晋级只由 B2 冻结独立 Validation
+的 hash-bound Teacher/Student 配对证据决定。
