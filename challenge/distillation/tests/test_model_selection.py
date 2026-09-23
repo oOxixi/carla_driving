@@ -38,6 +38,36 @@ def test_primary_metric_still_dominates_tiebreakers() -> None:
     assert higher_accuracy > lower_accuracy
 
 
+def test_safety_metric_can_be_the_first_configured_tiebreaker() -> None:
+    tiebreakers = _selection_tiebreakers([
+        {"metric": "safety_critical_behavior_recall", "mode": "max"},
+        {"metric": "safety_critical_target_speed_mae", "mode": "min"},
+        {"metric": "loss", "mode": "min"},
+    ])
+    safer = _selection_key(
+        {
+            "plan_sequence_accuracy": 1.0,
+            "safety_critical_behavior_recall": 1.0,
+            "safety_critical_target_speed_mae": 0.8,
+            "loss": 0.3,
+        },
+        selection_metric="plan_sequence_accuracy",
+        tiebreakers=tiebreakers,
+    )
+    lower_loss_but_worse_safety = _selection_key(
+        {
+            "plan_sequence_accuracy": 1.0,
+            "safety_critical_behavior_recall": 1.0,
+            "safety_critical_target_speed_mae": 1.2,
+            "loss": 0.1,
+        },
+        selection_metric="plan_sequence_accuracy",
+        tiebreakers=tiebreakers,
+    )
+    assert safer is not None and lower_loss_but_worse_safety is not None
+    assert safer > lower_loss_but_worse_safety
+
+
 def test_selection_rejects_unknown_or_nonfinite_tiebreakers() -> None:
     with pytest.raises(ValueError, match="unknown selection tie-breaker"):
         _selection_key(
