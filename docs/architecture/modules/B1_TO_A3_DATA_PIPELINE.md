@@ -201,7 +201,8 @@ CRLF，导致工作区原始字节 SHA256 与 Linux 生成的发布 manifest 不
 3. additive 派生器绑定 D2/D3/signature/source evidence：**完成**。
 4. Train/Val sample/request/group/record 隔离和全量预检：**门禁已实现**。
 5. 独立 config ID、view version、输出目录和自动化测试：**完成**。
-6. 全量 A1 输入打包、标签编码、Smoke、断点恢复和重复运行一致性通过。
+6. 全量 A1 输入打包、标签编码、CUDA Smoke 和同 seed 重复一致性：**完成**；正式训练
+   checkpoint 的中断恢复仍在正式运行时验证。
 7. D3 Val 只标记为 development validation；在 B2 交付独立 Seen/Variant/Unseen
    评价前，不生成泛化通过结论。
 

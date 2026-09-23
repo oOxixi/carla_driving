@@ -178,6 +178,8 @@ Train and 797 development-Validation records. The 308 D3 hard negatives stay
 in the audit-only exclusion index; they are not silently treated as ordinary
 supervision. D3 adds development coverage and is not independent unseen Test
 evidence.
+The exact server-side preparation evidence and hashes are recorded in
+[D2_D3_CUMULATIVE_PREP.md](D2_D3_CUMULATIVE_PREP.md).
 
 After B1 and B2 deliver version-matched Validation evidence, promotion uses:
 
