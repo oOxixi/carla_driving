@@ -1,0 +1,64 @@
+config_id: a3-b1-d2-v1-1-plus-d3-wave1-integration-smoke-v1
+seed: 20260924
+
+teacher:
+  git_sha: MULTI_PINNED_B1_D2_V1_1_PLUS_D3_WAVE1
+  model_id: Qwen/Qwen3.5-2B
+  model_revision: 15852e8c16360a2fea060d615a32b45270f8a8fc
+  artifact_fingerprint_sha256: 4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa
+  identity_policy: signed_cumulative_release_smoke
+
+contract: {max_steps: 4, max_targets: 8}
+
+dataset:
+  version: b1_d2_v1_1_plus_d3_wave1_a3_strict_positive_v1
+  train_path: artifacts/a3_d2_d3_cumulative_positive_view_v1/train.jsonl
+  val_path: artifacts/a3_d2_d3_cumulative_positive_view_v1/val.jsonl
+  view_manifest_path: artifacts/a3_d2_d3_cumulative_positive_view_v1/a3_cumulative_view_manifest.json
+  d2_release_dir_path: challenge/dataset/releases/d2_v1_1
+  d3_release_dir_path: challenge/dataset/releases/d3_wave1_addon_v1
+  asset_root: .
+  require_rgb: true
+  verify_teacher_identity: true
+  require_pinned_teacher_provenance: true
+
+model:
+  model_id: student-v0-r3-fp32
+  config_id: student-v0-r3-structure-20260911
+  factory: challenge.distillation.a1_student:build_a1_student
+  options: {}
+
+input:
+  factory: challenge.distillation.a1_student:build_a1_input_packer
+  options: {}
+
+training:
+  device: auto
+  epochs: 1
+  batch_size: 8
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+  max_updates: 2
+  selection_metric: plan_sequence_accuracy
+  resume: null
+
+sampling:
+  weights: {normal: 1.0, complex: 1.5, safety_critical: 2.5}
+
+class_balance: {enabled: false, heads: [behavior], smoothing: 1.0, max_weight: 5.0}
+
+loss_weights:
+  behavior: 2.0
+  target_pointer: 1.5
+  target_lane: 0.5
+  target_speed: 0.5
+  completion: 0.5
+  on_failure: 0.3
+  confidence: 0.2
+  replan: 0.2
+  plan_length: 0.5
+  requires_confirmation: 0.2
+
+distillation: {soft_alpha: 0.0, temperature: 1.0}
+output: {directory: artifacts/challenge/distillation/d2_d3_cumulative_smoke_v1}

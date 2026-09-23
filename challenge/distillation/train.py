@@ -106,7 +106,7 @@ def run_training(
                 if dataset_cfg.get("verify_teacher_identity")
                 and cfg["teacher"].get("identity_policy") not in {
                     "signed_d2_release_smoke", "signed_d2_release_formal",
-                    "signed_cumulative_release_formal",
+                    "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
                 }
                 else None
             ),
@@ -228,13 +228,15 @@ def run_training(
     }
     if cfg["teacher"].get("identity_policy") in {
         "signed_d2_release_smoke", "signed_d2_release_formal",
-        "signed_cumulative_release_formal",
+        "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
     }:
         repo = Path(__file__).resolve().parents[2]
         metadata["a3_view_manifest_sha256"] = canonical_text_sha256(
             repo / str(cfg["dataset"]["view_manifest_path"])
         )
-        if cfg["teacher"].get("identity_policy") == "signed_cumulative_release_formal":
+        if cfg["teacher"].get("identity_policy") in {
+            "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
+        }:
             view = json.loads(
                 (repo / str(cfg["dataset"]["view_manifest_path"])).read_text(encoding="utf-8")
             )
@@ -537,7 +539,8 @@ def _validate_frozen_identities(
     policy = str(cfg["teacher"].get("identity_policy", "frozen_manifest"))
     if policy not in {
         "frozen_manifest", "legacy_unpinned_smoke", "signed_d2_release_smoke",
-        "signed_d2_release_formal", "signed_cumulative_release_formal",
+        "signed_d2_release_formal", "signed_cumulative_release_smoke",
+        "signed_cumulative_release_formal",
     }:
         raise ValueError(f"unsupported teacher identity_policy: {policy}")
     manifest_path = Path(__file__).resolve().parents[1] / "teacher_baseline_manifest.json"
@@ -554,15 +557,17 @@ def _validate_frozen_identities(
     dataset_cfg = cfg["dataset"]
     if policy in {
         "signed_d2_release_smoke", "signed_d2_release_formal",
-        "signed_cumulative_release_formal",
+        "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
     }:
         if policy == "signed_d2_release_smoke" and not integration_smoke:
             raise ValueError("signed D2 release policy is limited to integration smoke")
+        if policy == "signed_cumulative_release_smoke" and not integration_smoke:
+            raise ValueError("signed cumulative release smoke policy is limited to integration smoke")
         if policy in {"signed_d2_release_formal", "signed_cumulative_release_formal"} and integration_smoke:
             raise ValueError("formal signed release policy cannot be used for integration smoke")
         expected_multi_teacher = (
             "MULTI_PINNED_B1_D2_V1_1_PLUS_D3_WAVE1"
-            if policy == "signed_cumulative_release_formal"
+            if policy in {"signed_cumulative_release_smoke", "signed_cumulative_release_formal"}
             else "MULTI_PINNED_B1_D2_V1_1"
         )
         if actual_teacher["git_sha"] != expected_multi_teacher:
@@ -579,7 +584,7 @@ def _validate_frozen_identities(
         repo = Path(__file__).resolve().parents[2]
         view_path = (repo / str(dataset_cfg["view_manifest_path"])).resolve()
         view = json.loads(view_path.read_text(encoding="utf-8"))
-        if policy == "signed_cumulative_release_formal":
+        if policy in {"signed_cumulative_release_smoke", "signed_cumulative_release_formal"}:
             if (
                 view.get("view_version") != CUMULATIVE_VIEW_VERSION
                 or dataset_cfg.get("version") != CUMULATIVE_VIEW_VERSION

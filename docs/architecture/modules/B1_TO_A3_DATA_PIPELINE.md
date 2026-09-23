@@ -141,6 +141,9 @@ python -m challenge.distillation.validate_a1_inputs \
   --view-dir artifacts/a3_d2_d3_cumulative_positive_view_v1 \
   --asset-root .
 python -m challenge.distillation.train \
+  --config challenge/distillation/d2_d3_cumulative_smoke_config.yaml \
+  --integration-smoke
+python -m challenge.distillation.train \
   --config challenge/distillation/d2_d3_cumulative_formal_config.yaml
 ```
 

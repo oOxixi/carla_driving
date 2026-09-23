@@ -172,7 +172,8 @@ python -m challenge.distillation.validate_a1_inputs \
 ```
 
 The cumulative formal config is
-`d2_d3_cumulative_formal_config.yaml`. Its strict-positive view contains 4079
+`d2_d3_cumulative_formal_config.yaml`; the bounded two-update check uses
+`d2_d3_cumulative_smoke_config.yaml --integration-smoke`. Its strict-positive view contains 4079
 Train and 797 development-Validation records. The 308 D3 hard negatives stay
 in the audit-only exclusion index; they are not silently treated as ordinary
 supervision. D3 adds development coverage and is not independent unseen Test
