@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "gate": "B1_SIGNED_PASS",
+  "status": "PASS",
+  "dataset_version": "b1_d3_wave1_addon_v1",
+  "signed_at_utc": "2026-09-23T13:28:36.412048+00:00",
+  "release_manifest_sha256": "dcd1bd1d0a34683e62e70a206760e691c0cd04b779f063d58a1fcf98837554bd",
+  "image_set_canonical_sha256": "015f961090907d03b52a4d6a195a5b743502e3fdc73ba07a6f6d5693663646d2",
+  "integrity_report_sha256": "6a01ed0de59744adc7240e006bdeaa70cefcfd8f590f6f1e3716b66a7b50437e",
+  "release_lock_sha256": "c4d6e0ed2705d2de648adf8e36936c35f302ee8573fdb4b1da1de167bcba92f3",
+  "teacher": {
+    "teacher_profile": "b1-pinned-teacher-v4",
+    "teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_fingerprint": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "quantization": null,
+    "dtype": "bfloat16"
+  }
+}
