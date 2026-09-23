@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from .groups import normalize_group
 from .identity import sha256_file
 from .replay import ReplayCase, load_replay_cases
 from .run_io import write_json, write_jsonl
@@ -85,6 +86,9 @@ def freeze_snapshot(
                 "teacher_plan_sha256": (
                     _canonical_sha256(case.teacher_plan) if case.teacher_plan else None
                 ),
+                # Persist B2's group label unchanged (None when absent) so a
+                # frozen snapshot keeps the evaluation grouping with the inputs.
+                "group": case.group,
             }
         )
     cases_path = write_jsonl(target / "cases.jsonl", records)
@@ -171,6 +175,7 @@ def load_frozen_snapshot(snapshot_dir: str | Path) -> tuple[list[ReplayCase], di
                     rgb_resolved=resolved,
                     rgb_source="frozen_snapshot",
                     source_file=str(cases_path),
+                    group=normalize_group(record.get("group")),
                 )
             )
     info = {

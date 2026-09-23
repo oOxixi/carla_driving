@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import os
 from pathlib import Path
 import shlex
 import subprocess
@@ -26,9 +27,28 @@ from .identity import (
     identity_from_weight_manifest,
     sha256_file,
 )
-from .stages import STAGE_INDEX, StageTrace
+from .stages import STAGE_INDEX, StageOrderError, StageTrace
+from .tensors import TENSOR_NAMES, load_tensor_dump, output_checksums
 
 _STAGE_ORDER = tuple(sorted(STAGE_INDEX, key=lambda name: STAGE_INDEX[name]))
+
+
+def split_command(command: str) -> list[str]:
+    """Split a board runtime command line without mangling Windows paths.
+
+    `shlex.split` in POSIX mode treats every backslash as an escape, so
+    ``"C:\\tools\\python.exe" ...`` silently loses its separators and the
+    adapter reports a runtime exit instead of a working run.  On Windows the
+    non-POSIX mode keeps the backslashes, and the surrounding quotes are then
+    removed by hand.
+    """
+    if os.name != "nt":
+        return shlex.split(command)
+    parts = shlex.split(command, posix=False)
+    return [
+        part[1:-1] if len(part) >= 2 and part.startswith('"') and part.endswith('"') else part
+        for part in parts
+    ]
 
 
 class AdapterError(RuntimeError):
@@ -58,6 +78,10 @@ class PlannerRuntime(Protocol):
     identity: CandidateIdentity
     capabilities: RuntimeCapabilities
 
+    def describe(self) -> Mapping[str, Any]:
+        """Identity and shape information, without running inference."""
+        ...
+
     def infer(
         self,
         request: Mapping[str, Any],
@@ -66,6 +90,22 @@ class PlannerRuntime(Protocol):
         round_index: int,
         phase: str = "measured",
     ) -> tuple[Mapping[str, Any] | None, StageTrace]:
+        ...
+
+    def run_batch(
+        self,
+        requests: Sequence[Mapping[str, Any]],
+    ) -> list[Mapping[str, Any] | None]:
+        """Serve several requests without paying the cold-start cost per request."""
+        ...
+
+    def run_model_only(
+        self,
+        tensor_dir: str | Path,
+        *,
+        iterations: int = 1,
+    ) -> dict[str, Any]:
+        """`inference_start -> inference_end` only, driven by a tensor dump."""
         ...
 
     def close(self) -> None:
@@ -281,6 +321,63 @@ class InProcessStudentRuntime:
             )
             return None, trace
 
+    def describe(self) -> Mapping[str, Any]:
+        """Identity and input shapes without running inference (A4 contract §4)."""
+        contract = self.model.contract
+        return {
+            "git_sha": self.identity.git_sha,
+            "model_id": self.identity.model_id,
+            "model_sha256": self.identity.model_sha256,
+            "dataset_version": self.identity.dataset_version,
+            "config_id": self.identity.config_id,
+            "precision": "fp32",
+            "batch": int(getattr(contract, "batch", 1)),
+            "input_shapes": {
+                name: list(shape) for name, shape in contract.input_shapes.items()
+            },
+            "model_only": self.capabilities.model_only,
+            # Host-side: the model is already resident, so there is no per-request
+            # process start to hide inside the end-to-end number.
+            "resident": True,
+            "source": "inprocess",
+        }
+
+    def run_batch(
+        self,
+        requests: Sequence[Mapping[str, Any]],
+    ) -> list[Mapping[str, Any] | None]:
+        plans: list[Mapping[str, Any] | None] = []
+        for index, request in enumerate(requests):
+            plan, _ = self.infer(request, case_id=f"batch-{index:02d}", round_index=0)
+            plans.append(plan)
+        return plans
+
+    def run_model_only(
+        self,
+        tensor_dir: str | Path,
+        *,
+        iterations: int = 1,
+    ) -> dict[str, Any]:
+        arrays, manifest = load_tensor_dump(tensor_dir)
+        torch = self._torch
+        tensors = [torch.from_numpy(arrays[name]) for name in TENSOR_NAMES]
+        outputs: dict[str, Any] = {}
+        for _ in range(max(1, iterations)):
+            with torch.inference_mode():
+                raw = self.model(*tensors)
+            outputs = {
+                key: value.detach().to("cpu").contiguous()
+                for key, value in dict(raw).items()
+            }
+        return {
+            "status": "OK",
+            "mode": "inprocess",
+            "iterations": max(1, iterations),
+            "outputs": output_checksums(outputs),
+            "dump_case_id": manifest.get("case_id"),
+            "dump_request_sha256": manifest.get("request_sha256"),
+        }
+
     def verify_consistency(self, request: Mapping[str, Any]) -> dict[str, Any]:
         """Prove the instrumented path equals ``StudentBackend.infer`` output."""
         if self._validator is None:
@@ -475,6 +572,66 @@ class OnnxModelRuntime:
             traces.append(trace)
         return traces
 
+    def describe(self) -> Mapping[str, Any]:
+        shapes: dict[str, list[Any]] = {}
+        for value in self.session.get_inputs():
+            shapes[value.name] = [
+                dimension if isinstance(dimension, int) else str(dimension)
+                for dimension in value.shape
+            ]
+        return {
+            "git_sha": self.identity.git_sha,
+            "model_id": self.identity.model_id,
+            "model_sha256": self.identity.model_sha256,
+            "dataset_version": self.identity.dataset_version,
+            "config_id": self.identity.config_id,
+            "precision": str(self._metadata.get("precision", "fp32")),
+            "batch": int(self._metadata.get("batch", 1) or 1),
+            "input_shapes": shapes,
+            "outputs": list(self.output_names),
+            "model_only": True,
+            # The session is already resident, so repeated requests do not pay a
+            # model-load cost.
+            "resident": True,
+            "source": "onnx",
+        }
+
+    def run_batch(
+        self,
+        requests: Sequence[Mapping[str, Any]],
+    ) -> list[Mapping[str, Any] | None]:
+        plans: list[Mapping[str, Any] | None] = []
+        for index, request in enumerate(requests):
+            plan, _ = self.infer(request, case_id=f"batch-{index:02d}", round_index=0)
+            plans.append(plan)
+        return plans
+
+    def run_model_only(
+        self,
+        tensor_dir: str | Path,
+        *,
+        iterations: int = 1,
+    ) -> dict[str, Any]:
+        arrays, manifest = load_tensor_dump(tensor_dir)
+        missing = [name for name in self.input_names if name not in arrays]
+        if missing:
+            raise AdapterError(f"tensor dump does not provide ONNX inputs: {missing}")
+        feed = {name: arrays[name] for name in self.input_names}
+        raw: list[Any] = []
+        for _ in range(max(1, iterations)):
+            raw = self.session.run(None, feed)
+        outputs = {
+            name: value for name, value in zip(self.output_names, raw, strict=True)
+        }
+        return {
+            "status": "OK",
+            "mode": "onnx",
+            "iterations": max(1, iterations),
+            "outputs": output_checksums(outputs),
+            "dump_case_id": manifest.get("case_id"),
+            "dump_request_sha256": manifest.get("request_sha256"),
+        }
+
     def close(self) -> None:
         return None
 
@@ -500,11 +657,17 @@ class BoardCliRuntime:
         config_id: str = UNRESOLVED,
         dataset_version: str = UNRESOLVED,
         timeout_s: float = 30.0,
+        log_path: str | Path | None = None,
     ) -> None:
-        self.argv = shlex.split(command) if isinstance(command, str) else list(command)
+        self.argv = split_command(command) if isinstance(command, str) else list(command)
         if not self.argv:
             raise AdapterError("board runtime command must not be empty")
         self.timeout_s = timeout_s
+        # Every board invocation is appended here.  Without a log of its own the
+        # harness could only *assume* the board runtime ran, which is exactly the
+        # evidence §3 of the B3 gate document refuses to accept.
+        self.log_path = Path(log_path) if log_path else None
+        self.log_lines = 0
         self.identity = (
             identity_from_artifact(
                 artifact,
@@ -527,6 +690,7 @@ class BoardCliRuntime:
             notes=("stage_source is downgraded to INSTRUMENTED only when the runtime emits a trace",),
         )
         self.emitted_trace = False
+        self.ignored_stages: tuple[str, ...] = ()
 
     def infer(
         self,
@@ -543,7 +707,10 @@ class BoardCliRuntime:
             phase=phase,
             stage_source="NOT_INSTRUMENTED",
         )
-        trace.mark("input_arrival")
+        # The host stamp is only a fallback: a runtime that emits its own
+        # `input_arrival` owns T0, and marking it twice used to abort the run
+        # with StageOrderError on a perfectly contract-compliant trace.
+        host_input_arrival_ns = trace.clock_ns()
         try:
             completed = subprocess.run(
                 self.argv,
@@ -554,8 +721,12 @@ class BoardCliRuntime:
                 check=False,
             )
         except subprocess.TimeoutExpired:
+            self._record_log(request, None, "TIMEOUT")
             trace.finish("TIMEOUT", reason_code="RUNTIME_TIMEOUT")
             return None, trace
+        self._record_log(
+            request, completed, "OK" if completed.returncode == 0 else "RUNTIME_EXIT"
+        )
         if completed.returncode != 0:
             trace.finish(
                 "ERROR",
@@ -577,10 +748,22 @@ class BoardCliRuntime:
         if isinstance(runtime_trace, Mapping) and runtime_trace:
             self.emitted_trace = True
             trace.stage_source = "INSTRUMENTED"
-            for stage, value in sorted(
-                runtime_trace.items(), key=lambda item: list(_STAGE_ORDER).index(item[0])
-            ):
-                trace.mark(str(stage), timestamp_ns=int(value))
+            known = {
+                str(stage): int(value)
+                for stage, value in runtime_trace.items()
+                if str(stage) in STAGE_INDEX
+            }
+            self.ignored_stages = tuple(
+                sorted(str(stage) for stage in runtime_trace if str(stage) not in STAGE_INDEX)
+            )
+            try:
+                for stage in _STAGE_ORDER:
+                    if stage in known:
+                        trace.mark(stage, timestamp_ns=known[stage])
+            except StageOrderError as error:
+                raise AdapterError(
+                    f"board runtime trace is not monotonic or is out of stage order: {error}"
+                ) from error
         else:
             self.capabilities = RuntimeCapabilities(
                 full_chain=True,
@@ -592,13 +775,146 @@ class BoardCliRuntime:
                     "model-only latency is NOT_AVAILABLE for this chain",
                 ),
             )
-        trace.mark("plan_ready")
+        if "input_arrival" not in trace.timestamps_ns:
+            trace.mark("input_arrival", timestamp_ns=host_input_arrival_ns)
+        if "plan_ready" not in trace.timestamps_ns:
+            trace.mark("plan_ready")
         trace.finish(
             "READY",
             reason_code=str(payload.get("reason_code", "")),
             detail="board_cli_envelope" if trace.stage_source == "NOT_INSTRUMENTED" else "",
         )
         return payload, trace
+
+    def _record_log(self, request: Mapping[str, Any], completed: Any, status: str) -> None:
+        """Append one line per board invocation; never fail a run over logging."""
+        if self.log_path is None:
+            return
+        record = {
+            "request_id": request.get("request_id"),
+            "status": status,
+            "returncode": None if completed is None else completed.returncode,
+            "command": self.argv,
+            "stdout_tail": "" if completed is None else completed.stdout[-2000:],
+            "stderr_tail": "" if completed is None else completed.stderr[-2000:],
+        }
+        try:
+            self.log_path.parent.mkdir(parents=True, exist_ok=True)
+            with self.log_path.open("a", encoding="utf-8") as stream:
+                stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+        except OSError:
+            return
+        self.log_lines += 1
+
+    def _run_extra(self, extra: Sequence[str], *, label: str, stdin: str = "") -> Any:
+        """Drive one auxiliary board invocation (`--describe`, `--model-only`…)."""
+        argv = [*self.argv, *extra]
+        try:
+            completed = subprocess.run(
+                argv,
+                input=stdin,
+                capture_output=True,
+                text=True,
+                timeout=self.timeout_s,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as error:
+            raise AdapterError(f"board runtime timed out in {label} mode") from error
+        self._record_log(
+            {"request_id": f"<{label}>"},
+            completed,
+            "OK" if completed.returncode == 0 else "RUNTIME_EXIT",
+        )
+        if completed.returncode != 0:
+            raise AdapterError(
+                f"board runtime does not support {label} "
+                f"(exit={completed.returncode}: {completed.stderr.strip()[:200]})"
+            )
+        lines = [line for line in completed.stdout.strip().splitlines() if line.strip()]
+        for line in reversed(lines):
+            try:
+                return json.loads(line)
+            except json.JSONDecodeError:
+                continue
+        raise AdapterError(f"board runtime {label} mode produced no JSON on stdout")
+
+    def describe(self) -> Mapping[str, Any]:
+        payload = self._run_extra(["--describe"], label="describe")
+        if not isinstance(payload, Mapping):
+            raise AdapterError("board --describe did not return a JSON object")
+        return payload
+
+    def run_batch(
+        self,
+        requests: Sequence[Mapping[str, Any]],
+    ) -> list[Mapping[str, Any] | None]:
+        """One process, one request per stdin line, one plan per stdout line.
+
+        This is the mode that keeps `model_load_ms` out of the end-to-end number,
+        so B3 tests it rather than assuming it (A4 contract §2).
+        """
+        stdin = "\n".join(json.dumps(dict(r), ensure_ascii=False) for r in requests)
+        argv = list(self.argv)
+        try:
+            completed = subprocess.run(
+                argv,
+                input=stdin,
+                capture_output=True,
+                text=True,
+                timeout=self.timeout_s,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as error:
+            raise AdapterError("board runtime timed out in batch mode") from error
+        self._record_log(
+            {"request_id": f"<batch:{len(requests)}>"},
+            completed,
+            "OK" if completed.returncode == 0 else "RUNTIME_EXIT",
+        )
+        if completed.returncode != 0:
+            raise AdapterError(
+                f"board runtime batch mode exited {completed.returncode}: "
+                f"{completed.stderr.strip()[:200]}"
+            )
+        plans: list[Mapping[str, Any] | None] = []
+        for line in completed.stdout.strip().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(payload, Mapping) and "request_id" in payload:
+                plans.append(payload)
+        if len(plans) != len(requests):
+            raise AdapterError(
+                f"board runtime batch mode returned {len(plans)} plans for "
+                f"{len(requests)} requests"
+            )
+        return plans
+
+    def run_model_only(
+        self,
+        tensor_dir: str | Path,
+        *,
+        iterations: int = 1,
+    ) -> dict[str, Any]:
+        payload = self._run_extra(
+            ["--model-only", "--input", str(tensor_dir)],
+            label="model-only",
+        )
+        if not isinstance(payload, Mapping):
+            raise AdapterError("board --model-only did not return a JSON object")
+        outputs = payload.get("outputs") or payload.get("checksums")
+        return {
+            "status": "OK" if isinstance(outputs, Mapping) else "NO_OUTPUT_DIGEST",
+            "mode": "board",
+            "iterations": iterations,
+            "outputs": dict(outputs) if isinstance(outputs, Mapping) else None,
+            "payload": dict(payload),
+            "tensor_dir": str(tensor_dir),
+        }
 
     def close(self) -> None:
         return None
@@ -611,4 +927,5 @@ __all__ = [
     "InProcessStudentRuntime",
     "OnnxModelRuntime",
     "BoardCliRuntime",
+    "split_command",
 ]

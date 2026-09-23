@@ -81,3 +81,37 @@ class FakeRuntime:
 
     def close(self) -> None:
         return None
+
+    # The three interface entries A4's contract asks for.  The fake implements
+    # them so the "conforming runtime" tests describe a runtime that really does
+    # expose `--describe`, batch mode and a model-only path.
+    def describe(self) -> Mapping[str, Any]:
+        return {
+            "git_sha": self.identity.git_sha,
+            "model_id": self.identity.model_id,
+            "model_sha256": self.identity.model_sha256,
+            "dataset_version": self.identity.dataset_version,
+            "config_id": self.identity.config_id,
+            "precision": "fp32",
+            "batch": 1,
+            "input_shapes": {
+                "rgb": [1, 3, 224, 224],
+                "text_tokens": [1, 32],
+                "targets": [1, 8, 14],
+                "state": [1, 64],
+            },
+        }
+
+    def run_batch(
+        self,
+        requests,
+    ):
+        return [
+            self.infer(request, case_id=f"batch-{index:02d}", round_index=0)[0]
+            for index, request in enumerate(requests)
+        ]
+
+    def run_model_only(self, tensor_dir, *, iterations: int = 1) -> dict[str, Any]:
+        raise RuntimeError(
+            f"fake runtime has no model weights to run from {tensor_dir}"
+        )

@@ -20,6 +20,13 @@ IDENTITY_FIELDS: tuple[str, ...] = (
 )
 
 UNRESOLVED = "UNRESOLVED"
+
+#: Marker written into `CandidateIdentity.verification` by the only function
+#: that recomputes a digest from a file on disk.  Anything that has to decide
+#: whether a candidate is gate-verified looks for this marker, so a hand-written
+#: identity cannot claim verification it never performed.
+VERIFICATION_METHOD_MANIFEST = "weights_manifest_vs_artifact_sha256"
+
 _SHA1_RE = re.compile(r"[0-9a-fA-F]{40}")
 
 
@@ -65,6 +72,10 @@ class CandidateIdentity:
     config_id: str = UNRESOLVED
     gate_status: str = "NOT_PROVIDED"
     weights_manifest: str | None = None
+    #: Machine-produced record of the digest check performed in
+    #: `identity_from_weight_manifest`.  ``None`` means "nobody verified this
+    #: identity against a file", which keeps every downstream claim diagnostic.
+    verification: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         for name in IDENTITY_FIELDS:
@@ -109,14 +120,25 @@ def identity_from_weight_manifest(
         raise ValueError(
             f"weight manifest SHA256 mismatch: manifest={reported} actual={actual}"
         )
+    gate_status = str(manifest.get("gate_status") or "NOT_PROVIDED")
     return CandidateIdentity(
         git_sha=str(manifest.get("git_sha") or UNRESOLVED),
         model_id=str(manifest.get("model_id") or UNRESOLVED),
         model_sha256=actual,
         dataset_version=str(manifest.get("dataset_version") or UNRESOLVED),
         config_id=str(manifest.get("config_id") or UNRESOLVED),
-        gate_status=str(manifest.get("gate_status") or "NOT_PROVIDED"),
+        gate_status=gate_status,
         weights_manifest=str(manifest_path),
+        verification={
+            "method": VERIFICATION_METHOD_MANIFEST,
+            "verified": True,
+            "manifest_path": str(manifest_path),
+            "manifest_sha256": sha256_file(manifest_path),
+            "reported_weights_sha256": reported or None,
+            "artifact_path": str(path),
+            "artifact_sha256": actual,
+            "gate_status": gate_status,
+        },
     )
 
 
@@ -140,6 +162,7 @@ def identity_from_artifact(
 __all__ = [
     "IDENTITY_FIELDS",
     "UNRESOLVED",
+    "VERIFICATION_METHOD_MANIFEST",
     "CandidateIdentity",
     "sha256_file",
     "git_head",

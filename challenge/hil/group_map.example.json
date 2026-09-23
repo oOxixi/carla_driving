@@ -1,0 +1,14 @@
+{
+  "_comment": "FORMAT EXAMPLE ONLY. This is not a B2 grouping; B3 must not define Seen/Variant/Unseen. B2 issues the real map in this shape so that `--group-map` can label a replay without editing the frozen snapshot.",
+  "_accepted_shapes": [
+    "{'<case_id|sample_id|scenario_id>': 'SEEN'}",
+    "{'groups': {'SEEN': ['<id>', ...], 'VARIANT': [...], 'UNSEEN': [...]}}"
+  ],
+  "groups": {
+    "SEEN": [
+      "REPLACE_WITH_B2_CASE_OR_SCENARIO_ID"
+    ],
+    "VARIANT": [],
+    "UNSEEN": []
+  }
+}

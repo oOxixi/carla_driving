@@ -135,3 +135,74 @@ Qwen 工作线程拿不到时间片，导致 HTTP 请求发出过晚。
 
 该环境与产出 B3 证据的解释器（系统 `py -3.12`）**完全隔离**：后者仍是
 `numpy 2.4.6` / `torch 2.6.0+cpu` / `onnxruntime 1.27.0`，未受任何影响。
+
+## F7. Windows 上 `shlex.split` 会吞掉 `--board-command` 的反斜杠路径
+
+**现象**：`python -m challenge.hil.cli run --adapter board --board-command "C:\tools\python.exe -m a4_runtime --trace" ...`
+在 Windows 上稳定失败，表现为 `RUNTIME_EXIT`（子进程根本没起来），而把命令换成不带路径的
+`py -3.12 script.py` 又正常，容易误判成"板端 Runtime 有问题"。
+
+**根因**：`shlex.split()` 默认 POSIX 模式，反斜杠是转义字符，`C:\tools\python.exe` 被切成
+`C:toolspython.exe`。这是 B3 适配器自身的缺陷，不是被测对象的问题。
+
+**修复**：`runtime_adapter.split_command()` 在 Windows 下改用 `shlex.split(posix=False)`
+并手工去掉外层引号；POSIX 平台仍走原路径。已加单元测试。
+
+**对 A4 的影响**：A4 的板端命令在 Linux/J6P 上不受影响；此修复只影响 B3 在 Windows 上的
+预验证与冒烟。
+
+## F8. 合规的板端 trace 曾让适配器直接抛异常
+
+**现象**：让被测命令按 `a4_runtime_contract.md` §3 输出完整 8 点 trace（含
+`input_arrival`）时，B3 的 board 适配器抛 `StageOrderError: stage already marked:
+input_arrival`，运行中断；而不输出打点时反而"正常"。
+
+**根因**：适配器在驱动子进程前先自己打了 `input_arrival`，解析出 Runtime 的打点后又逐个
+`mark()`，与宿主打点冲突；`plan_ready` 同理。这是"越遵守契约越报错"的反向缺陷。
+
+**修复**：Runtime 的自身打点优先，宿主只在 Runtime 未提供时补 `input_arrival`/`plan_ready`；
+未知阶段名忽略并记入 `ignored_stages`；时间戳非单调改为抛 `AdapterError`（可读错误而不是
+栈回溯）。已加 4 个单元测试，并用完整 8 点 trace 的假板端命令跑通一次 `run`，八段延时全部
+由 Runtime 打点推导。
+
+**记录**：该缺陷属于 `docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md` §16
+"Board adapter 覆盖不完整"一类，修复只在 `challenge/hil/` 内。
+
+## F9. Windows PowerShell 5.1 会把无 BOM 的 UTF-8 `.ps1` 当 ANSI 解析
+
+**现象**：B3 新写的 CARLA 入口脚本（含中文注释）用 `powershell -File` 执行时报
+`Unexpected token ')'`，而同一份文件在 PowerShell 7 下语法正确（用 `Parser::ParseFile`
+零错误）。
+
+**根因**：Windows PowerShell 5.1 对**没有 BOM** 的 `.ps1` 按系统 ANSI 代码页解码，中文注释
+被解成乱码字节，其中某些字节恰好破坏了引号/括号配对。这不是脚本逻辑问题，是编码问题。
+
+**修复**：B3 的 `.ps1` 一律**只用 ASCII**（注释与提示语用英文）。Python 文件不受影响
+（Python 3 源码默认 UTF-8）。
+
+**影响范围**：任何给 5.1 用户运行的脚本。仓库已有脚本目前恰好都是 ASCII，所以此前没暴露。
+
+## F10（B3 自身缺陷）长稳把"自己的记账"当成了"运行内存漂移"
+
+**现象**：第一轮 30 分钟长稳（`b3-soak-20260921T120731Z-c99d80d6`）报告
+`rss_drift_kib = 60595`（59.2 MiB，比例 18.6%），RSS 从 315 MiB 单调涨到 380 MiB，
+而且后半段比前半段涨得更快——看起来像泄漏。
+
+**根因**：`stability.run_soak` 把每次迭代的记录、每个延迟值、每个 RSS 采样全部留在内存里
+（101,510 次迭代 → 约 40–60 MiB），直到运行结束才由 `write_soak_files` 写盘；
+而"漂移"正是拿这些内存里的数值算出来的。于是**被测量的是 harness 自己的账本**，
+不是被测 Runtime。
+
+**修复**（`challenge/hil/stability.py`）：
+
+1. 支援 `row_path`：逐次记录**边跑边写** `stability_logs/soak.jsonl`，内存只保留计数；
+2. 延迟只保留有界聚合：首/末窗口各 2000 个样本 + 20000 样本蓄水池（用于整体分位，
+   超出时在汇总里标 `overall_percentiles_bounded=true`）+ 精确最大值；
+3. **漂移改用监控线程的 1 Hz RSS 序列**（`memory_during_soak.csv`，按时间有界），
+   不再每次迭代采样；汇总新增 `memory_drift_source` 与 `memory_drift_window_samples`。
+
+**验证**：同机同配置下 60 秒流式长稳漂移为 **266 KiB**（原方法在同等迭代量下会累计约
+1.7 MiB 的账本），证明修复后测的才是运行时内存。
+
+**影响**：2026-09-21 第一轮 30 分钟长稳的漂移数字**作废**，不得作为"漂移受控"的依据；
+`soak_summary.json` 的 `drift_note` 已写明新口径。

@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-09-21T12:42:16.461711+00:00",
+  "runtime": "inprocess-torch",
+  "capabilities": {
+    "full_chain": true,
+    "model_only": true,
+    "plan_validator": true,
+    "stage_source": "INSTRUMENTED",
+    "notes": [
+      "random-initialized weights (torch.manual_seed=20260911): structure/toolchain validation only"
+    ]
+  },
+  "request_count": 5,
+  "checks": [
+    {
+      "check": "identity_declared",
+      "status": "PASS",
+      "detail": "complete=True missing=[]"
+    },
+    {
+      "check": "no_exception_escaped",
+      "status": "PASS",
+      "detail": "5 requests executed"
+    },
+    {
+      "check": "plan_is_json_object",
+      "status": "PASS",
+      "detail": "5/5 returned an object"
+    },
+    {
+      "check": "plan_has_required_keys",
+      "status": "PASS",
+      "detail": "all required keys present"
+    },
+    {
+      "check": "no_forbidden_outputs",
+      "status": "PASS",
+      "detail": "no steer/throttle/brake/waypoints"
+    },
+    {
+      "check": "plan_passes_structural_checks",
+      "status": "PASS",
+      "detail": "ids echoed, 1..4 steps"
+    },
+    {
+      "check": "trace_marks_emitted",
+      "status": "PASS",
+      "detail": "5/5 requests carried stage marks"
+    },
+    {
+      "check": "model_only_latency_available",
+      "status": "PASS",
+      "detail": "5/5 requests reported model_inference_ms"
+    },
+    {
+      "check": "planner_e2e_latency_available",
+      "status": "PASS",
+      "detail": "5/5 requests reached plan_ready"
+    },
+    {
+      "check": "trace_stage_names_known",
+      "status": "PASS",
+      "detail": "subset of ['input_arrival', 'preprocess_end', 'packing_end', 'inference_start', 'inference_end', 'postprocess_end', 'adapter_end', 'plan_ready']"
+    },
+    {
+      "check": "latency_within_budget",
+      "status": "PASS",
+      "detail": "all <= 1000.0 ms"
+    },
+    {
+      "check": "describe_endpoint",
+      "status": "PASS",
+      "detail": "all required fields present"
+    },
+    {
+      "check": "batch_mode",
+      "status": "PASS",
+      "detail": "one process answered 2/2 requests with echoed request_id"
+    },
+    {
+      "check": "model_only_mode",
+      "status": "NOT_RUN",
+      "detail": "no tensor dump supplied (create one with `dump-tensors`)"
+    }
+  ],
+  "failed": [],
+  "warned": [],
+  "passed": true,
+  "adapter": "inprocess",
+  "status": "CHECKED"
+}

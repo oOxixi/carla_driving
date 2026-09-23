@@ -437,6 +437,11 @@ class BackgroundMonitor:
                 "bpu_percent_mean": (sum(bpu) / len(bpu)) if bpu else None,
                 "bpu_percent_max": max(bpu) if bpu else None,
                 "bpu_measured": bool(bpu),
+                # Which probe produced these numbers is part of the evidence:
+                # a BPU figure without a recorded source cannot be quoted.
+                "source": (
+                    self.utilization_rows[0]["source"] if self.utilization_rows else None
+                ),
             },
             "errors": list(self.errors),
         }

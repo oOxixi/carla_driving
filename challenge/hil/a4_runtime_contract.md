@@ -73,6 +73,16 @@ B3 用它来避免把进程冷启动算进延迟。
 6. 若某段无法打点（例如推理后端不暴露边界），**不要用外层时间代替**，
    直接不写该阶段；B3 会记录 `missing_stages` 并把该段标记为不可用。
 
+合并规则（B3 侧行为，2026-09-21 修复后）：
+
+- Runtime 自己给出的打点**优先**。上表 8 个阶段（含 `input_arrival` 与 `plan_ready`）
+  全部由 Runtime 提供时，B3 全部采用 Runtime 的值，不会覆盖，也不会重复打点。
+- Runtime 未提供的阶段由宿主补齐：`input_arrival` 用子进程启动前的宿主时刻，
+  `plan_ready` 用收到输出的宿主时刻。补齐意味着该段含进程通信开销，属宿主包络，
+  不能当作板端推理延时。
+- 未识别的阶段名会被忽略并记录在运行信息的 `ignored_stages`；时间戳非单调或阶段顺序
+  颠倒会让 B3 以 `AdapterError` 终止该次运行，而不是产生一份数字可疑的报告。
+
 ## 4. 交付物三：身份与描述查询
 
 需要一个**不跑推理**就能拿到身份的子命令，例如：
@@ -110,8 +120,21 @@ B3 用它来避免把进程冷启动算进延迟。
 ```
 
 - 该模式只做 `inference_start → inference_end`，**不含**预处理、packing、后处理、Adapter；
-- 输入用 B3 提供的固定张量（B3 会用 A1 的 `StudentPreprocessor` 生成并落盘）；
+- 输入用 B3 提供的固定张量。B3 已实现生成命令，A4 直接取用即可：
+
+  ```powershell
+  py -3.12 -m challenge.hil.cli dump-tensors `
+    --repo <carla_driving 路径> --frozen <冻结请求集> --limit 1 --out <输出目录>
+  ```
+
+  每个用例一个子目录，内含 `rgb.npy`、`text_tokens.npy`、`targets.npy`、`state.npy`
+  与 `manifest.json`（逐文件 shape/dtype/SHA256 及该请求的规范摘要）。这些张量由 A1 的
+  `StudentPreprocessor` 原样生成，A4 不要自己重算；
 - 输出可以只是原始张量或校验和，用于确认输入被正确加载。
+
+  为便于跨机对比，请输出为 `{"outputs": {"<输出名>": "<原始字节的 SHA256>", ...}}`；
+B3 会把板端校验和与 X86/ONNX 在**同一份张量**上的校验和对照，不一致即视为实现分歧，
+而不是"测量误差"。
 
 若没有这个模式，B3 只能报端到端，无法回答"板端推理本身是否达标"。
 
@@ -148,7 +171,15 @@ py -3.12 -m challenge.hil.cli contract `
 
 它会检查：进程能否被驱动、计划是否为合法 JSON、`request_id/command_id` 是否回显、
 是否出现 `steer/throttle/brake/waypoints`、步数是否在 1–4、打点阶段名是否合法、
-打点是否单调、`model_only_ms` 与 `planner_e2e_ms` 是否可得、是否超出延迟预算。
+打点是否单调、`model_only_ms` 与 `planner_e2e_ms` 是否可得、是否超出延迟预算；
+以及三条**独立驱动**的接口路径（对应本文 §4 / §2 / §5）：
+
+| 检查项 | 怎么判 | 失败意味着 |
+|---|---|---|
+| `describe_endpoint` | 跑 `<命令> --describe`，要求 8 个必备字段齐全 | 无法把报告数字绑定到具体模型产物 |
+| `describe_matches_artifact` | `--describe` 的 `model_sha256` 与 `--board-artifact` 的实测 SHA256 一致 | 报告会指向另一个模型 |
+| `batch_mode` | 一个进程喂 2 个请求（每行一个），要求回来 2 个计划且回显 `request_id` | 每次请求的冷启动被算进 E2E |
+| `model_only_mode` | 带 `--model-only --input <张量目录>`，要求返回输出校验和 | 无法回答"板端推理本身是否达标"；未提供张量目录时记 `NOT_RUN`（不算通过，也不算失败） |
 
 结果写在 `contract_report.json`，`passed=false` 时会列出具体失败的检查项。
 **这份报告就是 B3 的验收前置条件**，先过契约检查，再谈性能数字。

@@ -1,0 +1,27 @@
+﻿{
+    "schema_version":  "1.0",
+    "generated_at_utc":  "2026-09-21T12:05:47.1701272Z",
+    "dry_run":  false,
+    "repo_root":  "D:\\nana\\carla_driving-new\\carla_driving-new",
+    "runner":  "repo",
+    "python":  "py -3.12",
+    "carla_root":  "D:\\CARLA_Latest",
+    "scenario_root":  "D:\\nana\\carla_driving-new\\carla_driving-new\\external\\scenario_runner",
+    "server":  "127.0.0.1:2000",
+    "server_reachable":  true,
+    "pythonpath":  [
+                       "D:\\CARLA_Latest\\PythonAPI",
+                       "D:\\nana\\carla_driving-new\\carla_driving-new\\external\\scenario_runner",
+                       "D:\\nana\\carla_driving-new\\carla_driving-new"
+                   ],
+    "output_root":  "artifacts\\b3\\carla_measurement_20260921",
+    "scenarios":  [
+                      {
+                          "scenario":  "S01_set_speed_20",
+                          "command":  "py -3.12 D:\\nana\\carla_driving-new\\carla_driving-new\\challenge\\hil\\carla_measurement_entry.py --repo D:\\nana\\carla_driving-new\\carla_driving-new --scenario S01_set_speed_20 --runner repo --scenario-root D:\\nana\\carla_driving-new\\carla_driving-new\\external\\scenario_runner --host 127.0.0.1 --port 2000 --timeout-s 180 --log-dir artifacts\\b3\\carla_measurement_20260921\\S01_set_speed_20\\logs --summary-out artifacts\\b3\\carla_measurement_20260921\\S01_set_speed_20\\carla_run_summary.json --realtime",
+                          "output_dir":  "artifacts\\b3\\carla_measurement_20260921\\S01_set_speed_20",
+                          "status":  "SUCCEEDED",
+                          "returncode":  0
+                      }
+                  ]
+}
