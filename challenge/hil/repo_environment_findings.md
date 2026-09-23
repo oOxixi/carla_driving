@@ -165,7 +165,7 @@ input_arrival`，运行中断；而不输出打点时反而"正常"。
 栈回溯）。已加 4 个单元测试，并用完整 8 点 trace 的假板端命令跑通一次 `run`，八段延时全部
 由 Runtime 打点推导。
 
-**记录**：该缺陷属于 `docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md` §16
+**记录**：该缺陷属于 `docs/architecture/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md` §16
 "Board adapter 覆盖不完整"一类，修复只在 `challenge/hil/` 内。
 
 ## F9. Windows PowerShell 5.1 会把无 BOM 的 UTF-8 `.ps1` 当 ANSI 解析

@@ -1,6 +1,6 @@
 """Evidence-derived gate and scope decisions, fail closed.
 
-`docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md` §3/§15/§16 requires the
+`docs/architecture/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md` §3/§15/§16 requires the
 credibility of a conclusion to be decided by verified evidence rather than by a
 directory name, a manifest self-report or a command line switch.  Two hard-coded
 conclusions used to violate that rule:

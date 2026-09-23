@@ -1,6 +1,6 @@
 """Group-aware replay analysis: Seen / Variant / Unseen, without owning them.
 
-`docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md` §7 requires the replay to be
+`docs/architecture/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md` §7 requires the replay to be
 reported per group and §12 makes "Variant/Unseen 无模板化错误" a Gate, but B3 does
 **not** own the Seen/Variant/Unseen definitions.  So this module never invents a
 grouping: it reads the label the frozen input carries (B2's manifest field, or a

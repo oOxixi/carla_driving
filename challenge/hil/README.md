@@ -424,7 +424,7 @@ manifest 增加 `preflight` 段（契约是否通过、失败项、artifact 状�
 
 ### 11.4 Runtime 三条接口路径的独立检查
 
-`docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md` §16 里"Board adapter 覆盖不完整"一项，
+`docs/architecture/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md` §16 里"Board adapter 覆盖不完整"一项，
 B3 侧已补齐：契约检查现在会**实际驱动**而不是口头假设下面三条路径，任一无法驱动即 `FAIL`
 并给出原因（`contract_report.json` 的 `failed` 列表）。
 
