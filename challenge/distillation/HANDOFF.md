@@ -71,9 +71,12 @@ A3 向 B2 交付待验 FP32 candidate 与 manifest，至少包括：
 B2 独立保管 Frozen Test 并给出最终 PASS/FAIL。A3 只能消费 B2 返回的聚合结果和错误
 分类，训练、样本加权、checkpoint 选择与 hard-case mining 都不能读取 Frozen Test。
 
-当前实现还有一项必须关闭的阻塞：D2 正式配置使用
-`teacher.identity_policy: signed_d2_release_formal`，而 candidate promotion 校验器当前
-只接受 `frozen_manifest`。在二者统一并有测试前，不能把 candidate promotion 写成已通过。
+`signed_d2_release_formal` 与 promotion 的策略不一致已关闭：校验器现在同时支持单一
+`frozen_manifest` 和正式 D2 多 cohort 签名策略；后者额外绑定 release/view、B2
+benchmark/policy、case-set digest、evaluator Git SHA、样本数、两端 predictions SHA 与
+Student 权重 SHA。正式 Gate 的 Teacher 对照强制为冻结的 Teacher v4；历史多 cohort 标识
+只描述训练数据 provenance，不会被冒充为新的 Gate Teacher。这个修改只打通候选验证合同；B2 尚未交付
+真实独立 Validation 包，因此任何当前 candidate 仍不得写成 `A3_FP32_GATE_PASSED`。
 
 ## A3 → A2/A4/B3：下游权重
 

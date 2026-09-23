@@ -19,7 +19,8 @@ D2 mixed-cohort formal training entry now has its own signed-release policy
 and configuration; its first baseline and shortcut diagnostics are recorded in
 [D2_FP32_BASELINE_FINDINGS.md](D2_FP32_BASELINE_FINDINGS.md). It requires a
 clean commit and does not authorize weight promotion. The promotion gate described below
-applies to the older single-frozen-Teacher contract, not this mixed-cohort run.
+supports this mixed-cohort candidate while requiring an independently frozen Teacher v4
+evaluation package; no current artifact is promoted merely by satisfying the schema.
 
 This directory owns knowledge distillation and accuracy recovery only.  It does
 not modify the frozen CARLA A/B/C/D control chain, dataset splits, benchmark
@@ -152,3 +153,9 @@ python -m challenge.distillation.promote \
 
 The default core-accuracy drop limit is 1.5 percentage points. Safety-critical
 recall may not drop, and Student schema validity must be exactly 100%.
+For `signed_d2_release_formal` candidates, both evaluations must additionally
+bind the candidate release/view hashes, the same B2 benchmark and policy
+manifest hashes, case-set digest, evaluator Git SHA and positive sample count. Each side
+must bind its predictions SHA, the Student must bind its weights hash, and both evaluations
+must identify the exact frozen Teacher v4 baseline.
+The smoke identity policy is never promotable.

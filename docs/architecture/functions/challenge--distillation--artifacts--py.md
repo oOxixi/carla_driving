@@ -23,7 +23,7 @@ A3 Student weight artifacts and fail-closed FP32 promotion gate.
 
 ### `export_candidate_weights`
 
-源码位置：[challenge/distillation/artifacts.py 第 26 行](../../../challenge/distillation/artifacts.py#L26)。类型：`FunctionDef`。
+源码位置：[challenge/distillation/artifacts.py 第 39 行](../../../challenge/distillation/artifacts.py#L39)。类型：`FunctionDef`。
 
 ```python
 export_candidate_weights(output_directory: str | Path, *, model: torch.nn.Module, identity: Mapping[str, Any], validation: Mapping[str, Any], checkpoint_sha256: str) -> dict[str, Any]
@@ -33,7 +33,7 @@ Write a pure state_dict plus a non-promoted provenance manifest.
 
 ### `promote_fp32_candidate`
 
-源码位置：[challenge/distillation/artifacts.py 第 70 行](../../../challenge/distillation/artifacts.py#L70)。类型：`FunctionDef`。
+源码位置：[challenge/distillation/artifacts.py 第 83 行](../../../challenge/distillation/artifacts.py#L83)。类型：`FunctionDef`。
 
 ```python
 promote_fp32_candidate(candidate_manifest: Mapping[str, Any], *, weights_path: str | Path, teacher_evaluation: Mapping[str, Any], student_evaluation: Mapping[str, Any], output_path: str | Path, max_core_drop: float=0.015, max_safety_drop: float=0.0, core_metrics: Sequence[str]=CORE_METRICS, safety_metrics: Sequence[str]=SAFETY_METRICS) -> dict[str, Any]
@@ -43,7 +43,7 @@ Promote only independent Validation evidence; frozen Test is forbidden.
 
 ### `_validate_evaluation_identity`
 
-源码位置：[challenge/distillation/artifacts.py 第 130 行](../../../challenge/distillation/artifacts.py#L130)。类型：`FunctionDef`。
+源码位置：[challenge/distillation/artifacts.py 第 158 行](../../../challenge/distillation/artifacts.py#L158)。类型：`FunctionDef`。
 
 ```python
 _validate_evaluation_identity(candidate: Mapping[str, Any], evaluation: Mapping[str, Any], label: str) -> None
@@ -53,7 +53,7 @@ _validate_evaluation_identity(candidate: Mapping[str, Any], evaluation: Mapping[
 
 ### `_validate_pinned_teacher_candidate`
 
-源码位置：[challenge/distillation/artifacts.py 第 152 行](../../../challenge/distillation/artifacts.py#L152)。类型：`FunctionDef`。
+源码位置：[challenge/distillation/artifacts.py 第 191 行](../../../challenge/distillation/artifacts.py#L191)。类型：`FunctionDef`。
 
 ```python
 _validate_pinned_teacher_candidate(candidate: Mapping[str, Any]) -> None
@@ -61,9 +61,29 @@ _validate_pinned_teacher_candidate(candidate: Mapping[str, Any]) -> None
 
 `_validate_pinned_teacher_candidate` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
+### `_validate_formal_evaluation_pair`
+
+源码位置：[challenge/distillation/artifacts.py 第 225 行](../../../challenge/distillation/artifacts.py#L225)。类型：`FunctionDef`。
+
+```python
+_validate_formal_evaluation_pair(candidate: Mapping[str, Any], teacher: Mapping[str, Any], student: Mapping[str, Any]) -> None
+```
+
+只对 `signed_d2_release_formal` 生效：强制两份评价绑定candidate的release/view SHA、相同的B2 benchmark/policy SHA、case-set digest、evaluator Git SHA与正样本数，逐端绑定predictions SHA，并要求Student评价绑定实际候选权重SHA；不读取或放行Frozen Test。
+
+### `_require_hex`
+
+源码位置：[challenge/distillation/artifacts.py 第 268 行](../../../challenge/distillation/artifacts.py#L268)。类型：`FunctionDef`。
+
+```python
+_require_hex(value: str, length: int, message: str) -> None
+```
+
+验证固定长度十六进制身份；失败使用调用方提供的字段级错误信息，避免把缺失SHA静默当成空身份。
+
 ### `_metrics`
 
-源码位置：[challenge/distillation/artifacts.py 第 165 行](../../../challenge/distillation/artifacts.py#L165)。类型：`FunctionDef`。
+源码位置：[challenge/distillation/artifacts.py 第 275 行](../../../challenge/distillation/artifacts.py#L275)。类型：`FunctionDef`。
 
 ```python
 _metrics(evaluation: Mapping[str, Any], label: str) -> Mapping[str, Any]
@@ -73,7 +93,7 @@ _metrics(evaluation: Mapping[str, Any], label: str) -> Mapping[str, Any]
 
 ### `_drop_check`
 
-源码位置：[challenge/distillation/artifacts.py 第 172 行](../../../challenge/distillation/artifacts.py#L172)。类型：`FunctionDef`。
+源码位置：[challenge/distillation/artifacts.py 第 282 行](../../../challenge/distillation/artifacts.py#L282)。类型：`FunctionDef`。
 
 ```python
 _drop_check(name: str, teacher: Mapping[str, Any], student: Mapping[str, Any], max_drop: float, group: str) -> dict[str, Any]
@@ -83,7 +103,7 @@ _drop_check(name: str, teacher: Mapping[str, Any], student: Mapping[str, Any], m
 
 ### `_write_json`
 
-源码位置：[challenge/distillation/artifacts.py 第 204 行](../../../challenge/distillation/artifacts.py#L204)。类型：`FunctionDef`。
+源码位置：[challenge/distillation/artifacts.py 第 314 行](../../../challenge/distillation/artifacts.py#L314)。类型：`FunctionDef`。
 
 ```python
 _write_json(path: Path, value: Mapping[str, Any]) -> None
@@ -93,7 +113,7 @@ _write_json(path: Path, value: Mapping[str, Any]) -> None
 
 ### `_json_safe`
 
-源码位置：[challenge/distillation/artifacts.py 第 214 行](../../../challenge/distillation/artifacts.py#L214)。类型：`FunctionDef`。
+源码位置：[challenge/distillation/artifacts.py 第 324 行](../../../challenge/distillation/artifacts.py#L324)。类型：`FunctionDef`。
 
 ```python
 _json_safe(value: Any) -> Any
@@ -103,7 +123,7 @@ _json_safe(value: Any) -> Any
 
 ### `_sha256`
 
-源码位置：[challenge/distillation/artifacts.py 第 224 行](../../../challenge/distillation/artifacts.py#L224)。类型：`FunctionDef`。
+源码位置：[challenge/distillation/artifacts.py 第 334 行](../../../challenge/distillation/artifacts.py#L334)。类型：`FunctionDef`。
 
 ```python
 _sha256(path: Path) -> str
@@ -114,9 +134,11 @@ _sha256(path: Path) -> str
 ## 内部调用与异常路径
 
 - `export_candidate_weights` 调用：`Path`, `_sha256`, `_write_json`, `bool`, `dict`, `identity.get`, `model.state_dict`, `root.mkdir`, `str`, `temporary.replace`, `torch.save`, `weights_path.with_name`.
-- `promote_fp32_candidate` 调用：`Path`, `ValueError`, `_drop_check`, `_metrics`, `_sha256`, `_validate_evaluation_identity`, `_validate_pinned_teacher_candidate`, `_write_json`, `all`, `bool`, `candidate_manifest.get`, `checks.append`, `dict`, `float`, `student_evaluation.get`, `teacher_evaluation.get`.
+- `promote_fp32_candidate` 调用：`Path`, `ValueError`, `_drop_check`, `_metrics`, `_sha256`, `_validate_evaluation_identity`, `_validate_formal_evaluation_pair`, `_validate_pinned_teacher_candidate`, `_write_json`, `all`, `bool`, `candidate_manifest.get`, `checks.append`, `dict`, `float`, `student_evaluation.get`, `teacher_evaluation.get`.
 - `_validate_evaluation_identity` 调用：`ValueError`, `candidate.get`, `evaluation.get`, `is_protected_split`, `split.strip`, `split.strip().lower`, `str`, `str(evaluation.get('evaluation_id', '')).strip`.
-- `_validate_pinned_teacher_candidate` 调用：`ValueError`, `any`, `candidate.get`, `fingerprint.lower`, `len`, `revision.lower`, `str`.
+- `_validate_pinned_teacher_candidate` 调用：`ValueError`, `_require_hex`, `candidate.get`, `str`.
+- `_validate_formal_evaluation_pair` 调用：`ValueError`, `_require_hex`, `candidate.get`, `evaluation.get`, `isinstance`, `str`.
+- `_require_hex` 调用：`ValueError`, `any`, `len`, `value.lower`.
 - `_metrics` 调用：`ValueError`, `evaluation.get`, `isinstance`.
 - `_drop_check` 调用：`ValueError`, `float`, `math.isfinite`.
 - `_write_json` 调用：`_json_safe`, `dict`, `json.dumps`, `path.parent.mkdir`, `path.with_name`, `temporary.replace`, `temporary.write_text`.
@@ -125,22 +147,11 @@ _sha256(path: Path) -> str
 
 显式异常（仅 raise，未穷举依赖可能抛出的异常）：
 
-- `_drop_check`，第 180 行：`ValueError(f'gate metric {name!r} is required for Teacher and Student')`。
-- `_drop_check`，第 184 行：`ValueError(f'gate metric {name!r} must be numeric')`。
-- `_drop_check`，第 191 行：`ValueError(f'gate metric {name!r} must be in [0,1]')`。
-- `_metrics`，第 168 行：`ValueError(f'{label} evaluation.metrics must be an object')`。
-- `_validate_evaluation_identity`，第 139 行：`ValueError(f'{label} gate evidence must use Validation, never frozen Test')`。
-- `_validate_evaluation_identity`，第 141 行：`ValueError(f'{label} evaluation dataset_version does not match candidate')`。
-- `_validate_evaluation_identity`，第 143 行：`ValueError(f'{label} evaluation_id is required')`。
-- `_validate_evaluation_identity`，第 149 行：`ValueError(f'{label} evaluation {field} does not match candidate')`。
-- `_validate_pinned_teacher_candidate`，第 154 行：`ValueError('production candidate requires the pinned Teacher identity')`。
-- `_validate_pinned_teacher_candidate`，第 158 行：`ValueError('production candidate requires a full Teacher model revision')`。
-- `_validate_pinned_teacher_candidate`，第 162 行：`ValueError('production candidate requires a valid Teacher artifact fingerprint')`。
-- `promote_fp32_candidate`，第 84 行：`ValueError('only a production candidate pending the A3 gate can be promoted')`。
-- `promote_fp32_candidate`，第 86 行：`ValueError('candidate must come from a clean committed challenge worktree')`。
-- `promote_fp32_candidate`，第 90 行：`ValueError('candidate weight SHA256 does not match the manifest')`。
-- `promote_fp32_candidate`，第 92 行：`ValueError('gate drops must be in [0,1]')`。
-- `promote_fp32_candidate`，第 105 行：`ValueError('Student schema_validity must be numeric')`。
+- `promote_fp32_candidate`：拒绝非 `PENDING_A3_FP32_GATE`、脏工作区来源、权重SHA不一致、非法drop阈值或非数值schema validity。
+- `_validate_evaluation_identity`：拒绝Test/Frozen split、dataset身份不一致、空evaluation ID、Student身份错配；正式路径还拒绝非Teacher v4评价。
+- `_validate_pinned_teacher_candidate`：拒绝未知/Smoke policy、非法revision/fingerprint；`frozen_manifest`要求完整Teacher Git SHA，signed D2要求固定多cohort标识及release/view SHA。
+- `_validate_formal_evaluation_pair`：拒绝release/view不匹配、benchmark/policy/case-set/evaluator/predictions身份非法、成对口径不一致、样本数非正整数及Student权重SHA不匹配。
+- `_metrics` 与 `_drop_check`：拒绝缺失、非数值、非有限或超出 `[0,1]` 的门禁指标。
 
 调用清单是静态语法记录，不保证每条分支都会执行；回调、反射和跨进程调用需结合模块说明。
 
@@ -164,32 +175,27 @@ _sha256(path: Path) -> str
 - [已知现状记录](../AUDIT.md)：问题与风险不等于本轮已修复。
 - [源码索引](../SOURCE_INDEX.md)：全量文件归属；本页只说明当前功能实现。
 
-## 2026-09-20 源码契约复核
+## 2026-09-23 源码契约复核
 
-基线 `fe1ba839`。以下从当前源码声明提取；用于补充原有语义说明。默认表达式不等于运行生效值，分支记录不覆盖被调用函数的全部异常。
+基线为本次A3 promotion合同修改。以下记录signed D2多cohort路径新增的fail-closed边界；它不代表B2真实评价已完成。
 
 ### `challenge/distillation/artifacts.py`
 
-来源 SHA256：`4984eb81fffecee7895121a3319daea8a921a0d7c168887a60c418f7b5c56cd4`。
+来源 SHA256：`fbb56ef6ac338110b8164f74ca6f7bef285e4d41df5a9ec51c989e8c4d175689`。
 
 
 显式拒绝条件：下列仅保留局部 if/except 条件，不推断循环次数、跨函数状态或此前 return；必须结合入口调用链解释。
 
 | 入口 / 行 | 局部条件 | 抛出 |
 |---|---|---|
-| `promote_fp32_candidate` / 84 | `candidate_manifest.get('gate_status') != 'PENDING_A3_FP32_GATE'` | `raise ValueError('only a production candidate pending the A3 gate can be promoted')` |
-| `promote_fp32_candidate` / 86 | `candidate_manifest.get('source_worktree_dirty') is not False` | `raise ValueError('candidate must come from a clean committed challenge worktree')` |
-| `promote_fp32_candidate` / 90 | `actual_weights_sha != candidate_manifest.get('weights_sha256')` | `raise ValueError('candidate weight SHA256 does not match the manifest')` |
-| `promote_fp32_candidate` / 92 | `not 0.0 <= max_core_drop <= 1.0 or not 0.0 <= max_safety_drop <= 1.0` | `raise ValueError('gate drops must be in [0,1]')` |
-| `promote_fp32_candidate` / 105 | `except (TypeError, ValueError)` | `raise ValueError('Student schema_validity must be numeric') from error` |
-| `_validate_evaluation_identity` / 139 | `is_protected_split(split) or split.strip().lower() not in {'val', 'valid', 'validation', 'dev'}` | `raise ValueError(f'{label} gate evidence must use Validation, never frozen Test')` |
-| `_validate_evaluation_identity` / 141 | `str(evaluation.get('dataset_version')) != str(candidate.get('dataset_version'))` | `raise ValueError(f'{label} evaluation dataset_version does not match candidate')` |
-| `_validate_evaluation_identity` / 143 | `not str(evaluation.get('evaluation_id', '')).strip()` | `raise ValueError(f'{label} evaluation_id is required')` |
-| `_validate_evaluation_identity` / 149 | `evaluation.get(field) != candidate.get(field)` | `raise ValueError(f'{label} evaluation {field} does not match candidate')` |
-| `_validate_pinned_teacher_candidate` / 154 | `candidate.get('teacher_identity_policy') != 'frozen_manifest'` | `raise ValueError('production candidate requires the pinned Teacher identity')` |
-| `_validate_pinned_teacher_candidate` / 158 | `len(revision) != 40 or any((char not in '0123456789abcdef' for char in revision.lower()))` | `raise ValueError('production candidate requires a full Teacher model revision')` |
-| `_validate_pinned_teacher_candidate` / 162 | `len(fingerprint) != 64 or any((char not in '0123456789abcdef' for char in fingerprint.lower()))` | `raise ValueError('production candidate requires a valid Teacher artifact fingerprint')` |
-| `_metrics` / 168 | `not isinstance(value, Mapping)` | `raise ValueError(f'{label} evaluation.metrics must be an object')` |
-| `_drop_check` / 180 | `name not in teacher or name not in student` | `raise ValueError(f'gate metric {name!r} is required for Teacher and Student')` |
-| `_drop_check` / 184 | `except (TypeError, ValueError)` | `raise ValueError(f'gate metric {name!r} must be numeric') from error` |
-| `_drop_check` / 191 | `not math.isfinite(teacher_value) or not math.isfinite(student_value) or (not 0.0 <= teacher_value <= 1.0) or (not 0.0 <= student_value <= 1.0)` | `raise ValueError(f'gate metric {name!r} must be in [0,1]')` |
+| `promote_fp32_candidate` / 96 | candidate状态不是pending | 拒绝非正式待验候选 |
+| `promote_fp32_candidate` / 98 | `source_worktree_dirty is not False` | 拒绝脏工作区候选 |
+| `promote_fp32_candidate` / 102 | 权重实际SHA与manifest不一致 | 拒绝替换/错配权重 |
+| `_validate_evaluation_identity` / 164 | Test/Frozen或非Validation别名 | 拒绝把最终测试用于A3晋级 |
+| `_validate_evaluation_identity` / 175 | 正式评价不匹配冻结Teacher v4 | 拒绝历史多cohort身份冒充Gate Teacher |
+| `_validate_pinned_teacher_candidate` / 193 | policy不是frozen或signed formal | 拒绝Smoke和未知identity policy |
+| `_validate_pinned_teacher_candidate` / 213 | signed formal多cohort标识不匹配 | 拒绝伪造训练数据来源 |
+| `_validate_formal_evaluation_pair` / 234 | evaluation的release/view与candidate不一致 | 拒绝跨数据身份评价 |
+| `_validate_formal_evaluation_pair` / 254 | `sample_count`非正整数 | 拒绝空或非法分母 |
+| `_validate_formal_evaluation_pair` / 262 | benchmark/policy/case/evaluator/sample两端不一致 | 拒绝Teacher/Student非同口径比较 |
+| `_validate_formal_evaluation_pair` / 264 | Student权重SHA不匹配 | 拒绝评价其他checkpoint |

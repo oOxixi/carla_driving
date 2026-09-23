@@ -127,21 +127,18 @@ python -m challenge.distillation.promote \
   --output artifacts/run/weights_manifest.json
 ```
 
-### 当前门禁不一致
+### 正式D2多cohort门禁
 
-D2 v1.1 正式配置使用 `teacher.identity_policy=signed_d2_release_formal`，该值会原样写入
-候选 manifest；但 `promote_fp32_candidate()` 当前只接受 `frozen_manifest`。因此现有 D2
-正式候选不能直接通过 promotion，即使评价指标合格也会先被身份策略拒绝。
+`promote_fp32_candidate()` 现同时接受 `frozen_manifest` 和
+`signed_d2_release_formal`。正式D2策略必须使用固定多cohort Teacher标识，并验证完整
+model revision、artifact fingerprint、release manifest SHA和A3 view manifest SHA；
+Teacher/Student独立评价还必须绑定相同的benchmark manifest、policy manifest、case-set
+digest、evaluator Git SHA和样本数，并逐端绑定predictions SHA；Student评价必须绑定candidate
+权重SHA，正式对照Teacher必须是冻结v4。Smoke策略继续被拒绝。
 
-关闭此问题需要：
-
-1. 明确多 cohort 的 signed release 是否等价满足 pinned Teacher 要求；
-2. 将 promotion 的允许策略与训练门禁统一，但仍逐项验证 revision、fingerprint、release
-   SHA 和 A3 view SHA；
-3. 增加从 `d2_v1_1_formal_config.yaml` 生成候选并执行 promotion 的端到端测试；
-4. 在修复并复测前保持所有候选为 `PENDING_A3_FP32_GATE`。
-
-不能通过手工把 manifest 字段改成 `frozen_manifest` 绕过。
+该兼容只解决“合法正式候选无法进入判定器”的代码问题，不产生评价证据。没有B2签发的
+independent Validation包时，所有候选继续保持 `PENDING_A3_FP32_GATE`；仍禁止手工改
+identity policy或使用Reserved/Frozen Test制造PASS。
 
 ## 7. Runtime 就绪语义
 
@@ -203,7 +200,7 @@ B1/A3/B2/B3 的挑战赛道证据。后续整理这些文件时应明确标注 b
 | A1 Student 结构与随机 ONNX | 已完成 |
 | D2 FP32 基线训练及确定性复跑 | 已完成，但仅为候选 |
 | 独立 Validation Teacher/Student 对比 | 未交付 |
-| promotion identity policy 对齐 | 未完成 |
+| promotion identity policy 与证据身份对齐 | 已完成代码与测试；真实B2评价包未交付 |
 | 真实 `A3_FP32_GATE_PASSED` 权重与 manifest | 未交付 |
 | A2 INT8 正式产物 | 未交付 |
 | A4 J6P Runtime | 未交付 |

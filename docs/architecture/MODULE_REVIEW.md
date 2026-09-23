@@ -78,7 +78,7 @@
 
 ## 顺序精读进度补充：第12～15模块
 
-[Teacher数据治理](modules/challenge-data.md)完成33份实现页和301处占位改写，明确run/sample/release/view、身份/切分/排除证据；数据测试暴露M12-01外部冻结计划缺失。[蒸馏与晋级](modules/challenge-training.md)完成25份实现/配置页和103处占位改写，明确标签/mask/loss/checkpoint/纯权重/Gate，65项测试通过且A01保留。[导出与部署](modules/challenge-export.md)完成6份实现页和13处占位改写，artifact validator实际PASS，但R01/R03仍阻断真实权重到J6P闭环。[HIL与测量](modules/challenge-hil.md)完成20份实现/资源页和139处占位改写，71项测试通过且A02/A03/R02保留。当前顺序精读完成15/20；未训练正式Student或运行真实J6P。
+[Teacher数据治理](modules/challenge-data.md)完成33份实现页和301处占位改写，明确run/sample/release/view、身份/切分/排除证据；数据测试暴露M12-01外部冻结计划缺失。[蒸馏与晋级](modules/challenge-training.md)完成25份实现/配置页和103处占位改写，明确标签/mask/loss/checkpoint/纯权重/Gate；A01已于后续代码轮关闭。[导出与部署](modules/challenge-export.md)完成6份实现页和13处占位改写，artifact validator实际PASS，但R01/R03仍阻断真实权重到J6P闭环。[HIL与测量](modules/challenge-hil.md)完成20份实现/资源页和139处占位改写，71项测试通过且A02/A03/R02保留。当前顺序精读完成15/20；未训练正式Student或运行真实J6P。
 
 ## 顺序精读收口：第16～20模块
 

@@ -35,7 +35,7 @@ Gate 默认核心指标最大下降 0.015，安全 recall 最大下降 0，schem
 
 ## 已确认缺口
 
-[artifacts.py](../../../challenge/distillation/artifacts.py):130-149 仅验证评测的 dataset_version、evaluation_id 和 Teacher 身份，未验证 Student 评测的 weights_sha256、model_id/config_id，也未绑定相同 Validation 样本清单 hash。因此另一个 Student 的指标可能晋级当前权重；应增加证据到候选和数据切分的身份校验。该结论来自静态代码审查，本页不声称运行过攻击样例。
+[artifacts.py](../../../challenge/distillation/artifacts.py)现已绑定Student评测的weights/model/config；正式signed D2路径还绑定release/view、B2 benchmark/policy SHA、case-set digest、evaluator Git SHA、sample count、两端predictions SHA和冻结Teacher v4。原A01身份漏洞已关闭并有错配拒绝测试；真实B2评价包和evaluator环境仍未交付，因此不能把机制测试写成Gate通过。
 
 ## 测试及联动
 
@@ -60,7 +60,7 @@ Gate 默认核心指标最大下降 0.015，安全 recall 最大下降 0，schem
 
 ### 晋级证据缺口与验证
 
-A01仍未修复：当前晋级校验未绑定Student评测的weights/model/config和Validation样本清单hash，不能证明分数属于当前候选。服务器执行distillation、A1结构与交付测试共 **65 passed in 43.00s**；这是离线机制证据，不是正式训练、精度Gate或闭环结果。
+A01/W5代码项已关闭：当前晋级校验绑定Student weights/model/config，signed D2进一步绑定Validation benchmark/policy/case-set/evaluator/sample count/predictions及Teacher v4。服务器完整distillation测试 **66 passed**；这是离线机制证据，不是正式精度Gate或闭环结果。
 
 
 
@@ -74,7 +74,7 @@ run_training的smoke=False、integration_smoke=False、output_dir_override/resum
 
 ### 上下游与修改影响
 
-mask区分padding/缺速度，plan_length标签为真实步数减1；评估层次需区分head与最终Plan。晋级绑定候选权重、数据和Teacher，当前Student评估身份缺口见AUDIT A01，不能因manifest字段齐全就宣称绑定完整。
+mask区分padding/缺速度，plan_length标签为真实步数减1；评估层次需区分head与最终Plan。晋级现已绑定候选权重、数据、Teacher与signed D2评价清单身份；仍需B2真实签发包，不能因字段齐全就宣称Gate通过。
 
 ### [challenge/distillation/train.py](../../../challenge/distillation/train.py) 的入口与声明
 
@@ -162,7 +162,7 @@ promote_fp32_candidate(candidate_manifest: Mapping[str, Any], *, weights_path: s
 
 ## 诊断与维护交接
 
-本模块证据：dataset/checkpoint/RNG、权重SHA与评估身份；缺口见AUDIT A01。功能实现与上下游见本页原索引；跨模块回查[追踪矩阵](../TRACEABILITY.md)与[诊断入口](../DIAGNOSIS.md)。实际run必须核对版本，未执行的检查不视为已通过。
+本模块证据：dataset/checkpoint/RNG、权重SHA与评估身份；A01代码缺口已关闭，真实B2证据仍缺。功能实现与上下游见本页原索引；跨模块回查[追踪矩阵](../TRACEABILITY.md)与[诊断入口](../DIAGNOSIS.md)。实际run必须核对版本，未执行的检查不视为已通过。
 
 ## 2026-09-20 源码契约复核
 

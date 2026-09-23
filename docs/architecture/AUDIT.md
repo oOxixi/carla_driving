@@ -7,7 +7,7 @@
 
 | ID / 优先级 | 触发与影响 | 代码证据 | 本轮验证 | 修复与联动范围 |
 |---|---|---|---|---|
-| A01 / 高 | 晋级检查仅绑定 Teacher 与 dataset_version，另一个 Student 的评测身份可被接受，无法证明成绩属于当前候选 | [artifacts.py](../../challenge/distillation/artifacts.py) 130–149 | 调用 `_validate_evaluation_identity`，传入不同 weights_sha256/model_id/config_id，仍正常返回；只复现身份校验，不宣称完整错误模型已部署 | A3 evaluate/promote/artifacts、候选 manifest、A1 后端；绑定 Student 权重和配置、Validation 清单身份，增加错配拒绝测试 |
+| A01 / 已关闭 | 原晋级检查未绑定Student评测身份 | [artifacts.py](../../challenge/distillation/artifacts.py) `_validate_evaluation_identity`、`_validate_formal_evaluation_pair` | 已绑定model/config/weights；signed D2再绑定release/view、benchmark/policy、case-set、evaluator、sample count、predictions及Teacher v4；错配/Smoke拒绝测试覆盖 | 真实B2评价包仍缺，关闭代码身份漏洞不等于FP32 Gate通过 |
 | A02 / 高 | BoardCliRuntime 收到完整 trace 时与宿主重复 input_arrival；包含 plan_ready 也会重复，采样异常退出 | [runtime_adapter.py](../../challenge/hil/runtime_adapter.py) 546、576–595；[stages.py](../../challenge/hil/stages.py) 130–144 | mock subprocess 返回 trace，真实 `BoardCliRuntime.infer` 抛 `StageOrderError: stage already marked: input_arrival` | A4 trace 协议、B3 Adapter/stages/report；分开宿主 E2E 与板端阶段时间，不能混用两台机器 monotonic 时钟 |
 | A03 / 中 | HIL consistency 重新实现推理并比较 Backend，没有执行实际带埋点的 self.infer；不能覆盖 A02 | [runtime_adapter.py](../../challenge/hil/runtime_adapter.py) 284–321 | 静态调用核对 | 一致性检查应跨真实 Adapter Interface，比较 Plan 与 trace；保留可解释容差 |
 | A04 / 高 | vLLM 后端 health 恒真，服务配置完成可被报告为 READY，不代表模型可达 | [service.py](../../qwen_service/service.py) 442、483–484、1344–1352 | 未初始化 client 的实例仍返回 True；未进行真实网络断连试验 | 区分配置完成、可达、模型身份匹配和生产 Gate；与 runtime healthcheck 和故障测试联动 |
@@ -39,7 +39,7 @@
 
 ## 验证记录与处理顺序
 
-1. 先处理 A01/A02/A04：它们影响证据可信性、板端 Adapter 和服务可用性判断。
+1. A01代码身份漏洞已关闭；继续优先处理 A02/A04，它们影响板端 Adapter 和服务可用性判断。
 2. 再处理 A05/A06/A07/A09：恢复可执行入口、测试发现与自动回归。
 3. 对 R01/R02/R03 明确训练到部署交付契约，再扩展能力，避免先拼出看似“全链”的结果。
 4. 最后处理深层重构：runner 职责集中、配置来源收敛、B1 批次共用实现，先保持现有 Interface 与历史证据。
@@ -49,7 +49,7 @@
 
 ## Wave2专项问题
 
-原A01–A09为审计编号，不是ACC_A01等场景。新增W2-01–W2-06见[核查记录](functions/wave2-audit.md)：派生契约漂移、STOP目标契约、long首故障与运行证据缺口。业务问题尚未修复。
+原A01–A09为审计编号，不是ACC_A01等场景。A01已关闭，其他条目仍按各自行状态处理。新增W2-01–W2-06见[核查记录](functions/wave2-audit.md)：派生契约漂移、STOP目标契约、long首故障与运行证据缺口。
 
 ## 顺序精读新增记录
 
