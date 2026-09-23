@@ -49,6 +49,9 @@ Head、固定类别映射和纯权重交付格式。入口、数据预检、训�
 A2 的正式输入必须是 Gate-passed FP32 权重及由该权重导出的 ONNX；当前仓库 ONNX 是
 随机初始化结构冒烟产物，不能用于正式 PTQ。Calibration、PTQ/QAT、INT8 Gate 和交接
 要求见 [`docs/architecture/modules/A2_INT8_QUANTIZATION_AND_QAT.md`](../docs/architecture/modules/A2_INT8_QUANTIZATION_AND_QAT.md)。
+可执行的开发校准集、ONNX Runtime QDQ PTQ 冒烟和逐 Head 漂移工具见
+[`challenge/quantization/README.md`](quantization/README.md)。这些工具会拒绝把随机权重或
+未签发 Calibration 标成正式 INT8 候选。
 
 ## A4 部署
 
