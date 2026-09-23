@@ -28,7 +28,7 @@ Benchmark the exported SenseVoice ONNX model on Group 1 voice data.
 _normalize_transcript(value: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_normalize_transcript】把输入转换为维护工具的数据检查、生成、评测或证据处理使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `_edit_distance`
 
@@ -38,7 +38,7 @@ _normalize_transcript(value: str) -> str
 _edit_distance(left: str, right: str) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_edit_distance】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_slots_match`
 
@@ -58,7 +58,7 @@ Match annotated slots without rejecting additional executable metadata.
 _percentile(values: list[float], percentile: float) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_percentile】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_latency_stats`
 
@@ -68,7 +68,7 @@ _percentile(values: list[float], percentile: float) -> float | None
 _latency_stats(values: list[float]) -> dict[str, float | int | None]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_latency_stats】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_strip_and_correct`
 
@@ -78,7 +78,7 @@ _latency_stats(values: list[float]) -> dict[str, float | int | None]
 _strip_and_correct(text: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_strip_and_correct】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_git_state`
 
@@ -88,7 +88,7 @@ _strip_and_correct(text: str) -> str
 _git_state() -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_git_state】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_write_json`
 
@@ -98,7 +98,7 @@ _git_state() -> dict[str, Any]
 _write_json(path: Path, payload: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_write_json】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_write_markdown`
 
@@ -108,13 +108,13 @@ _write_json(path: Path, payload: Any) -> None
 _write_markdown(path: Path, report: dict[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_write_markdown】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `OnnxSenseVoice`
 
 源码位置：[tools/run_group1_voice_onnx_benchmark.py 第 178 行](../../../tools/run_group1_voice_onnx_benchmark.py#L178)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【OnnxSenseVoice】定义维护工具的数据检查、生成、评测或证据处理所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `OnnxSenseVoice.__init__`
 
@@ -124,7 +124,7 @@ _write_markdown(path: Path, report: dict[str, Any]) -> None
 OnnxSenseVoice.__init__(self, model_path: Path, base_model: Path, provider: str, language: str, use_itn: bool) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【OnnxSenseVoice.__init__】按签名接收依赖并建立维护工具的数据检查、生成、评测或证据处理的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `OnnxSenseVoice.transcribe`
 
@@ -134,7 +134,7 @@ OnnxSenseVoice.__init__(self, model_path: Path, base_model: Path, provider: str,
 OnnxSenseVoice.transcribe(self, audio_path: Path) -> tuple[str, dict[str, float]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【OnnxSenseVoice.transcribe】消费签名中的输入并执行维护工具的数据检查、生成、评测或证据处理的核心推理路径；返回结构、置信度、超时和降级来源必须随结果保留，模型未加载或远端不可达不得记为成功。
 
 ### `OnnxSenseVoice.warmup`
 
@@ -144,7 +144,7 @@ OnnxSenseVoice.transcribe(self, audio_path: Path) -> tuple[str, dict[str, float]
 OnnxSenseVoice.warmup(self, audio_root: Path, manifest: list[dict[str, Any]], rounds: int) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【OnnxSenseVoice.warmup】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_run_item`
 
@@ -154,7 +154,7 @@ OnnxSenseVoice.warmup(self, audio_root: Path, manifest: list[dict[str, Any]], ro
 _run_item(item: dict[str, Any], audio_root: Path, recognizer: OnnxSenseVoice) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_run_item】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `_summarize`
 
@@ -164,7 +164,7 @@ _run_item(item: dict[str, Any], audio_root: Path, recognizer: OnnxSenseVoice) ->
 _summarize(records: list[dict[str, Any]], latency_samples: int) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_summarize】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `main`
 
@@ -174,7 +174,7 @@ _summarize(records: list[dict[str, Any]], latency_samples: int) -> dict[str, Any
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

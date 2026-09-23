@@ -28,7 +28,7 @@ Shared request-to-scene projection for planner boundary validation.
 validation_scene(request: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 ModelRequest 的 scene summary、constraints、targets 和可选 capabilities 投影为 `PlanValidator` 场景。`objects` 只含 target_id/class/distance/confidence，`grounded_target_ids` 初值为所有 request targets；最后用 capabilities 顶层合并，因此 capability 中同名字段会覆盖初值。函数假定上游 Schema 已保证必填键。
 
 ## 内部调用与异常路径
 

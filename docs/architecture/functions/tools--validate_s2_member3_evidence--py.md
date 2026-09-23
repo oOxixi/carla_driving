@@ -28,7 +28,7 @@ Validate the member-3 S2 full-chain evidence bundle.
 _load_json(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_load_json】从参数、文件、环境或缓存解析维护工具的数据检查、生成、评测或证据处理所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `_load_jsonl`
 
@@ -38,7 +38,7 @@ _load_json(path: Path) -> dict[str, Any]
 _load_jsonl(path: Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_load_jsonl】从参数、文件、环境或缓存解析维护工具的数据检查、生成、评测或证据处理所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `_extension_check`
 
@@ -48,7 +48,7 @@ _load_jsonl(path: Path) -> list[dict[str, Any]]
 _extension_check(extension: Mapping[str, Any], key: str) -> Mapping[str, Any] | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_extension_check】检查维护工具的数据检查、生成、评测或证据处理的局部合同并返回/累计函数体定义的结果；静态校验通过不等于外部服务、CARLA、音频模型或最终交付已经通过。
 
 ### `validate_evidence`
 
@@ -58,7 +58,7 @@ _extension_check(extension: Mapping[str, Any], key: str) -> Mapping[str, Any] | 
 validate_evidence(summary: Mapping[str, Any], records: list[Mapping[str, Any]], *, functional_only: bool=False) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【validate_evidence】检查维护工具的数据检查、生成、评测或证据处理的局部合同并返回/累计函数体定义的结果；静态校验通过不等于外部服务、CARLA、音频模型或最终交付已经通过。
 
 ### `validate_evidence.check`
 
@@ -68,7 +68,7 @@ validate_evidence(summary: Mapping[str, Any], records: list[Mapping[str, Any]], 
 validate_evidence.check(key: str, passed: bool, actual: Any, required: Any, *, category: str='functional') -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【validate_evidence.check】检查维护工具的数据检查、生成、评测或证据处理的局部合同并返回/累计函数体定义的结果；静态校验通过不等于外部服务、CARLA、音频模型或最终交付已经通过。
 
 ### `main`
 
@@ -78,7 +78,7 @@ validate_evidence.check(key: str, passed: bool, actual: Any, required: Any, *, c
 main() -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

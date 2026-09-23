@@ -54,7 +54,7 @@ RGB/radar/LiDAR association, stable IDs, TTC and risk summarization.
 
 源码位置：[perception/fusion_tracker.py 第 23 行](../../../perception/fusion_tracker.py#L23)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+单模态目标观测，位置/速度采用 ego 前x、左y、上z坐标；只允许 RGB/RADAR/LIDAR，类别限定为五种内部类别。`source_id` 和框用于追溯，不直接成为最终 fused track ID。
 
 ### `Observation.__post_init__`
 
@@ -64,19 +64,19 @@ RGB/radar/LiDAR association, stable IDs, TTC and risk summarization.
 Observation.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+拒绝 VEHICLE_STATE 来源和未支持类别；位置、速度必须是长度3的有限数 tuple，并标准化为 float；置信度必须为非布尔有限数且在 `[0,1]`。当前不校验 `source_id` 与可选框的格式。
 
 ### `FusedObject`
 
 源码位置：[perception/fusion_tracker.py 第 51 行](../../../perception/fusion_tracker.py#L51)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+融合后的内部不可变目标：稳定 `fused-xxxxxx` ID、加权位置/速度、原点欧氏距离、可空 TTC、合成置信度、参与模态、一个代表框及最后帧号。它由 tracker 构造，本 dataclass 自身没有 post-init 校验。
 
 ### `FusionTrackerConfig`
 
 源码位置：[perception/fusion_tracker.py 第 65 行](../../../perception/fusion_tracker.py#L65)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+定义同帧观测聚类半径、跨帧 track 半径/寿命以及 TTC/距离风险阈值；数值单位分别为米、帧和秒，不等同于生产 `ConservativeSensorFusion` 的策略配置。
 
 ### `FusionTrackerConfig.__post_init__`
 
@@ -86,25 +86,25 @@ Observation.__post_init__(self) -> None
 FusionTrackerConfig.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+六个连续阈值必须为非布尔、有限正数，最大 track 丢失帧数必须为正整数。当前没有检查 emergency 阈值必小于 high/caution 阈值，因此反序配置不会在构造时拒绝。
 
 ### `FusionResult`
 
 源码位置：[perception/fusion_tracker.py 第 84 行](../../../perception/fusion_tracker.py#L84)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+一次融合返回的四项集合：当前可见目标、前向目标最小 gap、所有有效目标最小 TTC、风险等级，以及经 `InterfaceRegistry` 验证后的 canonical perception_state。
 
 ### `_TrackState`
 
 源码位置：[perception/fusion_tracker.py 第 93 行](../../../perception/fusion_tracker.py#L93)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+内部可变包装，保存最后一次 fused 目标及连续 misses；丢失期 track 可留在内部表中，但不会出现在本帧 `objects` 输出。
 
 ### `FusionTracker`
 
 源码位置：[perception/fusion_tracker.py 第 98 行](../../../perception/fusion_tracker.py#L98)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+独立的 RGB/雷达/LiDAR 聚类、跨帧关联和 schema 输出实现。它属于 `perception/` 参考管线；生产 CARLA runner 是否使用它必须由调用链证明，不能因类名相似就等同于 `CarlaPerceptionBridge`。
 
 ### `FusionTracker.__init__`
 
@@ -114,7 +114,7 @@ FusionTrackerConfig.__post_init__(self) -> None
 FusionTracker.__init__(self, config: FusionTrackerConfig | None=None, *, registry: InterfaceRegistry | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+采用给定或默认配置和接口注册器，初始化空 track 表并从 `fused-000001` 编号。没有 reset 方法；独立 episode 需新建实例或显式管理对象生命周期。
 
 ### `FusionTracker.update`
 
@@ -124,7 +124,7 @@ FusionTracker.__init__(self, config: FusionTrackerConfig | None=None, *, registr
 FusionTracker.update(self, aligned: AlignedSensorFrame, observations: Iterable[Observation], *, ego_speed_mps: float, traffic_light: str='UNKNOWN', distance_to_stop_line_m: float | None=None, speed_limit_mps: float | None=None) -> FusionResult
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+校验 aligned 类型、自车速度和灯态后，将观测转 tuple、同帧聚类、加权融合并跨帧关联。`min_gap_m` 只看 `position_m[0] > 0` 的目标，TTC 取最小有效值；风险由同步/车辆状态和阈值决定。最后组装含模态有效性、同步和降级原因的 state，经 registry 的 `perception_state` schema 验证后返回。
 
 ### `FusionTracker._cluster`
 
@@ -134,7 +134,7 @@ FusionTracker.update(self, aligned: AlignedSensorFrame, observations: Iterable[O
 FusionTracker._cluster(self, observations: tuple[Observation, ...]) -> list[list[Observation]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按类别、原点距离、模态和 source ID 确定性排序；对类别兼容且到现有簇算术中心不超过 `observation_association_m` 的最近簇做贪心归并，否则新建簇。结果依赖排序和贪心顺序，不是全局最优匹配。
 
 ### `FusionTracker._fuse_cluster`
 
@@ -144,7 +144,7 @@ FusionTracker._cluster(self, observations: tuple[Observation, ...]) -> list[list
 FusionTracker._fuse_cluster(self, cluster: list[Observation], frame_id: int, ego_speed_mps: float) -> FusedObject
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+以 `SOURCE_WEIGHT * max(confidence,0.05)` 加权位置/速度；类别选置信度和来源权重最大的观测，置信度按互补概率合成并封顶1。TTC 只在前向位置为正且 closing speed 大于0.05 m/s时计算；代表框取有框观测中置信度最高者。此时 track ID 留空，下一步再关联。
 
 ### `FusionTracker._associate_tracks`
 
@@ -154,7 +154,7 @@ FusionTracker._fuse_cluster(self, cluster: list[Observation], frame_id: int, ego
 FusionTracker._associate_tracks(self, candidates: list[FusedObject], frame_id: int) -> tuple[FusedObject, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+候选按距离/类别排序，贪心选择类别兼容且三维距离不超过 `track_association_m` 的未占用旧 track，否则分配新 ID。未匹配旧 track 的 misses 加1并最多保留配置帧数，但输出只包含 misses=0 的当前可见目标，按距离和ID排序。
 
 ### `FusionTracker._risk`
 
@@ -164,7 +164,7 @@ FusionTracker._associate_tracks(self, candidates: list[FusedObject], frame_id: i
 FusionTracker._risk(self, gap: float | None, ttc: float | None, aligned: AlignedSensorFrame) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+感知 stale 或 VEHICLE_STATE 无效时优先返回 UNKNOWN；否则 TTC/距离任一触发紧急阈值为 EMERGENCY，接着是 TTC HIGH、距离 CAUTION，最后 LOW。缺失 gap/TTC 本身不会变成 UNKNOWN，只由同步和车辆状态有效性决定。
 
 ### `FusionTracker._class_compatible`
 
@@ -174,7 +174,7 @@ FusionTracker._risk(self, gap: float | None, ttc: float | None, aligned: Aligned
 FusionTracker._class_compatible(first: str, second: str) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+完全相同类别可关联；任一类别为 `unknown` 或 `obstacle` 也视为兼容。它可能把泛化障碍与具体道路参与者合并，因此类别和来源证据都应保留。
 
 ### `FusionTracker._object_payload`
 
@@ -184,7 +184,7 @@ FusionTracker._class_compatible(first: str, second: str) -> bool
 FusionTracker._object_payload(item: FusedObject) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 fused 对象转成 schema JSON 形态：tuple 转 list、模态枚举转字符串，可空框保持 null。该函数不重新校验数值，最终由 registry 统一验证。
 
 ## 内部调用与异常路径
 

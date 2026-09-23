@@ -45,7 +45,7 @@ Explicit, SI-only tuning for C; final safety arbitration belongs to D.
 LongitudinalParameters.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+校验九个动力学/时间参数严格为正，静止间距非负，hold brake 在 `(0,1]`、emergency brake 在 `[0,1]`。参数只接受 SI 数值，不在此做 km/h 转换。
 
 ### `LongitudinalController`
 
@@ -66,7 +66,7 @@ emergency-brake control here is a local C fallback only.
 LongitudinalController.__init__(self, parameters: LongitudinalParameters | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从一份参数派生并共享 TrafficRule、Stop、Following、SpeedPlanner 与 SpeedPID，初始化上帧油门/制动为零。PID 加速度下限取 `-max_decel`；构造不接触 CARLA。
 
 ### `LongitudinalController._rate_limited_control`
 
@@ -76,7 +76,7 @@ LongitudinalController.__init__(self, parameters: LongitudinalParameters | None=
 LongitudinalController._rate_limited_control(self, accel_mps2: float, dt_s: float) -> ControlOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把正/负目标加速度分别归一化为油门/制动，再按 `max_control_delta_per_s*dt_s` 限制与上帧的变化。切换方向时先把另一执行器归零，保证 `ControlOutput` 的油门制动互斥。
 
 ### `LongitudinalController.step`
 
@@ -86,7 +86,7 @@ LongitudinalController._rate_limited_control(self, accel_mps2: float, dt_s: floa
 LongitudinalController.step(self, request: LongitudinalRequest, dt_s: float) -> LongitudinalOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+执行固定优先级：交通停止状态与前车风险→多约束目标速度→HOLD→不可达停止全刹→PID→低 TTC 本地紧急制动→变化率受限控制。普通返回状态按停车/跟车/巡航分类，reason 最终优先写 `SpeedPlan.limiting_constraint`；C 输出仍不是最终车辆控制权。
 
 ### `LongitudinalController.reset`
 

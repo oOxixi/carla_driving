@@ -58,7 +58,7 @@ Run the production NLU while explicitly bypassing unavailable ASR.
 _sha256(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_sha256】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_resolve_reference`
 
@@ -68,7 +68,7 @@ _sha256(path: Path) -> str
 _resolve_reference(reference: str, *bases: Path) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_resolve_reference】从参数、文件、环境或缓存解析维护工具的数据检查、生成、评测或证据处理所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `_load_jsonl`
 
@@ -78,7 +78,7 @@ _resolve_reference(reference: str, *bases: Path) -> Path
 _load_jsonl(path: Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_load_jsonl】从参数、文件、环境或缓存解析维护工具的数据检查、生成、评测或证据处理所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `_load_latency_samples`
 
@@ -88,7 +88,7 @@ _load_jsonl(path: Path) -> list[dict[str, Any]]
 _load_latency_samples(path: Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_load_latency_samples】从参数、文件、环境或缓存解析维护工具的数据检查、生成、评测或证据处理所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `_raw_control`
 
@@ -98,7 +98,7 @@ _load_latency_samples(path: Path) -> list[dict[str, Any]]
 _raw_control(decision: dict[str, Any]) -> dict[str, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_raw_control】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_context`
 
@@ -108,7 +108,7 @@ _raw_control(decision: dict[str, Any]) -> dict[str, float]
 _context(case: dict[str, Any], transcript: str, index: int) -> QwenInputContext
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_context】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_safety`
 
@@ -118,7 +118,7 @@ _context(case: dict[str, Any], transcript: str, index: int) -> QwenInputContext
 _safety(decision: dict[str, Any] | None, transcript: str, case: dict[str, Any], *, watchdog_alerts: tuple[str, ...]=()) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_safety】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_case_for_frame`
 
@@ -128,7 +128,7 @@ _safety(decision: dict[str, Any] | None, transcript: str, case: dict[str, Any], 
 _case_for_frame(cases: list[dict[str, Any]], cases_path: Path, frame_path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_case_for_frame】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_make_qwen`
 
@@ -138,7 +138,7 @@ _case_for_frame(cases: list[dict[str, Any]], cases_path: Path, frame_path: Path)
 _make_qwen(args: argparse.Namespace) -> tuple[StrictQwenVLAdapter, Any | None, dict[str, object]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_make_qwen】按函数体组合维护工具的数据检查、生成、评测或证据处理的中间对象或产物；输入筛选、排序、身份和失败项必须保留，生成成功不代表后续运行或评分门禁通过。
 
 ### `_git_commit`
 
@@ -148,7 +148,7 @@ _make_qwen(args: argparse.Namespace) -> tuple[StrictQwenVLAdapter, Any | None, d
 _git_commit() -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_git_commit】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_run_one`
 
@@ -158,7 +158,7 @@ _git_commit() -> str | None
 _run_one(sample: dict[str, Any], case: dict[str, Any], qwen: Any, index: int, phase: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_run_one】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `_asr_accuracy`
 
@@ -168,7 +168,7 @@ _run_one(sample: dict[str, Any], case: dict[str, Any], qwen: Any, index: int, ph
 _asr_accuracy(manifest_path: Path) -> tuple[dict[str, object], list[dict[str, Any]]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_asr_accuracy】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_multimodal_accuracy`
 
@@ -178,7 +178,7 @@ _asr_accuracy(manifest_path: Path) -> tuple[dict[str, object], list[dict[str, An
 _multimodal_accuracy(cases: list[dict[str, Any]], cases_path: Path, qwen: Any) -> tuple[dict[str, object], list[dict[str, Any]]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_multimodal_accuracy】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_write_json`
 
@@ -188,7 +188,7 @@ _multimodal_accuracy(cases: list[dict[str, Any]], cases_path: Path, qwen: Any) -
 _write_json(path: Path, payload: object) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_write_json】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_append_raw`
 
@@ -198,7 +198,7 @@ _write_json(path: Path, payload: object) -> None
 _append_raw(streams: tuple[Any, Any], record: dict[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_append_raw】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_failed_latency_record`
 
@@ -208,7 +208,7 @@ _append_raw(streams: tuple[Any, Any], record: dict[str, Any]) -> None
 _failed_latency_record(sample: dict[str, Any], index: int, phase: str, exception: Exception) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_failed_latency_record】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `main`
 
@@ -218,7 +218,7 @@ _failed_latency_record(sample: dict[str, Any], index: int, phase: str, exception
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

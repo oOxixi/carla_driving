@@ -28,7 +28,7 @@ B1 D2 Wave2 Teacher-v4 expansion collector.
 load_json(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_json` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `sha256_file`
 
@@ -38,7 +38,7 @@ load_json(path: Path) -> dict[str, Any]
 sha256_file(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sha256_file` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `canonical_json_sha256_without_field`
 
@@ -48,7 +48,7 @@ sha256_file(path: Path) -> str
 canonical_json_sha256_without_field(value: dict[str, Any], field: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`canonical_json_sha256_without_field` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `git_output`
 
@@ -58,7 +58,7 @@ canonical_json_sha256_without_field(value: dict[str, Any], field: str) -> str
 git_output(repo: Path, *args: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`git_output` 处理运行环境、仓库或路径边界；其结果用于可复现性与失败清理，不等同于样本质量或发布Gate。
 
 ### `current_branch`
 
@@ -68,7 +68,7 @@ git_output(repo: Path, *args: str) -> str
 current_branch(repo: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`current_branch` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `verify_collector_matches_head`
 
@@ -78,7 +78,7 @@ current_branch(repo: Path) -> str
 verify_collector_matches_head(repo: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`verify_collector_matches_head` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `health`
 
@@ -88,7 +88,7 @@ verify_collector_matches_head(repo: Path) -> dict[str, Any]
 health(url: str, pinned: dict[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`health` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `verify_teacher_manifest`
 
@@ -98,7 +98,7 @@ health(url: str, pinned: dict[str, Any]) -> dict[str, Any]
 verify_teacher_manifest(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`verify_teacher_manifest` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `verify_teacher_repo`
 
@@ -108,7 +108,7 @@ verify_teacher_manifest(path: Path) -> dict[str, Any]
 verify_teacher_repo(teacher_repo: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`verify_teacher_repo` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `resolve_scenario_path`
 
@@ -118,7 +118,7 @@ verify_teacher_repo(teacher_repo: Path) -> dict[str, Any]
 resolve_scenario_path(root: Path, scenario_path: str) -> Path | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`resolve_scenario_path` 处理运行环境、仓库或路径边界；其结果用于可复现性与失败清理，不等同于样本质量或发布Gate。
 
 ### `verify_plan`
 
@@ -128,7 +128,7 @@ resolve_scenario_path(root: Path, scenario_path: str) -> Path | None
 verify_plan(plan_path: Path, teacher_manifest: dict[str, Any], challenge_repo: Path, teacher_repo: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`verify_plan` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `empty_state`
 
@@ -138,7 +138,7 @@ verify_plan(plan_path: Path, teacher_manifest: dict[str, Any], challenge_repo: P
 empty_state(*, plan: dict[str, Any], plan_path: Path, collector_repo_sha: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`empty_state` 定义本脚本使用的数据或状态封装；字段含义由构造处和消费者共同约束，不能脱离发布版本解释。
 
 ### `validate_state_identity`
 
@@ -148,7 +148,7 @@ empty_state(*, plan: dict[str, Any], plan_path: Path, collector_repo_sha: str) -
 validate_state_identity(state: dict[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_state_identity` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `atomic_write_json`
 
@@ -158,7 +158,7 @@ validate_state_identity(state: dict[str, Any]) -> None
 atomic_write_json(path: Path, value: dict[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`atomic_write_json` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `load_or_create_state`
 
@@ -168,7 +168,7 @@ atomic_write_json(path: Path, value: dict[str, Any]) -> None
 load_or_create_state(state_path: Path, *, resume: bool, plan: dict[str, Any], plan_path: Path, collector_repo_sha: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_or_create_state` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `select_runs`
 
@@ -178,7 +178,7 @@ load_or_create_state(state_path: Path, *, resume: bool, plan: dict[str, Any], pl
 select_runs(runs: list[dict[str, Any]], state: dict[str, Any], *, start_index: int, max_runs: int | None, resume: bool) -> tuple[list[dict[str, Any]], int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`select_runs` 定义本脚本使用的数据或状态封装；字段含义由构造处和消费者共同约束，不能脱离发布版本解释。
 
 ### `clear_attempt_outputs`
 
@@ -188,7 +188,7 @@ select_runs(runs: list[dict[str, Any]], state: dict[str, Any], *, start_index: i
 clear_attempt_outputs(item_log_dir: Path, item_image_dir: Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`clear_attempt_outputs` 处理运行环境、仓库或路径边界；其结果用于可复现性与失败清理，不等同于样本质量或发布Gate。
 
 ### `run_case`
 
@@ -198,7 +198,7 @@ clear_attempt_outputs(item_log_dir: Path, item_image_dir: Path) -> None
 run_case(teacher_repo: Path, challenge_repo: Path, item: dict[str, Any], service: str, logs_root: Path, images_root: Path) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`run_case` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `collect_dataset`
 
@@ -208,7 +208,7 @@ run_case(teacher_repo: Path, challenge_repo: Path, item: dict[str, Any], service
 collect_dataset(repo: Path, logs_root: Path, dataset_root: Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`collect_dataset` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `main`
 
@@ -218,7 +218,7 @@ collect_dataset(repo: Path, logs_root: Path, dataset_root: Path) -> None
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ## 内部调用与异常路径
 

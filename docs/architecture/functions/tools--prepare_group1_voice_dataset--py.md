@@ -28,7 +28,7 @@ Prepare the official Group 1 voice dataset for task 5/6 evaluation.
 _sha256(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_sha256】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_git_state`
 
@@ -38,7 +38,7 @@ _sha256(path: Path) -> str
 _git_state() -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_git_state】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_load_json`
 
@@ -48,7 +48,7 @@ _git_state() -> dict[str, Any]
 _load_json(path: Path) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_load_json】从参数、文件、环境或缓存解析维护工具的数据检查、生成、评测或证据处理所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `_write_json`
 
@@ -58,7 +58,7 @@ _load_json(path: Path) -> Any
 _write_json(path: Path, payload: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_write_json】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_archive_member_count`
 
@@ -68,7 +68,7 @@ _write_json(path: Path, payload: Any) -> None
 _archive_member_count(zip_path: Path, suffix: str) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_archive_member_count】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_extract_if_needed`
 
@@ -78,7 +78,7 @@ _archive_member_count(zip_path: Path, suffix: str) -> int
 _extract_if_needed(zip_path: Path, extract_root: Path) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_extract_if_needed】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_normalize_archive_path`
 
@@ -88,7 +88,7 @@ _extract_if_needed(zip_path: Path, extract_root: Path) -> Path
 _normalize_archive_path(value: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_normalize_archive_path】把输入转换为维护工具的数据检查、生成、评测或证据处理使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `_audio_entries`
 
@@ -98,7 +98,7 @@ _normalize_archive_path(value: str) -> str
 _audio_entries(record: dict[str, Any], condition: str) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_audio_entries】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_build_manifest`
 
@@ -108,7 +108,7 @@ _audio_entries(record: dict[str, Any], condition: str) -> list[dict[str, Any]]
 _build_manifest(records: list[dict[str, Any]], *, condition: str, audio_prefix: str, dataset_root: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_build_manifest】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_counter_to_dict`
 
@@ -118,7 +118,7 @@ _build_manifest(records: list[dict[str, Any]], *, condition: str, audio_prefix: 
 _counter_to_dict(counter: Counter[str]) -> dict[str, int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_counter_to_dict】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_manifest_stats`
 
@@ -128,7 +128,7 @@ _counter_to_dict(counter: Counter[str]) -> dict[str, int]
 _manifest_stats(manifest: list[dict[str, Any]]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_manifest_stats】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_duplicate_texts`
 
@@ -138,7 +138,7 @@ _manifest_stats(manifest: list[dict[str, Any]]) -> dict[str, Any]
 _duplicate_texts(records: list[dict[str, Any]]) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_duplicate_texts】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_label_conflicts`
 
@@ -148,7 +148,7 @@ _duplicate_texts(records: list[dict[str, Any]]) -> list[dict[str, Any]]
 _label_conflicts(records: list[dict[str, Any]]) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_label_conflicts】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_split_stats`
 
@@ -158,7 +158,7 @@ _label_conflicts(records: list[dict[str, Any]]) -> list[dict[str, Any]]
 _split_stats(dataset_root: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_split_stats】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_markdown_report`
 
@@ -168,7 +168,7 @@ _split_stats(dataset_root: Path) -> dict[str, Any]
 _markdown_report(audit: dict[str, Any]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_markdown_report】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `main`
 
@@ -178,7 +178,7 @@ _markdown_report(audit: dict[str, Any]) -> str
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

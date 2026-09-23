@@ -2,7 +2,7 @@
 
 > 本目录现有模板主要面向基础赛道。挑战赛道 Student/J6P 的 Candidate 台账、Final Freeze、
 > Release Manifest、Docker 和提交包门禁见
-> [`docs/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md`](../docs/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md)。
+> [`docs/architecture/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md`](../docs/architecture/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md)。
 > 在挑战赛道专用 validator 实现并通过前，现有打包检查 PASS 不能表示挑战赛道 Final 完整。
 
 - `current/technical_solution.md`：当前技术方案源文件。

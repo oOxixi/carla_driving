@@ -14,8 +14,8 @@ Seen/Variant/Unseen 的定义权，也不能为了得到更好数字改变模型
 - [`B2_EVALUATION_AND_FP32_GATE.md`](B2_EVALUATION_AND_FP32_GATE.md)：冻结 Benchmark 与最终精度判定。
 - [`A4_OPENEXPLORER_J6P_RUNTIME.md`](A4_OPENEXPLORER_J6P_RUNTIME.md)：被测 Runtime 和 J6P 交付合同。
 - [`MODEL_AND_WEIGHT_LIFECYCLE.md`](MODEL_AND_WEIGHT_LIFECYCLE.md)：模型、权重和 Runtime 身份链。
-- [`challenge/hil/README.md`](../../challenge/hil/README.md)：当前 HIL 工具和可执行命令入口。
-- [`challenge/hil/a4_runtime_contract.md`](../../challenge/hil/a4_runtime_contract.md)：A4 Runtime 可测性合同。
+- [`challenge/hil/README.md`](../../../challenge/hil/README.md)：当前 HIL 工具和可执行命令入口。
+- [`challenge/hil/a4_runtime_contract.md`](../../../challenge/hil/a4_runtime_contract.md)：A4 Runtime 可测性合同。
 - [`B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md`](B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md)：B3 原始证据进入 Final 的绑定与复现门禁。
 
 ## 2. 当前状态快照

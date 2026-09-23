@@ -36,7 +36,7 @@ Pinned CARLA ScenarioRunner 0.9.16 process boundary.
 
 源码位置：[integration/official_scenario_runner.py 第 21 行](../../../integration/official_scenario_runner.py#L21)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的外部 ScenarioRunner 子进程配置：checkout 根、官方场景名、CARLA host/port、ScenarioRunner timeout、Python、可选 agent/config、同步/重载/输出开关及原样追加参数。它不启动 CARLA，也不拥有仓库自有场景 JSON。
 
 ### `ScenarioRunnerInvocation.__post_init__`
 
@@ -46,7 +46,7 @@ Pinned CARLA ScenarioRunner 0.9.16 process boundary.
 ScenarioRunnerInvocation.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+构造时要求非空场景与 host、端口 1–65535、timeout>0，且 agent config 不能脱离 agent path。未校验 root/agent 文件存在、Python 可执行、布尔字段精确类型或 extra_args 安全性；这些在 build/run 时暴露。
 
 ### `verify_checkout`
 
@@ -66,7 +66,7 @@ Fail unless ``root`` is the exact pinned ScenarioRunner checkout.
 build_command(invocation: ScenarioRunnerInvocation, *, verify: bool=True) -> list[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+可选先验证 checkout 精确 commit，再组装不经 shell 的 argv：python、scenario_runner.py、连接/超时/场景，以及启用的 sync/reload/output/json 和绝对 agent 路径，最后原样附加 extra_args。`verify=False` 仅供测试/显式调用，不提供版本保证。
 
 ### `run`
 

@@ -34,7 +34,7 @@ A route-relative actor candidate is not legal on the current map.
 _wrap_degrees(value: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把可转 float 的角度归一到 `[-180,180)`，用于车道航向差；非数值或非有限输入未单独拒绝，转换/后续比较决定结果。
 
 ### `_is_vehicle`
 
@@ -44,7 +44,7 @@ _wrap_degrees(value: float) -> float
 _is_vehicle(actor_spec: Mapping[str, object]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 actor `type`，缺失默认 vehicle，strip/lower 后仅精确等于 `vehicle` 返回真；`vehicle.*` 或其他车辆别名不会命中。
 
 ### `_lane_width_m`
 
@@ -54,7 +54,7 @@ _is_vehicle(actor_spec: Mapping[str, object]) -> bool
 _lane_width_m(waypoint: Any) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 waypoint.lane_width 并转 float；只有有限且>0.5 m 才采用，否则回退3.5 m。属性 getter 或不可转换值异常不会被吞掉。
 
 ### `_same_direction`
 
@@ -64,7 +64,7 @@ _lane_width_m(waypoint: Any) -> float
 _same_direction(base: Any, target: Any, *, tolerance_deg: float=45.0) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+比较两个 waypoint 的 yaw 包角，绝对差不超过默认45°视为同向。tolerance 未校验非负/有限，且只看局部航向，不检查 road/lane ID 连通性。
 
 ### `_lane_relation`
 
@@ -74,7 +74,7 @@ _same_direction(base: Any, target: Any, *, tolerance_deg: float=45.0) -> bool
 _lane_relation(actor_spec: Mapping[str, object]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从 `route_position.lane_relation` 读取并规范为大写；无 route_position 默认 CURRENT，只允许 CURRENT/ORIGINAL/左右相邻，否则抛 ValueError。它不确认对应车道真实存在。
 
 ### `_target_lane_waypoint`
 
@@ -84,7 +84,7 @@ _lane_relation(actor_spec: Mapping[str, object]) -> str
 _target_lane_waypoint(world_map: Any, base: Any, relation: str) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+CURRENT/ORIGINAL 原样返回基准 waypoint；左右相邻通过 CARLA getter 获取，并要求存在、lane_type 为 DRIVING、航向差在容差内。失败抛 `ActorPlacementError`，不跨多车道搜索或自动换到另一侧。
 
 ### `_legacy_vehicle_lane`
 
@@ -129,7 +129,7 @@ Return a copy with route offsets applied to either schema generation.
 offset_actor_route_position.shift_progress_triggers(value: object) -> object
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先深拷贝任意触发/行为子树，再递归把所有 `route_progress_greater_than_m.value` 增加 longitudinal offset，并将结果下限截为0。lateral offset 不改变触发阈值。
 
 ### `offset_actor_route_position.shift_progress_triggers.visit`
 
@@ -139,7 +139,7 @@ offset_actor_route_position.shift_progress_triggers(value: object) -> object
 offset_actor_route_position.shift_progress_triggers.visit(node: object) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+遍历 dict 及 list/tuple，命中 route-progress trigger 后转换 value 并继续递归所有子值；没有循环引用保护，非数值 value 会在 float 转换时报错。
 
 ### `rebase_actor_route_position`
 
@@ -162,7 +162,7 @@ only coordinates consumed by the active route geometry are rebased.
 rebase_actor_route_position.rebase_s(container: dict[str, object], key: str, label: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 mission-absolute s/x 减去重规划起点 offset，允许最多 `1e-6 m` 的浮点负误差并截0；更早的 actor/目标抛 `ActorPlacementError`。只重写活动路线消费的坐标，激活/停用触发仍保持任务绝对里程。
 
 ### `actor_resample_offsets`
 

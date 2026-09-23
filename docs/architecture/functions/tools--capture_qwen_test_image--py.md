@@ -28,7 +28,7 @@ capture_qwen_test_image
 parse_args() -> argparse.Namespace
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【parse_args】把输入转换为维护工具的数据检查、生成、评测或证据处理使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `save_carla_image_as_jpeg`
 
@@ -48,7 +48,7 @@ save_carla_image_as_jpeg(carla_image: carla.Image, output_path: Path) -> None
 find_spawn_transform(world: carla.World, spawn_index: int) -> carla.Transform
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【find_spawn_transform】把输入转换为维护工具的数据检查、生成、评测或证据处理使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `spawn_ego`
 
@@ -58,7 +58,7 @@ find_spawn_transform(world: carla.World, spawn_index: int) -> carla.Transform
 spawn_ego(world: carla.World, preferred_transform: carla.Transform) -> carla.Vehicle
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【spawn_ego】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `spawn_static_lead_vehicle`
 
@@ -68,7 +68,7 @@ spawn_ego(world: carla.World, preferred_transform: carla.Transform) -> carla.Veh
 spawn_static_lead_vehicle(world: carla.World, ego: carla.Vehicle, distance_m: float) -> Optional[carla.Vehicle]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【spawn_static_lead_vehicle】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `create_front_camera`
 
@@ -78,7 +78,7 @@ spawn_static_lead_vehicle(world: carla.World, ego: carla.Vehicle, distance_m: fl
 create_front_camera(world: carla.World, ego: carla.Vehicle, *, width: int, height: int, fov: float) -> carla.Sensor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【create_front_camera】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `drain_latest_image`
 
@@ -88,7 +88,7 @@ create_front_camera(world: carla.World, ego: carla.Vehicle, *, width: int, heigh
 drain_latest_image(image_queue: queue.Queue, latest: Optional[carla.Image]) -> Optional[carla.Image]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【drain_latest_image】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `main`
 
@@ -98,7 +98,7 @@ drain_latest_image(image_queue: queue.Queue, latest: Optional[carla.Image]) -> O
 main() -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

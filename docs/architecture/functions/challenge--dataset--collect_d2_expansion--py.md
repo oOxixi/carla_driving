@@ -28,7 +28,7 @@ B1 D2 expansion collector.
 load_json(path: Path) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_json` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `health`
 
@@ -38,7 +38,7 @@ load_json(path: Path) -> 未声明返回类型
 health(url: str, pinned: dict) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`health` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `git_output`
 
@@ -48,7 +48,7 @@ health(url: str, pinned: dict) -> 未声明返回类型
 git_output(repo: Path, *args: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`git_output` 处理运行环境、仓库或路径边界；其结果用于可复现性与失败清理，不等同于样本质量或发布Gate。
 
 ### `verify_teacher_repo`
 
@@ -58,7 +58,7 @@ git_output(repo: Path, *args: str) -> str
 verify_teacher_repo(teacher_repo: Path) -> dict
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`verify_teacher_repo` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `run_case`
 
@@ -68,7 +68,7 @@ verify_teacher_repo(teacher_repo: Path) -> dict
 run_case(teacher_repo, challenge_repo, item, service, logs, images) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`run_case` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `collect`
 
@@ -78,7 +78,7 @@ run_case(teacher_repo, challenge_repo, item, service, logs, images) -> 未声明
 collect(repo, logs, dataset) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`collect` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `main`
 
@@ -88,7 +88,7 @@ collect(repo, logs, dataset) -> 未声明返回类型
 main() -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ## 内部调用与异常路径
 

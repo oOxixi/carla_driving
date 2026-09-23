@@ -28,7 +28,7 @@ Deterministic sensor and observation fault injection with explicit invalidity.
 inject_sensor_fault(sample: SensorSample, fault: str, *, latency_ms: float=250.0, noise_std_m: float=1.0, seed: int=0) -> SensorSample
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+只接受五种显式故障。相符模态的黑屏/掉线/缺失通过 `SensorSample.invalidated` 标为无效；延迟故障给捕获时间加纳秒偏移；雷达噪声用给定 seed 的 NumPy RNG 加高斯噪声并写 `RADAR_NOISE_INJECTED`。故障与样本模态不匹配时原样返回；负延迟拒绝，但当前未单独限制 `noise_std_m` 非负。
 
 ### `inject_observation_fault`
 
@@ -38,7 +38,7 @@ inject_sensor_fault(sample: SensorSample, fault: str, *, latency_ms: float=250.0
 inject_observation_fault(observations: Iterable[Observation], fault: str, *, seed: int=0) -> tuple[Observation, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`missed_detection` 删除所有 RGB Observation、保留雷达/LiDAR；`false_positive` 先按 seed 重排原观测，再追加固定位置和低置信度的 RGB unknown 目标。返回 tuple；不修改传入 Observation 对象。
 
 ### `main`
 
@@ -48,7 +48,7 @@ inject_observation_fault(observations: Iterable[Observation], fault: str, *, see
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+CLI 从独占创建的输出 JSONL 逐条写入注入后的 replay 样本，统计输入和实际变化数，再写 `<output>.report.json` 并打印同一报告。`--fault` 仅开放传感器故障，不包含 observation 故障；输入损坏、输出已存在或序列化失败会异常退出而不是产生成功报告。
 
 ## 内部调用与异常路径
 

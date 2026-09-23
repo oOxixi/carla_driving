@@ -52,7 +52,7 @@ Validated scenario-file loading and deterministic execution helpers.
 _finite_number(value: object, name: str, *, minimum: float | None=None) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求精确 int/float 且非 bool，转换后必须有限；可选 minimum 使用包含下界。类型错误抛 TypeError，非有限或低于下界抛 ValueError，返回 float。
 
 ### `_nonempty_text`
 
@@ -62,19 +62,19 @@ _finite_number(value: object, name: str, *, minimum: float | None=None) -> float
 _nonempty_text(value: object, name: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求精确 `str` 且 strip 后非空，返回去除两端空白的文本；不做枚举、编码或长度校验。
 
 ### `ScheduledCommand`
 
 源码位置：[integration/scenario_execution.py 第 47 行](../../../integration/scenario_execution.py#L47)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的场景命令调度项，保存最早仿真秒、标准 voice envelope、可选 phase ID 和声明式 trigger。内部两个 dict 仍可变；是否到期和触发由 `CommandTimeline.due` 判断。
 
 ### `ScenarioSpec`
 
 源码位置：[integration/scenario_execution.py 第 55 行](../../../integration/scenario_execution.py#L55)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的已加载场景合同，集中保存来源、身份/等级、地图天气种子、同步步长与时长、ego 位姿、局部路线、命令、actors/sensors、Qwen 故障/期望、基础验收、扩展与路线原合同。嵌套 dict 仍可变，冻结只保护顶层属性赋值。
 
 ### `ScenarioSpec.load`
 
@@ -84,7 +84,7 @@ _nonempty_text(value: object, name: str) -> str
 ScenarioSpec.load(cls, path: str | Path) -> 'ScenarioSpec'
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从绝对路径读取 schema 1.0 JSON，严格校验根/等级/seed/runtime/ego/局部路线/命令与主要对象形状，按 time_s 排序命令并把每条有效期延长到场景剩余窗口。只支持 `scenario_local_xy_m`；不会验证地图存在、actor 蓝图、expected key 或 extension runtime requirements，这些由后续阶段负责。
 
 ### `ScenarioSpec.frame_count`
 
@@ -94,7 +94,7 @@ ScenarioSpec.load(cls, path: str | Path) -> 'ScenarioSpec'
 ScenarioSpec.frame_count(self) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回 `max(1, ceil(duration_s/fixed_delta_s))` 的计划帧数。它是预算上界计算，不证明 CARLA 实际产生同样帧数或完成路线。
 
 ### `ScenarioSpec.route_distance_contract_m`
 
@@ -104,7 +104,7 @@ ScenarioSpec.frame_count(self) -> int
 ScenarioSpec.route_distance_contract_m(self) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+若 route 声明 `distance_contract_m`，要求有限且≥0.1 m 后返回；否则累加原始局部折线各段欧氏长度。声明距离可以与几何长度不同，后续路线规划模式决定如何消费。
 
 ### `ScenarioSpec.route_planning_mode`
 
@@ -114,7 +114,7 @@ ScenarioSpec.route_distance_contract_m(self) -> float
 ScenarioSpec.route_planning_mode(self) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+显式 planning_mode 规范为小写并限制为 distance_coverage/destination/local_polyline/topology_coverage；缺失时有 destination 坐标则 destination，否则 distance_coverage。该属性不执行规划或验证地图拓扑。
 
 ### `ScenarioSpec.control_policy`
 
@@ -124,7 +124,7 @@ ScenarioSpec.route_planning_mode(self) -> str
 ScenarioSpec.control_policy(self) -> Mapping[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 `extensions.control_policy`，缺失返回空 mapping，非 mapping 抛 TypeError。返回原嵌套对象引用，不复制也不验证其中控制参数。
 
 ### `ScenarioSpec.world_destination`
 
@@ -134,7 +134,7 @@ ScenarioSpec.control_policy(self) -> Mapping[str, object]
 ScenarioSpec.world_destination(self, origin_x_m: float, origin_y_m: float, yaw_deg: float) -> tuple[float, float] | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+将 route 的局部 `[x,y]` destination 按 ego/world 原点与 yaw 旋转平移为世界二维坐标；未声明返回 None。所有坐标和 yaw 必须有限，函数不投影到可驾驶道路。
 
 ### `ScenarioSpec.requires_qwen_semantics`
 
@@ -180,7 +180,7 @@ Return each scheduled command once its time and optional event trigger hold.
 CommandTimeline.__init__(self, commands: Iterable[ScheduledCommand]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 iterable 物化并按 `time_s` 稳定排序，游标从0开始。实例是一次性状态机，没有 reset；同时间命令保留输入相对顺序。
 
 ### `CommandTimeline.completed`
 
@@ -200,7 +200,7 @@ Whether every declared command has been emitted exactly once.
 CommandTimeline.due(self, elapsed_s: float, context: Mapping[str, object] | None=None) -> tuple[dict[str, object], ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+校验 elapsed_s 非负，从游标起连续发出所有到时且 trigger 成立的命令，每条 envelope 浅拷贝且只发一次。遇到首个未来时间或未满足 trigger 就停止，后续命令即便到时也不会越过它；这保证声明顺序但可能让前置事件阻塞队列。
 
 ### `scenario_trigger_satisfied`
 
@@ -243,7 +243,7 @@ therefore retain the new runtime's confirmation/fail-closed behaviour.
 _parse_command(raw: object, index: int) -> ScheduledCommand
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把单条 JSON 命令转为 `ScheduledCommand`：校验非负 time、非空大写 intent、参数对象、置信度 `[0,1]`、确认 bool 和可选 phase/trigger；把 `target_speed_kph` 规范为 speed+km/h，ID 按原列表 index 生成，初始有效期至少 `time+30s`。intent/status/trigger 语义的完整合法性留给 adapter 和 trigger evaluator。
 
 ## 内部调用与异常路径
 

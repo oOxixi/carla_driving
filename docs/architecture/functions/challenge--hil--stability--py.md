@@ -28,7 +28,7 @@ Long-duration soak with a memory/temperature drift check and recovery probe.
 _window(rows: Sequence[dict[str, Any]], key: str, *, head: bool) -> list[float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_window` 实现本文件对应的HIL测量辅助步骤；具体输入、阶段、副作用和异常见本页签名/调用/拒绝表，修改时须同步schema与报告。
 
 ### `run_soak`
 
@@ -38,7 +38,7 @@ _window(rows: Sequence[dict[str, Any]], key: str, *, head: bool) -> list[float]
 run_soak(runtime: PlannerRuntime, cases: Sequence[ReplayCase], *, run_id: str, duration_s: float, telemetry: TelemetrySpec | None=None, recovery_probe_cases: int=10, progress: Callable[[str], None] | None=None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`run_soak` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `run_soak.emit`
 
@@ -48,7 +48,7 @@ run_soak(runtime: PlannerRuntime, cases: Sequence[ReplayCase], *, run_id: str, d
 run_soak.emit(message: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`emit` 写出冻结快照、handoff、trace、遥测或报告产物；文件必须绑定候选身份、输入哈希和环境，写盘成功不是Gate通过。
 
 ### `write_soak_files`
 

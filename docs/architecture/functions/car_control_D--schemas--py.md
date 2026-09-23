@@ -86,7 +86,7 @@ Shared data structures for D: safety arbitration, scoring and evidence.
 
 源码位置：[car_control_D/schemas.py 第 38 行](../../../car_control_D/schemas.py#L38)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的三轴控制值容器：油门、制动和转向（默认 0）。构造本身不限制类型、有限性、范围或油门制动冲突；边界由 adapter/validator/supervisor 执行。
 
 ### `ControlOutput.to_dict`
 
@@ -96,13 +96,13 @@ Shared data structures for D: safety arbitration, scoring and evidence.
 ControlOutput.to_dict(self) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用 `asdict` 返回三个控制字段的普通字典，不做归一化或再次验证。
 
 ### `CommandView`
 
 源码位置：[car_control_D/schemas.py 第 48 行](../../../car_control_D/schemas.py#L48)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+D 仲裁使用的冻结命令视图，包含 schema/ID/原文/intent、参数、两类置信度、歧义/确认、错误告警、语音阶段纳秒时间和有效秒数。内部 list/dict 仍可变；直接构造不验证 intent、置信范围或时间顺序。
 
 ### `CommandView.to_dict`
 
@@ -112,13 +112,13 @@ ControlOutput.to_dict(self) -> Dict[str, Any]
 CommandView.to_dict(self) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+递归复制为普通字典，包括 parameters、errors 和 warnings；不附加版本升级或字段别名。
 
 ### `VehicleStateView`
 
 源码位置：[car_control_D/schemas.py 第 72 行](../../../car_control_D/schemas.py#L72)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+D 使用的冻结车辆状态投影，速度/坐标/距离单位为 m、m/s、仿真秒，曲率为 1/m；同时携带灯态、路线/车道偏差、前车类型、传感器裕量和三类安全事实。默认表示静止且大部分风险量缺测，不表示传感器已健康。
 
 ### `VehicleStateView.to_dict`
 
@@ -128,13 +128,13 @@ CommandView.to_dict(self) -> Dict[str, Any]
 VehicleStateView.to_dict(self) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+通过 `asdict` 输出当前所有车辆状态字段；不标注测量来源、置信度或缺测原因。
 
 ### `RiskView`
 
 源码位置：[car_control_D/schemas.py 第 98 行](../../../car_control_D/schemas.py#L98)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结风险摘要，TTC 单位秒、期望间距单位米，并可请求紧急制动。两个数值可为 `None`；直接构造不校验负数、有限性或与车辆状态一致性。
 
 ### `RiskView.to_dict`
 
@@ -144,13 +144,13 @@ VehicleStateView.to_dict(self) -> Dict[str, Any]
 RiskView.to_dict(self) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回风险字段普通字典，保留 `None`，不派生风险等级。
 
 ### `SafetyDecision`
 
 源码位置：[car_control_D/schemas.py 第 108 行](../../../car_control_D/schemas.py#L108)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的仲裁结果，包含最终控制、是否覆盖、原因/类别、风险指标及可选原始控制。`risk_metrics` 仍是可变字典；直接构造不能保证 override 与 reason/control 一致，应优先由 supervisor 生成。
 
 ### `SafetyDecision.to_dict`
 
@@ -160,13 +160,13 @@ RiskView.to_dict(self) -> Dict[str, Any]
 SafetyDecision.to_dict(self) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用 `asdict` 递归展开嵌套 `ControlOutput` 和风险指标，返回可序列化性仍取决于调用方放入 metrics 的值。
 
 ### `ValidationResult`
 
 源码位置：[car_control_D/schemas.py 第 122 行](../../../car_control_D/schemas.py#L122)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的校验摘要，区分布尔 valid、错误和告警；内部列表仍可变。约定上告警不使 valid 变假，但 dataclass 本身不强制 valid 与 errors 一致。
 
 ### `ValidationResult.to_dict`
 
@@ -176,13 +176,13 @@ SafetyDecision.to_dict(self) -> Dict[str, Any]
 ValidationResult.to_dict(self) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+递归复制 valid/errors/warnings 为普通字典，不改变校验结论。
 
 ### `ScenarioResult`
 
 源码位置：[car_control_D/schemas.py 第 132 行](../../../car_control_D/schemas.py#L132)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+可变的开发计分输入，保存场景身份、难度、状态、各事件/命令计数、可选端到端毫秒和事件列表。构造不限制状态枚举、非负计数或身份格式，不等于正式场景结果 schema。
 
 ### `ScenarioResult.to_dict`
 
@@ -192,7 +192,7 @@ ValidationResult.to_dict(self) -> Dict[str, Any]
 ScenarioResult.to_dict(self) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用 `asdict` 递归复制场景结果及事件列表；不计算得分、不验证终态或冻结运行 provenance。
 
 ## 内部调用与异常路径
 

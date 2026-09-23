@@ -46,7 +46,7 @@ Final safety arbitration for D.
 
 源码位置：[car_control_D/safety_supervisor.py 第 19 行](../../../car_control_D/safety_supervisor.py#L19)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的 D 仲裁配置：TTC/距离/速度/曲率决定纵向与路线阈值，制动和转向字段决定覆盖输出。大多数默认来自导入时的 `DEFAULT_STRATEGY`，三个紧急制动包络值在类内固定；声明默认不代表 runner 在 DrivingPolicy 覆盖后的实际值。
 
 ### `SafetyConfig.__post_init__`
 
@@ -56,13 +56,13 @@ Final safety arbitration for D.
 SafetyConfig.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求所有配置为有限 int/float 且拒绝 bool；距离、时间、速度和灵敏度非负，紧急减速度严格大于零，low TTC 不大于 caution TTC，路线阈值保持层级，控制/置信字段落在 `[0,1]`。它未限制 route sensitivities 的上界，也未验证 recovery max speed 当前是否被仲裁逻辑消费。
 
 ### `SafetySupervisor`
 
 源码位置：[car_control_D/safety_supervisor.py 第 85 行](../../../car_control_D/safety_supervisor.py#L85)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+D 的无状态逐帧 fail-closed 仲裁器；把 B/C 原始控制、车辆/风险、可选命令和 watchdog 归一后按固定优先级返回 `SafetyDecision`。锁存、恢复、命令超时和实际 CARLA apply 属于外层 runtime。
 
 ### `SafetySupervisor.__init__`
 
@@ -72,7 +72,7 @@ SafetyConfig.__post_init__(self) -> None
 SafetySupervisor.__init__(self, config: Optional[SafetyConfig]=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存注入的已校验 `SafetyConfig`，未提供时构造默认配置。构造不加载运行 policy、不读取环境变量，也不维护跨帧状态。
 
 ### `SafetySupervisor.arbitrate`
 
@@ -82,7 +82,7 @@ SafetySupervisor.__init__(self, config: Optional[SafetyConfig]=None) -> None
 SafetySupervisor.arbitrate(self, raw_control: Any, vehicle_state: Any=None, command: Any=None, risk: Any=None, watchdog_alerts: Optional[Iterable[str]]=None) -> SafetyDecision
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先验证/适配控制、车辆、风险和命令，并把非法状态或 watchdog 转为停车；随后按代码顺序处理碰撞/闯灯、显式停止、命令拒绝/确认、风险急停、低 TTC、动态前距、停止线、严重偏航、车道偏移/压线和 caution TTC，最后才放行 raw control。动态前距同时取策略包络、本配置紧急制动公式和最小距离最大值；路线阈值随速度/曲率收紧。该函数只给出本帧决定，没有锁存与恢复时序；`watchdog_alerts` 先于碰撞等事实返回，风险指标仍保留 alerts 但主 reason 只记录首个命中分支。
 
 ### `SafetySupervisor.arbitrate.category`
 
@@ -92,7 +92,7 @@ SafetySupervisor.arbitrate(self, raw_control: Any, vehicle_state: Any=None, comm
 SafetySupervisor.arbitrate.category(reason: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 reason 归到 QWEN_OR_COMMAND、CONTROL、PERCEPTION、WATCHDOG、ROUTE_OR_LATERAL_CONTROL、NONE 或兜底 SAFETY_POLICY。WATCHDOG 只有 alert 文本含 `SENSOR`/`PERCEPTION` 才归感知，分类依赖字符串命名而非结构化来源。
 
 ### `SafetySupervisor.arbitrate.stop`
 
@@ -102,7 +102,7 @@ SafetySupervisor.arbitrate.category(reason: str) -> str
 SafetySupervisor.arbitrate.stop(reason: str, brake: Optional[float]=None, steer: float=0.0) -> SafetyDecision
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+构造 throttle=0、指定或 emergency brake、指定 steer（默认 0）的覆盖决定，保留原始控制、共享风险 metrics 和派生原因类别。函数不再次 validate 输出，正确范围依赖 `SafetyConfig` 构造校验。
 
 ### `SafetySupervisor.arbitrate.caution`
 
@@ -112,7 +112,7 @@ SafetySupervisor.arbitrate.stop(reason: str, brake: Optional[float]=None, steer:
 SafetySupervisor.arbitrate.caution(reason: str) -> SafetyDecision
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+谨慎覆盖关闭油门，制动取原值与 caution brake 的较大者，转向裁剪到 recovery steer limit；保留 raw control 和 metrics。它仍标记 `safety_override=True`，但不是 emergency brake。
 
 ### `SafetySupervisor.arbitrate.recover_route`
 
@@ -122,7 +122,7 @@ SafetySupervisor.arbitrate.caution(reason: str) -> SafetyDecision
 SafetySupervisor.arbitrate.recover_route() -> SafetyDecision
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+严重路线偏离时关闭油门、制动至少为 route-deviation brake，并只保留裁剪后的原始转向，reason 固定为 `ROUTE_DEVIATION_RECOVERY_STOP`。尽管配置保留 `route_recovery_throttle` 和 `route_recovery_max_speed_mps`，本实现不会在该分支授权推进，恢复需外层提供新路线/控制后下一帧重新仲裁。
 
 ## 内部调用与异常路径
 

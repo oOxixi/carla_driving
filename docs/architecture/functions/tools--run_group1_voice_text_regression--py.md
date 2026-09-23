@@ -28,7 +28,7 @@ Run deterministic Group 1 task 5 NLU/safety regression from a voice manifest.
 _write_json(path: Path, payload: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_write_json】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_git_state`
 
@@ -38,7 +38,7 @@ _write_json(path: Path, payload: Any) -> None
 _git_state() -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_git_state】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_percentile`
 
@@ -48,7 +48,7 @@ _git_state() -> dict[str, Any]
 _percentile(values: list[float], percentile: float) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_percentile】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_latency_stats`
 
@@ -58,7 +58,7 @@ _percentile(values: list[float], percentile: float) -> float | None
 _latency_stats(values: list[float]) -> dict[str, float | int | None]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_latency_stats】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_run_text`
 
@@ -68,7 +68,7 @@ _latency_stats(values: list[float]) -> dict[str, float | int | None]
 _run_text(text: str, request_id: str, asr_confidence: float | None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_run_text】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `_slots_match`
 
@@ -78,7 +78,7 @@ _run_text(text: str, request_id: str, asr_confidence: float | None) -> dict[str,
 _slots_match(actual: dict[str, Any], expected: dict[str, Any]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_slots_match】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_error_codes`
 
@@ -88,7 +88,7 @@ _slots_match(actual: dict[str, Any], expected: dict[str, Any]) -> bool
 _error_codes(command: dict[str, Any]) -> set[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_error_codes】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_record`
 
@@ -98,7 +98,7 @@ _error_codes(command: dict[str, Any]) -> set[str]
 _record(item: dict[str, Any], asr_confidence: float) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_record】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_low_confidence_check`
 
@@ -108,7 +108,7 @@ _record(item: dict[str, Any], asr_confidence: float) -> dict[str, Any]
 _low_confidence_check(item: dict[str, Any], low_confidence: float) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_low_confidence_check】检查维护工具的数据检查、生成、评测或证据处理的局部合同并返回/累计函数体定义的结果；静态校验通过不等于外部服务、CARLA、音频模型或最终交付已经通过。
 
 ### `_run_safety_probe`
 
@@ -118,7 +118,7 @@ _low_confidence_check(item: dict[str, Any], low_confidence: float) -> dict[str, 
 _run_safety_probe(probe: dict[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_run_safety_probe】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `_summarize`
 
@@ -128,7 +128,7 @@ _run_safety_probe(probe: dict[str, Any]) -> dict[str, Any]
 _summarize(records: list[dict[str, Any]]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_summarize】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_grouped_summary`
 
@@ -138,7 +138,7 @@ _summarize(records: list[dict[str, Any]]) -> dict[str, Any]
 _grouped_summary(records: list[dict[str, Any]], key: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_grouped_summary】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_markdown_report`
 
@@ -148,7 +148,7 @@ _grouped_summary(records: list[dict[str, Any]], key: str) -> dict[str, Any]
 _markdown_report(report: dict[str, Any]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_markdown_report】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `main`
 
@@ -158,7 +158,7 @@ _markdown_report(report: dict[str, Any]) -> str
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

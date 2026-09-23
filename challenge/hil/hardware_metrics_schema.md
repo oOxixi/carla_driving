@@ -1,7 +1,7 @@
 # B3 硬件指标与原始数据列定义（D1 交付）
 
 > 板端环境冻结、三轮实测、Gate 与证据交接见
-> [`docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](../../docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md)。
+> [`docs/architecture/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](../../docs/architecture/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md)。
 
 > 本文件定义 `hardware_env.json`、四类 `*_raw.csv` 与稳定性日志的格式。
 > 原则：**取不到就写 NOT_APPLICABLE 并说明原因，绝不用估计值或代理指标填充。**

@@ -28,7 +28,7 @@ Collect real CARLA RGB frames with deterministic multi-vehicle annotations.
 _jsonl(path: Path, rows: list[dict[str, Any]]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_jsonl】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_sha256`
 
@@ -38,7 +38,7 @@ _jsonl(path: Path, rows: list[dict[str, Any]]) -> None
 _sha256(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_sha256】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_same_direction`
 
@@ -48,7 +48,7 @@ _sha256(path: Path) -> str
 _same_direction(first: carla.Waypoint, second: carla.Waypoint) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_same_direction】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_adjacent_waypoint`
 
@@ -58,7 +58,7 @@ _same_direction(first: carla.Waypoint, second: carla.Waypoint) -> bool
 _adjacent_waypoint(waypoint: carla.Waypoint) -> tuple[carla.Waypoint | None, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_adjacent_waypoint】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_lifted`
 
@@ -68,7 +68,7 @@ _adjacent_waypoint(waypoint: carla.Waypoint) -> tuple[carla.Waypoint | None, str
 _lifted(transform: carla.Transform, z_offset: float=0.35) -> carla.Transform
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_lifted】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_distance`
 
@@ -78,7 +78,7 @@ _lifted(transform: carla.Transform, z_offset: float=0.35) -> carla.Transform
 _distance(first: carla.Location, second: carla.Location) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_distance】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_camera_intrinsic`
 
@@ -88,7 +88,7 @@ _distance(first: carla.Location, second: carla.Location) -> float
 _camera_intrinsic(width: int, height: int, fov_degrees: float) -> np.ndarray
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_camera_intrinsic】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_project_bbox`
 
@@ -98,7 +98,7 @@ _camera_intrinsic(width: int, height: int, fov_degrees: float) -> np.ndarray
 _project_bbox(actor: carla.Actor, camera: carla.Sensor, width: int, height: int, fov_degrees: float) -> list[float] | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_project_bbox】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_spawn_actor`
 
@@ -108,7 +108,7 @@ _project_bbox(actor: carla.Actor, camera: carla.Sensor, width: int, height: int,
 _spawn_actor(world: carla.World, blueprint: carla.ActorBlueprint, transform: carla.Transform) -> carla.Actor
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_spawn_actor】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_select_layout`
 
@@ -118,7 +118,7 @@ _spawn_actor(world: carla.World, blueprint: carla.ActorBlueprint, transform: car
 _select_layout(world_map: carla.Map, spawn_points: list[carla.Transform], seed: int, *, occlusion: bool) -> tuple[carla.Transform, carla.Waypoint, carla.Waypoint, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_select_layout】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_collect_one`
 
@@ -128,7 +128,7 @@ _select_layout(world_map: carla.Map, spawn_points: list[carla.Transform], seed: 
 _collect_one(world: carla.World, seed: int, image_dir: Path, width: int, height: int, fov: float, actors: list[carla.Actor], *, weather_profile: str, pedestrian_second: bool, occlusion: bool, dense_target_count: int) -> tuple[dict[str, Any], list[dict[str, Any]]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_collect_one】按函数体组合维护工具的数据检查、生成、评测或证据处理的中间对象或产物；输入筛选、排序、身份和失败项必须保留，生成成功不代表后续运行或评分门禁通过。
 
 ### `_front_corridor_min`
 
@@ -148,7 +148,7 @@ Summarize raw CARLA LiDAR for the high-level four-modal context.
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

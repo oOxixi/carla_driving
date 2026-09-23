@@ -28,7 +28,7 @@ build_d2_wave2_plan
 canonical_json_sha256(value: object) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`canonical_json_sha256` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `sha256_file`
 
@@ -38,7 +38,7 @@ canonical_json_sha256(value: object) -> str
 sha256_file(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sha256_file` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `scenario_file_path`
 
@@ -48,7 +48,7 @@ sha256_file(path: Path) -> str
 scenario_file_path(repo: Path, row: dict[str, str]) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`scenario_file_path` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `scenario_exists`
 
@@ -58,7 +58,7 @@ scenario_file_path(repo: Path, row: dict[str, str]) -> Path
 scenario_exists(repo: Path, rel: str) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`scenario_exists` 定义本脚本使用的数据或状态封装；字段含义由构造处和消费者共同约束，不能脱离发布版本解释。
 
 ### `seed_expansion_policy`
 
@@ -68,7 +68,7 @@ scenario_exists(repo: Path, rel: str) -> bool
 seed_expansion_policy(repo: Path, row: dict[str, str]) -> tuple[bool, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`seed_expansion_policy` 参与分组、候选或确定性切分与分配；必须保持同组不跨split、seed可复现并记录未满足配额，不能靠重跑挑选有利结果。
 
 ### `read_registry`
 
@@ -78,7 +78,7 @@ seed_expansion_policy(repo: Path, row: dict[str, str]) -> tuple[bool, str]
 read_registry(path: Path) -> list[dict[str, str]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`read_registry` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `load_plan_seed_values`
 
@@ -88,7 +88,7 @@ read_registry(path: Path) -> list[dict[str, str]]
 load_plan_seed_values(path: Path) -> set[int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_plan_seed_values` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `validate_wave1_plan`
 
@@ -98,7 +98,7 @@ load_plan_seed_values(path: Path) -> set[int]
 validate_wave1_plan(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_wave1_plan` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `validate_teacher_manifest`
 
@@ -108,7 +108,7 @@ validate_wave1_plan(path: Path) -> dict[str, Any]
 validate_teacher_manifest(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_teacher_manifest` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `validate_semantic_report`
 
@@ -118,7 +118,7 @@ validate_teacher_manifest(path: Path) -> dict[str, Any]
 validate_semantic_report(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_semantic_report` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `validate_eligibility_report`
 
@@ -128,7 +128,7 @@ validate_semantic_report(path: Path) -> dict[str, Any]
 validate_eligibility_report(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_eligibility_report` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `cap_for`
 
@@ -138,7 +138,7 @@ validate_eligibility_report(path: Path) -> dict[str, Any]
 cap_for(row: dict[str, str], bucket: str) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`cap_for` 按当前策略把场景或样本映射到治理类别、配额或状态；分类结果会影响训练资格和切分，修改规则需版本化并重建报告。
 
 ### `historical_status`
 
@@ -148,7 +148,7 @@ cap_for(row: dict[str, str], bucket: str) -> int
 historical_status(sid: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`historical_status` 按当前策略把场景或样本映射到治理类别、配额或状态；分类结果会影响训练资格和切分，修改规则需版本化并重建报告。
 
 ### `tags_for`
 
@@ -158,7 +158,7 @@ historical_status(sid: str) -> str
 tags_for(row: dict[str, str], bucket: str) -> list[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`tags_for` 按当前策略把场景或样本映射到治理类别、配额或状态；分类结果会影响训练资格和切分，修改规则需版本化并重建报告。
 
 ### `base_allowed`
 
@@ -168,7 +168,7 @@ tags_for(row: dict[str, str], bucket: str) -> list[str]
 base_allowed(repo: Path, rows: list[dict[str, str]]) -> list[dict[str, str]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`base_allowed` 按当前策略把场景或样本映射到治理类别、配额或状态；分类结果会影响训练资格和切分，修改规则需版本化并重建报告。
 
 ### `candidate_pool`
 
@@ -178,7 +178,7 @@ base_allowed(repo: Path, rows: list[dict[str, str]]) -> list[dict[str, str]]
 candidate_pool(repo: Path, rows: list[dict[str, str]], bucket: str) -> list[dict[str, str]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`candidate_pool` 参与分组、候选或确定性切分与分配；必须保持同组不跨split、seed可复现并记录未满足配额，不能靠重跑挑选有利结果。
 
 ### `build_plan`
 
@@ -188,7 +188,7 @@ candidate_pool(repo: Path, rows: list[dict[str, str]], bucket: str) -> list[dict
 build_plan(repo: Path, rows: list[dict[str, str]], prior_seeds: set[int]) -> tuple[list[dict[str, Any]], dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_plan` 从显式输入构造版本化样本、计划、清单或派生视图；保持原始记录不变，并把默认、排除原因与来源身份写入新产物。
 
 ### `build_plan.allocate`
 
@@ -198,7 +198,7 @@ build_plan(repo: Path, rows: list[dict[str, str]], prior_seeds: set[int]) -> tup
 build_plan.allocate(bucket: str, target: int) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`allocate` 定义本脚本使用的数据或状态封装；字段含义由构造处和消费者共同约束，不能脱离发布版本解释。
 
 ### `main`
 
@@ -208,7 +208,7 @@ build_plan.allocate(bucket: str, target: int) -> None
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ### `main.resolve_arg`
 
@@ -218,7 +218,7 @@ main() -> int
 main.resolve_arg(raw: str) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`resolve_arg` 处理运行环境、仓库或路径边界；其结果用于可复现性与失败清理，不等同于样本质量或发布Gate。
 
 ## 内部调用与异常路径
 

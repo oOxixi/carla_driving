@@ -38,7 +38,7 @@ Build a prompt without exposing any evaluation label or category.
 _percentile(values: list[float], quantile: float) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_percentile】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_latency_summary`
 
@@ -48,7 +48,7 @@ _percentile(values: list[float], quantile: float) -> float | None
 _latency_summary(values: list[float]) -> dict[str, float | int | None]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_latency_summary】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_group_metrics`
 
@@ -58,7 +58,7 @@ _latency_summary(values: list[float]) -> dict[str, float | int | None]
 _group_metrics(records: list[dict[str, Any]], field: str) -> dict[str, dict[str, float | int]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_group_metrics】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_input_integrity`
 
@@ -68,7 +68,7 @@ _group_metrics(records: list[dict[str, Any]], field: str) -> dict[str, dict[str,
 _input_integrity(source_records: list[dict[str, Any]]) -> dict[str, int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_input_integrity】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `summarize_records`
 
@@ -78,7 +78,7 @@ _input_integrity(source_records: list[dict[str, Any]]) -> dict[str, int]
 summarize_records(records: list[dict[str, Any]]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【summarize_records】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_extract_choice`
 
@@ -88,7 +88,7 @@ summarize_records(records: list[dict[str, Any]]) -> dict[str, Any]
 _extract_choice(response: Any) -> tuple[str, float | None, list[dict[str, Any]]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_extract_choice】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_evaluate_one`
 
@@ -98,7 +98,7 @@ _extract_choice(response: Any) -> tuple[str, float | None, list[dict[str, Any]]]
 _evaluate_one(*, client: Any, semaphore: asyncio.Semaphore, model: str, index: int, record: dict[str, Any], retries: int) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_evaluate_one】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `_select_records`
 
@@ -108,7 +108,7 @@ _evaluate_one(*, client: Any, semaphore: asyncio.Semaphore, model: str, index: i
 _select_records(records: list[dict[str, Any]], *, categories: list[str], sample_per_category: int | None, limit: int | None) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_select_records】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_run`
 
@@ -118,7 +118,7 @@ _select_records(records: list[dict[str, Any]], *, categories: list[str], sample_
 _run(args: argparse.Namespace) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_run】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `main`
 
@@ -128,7 +128,7 @@ _run(args: argparse.Namespace) -> int
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

@@ -29,7 +29,7 @@ event_logger
 ensure_dir(path: str | Path) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把字符串或 `Path` 转为路径，递归创建目录（已存在不报错）并返回该 `Path`。权限、非法路径和文件占位等异常直接传播。
 
 ### `append_jsonl`
 
@@ -39,7 +39,7 @@ ensure_dir(path: str | Path) -> Path
 append_jsonl(path: str | Path, record: Dict[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+确保父目录存在，以 UTF-8 追加模式把一条字典序列化为单行 JSON 并写换行，保留非 ASCII 字符。没有锁、fsync、schema 校验或跨进程原子保证；不可 JSON 序列化值会抛异常，既有文件不会清空。
 
 ### `write_json`
 
@@ -49,7 +49,7 @@ append_jsonl(path: str | Path, record: Dict[str, Any]) -> None
 write_json(path: str | Path, record: Dict[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+确保父目录存在，以 UTF-8 写模式把字典输出为两空格缩进 JSON。目标文件会被覆盖且没有临时文件/原子替换；序列化或 IO 失败直接传播，调用方不能把文件存在当作完整写入证明。
 
 ## 内部调用与异常路径
 

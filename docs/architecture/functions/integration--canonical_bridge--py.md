@@ -1,6 +1,6 @@
 # canonical_bridge：功能记录
 
-上级模块：[模块说明](../modules/vehicle-planner.md) · 实现：[integration/canonical_bridge.py](../../../integration/canonical_bridge.py)
+上级模块：[模块说明](../modules/vehicle-interfaces.md) · 实现：[integration/canonical_bridge.py](../../../integration/canonical_bridge.py)
 
 ## 业务语义与维护关联
 
@@ -8,6 +8,7 @@
 
 - [异步等待、旧结果拒绝与多层命令ID](async-plan-dispatch.md)
 - [计划可行性校验与内部步骤展开](plan-validation-compilation.md)
+- [版本、时间、坐标与适配语义](interface-versioning.md)
 
 ## 功能职责与范围
 
@@ -56,6 +57,13 @@ control_command_to_voice_envelope(control: Mapping[str, Any], *, source_text: st
 ```
 
 SET_SPEED/SLOW_DOWN需速度，FOLLOW映SLOW_DOWN或KEEP_LANE；STOP/HOLD映STOP。SLOW且QWEN_DECISION_PLAN才允许转弯/变道/PULL_OVER/YIELD，YIELD转SLOW_DOWN且需速度。TTL=max(0.1,(deadline-issued)/1e9)，不能代替上游过期拒绝；不把target_id转成底层执行目标槽位。
+
+## 第9模块精读补充
+
+- voice→driving 的速度优先读取有限的 `target_speed_mps`；否则读取 legacy `speed`。`km/h`、`kph`、`kmh` 及中文公里每小时会除以 3.6，其他单位当前直接当 m/s。定点输入 `speed=36, unit="mph"` 的输出是 `target_speed_mps=36.0`，这是 M09-01 的现状证据，不是期望规范。
+- `confirm_required` 用 Python `bool(...)` 转换；直接绕过上游类型合同传字符串会按非空字符串为真。正式调用应先保证 envelope 的生产者合同，不能把该 adapter 当任意松散 JSON 清洗器。
+- perception→state 的 `modality_valid`、`stale` 和 degraded code 由 `perception_mode` 分支声明，并不会重新读取原始传感器时间戳证明同步；证据中必须另存传感帧质量与同步记录。
+- control→voice 的复杂行为依赖 `source == QWEN_DECISION_PLAN` 才放行，随后仍只生成旧 runtime envelope；“转换成功”不等于目标跟踪、换道轨迹或车辆控制已经完成。
 
 ## 内部调用与异常路径
 

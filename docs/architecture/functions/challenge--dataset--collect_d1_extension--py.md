@@ -28,7 +28,7 @@ collect_d1_extension
 canonical_json_sha256(value) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`canonical_json_sha256` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `verify_plan`
 
@@ -38,7 +38,7 @@ canonical_json_sha256(value) -> str
 verify_plan(path: Path) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`verify_plan` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `run_seed_variant`
 
@@ -48,7 +48,7 @@ verify_plan(path: Path) -> 未声明返回类型
 run_seed_variant(repo: Path, runner_python: str, scenario_path: str, seed: int, service_url: str, log_dir: Path, image_prefix: str, host: str, port: int, timeout_ms: int) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`run_seed_variant` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `collect_one_log`
 
@@ -58,7 +58,7 @@ run_seed_variant(repo: Path, runner_python: str, scenario_path: str, seed: int, 
 collect_one_log(repo: Path, runner_python: str, log_path: Path, tmp_dir: Path, eid: str) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`collect_one_log` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `append_jsonl`
 
@@ -68,7 +68,7 @@ collect_one_log(repo: Path, runner_python: str, log_path: Path, tmp_dir: Path, e
 append_jsonl(path: Path, rows) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`append_jsonl` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `main`
 
@@ -78,7 +78,7 @@ append_jsonl(path: Path, rows) -> 未声明返回类型
 main() -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ### `main.group_key_of`
 
@@ -88,7 +88,7 @@ main() -> 未声明返回类型
 main.group_key_of(row) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`group_key_of` 参与分组、候选或确定性切分与分配；必须保持同组不跨split、seed可复现并记录未满足配额，不能靠重跑挑选有利结果。
 
 ## 内部调用与异常路径
 

@@ -28,13 +28,13 @@ Dependency-light HTTP server exposing /health, /infer and /metrics.
 _configure_low_latency_socket(connection: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_configure_low_latency_socket】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `QwenHTTPServer`
 
 源码位置：[qwen_service/server.py 第 30 行](../../../qwen_service/server.py#L30)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenHTTPServer】定义Qwen请求、后端推理或HTTP服务所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `QwenHTTPServer.__init__`
 
@@ -44,13 +44,13 @@ _configure_low_latency_socket(connection: Any) -> None
 QwenHTTPServer.__init__(self, address: tuple[str, int], service: QwenDecisionService) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenHTTPServer.__init__】按签名接收依赖并建立Qwen请求、后端推理或HTTP服务的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `QwenRequestHandler`
 
 源码位置：[qwen_service/server.py 第 38 行](../../../qwen_service/server.py#L38)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenRequestHandler】定义Qwen请求、后端推理或HTTP服务所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `QwenRequestHandler.setup`
 
@@ -60,7 +60,7 @@ QwenHTTPServer.__init__(self, address: tuple[str, int], service: QwenDecisionSer
 QwenRequestHandler.setup(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenRequestHandler.setup】按签名接收依赖并建立Qwen请求、后端推理或HTTP服务的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `QwenRequestHandler.do_GET`
 
@@ -70,7 +70,7 @@ QwenRequestHandler.setup(self) -> None
 QwenRequestHandler.do_GET(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenRequestHandler.do_GET】从参数、文件、环境或缓存解析Qwen请求、后端推理或HTTP服务所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `QwenRequestHandler.do_POST`
 
@@ -80,7 +80,7 @@ QwenRequestHandler.do_GET(self) -> None
 QwenRequestHandler.do_POST(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenRequestHandler.do_POST】是Qwen请求、后端推理或HTTP服务的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `QwenRequestHandler.log_message`
 
@@ -90,7 +90,7 @@ QwenRequestHandler.do_POST(self) -> None
 QwenRequestHandler.log_message(self, format: str, *args: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenRequestHandler.log_message】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `QwenRequestHandler._send`
 
@@ -100,7 +100,7 @@ QwenRequestHandler.log_message(self, format: str, *args: Any) -> None
 QwenRequestHandler._send(self, status: int | HTTPStatus, payload: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenRequestHandler._send】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `build_service`
 
@@ -110,7 +110,7 @@ QwenRequestHandler._send(self, status: int | HTTPStatus, payload: Any) -> None
 build_service(args: argparse.Namespace) -> QwenDecisionService
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【build_service】按函数体组合Qwen请求、后端推理或HTTP服务的中间对象或产物；输入筛选、排序、身份和失败项必须保留，生成成功不代表后续运行或评分门禁通过。
 
 ### `main`
 
@@ -120,7 +120,7 @@ build_service(args: argparse.Namespace) -> QwenDecisionService
 main() -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是Qwen请求、后端推理或HTTP服务的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

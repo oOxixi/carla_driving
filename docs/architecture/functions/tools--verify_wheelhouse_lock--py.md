@@ -28,7 +28,7 @@ Reject any wheelhouse drift from its frozen complete manifest.
 verify_wheelhouse(lock_path: Path, root: Path, suffix: str='.whl') -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【verify_wheelhouse】检查维护工具的数据检查、生成、评测或证据处理的局部合同并返回/累计函数体定义的结果；静态校验通过不等于外部服务、CARLA、音频模型或最终交付已经通过。
 
 ### `main`
 
@@ -38,7 +38,7 @@ verify_wheelhouse(lock_path: Path, root: Path, suffix: str='.whl') -> None
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

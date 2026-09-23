@@ -22,9 +22,38 @@ manifest 必须为 JSON 对象，git_sha/model_id/weights_sha256/dataset_version
 
 ## 测试与联动
 
-[A1 测试](../../../challenge/tests/test_a1_student.py)、[交付测试](../../../challenge/tests/test_delivery.py)。修改 Adapter 时检查 A3 评测是否测原始 Head 还是最终计划，并检查 HIL 实际 infer 一致性；修改健康状态时检查主系统启动和故障降级路径。
+[A1 测试](../../../challenge/tests/test_a1_student.py)、[交付测试](../../../challenge/tests/test_delivery.py)。本轮服务器执行结果 **26 passed in 19.76s**。修改 Adapter 时检查 A3 评测是否测原始 Head 还是最终计划，并检查 HIL 实际 infer 一致性；修改健康状态时检查主系统启动和故障降级路径。
 
 风险：加载器验证 manifest 声明及文件身份，不独立重算 Gate。A3 晋级证据的绑定必须由上游补齐，见[训练页](challenge-training.md)。
+
+## 第11模块逐入口精读结论（2026-09-22）
+
+### Teacher/Student 共用边界
+
+- 两个 Backend 都先验证 ModelRequest V1，后验证 ManeuverPlan V2，并在构造时核对两份 Schema 规范化指纹；它们不会修改 A/B/C/D 低层控制链。
+- `validation_scene` 只投影请求内摘要、约束、目标和能力，不回读实时 CARLA。若推理期间场景变化，时效和重规划由外层生命周期处理。
+- `allow_confirmation=True` 表示 Validator 接受需确认计划返回，不表示确认已获得；编排器必须区分“合法计划”和“可立即执行”。
+
+### Student 解码和确定性修复
+
+| Head/输入 | Adapter最终语义 |
+|---|---|
+| plan length | argmax+1，夹到模型步数；must_stop强制1步 |
+| behavior | 只从请求允许且场景能力可行的行为中按logit选择；空集合回退HOLD并强制确认 |
+| pointer | FOLLOW/AVOID只在请求前8个有效目标中选；其他行为不要求目标 |
+| lane/completion | 换道/转弯/回原道和多数completion由行为确定性覆盖 |
+| speed | 夹到0、代码50、请求speed limit和max target speed的最小值 |
+| confirmation | 无可行动作、logit≥0或confidence<0.8任一触发 |
+| sequence | STOP/HOLD/PULL_OVER后截断；replan只保留非负logit前8类 |
+
+因此评测必须同时保存原始 Head、修复原因和最终 Plan；只评最终 plan 会掩盖模型输出错误，只评 Head 又不能代表闭环安全结果。
+
+### 就绪、身份和当前边界
+
+- Student 无权重、无manifest或只加载裸state_dict时均可 `infer` 做结构 smoke，但 `health=False`；正式切换必须要求 health 和外部已签发 Gate 证据。
+- manifest 绑定 git/model/config/dataset/gate字符串与实际权重SHA，但代码不验证 dataset manifest、Gate报告或签发者；这部分由A3/B2交付链补齐。
+- Teacher wrapper 的 production_ready 是构造时快照，正式服务重载后应重建 wrapper 或由上层明确刷新，不能假定字段自动联动。
+- M11-01：PULL_OVER 的 predicted lane 不是 SHOULDER 时 Adapter 输出 null lane，而 PlanValidator 当前仍接受；见 [AUDIT](../AUDIT.md)。修复应同时约束 Adapter/Validator/Compiler/闭环控制和训练标签。
 
 
 

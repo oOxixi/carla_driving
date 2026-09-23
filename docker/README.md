@@ -2,7 +2,7 @@
 
 > 本目录当前是基础控制/Qwen 服务 Docker。挑战赛道 Student/J6P 最终镜像的身份、构建、
 > 干净环境复现和 Release Gate 见
-> [`docs/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md`](../docs/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md)。
+> [`docs/architecture/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md`](../docs/architecture/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md)。
 > 当前 Compose 校验通过不代表挑战赛道 Runtime 已被打包。
 
 本配置把运行环境拆为两个容器：

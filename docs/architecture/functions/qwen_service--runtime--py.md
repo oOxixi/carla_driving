@@ -52,7 +52,7 @@ Keep one loaded model behind a bounded, fail-closed request boundary.
 QwenServiceRuntime.__init__(self, adapter: object, *, model_name: str, max_concurrency: int=1, timeout_s: float=5.0, metrics_window: int=1000, gpu_stats: Callable[[], Mapping[str, Any]] | None=None, clock: Callable[[], float]=time.monotonic) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceRuntime.__init__】按签名接收依赖并建立Qwen请求、后端推理或HTTP服务的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `QwenServiceRuntime.health`
 
@@ -62,7 +62,7 @@ QwenServiceRuntime.__init__(self, adapter: object, *, model_name: str, max_concu
 QwenServiceRuntime.health(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceRuntime.health】汇总Qwen请求、后端推理或HTTP服务的健康或就绪状态；调用方必须区分配置完成、依赖可达、模型/数据身份匹配和生产门禁，不能只凭布尔值扩大结论。
 
 ### `QwenServiceRuntime.infer`
 
@@ -72,7 +72,7 @@ QwenServiceRuntime.health(self) -> dict[str, object]
 QwenServiceRuntime.infer(self, payload: Mapping[str, object]) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceRuntime.infer】消费签名中的输入并执行Qwen请求、后端推理或HTTP服务的核心推理路径；返回结构、置信度、超时和降级来源必须随结果保留，模型未加载或远端不可达不得记为成功。
 
 ### `QwenServiceRuntime.metrics`
 
@@ -82,7 +82,7 @@ QwenServiceRuntime.infer(self, payload: Mapping[str, object]) -> dict[str, objec
 QwenServiceRuntime.metrics(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceRuntime.metrics】是Qwen请求、后端推理或HTTP服务的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `QwenServiceRuntime.close`
 
@@ -92,7 +92,7 @@ QwenServiceRuntime.metrics(self) -> dict[str, object]
 QwenServiceRuntime.close(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceRuntime.close】是Qwen请求、后端推理或HTTP服务的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `QwenServiceRuntime._record`
 
@@ -102,7 +102,7 @@ QwenServiceRuntime.close(self) -> None
 QwenServiceRuntime._record(self, outcome: str, elapsed_ms: float) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceRuntime._record】生成或记录Qwen请求、后端推理或HTTP服务的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `QwenServiceRuntime._release_slot`
 
@@ -112,7 +112,7 @@ QwenServiceRuntime._record(self, outcome: str, elapsed_ms: float) -> None
 QwenServiceRuntime._release_slot(self, _future: Future[object]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceRuntime._release_slot】是Qwen请求、后端推理或HTTP服务的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `_parse_context`
 
@@ -122,7 +122,7 @@ QwenServiceRuntime._release_slot(self, _future: Future[object]) -> None
 _parse_context(payload: Mapping[str, object]) -> QwenInputContext
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_parse_context】把输入转换为Qwen请求、后端推理或HTTP服务使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `_latency_summary`
 
@@ -132,7 +132,7 @@ _parse_context(payload: Mapping[str, object]) -> QwenInputContext
 _latency_summary(values: list[float]) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_latency_summary】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_percentile`
 
@@ -142,7 +142,7 @@ _latency_summary(values: list[float]) -> dict[str, object]
 _percentile(ordered: list[float], quantile: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_percentile】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_torch_gpu_stats`
 
@@ -152,7 +152,7 @@ _percentile(ordered: list[float], quantile: float) -> float
 _torch_gpu_stats() -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_torch_gpu_stats】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ## 内部调用与异常路径
 

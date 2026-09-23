@@ -27,7 +27,7 @@ Time-gap following and local TTC risk estimation.
 
 源码位置：[car_control_C/following_controller.py 第 13 行](../../../car_control_C/following_controller.py#L13)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的 SI 参数合同：静止间距（m）、时间间距和紧急 TTC（s）、舒适减速度（m/s²）；默认均来自统一策略配置。
 
 ### `FollowingParameters.__post_init__`
 
@@ -37,13 +37,13 @@ Time-gap following and local TTC risk estimation.
 FollowingParameters.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求静止间距有限且非负，其余三项有限且严格为正；不建立速度上限，也不修改输入。
 
 ### `FollowingController`
 
 源码位置：[car_control_C/following_controller.py 第 26 行](../../../car_control_C/following_controller.py#L26)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+无历史状态的时距跟车与局部 TTC 估计器。它产生期望间距、速度硬上限和 `RiskMetrics`，但不直接制动，也不替代 D 的最终仲裁。
 
 ### `FollowingController.__init__`
 
@@ -53,7 +53,7 @@ FollowingParameters.__post_init__(self) -> None
 FollowingController.__init__(self, parameters: FollowingParameters | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存调用方参数或构造默认 `FollowingParameters`；无传感器、线程、文件或 CARLA 副作用。
 
 ### `FollowingController.desired_gap_m`
 
@@ -63,7 +63,7 @@ FollowingController.__init__(self, parameters: FollowingParameters | None=None) 
 FollowingController.desired_gap_m(self, ego_speed_mps: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+校验非负自车速度后计算 `standstill_gap + time_gap*speed + sensor_base_margin + sensor_uncertainty_time*speed`。结果是规划间距，不是碰撞距离真值。
 
 ### `FollowingController.risk`
 
@@ -73,7 +73,7 @@ FollowingController.desired_gap_m(self, ego_speed_mps: float) -> float
 FollowingController.risk(self, *, ego_speed_mps: float, lead_distance_m: float | None, closing_speed_mps: float | None) -> RiskMetrics
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+距离或接近速度任一缺失时返回 `ttc=None/emergency=False`；接近速度小于等于零同样不算 TTC。只有正接近速度才用 `distance/closing_speed`，并按 `<= emergency_ttc_s` 请求局部紧急制动。
 
 ### `FollowingController.speed_cap_mps`
 
@@ -83,7 +83,7 @@ FollowingController.risk(self, *, ego_speed_mps: float, lead_distance_m: float |
 FollowingController.speed_cap_mps(self, *, ego_speed_mps: float, lead_distance_m: float | None, closing_speed_mps: float | None) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+测量缺失返回 `None`，否则以 `lead_speed=max(0, ego-closing)` 和 `sqrt(2*a*max(0,gap-desired))` 计算非负硬上限。负接近速度可提高估计前车速度，但返回值仍不低于零。
 
 ## 内部调用与异常路径
 

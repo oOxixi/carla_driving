@@ -32,13 +32,13 @@ Core B service with strict contracts, bounded concurrency and metrics.
 _percentile(values: list[float], quantile: float) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_percentile】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `DecisionBackend`
 
 源码位置：[qwen_service/service.py 第 42 行](../../../qwen_service/service.py#L42)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【DecisionBackend】定义Qwen请求、后端推理或HTTP服务所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `DecisionBackend.infer`
 
@@ -48,7 +48,7 @@ _percentile(values: list[float], quantile: float) -> float | None
 DecisionBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【DecisionBackend.infer】消费签名中的输入并执行Qwen请求、后端推理或HTTP服务的核心推理路径；返回结构、置信度、超时和降级来源必须随结果保留，模型未加载或远端不可达不得记为成功。
 
 ### `DecisionBackend.health`
 
@@ -58,13 +58,13 @@ DecisionBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 DecisionBackend.health(self) -> tuple[bool, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【DecisionBackend.health】汇总Qwen请求、后端推理或HTTP服务的健康或就绪状态；调用方必须区分配置完成、依赖可达、模型/数据身份匹配和生产门禁，不能只凭布尔值扩大结论。
 
 ### `ServiceFailure`
 
 源码位置：[qwen_service/service.py 第 51 行](../../../qwen_service/service.py#L51)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【ServiceFailure】定义Qwen请求、后端推理或HTTP服务所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `ServiceFailure.__init__`
 
@@ -74,7 +74,7 @@ DecisionBackend.health(self) -> tuple[bool, str]
 ServiceFailure.__init__(self, status_code: int, error_code: str, message: str, *, request_id: str | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【ServiceFailure.__init__】按签名接收依赖并建立Qwen请求、后端推理或HTTP服务的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `ServiceFailure.to_dict`
 
@@ -84,13 +84,13 @@ ServiceFailure.__init__(self, status_code: int, error_code: str, message: str, *
 ServiceFailure.to_dict(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【ServiceFailure.to_dict】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `QwenServiceConfig`
 
 源码位置：[qwen_service/service.py 第 69 行](../../../qwen_service/service.py#L69)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceConfig】定义Qwen请求、后端推理或HTTP服务所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `QwenServiceConfig.__post_init__`
 
@@ -100,13 +100,13 @@ ServiceFailure.to_dict(self) -> dict[str, Any]
 QwenServiceConfig.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenServiceConfig.__post_init__】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `UnavailableBackend`
 
 源码位置：[qwen_service/service.py 第 82 行](../../../qwen_service/service.py#L82)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【UnavailableBackend】定义Qwen请求、后端推理或HTTP服务所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `UnavailableBackend.__init__`
 
@@ -116,7 +116,7 @@ QwenServiceConfig.__post_init__(self) -> None
 UnavailableBackend.__init__(self, reason: str='no local Qwen checkpoint configured') -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【UnavailableBackend.__init__】按签名接收依赖并建立Qwen请求、后端推理或HTTP服务的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `UnavailableBackend.infer`
 
@@ -126,7 +126,7 @@ UnavailableBackend.__init__(self, reason: str='no local Qwen checkpoint configur
 UnavailableBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【UnavailableBackend.infer】消费签名中的输入并执行Qwen请求、后端推理或HTTP服务的核心推理路径；返回结构、置信度、超时和降级来源必须随结果保留，模型未加载或远端不可达不得记为成功。
 
 ### `UnavailableBackend.health`
 
@@ -136,7 +136,7 @@ UnavailableBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 UnavailableBackend.health(self) -> tuple[bool, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【UnavailableBackend.health】汇总Qwen请求、后端推理或HTTP服务的健康或就绪状态；调用方必须区分配置完成、依赖可达、模型/数据身份匹配和生产门禁，不能只凭布尔值扩大结论。
 
 ### `DeterministicTestBackend`
 
@@ -152,7 +152,7 @@ Contract-test backend; never valid evidence for Qwen correctness/latency.
 DeterministicTestBackend.health(self) -> tuple[bool, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【DeterministicTestBackend.health】汇总Qwen请求、后端推理或HTTP服务的健康或就绪状态；调用方必须区分配置完成、依赖可达、模型/数据身份匹配和生产门禁，不能只凭布尔值扩大结论。
 
 ### `DeterministicTestBackend.infer`
 
@@ -162,7 +162,7 @@ DeterministicTestBackend.health(self) -> tuple[bool, str]
 DeterministicTestBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【DeterministicTestBackend.infer】消费签名中的输入并执行Qwen请求、后端推理或HTTP服务的核心推理路径；返回结构、置信度、超时和降级来源必须随结果保留，模型未加载或远端不可达不得记为成功。
 
 ### `DeterministicPlannerV2Backend`
 
@@ -178,7 +178,7 @@ Planner V2 contract stub; explicitly excluded from model evidence.
 DeterministicPlannerV2Backend.health(self) -> tuple[bool, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【DeterministicPlannerV2Backend.health】汇总Qwen请求、后端推理或HTTP服务的健康或就绪状态；调用方必须区分配置完成、依赖可达、模型/数据身份匹配和生产门禁，不能只凭布尔值扩大结论。
 
 ### `DeterministicPlannerV2Backend.infer`
 
@@ -188,7 +188,7 @@ DeterministicPlannerV2Backend.health(self) -> tuple[bool, str]
 DeterministicPlannerV2Backend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【DeterministicPlannerV2Backend.infer】消费签名中的输入并执行Qwen请求、后端推理或HTTP服务的核心推理路径；返回结构、置信度、超时和降级来源必须随结果保留，模型未加载或远端不可达不得记为成功。
 
 ### `LocalQwenPlannerBackend`
 
@@ -204,7 +204,7 @@ Real local Qwen2.5-VL generation backend for ManeuverPlan V2 JSON.
 LocalQwenPlannerBackend.__init__(self, model_path: str | Path, *, image_root: str | Path | None=None, max_new_tokens: int=256, min_pixels: int=64 * 28 * 28, max_pixels: int=256 * 28 * 28) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【LocalQwenPlannerBackend.__init__】按签名接收依赖并建立Qwen请求、后端推理或HTTP服务的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `LocalQwenPlannerBackend.health`
 
@@ -214,7 +214,7 @@ LocalQwenPlannerBackend.__init__(self, model_path: str | Path, *, image_root: st
 LocalQwenPlannerBackend.health(self) -> tuple[bool, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【LocalQwenPlannerBackend.health】汇总Qwen请求、后端推理或HTTP服务的健康或就绪状态；调用方必须区分配置完成、依赖可达、模型/数据身份匹配和生产门禁，不能只凭布尔值扩大结论。
 
 ### `LocalQwenPlannerBackend.infer`
 
@@ -224,7 +224,7 @@ LocalQwenPlannerBackend.health(self) -> tuple[bool, str]
 LocalQwenPlannerBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【LocalQwenPlannerBackend.infer】消费签名中的输入并执行Qwen请求、后端推理或HTTP服务的核心推理路径；返回结构、置信度、超时和降级来源必须随结果保留，模型未加载或远端不可达不得记为成功。
 
 ### `LocalQwenPlannerBackend._resolve_image`
 
@@ -234,7 +234,7 @@ LocalQwenPlannerBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, 
 LocalQwenPlannerBackend._resolve_image(self, value: Any) -> Path | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【LocalQwenPlannerBackend._resolve_image】从参数、文件、环境或缓存解析Qwen请求、后端推理或HTTP服务所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `VllmQwenPlannerBackend`
 
@@ -250,7 +250,7 @@ Production Planner V2 adapter over an existing OpenAI-compatible vLLM.
 VllmQwenPlannerBackend.__init__(self, *, base_url: str, model: str, image_root: str | Path | None=None, api_key: str='unused', timeout_s: float=15.0, max_new_tokens: int=256, image_max_side: int=224, jpeg_quality: int=75) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend.__init__】按签名接收依赖并建立Qwen请求、后端推理或HTTP服务的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `VllmQwenPlannerBackend.health`
 
@@ -260,7 +260,7 @@ VllmQwenPlannerBackend.__init__(self, *, base_url: str, model: str, image_root: 
 VllmQwenPlannerBackend.health(self) -> tuple[bool, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend.health】汇总Qwen请求、后端推理或HTTP服务的健康或就绪状态；调用方必须区分配置完成、依赖可达、模型/数据身份匹配和生产门禁，不能只凭布尔值扩大结论。
 
 ### `VllmQwenPlannerBackend.infer`
 
@@ -270,7 +270,7 @@ VllmQwenPlannerBackend.health(self) -> tuple[bool, str]
 VllmQwenPlannerBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend.infer】消费签名中的输入并执行Qwen请求、后端推理或HTTP服务的核心推理路径；返回结构、置信度、超时和降级来源必须随结果保留，模型未加载或远端不可达不得记为成功。
 
 ### `VllmQwenPlannerBackend._expanded_steps`
 
@@ -280,7 +280,7 @@ VllmQwenPlannerBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, A
 VllmQwenPlannerBackend._expanded_steps(self, request: Mapping[str, Any], behavior: str) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend._expanded_steps】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `VllmQwenPlannerBackend._pedestrian_then_overtake_requested`
 
@@ -290,7 +290,7 @@ VllmQwenPlannerBackend._expanded_steps(self, request: Mapping[str, Any], behavio
 VllmQwenPlannerBackend._pedestrian_then_overtake_requested(request: Mapping[str, Any]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend._pedestrian_then_overtake_requested】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `VllmQwenPlannerBackend._persistent_post_maneuver_speed_requested`
 
@@ -310,7 +310,7 @@ Return whether a finite maneuver requests a persistent speed.
 VllmQwenPlannerBackend._resume_requested(request: Mapping[str, Any]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend._resume_requested】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `VllmQwenPlannerBackend._clearance_observation_requested`
 
@@ -320,7 +320,7 @@ VllmQwenPlannerBackend._resume_requested(request: Mapping[str, Any]) -> bool
 VllmQwenPlannerBackend._clearance_observation_requested(request: Mapping[str, Any]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend._clearance_observation_requested】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `VllmQwenPlannerBackend._transient_merge_hazard`
 
@@ -340,7 +340,7 @@ Identify hazards that clear by stabilising, not by being passed.
 VllmQwenPlannerBackend._choice_codes(self, request: Mapping[str, Any]) -> list[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend._choice_codes】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `VllmQwenPlannerBackend._traffic_stop_required`
 
@@ -350,7 +350,7 @@ VllmQwenPlannerBackend._choice_codes(self, request: Mapping[str, Any]) -> list[s
 VllmQwenPlannerBackend._traffic_stop_required(request: Mapping[str, Any]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend._traffic_stop_required】释放Qwen请求、后端推理或HTTP服务持有的线程、客户端或服务资源；调用顺序需与资源创建方匹配，不能把关闭完成当作此前请求成功。
 
 ### `VllmQwenPlannerBackend._choice_prompt`
 
@@ -360,7 +360,7 @@ VllmQwenPlannerBackend._traffic_stop_required(request: Mapping[str, Any]) -> boo
 VllmQwenPlannerBackend._choice_prompt(self, request: Mapping[str, Any], *, choice_codes: list[str] | None=None) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend._choice_prompt】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `VllmQwenPlannerBackend._step`
 
@@ -370,7 +370,7 @@ VllmQwenPlannerBackend._choice_prompt(self, request: Mapping[str, Any], *, choic
 VllmQwenPlannerBackend._step(self, request: Mapping[str, Any], behavior: str, *, index: int) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend._step】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `VllmQwenPlannerBackend._resolve_image`
 
@@ -380,7 +380,7 @@ VllmQwenPlannerBackend._step(self, request: Mapping[str, Any], behavior: str, *,
 VllmQwenPlannerBackend._resolve_image(self, value: Any) -> Path | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend._resolve_image】从参数、文件、环境或缓存解析Qwen请求、后端推理或HTTP服务所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `VllmQwenPlannerBackend._image_data_url`
 
@@ -390,7 +390,7 @@ VllmQwenPlannerBackend._resolve_image(self, value: Any) -> Path | None
 VllmQwenPlannerBackend._image_data_url(self, path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend._image_data_url】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `VllmQwenPlannerBackend.close`
 
@@ -400,7 +400,7 @@ VllmQwenPlannerBackend._image_data_url(self, path: Path) -> str
 VllmQwenPlannerBackend.close(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【VllmQwenPlannerBackend.close】释放Qwen请求、后端推理或HTTP服务持有的线程、客户端或服务资源；调用顺序需与资源创建方匹配，不能把关闭完成当作此前请求成功。
 
 ### `LocalQwenBackend`
 
@@ -416,7 +416,7 @@ Adapter from the repository's real local Qwen2.5-VL implementation.
 LocalQwenBackend.__init__(self, model_path: str | Path, *, image_root: str | Path | None=None, max_new_tokens: int=48, min_pixels: int=64 * 28 * 28, max_pixels: int=256 * 28 * 28) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【LocalQwenBackend.__init__】按签名接收依赖并建立Qwen请求、后端推理或HTTP服务的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `LocalQwenBackend.health`
 
@@ -426,7 +426,7 @@ LocalQwenBackend.__init__(self, model_path: str | Path, *, image_root: str | Pat
 LocalQwenBackend.health(self) -> tuple[bool, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【LocalQwenBackend.health】汇总Qwen请求、后端推理或HTTP服务的健康或就绪状态；调用方必须区分配置完成、依赖可达、模型/数据身份匹配和生产门禁，不能只凭布尔值扩大结论。
 
 ### `LocalQwenBackend.infer`
 
@@ -436,7 +436,7 @@ LocalQwenBackend.health(self) -> tuple[bool, str]
 LocalQwenBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【LocalQwenBackend.infer】消费签名中的输入并执行Qwen请求、后端推理或HTTP服务的核心推理路径；返回结构、置信度、超时和降级来源必须随结果保留，模型未加载或远端不可达不得记为成功。
 
 ### `LocalQwenBackend._to_plan`
 
@@ -446,7 +446,7 @@ LocalQwenBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 LocalQwenBackend._to_plan(self, request: Mapping[str, Any], decision: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【LocalQwenBackend._to_plan】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_planner_step`
 
@@ -456,13 +456,13 @@ LocalQwenBackend._to_plan(self, request: Mapping[str, Any], decision: Mapping[st
 _planner_step(step_id: str, behavior: str, *, speed: float | None, target_id: str | None=None, lane: str | None='CURRENT', time_gap_s: float | None=None, route_direction: str | None=None, preconditions: tuple[str, ...]=('PERCEPTION_FRESH', 'NO_EMERGENCY_RISK'), completion: str='SPEED_BELOW', completion_value: float | None=3.3, timeout_s: float=5.0, failure: str='SAFE_STOP') -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_planner_step】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `QwenDecisionService`
 
 源码位置：[qwen_service/service.py 第 1227 行](../../../qwen_service/service.py#L1227)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenDecisionService】定义Qwen请求、后端推理或HTTP服务所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `QwenDecisionService.__init__`
 
@@ -472,7 +472,7 @@ _planner_step(step_id: str, behavior: str, *, speed: float | None, target_id: st
 QwenDecisionService.__init__(self, backend: DecisionBackend, *, config: QwenServiceConfig | None=None, registry: InterfaceRegistry | None=None, qwen_mode: str='atomic_v1', clock_ns: Any=time.monotonic_ns) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenDecisionService.__init__】按签名接收依赖并建立Qwen请求、后端推理或HTTP服务的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `QwenDecisionService.infer`
 
@@ -482,7 +482,7 @@ QwenDecisionService.__init__(self, backend: DecisionBackend, *, config: QwenServ
 QwenDecisionService.infer(self, payload: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenDecisionService.infer】消费签名中的输入并执行Qwen请求、后端推理或HTTP服务的核心推理路径；返回结构、置信度、超时和降级来源必须随结果保留，模型未加载或远端不可达不得记为成功。
 
 ### `QwenDecisionService.health`
 
@@ -492,7 +492,7 @@ QwenDecisionService.infer(self, payload: Mapping[str, Any]) -> dict[str, Any]
 QwenDecisionService.health(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenDecisionService.health】汇总Qwen请求、后端推理或HTTP服务的健康或就绪状态；调用方必须区分配置完成、依赖可达、模型/数据身份匹配和生产门禁，不能只凭布尔值扩大结论。
 
 ### `QwenDecisionService.metrics`
 
@@ -502,7 +502,7 @@ QwenDecisionService.health(self) -> dict[str, Any]
 QwenDecisionService.metrics(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenDecisionService.metrics】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `QwenDecisionService.close`
 
@@ -512,7 +512,7 @@ QwenDecisionService.metrics(self) -> dict[str, Any]
 QwenDecisionService.close(self, *, wait: bool=False) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenDecisionService.close】释放Qwen请求、后端推理或HTTP服务持有的线程、客户端或服务资源；调用顺序需与资源创建方匹配，不能把关闭完成当作此前请求成功。
 
 ### `QwenDecisionService._release_slot`
 
@@ -522,7 +522,7 @@ QwenDecisionService.close(self, *, wait: bool=False) -> None
 QwenDecisionService._release_slot(self, _future: Future[Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenDecisionService._release_slot】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `QwenDecisionService._increment`
 
@@ -532,7 +532,7 @@ QwenDecisionService._release_slot(self, _future: Future[Any]) -> None
 QwenDecisionService._increment(self, name: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【QwenDecisionService._increment】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_gpu_metrics`
 
@@ -542,7 +542,7 @@ QwenDecisionService._increment(self, name: str) -> None
 _gpu_metrics() -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_gpu_metrics】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_planner_scene`
 
@@ -552,7 +552,7 @@ _gpu_metrics() -> dict[str, Any]
 _planner_scene(request: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_planner_scene】根据紧邻签名和函数体完成Qwen请求、后端推理或HTTP服务中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ## 内部调用与异常路径
 

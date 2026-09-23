@@ -25,7 +25,7 @@ scenario_runner
 
 源码位置：[car_control_D/scenario_runner.py 第 9 行](../../../car_control_D/scenario_runner.py#L9)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+围绕任意零参数场景函数增加开始/结束日志、异常转失败、仓库内计分和 result 文件写入。它不是 CARLA ScenarioRunner，也不管理传感器、超时、actor 清理或路线循环。
 
 ### `ScenarioRunner.__init__`
 
@@ -35,7 +35,7 @@ scenario_runner
 ScenarioRunner.__init__(self, recorder: Optional[ScenarioRecorder]=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存调用方 recorder；缺失时创建默认 `ScenarioRecorder("logs")`，会立即创建相对工作目录。没有为每个场景自动隔离输出目录。
 
 ### `ScenarioRunner.run`
 
@@ -45,7 +45,7 @@ ScenarioRunner.__init__(self, recorder: Optional[ScenarioRecorder]=None) -> None
 ScenarioRunner.run(self, scenario_id: str, difficulty: str, fn: Callable[[], Dict[str, Any]]) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先记录 SCENARIO_START，再调用 `fn()`；正常返回用 `setdefault` 补 ID、难度和 `SUCCEEDED`，异常则记录错误并生成 `FAILED`/未完成 1。随后计分、覆盖写 result、记录 SCENARIO_END。若 fn 返回非字典或后续日志/写盘失败，异常不在场景 try 范围内；调用方自带错误 ID/难度不会被参数覆盖。
 
 ## 内部调用与异常路径
 

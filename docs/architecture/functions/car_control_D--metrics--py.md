@@ -25,7 +25,7 @@ metrics
 
 源码位置：[car_control_D/metrics.py 第 10 行](../../../car_control_D/metrics.py#L10)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+面向开发/离线场景的内存加文件记录器，分别保存 event、frame、command，并委托 `OfficialScorer` 生成汇总。它没有 schema、锁、轮转或运行身份冻结，不能单独作为正式比赛证据链。
 
 ### `ScenarioRecorder.__init__`
 
@@ -35,7 +35,7 @@ metrics
 ScenarioRecorder.__init__(self, log_dir: str | Path='logs') -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+创建 `log_dir`（默认相对当前工作目录的 `logs`），初始化三个空列表。构造不会清理既有 JSONL，因此内存只含本实例新记录，而磁盘追加文件可能含历史运行。
 
 ### `ScenarioRecorder.log_event`
 
@@ -45,7 +45,7 @@ ScenarioRecorder.__init__(self, log_dir: str | Path='logs') -> None
 ScenarioRecorder.log_event(self, event_type: str, **fields: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 `event_type` 与任意字段合成字典，先追加内存再追加 `event_log.jsonl`。若文件写入失败，内存已发生变化；传入 fields 中同名 `event_type` 会因字典展开顺序覆盖形参值。
 
 ### `ScenarioRecorder.log_frame`
 
@@ -55,7 +55,7 @@ ScenarioRecorder.log_event(self, event_type: str, **fields: Any) -> None
 ScenarioRecorder.log_frame(self, **fields: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+将任意 frame 字段字典保存到内存并追加 `frame_log.jsonl`。没有必需 frame/time/control 字段校验，也没有复制后冻结嵌套值；调用方负责单位和运行身份。
 
 ### `ScenarioRecorder.log_command`
 
@@ -65,7 +65,7 @@ ScenarioRecorder.log_frame(self, **fields: Any) -> None
 ScenarioRecorder.log_command(self, command: Dict[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把传入 command 字典引用放入内存，并追加写 `command_log.jsonl`。不经 command schema 验证；后续修改原字典可能改变内存视图但不会改变已写磁盘行。
 
 ### `ScenarioRecorder.write_result`
 
@@ -75,7 +75,7 @@ ScenarioRecorder.log_command(self, command: Dict[str, Any]) -> None
 ScenarioRecorder.write_result(self, result: Dict[str, Any]) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+覆盖写 `result.json` 并原样返回输入字典。没有追加历史、原子替换或结果 schema 校验，多场景共用目录时只保留最后一次 result 文件。
 
 ### `ScenarioRecorder.write_score_report`
 
@@ -85,7 +85,7 @@ ScenarioRecorder.write_result(self, result: Dict[str, Any]) -> Dict[str, Any]
 ScenarioRecorder.write_score_report(self, scenario_results: List[Dict[str, Any]]) -> Dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用给定 scenario results 和本实例全部 command 记录生成汇总，覆盖写 `score_report.json` 并返回报告。该报告实现仓库内 25/10/5 基线规则，不绑定官方版本、提交或输入哈希。
 
 ## 内部调用与异常路径
 

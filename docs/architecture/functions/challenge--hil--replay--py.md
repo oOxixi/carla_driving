@@ -37,13 +37,13 @@ Replay of frozen B1 request sets through the planner under test.
 
 源码位置：[challenge/hil/replay.py 第 42 行](../../../challenge/hil/replay.py#L42)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`ReplayCase` HIL协议类，封装runtime、能力、身份、trace、回放、轮次或采样状态；默认字段不是实测结果，必须随证据序列化。
 
 ### `ReplayResult`
 
 源码位置：[challenge/hil/replay.py 第 56 行](../../../challenge/hil/replay.py#L56)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`ReplayResult` HIL协议类，封装runtime、能力、身份、trace、回放、轮次或采样状态；默认字段不是实测结果，必须随证据序列化。
 
 ### `_rgb_index`
 
@@ -53,7 +53,7 @@ Replay of frozen B1 request sets through the planner under test.
 _rgb_index(delivery_root: Path | None) -> dict[str, dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_rgb_index` 读取冻结输入、配置、图像或provenance；路径解析必须保持发布边界，缺失资源不能静默当作成功样本。
 
 ### `_resolve_rgb`
 
@@ -73,7 +73,7 @@ Return (path, sha256, resolved, source).
 load_replay_cases(*, delivery_root: str | Path | None, requests_path: str | Path | None=None, repo_root: str | Path | None=None, limit: int | None=None) -> tuple[list[ReplayCase], dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_replay_cases` 读取冻结输入、配置、图像或provenance；路径解析必须保持发布边界，缺失资源不能静默当作成功样本。
 
 ### `_behaviors`
 
@@ -83,7 +83,7 @@ load_replay_cases(*, delivery_root: str | Path | None, requests_path: str | Path
 _behaviors(plan: Mapping[str, Any] | None) -> list[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_behaviors` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `_targets`
 
@@ -93,7 +93,7 @@ _behaviors(plan: Mapping[str, Any] | None) -> list[str]
 _targets(plan: Mapping[str, Any] | None) -> list[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_targets` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `_match_ratio`
 
@@ -103,7 +103,7 @@ _targets(plan: Mapping[str, Any] | None) -> list[str]
 _match_ratio(left: Sequence[str], right: Sequence[str]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_match_ratio` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `structural_checks`
 
@@ -113,7 +113,7 @@ _match_ratio(left: Sequence[str], right: Sequence[str]) -> float
 structural_checks(request: Mapping[str, Any], plan: Mapping[str, Any] | None) -> tuple[str, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`structural_checks` 检查runtime合同、artifact、输出一致性、结构或身份完整性；结果只覆盖声明能力，model-only与full-chain、宿主与板端证据不得混写。
 
 ### `run_replay`
 
@@ -123,7 +123,7 @@ structural_checks(request: Mapping[str, Any], plan: Mapping[str, Any] | None) ->
 run_replay(runtime: PlannerRuntime, cases: Iterable[ReplayCase], *, run_id: str, round_index: int, phase: str='measured') -> ReplayResult
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`run_replay` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `failure_row_detail`
 
@@ -133,7 +133,7 @@ run_replay(runtime: PlannerRuntime, cases: Iterable[ReplayCase], *, run_id: str,
 failure_row_detail(trace: StageTrace) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`failure_row_detail` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ## 内部调用与异常路径
 

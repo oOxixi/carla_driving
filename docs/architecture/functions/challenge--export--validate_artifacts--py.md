@@ -28,7 +28,7 @@ Fail closed when A1 code, reports, contracts and ONNX drift apart.
 validate_artifacts(root: str | Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_artifacts` 执行模型分析、ONNX导出、产物校验或X86推理；必须记录结构、权重、opset、动态轴、元数据与数值对齐，结构smoke不能冒充真实候选部署。
 
 ### `main`
 
@@ -38,7 +38,7 @@ validate_artifacts(root: str | Path) -> dict[str, Any]
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析导出、校验或X86运行参数，执行对应结构/产物流程并以退出码报告门禁；命令成功不代表训练权重、量化或J6P部署已经验收。
 
 ## 内部调用与异常路径
 

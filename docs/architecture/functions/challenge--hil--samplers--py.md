@@ -38,7 +38,7 @@ Process/board telemetry sampling with explicit not-measured reporting.
 _now() -> tuple[str, int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_now` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `_memory_backend`
 
@@ -48,7 +48,7 @@ _now() -> tuple[str, int]
 _memory_backend() -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_memory_backend` 实现本文件对应的HIL测量辅助步骤；具体输入、阶段、副作用和异常见本页签名/调用/拒绝表，修改时须同步schema与报告。
 
 ### `sample_process_memory`
 
@@ -95,7 +95,7 @@ travel with its numbers.
 
 源码位置：[challenge/hil/samplers.py 第 111 行](../../../challenge/hil/samplers.py#L111)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`SYSTEM_POWER_STATUS` 定义HIL runtime、身份、trace、回放或采样协议对象；字段需随原始证据序列化，不能把默认值解释成实测结果。
 
 ### `cpu_frequency_mhz`
 
@@ -147,7 +147,7 @@ exactly the bug this function exists to avoid.
 
 源码位置：[challenge/hil/samplers.py 第 198 行](../../../challenge/hil/samplers.py#L198)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`PROCESS_MEMORY_COUNTERS` 定义HIL runtime、身份、trace、回放或采样协议对象；字段需随原始证据序列化，不能把默认值解释成实测结果。
 
 ### `ProbeCommand`
 
@@ -163,13 +163,13 @@ External probe expected to print one JSON object on stdout.
 ProbeCommand.read(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`read` 执行一次被测推理、输出抓取或外部探针读取；返回计划、Head或遥测必须与对应capability、stage_source和clock_domain一起解释。
 
 ### `TelemetrySpec`
 
 源码位置：[challenge/hil/samplers.py 第 253 行](../../../challenge/hil/samplers.py#L253)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`TelemetrySpec` HIL协议类，封装runtime、能力、身份、trace、回放、轮次或采样状态；默认字段不是实测结果，必须随证据序列化。
 
 ### `TelemetrySpec.__post_init__`
 
@@ -179,7 +179,7 @@ ProbeCommand.read(self) -> dict[str, Any]
 TelemetrySpec.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__post_init__` 固化runtime、trace、身份、采样器或结果容器的依赖和初始状态，并执行源码中的参数约束；运行证据还需完整identity与时钟域。
 
 ### `BackgroundMonitor`
 
@@ -195,7 +195,7 @@ Sample memory every interval; power/utilization only if probed.
 BackgroundMonitor.__init__(self, spec: TelemetrySpec | None=None, *, run_id: str='', round_index: int=0) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化runtime、trace、身份、采样器或结果容器的依赖和初始状态，并执行源码中的参数约束；运行证据还需完整identity与时钟域。
 
 ### `BackgroundMonitor._cpu_percent_sampler`
 
@@ -205,7 +205,7 @@ BackgroundMonitor.__init__(self, spec: TelemetrySpec | None=None, *, run_id: str
 BackgroundMonitor._cpu_percent_sampler() -> Callable[[], float | None]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_cpu_percent_sampler` 实现本文件对应的HIL测量辅助步骤；具体输入、阶段、副作用和异常见本页签名/调用/拒绝表，修改时须同步schema与报告。
 
 ### `BackgroundMonitor.start`
 
@@ -215,7 +215,7 @@ BackgroundMonitor._cpu_percent_sampler() -> Callable[[], float | None]
 BackgroundMonitor.start(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`start` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `BackgroundMonitor._loop`
 
@@ -225,7 +225,7 @@ BackgroundMonitor.start(self) -> None
 BackgroundMonitor._loop(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_loop` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `BackgroundMonitor.sample_once`
 
@@ -235,7 +235,7 @@ BackgroundMonitor._loop(self) -> None
 BackgroundMonitor.sample_once(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sample_once` 执行轮次、回放、长稳、子命令、benchmark或后台采样；warmup与measured分离，错误/超时/缺stage必须作为结果记录而非零时延。
 
 ### `BackgroundMonitor._power_row`
 
@@ -245,7 +245,7 @@ BackgroundMonitor.sample_once(self) -> None
 BackgroundMonitor._power_row(self, wall: str, monotonic: int, index: int) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_power_row` 实现本文件对应的HIL测量辅助步骤；具体输入、阶段、副作用和异常见本页签名/调用/拒绝表，修改时须同步schema与报告。
 
 ### `BackgroundMonitor._utilization_row`
 
@@ -255,7 +255,7 @@ BackgroundMonitor._power_row(self, wall: str, monotonic: int, index: int) -> dic
 BackgroundMonitor._utilization_row(self, wall: str, monotonic: int, index: int) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_utilization_row` 实现本文件对应的HIL测量辅助步骤；具体输入、阶段、副作用和异常见本页签名/调用/拒绝表，修改时须同步schema与报告。
 
 ### `BackgroundMonitor.stop`
 
@@ -265,7 +265,7 @@ BackgroundMonitor._utilization_row(self, wall: str, monotonic: int, index: int) 
 BackgroundMonitor.stop(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`stop` 释放runtime、会话、线程或子进程资源；应在异常路径也调用，关闭成功不补齐此前缺失的trace或证据。
 
 ### `BackgroundMonitor.summary`
 
@@ -275,7 +275,7 @@ BackgroundMonitor.stop(self) -> None
 BackgroundMonitor.summary(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`summary` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `BackgroundMonitor.summary.values`
 
@@ -285,7 +285,7 @@ BackgroundMonitor.summary(self) -> dict[str, Any]
 BackgroundMonitor.summary.values(rows: list[dict[str, Any]], key: str) -> list[float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`values` 定义HIL runtime、身份、trace、回放或采样协议对象；字段需随原始证据序列化，不能把默认值解释成实测结果。
 
 ## 内部调用与异常路径
 

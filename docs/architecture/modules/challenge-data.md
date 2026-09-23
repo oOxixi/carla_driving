@@ -43,6 +43,30 @@ build_a3_d2_view.py:18-31 固定 D2 v1.1 视图和三个支持 cohort；82-96 �
 
 修改采集字段时联动 Schema、训练资格策略、release 校验、A3 dataset/preflight 和历史样本迁移说明。D3 累计接入 A3 的能力不能由 D2 固定视图自动推断；应新增版本化视图与测试。
 
+## 第12模块逐入口精读结论（2026-09-22）
+
+### 数据生命周期与不可替代证据
+
+| 层级 | 权威对象 | 允许动作 | 禁止替代 |
+|---|---|---|---|
+| 原始运行 | run日志、RGB、request、Teacher plan、闭环事件 | 追加采集、保留失败 | 不能改终态或标签制造正样本 |
+| canonical sample | collector输出与拒绝记录 | 结构配对、目标grounding、角色分类 | 结构有效不能替代闭环成功 |
+| 冻结release | Train/Val/Reserved、images、release manifest、quarantine | 只读校验、可移植路径发布 | source split manifest不能替代发布hash |
+| A3 view | strict-positive Train/Val、排除ID、view manifest | 从签名release派生训练视图 | 不读Reserved/Test，不覆盖源release |
+
+`sample_id`、`command_id`、`request_id`、target顺序、Teacher身份和闭环终态必须能回到同一运行链。`quality.training_role`、`valid_for_training` 和 `closed_loop_quality` 是三个不同判断；HARD_NEGATIVE与终态异常应隔离并留provenance，不能简单删除。
+
+### 切分、哈希与新批次接入
+
+- group key 由 scenario family/map/route/seed 等治理字段形成；Train/Val/Reserved须同时做到sample ID与group零重叠。重新切分不能消除模型曾看过样本的历史暴露。
+- manifest中的文本hash采用LF规范化口径，图像采用原始字节SHA；两者不可混用。发布路径改写会改变JSONL hash，必须由release manifest重新签发。
+- D2 strict view只接受三个已登记cohort并固定Teacher manifest；顶层 `dataset_version` 保留采集cohort，metadata中的版本描述派生view。消费者必须明确读取哪一层。
+- D3需要新的冻结计划、完整运行证据、release和版本化A3 view；R07说明当前D2 builder不会自动支持D3。
+
+### 当前验证边界
+
+服务器执行数据测试原集合得到 **59 passed、1 failed**；失败为 M12-01：测试直接读取被 `.gitignore` 排除且当前不存在的D3冻结计划。排除该已登记外部产物依赖后为 **59 passed、1 deselected**。这不影响D2 v1.1 release已签名事实，但说明干净checkout无法独立复核D3计划provenance。
+
 
 
 ## 模块接口与参数核对（2026-09-20）

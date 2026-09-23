@@ -55,19 +55,19 @@ Deterministic scenario perturbations for pre-CARLA generalization gates.
 _sequence(raw: object, name: str) -> tuple[object, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求矩阵字段是非空 `list`，返回保持顺序的 tuple；空列表、tuple 或其他类型均抛 `ValueError`。元素类型由各字段的后续解析负责。
 
 ### `PerturbationCase`
 
 源码位置：[integration/generalization_gate.py 第 24 行](../../../integration/generalization_gate.py#L24)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的一次泛化扰动参数集，绑定派生 case ID、地图/天气/种子、仿真步长、actor 纵横偏移、速度/数量比例、制动/行人时间偏移、目标车道关系及传感器条件。dataclass 直接构造不校验范围，正常来源应为已验证的 `GeneralizationMatrix.cases`。
 
 ### `GeneralizationMatrix`
 
 源码位置：[integration/generalization_gate.py 第 41 行](../../../integration/generalization_gate.py#L41)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结矩阵配置及其来源路径，保存每一扰动维度的候选 tuple、每场景采样数和 holdout ID。它描述候选空间而非笛卡尔积结果；内部值在 `load_generalization_matrix` 校验，直接实例化不会重复校验。
 
 ### `GeneralizationMatrix.cases`
 
@@ -87,7 +87,7 @@ Yield a bounded Latin-cycle sample instead of an explosive product.
 load_generalization_matrix(path: str | Path | None=None) -> GeneralizationMatrix
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取默认或指定 UTF-8 JSON，要求根对象和 schema 1.0、所有维度非空、seed 为精确整数、采样数正整数，车道关系仅 CURRENT/左右相邻，传感器条件仅 nominal/reduced_rgb/sparse_lidar。路径解析、JSON 和数值转换异常直接传播；本入口不检查地图/天气是否被当前 CARLA 安装支持。
 
 ### `load_generalization_matrix.numbers`
 
@@ -97,7 +97,7 @@ load_generalization_matrix(path: str | Path | None=None) -> GeneralizationMatrix
 load_generalization_matrix.numbers(name: str, *, positive: bool=False) -> tuple[float, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从当前 JSON 根读取指定非空列表并把每项转 float，拒绝非有限值；`positive=True` 时还要求严格大于零。布尔值会被 `float` 接受为 0/1，只有正值分支会因 False=0 被拒绝，矩阵作者应避免布尔数值。
 
 ### `_referenced_actor_ids`
 
@@ -107,7 +107,7 @@ load_generalization_matrix.numbers(name: str, *, positive: bool=False) -> tuple[
 _referenced_actor_ids(scenario: Mapping[str, Any]) -> set[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+递归扫描 commands、expected、qwen_expected 和 extensions 中键名精确为 `actor_id`/`target_actor_id` 的字符串值，返回被语义或验收引用的 actor ID 集合。actors 本身不扫描，其他别名如 target_id 也不计入保护集。
 
 ### `_referenced_actor_ids.visit`
 
@@ -117,7 +117,7 @@ _referenced_actor_ids(scenario: Mapping[str, Any]) -> set[str]
 _referenced_actor_ids.visit(value: object) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+深度遍历 mapping 和非字符串 sequence；命中 actor 引用键时加入结果而不继续遍历该字符串，其余子值递归。该闭包只读输入并修改外层 set，没有循环引用保护。
 
 ### `_scale_auxiliary_vehicles`
 
@@ -127,7 +127,7 @@ _referenced_actor_ids.visit(value: object) -> None
 _scale_auxiliary_vehicles(actors: list[dict[str, Any]], scale: float, referenced_actor_ids: set[str]) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按 `round(车辆数*scale)` 且至少 1 计算目标车辆数，只删除/克隆未被语义引用的辅助车辆。缩小时从 auxiliary 尾部删除；放大时循环复制原 auxiliary，沿路线每个 clone 增加 12 m 并生成 density ID。没有车辆或没有可用 auxiliary 时保持原样，因此比例是目标而非必达保证，非车辆 actor 不参与数量缩放。
 
 ### `_apply_sensor_condition`
 
@@ -137,7 +137,7 @@ _scale_auxiliary_vehicles(actors: list[dict[str, Any]], scale: float, referenced
 _apply_sensor_condition(scenario: dict[str, Any], condition: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+原地修改派生 scenario 的 sensors：reduced_rgb 将 ID 含 rgb 的 width/height 缩为 75%且不低于64；sparse_lidar 将 `sensors.lidar.channels` 减半且不低于8；nominal 或无对象配置不动作。只改变声明配置，不证明仿真实际采用或传感质量达到预期。
 
 ### `perturb_scenario`
 

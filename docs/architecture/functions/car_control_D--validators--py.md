@@ -29,7 +29,7 @@ Validation rules for commands, controls and final feedback.
 _finite_number(name: str, value: float, errors: List[str]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+若值是布尔、非 int/float 或非有限数，就向调用方提供的 errors 列表追加一条消息；不抛异常、不返回布尔，也不检查范围。
 
 ### `validate_control`
 
@@ -39,7 +39,7 @@ _finite_number(name: str, value: float, errors: List[str]) -> None
 validate_control(control: Any) -> ValidationResult
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先用 adapter 取三轴控制；转换异常立即返回失败。随后要求有限、steer 在 `[-1,1]`、throttle/brake 在 `[0,1]`，两者同时大于 `0.03` 视为冲突。恰好 0.03 不触发冲突；返回所有局部错误而不是抛出。
 
 ### `validate_command`
 
@@ -49,7 +49,7 @@ validate_control(control: Any) -> ValidationResult
 validate_command(command: Any) -> ValidationResult
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+适配命令后校验 schema 版本、非空 ID、允许 intent 和两项置信度范围；CHANGE_LANE 必须给 LEFT/RIGHT，SET_SPEED 至少有一种速度键。UNKNOWN、需确认或歧义只生成 warning，但 supervisor 会对提供的这类命令 fail-closed；参数速度数值与有效期不在此验证。
 
 ### `validate_execution_feedback`
 
@@ -59,7 +59,7 @@ validate_command(command: Any) -> ValidationResult
 validate_execution_feedback(feedback: Any) -> ValidationResult
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从 dict 或属性对象读取 ID/status，只确认 ID 非空且 status 属于终态集合。它刻意不接受 RECEIVED/EXECUTING，也不检查 schema、时间、latency、terminal_reason 或 safety_event；完整反馈合同必须走 `InterfaceRegistry`。
 
 ## 内部调用与异常路径
 

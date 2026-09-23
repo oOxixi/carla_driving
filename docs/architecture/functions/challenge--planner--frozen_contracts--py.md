@@ -28,7 +28,7 @@ Byte-level fingerprints for the Teacher/Student planner boundary.
 canonical_schema_sha256(path: str | Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 JSON Schema，按键排序、紧凑分隔符和 UTF-8 非 ASCII 保留形式重新序列化，再返回 SHA256。它消除空白/键顺序差异，但数组顺序、数值和字段语义变化仍改变指纹；文件/JSON错误直接传播。
 
 ### `assert_frozen_contracts`
 
@@ -38,7 +38,7 @@ canonical_schema_sha256(path: str | Path) -> str
 assert_frozen_contracts(registry: InterfaceRegistry) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+逐一核对 `model_request` 和 `maneuver_plan` 当前规范化指纹；任一不等即拒绝加载 Teacher/Student backend。它不核对其他五种接口，也不证明 producer/consumer 已迁移；真实合同变更必须走版本化 A1 更新。
 
 ## 内部调用与异常路径
 

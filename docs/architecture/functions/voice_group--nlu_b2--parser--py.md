@@ -47,7 +47,7 @@ Runtime limits agreed with the vehicle-control side.
 
 源码位置：[voice_group/nlu_b2/parser.py 第 42 行](../../../voice_group/nlu_b2/parser.py#L42)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【ParseContext】定义语音识别、复核或命令解释所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `ParseContext.error`
 
@@ -57,7 +57,7 @@ Runtime limits agreed with the vehicle-control side.
 ParseContext.error(self, code: str, message: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【ParseContext.error】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `ParseContext.warning`
 
@@ -67,7 +67,7 @@ ParseContext.error(self, code: str, message: str) -> None
 ParseContext.warning(self, code: str, message: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【ParseContext.warning】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser`
 
@@ -83,7 +83,7 @@ Extract slots, validate them, and package executable commands.
 CommandParser.__init__(self, config: ParserConfig | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser.__init__】按签名接收依赖并建立语音识别、复核或命令解释的实例状态；实际拒绝条件、缓存和资源所有权以函数体及下方调用/raise记录为准。
 
 ### `CommandParser.parse`
 
@@ -103,7 +103,7 @@ Parse B1 output into the final JSON command consumed by D.
 CommandParser._build_context(self, b1_result: dict[str, Any]) -> ParseContext
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._build_context】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser._blocking_b1_error`
 
@@ -113,7 +113,7 @@ CommandParser._build_context(self, b1_result: dict[str, Any]) -> ParseContext
 CommandParser._blocking_b1_error(ctx: ParseContext) -> tuple[str, str] | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._blocking_b1_error】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser._handle_set_speed`
 
@@ -123,7 +123,7 @@ CommandParser._blocking_b1_error(ctx: ParseContext) -> tuple[str, str] | None
 CommandParser._handle_set_speed(self, ctx: ParseContext) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._handle_set_speed】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser._handle_change_lane`
 
@@ -133,7 +133,7 @@ CommandParser._handle_set_speed(self, ctx: ParseContext) -> None
 CommandParser._handle_change_lane(self, ctx: ParseContext) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._handle_change_lane】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser._handle_pull_over`
 
@@ -143,7 +143,7 @@ CommandParser._handle_change_lane(self, ctx: ParseContext) -> None
 CommandParser._handle_pull_over(self, ctx: ParseContext) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._handle_pull_over】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser._handle_stop`
 
@@ -153,7 +153,7 @@ CommandParser._handle_pull_over(self, ctx: ParseContext) -> None
 CommandParser._handle_stop(self, ctx: ParseContext) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._handle_stop】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser._handle_avoid_obstacle`
 
@@ -163,7 +163,7 @@ CommandParser._handle_stop(self, ctx: ParseContext) -> None
 CommandParser._handle_avoid_obstacle(self, ctx: ParseContext) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._handle_avoid_obstacle】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser._handle_keep_lane`
 
@@ -173,7 +173,7 @@ CommandParser._handle_avoid_obstacle(self, ctx: ParseContext) -> None
 CommandParser._handle_keep_lane(self, ctx: ParseContext) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._handle_keep_lane】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser._handle_follow_route`
 
@@ -183,7 +183,7 @@ CommandParser._handle_keep_lane(self, ctx: ParseContext) -> None
 CommandParser._handle_follow_route(self, ctx: ParseContext) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._handle_follow_route】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser._handle_turn`
 
@@ -193,7 +193,7 @@ CommandParser._handle_follow_route(self, ctx: ParseContext) -> None
 CommandParser._handle_turn(self, ctx: ParseContext) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._handle_turn】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser._handle_relative_speed`
 
@@ -203,7 +203,7 @@ CommandParser._handle_turn(self, ctx: ParseContext) -> None
 CommandParser._handle_relative_speed(self, ctx: ParseContext) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._handle_relative_speed】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser._validate_common_safety`
 
@@ -213,7 +213,7 @@ CommandParser._handle_relative_speed(self, ctx: ParseContext) -> None
 CommandParser._validate_common_safety(self, ctx: ParseContext) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._validate_common_safety】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `CommandParser._status`
 
@@ -223,7 +223,7 @@ CommandParser._validate_common_safety(self, ctx: ParseContext) -> None
 CommandParser._status(ctx: ParseContext) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【CommandParser._status】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `parse_command`
 
@@ -243,7 +243,7 @@ Convenience function for callers that do not need a parser instance.
 _normalize_text(text: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_normalize_text】把输入转换为语音识别、复核或命令解释使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `_extract_direction`
 
@@ -253,7 +253,7 @@ _normalize_text(text: str) -> str
 _extract_direction(text: str) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_extract_direction】根据紧邻签名和函数体完成语音识别、复核或命令解释中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_extract_speed`
 
@@ -263,7 +263,7 @@ _extract_direction(text: str) -> str | None
 _extract_speed(text: str) -> int | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_extract_speed】根据紧邻签名和函数体完成语音识别、复核或命令解释中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_extract_obstacle_target`
 
@@ -273,7 +273,7 @@ _extract_speed(text: str) -> int | None
 _extract_obstacle_target(text: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_extract_obstacle_target】从参数、文件、环境或缓存解析语音识别、复核或命令解释所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `_extract_target`
 
@@ -283,7 +283,7 @@ _extract_obstacle_target(text: str) -> str
 _extract_target(text: str) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_extract_target】从参数、文件、环境或缓存解析语音识别、复核或命令解释所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `_chinese_number_to_int`
 
@@ -293,7 +293,7 @@ _extract_target(text: str) -> str | None
 _chinese_number_to_int(value: str) -> int | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_chinese_number_to_int】根据紧邻签名和函数体完成语音识别、复核或命令解释中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_safe_float`
 
@@ -303,7 +303,7 @@ _chinese_number_to_int(value: str) -> int | None
 _safe_float(value: Any, default: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_safe_float】根据紧邻签名和函数体完成语音识别、复核或命令解释中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_optional_float`
 
@@ -313,7 +313,7 @@ _safe_float(value: Any, default: float) -> float
 _optional_float(value: Any) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_optional_float】根据紧邻签名和函数体完成语音识别、复核或命令解释中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_optional_lower`
 
@@ -323,7 +323,7 @@ _optional_float(value: Any) -> float | None
 _optional_lower(value: Any) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_optional_lower】根据紧邻签名和函数体完成语音识别、复核或命令解释中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ## 内部调用与异常路径
 

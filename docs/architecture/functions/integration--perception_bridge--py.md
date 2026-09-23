@@ -28,7 +28,7 @@ Conversions from frame-aligned scene facts to A/C/D inputs.
 longitudinal_request(vehicle: RuntimeVehicleState, scene: PerceptionFrame, *, requested_speed_mps: float, path_curvature_per_m: float) -> LongitudinalRequest
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把同帧 `RuntimeVehicleState` 和 `PerceptionFrame` 转成 C 的 `LongitudinalRequest`。帧号或仿真时间不完全相等会拒绝；只有前车速度而无距离也拒绝。有距离但无速度时按前方物体静止，令 closing speed 等于自车速度；两者都有时用自车速度减前车速度，随后连同灯态、停止线、限速和曲率交给 C。
 
 ### `safety_vehicle_state`
 

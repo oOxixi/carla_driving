@@ -29,7 +29,7 @@ Mine validation disagreements without exposing or tuning on frozen Test.
 collect_hard_cases(batch: Mapping[str, Any], outputs: Mapping[str, torch.Tensor], *, split: str) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`collect_hard_cases` 执行评测、探针、hard-case收集或候选晋级步骤；结果必须区分Head指标、Adapter计划、闭环安全与独立数据角色。
 
 ### `write_hard_cases`
 
@@ -39,7 +39,7 @@ collect_hard_cases(batch: Mapping[str, Any], outputs: Mapping[str, torch.Tensor]
 write_hard_cases(path: str | Path, rows: list[Mapping[str, Any]]) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_hard_cases` 写出训练报告、checkpoint、hard-case或纯权重候选；写盘成功不代表候选可部署，仍需SHA、manifest和独立Gate绑定。
 
 ### `write_hard_case_bundle`
 
@@ -49,7 +49,7 @@ write_hard_cases(path: str | Path, rows: list[Mapping[str, Any]]) -> Path
 write_hard_case_bundle(directory: str | Path, rows: list[Mapping[str, Any]]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_hard_case_bundle` 写出训练报告、checkpoint、hard-case或纯权重候选；写盘成功不代表候选可部署，仍需SHA、manifest和独立Gate绑定。
 
 ## 内部调用与异常路径
 

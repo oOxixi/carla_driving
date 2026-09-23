@@ -32,7 +32,7 @@ Frozen Student V0 tensor dimensions and structured vocabularies.
 
 源码位置：[challenge/student/contract.py 第 40 行](../../../challenge/student/contract.py#L40)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结 Student V0 的 batch、四路输入宽度、最多目标数和最多计划步数。dataclass 为 frozen/slots，但没有 `__post_init__` 范围校验；非默认维度是否可运行还受预处理、CNN 固定 3×3 投影、head、权重和导出合同共同约束，不能把可构造等同于受支持。
 
 ### `StudentShapeContract.input_shapes`
 
@@ -42,7 +42,7 @@ Frozen Student V0 tensor dimensions and structured vocabularies.
 StudentShapeContract.input_shapes(self) -> dict[str, tuple[int, ...]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回四路具名 shape：RGB `[B,C,H,W]`、文本 `[B,L]`、目标 `[B,N,F]`、状态 `[B,S]`。它只计算声明，不分配 Tensor、不校验 dtype；当前运行预处理仅完整支持默认 batch=1，见 M10-01。
 
 ### `StudentShapeContract.output_shapes`
 
@@ -52,7 +52,7 @@ StudentShapeContract.input_shapes(self) -> dict[str, tuple[int, ...]]
 StudentShapeContract.output_shapes(self) -> dict[str, tuple[int, ...]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回十个 Head 的稳定具名 shape。pointer 最后一类为 `max_targets` 对应 NONE；类别维度由五组枚举长度决定。修改枚举顺序即使 shape 不变也会改变权重/标签语义，必须更换配置与权重身份。
 
 ## 内部调用与异常路径
 

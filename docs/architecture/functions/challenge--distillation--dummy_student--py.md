@@ -35,7 +35,7 @@ A shared MLP with the exact structured output dictionary A3 expects.
 DummyStudent.__init__(self, *, feature_dim: int=32, hidden_dim: int=48, max_steps: int=4, max_targets: int=8) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化本对象的训练结构、配置或依赖，并执行源码中的初始一致性检查；后续批次仍必须保持shape、device、dtype和身份一致。
 
 ### `DummyStudent.forward`
 
@@ -45,7 +45,7 @@ DummyStudent.__init__(self, *, feature_dim: int=32, hidden_dim: int=48, max_step
 DummyStudent.forward(self, model_inputs: Mapping[str, Tensor]) -> dict[str, Tensor]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`forward` 执行Student前向并按冻结Head合同返回或校验具名Tensor；训练路径还需检查shape、device、有限值和梯度，不能只看模型调用成功。
 
 ### `build_dummy_student`
 
@@ -55,7 +55,7 @@ DummyStudent.forward(self, model_inputs: Mapping[str, Tensor]) -> dict[str, Tens
 build_dummy_student(config: Mapping[str, Any] | None=None) -> DummyStudent
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_dummy_student` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ## 内部调用与异常路径
 

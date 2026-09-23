@@ -45,7 +45,7 @@ Timestamp, frame, coordinate and bounded-buffer normalization for C.
 
 源码位置：[perception/sensor_adapter.py 第 16 行](../../../perception/sensor_adapter.py#L16)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+固定四种同步模态：RGB、RADAR、LIDAR、VEHICLE_STATE。默认 synchronizer 要求四种齐全；生产 CARLA bridge 的 Radar 可选策略属于另一实现，不能混用默认含义。
 
 ### `_finite`
 
@@ -55,7 +55,7 @@ Timestamp, frame, coordinate and bounded-buffer normalization for C.
 _finite(name: str, value: object) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+只接受非布尔 `int/float` 并转为有限 float；类型错误抛 TypeError，NaN/无穷抛 ValueError。正负范围由各调用者另行限制。
 
 ### `Extrinsics`
 
@@ -71,7 +71,7 @@ Rigid transform from one sensor frame to ego x-front/y-left/z-up.
 Extrinsics.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+平移必须是长度3 tuple，各分量与 roll/pitch/yaw 均须有限，成功后全部标准化为 float。角度单位为度，不限制到某个周期。
 
 ### `Extrinsics.transform_point`
 
@@ -81,7 +81,7 @@ Extrinsics.__post_init__(self) -> None
 Extrinsics.transform_point(self, point_xyz_m: Iterable[float]) -> tuple[float, float, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+对三维点应用 `Rz(yaw) @ Ry(pitch) @ Rx(roll)` 后再加米制平移，输出 ego 前x/左y/上z tuple；输入不是恰好三项或包含非有限值会拒绝。
 
 ### `Extrinsics.rotate_vector`
 
@@ -91,7 +91,7 @@ Extrinsics.transform_point(self, point_xyz_m: Iterable[float]) -> tuple[float, f
 Extrinsics.rotate_vector(self, vector_xyz: Iterable[float]) -> tuple[float, float, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+分别变换原点和向量端点再相减，从而只保留旋转、消除平移；继承 `transform_point` 的长度和有限值校验。
 
 ### `Extrinsics.to_dict`
 
@@ -101,13 +101,13 @@ Extrinsics.rotate_vector(self, vector_xyz: Iterable[float]) -> tuple[float, floa
 Extrinsics.to_dict(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+输出 JSON 友好的平移 list 与三个度制角度，不附坐标系名称；调用方必须由合同确认这是 sensor→ego 变换。
 
 ### `SensorSample`
 
 源码位置：[perception/sensor_adapter.py 第 84 行](../../../perception/sensor_adapter.py#L84)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+单模态样本合同：同时携带 CARLA frame、仿真秒、捕获单调纳秒、任意 payload、外参和显式有效性。无效样本仍保留身份/时间，但必须有错误码。
 
 ### `SensorSample.__post_init__`
 
@@ -117,7 +117,7 @@ Extrinsics.to_dict(self) -> dict[str, Any]
 SensorSample.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+模态和外参必须为对应类型，帧号/捕获纳秒为非负整数，仿真时间为非负有限数，valid 必须 bool；`valid=False` 强制非空错误码。有效样本允许 error_code 非空，用于“有噪但仍可用”等显式标记。
 
 ### `SensorSample.invalidated`
 
@@ -127,13 +127,13 @@ SensorSample.__post_init__(self) -> None
 SensorSample.invalidated(self, error_code: str, *, payload: Any=None) -> 'SensorSample'
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用 dataclass `replace` 保留模态、帧、时间和外参，只替换 payload、`valid=False` 与错误码；新对象会再次经过 post-init，因此空错误码会被拒绝。
 
 ### `AlignedSensorFrame`
 
 源码位置：[perception/sensor_adapter.py 第 117 行](../../../perception/sensor_adapter.py#L117)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+同步器的不可变结果快照，包含实际选择样本、逐模态有效性、最大捕获偏差、是否齐全/容差内、是否 stale、缺失模态和去重后的降级原因。本 dataclass 自身不复核这些字段间一致性。
 
 ### `AlignedSensorFrame.sample`
 
@@ -143,7 +143,7 @@ SensorSample.invalidated(self, error_code: str, *, payload: Any=None) -> 'Sensor
 AlignedSensorFrame.sample(self, modality: Modality) -> SensorSample | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按模态从 `samples` 映射取值，缺失返回 None；不会检查 `modality_valid`，调用者必须同时读取有效性或整体 stale 状态。
 
 ### `SensorSynchronizer`
 
@@ -159,7 +159,7 @@ Align exact CARLA frames without blocking and without false validity.
 SensorSynchronizer.__init__(self, *, required_modalities: tuple[Modality, ...]=tuple(Modality), tolerance_ms: float=50.0, max_age_ms: float=150.0, buffer_size: int=8, require_same_frame: bool=True) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求模态 tuple 非空、唯一且都是枚举；容差非负、最大年龄为正、buffer为正整数。为每个必需模态创建线程锁保护的定长 deque；`require_same_frame` 用 `bool()` 转换，非布尔真值也会被接受。
 
 ### `SensorSynchronizer.push`
 
@@ -169,7 +169,7 @@ SensorSynchronizer.__init__(self, *, required_modalities: tuple[Modality, ...]=t
 SensorSynchronizer.push(self, sample: SensorSample) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+只接收已配置模态的 `SensorSample`。同模态同 frame 的新样本确定性替换旧样本，随后按 `(frame_id,captured_at_ns)` 排序并仅保留 deque 上限的最新项；方法不阻塞等待其他模态。
 
 ### `SensorSynchronizer.align`
 
@@ -179,7 +179,7 @@ SensorSynchronizer.push(self, sample: SensorSample) -> None
 SensorSynchronizer.align(self, *, reference_frame_id: int, reference_sim_time_s: float, reference_captured_at_ns: int, now_ns: int) -> AlignedSensorFrame
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+复制锁内缓冲快照后逐模态选样本：同帧模式先过滤 reference frame，再按捕获时间偏差/帧差选最近项。有效性同时要求样本有效且偏差不超阈值；缺失、样本错误、超容差和过期分别写原因。`within_tolerance` 要求无缺失且所有模态有效，`stale` 在超龄或整体不满足时为 true；函数不消费缓冲样本。
 
 ### `SensorRecorder`
 
@@ -195,7 +195,7 @@ Append strict JSON samples for deterministic replay.
 SensorRecorder.__init__(self, path: str | Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+创建父目录并以文本独占模式 `x` 打开目标，防止覆盖既有证据；路径已存在会抛 FileExistsError。文件固定 UTF-8 和 LF。
 
 ### `SensorRecorder.record`
 
@@ -205,7 +205,7 @@ SensorRecorder.__init__(self, path: str | Path) -> None
 SensorRecorder.record(self, sample: SensorSample) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求 `SensorSample`。NumPy payload 转成带 array/dtype/shape 的 JSON 对象，其他 payload 直接交给严格 `json.dumps(allow_nan=False)`；逐行写 schema、时间、外参、有效性并立即 flush。不可序列化或非有限数据会失败，不吞异常。
 
 ### `SensorRecorder.close`
 
@@ -215,7 +215,7 @@ SensorRecorder.record(self, sample: SensorSample) -> None
 SensorRecorder.close(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+仅在句柄尚未关闭时关闭，重复调用安全；不额外写索引、hash或完成标记。
 
 ### `SensorRecorder.__enter__`
 
@@ -225,7 +225,7 @@ SensorRecorder.close(self) -> None
 SensorRecorder.__enter__(self) -> 'SensorRecorder'
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回 recorder 本身供 `with` 使用，不延迟打开文件；文件已在构造阶段创建。
 
 ### `SensorRecorder.__exit__`
 
@@ -235,13 +235,13 @@ SensorRecorder.__enter__(self) -> 'SensorRecorder'
 SensorRecorder.__exit__(self, *_: object) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+无论 with 块是否异常都调用 `close()`，但不返回 true，因此不会抑制原异常。
 
 ### `SensorReplayer`
 
 源码位置：[perception/sensor_adapter.py 第 287 行](../../../perception/sensor_adapter.py#L287)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+惰性 JSONL replay 入口；只保存路径，真正读文件和构造样本发生在迭代阶段。它验证字段能否构成当前合同，但不验证跨行帧单调、模态齐全或文件 manifest。
 
 ### `SensorReplayer.__init__`
 
@@ -251,7 +251,7 @@ SensorRecorder.__exit__(self, *_: object) -> None
 SensorReplayer.__init__(self, path: str | Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把输入转成 `Path`，不在构造时检查存在性、hash或 schema 版本。
 
 ### `SensorReplayer.__iter__`
 
@@ -261,7 +261,7 @@ SensorReplayer.__init__(self, path: str | Path) -> None
 SensorReplayer.__iter__(self) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+一次性读取 UTF-8 文本并逐行解析；识别 recorder 的精确 array/dtype/shape 三键 payload 并恢复 ndarray，然后重建外参和 `SensorSample`。任意 JSON、字段、枚举、reshape或合同错误统一包装为带1基行号的 ValueError；当前不核对记录中的 `schema_version` 值。
 
 ## 内部调用与异常路径
 

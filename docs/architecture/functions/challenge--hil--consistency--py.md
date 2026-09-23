@@ -25,7 +25,7 @@ Numerical equivalence between the torch path, the ONNX graph, and (later)
 
 源码位置：[challenge/hil/consistency.py 第 26 行](../../../challenge/hil/consistency.py#L26)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`OutputSource` HIL协议类，封装runtime、能力、身份、trace、回放、轮次或采样状态；默认字段不是实测结果，必须随证据序列化。
 
 ### `OutputSource.outputs`
 
@@ -35,7 +35,7 @@ Numerical equivalence between the torch path, the ONNX graph, and (later)
 OutputSource.outputs(self, request: Mapping[str, Any]) -> dict[str, np.ndarray]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`outputs` 执行一次被测推理、输出抓取或外部探针读取；返回计划、Head或遥测必须与对应capability、stage_source和clock_domain一起解释。
 
 ### `OutputSource.close`
 
@@ -45,7 +45,7 @@ OutputSource.outputs(self, request: Mapping[str, Any]) -> dict[str, np.ndarray]
 OutputSource.close(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`close` 释放runtime、会话、线程或子进程资源；应在异常路径也调用，关闭成功不补齐此前缺失的trace或证据。
 
 ### `TorchOutputSource`
 
@@ -61,7 +61,7 @@ Raw ``StudentPlannerV0.forward`` outputs as numpy arrays.
 TorchOutputSource.__init__(self, repo_root: str | Path, *, weights: str | Path | None=None, seed: int | None=20260911, model_id: str=UNRESOLVED, config_id: str=UNRESOLVED) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化runtime、trace、身份、采样器或结果容器的依赖和初始状态，并执行源码中的参数约束；运行证据还需完整identity与时钟域。
 
 ### `TorchOutputSource.outputs`
 
@@ -71,7 +71,7 @@ TorchOutputSource.__init__(self, repo_root: str | Path, *, weights: str | Path |
 TorchOutputSource.outputs(self, request: Mapping[str, Any]) -> dict[str, np.ndarray]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`outputs` 执行一次被测推理、输出抓取或外部探针读取；返回计划、Head或遥测必须与对应capability、stage_source和clock_domain一起解释。
 
 ### `TorchOutputSource.close`
 
@@ -81,7 +81,7 @@ TorchOutputSource.outputs(self, request: Mapping[str, Any]) -> dict[str, np.ndar
 TorchOutputSource.close(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`close` 释放runtime、会话、线程或子进程资源；应在异常路径也调用，关闭成功不补齐此前缺失的trace或证据。
 
 ### `OnnxOutputSource`
 
@@ -97,7 +97,7 @@ Raw ONNX Runtime outputs; also the template for INT8-vs-FP32 checks.
 OnnxOutputSource.__init__(self, onnx_path: str | Path, repo_root: str | Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化runtime、trace、身份、采样器或结果容器的依赖和初始状态，并执行源码中的参数约束；运行证据还需完整identity与时钟域。
 
 ### `OnnxOutputSource.outputs`
 
@@ -107,7 +107,7 @@ OnnxOutputSource.__init__(self, onnx_path: str | Path, repo_root: str | Path) ->
 OnnxOutputSource.outputs(self, request: Mapping[str, Any]) -> dict[str, np.ndarray]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`outputs` 执行一次被测推理、输出抓取或外部探针读取；返回计划、Head或遥测必须与对应capability、stage_source和clock_domain一起解释。
 
 ### `OnnxOutputSource.close`
 
@@ -117,7 +117,7 @@ OnnxOutputSource.outputs(self, request: Mapping[str, Any]) -> dict[str, np.ndarr
 OnnxOutputSource.close(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`close` 释放runtime、会话、线程或子进程资源；应在异常路径也调用，关闭成功不补齐此前缺失的trace或证据。
 
 ### `compare_outputs`
 
@@ -137,7 +137,7 @@ Compare every output tensor; missing or extra keys are failures.
 compare_sources(reference: OutputSource, candidate: OutputSource, requests: Sequence[Mapping[str, Any]], *, rtol: float=DEFAULT_RTOL, atol: float=DEFAULT_ATOL) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`compare_sources` 检查runtime合同、artifact、输出一致性、结构或身份完整性；结果只覆盖声明能力，model-only与full-chain、宿主与板端证据不得混写。
 
 ## 内部调用与异常路径
 

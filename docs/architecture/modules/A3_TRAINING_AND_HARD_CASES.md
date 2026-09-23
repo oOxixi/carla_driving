@@ -11,7 +11,7 @@ Student 结构、不采集 B1 Teacher 数据、不读取 B2 Frozen Test，也不
 
 - [`B1_TO_A3_DATA_PIPELINE.md`](B1_TO_A3_DATA_PIPELINE.md)：数据身份、划分与发布门禁。
 - [`MODEL_AND_WEIGHT_LIFECYCLE.md`](MODEL_AND_WEIGHT_LIFECYCLE.md)：Teacher、Student、FP32、INT8 与运行时权重的身份链。
-- [`challenge/distillation/HANDOFF.md`](../../challenge/distillation/HANDOFF.md)：A1/B1/B2/B3 与 A3 的字段级交接合同。
+- [`challenge/distillation/HANDOFF.md`](../../../challenge/distillation/HANDOFF.md)：A1/B1/B2/B3 与 A3 的字段级交接合同。
 
 ## 2. 四种运行等级
 

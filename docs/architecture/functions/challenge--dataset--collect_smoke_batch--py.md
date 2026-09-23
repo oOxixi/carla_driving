@@ -28,7 +28,7 @@ collect_smoke_batch
 load_json(path: Path) -> dict[str, Any] | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_json` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `count_jsonl_rows`
 
@@ -38,7 +38,7 @@ load_json(path: Path) -> dict[str, Any] | None
 count_jsonl_rows(path: Path) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`count_jsonl_rows` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `read_jsonl`
 
@@ -48,7 +48,7 @@ count_jsonl_rows(path: Path) -> int
 read_jsonl(path: Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`read_jsonl` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `validate_teacher`
 
@@ -58,7 +58,7 @@ read_jsonl(path: Path) -> list[dict[str, Any]]
 validate_teacher(service_url: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_teacher` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `collect_dataset`
 
@@ -68,7 +68,7 @@ validate_teacher(service_url: str) -> None
 collect_dataset(repo_root: Path, log_dir: Path, dataset_dir: Path) -> tuple[int, int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`collect_dataset` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `existing_valid_scenarios`
 
@@ -78,7 +78,7 @@ collect_dataset(repo_root: Path, log_dir: Path, dataset_dir: Path) -> tuple[int,
 existing_valid_scenarios(dataset_dir: Path) -> set[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`existing_valid_scenarios` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `run_scenario`
 
@@ -88,7 +88,7 @@ existing_valid_scenarios(dataset_dir: Path) -> set[str]
 run_scenario(repo_root: Path, scenario_path: str, service_url: str, log_dir: Path) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`run_scenario` 执行采集或从运行日志汇总样本/证据；运行成功、结构有效、闭环成功和训练资格是分开的判断，失败记录不得静默丢弃。
 
 ### `validate_dataset`
 
@@ -98,7 +98,7 @@ run_scenario(repo_root: Path, scenario_path: str, service_url: str, log_dir: Pat
 validate_dataset(repo_root: Path, dataset_dir: Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_dataset` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `build_manifest`
 
@@ -108,7 +108,7 @@ validate_dataset(repo_root: Path, dataset_dir: Path) -> None
 build_manifest(repo_root: Path, dataset_dir: Path) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_manifest` 从显式输入构造版本化样本、计划、清单或派生视图；保持原始记录不变，并把默认、排除原因与来源身份写入新产物。
 
 ### `main`
 
@@ -118,7 +118,7 @@ build_manifest(repo_root: Path, dataset_dir: Path) -> None
 main() -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ## 内部调用与异常路径
 

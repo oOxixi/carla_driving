@@ -56,7 +56,30 @@
 
 [命令与状态机](modules/vehicle-behavior.md)逐项整理完成：10份实现页、137处占位改写，补齐具体参数、FSM状态、snapshot默认及实际消费边界。相关离线测试113 passed；M03-01–M03-03保留为未修复问题，实车影响未扩大推断。当前顺序精读完成3/20，详见[进度表](SEQUENTIAL_REVIEW.md)。
 
+## 顺序精读进度补充：第4、5模块
 
-## 顺序精读进度补充：第4模块
+[路线与横向控制](modules/vehicle-lateral.md)逐项整理完成：14份实现页、119处占位改写，补齐全局拓扑路线、场景局部路线、进度/恢复、坐标和生产 Pure Pursuit 有效参数；[专题页](modules/04_ROUTE_AND_LATERAL_CONTROL.md)纳入统一目录，RLC-01～RLC-05 保留为未关闭工程边界。[纵向控制](modules/vehicle-longitudinal.md)已完成13份实现页和83处占位改写，补齐生产链、速度约束、缺测、状态与重置边界，并登记M05-01配置生效缺口。当前顺序精读完成5/20，详见[进度表](SEQUENTIAL_REVIEW.md)。
 
-[路线与横向控制](modules/vehicle-lateral.md)逐项整理完成：14份实现页、119处占位改写，补齐全局拓扑路线、场景局部路线、进度/恢复、坐标和生产 Pure Pursuit 有效参数。专题页纳入三层索引，RLC-01～RLC-05 保留为未关闭工程边界。当前顺序精读完成4/20，详见[进度表](SEQUENTIAL_REVIEW.md)。
+## 顺序精读进度补充：第6模块
+
+[感知](modules/vehicle-perception.md)已完成12份实现页复核和10页96处占位改写，区分runner生产bridge、C安全融合及独立perception benchmark管线，补齐帧同步、传感器门限、目标身份、canonical近似与来源审计；79项相关离线测试通过，M06-01/M06-02保留为未修复边界。当前顺序精读完成6/20。
+
+## 顺序精读进度补充：第7模块
+
+[安全仲裁](modules/vehicle-safety.md)已完成13份实现页复核和12页82处占位改写，区分生产实时链与 canonical D 封装，补齐输入收敛、覆盖优先级、动态阈值、命令终态、测量与计分证据边界；35项相关离线测试通过，M07-01保留为未修复的 canonical 控制/终态一致性边界。当前顺序精读完成7/20。
+
+## 顺序精读进度补充：第8模块
+
+[场景执行与评分](modules/vehicle-scenarios.md)已完成9份实现页复核和8页98处占位改写，区分场景合同/几何、主runner扩展、evidence/acceptance与外部固定 ScenarioRunner，补齐命令调度、actor坐标、泛化采样、事件时序、context和证据等级；134项相关离线测试通过，M08-01保留为外部 agent 的多模态/逐帧Qwen能力缺口。当前顺序精读完成8/20。
+
+## 顺序精读进度补充：第9～11模块
+
+[接口与坐标转换](modules/vehicle-interfaces.md)已核对7份Schema字段页、Registry、canonical bridge与版本语义，补齐验证层次、单位/坐标/ID/时钟和三类转换降级；43项离线测试通过，M09-01保留。[Student结构与预处理](modules/challenge-structure.md)完成5份实现页复核和23处占位改写，补齐四路张量、十Head、信息损失与mask，服务器23项测试通过并保留M10-01。[Student Planner](modules/challenge-planner.md)完成8份实现/语义页复核和22处占位改写，补齐双Backend、确定性修复、confirmation与权重就绪边界，服务器26项测试通过并保留M11-01。当前顺序精读完成11/20；以上均未修改业务代码，也不等于CARLA、正式权重或J6P验收。
+
+## 顺序精读进度补充：第12～15模块
+
+[Teacher数据治理](modules/challenge-data.md)完成33份实现页和301处占位改写，明确run/sample/release/view、身份/切分/排除证据；数据测试暴露M12-01外部冻结计划缺失。[蒸馏与晋级](modules/challenge-training.md)完成25份实现/配置页和103处占位改写，明确标签/mask/loss/checkpoint/纯权重/Gate，65项测试通过且A01保留。[导出与部署](modules/challenge-export.md)完成6份实现页和13处占位改写，artifact validator实际PASS，但R01/R03仍阻断真实权重到J6P闭环。[HIL与测量](modules/challenge-hil.md)完成20份实现/资源页和139处占位改写，71项测试通过且A02/A03/R02保留。当前顺序精读完成15/20；未训练正式Student或运行真实J6P。
+
+## 顺序精读收口：第16～20模块
+
+[语音链](modules/support-voice.md)、[Qwen后端](modules/support-qwen.md)、[配置与场景合同](modules/support-config-scenarios.md)、[运行环境与交付](modules/support-delivery.md)和[维护工具](modules/support-tools.md)已完成138份关联页复核与488处占位改写。服务器三组离线回归分别为97、195、174项通过；场景静态校验155/155、三份official场景合同PASS。A04、A05、A06、A09继续保留，真实ASR/Qwen/CARLA/Docker/J6P未因文档完成而升级证据。当前20/20模块均完成当前基线的逐入口精读，下一阶段是修复AUDIT问题并执行各环境门禁。

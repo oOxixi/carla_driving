@@ -29,7 +29,7 @@ Validation loop shared by smoke training and the future A1 Student.
 evaluate(model: torch.nn.Module, batches: Iterable[dict[str, Any]], loss_fn: torch.nn.Module, *, device: torch.device, max_targets: int) -> dict[str, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`evaluate` 执行评测、探针、hard-case收集或候选晋级步骤；结果必须区分Head指标、Adapter计划、闭环安全与独立数据角色。
 
 ### `move_batch_to_device`
 
@@ -39,7 +39,7 @@ evaluate(model: torch.nn.Module, batches: Iterable[dict[str, Any]], loss_fn: tor
 move_batch_to_device(batch: dict[str, Any], device: torch.device) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`move_batch_to_device` 实现Dataset、批处理、过滤或报告辅助转换；它保留训练语义但不单独完成发布完整性、身份或泛化门禁。
 
 ## 内部调用与异常路径
 

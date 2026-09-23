@@ -142,6 +142,62 @@ CarlaPerceptionBridge.acquire(self, frame: int, sim_time_s: float, *, route: Rou
 
 ## Dependencies and coordinated changes
 
+## 第6模块逐项精读结论（2026-09-21）
+
+本轮核对12份感知实现页，其中10页的96处通用占位已经按当前函数体替换；另外两页是包导出和 shell 入口，本来没有函数占位。精读覆盖真实 CARLA 采集链、二维检测/追踪、来源审计，以及独立 `perception/` 参考管线；不把离线接口回归等同于真实摄像头/LiDAR/Radar质量验收。
+
+### 生产感知链
+
+1. runner 根据 sensor profile 附着传感器；`default` 是800×450前视RGB、32线224k点/s LiDAR、3k点/s Radar及两个事件传感器，`low` 降分辨率/点密度，`competition_multiview` 再增加左/右/后RGB。连续传感器进入 frame buffer，碰撞和压线进入独立 `EventLedger`。
+2. `CarlaPerceptionBridge.acquire(frame, sim_time)` 对前RGB、LiDAR和已配置多视角RGB作必需同帧等待；Radar是可选同帧输入，只等待最多5 ms grace。必需输入超时、payload帧不符、LiDAR不可解析或已配置检测器失败均抛 `PerceptionAcquisitionError` 子类，runner抑制普通控制并走启动宽限或watchdog安全路径。
+3. LiDAR前走廊要求1–60 m、横向±1.35 m、高度−1.8至−0.7 m且至少3点，取前向距离10百分位；相邻车道在左右1.75–5.25 m带内按xy距离取10百分位。高度门限刻意排除树冠、灯臂和高架等头顶回波。
+4. Radar候选按深度/方位/高度换算到ego前向距离，选择走廊内最近有限目标。Radar与LiDAR相差不超过4 m才给现有前车补速度；没有LiDAR时仅8 m内Radar触发控制侧短距兜底，远距孤立Radar只作为Qwen候选，不进入 `lead_distance_m`。
+5. `TemporalLeadTracker` 对35 m内前车最多保持0.75 s：新近的回波总能接管，突然跳到远处的背景回波会被抑制；缺测期按自车与已知前车速度推进距离。一帧不足以估速时保守按前车静止，后续距离差分只在时间窗内且速度为0–20 m/s时采用，并对已有速度作0.65/0.35平滑。
+6. RGB检测结果全部保留供Qwen和审计，只有画面中心35%–65%且框底部不低于30%的目标进入前向控制语义。LiDAR前方有目标而RGB漏检时仍构造泛化 `obstacle`；相邻LiDAR目标追加为左右目标。最终由 `SensorObjectTracker` 分配 `C-xxxx` ID。
+7. 交通灯优先使用active light和地图停止点，也能在CARLA尚未标记active前按同车道、朝向、前后/横向几何寻找upcoming stop waypoint；trigger volume只作明确标记的近似。限速由km/h除3.6，车道偏移和路线偏差来自地图/路线几何。
+8. `PerceptionSample` 同时交付控制 `PerceptionFrame`、原始模态、C融合摘要、`sensor_ready_ns` 和逐字段来源。严格传感器模式随后用 `audit_control_sources` 禁止 ORACLE/SYNTHETIC 来源；UNKNOWN/DERIVED不会被该审计自动拒绝，仍需字段质量门禁。
+
+### 三套容易混淆的目标/融合实现
+
+| 实现 | 当前用途 | ID/同步语义 |
+|---|---|---|
+| `CarlaPerceptionBridge + SensorObjectTracker` | runner生产CARLA链 | 必需模态精确frame；`C-xxxx`二维类别/中心/距离贪心关联 |
+| `ConservativeSensorFusion` | 生产C安全摘要 | LiDAR/RGB同帧、Radar或距离差分速度；输出动作/速度cap，不分配Qwen目标ID |
+| `perception.SensorSynchronizer/RGBPipeline/FusionTracker` | benchmark、回放与独立感知交付 | 四模态默认必需、捕获时间容差；`rgb-xxxxxx`和`fused-xxxxxx`属于各自管线 |
+
+`rg` 当前显示独立 `perception/` 三件套的非测试消费者是 `tools/benchmark_perception_pipeline.py`；runner生产链直接实例化 `CarlaPerceptionBridge`。因此独立管线测试通过不能证明runner已经使用其四模态融合，反过来也不能删掉它的回放/交付用途。
+
+### Canonical/Qwen转换的近似边界
+
+`perception_frame_to_state` 把 `PerceptionFrame` 转为模型/接口状态时仍有显式近似：无距离目标补50 m，横向位置用 `(0.5-image_center)*7`，没有track ID时用类别+列表索引，只有列表第一个对象获得 `scene.lead_speed_mps`，其他对象速度置0。传感器模式下 obstacle+距离标成LiDAR，语义目标标RGB并可追加LiDAR；非传感器模式统一标WORLD。这些字段满足schema不代表是三维传感器真值。
+
+### 目标身份与来源维护规则
+
+- scenario actor ID、传感器 track ID、Qwen plan target ID 是三层身份；只允许通过同一命令/提交帧的 evidence alias 做验收归因，不能把oracle actor ID塞回感知目标。
+- `SensorObjectTracker` 的默认匹配要求同类别、归一化中心L1位移≤0.25；两帧都有距离时还要求距离差不超过 `max(3 m, previous_distance*25%)`。距离缺失不会单独阻止匹配，超过5帧历史淘汰。
+- `EventLedger.flags_for_frame(N)` 会消费所有 `<=N` 的迟到事件，使N帧之后才到的事件能在N+1显示；collision/lane invasion是事件事实，不是逐帧持续状态。
+- 来源分类使用字符串token包含和固定优先级。新增来源名必须补分类回归，避免包含 `CARLA_TRUTH_` 等token而被意外归为oracle，或未知来源被当作普通DERIVED。
+
+### 已确认边界与保留问题
+
+- **M06-01 / 已复现、未修复：调用者提供的重复track ID不保证同帧唯一。** `SensorObjectTracker.update` 对非空 `detection.track_id` 直接采用；两个输入都带 `dup` 时输出两个 `dup`，内部表又由后一个覆盖前一个。生产 `OnnxYoloDetector` 当前不给ID，因此正常bridge路径主要由tracker分配；但该公开接口和未来上游带ID接入需要唯一性门禁或冲突重命名。
+- **M06-02 / 已复现、未修复：canonical目标速度按列表索引而非距离关联。** 两个目标依次为无距离side和10 m lead，`scene.lead_speed_mps=2` 时，转换结果给side写2 m/s和50 m，真正lead写0 m/s和10 m，TTC分别成为6.25 s和1.0 s；这与前车速度应绑定的对象不一致。修复需按range/track关联速度，并联动Qwen排序、Student pointer和历史schema回归。
+- `SensorSynchronizer` 默认四模态全部必需且Radar缺失会stale，生产bridge则把Radar设为可选；复用配置时必须明确适用链，不能把一个默认直接覆盖另一个。
+
+### 验证范围
+
+本轮实际执行：
+
+```text
+python -m pytest integration/tests/test_carla_perception.py \
+  integration/tests/test_role_c_perception.py integration/tests/test_object_tracker.py \
+  integration/tests/test_rgb_detector.py integration/tests/test_perception_stage.py \
+  integration/tests/test_canonical_bridge.py integration/tests/test_sensor_profiles.py -q
+79 passed in 0.91s
+```
+
+另外用纯Python调用复现M06-01/M06-02。上述验证不启动CARLA、不加载真实ONNX模型，也未测夜间/雨雾、传感器噪声、目标ID实车稳定性或真实Radar/LiDAR覆盖。
+
 
 ## Validation entry points
 

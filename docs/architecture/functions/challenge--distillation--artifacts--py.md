@@ -49,7 +49,7 @@ Promote only independent Validation evidence; frozen Test is forbidden.
 _validate_evaluation_identity(candidate: Mapping[str, Any], evaluation: Mapping[str, Any], label: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_validate_evaluation_identity` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `_validate_pinned_teacher_candidate`
 
@@ -59,7 +59,7 @@ _validate_evaluation_identity(candidate: Mapping[str, Any], evaluation: Mapping[
 _validate_pinned_teacher_candidate(candidate: Mapping[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_validate_pinned_teacher_candidate` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `_metrics`
 
@@ -69,7 +69,7 @@ _validate_pinned_teacher_candidate(candidate: Mapping[str, Any]) -> None
 _metrics(evaluation: Mapping[str, Any], label: str) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_metrics` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ### `_drop_check`
 
@@ -79,7 +79,7 @@ _metrics(evaluation: Mapping[str, Any], label: str) -> Mapping[str, Any]
 _drop_check(name: str, teacher: Mapping[str, Any], student: Mapping[str, Any], max_drop: float, group: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_drop_check` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `_write_json`
 
@@ -89,7 +89,7 @@ _drop_check(name: str, teacher: Mapping[str, Any], student: Mapping[str, Any], m
 _write_json(path: Path, value: Mapping[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_write_json` 写出训练报告、checkpoint、hard-case或纯权重候选；写盘成功不代表候选可部署，仍需SHA、manifest和独立Gate绑定。
 
 ### `_json_safe`
 
@@ -99,7 +99,7 @@ _write_json(path: Path, value: Mapping[str, Any]) -> None
 _json_safe(value: Any) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_json_safe` 实现Dataset、批处理、过滤或报告辅助转换；它保留训练语义但不单独完成发布完整性、身份或泛化门禁。
 
 ### `_sha256`
 
@@ -109,7 +109,7 @@ _json_safe(value: Any) -> Any
 _sha256(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_sha256` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ## 内部调用与异常路径
 

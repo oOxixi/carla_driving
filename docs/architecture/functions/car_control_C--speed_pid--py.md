@@ -30,7 +30,7 @@ Longitudinal speed PID operating exclusively in SI units.
 
 源码位置：[car_control_C/speed_pid.py 第 11 行](../../../car_control_C/speed_pid.py#L11)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结参数保存 P/I/D 增益、积分边界、加速度上下限及目标突变复位阈值；默认取统一策略，不保存运行历史。
 
 ### `PIDParameters.__post_init__`
 
@@ -40,7 +40,7 @@ Longitudinal speed PID operating exclusively in SI units.
 PIDParameters.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+Kp/Ki/Kd 可为零但不得为负；积分限、正向加速度上限和目标突变阈值必须为正；负向下限只要求有限，并必须严格小于上限。
 
 ### `SpeedPID`
 
@@ -56,7 +56,7 @@ PID with bounded integral and conditional integration anti-windup.
 SpeedPID.__init__(self, kp: float=DEFAULT_STRATEGY.longitudinal.pid_kp, ki: float=DEFAULT_STRATEGY.longitudinal.pid_ki, kd: float=DEFAULT_STRATEGY.longitudinal.pid_kd, integral_limit: float=DEFAULT_STRATEGY.longitudinal.pid_integral_limit, accel_min_mps2: float=-DEFAULT_STRATEGY.common.max_decel_mps2, accel_max_mps2: float=DEFAULT_STRATEGY.longitudinal.max_accel_mps2, target_step_reset_mps: float=DEFAULT_STRATEGY.longitudinal.pid_target_step_reset_mps) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用位置参数构造并验证 `PIDParameters`，把积分、上一误差和上一目标清零；一个实例保存单一 episode 的控制历史。
 
 ### `SpeedPID.reset`
 
@@ -66,7 +66,7 @@ SpeedPID.__init__(self, kp: float=DEFAULT_STRATEGY.longitudinal.pid_kp, ki: floa
 SpeedPID.reset(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+清除积分、上一误差和上一目标。独立场景/车辆重生必须调用，否则会继承前一 episode 的导数和积分状态。
 
 ### `SpeedPID.step`
 
@@ -76,7 +76,7 @@ SpeedPID.reset(self) -> None
 SpeedPID.step(self, target_speed_mps: float, speed_mps: float, dt_s: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+校验目标速度/当前速度非负、`dt_s` 为正；目标突变达到阈值时积分衰减至 25%。采用误差差分导数、有限积分和输出夹取，并仅在不会继续推高饱和的方向积分，返回 m/s² 而非归一化油门。
 
 ## 内部调用与异常路径
 

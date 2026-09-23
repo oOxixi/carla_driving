@@ -28,7 +28,7 @@ D-owned command lifecycle with schema-validated terminal feedback.
 
 源码位置：[car_control_D/execution_feedback.py 第 19 行](../../../car_control_D/execution_feedback.py#L19)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+每个 command ID 的进程内可变状态：当前 status、接收单调纳秒、首次/最近执行应用时间和可选终态反馈。对象只由 tracker 持有，不负责持久化、过期或线程同步。
 
 ### `ExecutionFeedbackTracker`
 
@@ -44,7 +44,7 @@ Guarantee deterministic transitions and at most one terminal per ID.
 ExecutionFeedbackTracker.__init__(self, *, registry: InterfaceRegistry | None=None, clock_ns: Callable[[], int]=time.monotonic_ns) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+注入或创建接口注册器和纳秒时钟，初始化 command 状态表与事件列表。状态只在当前实例内保留，没有锁、容量上限或重启恢复。
 
 ### `ExecutionFeedbackTracker.received`
 
@@ -54,7 +54,7 @@ ExecutionFeedbackTracker.__init__(self, *, registry: InterfaceRegistry | None=No
 ExecutionFeedbackTracker.received(self, command_id: str, action_summary: str, *, emitted_at_ns: int | None=None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+校验非空字符串 ID 和非负时间，为新 ID 建立 `RECEIVED` 并追加经 schema 验证的事件。重复活动 ID 只即时生成当前状态反馈而不追加事件；已有终态则返回其浅拷贝，保证同一 ID 不产生第二终态。
 
 ### `ExecutionFeedbackTracker.executing`
 
@@ -64,7 +64,7 @@ ExecutionFeedbackTracker.received(self, command_id: str, action_summary: str, *,
 ExecutionFeedbackTracker.executing(self, command_id: str, action_summary: str, *, t_action_apply_ns: int | None=None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求 command 已 received，校验 action 时间不得早于接收时间，更新为 `EXECUTING` 并记录 `t_action_apply_ns` 与 receipt→apply 毫秒延迟。重复执行会更新应用时间并追加事件；若已终态则幂等返回原终态。
 
 ### `ExecutionFeedbackTracker.finish`
 
@@ -74,7 +74,7 @@ ExecutionFeedbackTracker.executing(self, command_id: str, action_summary: str, *
 ExecutionFeedbackTracker.finish(self, command_id: str, status: str, action_summary: str, terminal_reason: str, *, emitted_at_ns: int | None=None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+只接受除 `SAFETY_OVERRIDE` 外的终态集合，为活动命令生成 schema 验证后的终态、缓存并追加事件；延迟仍取 receipt→已记录 action apply，而不是 receipt→finish。未知 ID 抛 `KeyError`，重复完成返回首个终态，不改 reason/status。
 
 ### `ExecutionFeedbackTracker.safety_override`
 
@@ -84,7 +84,7 @@ ExecutionFeedbackTracker.finish(self, command_id: str, status: str, action_summa
 ExecutionFeedbackTracker.safety_override(self, command_id: str, *, reason_code: str, raw_control: Mapping[str, Any], final_control: Mapping[str, Any], action_summary: str='D safety override applied', emitted_at_ns: int | None=None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+为活动命令生成 `SAFETY_OVERRIDE` 终态并附 reason、原始与最终三轴控制。原始控制允许油门制动重叠以保留触发证据，最终控制禁止任何正值重叠；随后由 `execution_feedback` schema 再校验。已有终态不追加新事件，未知 ID 或控制字段缺失/非法会抛异常。
 
 ### `ExecutionFeedbackTracker.fail_unfinished`
 
@@ -94,7 +94,7 @@ ExecutionFeedbackTracker.safety_override(self, command_id: str, *, reason_code: 
 ExecutionFeedbackTracker.fail_unfinished(self, *, reason: str, emitted_at_ns: int | None=None) -> tuple[dict[str, Any], ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+在同一时间戳下遍历当前快照，把所有尚无终态的命令以 `FAILED/runtime shutdown` 结束并返回终态 tuple。已有终态跳过；任一 finish 异常会中断循环，函数没有事务回滚。
 
 ### `ExecutionFeedbackTracker.events`
 
@@ -104,7 +104,7 @@ ExecutionFeedbackTracker.fail_unfinished(self, *, reason: str, emitted_at_ns: in
 ExecutionFeedbackTracker.events(self) -> tuple[Mapping[str, Any], ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按追加顺序返回事件字典的 tuple，并对每个顶层字典做浅拷贝。嵌套 `safety_event` 等对象仍可能共享引用；此属性不包含重复 received 的即时返回记录。
 
 ### `ExecutionFeedbackTracker.unfinished_command_ids`
 
@@ -114,7 +114,7 @@ ExecutionFeedbackTracker.events(self) -> tuple[Mapping[str, Any], ...]
 ExecutionFeedbackTracker.unfinished_command_ids(self) -> tuple[str, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+筛选 `terminal_feedback is None` 的 ID，排序后返回 tuple。`EXECUTING` 与仅 `RECEIVED` 都算未完成；读取不改变状态。
 
 ### `ExecutionFeedbackTracker._emit`
 
@@ -124,7 +124,7 @@ ExecutionFeedbackTracker.unfinished_command_ids(self) -> tuple[str, ...]
 ExecutionFeedbackTracker._emit(self, command_id: str, status: str, summary: str, now: int, applied: int | None, latency: float | None, terminal_reason: str | None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+组装标准 `execution_feedback` payload（无 safety_event）并交给 `InterfaceRegistry` 做完整 schema 验证，返回注册器规范化结果。本方法不追加事件、不更新生命周期，调用者负责状态副作用。
 
 ### `ExecutionFeedbackTracker._require_active`
 
@@ -134,7 +134,7 @@ ExecutionFeedbackTracker._emit(self, command_id: str, status: str, summary: str,
 ExecutionFeedbackTracker._require_active(self, command_id: str) -> _Lifecycle
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先执行 ID 非空校验，再从内部表返回生命周期；从未 received 的 ID 转为带 command ID 的 `KeyError`。名称中的 active 不代表未终态，终态判断由上层方法执行。
 
 ### `ExecutionFeedbackTracker._identity`
 
@@ -144,7 +144,7 @@ ExecutionFeedbackTracker._require_active(self, command_id: str) -> _Lifecycle
 ExecutionFeedbackTracker._identity(command_id: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求 command ID 的精确类型为非空 `str`；不去除空白、不检查格式或全局唯一性，所以仅空格字符串可通过，生命周期唯一性只限当前 tracker 字典键。
 
 ### `ExecutionFeedbackTracker._control`
 
@@ -154,7 +154,7 @@ ExecutionFeedbackTracker._identity(command_id: str) -> None
 ExecutionFeedbackTracker._control(control: Mapping[str, Any], *, allow_overlap: bool) -> dict[str, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 throttle/brake/steer 三个必需键并转为 float。`allow_overlap=False` 时任何同时大于零的油门/制动都会拒绝；本局部函数本身不检查范围和有限性，最终是否拒绝还依赖 execution-feedback schema。
 
 ### `ExecutionFeedbackTracker._now`
 
@@ -164,7 +164,7 @@ ExecutionFeedbackTracker._control(control: Mapping[str, Any], *, allow_overlap: 
 ExecutionFeedbackTracker._now(self, value: int | None) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+显式值缺失时调用注入的 `clock_ns`，随后要求精确 `int` 且非负。它不验证时间相对上一事件是否单调；执行早于接收的专门检查只在 `executing` 中存在。
 
 ## 内部调用与异常路径
 

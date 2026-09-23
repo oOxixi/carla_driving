@@ -29,7 +29,7 @@ Reproducible checkpoint save/resume helpers.
 save_checkpoint(path: str | Path, *, model: torch.nn.Module, optimizer: torch.optim.Optimizer, epoch: int, global_step: int, best_metric: float, metadata: Mapping[str, Any], scheduler: Any=None, extra_state: Mapping[str, Any] | None=None) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`save_checkpoint` 写出训练报告、checkpoint、hard-case或纯权重候选；写盘成功不代表候选可部署，仍需SHA、manifest和独立Gate绑定。
 
 ### `load_checkpoint`
 
@@ -39,7 +39,7 @@ save_checkpoint(path: str | Path, *, model: torch.nn.Module, optimizer: torch.op
 load_checkpoint(path: str | Path, *, model: torch.nn.Module, optimizer: torch.optim.Optimizer | None=None, scheduler: Any=None, map_location: str | torch.device='cpu') -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_checkpoint` 读取配置、数据、checkpoint或资源引用；返回内容保持来源身份，缺失/不匹配由本页异常条件拒绝而不是自动补齐。
 
 ### `sha256_file`
 
@@ -49,7 +49,7 @@ load_checkpoint(path: str | Path, *, model: torch.nn.Module, optimizer: torch.op
 sha256_file(path: str | Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sha256_file` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ## 内部调用与异常路径
 

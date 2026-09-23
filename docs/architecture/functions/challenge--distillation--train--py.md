@@ -29,7 +29,7 @@ Configuration-driven A3 distillation trainer.
 run_training(config: Mapping[str, Any], *, smoke: bool=False, output_dir_override: str | Path | None=None, resume_override: str | Path | None=None, integration_smoke: bool=False) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`run_training` 执行评测、探针、hard-case收集或候选晋级步骤；结果必须区分Head指标、Adapter计划、闭环安全与独立数据角色。
 
 ### `_validated_forward`
 
@@ -39,7 +39,7 @@ run_training(config: Mapping[str, Any], *, smoke: bool=False, output_dir_overrid
 _validated_forward(model: torch.nn.Module, batch: Mapping[str, Any], *, max_targets: int) -> Mapping[str, torch.Tensor]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_validated_forward` 执行Student前向并按冻结Head合同返回或校验具名Tensor；训练路径还需检查shape、device、有限值和梯度，不能只看模型调用成功。
 
 ### `_records`
 
@@ -49,7 +49,7 @@ _validated_forward(model: torch.nn.Module, batch: Mapping[str, Any], *, max_targ
 _records(cfg: Mapping[str, Any], *, smoke: bool, record_limit: int | None=None) -> tuple[list[dict[str, Any]], list[dict[str, Any]], str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_records` 读取配置、数据、checkpoint或资源引用；返回内容保持来源身份，缺失/不匹配由本页异常条件拒绝而不是自动补齐。
 
 ### `_audit_quarantined_hard_cases`
 
@@ -59,7 +59,7 @@ _records(cfg: Mapping[str, Any], *, smoke: bool, record_limit: int | None=None) 
 _audit_quarantined_hard_cases(cfg: Mapping[str, Any], *, smoke: bool) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_audit_quarantined_hard_cases` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `_build_model`
 
@@ -69,7 +69,7 @@ _audit_quarantined_hard_cases(cfg: Mapping[str, Any], *, smoke: bool) -> dict[st
 _build_model(config: Mapping[str, Any], *, max_steps: int, max_targets: int) -> torch.nn.Module
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_build_model` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ### `_build_input_packer`
 
@@ -79,7 +79,7 @@ _build_model(config: Mapping[str, Any], *, max_steps: int, max_targets: int) -> 
 _build_input_packer(config: Mapping[str, Any] | None, *, max_steps: int, max_targets: int) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_build_input_packer` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ### `_validate_config`
 
@@ -89,7 +89,7 @@ _build_input_packer(config: Mapping[str, Any] | None, *, max_steps: int, max_tar
 _validate_config(value: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_validate_config` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `_validate_frozen_identities`
 
@@ -99,7 +99,7 @@ _validate_config(value: Mapping[str, Any]) -> dict[str, Any]
 _validate_frozen_identities(cfg: Mapping[str, Any], *, integration_smoke: bool=False) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_validate_frozen_identities` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `_device`
 
@@ -109,7 +109,7 @@ _validate_frozen_identities(cfg: Mapping[str, Any], *, integration_smoke: bool=F
 _device(value: str) -> torch.device
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_device` 实现本文件对应的蒸馏、评测或候选处理子步骤；具体输入、mask、拒绝条件和副作用见本页签名/异常/调用表。
 
 ### `_seed_everything`
 
@@ -119,7 +119,7 @@ _device(value: str) -> torch.device
 _seed_everything(seed: int) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_seed_everything` 实现本文件对应的蒸馏、评测或候选处理子步骤；具体输入、mask、拒绝条件和副作用见本页签名/异常/调用表。
 
 ### `_git_sha`
 
@@ -129,7 +129,7 @@ _seed_everything(seed: int) -> None
 _git_sha() -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_git_sha` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `_git_is_dirty`
 
@@ -139,7 +139,7 @@ _git_sha() -> str
 _git_is_dirty() -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_git_is_dirty` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `_strict_json`
 
@@ -149,7 +149,7 @@ _git_is_dirty() -> bool
 _strict_json(value: Any) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_strict_json` 实现本文件对应的蒸馏、评测或候选处理子步骤；具体输入、mask、拒绝条件和副作用见本页签名/异常/调用表。
 
 ### `_load_config`
 
@@ -159,7 +159,7 @@ _strict_json(value: Any) -> Any
 _load_config(path: str | Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_load_config` 读取配置、数据、checkpoint或资源引用；返回内容保持来源身份，缺失/不匹配由本页异常条件拒绝而不是自动补齐。
 
 ### `main`
 
@@ -169,7 +169,7 @@ _load_config(path: str | Path) -> dict[str, Any]
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析训练、评测或晋级命令行参数，调用对应门禁并用退出码表达成功/拒绝；生成报告或候选不自动等于通过独立Validation或Frozen Test。
 
 ## 内部调用与异常路径
 

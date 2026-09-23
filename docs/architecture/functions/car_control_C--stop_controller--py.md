@@ -29,13 +29,13 @@ Four-phase longitudinal stopping policy.
 
 源码位置：[car_control_C/stop_controller.py 第 11 行](../../../car_control_C/stop_controller.py#L11)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+四阶段字符串枚举：`CRUISE`、`DECELERATE`、`CREEP`、`HOLD`。它描述 C 的停止阶段，不是命令 FSM 终态。
 
 ### `StopParameters`
 
 源码位置：[car_control_C/stop_controller.py 第 19 行](../../../car_control_C/stop_controller.py#L19)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结参数保存最大/舒适减速度、蠕行速度、保持距离、静止速度和保持制动；默认从统一策略装配。
 
 ### `StopParameters.__post_init__`
 
@@ -45,13 +45,13 @@ Four-phase longitudinal stopping policy.
 StopParameters.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+最大/舒适减速度必须严格为正；蠕行速度、保持距离和保持速度允许零；保持制动限制在 `(0,1]`。未额外要求舒适减速度小于最大减速度。
 
 ### `StopController`
 
 源码位置：[car_control_C/stop_controller.py 第 36 行](../../../car_control_C/stop_controller.py#L36)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+无历史状态的四阶段停车策略，负责状态、速度上限和所需减速度计算；真正的保持与紧急回退由 `LongitudinalController.step` 执行。
 
 ### `StopController.__init__`
 
@@ -61,7 +61,7 @@ StopParameters.__post_init__(self) -> None
 StopController.__init__(self, parameters: StopParameters | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存调用参数或默认参数；不创建定时器，不读取交通灯，也不保存上一帧状态。
 
 ### `StopController.state_for`
 
@@ -71,7 +71,7 @@ StopController.__init__(self, parameters: StopParameters | None=None) -> None
 StopController.state_for(self, speed_mps: float, distance_m: float | None) -> StopState
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+无停止距离时为 `CRUISE`；距离不大于 hold distance 且速度不大于 hold speed 才进入 `HOLD`；距离小于 `max(2m, 3*hold_distance)` 为 `CREEP`，其余有停止点的情况为 `DECELERATE`。
 
 ### `StopController.speed_cap_mps`
 
@@ -81,7 +81,7 @@ StopController.state_for(self, speed_mps: float, distance_m: float | None) -> St
 StopController.speed_cap_mps(self, speed_mps: float, distance_m: float | None, dt_s: float=0.0) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+无停止点返回 `None`，HOLD 返回 0，CREEP 返回固定蠕行速度；减速阶段用舒适减速度和扣除保持距离/下一控制周期行程后的可用距离计算 `sqrt(2ad)` 上限。
 
 ### `StopController.required_decel_mps2`
 
@@ -91,7 +91,7 @@ StopController.speed_cap_mps(self, speed_mps: float, distance_m: float | None, d
 StopController.required_decel_mps2(self, speed_mps: float, distance_m: float | None) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+无停止点或静止时返回零，否则按 `v²/(2*max(1e-3, distance-hold_distance))` 计算所需减速度；调用方将其与最大减速度比较决定不可达停止全刹。
 
 ## 内部调用与异常路径
 

@@ -28,7 +28,7 @@ build_d1_delivery
 sha256_file(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`sha256_file` 生成内容或文件的稳定身份摘要，用于计划、发布或provenance绑定；摘要口径区分原始字节与规范化JSON，不能混用。
 
 ### `write_jsonl`
 
@@ -38,7 +38,7 @@ sha256_file(path: Path) -> str
 write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_jsonl` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `write_json`
 
@@ -48,7 +48,7 @@ write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None
 write_json(path: Path, value: Any) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_json` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `get_meta`
 
@@ -58,7 +58,7 @@ write_json(path: Path, value: Any) -> None
 get_meta(row: dict[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`get_meta` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `validate_teacher_identity`
 
@@ -68,7 +68,7 @@ get_meta(row: dict[str, Any]) -> dict[str, Any]
 validate_teacher_identity(rows: list[dict[str, Any]]) -> dict[str, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_teacher_identity` 执行当前阶段的拒绝式门禁；只覆盖函数读取的字段/文件，成功不能替代Teacher服务、闭环终态、切分防泄漏或下游A3预检。
 
 ### `audit_groups`
 
@@ -78,7 +78,7 @@ validate_teacher_identity(rows: list[dict[str, Any]]) -> dict[str, str]
 audit_groups(base_rows, ext_rows) -> 未声明返回类型
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`audit_groups` 参与分组、候选或确定性切分与分配；必须保持同组不跨split、seed可复现并记录未满足配额，不能靠重跑挑选有利结果。
 
 ### `schema_markdown`
 
@@ -88,7 +88,7 @@ audit_groups(base_rows, ext_rows) -> 未声明返回类型
 schema_markdown() -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`schema_markdown` 定义本脚本使用的数据或状态封装；字段含义由构造处和消费者共同约束，不能脱离发布版本解释。
 
 ### `quality_markdown`
 
@@ -98,7 +98,7 @@ schema_markdown() -> str
 quality_markdown(counts, group_audit, source_counts, class_counts, quarantine_counts, collection_sha_counts, failures) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`quality_markdown` 定义本脚本使用的数据或状态封装；字段含义由构造处和消费者共同约束，不能脱离发布版本解释。
 
 ### `main`
 
@@ -108,7 +108,7 @@ quality_markdown(counts, group_audit, source_counts, class_counts, quarantine_co
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ## 内部调用与异常路径
 

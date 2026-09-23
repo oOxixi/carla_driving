@@ -58,7 +58,7 @@ Linear interpolation percentile, matching runtime/latency_trace.py.
 summarize(values: Iterable[float]) -> dict[str, float | int | None]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`summarize` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `StageOrderError`
 
@@ -83,7 +83,7 @@ must never be reordered or stamped with a decreasing clock value.
 StageTrace.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__post_init__` 固化runtime、trace、身份、采样器或结果容器的依赖和初始状态，并执行源码中的参数约束；运行证据还需完整identity与时钟域。
 
 ### `StageTrace.mark`
 
@@ -93,7 +93,7 @@ StageTrace.__post_init__(self) -> None
 StageTrace.mark(self, stage: str, timestamp_ns: int | None=None) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`mark` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `StageTrace.finish`
 
@@ -103,7 +103,7 @@ StageTrace.mark(self, stage: str, timestamp_ns: int | None=None) -> int
 StageTrace.finish(self, outcome: str, *, reason_code: str | None=None, detail: str | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`finish` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `StageTrace.durations_ms`
 
@@ -113,7 +113,7 @@ StageTrace.finish(self, outcome: str, *, reason_code: str | None=None, detail: s
 StageTrace.durations_ms(self) -> dict[str, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`durations_ms` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `StageTrace.missing_stages`
 
@@ -123,7 +123,7 @@ StageTrace.durations_ms(self) -> dict[str, float]
 StageTrace.missing_stages(self) -> tuple[str, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`missing_stages` 检查runtime合同、artifact、输出一致性、结构或身份完整性；结果只覆盖声明能力，model-only与full-chain、宿主与板端证据不得混写。
 
 ### `StageTrace.to_csv_row`
 
@@ -133,7 +133,7 @@ StageTrace.missing_stages(self) -> tuple[str, ...]
 StageTrace.to_csv_row(self, *, run_id: str, identity: Mapping[str, str], wall_time_utc: str | None=None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`to_csv_row` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `StageTrace.to_dict`
 
@@ -143,7 +143,7 @@ StageTrace.to_csv_row(self, *, run_id: str, identity: Mapping[str, str], wall_ti
 StageTrace.to_dict(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`to_dict` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `LatencyCollector`
 
@@ -159,7 +159,7 @@ Collect finished traces and aggregate them by phase and round.
 LatencyCollector.__init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化runtime、trace、身份、采样器或结果容器的依赖和初始状态，并执行源码中的参数约束；运行证据还需完整identity与时钟域。
 
 ### `LatencyCollector.add`
 
@@ -169,7 +169,7 @@ LatencyCollector.__init__(self) -> None
 LatencyCollector.add(self, trace: StageTrace) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`add` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `LatencyCollector.__len__`
 
@@ -179,7 +179,7 @@ LatencyCollector.add(self, trace: StageTrace) -> None
 LatencyCollector.__len__(self) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__len__` 实现本文件对应的HIL测量辅助步骤；具体输入、阶段、副作用和异常见本页签名/调用/拒绝表，修改时须同步schema与报告。
 
 ### `LatencyCollector.traces`
 
@@ -189,7 +189,7 @@ LatencyCollector.__len__(self) -> int
 LatencyCollector.traces(self) -> tuple[StageTrace, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`traces` 定义HIL runtime、身份、trace、回放或采样协议对象；字段需随原始证据序列化，不能把默认值解释成实测结果。
 
 ### `LatencyCollector.report`
 
@@ -199,7 +199,7 @@ LatencyCollector.traces(self) -> tuple[StageTrace, ...]
 LatencyCollector.report(self, *, run_id: str, identity: Mapping[str, str]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`report` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `LatencyCollector._metrics`
 
@@ -209,7 +209,7 @@ LatencyCollector.report(self, *, run_id: str, identity: Mapping[str, str]) -> di
 LatencyCollector._metrics(self, traces: list[StageTrace]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_metrics` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `LatencyCollector._outcome_counts`
 
@@ -219,7 +219,7 @@ LatencyCollector._metrics(self, traces: list[StageTrace]) -> dict[str, Any]
 LatencyCollector._outcome_counts(self) -> dict[str, int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_outcome_counts` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ## 内部调用与异常路径
 

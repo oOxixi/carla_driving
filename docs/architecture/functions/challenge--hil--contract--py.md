@@ -28,7 +28,7 @@ Executable form of the A4 runtime contract.
 _check(name: str, status: str, detail: str) -> dict[str, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_check` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `check_runtime_contract`
 
@@ -38,7 +38,7 @@ _check(name: str, status: str, detail: str) -> dict[str, str]
 check_runtime_contract(runtime: PlannerRuntime, requests: Sequence[Mapping[str, Any]], *, latency_budget_ms: float=1000.0) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`check_runtime_contract` 检查runtime合同、artifact、输出一致性、结构或身份完整性；结果只覆盖声明能力，model-only与full-chain、宿主与板端证据不得混写。
 
 ## 内部调用与异常路径
 

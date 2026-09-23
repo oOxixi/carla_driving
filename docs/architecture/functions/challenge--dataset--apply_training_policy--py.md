@@ -28,7 +28,7 @@ apply_training_policy
 read_jsonl(path: Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`read_jsonl` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `write_jsonl`
 
@@ -38,7 +38,7 @@ read_jsonl(path: Path) -> list[dict[str, Any]]
 write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_jsonl` 将已构造结果写入目标路径或发布目录；文件写成不代表样本合格，调用前后仍需核对原子性、SHA256、行数和manifest引用。
 
 ### `get_dict`
 
@@ -48,7 +48,7 @@ write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None
 get_dict(sample: dict[str, Any], key: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`get_dict` 读取或派生数据治理所需的输入，不修改源发布；缺失、类型和回退语义以函数返回及本页异常表为准，调用方仍须固定数据版本与来源清单。
 
 ### `evaluate_sample`
 
@@ -58,7 +58,7 @@ get_dict(sample: dict[str, Any], key: str) -> dict[str, Any]
 evaluate_sample(sample: dict[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`evaluate_sample` 从日志、请求或Teacher计划提取或评估训练语义；ID、target顺序、终态与时间字段必须来自同一命令链，缺失时返回或隔离而非猜测。
 
 ### `main`
 
@@ -68,7 +68,7 @@ evaluate_sample(sample: dict[str, Any]) -> dict[str, Any]
 main() -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析命令行参数并编排本脚本的数据读取、身份校验、生成/采集与落盘步骤；退出码和产物是否可发布取决于本页所列拒绝条件，不能只凭文件生成成功判定。
 
 ## 内部调用与异常路径
 

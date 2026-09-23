@@ -29,7 +29,7 @@ Multi-constraint target-speed planner.
 
 源码位置：[car_control_C/speed_planner.py 第 19 行](../../../car_control_C/speed_planner.py#L19)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的三参数合同：最大横向加速度、指令加速度斜率和指令减速度斜率，均使用 SI 单位并来自统一策略。
 
 ### `SpeedPlannerParameters.__post_init__`
 
@@ -39,7 +39,7 @@ Multi-constraint target-speed planner.
 SpeedPlannerParameters.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求三项参数均有限且严格为正；这里不检查它们与车辆物理能力是否匹配。
 
 ### `SpeedPlan`
 
@@ -55,13 +55,13 @@ Auditable result of fusing every longitudinal speed constraint.
 SpeedPlan.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把安全目标速度、决定它的约束名以及只读 caps 映射复制成普通可序列化字典，便于日志审计。
 
 ### `SpeedPlanner`
 
 源码位置：[car_control_C/speed_planner.py 第 46 行](../../../car_control_C/speed_planner.py#L46)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+融合曲率、道路限速、停止点、前车间距和命令速度的有状态目标速度规划器。它只输出目标 m/s，不产生油门/制动。
 
 ### `SpeedPlanner.__init__`
 
@@ -71,7 +71,7 @@ SpeedPlan.to_dict(self) -> dict[str, object]
 SpeedPlanner.__init__(self, parameters: SpeedPlannerParameters | None=None, traffic_rules: TrafficRulePlanner | None=None, stop_controller: StopController | None=None, following_controller: FollowingController | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存或构造四个依赖，初始化 `_previous_target=None` 与 `last_plan=None`。传入依赖用于与主控制器共享同一组停止/跟车规则。
 
 ### `SpeedPlanner.plan`
 
@@ -81,7 +81,7 @@ SpeedPlanner.__init__(self, parameters: SpeedPlannerParameters | None=None, traf
 SpeedPlanner.plan(self, request: LongitudinalRequest, dt_s: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+曲率上限为 `sqrt(max_lateral_accel/abs(curvature))`，再与道路限速、停止点和前车上限取最小硬约束；命令速度只按上一目标以加/减速度斜率渐变，最终目标不得超过硬上限。首次调用以当前车速为斜率基准，并记录只含有限 caps 的 `SpeedPlan`。
 
 ### `SpeedPlanner.reset`
 

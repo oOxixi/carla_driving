@@ -29,7 +29,7 @@ Measure how much of A3 Val can be solved by request hints without RGB.
 _first_behavior(row: Mapping[str, Any]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_first_behavior` 实现Dataset、批处理、过滤或报告辅助转换；它保留训练语义但不单独完成发布完整性、身份或泛化门禁。
 
 ### `_request`
 
@@ -39,7 +39,7 @@ _first_behavior(row: Mapping[str, Any]) -> str
 _request(row: Mapping[str, Any]) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_request` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ### `_hint_behavior`
 
@@ -49,7 +49,7 @@ _request(row: Mapping[str, Any]) -> Mapping[str, Any]
 _hint_behavior(request: Mapping[str, Any]) -> str | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_hint_behavior` 实现Dataset、批处理、过滤或报告辅助转换；它保留训练语义但不单独完成发布完整性、身份或泛化门禁。
 
 ### `_plan_signature`
 
@@ -59,7 +59,7 @@ _hint_behavior(request: Mapping[str, Any]) -> str | None
 _plan_signature(row: Mapping[str, Any], encoder: DistillationLabelEncoder) -> tuple[Any, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_plan_signature` 构造模型、输入打包器、mock样本或标签所需对象；mock/integration smoke只验证链路，禁止作为正式训练或晋级精度证据。
 
 ### `probe_records`
 
@@ -69,7 +69,7 @@ _plan_signature(row: Mapping[str, Any], encoder: DistillationLabelEncoder) -> tu
 probe_records(train_rows: list[Mapping[str, Any]], val_rows: list[Mapping[str, Any]]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`probe_records` 执行评测、探针、hard-case收集或候选晋级步骤；结果必须区分Head指标、Adapter计划、闭环安全与独立数据角色。
 
 ### `main`
 
@@ -79,7 +79,7 @@ probe_records(train_rows: list[Mapping[str, Any]], val_rows: list[Mapping[str, A
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析训练、评测或晋级命令行参数，调用对应门禁并用退出码表达成功/拒绝；生成报告或候选不自动等于通过独立Validation或Frozen Test。
 
 ## 内部调用与异常路径
 

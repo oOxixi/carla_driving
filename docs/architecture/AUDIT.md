@@ -55,6 +55,40 @@
 
 - **M01-01 / 已复现、未修复**：[sensor_stability](functions/integration--sensor_stability--py.md)的run_sensor_probe预热失败后，测量while不进入但执行else，将success=True。实际函数mock边界复现frames=3/startup_frames=1、wait_for_frame=False得到success=true/aligned_frames=0。影响probe结果与CLI返回码的可信性；修复需检查循环成功条件并覆盖启动失败/测量失败/成功。该发现不等于CARLA真实传感器必然失效。
 
+### 第5模块：纵向控制精读新增证据（基线50bf1faa）
+
+**M05-01 / 静态接线与纯Python边界已确认、未修复：perception policy的五个动态包络字段未进入实际包络公式。** [DrivingPolicy.perception_parameters](../../integration/driving_policy.py)构造`reaction_time_s`、`emergency_reaction_time_s`、`comfortable_deceleration_mps2`、`emergency_deceleration_mps2`、`range_uncertainty_buffer_m`，且[SafetyStateParameters](functions/car_control_C--safety_state--py.md)验证并保存它们；但`ConservativeSensorFusion.update`调用[dynamic_safety_distance](../../config/strategy.py)时只传速度、接近速度、曲率、对象类型和margin scale，没有传这些字段或替代StrategyConfig。后者因此读取导入时的`DEFAULT_STRATEGY`。同一帧输入下仅改变上述五项，动态谨慎/紧急距离保持相同。此结论只针对动态包络；距离floor、TTC、VRU限速/保持等字段有独立消费路径，不能扩大为整个DrivingPolicy无效。修复前需先决定单一配置所有权，再补参数效果回归和runner实际配置身份记录。
+
+### 第6模块：感知精读新增证据（基线5c46eb7d）
+
+**M06-01 / 直接接口已复现、未修复：上游显式track ID可在同帧重复。** [SensorObjectTracker.update](functions/integration--object_tracker--py.md)优先采用非空`detection.track_id`，没有检查该ID是否已被本帧另一目标使用。输入两个分别位于画面左右、但都带`track_id="dup"`的合法DetectedObject，输出ID为`["dup","dup"]`，内部`_tracks["dup"]`最终只保留后一个。当前生产OnnxYoloDetector输出ID为空，bridge通常由tracker分配`C-xxxx`，所以这是公开接口/未来带ID上游的身份边界，不应扩大为已确认历史run都重复。
+
+**M06-02 / canonical实际转换已复现、未修复：前车速度按对象列表首项绑定。** [perception_frame_to_state](../../integration/canonical_bridge.py)仅给`index==0`对象写`scene.lead_speed_mps`，未按`lead_distance_m`、track或测距目标关联。构造side目标（无距离、列表第一）和lead目标（10 m、列表第二），自车10 m/s、lead speed 2 m/s，输出side为50 m/2 m/s/TTC 6.25 s，lead为10 m/0 m/s/TTC 1.0 s。字段均通过schema但对象语义错配；修复需明确range-track关联，并同时回归Qwen目标排序、Student pointer、NONE/缺测和多目标场景。
+
+### 第7模块：安全仲裁精读新增证据（基线3b05476b）
+
+**M07-01 / 直接 canonical 封装已复现、未修复：帧级控制可恢复推进，但命令反馈仍保持 safety 终态。** [DControlRuntime.apply](../../car_control_D/control_runtime.py)在 safety override 时调用 `ExecutionFeedbackTracker.safety_override`，把 command ID 永久置为终态；同一 ID 下一帧仍会重新仲裁和返回新的 `final_control`。用仓库 `control_command/perception_state` examples，首帧 `risk_level=EMERGENCY` 得 throttle=0/brake=1、feedback=`SAFETY_OVERRIDE`；次帧风险解除、50 m gap 后得到 reason=`NONE`、override=false、throttle=0.2/brake=0，但 feedback 仍为第一次 `SAFETY_OVERRIDE`，unfinished 为空。当前 CARLA live runner 直接调用 `SafetySupervisor`，不使用 `DControlRuntime`，故这不是当前实车故障证明。若未来接入 canonical D，需把覆盖定义为帧事件或命令终止二选一，并回归终态后控制授权、重试 attempt ID、评分和监控消费。
+
+### 第8模块：场景执行与评分精读新增证据（基线7d618af3）
+
+**M08-01 / 外部 ScenarioRunner agent 直接接口已复现、未修复：声明 RGB 但 Qwen 请求无图且逐帧同步调用。** [ScenarioRunnerAgent.sensors](../../integration/scenario_runner_agent.py)声明 `front_rgb/lidar/gnss`，但 `_sensor_frame` 只读取 GNSS/LiDAR，`OfficialSensorFrame` 没有图像字段，`_qwen_high_level_command` 固定 `rgb_ref=None`、`visual_valid=False`、`detected_objects=[]`；在线 `run_step` 每帧调用该方法。给 agent 注入计数 stub client，连续传两个含 front_rgb 的合法 sensor frame，得到 `qwen_calls=2`、两个 rgb_ref 均 None、两个 visual_valid 均 false。该 adapter 是外部固定 ScenarioRunner 的简化未知场景入口，主 `carla_runner` 使用另一套多模态/事件式链，因此不能扩大为全项目未使用 RGB 或所有 Qwen 都逐帧调用。若用于正式全链，需接入同步图像/检测、事件异步生命周期及 evidence；若只作安全 baseline，交付材料必须降级声明能力。
+
+### 第9模块：接口与坐标转换精读新增证据（基线0bbbdc09）
+
+**M09-01 / 直接 adapter 已复现、未修复：未知 legacy 速度单位被静默当作 m/s。** [voice_envelope_to_driving_command](functions/integration--canonical_bridge--py.md#fn-voice-envelope-to-driving-command)只对 `km/h`、`kph`、`kmh` 及中文公里每小时除以3.6，其余单位进入原值分支。输入 `intent=SET_SPEED, speed=36, unit=mph` 后得到 `target_speed_mps=36.0`，而不是拒绝或换算为约16.09 m/s；输出仍通过 `driving_command` Schema。该结论只针对直接 legacy envelope adapter，不能扩大为所有正式语音生产者都会发送未知单位。修复需先冻结允许单位和错误语义，再联动旧客户端、Schema/Adapter测试与运行证据，避免静默速度放大。
+
+### 第10模块：Student结构与预处理精读新增证据（基线0bbbdc09）
+
+**M10-01 / 服务器 PyTorch 直接接口已复现、未修复：非默认 contract batch 产生四路不一致。** [StudentPreprocessor](functions/challenge--student--preprocess--py.md)在 `_rgb` 缺图分支按 `contract.input_shapes["rgb"]` 建 Tensor，但 `_text/_targets/_state` 都硬编码首维1。用 `StudentShapeContract(batch=2)` 和仓库 ModelRequest 示例复现得到 RGB `(2,3,224,224)`、文本 `(1,32)`、目标 `(1,8,14)`、状态 `(1,64)`；直接送入模型会在融合前形成 batch 不一致。当前正式导出合同固定 batch1，训练批次通常由 Dataset/collate 堆叠，因此不能扩大为默认线上推理故障。修复前需决定 runtime preprocessor 是否明确拒绝非1 batch，或全面支持批输入，并回归训练、导出和HIL。
+
+### 第11模块：Student Planner精读新增证据（基线0bbbdc09）
+
+**M11-01 / 服务器 PyTorch完整解码+Validator已复现、未修复：PULL_OVER可在无肩部目标车道时通过。** [StudentPlanAdapter._step](functions/challenge--planner--student_adapter--py.md)只有 `predicted_lane == "SHOULDER"` 才为 PULL_OVER 写 `target_lane`，否则写 null；[PlanValidator](../../runtime/plan_validator.py)只在非空 target_lane 为 SHOULDER 时校验车道可用，没有要求 PULL_OVER 必须指定 SHOULDER。构造只允许PULL_OVER、available_lanes含CURRENT/SHOULDER、行为Head选PULL_OVER而车道Head选CURRENT的请求，最终输出 `behavior=PULL_OVER,target_lane=None` 且 Validator 通过。该结论是Adapter/Validator合同缺口，不代表真实训练权重必然产生该组合。修复需统一训练标签、Adapter强制车道、Validator拒绝条件、Compiler和闭环靠边完成判定。
+
+### 第12模块：Teacher数据治理精读新增证据（基线47d2ad3b）
+
+**M12-01 / 干净服务器checkout已复现、未修复：D3冻结计划provenance测试依赖被忽略的运行产物。** [test_d3_wave1_collector](../../challenge/dataset/tests/test_d3_wave1_collector.py)直接读取 `collect_d3_wave1.DEFAULT_PLAN` 指向的 `artifacts/b1_d3_expansion_plan_wave1_v1/d3_expansion_plan_wave1.json`，但仓库 `.gitignore` 排除 `/artifacts/*` 且该文件当前不存在。完整相关测试得到 `1 failed, 195 passed`，单独数据套件排除该项为 `59 passed, 1 deselected`。这不证明D3计划内容错误，只证明干净checkout不能按现有测试独立复核其固定SHA/provenance。应将最小冻结计划或签名manifest纳入可复现发布，或让测试从明确外部artifact输入读取并在缺失时报告独立环境门禁。
+
 
 ### 第2模块：异步规划精读新增证据（2026-09-20，基线fe1ba839）
 

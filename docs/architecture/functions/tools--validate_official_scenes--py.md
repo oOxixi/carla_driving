@@ -24,7 +24,7 @@ CARLA-independent contract checks for the three official competition scenes.
 
 源码位置：[tools/validate_official_scenes.py 第 27 行](../../../tools/validate_official_scenes.py#L27)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【ContractFailure】定义维护工具的数据检查、生成、评测或证据处理所需的对象边界；类字段、构造校验和方法才是完整合同，实例化本身不代表外部资源或运行门禁已通过。
 
 ### `_require`
 
@@ -34,7 +34,7 @@ CARLA-independent contract checks for the three official competition scenes.
 _require(condition: bool, message: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_require】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_load`
 
@@ -44,7 +44,7 @@ _require(condition: bool, message: str) -> None
 _load(path: Path) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_load】从参数、文件、环境或缓存解析维护工具的数据检查、生成、评测或证据处理所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `_route_length`
 
@@ -54,7 +54,7 @@ _load(path: Path) -> dict[str, Any]
 _route_length(points: Iterable[Iterable[float]]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_route_length】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_actor_ids`
 
@@ -64,7 +64,7 @@ _route_length(points: Iterable[Iterable[float]]) -> float
 _actor_ids(data: dict[str, Any]) -> set[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_actor_ids】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_trigger_actor_ids`
 
@@ -74,7 +74,7 @@ _actor_ids(data: dict[str, Any]) -> set[str]
 _trigger_actor_ids(trigger: Any) -> set[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_trigger_actor_ids】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_trigger_route_progress_m`
 
@@ -84,7 +84,7 @@ _trigger_actor_ids(trigger: Any) -> set[str]
 _trigger_route_progress_m(trigger: Any) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_trigger_route_progress_m】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_validate_common`
 
@@ -94,7 +94,7 @@ _trigger_route_progress_m(trigger: Any) -> float | None
 _validate_common(label: str, path: Path, data: dict[str, Any]) -> ScenarioSpec
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_validate_common】检查维护工具的数据检查、生成、评测或证据处理的局部合同并返回/累计函数体定义的结果；静态校验通过不等于外部服务、CARLA、音频模型或最终交付已经通过。
 
 ### `validate_all`
 
@@ -104,7 +104,7 @@ _validate_common(label: str, path: Path, data: dict[str, Any]) -> ScenarioSpec
 validate_all() -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【validate_all】检查维护工具的数据检查、生成、评测或证据处理的局部合同并返回/累计函数体定义的结果；静态校验通过不等于外部服务、CARLA、音频模型或最终交付已经通过。
 
 ### `main`
 
@@ -114,7 +114,7 @@ validate_all() -> dict[str, Any]
 main() -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

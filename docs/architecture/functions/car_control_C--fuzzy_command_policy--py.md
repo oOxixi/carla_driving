@@ -47,7 +47,7 @@ Reject expiry and stop safely before requesting a voice confirmation.
 FuzzyCommandPolicy.__init__(self, config: FuzzyCommandPolicyConfig | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+保存严格策略配置并创建独立 `FollowingController` 用于当前帧 TTC；不共享主纵向控制器的历史，也不拥有命令状态机。
 
 ### `FuzzyCommandPolicy.evaluate`
 
@@ -57,7 +57,7 @@ FuzzyCommandPolicy.__init__(self, config: FuzzyCommandPolicyConfig | None=None) 
 FuzzyCommandPolicy.evaluate(self, command: DrivingCommand, request: LongitudinalRequest) -> FuzzyCommandDecision
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先校验 A 层命令/请求类型并保留前车测量计算风险。命令到期时返回零速安全请求、`REJECTED` 输出和 `EXPIRED` 反馈；低置信、歧义或显式确认时返回零速请求及 `CONFIRMING`，若低 TTC 则升级本地 `EMERGENCY_BRAKE`。可信命令原样放行且 `output=None`。
 
 ### `FuzzyCommandPolicy._safe_output`
 
@@ -67,7 +67,7 @@ FuzzyCommandPolicy.evaluate(self, command: DrivingCommand, request: Longitudinal
 FuzzyCommandPolicy._safe_output(self, request: LongitudinalRequest, state: str, reason: str, risk: RiskMetrics) -> LongitudinalOutput
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+生成互斥的 `throttle=0` 与制动：静止用 hold brake，运动中用舒适/最大减速度比例，紧急风险至少提高到 emergency brake。目标速度固定零；目标加速度记录舒适减速度请求，最终控制仍可被 D 覆盖。
 
 ## 内部调用与异常路径
 

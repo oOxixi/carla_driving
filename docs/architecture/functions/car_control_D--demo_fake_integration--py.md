@@ -29,7 +29,7 @@ demo_fake_integration
 main() -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+构造一条固定 SLOW_DOWN 命令和单帧车辆/风险输入，执行 `SafetySupervisor.arbitrate`，再通过 `ScenarioRunner` 写入 `logs/` 下的 command、frame、event、result 和 score report 并打印提示。它不加载 CARLA、Qwen 或传感器，只是日志与评分接线示例；重复运行会追加 JSONL、覆盖 JSON 汇总。
 
 ## 内部调用与异常路径
 

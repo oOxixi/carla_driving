@@ -28,7 +28,7 @@ Run directory layout, atomic writers, and the per-run evidence manifest.
 new_run_id(prefix: str='b3') -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`new_run_id` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `_write_atomic`
 
@@ -38,7 +38,7 @@ new_run_id(prefix: str='b3') -> str
 _write_atomic(path: Path, text: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_write_atomic` 写出冻结快照、handoff、trace、遥测或报告产物；文件必须绑定候选身份、输入哈希和环境，写盘成功不是Gate通过。
 
 ### `write_json`
 
@@ -48,7 +48,7 @@ _write_atomic(path: Path, text: str) -> None
 write_json(path: str | Path, payload: object) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_json` 写出冻结快照、handoff、trace、遥测或报告产物；文件必须绑定候选身份、输入哈希和环境，写盘成功不是Gate通过。
 
 ### `read_json`
 
@@ -58,7 +58,7 @@ write_json(path: str | Path, payload: object) -> Path
 read_json(path: str | Path) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`read_json` 读取冻结输入、配置、图像或provenance；路径解析必须保持发布边界，缺失资源不能静默当作成功样本。
 
 ### `write_jsonl`
 
@@ -68,7 +68,7 @@ read_json(path: str | Path) -> Any
 write_jsonl(path: str | Path, rows: Iterable[Mapping[str, Any]]) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_jsonl` 写出冻结快照、handoff、trace、遥测或报告产物；文件必须绑定候选身份、输入哈希和环境，写盘成功不是Gate通过。
 
 ### `read_jsonl`
 
@@ -78,7 +78,7 @@ write_jsonl(path: str | Path, rows: Iterable[Mapping[str, Any]]) -> Path
 read_jsonl(path: str | Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`read_jsonl` 读取冻结输入、配置、图像或provenance；路径解析必须保持发布边界，缺失资源不能静默当作成功样本。
 
 ### `_format_cell`
 
@@ -88,7 +88,7 @@ read_jsonl(path: str | Path) -> list[dict[str, Any]]
 _format_cell(value: Any) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_format_cell` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `write_csv`
 
@@ -98,7 +98,7 @@ _format_cell(value: Any) -> str
 write_csv(path: str | Path, columns: Sequence[str], rows: Iterable[Mapping[str, Any]]) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_csv` 写出冻结快照、handoff、trace、遥测或报告产物；文件必须绑定候选身份、输入哈希和环境，写盘成功不是Gate通过。
 
 ### `RunDir`
 
@@ -114,7 +114,7 @@ write_csv(path: str | Path, columns: Sequence[str], rows: Iterable[Mapping[str, 
 RunDir.__init__(self, root: str | Path, run_id: str | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 固化runtime、trace、身份、采样器或结果容器的依赖和初始状态，并执行源码中的参数约束；运行证据还需完整identity与时钟域。
 
 ### `RunDir.path`
 
@@ -124,7 +124,7 @@ RunDir.__init__(self, root: str | Path, run_id: str | None=None) -> None
 RunDir.path(self, *parts: str) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`path` 更新trace/collector状态或派生运行辅助值；阶段顺序、重复mark、能力声明和错误传播受源码条件约束，不能仅凭名称推断。
 
 ### `RunDir.write_hardware_env`
 
@@ -134,7 +134,7 @@ RunDir.path(self, *parts: str) -> Path
 RunDir.write_hardware_env(self, payload: Mapping[str, Any]) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_hardware_env` 写出冻结快照、handoff、trace、遥测或报告产物；文件必须绑定候选身份、输入哈希和环境，写盘成功不是Gate通过。
 
 ### `RunDir.build_manifest`
 
@@ -144,7 +144,7 @@ RunDir.write_hardware_env(self, payload: Mapping[str, Any]) -> Path
 RunDir.build_manifest(self, *, identity: CandidateIdentity, claim_scope: str, extra: Mapping[str, Any] | None=None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`build_manifest` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ## 内部调用与异常路径
 

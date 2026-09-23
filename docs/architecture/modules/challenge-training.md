@@ -41,6 +41,27 @@ Gate 默认核心指标最大下降 0.015，安全 recall 最大下降 0，schem
 
 [tests](../../../challenge/distillation/tests) 覆盖标签、loss、输出、checkpoint、preflight、A1/B1 接口、D2 Gate、指标、artifacts、报告与 smoke。训练配置、预处理、标签/Head、数据视图版本必须共同变更；修改 Gate 时联动生产加载器、评测证据格式和测试。当前 evaluate 输出训练指标，不能自动等同于最终 Adapter/PlanValidator 的闭环结果。
 
+## 第13模块逐入口精读结论（2026-09-22）
+
+### 从样本到候选的强制顺序
+
+1. preflight核对release/view、RGB、Teacher provenance、split角色和指针；Train统计不能读取Val/Reserved。
+2. Dataset保持ModelRequest targets顺序，label encoder把1～4步计划编码成固定Head标签与mask；超长、ID错配、目标不在前8候选均拒绝。
+3. 模型输出先过具名Head、shape、device和finite检查；loss分别使用step mask、target-speed mask、sample weight与可选class weight。
+4. 训练循环保存可恢复checkpoint；部署候选另导出纯state_dict和身份manifest，二者不能互换。
+5. 独立Validation与候选身份绑定后才能promote；Frozen Test不得用于阈值调整，A3通过也不替代B2/B3。
+
+### Loss、评测和恢复边界
+
+- soft distillation当前只覆盖behavior与target pointer；其余Head仍为hard label。报告不得写成“十Head全部soft蒸馏”。
+- padding中性值不参与loss，mask才是权威；空分母、缺速度标签和安全类recall需要保留真实分母。
+- `max_updates=0` 表示不设更新数上限，不是零步训练；formal配置仍受3 epochs控制。Smoke/mock只证明链路，候选状态必须保持MOCK_ONLY。
+- checkpoint包含optimizer/scheduler/RNG用于恢复；纯权重文件仅含state_dict。恢复训练必须验证结构、数据、Teacher和配置身份，而不仅是能load。
+
+### 晋级证据缺口与验证
+
+A01仍未修复：当前晋级校验未绑定Student评测的weights/model/config和Validation样本清单hash，不能证明分数属于当前候选。服务器执行distillation、A1结构与交付测试共 **65 passed in 43.00s**；这是离线机制证据，不是正式训练、精度Gate或闭环结果。
+
 
 
 ## 模块接口与参数核对（2026-09-20）

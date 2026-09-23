@@ -48,25 +48,25 @@ Head、固定类别映射和纯权重交付格式。入口、数据预检、训�
 
 A2 的正式输入必须是 Gate-passed FP32 权重及由该权重导出的 ONNX；当前仓库 ONNX 是
 随机初始化结构冒烟产物，不能用于正式 PTQ。Calibration、PTQ/QAT、INT8 Gate 和交接
-要求见 [`docs/modules/A2_INT8_QUANTIZATION_AND_QAT.md`](../docs/modules/A2_INT8_QUANTIZATION_AND_QAT.md)。
+要求见 [`docs/architecture/modules/A2_INT8_QUANTIZATION_AND_QAT.md`](../docs/architecture/modules/A2_INT8_QUANTIZATION_AND_QAT.md)。
 
 ## A4 部署
 
 A4 只接收身份完整且通过精度门禁的 INT8 candidate。OpenExplorer 转换、算子/fallback
 审计、X86/J6P Runtime 接口、性能优化顺序、证据等级和 B3 交接要求见
-[`docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md`](../docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md)。
+[`docs/architecture/modules/A4_OPENEXPLORER_J6P_RUNTIME.md`](../docs/architecture/modules/A4_OPENEXPLORER_J6P_RUNTIME.md)。
 当前随机初始化 FP32 ONNX 和全零输入 X86 计时仅是结构 Smoke，不代表 J6P 可部署或达标。
 
 ## B3 独立实测
 
 B3 只测 A4 交付的同一 Runtime，不修改模型或维护第二套测试实现。HIL 回放、八阶段计时、
 Seen/Variant/Unseen、板端遥测、长稳、证据等级和最终门禁见
-[`docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](../docs/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md)。
+[`docs/architecture/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](../docs/architecture/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md)。
 当前策展结果仅为随机初始化模型的 X86 机制预验证，不属于正式 J6P 结果。
 
 ## B4 复现与交付
 
 B4 负责把代码、数据、模型、Runtime、B2/B3 原始证据和 Docker 绑定到唯一 Release
 Candidate，并在干净环境复现后生成 Final 包。详细状态机、Manifest、冻结和 G5 门禁见
-[`docs/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md`](../docs/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md)。
+[`docs/architecture/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md`](../docs/architecture/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md)。
 当前基础赛道 Qwen 打包脚本不能替代挑战赛道 Student/J6P 发布链。

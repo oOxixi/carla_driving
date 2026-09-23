@@ -29,7 +29,7 @@ Fail-closed dataset checks before A3 reads production supervision.
 is_protected_split(value: object) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`is_protected_split` 定义蒸馏训练使用的模型、Dataset、标签器、loss或错误类型；字段和Head顺序受Student contract约束，修改后必须重训并更新身份。
 
 ### `preflight_datasets`
 
@@ -49,7 +49,7 @@ Return an auditable report; callers must reject ``valid == False``.
 write_preflight_report(path: str | Path, report: Mapping[str, Any]) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`write_preflight_report` 写出训练报告、checkpoint、hard-case或纯权重候选；写盘成功不代表候选可部署，仍需SHA、manifest和独立Gate绑定。
 
 ### `_scan_path`
 
@@ -59,7 +59,7 @@ write_preflight_report(path: str | Path, report: Mapping[str, Any]) -> Path
 _scan_path(path: Path, split: str, encoder: DistillationLabelEncoder, expected_version: str | None, max_errors: int, expected_teacher_git_sha: str | None, expected_teacher_model_id: str | None, asset_root: Path | None, require_rgb: bool, expected_teacher_model_revision: str | None, expected_teacher_artifact_fingerprint_sha256: str | None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_scan_path` 实现本文件对应的蒸馏、评测或候选处理子步骤；具体输入、mask、拒绝条件和副作用见本页签名/异常/调用表。
 
 ### `_inspect_record`
 
@@ -69,7 +69,7 @@ _scan_path(path: Path, split: str, encoder: DistillationLabelEncoder, expected_v
 _inspect_record(record: Mapping[str, Any], split: str, encoder: DistillationLabelEncoder, expected_version: str | None, expected_teacher_git_sha: str | None, expected_teacher_model_id: str | None, asset_root: Path | None, require_rgb: bool, expected_teacher_model_revision: str | None, expected_teacher_artifact_fingerprint_sha256: str | None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_inspect_record` 实现本文件对应的蒸馏、评测或候选处理子步骤；具体输入、mask、拒绝条件和副作用见本页签名/异常/调用表。
 
 ### `_split_matches`
 
@@ -79,7 +79,7 @@ _inspect_record(record: Mapping[str, Any], split: str, encoder: DistillationLabe
 _split_matches(declared: str, expected: str) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_split_matches` 实现本文件对应的蒸馏、评测或候选处理子步骤；具体输入、mask、拒绝条件和副作用见本页签名/异常/调用表。
 
 ### `_public_stats`
 
@@ -89,7 +89,7 @@ _split_matches(declared: str, expected: str) -> bool
 _public_stats(value: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_public_stats` 实现本文件对应的蒸馏、评测或候选处理子步骤；具体输入、mask、拒绝条件和副作用见本页签名/异常/调用表。
 
 ### `_validate_rgb`
 
@@ -99,7 +99,7 @@ _public_stats(value: Mapping[str, Any]) -> dict[str, Any]
 _validate_rgb(record: Mapping[str, Any], asset_root: Path | None, require_rgb: bool) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_validate_rgb` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `_validate_recorded_pointers`
 
@@ -109,7 +109,7 @@ _validate_rgb(record: Mapping[str, Any], asset_root: Path | None, require_rgb: b
 _validate_recorded_pointers(record: Mapping[str, Any], labels: Mapping[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_validate_recorded_pointers` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `main`
 
@@ -119,7 +119,7 @@ _validate_recorded_pointers(record: Mapping[str, Any], labels: Mapping[str, Any]
 main(argv: Sequence[str] | None=None) -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析训练、评测或晋级命令行参数，调用对应门禁并用退出码表达成功/拒绝；生成报告或候选不自动等于通过独立Validation或Frozen Test。
 
 ## 内部调用与异常路径
 

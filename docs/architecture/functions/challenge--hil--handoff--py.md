@@ -28,7 +28,7 @@ Export B3 runtime failures into a form A3 can actually consume.
 _canonical_sha256(payload: Any) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_canonical_sha256` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `_failure_taxonomy`
 
@@ -38,7 +38,7 @@ _canonical_sha256(payload: Any) -> str
 _failure_taxonomy(structural_failures: Sequence[str], outcome: str, teacher_behaviors: Sequence[str], student_behaviors: Sequence[str]) -> list[str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_failure_taxonomy` 实现本文件对应的HIL测量辅助步骤；具体输入、阶段、副作用和异常见本页签名/调用/拒绝表，修改时须同步schema与报告。
 
 ### `export_handoff`
 
@@ -48,7 +48,7 @@ _failure_taxonomy(structural_failures: Sequence[str], outcome: str, teacher_beha
 export_handoff(*, out_dir: str | Path, run_id: str, replay_rows: Iterable[Mapping[str, Any]], plan_rows: Iterable[Mapping[str, Any]], abnormal_summary: Mapping[str, Any] | None, source_snapshot: Mapping[str, Any] | None=None) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`export_handoff` 写出冻结快照、handoff、trace、遥测或报告产物；文件必须绑定候选身份、输入哈希和环境，写盘成功不是Gate通过。
 
 ### `_taxonomy_counts`
 
@@ -58,7 +58,7 @@ export_handoff(*, out_dir: str | Path, run_id: str, replay_rows: Iterable[Mappin
 _taxonomy_counts(records: Sequence[Mapping[str, Any]]) -> dict[str, int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_taxonomy_counts` 构造或汇总HIL身份、阶段、统计、环境或报告字段；计算口径依赖有效样本和单一时钟域，UNKNOWN与缺测需原样保留。
 
 ### `_readme`
 
@@ -68,7 +68,7 @@ _taxonomy_counts(records: Sequence[Mapping[str, Any]]) -> dict[str, int]
 _readme(summary: Mapping[str, Any]) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_readme` 实现本文件对应的HIL测量辅助步骤；具体输入、阶段、副作用和异常见本页签名/调用/拒绝表，修改时须同步schema与报告。
 
 ### `load_handoff`
 
@@ -78,7 +78,7 @@ _readme(summary: Mapping[str, Any]) -> str
 load_handoff(path: str | Path) -> list[dict[str, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`load_handoff` 读取冻结输入、配置、图像或provenance；路径解析必须保持发布边界，缺失资源不能静默当作成功样本。
 
 ## 内部调用与异常路径
 

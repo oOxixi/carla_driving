@@ -14,8 +14,8 @@ Frozen Test 调参，也不负责 OpenExplorer Runtime、J6P 性能优化或最�
 - [`MODEL_AND_WEIGHT_LIFECYCLE.md`](MODEL_AND_WEIGHT_LIFECYCLE.md)：FP32→INT8→Runtime 状态机。
 - [`A3_TRAINING_AND_HARD_CASES.md`](A3_TRAINING_AND_HARD_CASES.md)：FP32/QAT 训练职责。
 - [`B2_EVALUATION_AND_FP32_GATE.md`](B2_EVALUATION_AND_FP32_GATE.md)：统一评价与 Gate 证据。
-- [`challenge/A1_MODEL_INTERFACE.md`](../../challenge/A1_MODEL_INTERFACE.md)：固定 Shape 和 Head 合同。
-- [`challenge/hil/README.md`](../../challenge/hil/README.md)：A2 产物的独立结构/一致性检查入口。
+- [`challenge/A1_MODEL_INTERFACE.md`](../../../challenge/A1_MODEL_INTERFACE.md)：固定 Shape 和 Head 合同。
+- [`challenge/hil/README.md`](../../../challenge/hil/README.md)：A2 产物的独立结构/一致性检查入口。
 
 ## 2. 当前状态快照
 

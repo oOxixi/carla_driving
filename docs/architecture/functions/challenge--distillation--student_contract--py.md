@@ -39,7 +39,7 @@ Raise a focused error before malformed Student heads reach the loss.
 validate_finite_gradients(model: torch.nn.Module) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`validate_finite_gradients` 核对训练输入、冻结身份或候选证据；只覆盖显式检查项，不能用通过结果替代Student权重、样本清单和Teacher provenance的完整绑定。
 
 ### `forward_student`
 

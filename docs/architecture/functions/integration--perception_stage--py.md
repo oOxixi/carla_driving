@@ -25,7 +25,7 @@ Perception/control source boundary for the CARLA runtime.
 
 源码位置：[integration/perception_stage.py 第 15 行](../../../integration/perception_stage.py#L15)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+来源权威枚举：传感器、地图、oracle、合成、派生和未知。它描述来源类别，不表示该观测质量已经通过同步或数值门禁。
 
 ### `classify_observation_source`
 
@@ -35,13 +35,13 @@ Perception/control source boundary for the CARLA runtime.
 classify_observation_source(source: str) -> ObservationAuthority
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+将来源字符串去空白并转大写后按固定 token 优先级分类：ORACLE、SYNTHETIC、SENSOR、MAP；非空且不为 UNKNOWN/UNAVAILABLE 的其他字符串归 DERIVED，剩余归 UNKNOWN。使用的是子串包含判断，新增来源名时要避免意外命中高优先级 token。
 
 ### `PerceptionSourceAudit`
 
 源码位置：[integration/perception_stage.py 第 51 行](../../../integration/perception_stage.py#L51)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结审计结果，保存每个字段的权威类型以及禁止进入控制的字段名 tuple；映射由构造方包装为只读视图，但这不是传感器数值本身。
 
 ### `PerceptionSourceAudit.control_clean`
 
@@ -51,7 +51,7 @@ classify_observation_source(source: str) -> ObservationAuthority
 PerceptionSourceAudit.control_clean(self) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+仅判断 `forbidden_control_fields` 是否为空；为 true 表示未发现被规则禁止的来源，不证明数据齐全、同帧或物理正确。
 
 ### `PerceptionSourceAudit.to_dict`
 
@@ -61,7 +61,7 @@ PerceptionSourceAudit.control_clean(self) -> bool
 PerceptionSourceAudit.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把只读映射复制成普通 dict、禁止字段 tuple 转成 list，并附上派生的 `control_clean`，供 JSON 日志使用；不重新执行分类。
 
 ### `audit_control_sources`
 
@@ -71,7 +71,7 @@ PerceptionSourceAudit.to_dict(self) -> dict[str, object]
 audit_control_sources(source_by_field: Mapping[str, str], *, strict_sensor_mode: bool) -> PerceptionSourceAudit
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+逐字段调用来源分类器；仅在 `strict_sensor_mode=True` 时把 ORACLE 和 SYNTHETIC 字段排序写入禁止列表。MAP、DERIVED、UNKNOWN 不会被该函数禁止，因此 `control_clean=True` 不能替代字段必填和质量校验。
 
 ## 内部调用与异常路径
 

@@ -34,7 +34,7 @@ Validate both sides of an existing Qwen Planner V2 implementation.
 QwenTeacherBackend.__init__(self, delegate: Any, *, registry: InterfaceRegistry | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求 delegate 暴露可调用 `infer`，保存 registry/validator，并在构造时复制 delegate 的 model_id 与 production_ready；随后核对 ModelRequest/ManeuverPlan 冻结指纹。复制的是构造时快照，delegate 后续改变就绪字段不会自动更新包装器。
 
 ### `QwenTeacherBackend.infer`
 
@@ -44,7 +44,7 @@ QwenTeacherBackend.__init__(self, delegate: Any, *, registry: InterfaceRegistry 
 QwenTeacherBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先验证并深复制 ModelRequest，再调用 delegate；返回计划由 PlanValidator 校验 schema、低层字段、请求/命令ID、时效及场景可行性。`allow_confirmation=True` 允许需确认计划返回，但不代表已获执行授权。
 
 ### `QwenTeacherBackend.health`
 
@@ -54,7 +54,7 @@ QwenTeacherBackend.infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]
 QwenTeacherBackend.health(self) -> tuple[bool, str]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+若 delegate 有 health，先调用并返回其 detail；包装器构造时的 production_ready 为假会强制返回假。没有 health 时直接返回生产就绪快照及 model_id。该检查不发起试推理，也不核对具体 Teacher revision/fingerprint。
 
 ## 内部调用与异常路径
 

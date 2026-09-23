@@ -340,3 +340,21 @@ perturb_scenario(raw_scenario: Mapping[str, Any], case: PerturbationCase) -> dic
 | `safety.emergency_reaction_time_s` | `0.35` |
 | `safety.emergency_deceleration_mps2` | `6.0` |
 | `safety.range_uncertainty_buffer_m` | `1.0` |
+
+## 第18模块逐入口精读结论（2026-09-22）
+
+本轮按基线 `4e41f990` 核对5份配置资源页、1份场景Schema页和3份专题语义页，改写14处泛用占位。该模块定义的是“配置怎样生效、场景怎样被解释和验证”，不直接证明车辆完成场景。
+
+### 配置所有权与覆盖顺序
+
+`strategy_config.yaml`（实际为JSON语法YAML）由 `config/strategy.py` 严格装载并形成导入期 `DEFAULT_STRATEGY`；`driving_policy.json` 由 `integration/driving_policy.py` 形成感知与安全配置，runner还可传显式override。最终值不是简单的“后者覆盖前者”：部分安全下限仍从 `DEFAULT_STRATEGY` 取值，lane offset还会取policy与route deviation的较小值。每次run应记录文件hash、CLI/env和最终派生配置，单独修改某个文件不能宣称全链阈值已经改变。
+
+### 场景合同与运行证据
+
+`scenario_schema.json` 描述结构，`validate_scenarios.py` 实现的是项目需要的手工子集检查，不是完整JSON Schema执行器。静态合法只说明字段、有限数值和部分关系通过；地图存在、spawn成功、路线可达、actor时序、传感器同步、Qwen终态与评分都必须由runner证据回答。`scenario_local_xy_m` 需由runner转换，不能当作CARLA world坐标直接使用。
+
+official、development、acceptance、generalization、variant/unseen各自证据等级不同。生成器输出和开发场景通过不能替代S1/S2/S3正式结果；场景ID、route hash、seed、地图、天气和代码SHA必须一起保存，避免以同名JSON覆盖真实运行身份。
+
+### 修改联动与门禁
+
+改策略字段时同步loader、dataclass关系校验、DrivingPolicy派生、实际消费者与测试；改场景Schema时同步validator、runner、生成器、矩阵、评分和证据索引。门禁顺序为通用静态校验、official/泛化专项校验、离线合同测试、指定CARLA smoke、完整任务与冻结证据。任何actor/spawn/route/sensor失败都应保留为运行失败，禁止通过放宽expected或改评分掩盖。

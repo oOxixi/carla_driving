@@ -8,22 +8,22 @@
 | 2 | [异步规划](modules/vehicle-planner.md) | 本轮完成：21份实现页、189处占位改写、具体参数索引；两项边界问题保留 |
 | 3 | [命令与状态机](modules/vehicle-behavior.md) | 本轮完成：10份实现页、137处占位改写、参数/状态/snapshot索引；M03问题保留 |
 | 4 | [路线与横向控制](modules/vehicle-lateral.md) | 本轮完成：14份实现页、119处占位改写、全局路线/恢复/横向有效参数索引；RLC问题保留 |
-| 5 | [纵向控制](modules/vehicle-longitudinal.md) | 待按顺序精读；保留既有静态复核结果 |
-| 6 | [感知](modules/vehicle-perception.md) | 待按顺序精读；保留既有静态复核结果 |
-| 7 | [安全仲裁](modules/vehicle-safety.md) | 待按顺序精读；保留既有静态复核结果 |
-| 8 | [场景执行与评分](modules/vehicle-scenarios.md) | 待按顺序精读；保留既有静态复核结果 |
-| 9 | [接口与坐标转换](modules/vehicle-interfaces.md) | 待按顺序精读；保留既有静态复核结果 |
-| 10 | [Student 结构与预处理](modules/challenge-structure.md) | 待按顺序精读；保留既有静态复核结果 |
-| 11 | [Student Planner](modules/challenge-planner.md) | 待按顺序精读；保留既有静态复核结果 |
-| 12 | [Teacher 数据治理](modules/challenge-data.md) | 待按顺序精读；保留既有静态复核结果 |
-| 13 | [蒸馏与晋级](modules/challenge-training.md) | 待按顺序精读；保留既有静态复核结果 |
-| 14 | [导出与部署](modules/challenge-export.md) | 待按顺序精读；保留既有静态复核结果 |
-| 15 | [HIL 与测量](modules/challenge-hil.md) | 待按顺序精读；保留既有静态复核结果 |
-| 16 | [语音链](modules/support-voice.md) | 待按顺序精读；保留既有静态复核结果 |
-| 17 | [Qwen 后端](modules/support-qwen.md) | 待按顺序精读；保留既有静态复核结果 |
-| 18 | [配置与场景合同](modules/support-config-scenarios.md) | 待按顺序精读；保留既有静态复核结果 |
-| 19 | [运行环境与交付](modules/support-delivery.md) | 待按顺序精读；保留既有静态复核结果 |
-| 20 | [维护工具](modules/support-tools.md) | 待按顺序精读；保留既有静态复核结果 |
+| 5 | [纵向控制](modules/vehicle-longitudinal.md) | **本轮完成**：13份实现页、83处占位改写、生产链/参数/缺测/重置索引；M05-01与A07保留 |
+| 6 | [感知](modules/vehicle-perception.md) | **本轮完成**：12份实现页、10页96处占位改写、生产/参考链与来源索引；M06-01/M06-02保留 |
+| 7 | [安全仲裁](modules/vehicle-safety.md) | **本轮完成**：13份实现页、12页82处占位改写、双入口/仲裁/终态/评分证据索引；M07-01保留 |
+| 8 | [场景执行与评分](modules/vehicle-scenarios.md) | **本轮完成**：9份实现页、8页98处占位改写，场景/扩展/证据/外部runner边界；M08-01保留 |
+| 9 | [接口与坐标转换](modules/vehicle-interfaces.md) | **本轮完成**：7份Schema字段页、Registry与3个canonical转换入口；单位/坐标/ID/时钟及M09-01保留 |
+| 10 | [Student 结构与预处理](modules/challenge-structure.md) | **本轮完成**：5份实现页、23处占位改写，四路张量/十Head/预处理/训练mask及M10-01保留 |
+| 11 | [Student Planner](modules/challenge-planner.md) | **本轮完成**：8份实现页、22处占位改写，双Backend/解码/修复/就绪身份及M11-01保留 |
+| 12 | [Teacher 数据治理](modules/challenge-data.md) | **本轮完成**：33份实现页、301处占位改写，采集/release/view/切分/身份与M12-01保留 |
+| 13 | [蒸馏与晋级](modules/challenge-training.md) | **本轮完成**：25份实现/配置页、19页103处占位改写，标签/loss/checkpoint/Gate与A01保留 |
+| 14 | [导出与部署](modules/challenge-export.md) | **本轮完成**：6份实现页、4页13处占位改写，随机ONNX/真实权重/X86/J6P边界与R01/R03保留 |
+| 15 | [HIL 与测量](modules/challenge-hil.md) | **本轮完成**：20份实现/资源页、17页139处占位改写，Runtime/trace/身份/证据与A02/A03/R02保留 |
+| 16 | [语音链](modules/support-voice.md) | **本轮完成**：14份实现/语义页、50处占位改写，音频/文本分层、级联复核、授权与声学证据边界；A09保留 |
+| 17 | [Qwen 后端](modules/support-qwen.md) | **本轮完成**：8份实现/语义页、78处占位改写，HTTP/服务/backend、三层超时、规则组装与身份边界；A04/A05保留 |
+| 18 | [配置与场景合同](modules/support-config-scenarios.md) | **本轮完成**：9份配置/场景/语义页、14处占位改写，配置优先级、坐标、证据等级与校验边界 |
+| 19 | [运行环境与交付](modules/support-delivery.md) | **本轮完成**：37份容器/依赖/数据/交付页、4处占位改写，镜像入口、身份、发布hash与交付门禁；A06保留 |
+| 20 | [维护工具](modules/support-tools.md) | **本轮完成**：70份工具/脚本/语义页、342处占位改写，副作用分层、参数、cwd与证据边界；A06/A09保留 |
 
 ## 第1模块完成记录
 
@@ -57,15 +57,105 @@
 
 10份实现页的Git blob SHA256与当前源码一致；132个已登记函数签名（含局部回调）经Python AST核对参数、注解和默认表达式无差异。模块/逐文件/语义/审计/进度页522条本地链接与函数锚点检查无缺失；10页无原占位句，`git diff --check`通过。4份examples实际依次经过HighLevelCommandAdapter与VoiceCommandAdapter：变道示例为valid/MULTIMODAL_DECISION/需确认，其余分别KEEP_LANE、SET_SPEED、SET_SPEED且无需确认；均只是适配成功，不是车辆执行验收。第3模块精读完成时改动仅16份文档；发布同步另行统一了全体系哈希口径。
 
-
 ## 第4模块完成记录
 
 - 覆盖14份实现记录和2份跨文件语义/专题页；13页共119处泛用占位按函数体改写，无占位的包导出页保留实际导出边界。
-- 模块页补全 RouteManager、场景兼容合同、两类 progress tracker、恢复策略和生产 Pure Pursuit 有效值；明确 `docs/modules/04_ROUTE_AND_LATERAL_CONTROL.md` 是专题证据，20模块页仍是统一入口。
+- 模块页补全 RouteManager、场景兼容合同、两类 progress tracker、恢复策略和生产 Pure Pursuit 有效值；明确 `docs/architecture/modules/04_ROUTE_AND_LATERAL_CONTROL.md` 是专题证据，20模块页仍是统一入口。
 - 区分终点 A*、距离覆盖、验收局部路线、纯几何变道和 CARLA 拓扑变道；区分路线投影、实际累计里程、任务绝对里程与重规划 local s。
 - RLC-01～RLC-05 继续作为接口重复、配置分散、长时状态上界、实车证据和浅不可变风险；本轮未修改实现，也未把历史 CARLA 报告升级为当前验收。
 - 下一项为第5模块“纵向控制”，本轮不提前标记后续模块完成。
 
 ### 第4模块文档校验结果
 
-14份实现页记录186个类/函数入口；119处旧占位清零，14个来源 Git blob SHA256 与当前源码一致，模块/实现/审计/进度文档中的471条本地链接无缺失。直接离线回归 `python -m pytest car_control_B/tests integration/tests/test_route_geometry.py integration/tests/test_route_manager.py integration/tests/test_route_planner.py integration/tests/test_runtime_stages.py -q` → **81 passed in 1.31s**；`git diff --check`通过。以上不包含CARLA闭环、远端模型或硬件验收。
+14份实现页记录186个类/函数入口；119处旧占位清零，14个来源 Git blob SHA256 与当前源码一致，模块/实现/审计/进度文档中的471条本地链接无缺失。直接离线回归 `python -m pytest car_control_B/tests integration/tests/test_route_geometry.py integration/tests/test_route_manager.py integration/tests/test_route_planner.py integration/tests/test_runtime_stages.py -q` → **81 passed in 1.31s**；`git diff --check`通过。以上不包含CARLA闭环、远端模型或硬件验收。专题文档现已迁入 `docs/architecture/modules/04_ROUTE_AND_LATERAL_CONTROL.md`。
+
+## 第5模块完成记录
+
+- 逐项核对 `car_control_C` 13份有声明的实现页，83处泛用占位已改为当前函数的参数消费、返回、状态、副作用、异常和调用关系；对应页面已无原占位句。
+- 纵向模块页补齐生产调用顺序、五类速度约束、停止状态边界、跟车/TTC缺测语义、融合确认、PID/episode重置、默认参数与 C→D 控制权。
+- 纯 Python 静态/边界核对确认 M05-01：DrivingPolicy 构造的五个动态包络字段未传入 `dynamic_safety_distance`，当前仍由 `DEFAULT_STRATEGY` 决定；只登记，不修改控制代码。
+- A07 重名测试发现问题继续保留。本机未提供 pytest，故本轮不声称离线套件或 CARLA 已重新运行。
+- 下一项是第6模块“感知”；本轮没有提前把后续模块标为完成。
+
+## 第6模块完成记录
+
+- 核对12份实现页；10页共96处泛用占位按函数体改写，包导出和shell页保留无占位的实际入口说明。
+- 模块页补齐三种sensor profile、同帧获取、LiDAR/Radar门限、前车短时保持、RGB控制走廊、地图灯态、目标ID和来源审计；明确生产bridge与独立perception benchmark管线的边界。
+- 纯Python复现M06-01重复上游track ID导致同帧身份冲突，以及M06-02 canonical按列表首项绑定lead speed导致目标速度/TTC错配；只登记问题，未修改业务代码。
+- 感知相关7份测试入口执行结果 **79 passed in 0.91s**；该结果不包含CARLA、真实ONNX、雨夜或真实传感器质量。
+- 下一项是第7模块“安全仲裁”；本轮不提前标记后续模块完成。
+
+## 第7模块完成记录
+
+- 核对13份 `car_control_D` 实现页；其中12页共82处泛用占位按函数体改写，包导出页保留实际导出边界。
+- 模块页明确生产 `ControlRuntime → SafetySupervisor` 与 canonical `DControlRuntime` 的适用范围，补齐 adapter/validator、仲裁优先级、动态安全距离、路线恢复、反馈终态、日志/benchmark/计分证据等级。
+- 纯 Python 定点复现 M07-01：同一 canonical command 首帧终态 safety override 后，次帧可恢复推进控制但 feedback 仍是旧终态；只登记边界，未修改业务代码，且不扩大为当前 live runner 故障。
+- D 相关测试入口执行结果 **35 passed in 0.53s**；不包含 CARLA、Qwen、真实传感器或官方评分一致性验收。
+- 下一项是第8模块“场景执行与评分”；本轮不提前标记后续模块完成。
+
+## 第8模块完成记录
+
+- 核对9份实现场景页和4份既有语义/诊断页；8页共98处泛用占位按函数体改写，`scoring_stage` 原已有独立说明无需替换。
+- 模块页区分合同/几何、主runner扩展、evidence/acceptance、外部固定 ScenarioRunner 四层，补齐命令调度阻塞语义、任务绝对/重规划局部坐标、泛化采样、事件时序、context覆盖及证据等级。
+- 纯 Python 定点复现 M08-01：外部 ScenarioRunner agent 两个含RGB帧触发两次同步 Qwen，但两个请求均无 rgb_ref、visual_valid=false；只登记该 adapter 能力缺口，不扩大为主 runner 故障。
+- 场景相关8份测试入口执行结果 **134 passed in 2.59s**；不包含真实 CARLA、外部 checkout、在线模型或官方评分验收。
+- 下一项是第9模块“接口与坐标转换”；本轮不提前标记后续模块完成。
+
+## 第9模块完成记录
+
+- 核对7份 Schema 字段页、Registry、canonical bridge 和版本语义页；原页没有泛用占位句，本轮补充验证层次、三类转换的默认/降级、单位/坐标/ID/时钟边界及修改联动。
+- 纠正 Registry 与 bridge 实现页的上级模块导航；明确 Schema valid、Plan 可执行、安全仲裁和场景通过是不同证据层级。
+- 纯 Python 定点复现 M09-01：legacy `speed=36, unit=mph` 被输出为 36.0 m/s，未知单位当前未拒绝；只登记现状，未修改业务代码。
+- 接口相关3份测试入口执行结果 **43 passed in 0.55s**；不包含 CARLA、远端模型或板端。
+- 下一项是第10模块“Student 结构与预处理”；本轮不提前标记后续模块完成。
+
+## 第10模块完成记录
+
+- 核对5份 Student 实现页和预处理语义页；4页共23处泛用占位按函数体改写，包导出页保留实际导出说明。
+- 模块页补齐四路输入、CNN固定空间假设、十Head logits/数值语义、RGB/text/targets/state 信息损失，以及 padding/mask 权威规则。
+- 在服务器 PyTorch 环境定点复现 M10-01：`StudentShapeContract(batch=2)` 时 RGB 为 batch2，而 text/targets/state 仍为 batch1；只登记边界，不改运行代码。
+- 相关4份测试入口在服务器执行结果 **23 passed in 7.32s**；本机默认 Python 缺 torch，结果不包含 ONNX、CARLA、J6P 或正式权重验收。
+- 下一项是第11模块“Student Planner”；本轮不提前标记后续模块完成。
+
+## 第11模块完成记录
+
+- 核对8份 Planner 实现页和 Head 解码语义页；6页共22处泛用占位按函数体改写，包导出页保留实际导出说明。
+- 模块页补齐 Teacher/Student 共用验证边界、十Head到最终Plan的确定性修复、confirmation语义、权重manifest和 production-ready 证据层级。
+- 服务器 PyTorch 定点复现 M11-01：请求只允许 PULL_OVER 且存在 SHOULDER，模型车道预测 CURRENT 时最终行为仍为 PULL_OVER、target_lane=null，并通过当前 PlanValidator；只登记，未改业务代码。
+- A1与交付测试执行结果 **26 passed in 19.76s**；不包含正式权重、Teacher服务、CARLA、ONNX或J6P。
+- 下一项是第12模块“Teacher 数据治理”；本轮不提前标记后续模块完成。
+
+## 第12模块完成记录
+
+- 核对33份数据实现页与发布/视图语义页，301处泛用占位按采集、身份、切分、发布和治理职责改写。
+- 模块页明确原始run、canonical sample、冻结release与A3 view四层证据，补齐Teacher/target/终态关联、group防泄漏、文本/图像hash口径和D3接入边界。
+- 原测试集合为 **59 passed、1 failed**；M12-01确认D3 provenance测试依赖被忽略且缺失的artifact。排除该外部产物依赖后 **59 passed、1 deselected**。
+- 下一项是第13模块“蒸馏与晋级”。
+
+## 第13模块完成记录
+
+- 核对25份实现/配置页；19个Python实现页共103处占位改写，补齐preflight→标签→loss→训练→checkpoint→候选→promote顺序。
+- 明确soft蒸馏只覆盖两个Head、mask/分母、max_updates=0、checkpoint与纯权重区别，以及A01 Student评估身份缺口。
+- 服务器distillation、A1与交付测试 **65 passed in 43.00s**；未运行正式训练或精度Gate。
+- 下一项是第14模块“导出与部署”。
+
+## 第14模块完成记录
+
+- 核对6份导出/运行实现页，4页13处占位改写；区分随机结构ONNX、真实A3权重ONNX、X86前向与J6P交付。
+- 当前artifact validator实际PASS，记录ONNX SHA、23,006,581参数、算子、shape和十Head顺序；R01/R03仍保留，不能升级为生产部署通过。
+- 下一项是第15模块“HIL与测量”。
+
+## 第15模块完成记录
+
+- 核对20份HIL实现/资源页；17页139处占位改写，补齐三类Runtime能力、StageTrace、轮次、身份、冻结/回放/soak/采样/报告证据边界。
+- 服务器HIL测试 **71 passed in 1.85s**；A02重复mark、A03绕过真实infer、R02 full_chain语义仍未修复，未做真实J6P测试。
+- 第15模块完成时下一项为第16模块“语音链”；后续完成情况见下节，未用本条提前标记。
+
+## 第16～20模块完成记录
+
+- 第16模块核对14份语音实现/语义页，50处泛用占位改写；明确音频与文本证据分层、SenseVoice→B1→B2→可选faster-whisper复核、进程级缓存、命令授权和声学校准边界。服务器相关测试 **97 passed in 1.03s**。
+- 第17模块核对8份Qwen实现/语义页，78处占位改写；明确client/HTTP/service/backend边界、三层超时、atomic/planner差异、vLLM choice+规则组装和模型身份。服务器当前接口测试 **195 passed in 5.81s**；旧 `test_server.py` collect-only仍因删除的 `create_server` 失败，A04/A05没有被文档掩盖。
+- 第18模块核对9份配置/场景页，14处占位改写；明确strategy/policy/override的非简单覆盖、local/world坐标和静态合同与CARLA证据分层。服务器场景/配置/交付组合回归中的对应集合纳入 **174 passed in 1.76s**；`validate_scenarios.py` 为 **155 checked, 0 failed**，official validator为PASS。
+- 第19模块核对37份容器、依赖、数据和交付页，4处占位改写；明确镜像默认入口、模型/数据/发布hash、干净环境交付顺序与A06旧脚本cwd问题。
+- 第20模块核对70份工具/脚本/语义页，342处占位改写；明确只读校验、派生写入和外部执行三类副作用，以及CLI/cwd/退出码/原始产物的证据要求。
+- 本轮合计核对138份关联页、改写488处原占位，20/20模块均完成当前代码基线的逐入口精读。完成状态不关闭AUDIT问题，也不代表真实ASR/Qwen/CARLA/Docker/J6P全链已经运行。

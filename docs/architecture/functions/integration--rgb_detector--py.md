@@ -34,7 +34,7 @@ Model, preprocessing or inference failure that must fail closed.
 
 源码位置：[integration/rgb_detector.py 第 34 行](../../../integration/rgb_detector.py#L34)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+记录等比例缩放系数、左右/上下填充和原图尺寸，供检测框从网络输入坐标反算回原图；它不包含图像数据，也不做值校验。
 
 ### `carla_rgb_array`
 
@@ -54,7 +54,7 @@ Convert a CARLA BGRA payload (or a test RGB array) to uint8 RGB.
 _resize_rgb(image: np.ndarray, width: int, height: int) -> np.ndarray
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+用 Pillow 的 RGB 双线性插值缩放为指定宽高并返回 NumPy 数组；缺少 Pillow 时把 ImportError 转为 `OnnxDetectionError`，以便配置了检测器的生产链 fail closed。
 
 ### `_letterbox`
 
@@ -64,7 +64,7 @@ _resize_rgb(image: np.ndarray, width: int, height: int) -> np.ndarray
 _letterbox(image: np.ndarray, input_width: int, input_height: int) -> tuple[np.ndarray, _Letterbox]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按不拉伸的最小比例缩放，置于值114的固定输入画布中央，再转成 `[1,3,H,W]`、float32、`0..1`、连续内存张量；同时返回用于逆变换的 `_Letterbox`。输入形状由上游 `detect_rgb` 先校验。
 
 ### `_box_iou`
 
@@ -74,7 +74,7 @@ _letterbox(image: np.ndarray, input_width: int, input_height: int) -> tuple[np.n
 _box_iou(box: Sequence[float], boxes: np.ndarray) -> np.ndarray
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+向量化计算一个 xyxy 框与多个框的 IoU；负宽高面积截为0，分母用 `1e-9` 下限避免除零。该函数假定数组至少有四列。
 
 ### `_class_aware_nms`
 
@@ -84,7 +84,7 @@ _box_iou(box: Sequence[float], boxes: np.ndarray) -> np.ndarray
 _class_aware_nms(boxes: np.ndarray, scores: np.ndarray, class_ids: np.ndarray, iou_threshold: float) -> list[int]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按类别分别做贪心 NMS：类别内先按分数降序，保留最高分并删除 IoU 大于阈值的同类框；不同类别互不抑制。最后把所有保留索引再次按分数降序返回。
 
 ### `OnnxYoloDetector`
 
@@ -100,7 +100,7 @@ Ultralytics-style ONNX road-user detector with auditable postprocessing.
 OnnxYoloDetector.__init__(self, model_path: str | Path, *, confidence_threshold: float=0.35, iou_threshold: float=0.45, input_size: int=640, providers: Sequence[str]=('CPUExecutionProvider',), session: Any | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+校验阈值在 `(0,1]`、输入尺寸至少32。未注入 session 时要求模型文件存在、延迟导入 onnxruntime 并按 provider 建会话；会话必须恰好一个输入。静态四维输入读取模型 H/W，动态维退回 `input_size`；模型装载和依赖异常统一为 `OnnxDetectionError`。
 
 ### `OnnxYoloDetector.detect_measurement`
 
@@ -110,7 +110,7 @@ OnnxYoloDetector.__init__(self, model_path: str | Path, *, confidence_threshold:
 OnnxYoloDetector.detect_measurement(self, measurement: Any) -> tuple[DetectedObject, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+先用 `carla_rgb_array` 把 CARLA BGRA 或测试 RGB payload 转为 uint8 RGB，再委托 `detect_rgb`；因此原始缓冲长度、宽高和通道错误会在推理前被拒绝。
 
 ### `OnnxYoloDetector.detect_rgb`
 
@@ -120,7 +120,7 @@ OnnxYoloDetector.detect_measurement(self, measurement: Any) -> tuple[DetectedObj
 OnnxYoloDetector.detect_rgb(self, image_rgb: np.ndarray) -> tuple[DetectedObject, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求非空 HWC 三通道图像，转 uint8 后 letterbox，调用单输入 ONNX session。推理异常、空输出均 fail closed；只解码第一输出，返回合法 `DetectedObject` tuple。
 
 ### `OnnxYoloDetector._decode`
 
@@ -130,7 +130,7 @@ OnnxYoloDetector.detect_rgb(self, image_rgb: np.ndarray) -> tuple[DetectedObject
 OnnxYoloDetector._decode(self, output: np.ndarray, transform: _Letterbox) -> tuple[DetectedObject, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+支持 squeeze 后二维的 `[N,6]` 端到端输出和 Ultralytics `[N,84/85]`（也接受转置布局）。只保留 COCO 行人/自行车/汽车/摩托/公交/卡车，应用有限分数、置信度、逆 letterbox、边界裁剪、正面积和类别感知 NMS；输出框归一化到原图。列数或维数不支持时抛 `OnnxDetectionError`。
 
 ### `driving_corridor_detections`
 

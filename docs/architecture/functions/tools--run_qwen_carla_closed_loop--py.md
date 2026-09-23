@@ -28,7 +28,7 @@ Run one auditable RGB/LiDAR -> Qwen -> A/B/C/D -> CARLA loop.
 _parser() -> argparse.ArgumentParser
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_parser】把输入转换为维护工具的数据检查、生成、评测或证据处理使用的结构；只承诺函数体明确实现的字段、单位和规范化规则，未知值、缺字段及降级语义需与下游Schema一并核对。
 
 ### `_map_leaf`
 
@@ -38,7 +38,7 @@ _parser() -> argparse.ArgumentParser
 _map_leaf(name: str) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_map_leaf】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_speed_mps`
 
@@ -48,7 +48,7 @@ _map_leaf(name: str) -> str
 _speed_mps(vector: Any) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_speed_mps】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_vehicle_state`
 
@@ -58,7 +58,7 @@ _speed_mps(vector: Any) -> float
 _vehicle_state(ego: Any, frame: int, sim_time_s: float, world_map: Any) -> RuntimeVehicleState
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_vehicle_state】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_lateral_controller`
 
@@ -68,7 +68,7 @@ _vehicle_state(ego: Any, frame: int, sim_time_s: float, world_map: Any) -> Runti
 _lateral_controller() -> PurePursuitController
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_lateral_controller】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_spawn_ego`
 
@@ -78,7 +78,7 @@ _lateral_controller() -> PurePursuitController
 _spawn_ego(session: CarlaSession, world: Any) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_spawn_ego】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_acquire_ready_sample`
 
@@ -88,7 +88,7 @@ _spawn_ego(session: CarlaSession, world: Any) -> Any
 _acquire_ready_sample(session: CarlaSession, world: Any, bridge: CarlaPerceptionBridge, *, attempts: int=12, timeout_s: float=10.0) -> Any
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_acquire_ready_sample】汇总维护工具的数据检查、生成、评测或证据处理的健康或就绪状态；调用方必须区分配置完成、依赖可达、模型/数据身份匹配和生产门禁，不能只凭布尔值扩大结论。
 
 ### `_save_sensor_pair`
 
@@ -98,7 +98,7 @@ _acquire_ready_sample(session: CarlaSession, world: Any, bridge: CarlaPerception
 _save_sensor_pair(sample: Any, media_dir: Path) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_save_sensor_pair】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ### `_sha256`
 
@@ -108,7 +108,7 @@ _save_sensor_pair(sample: Any, media_dir: Path) -> dict[str, object]
 _sha256(path: Path) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_sha256】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_json_dump`
 
@@ -118,7 +118,7 @@ _sha256(path: Path) -> str
 _json_dump(path: Path, value: object) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_json_dump】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_json_line`
 
@@ -128,7 +128,7 @@ _json_dump(path: Path, value: object) -> None
 _json_line(stream: Any, value: object) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_json_line】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `run`
 
@@ -138,7 +138,7 @@ _json_line(stream: Any, value: object) -> None
 run(args: argparse.Namespace) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【run】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ### `main`
 
@@ -148,7 +148,7 @@ run(args: argparse.Namespace) -> dict[str, object]
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

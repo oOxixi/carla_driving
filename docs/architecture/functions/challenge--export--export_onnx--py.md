@@ -28,7 +28,7 @@ Export Student V0 with fixed shapes and no dynamic axes.
 _source_git_sha() -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_source_git_sha` 解析源码或产物身份，用于把导出文件绑定到固定提交和权重；UNKNOWN或脏工作树不能作为正式发布身份。
 
 ### `StudentOnnxExportWrapper`
 
@@ -44,7 +44,7 @@ Convert the public named dict to ONNX's stable positional output list.
 StudentOnnxExportWrapper.__init__(self, model: StudentPlannerV0) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`__init__` 保存导出包装器或FLOPs统计所需结构，并注册算子hook；统计/包装不改变原模型权重，但结果依赖实际输入shape和受支持算子。
 
 ### `StudentOnnxExportWrapper.forward`
 
@@ -54,7 +54,7 @@ StudentOnnxExportWrapper.__init__(self, model: StudentPlannerV0) -> None
 StudentOnnxExportWrapper.forward(self, *inputs: torch.Tensor) -> tuple[torch.Tensor, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`forward` 在导出或统计时按冻结输入/输出顺序执行一次前向或记录算子量；返回位置顺序必须与OUTPUT_NAMES一致，不能用Python dict偶然顺序替代合同。
 
 ### `export_student_v0`
 
@@ -64,7 +64,7 @@ StudentOnnxExportWrapper.forward(self, *inputs: torch.Tensor) -> tuple[torch.Ten
 export_student_v0(output: str | Path, *, seed: int=20260911, source_git_sha: str | None=None) -> Path
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`export_student_v0` 执行模型分析、ONNX导出、产物校验或X86推理；必须记录结构、权重、opset、动态轴、元数据与数值对齐，结构smoke不能冒充真实候选部署。
 
 ### `main`
 
@@ -74,7 +74,7 @@ export_student_v0(output: str | Path, *, seed: int=20260911, source_git_sha: str
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+解析导出、校验或X86运行参数，执行对应结构/产物流程并以退出码报告门禁；命令成功不代表训练权重、量化或J6P部署已经验收。
 
 ## 内部调用与异常路径
 

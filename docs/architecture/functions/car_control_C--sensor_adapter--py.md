@@ -33,7 +33,7 @@ C-role sensor timestamp and extrinsics audit helpers.
 
 源码位置：[car_control_C/sensor_adapter.py 第 16 行](../../../car_control_C/sensor_adapter.py#L16)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+单传感器帧戳，包含非负整数 frame、秒时间戳和来源文本；是审计辅助合同，不持有原始传感器数据。
 
 ### `SensorFrameStamp.__post_init__`
 
@@ -43,7 +43,7 @@ C-role sensor timestamp and extrinsics audit helpers.
 SensorFrameStamp.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+严格要求 frame 为非负 exact int，时间为 int/float，来源转字符串后非空。当前未拒绝 bool 时间或 NaN/Infinity，也未规范化 source 空白。
 
 ### `SensorFrameStamp.to_dict`
 
@@ -53,13 +53,13 @@ SensorFrameStamp.__post_init__(self) -> None
 SensorFrameStamp.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+返回 frame、浮点秒时间和来源的普通字典；无 schema version，供外层 `SensorAudit` 嵌套。
 
 ### `SensorAudit`
 
 源码位置：[car_control_C/sensor_adapter.py 第 38 行](../../../car_control_C/sensor_adapter.py#L38)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+汇总目标控制帧、仿真时间、各传感器帧戳/外参，以及最大帧差、时间差和对齐结论；dataclass 本身没有 `__post_init__`，应由 builder 构造。
 
 ### `SensorAudit.to_dict`
 
@@ -69,7 +69,7 @@ SensorFrameStamp.to_dict(self) -> dict[str, object]
 SensorAudit.to_dict(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+生成版本 `1.0` 的 JSON-ready 记录，递归转换帧戳和外参数值，并把最大时间差四舍五入到 6 位；不重新计算 alignment。
 
 ### `build_sensor_audit`
 
@@ -79,7 +79,7 @@ SensorAudit.to_dict(self) -> dict[str, object]
 build_sensor_audit(*, frame_id: int, sim_time_s: float, stamps: Mapping[str, SensorFrameStamp], extrinsics: Mapping[str, Mapping[str, float]] | None=None, max_allowed_frame_delta: int=0, max_allowed_time_delta_s: float=0.05) -> SensorAudit
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求目标 frame 为非负整数且 stamps 非空；计算每个传感器相对目标的绝对帧差/时间差并取最大值，只有两者均不超过调用阈值才 `alignment_ok=True`。当前未校验阈值非负、stamp 类型和时间有限性。
 
 ## 内部调用与异常路径
 

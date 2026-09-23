@@ -38,7 +38,7 @@ Return the fixed, nearest-rank timing summary used by gates.
 summarize_latency.percentile(quantile: float) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【summarize_latency.percentile】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `evaluate_official_gates`
 
@@ -68,7 +68,7 @@ Aggregate only measured official thresholds without inventing scenarios.
 _percentile(values: list[float], quantile: float) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_percentile】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_latency`
 
@@ -78,7 +78,7 @@ _percentile(values: list[float], quantile: float) -> float | None
 _latency(values: list[float]) -> dict[str, float | None]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_latency】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_is_safety_fault`
 
@@ -88,7 +88,7 @@ _latency(values: list[float]) -> dict[str, float | None]
 _is_safety_fault(record: dict[str, Any]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_is_safety_fault】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_contract_pass`
 
@@ -98,7 +98,7 @@ _is_safety_fault(record: dict[str, Any]) -> bool
 _contract_pass(record: dict[str, Any]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_contract_pass】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_raw_target_ok`
 
@@ -108,7 +108,7 @@ _contract_pass(record: dict[str, Any]) -> bool
 _raw_target_ok(record: dict[str, Any]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_raw_target_ok】从参数、文件、环境或缓存解析维护工具的数据检查、生成、评测或证据处理所需输入；路径优先级、默认值和缺失处理以函数体为准，读取成功不自动证明内容身份正确。
 
 ### `_asr_exact`
 
@@ -118,7 +118,7 @@ _raw_target_ok(record: dict[str, Any]) -> bool
 _asr_exact(record: dict[str, Any]) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_asr_exact】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `summarize_records`
 
@@ -138,7 +138,7 @@ Separate answerable perception from deliberate safety fault injection.
 summarize_records.ratio(subset: list[dict[str, Any]], predicate: Callable[[dict[str, Any]], bool]) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【summarize_records.ratio】生成或记录维护工具的数据检查、生成、评测或证据处理的文件/元数据；执行前要核对目标路径与覆盖行为，执行后以内容哈希、返回码和消费方复核，不能仅以文件存在判定通过。
 
 ## 内部调用与异常路径
 

@@ -29,7 +29,7 @@ D's unique final-control exit for canonical V1 pipeline objects.
 
 源码位置：[car_control_D/control_runtime.py 第 18 行](../../../car_control_D/control_runtime.py#L18)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+不可变的单帧 D 输出，绑定 command ID、最终 `ControlOutput`、完整 `SafetyDecision`、仅仲裁函数的 wall-clock 毫秒耗时和本次执行反馈。它不包含 CARLA 实际 apply 的确认，也不是实时 runner 的 `FrameResult`。
 
 ### `DControlRuntime`
 
@@ -45,7 +45,7 @@ Validate high-level authority and expose the only final control value.
 DControlRuntime.__init__(self, *, supervisor: SafetySupervisor | None=None, registry: InterfaceRegistry | None=None, lifecycle: ExecutionFeedbackTracker | None=None, clock_ns: Callable[[], int]=time.monotonic_ns) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+注入或创建 `SafetySupervisor`、`InterfaceRegistry` 与 `ExecutionFeedbackTracker`，并保存单调纳秒时钟；初始化空的仲裁时延和帧间 cadence 样本。该类是 canonical V1 封装，生产 CARLA runner 当前走另一条 `ControlRuntime → SafetySupervisor` 链。
 
 ### `DControlRuntime.apply`
 
@@ -55,7 +55,7 @@ DControlRuntime.__init__(self, *, supervisor: SafetySupervisor | None=None, regi
 DControlRuntime.apply(self, control_command: Mapping[str, Any], perception_state: Mapping[str, Any], vehicle_state: Mapping[str, Any], planned_control: Any, *, now_ns: int | None=None) -> FinalControlFrame
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+为命令建立 RECEIVED 生命周期，验证 canonical `control_command`/`perception_state`，把过期、stale、同步失败或 vehicle-state 缺失转换成 watchdog，再合并感知距离/灯态/TTC后仲裁。记录仲裁耗时与相邻 `now_ns` cadence；覆盖时直接产生终态 `SAFETY_OVERRIDE`，否则产生 `EXECUTING`。`vehicle_state` 本身只做 `dict()` 转换，不经 registry；反馈证明 D 决策已生成，不证明 CARLA 已接受控制。
 
 ### `DControlRuntime.complete`
 
@@ -65,7 +65,7 @@ DControlRuntime.apply(self, control_command: Mapping[str, Any], perception_state
 DControlRuntime.complete(self, command_id: str, *, succeeded: bool, reason: str, now_ns: int | None=None) -> Mapping[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把调用方布尔结果映射为 `SUCCEEDED` 或 `FAILED`，使用固定 action summary 和给定 reason 结束已接收命令。未知 command ID 会由 tracker 抛 `KeyError`；已有终态则幂等返回原终态，因此不能覆盖先前 safety override。
 
 ### `DControlRuntime.metrics`
 
@@ -75,7 +75,7 @@ DControlRuntime.complete(self, command_id: str, *, succeeded: bool, reason: str,
 DControlRuntime.metrics(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+汇总本实例累计的仲裁均值、近似 P95/P99、最大值，以及由相邻 `now_ns` 推导的 cadence 均值/极值和 20–50 Hz 比例；无样本时字段为 `None`。同时列出未终态 command ID。列表没有容量上限或自动重置，统计只覆盖本进程实例。
 
 ### `DControlRuntime._command_view`
 
@@ -85,7 +85,7 @@ DControlRuntime.metrics(self) -> dict[str, Any]
 DControlRuntime._command_view(command: Mapping[str, Any]) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 canonical behavior 映射为 D 的有限 intent 集；仅 EMERGENCY_STOP/STOP/SET_SPEED/SLOW_DOWN/KEEP_LANE 保持名称，其他 behavior 均退化为 `FORWARD`。只在 target 有 `target_speed_mps` 时写 parameters.speed，并以 reason_code 充 source_text；目标、车道和多步计划不会进入此视图。
 
 ## 内部调用与异常路径
 

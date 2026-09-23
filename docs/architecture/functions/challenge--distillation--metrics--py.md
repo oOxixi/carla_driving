@@ -29,7 +29,7 @@ Per-head validation metrics for Student plans.
 compute_batch_metrics(outputs: Mapping[str, Tensor], labels: Mapping[str, Tensor], sample_classes: Sequence[str]) -> dict[str, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`compute_batch_metrics` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ### `metric_denominators`
 
@@ -39,7 +39,7 @@ compute_batch_metrics(outputs: Mapping[str, Tensor], labels: Mapping[str, Tensor
 metric_denominators(labels: Mapping[str, Tensor], sample_classes: Sequence[str]) -> dict[str, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`metric_denominators` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ### `average_metrics`
 
@@ -49,7 +49,7 @@ metric_denominators(labels: Mapping[str, Tensor], sample_classes: Sequence[str])
 average_metrics(rows: Sequence[Mapping[str, float]], weights: Sequence[Mapping[str, float]] | None=None) -> dict[str, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`average_metrics` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ### `_accuracy`
 
@@ -59,7 +59,7 @@ average_metrics(rows: Sequence[Mapping[str, float]], weights: Sequence[Mapping[s
 _accuracy(correct: Tensor, mask: Tensor) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_accuracy` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ### `_masked_mae`
 
@@ -69,7 +69,7 @@ _accuracy(correct: Tensor, mask: Tensor) -> float
 _masked_mae(predicted: Tensor, target: Tensor, mask: Tensor) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_masked_mae` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ### `_recall`
 
@@ -79,7 +79,7 @@ _masked_mae(predicted: Tensor, target: Tensor, mask: Tensor) -> float
 _recall(predicted: Tensor, truth: Tensor) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_recall` 计算当前批次的loss或指标分子/分母；padding、缺标签和类别权重由显式mask决定，不能把无效槽位或空分母计为正确。
 
 ## 内部调用与异常路径
 

@@ -96,3 +96,23 @@ Verify models/wheelhouse/release locks, then GPU/kernel/service readiness and ac
 | [Dockerfile.qwen-cu132](../../../docker/Dockerfile.qwen-cu132) | 离线模型环境，VLLM_NO_USAGE_STATS=1；EXPOSE 8001 | ENTRYPOINT=/usr/local/bin/qwen-entrypoint；EXPOSE只是镜像声明，主机端口发布和服务地址仍由实际启动决定 |
 
 这些目录是容器内路径，不能直接当宿主路径。修改镜像CMD/ENTRYPOINT后需同步调用脚本和运行说明。shell参数完整性需阅读各脚本，Python argparse统计不覆盖它们。
+
+## 第19模块逐入口精读结论（2026-09-22）
+
+本轮按基线 `4e41f990` 核对37份容器、依赖、脚本、数据与交付页面，改写4处Python入口的泛用占位。资源文件没有函数占位并不表示已完成构建；本模块的核心是把代码、依赖、模型、数据和证据绑定成可复现身份。
+
+### 构建、启动与模型身份
+
+controller、Qwen和vLLM builder是不同镜像合同，requirements输入、CUDA/PyTorch/vLLM组合、离线环境、挂载和ENTRYPOINT均不能交叉推断。controller默认CMD是 `integration.demo_offline`，不是CARLA闭环；Qwen镜像 `EXPOSE 8001` 也不代表宿主已发布该端口或服务可达。生产模型必须同时核对repo/revision、artifact fingerprint、model manifest、容器内路径和运行时返回的model identity。
+
+### 数据与提交证据
+
+datasets、CARLA Language Benchmark、release locks和submission package分别管理样本合同、冻结基准、发布身份与最终材料。原始数据、派生数据、冻结split和报告必须通过hash/manifest连接；复制文件或重写可移植RGB路径后必须重签发布hash，不能沿用源清单声称发布内容未变。reference promotion会改变当前引用，执行前要验证来源证据，执行后要保存旧/新身份和生成日志。
+
+### 运行脚本与已知边界
+
+A06仍未关闭：旧 `scripts/run_full_pipeline.sh` 把 `scripts` 目录算作项目根，模块查找和产物路径依赖偶然外部环境。在修复并从任意cwd验证前，不得把它列为正式一键复现入口。Shell/PowerShell、notebook与Docker入口的参数和cwd各自独立；`--help`、镜像构建成功或文件存在都不等于场景、模型或提交Gate通过。
+
+### 交付门禁
+
+最低顺序是依赖/lock与wheelhouse核验、源码/模型manifest核验、镜像构建、容器内health与独立infer、CARLA场景证据、报告/附件hash，最后生成submission package并在干净环境复核。每级失败保留原始日志和退出码；缺GPU、权重、CARLA或外部runner时明确写未验证，不能用mock或历史报告补齐。

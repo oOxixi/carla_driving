@@ -5,7 +5,7 @@
 以下功能页说明实现理由、分支、接口含义、改动联动与验证。先读这些内容，再按逐文件索引定位方法；不要用函数名推断业务语义。
 
 - [路线、跟踪控制与完成里程](../functions/route-control-progress.md)
-- [路线与横向控制专题精读](../../modules/04_ROUTE_AND_LATERAL_CONTROL.md)
+- [路线与横向控制专题精读](04_ROUTE_AND_LATERAL_CONTROL.md)
 
 [Vehicle module](../modules/vehicle.md)
 

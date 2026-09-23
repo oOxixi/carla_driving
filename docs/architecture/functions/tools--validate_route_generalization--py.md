@@ -28,7 +28,7 @@ Validate destination route planning against one or more live CARLA maps.
 _map_name(world_map: Any) -> str
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_map_name】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_candidate_pairs`
 
@@ -38,7 +38,7 @@ _map_name(world_map: Any) -> str
 _candidate_pairs(spawn_points: list[Any], minimum_endpoint_gap_m: float) -> list[tuple[int, Any, int, Any]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_candidate_pairs】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_route_profiles`
 
@@ -48,7 +48,7 @@ _candidate_pairs(spawn_points: list[Any], minimum_endpoint_gap_m: float) -> list
 _route_profiles(route: Any) -> tuple[tuple[str, ...], dict[str, object]]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【_route_profiles】根据紧邻签名和函数体完成维护工具的数据检查、生成、评测或证据处理中的局部职责；返回、状态、副作用和异常以本页下方调用/raise记录为边界，名称本身不增加额外保证。
 
 ### `_select_diverse_routes`
 
@@ -68,7 +68,7 @@ Greedily retain deterministic routes that add structural coverage.
 validate_map(client: Any, map_name: str, pairs_required: int, *, minimum_endpoint_gap_m: float, minimum_route_length_m: float, maximum_route_length_m: float, maximum_junction_count: int | None, required_profiles: tuple[str, ...]=(), candidate_limit: int=120) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【validate_map】检查维护工具的数据检查、生成、评测或证据处理的局部合同并返回/累计函数体定义的结果；静态校验通过不等于外部服务、CARLA、音频模型或最终交付已经通过。
 
 ### `main`
 
@@ -78,7 +78,7 @@ validate_map(client: Any, map_name: str, pairs_required: int, *, minimum_endpoin
 main() -> int
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+【main】是维护工具的数据检查、生成、评测或证据处理的执行/命令入口；参数来自紧邻签名或本页CLI表，可能读取外部资源、写产物或启动服务，应以退出码、原始日志和固定输入身份判定结果。
 
 ## 内部调用与异常路径
 

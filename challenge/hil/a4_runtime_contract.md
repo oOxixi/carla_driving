@@ -1,7 +1,7 @@
 # A4 板端 Runtime 接口需求书（B3 提出）
 
 > A4 从 INT8 输入、OpenExplorer 转换到 J6P 交付的完整门禁见
-> [`docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md`](../../docs/modules/A4_OPENEXPLORER_J6P_RUNTIME.md)。
+> [`docs/architecture/modules/A4_OPENEXPLORER_J6P_RUNTIME.md`](../../docs/architecture/modules/A4_OPENEXPLORER_J6P_RUNTIME.md)。
 
 > 目的：让 A4 的 Runtime **一次做对**。本文件只列 B3 测量所必需的最小接口，
 > 不干涉 A4 的实现方式。文末的自检命令能在交付前把契约跑一遍。

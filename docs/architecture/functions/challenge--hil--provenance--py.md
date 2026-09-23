@@ -38,7 +38,7 @@ Resolve a local tag to a commit SHA without touching the network.
 _load_pin(repo: Path, *, label: str, manifest_relative: str, default_tag: str, git_key: str, fingerprint_key: str) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+`_load_pin` 读取冻结输入、配置、图像或provenance；路径解析必须保持发布边界，缺失资源不能静默当作成功样本。
 
 ### `teacher_baselines`
 

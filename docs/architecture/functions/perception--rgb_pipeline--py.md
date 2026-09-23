@@ -42,7 +42,7 @@ Road ROI, low-rate detection, high-rate stable tracking and Top-K output.
 
 源码位置：[perception/rgb_pipeline.py 第 15 行](../../../perception/rgb_pipeline.py#L15)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+定义道路 ROI、网络输入尺寸、低频检测间隔、Top-K、IoU 匹配和 track 保留帧数。这里的 track 是纯图像框追踪，没有距离和三维速度。
 
 ### `RGBPipelineConfig.__post_init__`
 
@@ -52,13 +52,13 @@ Road ROI, low-rate detection, high-rate stable tracking and Top-K output.
 RGBPipelineConfig.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求 `0 <= roi_top < roi_bottom <= 1`；输入尺寸、检测间隔、Top-K和寿命为正整数，IoU阈值在 `[0,1]`。不检查网络尺寸是否满足某个具体模型步长。
 
 ### `RGBDetection`
 
 源码位置：[perception/rgb_pipeline.py 第 36 行](../../../perception/rgb_pipeline.py#L36)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+检测器回调的二维结果，框坐标是输入 ROI 内归一化 xyxy；`_normalize` 再映射到整图坐标。类别字符串不受固定词表限制。
 
 ### `RGBDetection.__post_init__`
 
@@ -68,13 +68,13 @@ RGBPipelineConfig.__post_init__(self) -> None
 RGBDetection.__post_init__(self) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+类别必须非空，置信度为 `[0,1]` 有限数；框必须是长度4 tuple，各值有限且在 `[0,1]`、宽高为正。成功后置信度和框统一转 float。
 
 ### `RGBTrack`
 
 源码位置：[perception/rgb_pipeline.py 第 58 行](../../../perception/rgb_pipeline.py#L58)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+不可变图像 track 快照，记录稳定 `rgb-xxxxxx` ID、框、首次/最后检测帧、累计年龄以及本帧是否真正检测到。传播帧的 `last_frame_id` 保持最后检测帧。
 
 ### `_iou`
 
@@ -84,7 +84,7 @@ RGBDetection.__post_init__(self) -> None
 _iou(first: tuple[float, ...], second: tuple[float, ...]) -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+计算两个归一化 xyxy 框的交并比，交集负边长截0，分母下限 `1e-12`。调用者依赖 `RGBDetection` 已保证正面积。
 
 ### `RGBPipeline`
 
@@ -100,7 +100,7 @@ Detector callback receives the resized ROI and returns normalized ROI boxes.
 RGBPipeline.__init__(self, detector: Callable[[np.ndarray], Iterable[RGBDetection | Mapping[str, Any]]], *, config: RGBPipelineConfig | None=None, gpu_preprocess: Callable[[np.ndarray, int, int], np.ndarray] | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求 detector 可调用，接受可选 GPU 预处理器；初始化空 track、检测帧和逐帧延迟表。回调合同是接收 resize 后 ROI，返回 `RGBDetection` 或含三个必需键的 mapping。
 
 ### `RGBPipeline.process`
 
@@ -110,7 +110,7 @@ RGBPipeline.__init__(self, detector: Callable[[np.ndarray], Iterable[RGBDetectio
 RGBPipeline.process(self, image_rgb: np.ndarray, *, frame_id: int) -> tuple[RGBTrack, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+校验非空 HWC RGB 和非负帧号。到检测间隔时裁剪/缩放 ROI、调用 detector、映射整图并关联；中间帧只传播旧框。活动 track 按框底部、面积、置信度和ID排序，截到 Top-K；每次调用都记录完整处理耗时。函数未强制帧号单调，倒序帧会影响年龄/淘汰语义。
 
 ### `RGBPipeline.metrics`
 
@@ -120,7 +120,7 @@ RGBPipeline.process(self, image_rgb: np.ndarray, *, frame_id: int) -> tuple[RGBT
 RGBPipeline.metrics(self) -> dict[str, Any]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+从已累计的每帧延迟计算帧数、均值、nearest-rank式 p95、最大值、内部track数和检测间隔；无样本时三个延迟均为 None。内部track数可包含尚未输出的状态，不等同于当前 Top-K 数。
 
 ### `RGBPipeline._preprocess`
 
@@ -130,7 +130,7 @@ RGBPipeline.metrics(self) -> dict[str, Any]
 RGBPipeline._preprocess(self, image: np.ndarray) -> tuple[np.ndarray, float, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+按图像高度比例切 ROI，保证至少一行；优先调用注入的 GPU preprocess，否则用 Pillow 双线性缩放到配置尺寸。返回 resize 图、ROI 顶部比例和高度比例，供框映射；缺少 Pillow 时抛 RuntimeError。
 
 ### `RGBPipeline._normalize`
 
@@ -140,7 +140,7 @@ RGBPipeline._preprocess(self, image: np.ndarray) -> tuple[np.ndarray, float, flo
 RGBPipeline._normalize(item: RGBDetection | Mapping[str, Any], top_ratio: float, height_ratio: float) -> RGBDetection
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+mapping 输入通过 `class_name/confidence/bbox_xyxy_norm` 三键构造检测；x坐标保持，y坐标按 `top_ratio + roi_y * height_ratio` 映射到整图，再由 `RGBDetection` 二次验证。
 
 ### `RGBPipeline._associate`
 
@@ -150,7 +150,7 @@ RGBPipeline._normalize(item: RGBDetection | Mapping[str, Any], top_ratio: float,
 RGBPipeline._associate(self, detections: tuple[RGBDetection, ...], frame_id: int) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+检测按置信度/类别/框确定性排序，只与同类别未占用 track 比 IoU；达到阈值复用ID并按帧差增加年龄，否则分配新ID。未匹配旧track在寿命内保留、标记非本帧检测；最终用本轮 updated 表整体替换历史。
 
 ### `RGBPipeline._propagate`
 
@@ -160,7 +160,7 @@ RGBPipeline._associate(self, detections: tuple[RGBDetection, ...], frame_id: int
 RGBPipeline._propagate(self, frame_id: int) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+非检测帧不做运动预测，只原样保留寿命内的框、年龄加1并置 `detected_this_frame=False`；超过 `last_frame_id` 最大年龄的 track 删除。
 
 ## 内部调用与异常路径
 

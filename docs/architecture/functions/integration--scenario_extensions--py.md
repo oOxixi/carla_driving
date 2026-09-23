@@ -33,13 +33,13 @@ Executable acceptance-suite v2 extensions.
 missing_runtime_requirements(extensions: Mapping[str, Any]) -> tuple[str, ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 `extensions.runtime_support.requirements`，要求为非字符串 sequence，返回去重排序后不在 `IMPLEMENTED_RUNTIME_REQUIREMENTS` 中的名称。缺少 support/requirements 视为空；这里只核对声明名称，不证明每项场景运行已通过。
 
 ### `ExtensionFrameState`
 
 源码位置：[integration/scenario_extensions.py 第 55 行](../../../integration/scenario_extensions.py#L55)。类型：`ClassDef`。
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+冻结的单帧扩展输出：trigger context、当前 faults、刚激活/恢复的 fault ID、可选场景限速 m/s 以及是否替换地图限速。嵌套 dict 可变，状态由同一 `ScenarioExtensionRuntime` 累积。
 
 ### `ScenarioExtensionRuntime`
 
@@ -55,7 +55,7 @@ State machine for scenario-only runtime extensions and their evidence.
 ScenarioExtensionRuntime.__init__(self, extensions: Mapping[str, Any]) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+验证 extensions 为 mapping 且声明 requirement 全部已实现，复制顶层配置，解析 faults sequence，并初始化命令/phase、Qwen、actor、fault、速度/灯态、紧急响应、路线与 RSS 等跨帧聚合状态。非 mapping fault 项会被静默忽略；实例只服务一个场景且无 reset/线程同步。
 
 ### `ScenarioExtensionRuntime._rss_mb`
 
@@ -65,7 +65,7 @@ ScenarioExtensionRuntime.__init__(self, extensions: Mapping[str, Any]) -> None
 ScenarioExtensionRuntime._rss_mb() -> float
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+尝试用 `resource.getrusage(RUSAGE_SELF).ru_maxrss` 换算 MB，Windows 与非 Windows 使用不同分母；模块/OS/值异常返回0。ru_maxrss 通常是进程历史峰值，不是当前占用，跨场景同进程的 growth 证据有平台与基线限制。
 
 ### `ScenarioExtensionRuntime.qwen_faults`
 
@@ -75,7 +75,7 @@ ScenarioExtensionRuntime._rss_mb() -> float
 ScenarioExtensionRuntime.qwen_faults(self) -> tuple[dict[str, Any], ...]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+筛选 fault.type 小写以 `qwen_` 开头的配置并返回 tuple；元素仍是初始化时的浅复制 dict，可被外部修改。
 
 ### `ScenarioExtensionRuntime.weather_parameters`
 
@@ -85,7 +85,7 @@ ScenarioExtensionRuntime.qwen_faults(self) -> tuple[dict[str, Any], ...]
 ScenarioExtensionRuntime.weather_parameters(self) -> dict[str, float]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+读取 `extensions.weather_parameters`，要求 mapping，并把键转字符串、值转 float 返回新字典。未检查有限性或 CARLA WeatherParameters 是否支持该键。
 
 ### `ScenarioExtensionRuntime.route_loop`
 
@@ -95,7 +95,7 @@ ScenarioExtensionRuntime.weather_parameters(self) -> dict[str, float]
 ScenarioExtensionRuntime.route_loop(self) -> bool
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+当 `extensions.route_policy` 是 mapping 时返回其 `loop` 的 Python bool，否则 false。字符串 `"false"` 会成为真，场景 schema 应传真实布尔值。
 
 ### `ScenarioExtensionRuntime.note_command_submitted`
 
@@ -105,7 +105,7 @@ ScenarioExtensionRuntime.route_loop(self) -> bool
 ScenarioExtensionRuntime.note_command_submitted(self, command: Mapping[str, object], *, qwen: bool) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+登记 command ID/intent/当前 elapsed、phase 的提交里程与近10秒接近速度、活动 phase 和目标速度；累计确认、Qwen请求、停止/重启/减速状态。速度按 unit 转成 km/h，但未校验有限性；重复 ID 会再次进入提交顺序列表。
 
 ### `ScenarioExtensionRuntime.note_terminal`
 
@@ -115,7 +115,7 @@ ScenarioExtensionRuntime.note_command_submitted(self, command: Mapping[str, obje
 ScenarioExtensionRuntime.note_terminal(self, command_id: str, status: object) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把 command ID 加入 terminal set，若已绑定 phase 则标记 terminal/completed 并结束活动 phase；按规范化 status 累计计数，SUCCEEDED 记录当前 elapsed。方法名虽用于 Qwen 统计，但不验证该 ID 曾以 qwen=true 提交，也不限制 status 为终态。
 
 ### `ScenarioExtensionRuntime.note_qwen_plan`
 
@@ -135,7 +135,7 @@ Collect actions and auditable sensor-to-scenario target bindings.
 ScenarioExtensionRuntime.note_qwen_plan.walk(value: Any, key: str='') -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+递归遍历 plan mapping/sequence，收集 behavior/action/intent，大写保存；收集三种目标 ID 并按 sensor→scenario alias 同时加入映射值；目标速度 m/s 转 km/h、kph 原值保存。它是宽松证据提取，不验证 ManeuverPlan schema，也可能从非执行元数据中采到同名键。
 
 ### `ScenarioExtensionRuntime.note_qwen_resolution`
 
@@ -145,7 +145,7 @@ ScenarioExtensionRuntime.note_qwen_plan.walk(value: Any, key: str='') -> None
 ScenarioExtensionRuntime.note_qwen_resolution(self, *, disposition: str, reason_code: str | None, applied: bool, command_id: str | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+记录 disposition/reason，并通过字符串 token 统计 stale/late/invalid/timeout；applied 时增加 vehicle-advance、当前 elapsed、按 command 的 applied 时间和最新提交索引。invalid 还会因场景配置存在 qwen_invalid_token fault 而计数，因此这是验收事件分类，不是纯模型响应解析。
 
 ### `ScenarioExtensionRuntime.note_maneuver_terminal_reason`
 
@@ -170,7 +170,7 @@ be counted as another Qwen request or outcome.
 ScenarioExtensionRuntime.note_phase_completed(self, phase_id: str) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+strip phase ID，非空时加入 completed set；不要求 phase 在计划或命令映射中存在，也不自动加入 terminal trigger set。
 
 ### `ScenarioExtensionRuntime.restore_terminal_phase`
 
@@ -190,7 +190,7 @@ Restore trigger state from a verified earlier run segment only.
 ScenarioExtensionRuntime.note_actor_trigger(self, actor_id: str, *, elapsed_s: float | None=None) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+strip actor ID，非空时加入触发集合，并用显式 elapsed 或当前 last elapsed 记录首次危险时间；后续同 ID 不覆盖首次时间。未校验时间有限/非负。
 
 ### `ScenarioExtensionRuntime.note_perception_observation`
 
@@ -230,7 +230,7 @@ Return one configured hazard whose minimum stop hold has elapsed.
 ScenarioExtensionRuntime.note_emergency_recovered(self, actor_id: str, *, elapsed_s: float) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求该 actor 已有 control-effect 时间，再以 `setdefault` 记录首次恢复 elapsed。它不自行核对 hold/clearance；调用方应先通过 `ready_emergency_recovery`。
 
 ### `ScenarioExtensionRuntime.note_actor_activated`
 
@@ -240,7 +240,7 @@ ScenarioExtensionRuntime.note_emergency_recovered(self, actor_id: str, *, elapse
 ScenarioExtensionRuntime.note_actor_activated(self, actor_id: str, *, route_progress_m: float) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求非空 actor ID 和有限非负任务路线里程，以 `setdefault` 保存首次激活进度。重复激活不覆盖，单位为米。
 
 ### `ScenarioExtensionRuntime.note_target_lane_occupancy`
 
@@ -250,7 +250,7 @@ ScenarioExtensionRuntime.note_actor_activated(self, actor_id: str, *, route_prog
 ScenarioExtensionRuntime.note_target_lane_occupancy(self, count: int) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+要求精确非负 int 并覆盖保存当前/最近一次目标车道占用数量；不是最大值、最小值或时间序列，验收消费者读取最后一次观测。
 
 ### `ScenarioExtensionRuntime.note_mission_route_restored`
 
@@ -270,7 +270,7 @@ Record a successful manoeuvre return to the saved mission route.
 ScenarioExtensionRuntime.update_frame(self, *, elapsed_s: float, route_progress_m: float, ego_speed_mps: float, ego_standstill_duration_s: float, actor_distances_m: Mapping[str, float], traffic_light_state: str, distance_to_stop_line_m: float | None, lane_id: str, lateral_offset_m: float | None=None, route_deviation_m: float | None=None) -> ExtensionFrameState
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+更新每帧 trigger context、actor距离最小值、车道切换、速度/phase目标接近、路线偏差、重启位移、RSS和灯态/停止线；逐 fault 评估触发及 duration 窗口，返回活动/新启停 fault 和场景限速。多个数值直接 float 转换，actor距离单独要求有限非负；elapsed/速度/里程等未统一有限性检查，调用方必须提供已验证帧状态。
 
 ### `ScenarioExtensionRuntime.note_control_observation`
 
@@ -300,7 +300,7 @@ Advance one actor event at a time and return its effective state.
 ScenarioExtensionRuntime.evidence(self) -> dict[str, object]
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+把累计状态复制为评价字典，包括 Qwen请求/终态/行为/目标/故障、速度/灯态/phase/路线、actor距离和紧急事件六阶段时间。紧急 response 使用 perception→control 毫秒并计算插值 P95/最大值；缺失阶段保留 None，不会伪造完成。
 
 ### `ScenarioExtensionRuntime._percentile`
 
@@ -310,7 +310,7 @@ ScenarioExtensionRuntime.evidence(self) -> dict[str, object]
 ScenarioExtensionRuntime._percentile(values: Sequence[float], quantile: float) -> float | None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+空 sequence 返回 None，单值原样返回，多值排序后按 `(n-1)*quantile` 线性插值。quantile 未限制范围，当前用于0.95。
 
 ### `ScenarioExtensionRuntime.evaluate`
 
@@ -330,7 +330,7 @@ Evaluate every v2 proposed-acceptance field with auditable evidence.
 ScenarioExtensionRuntime.evaluate.add(key: str, passed: bool, actual: object, required: object) -> None
 ```
 
-源码未提供该入口的独立说明；名称和类型签名不能充分确定单位、异常或副作用，修改时须同时阅读函数体及下列调用关系。
+向 checks 追加 key、PASS/FAIL、actual、required 的统一条目；外层 `evaluate` 对 proposed 每个已知字段逐项调用，未知字段走失败分支。闭包不做类型转换或去重。
 
 ## 内部调用与异常路径
 
