@@ -265,9 +265,17 @@ def run_training(
         start_epoch = int(restored["epoch"]) + 1
         global_step = int(restored["global_step"])
         best_metric = float(restored["best_metric"])
-        data_generator_state = restored.get("extra_state", {}).get("data_generator_state")
+        restored_extra = restored.get("extra_state", {})
+        data_generator_state = restored_extra.get("data_generator_state")
         if data_generator_state is not None:
             generator.set_state(data_generator_state.cpu())
+        restored_key = restored_extra.get("best_selection_key")
+        best_selection_key = (
+            tuple(float(value) for value in restored_key)
+            if restored_key is not None else (best_metric,)
+        )
+    else:
+        best_selection_key = None
 
     log_path = output_dir / "training.jsonl"
     best_path = output_dir / "student_fp32_best.pt"
@@ -275,6 +283,7 @@ def run_training(
     epochs = int(training["epochs"])
     max_updates = int(training.get("max_updates", 0))
     selection_metric = str(training.get("selection_metric", "plan_sequence_accuracy"))
+    selection_tiebreakers = _selection_tiebreakers(training.get("selection_tiebreakers"))
     if not resume_path and log_path.is_file():
         log_path.unlink()
     history: list[dict[str, Any]] = []
@@ -308,7 +317,10 @@ def run_training(
         )
         if selection_metric not in validation:
             raise ValueError(f"unknown selection metric: {selection_metric}")
-        candidate = float(validation[selection_metric])
+        candidate_key = _selection_key(
+            validation, selection_metric=selection_metric,
+            tiebreakers=selection_tiebreakers,
+        )
         entry = {
             "epoch": epoch,
             "global_step": global_step,
@@ -318,8 +330,11 @@ def run_training(
         history.append(entry)
         with log_path.open("a", encoding="utf-8") as stream:
             stream.write(json.dumps(_strict_json(entry), ensure_ascii=False) + "\n")
-        if math.isfinite(candidate) and candidate > best_metric:
-            best_metric = candidate
+        if candidate_key is not None and (
+            best_selection_key is None or candidate_key > best_selection_key
+        ):
+            best_selection_key = candidate_key
+            best_metric = candidate_key[0]
             save_checkpoint(
                 best_path,
                 model=model,
@@ -328,7 +343,10 @@ def run_training(
                 global_step=global_step,
                 best_metric=best_metric,
                 metadata=metadata,
-                extra_state={"data_generator_state": generator.get_state()},
+                extra_state={
+                    "data_generator_state": generator.get_state(),
+                    "best_selection_key": list(best_selection_key),
+                },
             )
         save_checkpoint(
             last_path,
@@ -338,7 +356,12 @@ def run_training(
             global_step=global_step,
             best_metric=best_metric,
             metadata=metadata,
-            extra_state={"data_generator_state": generator.get_state()},
+            extra_state={
+                "data_generator_state": generator.get_state(),
+                "best_selection_key": (
+                    list(best_selection_key) if best_selection_key is not None else None
+                ),
+            },
         )
         if max_updates and global_step >= max_updates:
             break
@@ -382,6 +405,8 @@ def run_training(
         "epochs_completed": len(history),
         "global_step": global_step,
         "selection_metric": selection_metric,
+        "selection_tiebreakers": selection_tiebreakers,
+        "best_selection_key": list(best_selection_key or ()),
         "best_metric": best_metric,
         "best_validation": best_validation,
         "best_checkpoint": str(best_path),
@@ -531,6 +556,60 @@ def _validate_config(value: Mapping[str, Any]) -> dict[str, Any]:
     if int(cfg["training"]["batch_size"]) < 1 or int(cfg["training"]["epochs"]) < 1:
         raise ValueError("batch_size and epochs must be positive")
     return cfg
+
+
+def _selection_tiebreakers(value: object) -> list[dict[str, str]]:
+    """Normalize deterministic checkpoint tie-breakers.
+
+    The historical selector maximized one categorical metric and kept the
+    first checkpoint forever after saturation.  Lower Validation loss and
+    speed MAE are safe, general tie-breakers because they use the same
+    development split and never consult Test data.
+    """
+    if value is None:
+        value = [
+            {"metric": "loss", "mode": "min"},
+            {"metric": "target_speed_mae", "mode": "min"},
+        ]
+    if not isinstance(value, list):
+        raise ValueError("training.selection_tiebreakers must be a list")
+    normalized: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in value:
+        if isinstance(item, str):
+            metric, mode = item, "min"
+        elif isinstance(item, Mapping):
+            metric = str(item.get("metric", "")).strip()
+            mode = str(item.get("mode", "min")).strip().lower()
+        else:
+            raise ValueError("selection tie-breaker must be a metric name or mapping")
+        if not metric or metric in seen:
+            raise ValueError("selection tie-breaker metrics must be non-empty and unique")
+        if mode not in {"min", "max"}:
+            raise ValueError("selection tie-breaker mode must be min or max")
+        normalized.append({"metric": metric, "mode": mode})
+        seen.add(metric)
+    return normalized
+
+
+def _selection_key(
+    validation: Mapping[str, Any],
+    *,
+    selection_metric: str,
+    tiebreakers: list[dict[str, str]],
+) -> tuple[float, ...] | None:
+    if selection_metric not in validation:
+        raise ValueError(f"unknown selection metric: {selection_metric}")
+    values = [float(validation[selection_metric])]
+    for item in tiebreakers:
+        metric = item["metric"]
+        if metric not in validation:
+            raise ValueError(f"unknown selection tie-breaker: {metric}")
+        value = float(validation[metric])
+        values.append(value if item["mode"] == "max" else -value)
+    if not all(math.isfinite(value) for value in values):
+        return None
+    return tuple(values)
 
 
 def _validate_frozen_identities(

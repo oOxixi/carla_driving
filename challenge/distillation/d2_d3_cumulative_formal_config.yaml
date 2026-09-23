@@ -1,4 +1,4 @@
-config_id: a3-b1-d2-v1-1-plus-d3-wave1-fp32-v1
+config_id: a3-b1-d2-v1-1-plus-d3-wave1-fp32-v2
 seed: 20260924
 
 teacher:
@@ -43,6 +43,9 @@ training:
   gradient_clip_norm: 1.0
   max_updates: 0
   selection_metric: plan_sequence_accuracy
+  selection_tiebreakers:
+    - {metric: loss, mode: min}
+    - {metric: target_speed_mae, mode: min}
   resume: null
 
 sampling:
@@ -69,4 +72,4 @@ loss_weights:
 distillation: {soft_alpha: 0.0, temperature: 1.0}
 
 output:
-  directory: artifacts/challenge/distillation/d2_d3_cumulative_fp32_v1
+  directory: artifacts/challenge/distillation/d2_d3_cumulative_fp32_v2
