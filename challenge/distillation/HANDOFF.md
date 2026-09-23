@@ -68,6 +68,11 @@ A3 向 B2 交付待验 FP32 candidate 与 manifest，至少包括：
 - Training/Validation 指标、hard-case 汇总和已知限制；
 - 明确的 candidate 状态，不得提前写 `A3_FP32_GATE_PASSED`。
 
+使用 `python -m challenge.distillation.candidate_handoff` 生成不可覆盖的待验包；工具会
+复算candidate权重与来源checkpoint SHA，核对训练摘要、数据预检和hard-case计数，并从
+训练Git提交提取配置快照。当前已冻结候选及服务器持久路径见
+[`A3_CANDIDATE_HANDOFF.md`](A3_CANDIDATE_HANDOFF.md)。
+
 B2 独立保管 Frozen Test 并给出最终 PASS/FAIL。A3 只能消费 B2 返回的聚合结果和错误
 分类，训练、样本加权、checkpoint 选择与 hard-case mining 都不能读取 Frozen Test。
 

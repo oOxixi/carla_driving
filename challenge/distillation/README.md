@@ -140,6 +140,22 @@ and a candidate manifest. Mock runs are marked `MOCK_ONLY`; real runs remain
 independent Validation evidence for Teacher and Student, can create
 `A3_FP32_GATE_PASSED`. Frozen Test evidence is explicitly rejected.
 
+Before B2 evaluation, package one exact pending candidate with a config snapshot
+from its training commit and hash-bound training evidence:
+
+```bash
+python -m challenge.distillation.candidate_handoff \
+  --source artifacts/challenge/distillation/d2_v1_1_fp32_baseline_v4 \
+  --output artifacts/challenge/distillation/a3_fp32_candidate_handoff_v1 \
+  --repo-root .
+```
+
+The output is deliberately marked `PENDING_B2_INDEPENDENT_VALIDATION` and
+`PENDING_A3_FP32_GATE`. It cannot overwrite an existing package and rejects
+Smoke runs, dirty sources, mismatched weights/checkpoints, failed preflight,
+or inconsistent hard-case counts. Current candidate identity and the external
+server package record are in [A3_CANDIDATE_HANDOFF.md](A3_CANDIDATE_HANDOFF.md).
+
 After B1 and B2 deliver version-matched Validation evidence, promotion uses:
 
 ```bash

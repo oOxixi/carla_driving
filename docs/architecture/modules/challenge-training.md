@@ -21,7 +21,7 @@
 | loss、类别平衡、指标分母与分组评估 | losses.py、class_balance.py、metrics.py、evaluate.py |
 | 训练循环、配置/Teacher 身份校验、随机种子、恢复 | train.py、checkpoint.py |
 | hard case、消融、shortcut 检查 | hard_cases.py、ablation_eval.py、shortcut_probe.py |
-| 报告、纯权重候选及 Gate 晋级 | run_report.py、artifacts.py、promote.py |
+| 报告、纯权重候选、B2交接包及 Gate 晋级 | run_report.py、artifacts.py、candidate_handoff.py、promote.py |
 
 ## 端到端契约
 
@@ -39,7 +39,7 @@ Gate 默认核心指标最大下降 0.015，安全 recall 最大下降 0，schem
 
 ## 测试及联动
 
-[tests](../../../challenge/distillation/tests) 覆盖标签、loss、输出、checkpoint、preflight、A1/B1 接口、D2 Gate、指标、artifacts、报告与 smoke。训练配置、预处理、标签/Head、数据视图版本必须共同变更；修改 Gate 时联动生产加载器、评测证据格式和测试。当前 evaluate 输出训练指标，不能自动等同于最终 Adapter/PlanValidator 的闭环结果。
+[tests](../../../challenge/distillation/tests) 覆盖标签、loss、输出、checkpoint、preflight、A1/B1 接口、D2 Gate、候选交接包、指标、artifacts、报告与 smoke。`candidate_handoff.py`只接受正式pending候选，复算权重/checkpoint并核对训练、数据与hard-case证据；它不执行B2评价。训练配置、预处理、标签/Head、数据视图版本必须共同变更；修改 Gate 时联动生产加载器、评测证据格式和测试。当前 evaluate 输出训练指标，不能自动等同于最终 Adapter/PlanValidator 的闭环结果。
 
 ## 第13模块逐入口精读结论（2026-09-22）
 
