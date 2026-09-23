@@ -23,19 +23,19 @@ B1 immutable release
 
 ## 2. 当前状态快照
 
-核对日期：2026-09-21。代码基线：`challenge` 提交
-`d09f4da2fcbcbe908a4a9bf0b5427108fe692c67`。
+核对日期：2026-09-24。实现基线从 `challenge` 提交 `1f97aa1e` 开始，最终提交以本页
+所在提交为准。
 
 | 数据发布 | 状态 | A3 当前允许用途 |
 |---|---|---|
 | `d2_v1_1` | `B1_SIGNED_PASS` | 已支持派生严格正样本视图、预检、Smoke 和正式基线训练 |
-| `d3_wave1_addon_v1` | `B1_RELEASE_CANDIDATE` | 仅允许清单、schema、切分和覆盖率审计；暂不进入正式训练 |
+| `d3_wave1_addon_v1` | immutable candidate + detached `B1_SIGNED_PASS` | 允许通过累积门禁进入 D2+D3 正式训练输入 |
 | D2 reserved/test candidates | B1/B2 保留 | A3 不读取、不调参、不选 checkpoint |
 
 D3 Wave1 是叠加在 D2 v1.1 上的增量包，不覆盖也不重写 D2。发布中包含 1747 条 Train
-增量、308 条 Val 增量、308 条 hard negative、35 条隔离记录和 2363 张 RGB。当前本地
-为节省空间只同步了提交和清单，2363 张新增 RGB 未展开，因此本地也不能执行全量 RGB
-逐文件哈希和图像解码门禁。
+增量、308 条 Val 增量、308 条 hard negative、35 条隔离记录和 2363 张 RGB。本地可只做
+`--skip-images` 元数据开发检查；正式门禁固定在服务器完整副本上验证全部 RGB，不能用
+跳图结果启动正式训练。
 
 ## 3. 上下游合同
 
@@ -85,9 +85,9 @@ A3 不直接编辑 B1 发布文件，而是在 `artifacts/` 生成派生视图�
 - B3 消费带 `A3_FP32_GATE_PASSED` 的 FP32 权重与 manifest 做 x86/HIL 验证。
 - B3 对现有 D2 Val 的回放只能证明工具链可运行，不能替代 B2 独立泛化结论。
 
-## 4. 已完成的 D2 v1.1 路径
+## 4. 已完成的 D2 与 D2+D3 路径
 
-当前生产代码只对 D2 v1.1 的单发布视图形成了闭环：
+当前保留 D2 v1.1 单发布回归路径，并新增互不覆盖的 D2+D3 累积路径：
 
 | 责任 | 实现 |
 |---|---|
@@ -99,6 +99,10 @@ A3 不直接编辑 B1 发布文件，而是在 `artifacts/` 生成派生视图�
 | 正式配置 | `challenge/distillation/d2_v1_1_formal_config.yaml` |
 | 训练、断点与候选导出 | `challenge/distillation/train.py` |
 | FP32 晋级 | `challenge/distillation/promote.py` |
+| D3 旁路签名与发布校验 | `challenge/dataset/validate_d3_release.py` |
+| D2+D3 严格正样本派生 | `challenge/dataset/build_a3_cumulative_view.py` |
+| 累积视图全量审计 | `challenge/distillation/audit_cumulative_view.py` |
+| 累积正式配置 | `challenge/distillation/d2_d3_cumulative_formal_config.yaml` |
 
 已验证的 A3 D2 严格正样本视图为 Train 2332、Val 489。该 Val 与 Train 的指令文本和
 场景 ID 高度重合，因此它只用于开发回归和同分布模型选择，不能证明未见指令或未见场景
@@ -125,6 +129,21 @@ python -m challenge.distillation.train \
   --config challenge/distillation/d2_v1_1_formal_config.yaml
 ```
 
+D2+D3 累积输入复现顺序：
+
+```bash
+python -m challenge.dataset.validate_d3_release
+python -m challenge.dataset.build_a3_cumulative_view
+python -m challenge.distillation.audit_cumulative_view
+python -m challenge.distillation.validate_a1_inputs \
+  --release-dir challenge/dataset/releases/d2_v1_1 \
+  --d3-release-dir challenge/dataset/releases/d3_wave1_addon_v1 \
+  --view-dir artifacts/a3_d2_d3_cumulative_positive_view_v1 \
+  --asset-root .
+python -m challenge.distillation.train \
+  --config challenge/distillation/d2_d3_cumulative_formal_config.yaml
+```
+
 正式训练要求干净 Git 提交、完整 RGB 和 CUDA/PyTorch 环境。没有这些条件时只运行只读
 清单审计，不生成可晋级权重。
 
@@ -138,27 +157,29 @@ python -m challenge.distillation.train \
 - JSONL、RGB mapping、split、provenance 和 release manifest 已提供。
 - 文件数量和 Git blob 字节数与 `release_manifest.json` 中的声明一致。
 
-本地无训练依赖的只读复核结果：Train 1747 条、Val 308 条；两侧 `sample_id` 和
+元数据复核结果：Train 增量 1747 条、Val 增量 308 条；两侧 `sample_id` 和
 `request_id` 均各自唯一，Train/Val `group_key` 重叠为 0，全部 2055 条都满足发布中
-声明的普通正样本与闭环成功条件。这是元数据复核，不等于 A1 标签编码、RGB 或正式 A3
-preflight 通过。
+声明的普通正样本与闭环成功条件。服务器已经完成 2363 张 D3 RGB 的逐图哈希及完整
+release/view 审计；A1 全量打包结果必须继续单独记录，不能由元数据结果代替。
 
-### 5.2 当前阻塞项
+### 5.2 已关闭的接入阻塞与仍保留的证据边界
 
-| 阻塞项 | 代码事实 | 影响 |
+| 项目 | 当前代码事实 | 结论 |
 |---|---|---|
-| 发布尚未签发 | D3 manifest 为 `B1_RELEASE_CANDIDATE`；A3 门禁要求 `B1_SIGNED_PASS` | 正式训练必须拒绝 |
-| A3 只认识 D2 单发布 | identity policy 仅有 `signed_d2_release_*`，view version 固定为 D2 v1.1 | 不能把 D3 文件直接写进现有 YAML |
-| 派生器 cohort 未登记 D3 | `build_a3_d2_view.py` 的 `COHORTS` 不含 `teacher_distill_v0.5_d3_expansion_wave1_v4` | 无法生成带完整 provenance 的 A3 视图 |
-| 精确 Teacher 身份未落到 D3 记录 | D3 记录有 model ID 和采集 SHA，但没有精确 model revision 与 artifact fingerprint | 现有 pinned provenance 预检会失败 |
-| 新 RGB 未在本地展开 | 本地稀疏同步跳过 `d3_wave1_addon_v1/images/` | 不能做全量图片存在性、SHA 和解码校验 |
-| 不是独立泛化集 | 新 source text=0、新 scenario ID=0 | D3 Val 不能作为 unseen/template-disjoint 评价 |
-| 关键覆盖仍为空 | Town03_Opt、YIELD、PULL_OVER、HOLD、三步、四步均为 0 | 不能宣称已补齐 A3 能力覆盖 |
+| 旁路签发 | `B1_SIGNED_PASS.json` 绑定 immutable manifest、integrity report、lock、RGB set 和 Teacher v4 | 已由独立 validator 接入 |
+| 多发布身份 | `signed_cumulative_release_formal` 与独立 view version | 已与 D2 单发布隔离 |
+| D3 cohort | v0.5 映射到 pinned Teacher v4 manifest | 派生记录补齐精确 provenance |
+| 全量 RGB | 服务器逐图核验 D2 3592、D3 2363 | 输入完整性 PASS；本地跳图不能替代 |
+| 普通监督 | 累积 Train 4079、Val 797 | 可进入正式训练预检 |
+| hard negative | D3 308 条仅进入排除审计索引 | 当前不作为普通监督；后续需专门 loss/采样设计 |
+| 独立泛化 | D3 未增加新 source text/scenario ID，官方 manifest 也声明 development only | 仍不能作为 unseen/template-disjoint Gate |
+| 关键覆盖 | Town03_Opt、YIELD、PULL_OVER、HOLD、三步、四步仍未由本次接入证明补齐 | 仍需 B1/B2 后续数据与独立评价 |
 
 D3 采集记录中的 `metadata.teacher_git_sha` 为
 `95e97b00def8ec36f12937da34ce8bb9082c4a04`。该字段表示采集代码身份，不能直接替代
-`challenge/teacher_baseline_manifest.json` 中冻结的 Teacher 基线身份。B1 应明确提供
-对应 pinned manifest，A3 再把基线 SHA、模型 revision 和 artifact fingerprint 注入派生视图。
+`challenge/teacher_baseline_manifest.json` 中冻结的早期 Teacher 基线身份。旁路签名已经绑定
+`challenge/teacher_pinned_manifest_v4.json`；A3 派生器据此注入模型 revision 和 artifact
+fingerprint，同时保留采集 SHA，二者不再混用。
 
 ### 5.3 Windows 文本哈希注意事项
 
@@ -168,17 +189,15 @@ CRLF，导致工作区原始字节 SHA256 与 Linux 生成的发布 manifest 不
 进行，或为发布数据声明 `.gitattributes` 的 `eol=lf` 后重新签发。不能把换行转换后的文件
 哈希失败误报成 B1 内容被修改。
 
-## 6. D3 正式接入的完成定义
+## 6. D3 数据接入与后续训练完成定义
 
-只有以下项目全部完成后，A3 才能开始 D2+D3 正式训练：
+数据接入的第 1～5 项已经由代码与服务器证据关闭；第 6～7 项仍是正式训练和晋级工作：
 
-1. B1 将 D3 状态签发为明确的通过状态，并补齐精确 Teacher revision、artifact
-   fingerprint 与采集代码 provenance。
-2. 完整同步 2363 张 RGB，逐文件 SHA256、图像集合哈希、解码和记录引用全部通过。
-3. 新增通用的 additive release 派生器，不修改 D2/D3 原包，并为多个源 release 绑定
-   manifest SHA256。
-4. 新派生视图完成 sample/request/group/record 四类 Train/Val 隔离检查。
-5. 新增独立配置 ID、数据版本、输出目录和自动化测试，禁止复用 D2 基线产物目录。
+1. B1 旁路签名、Teacher revision/fingerprint 与采集 provenance：**完成**。
+2. 2363 张 D3 RGB 的逐图 SHA、图像集合、引用门禁：**服务器完成**。
+3. additive 派生器绑定 D2/D3/signature/source evidence：**完成**。
+4. Train/Val sample/request/group/record 隔离和全量预检：**门禁已实现**。
+5. 独立 config ID、view version、输出目录和自动化测试：**完成**。
 6. 全量 A1 输入打包、标签编码、Smoke、断点恢复和重复运行一致性通过。
 7. D3 Val 只标记为 development validation；在 B2 交付独立 Seen/Variant/Unseen
    评价前，不生成泛化通过结论。
@@ -189,9 +208,9 @@ CRLF，导致工作区原始字节 SHA256 与 Linux 生成的发布 manifest 不
 |---|---|
 | 阅读 D3 README、manifest 和 JSONL | 可以 |
 | 核对条数、schema、终态治理和切分字段 | 可以 |
-| 分析标签覆盖和缺失类别 | 可以，但结论只针对候选发布 |
+| 分析标签覆盖和缺失类别 | 可以；结论只针对 development 数据 |
 | 使用 D2 v1.1 复现既有 A3 基线 | 可以 |
-| 用 D3 直接启动正式训练 | 不可以 |
+| 通过累积派生视图和正式门禁启动 D2+D3 训练 | 可以；必须是干净提交且完整 RGB |
 | 用 D3 Val 宣称泛化或比赛准确率 | 不可以 |
 | 用 reserved/test candidates 调参 | 不可以 |
 | 生成 `A3_FP32_GATE_PASSED` | 不可以，仍缺 B2 独立对比证据 |

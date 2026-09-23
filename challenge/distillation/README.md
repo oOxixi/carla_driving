@@ -2,7 +2,8 @@
 
 > 当前 B1 数据接入状态、D2 v1.1 与 D3 Wave1 的边界以及正式训练前必须满足的门禁，
 > 统一见 [`docs/architecture/modules/B1_TO_A3_DATA_PIPELINE.md`](../../docs/architecture/modules/B1_TO_A3_DATA_PIPELINE.md)。
-> D3 Wave1 当前仍为 `B1_RELEASE_CANDIDATE`，不得直接替换下述已签发 D2 配置。
+> D3 Wave1 的不可变 manifest 仍保留 `B1_RELEASE_CANDIDATE`，但 B1 已通过独立
+> `B1_SIGNED_PASS.json` 对其精确字节签发。D2 单发布与 D2+D3 累积配置互不覆盖。
 > A3 的运行等级、Loss、checkpoint 选择、恢复语义和 Hard-case 闭环统一见
 > [`docs/architecture/modules/A3_TRAINING_AND_HARD_CASES.md`](../../docs/architecture/modules/A3_TRAINING_AND_HARD_CASES.md)。
 > 独立 Validation、FP32 promotion 与 B2 Frozen Benchmark 的边界统一见
@@ -156,6 +157,27 @@ Smoke runs, dirty sources, mismatched weights/checkpoints, failed preflight,
 or inconsistent hard-case counts. Current candidate identity and the external
 server package record are in [A3_CANDIDATE_HANDOFF.md](A3_CANDIDATE_HANDOFF.md).
 
+The signed D3 add-on is consumed only through the cumulative fail-closed path:
+
+```bash
+python -m challenge.dataset.validate_d3_release
+python -m challenge.dataset.build_a3_cumulative_view
+python -m challenge.distillation.audit_cumulative_view
+python -m challenge.distillation.validate_a1_inputs \
+  --release-dir challenge/dataset/releases/d2_v1_1 \
+  --d3-release-dir challenge/dataset/releases/d3_wave1_addon_v1 \
+  --view-dir artifacts/a3_d2_d3_cumulative_positive_view_v1 \
+  --asset-root . \
+  --output artifacts/a3_d2_d3_cumulative_a1_inputs.json
+```
+
+The cumulative formal config is
+`d2_d3_cumulative_formal_config.yaml`. Its strict-positive view contains 4079
+Train and 797 development-Validation records. The 308 D3 hard negatives stay
+in the audit-only exclusion index; they are not silently treated as ordinary
+supervision. D3 adds development coverage and is not independent unseen Test
+evidence.
+
 After B1 and B2 deliver version-matched Validation evidence, promotion uses:
 
 ```bash
@@ -169,9 +191,12 @@ python -m challenge.distillation.promote \
 
 The default core-accuracy drop limit is 1.5 percentage points. Safety-critical
 recall may not drop, and Student schema validity must be exactly 100%.
-For `signed_d2_release_formal` candidates, both evaluations must additionally
+For `signed_d2_release_formal` and `signed_cumulative_release_formal`
+candidates, both evaluations must additionally
 bind the candidate release/view hashes, the same B2 benchmark and policy
 manifest hashes, case-set digest, evaluator Git SHA and positive sample count. Each side
 must bind its predictions SHA, the Student must bind its weights hash, and both evaluations
 must identify the exact frozen Teacher v4 baseline.
+The cumulative policy also binds the D2 release, detached B1 D3 signature and
+canonical multi-release source-evidence digest.
 The smoke identity policy is never promotable.

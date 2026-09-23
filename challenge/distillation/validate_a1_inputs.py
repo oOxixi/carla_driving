@@ -1,4 +1,4 @@
-"""Decode every A3 D2 Train/Val sample through A1's real four-modal packer."""
+"""Decode every A3 signed Train/Val sample through A1's real four-modal packer."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import torch
 
 from .a1_student import build_a1_input_packer
 from .audit_d2_view import audit_view
+from .audit_cumulative_view import audit_cumulative_view
 from .dataset import DistillationDataset, load_jsonl, make_collate_fn
 
 
@@ -41,12 +42,17 @@ def validate_inputs(
     view_dir: Path,
     asset_root: Path,
     *,
+    d3_release_dir: Path | None = None,
     batch_size: int = 8,
     max_errors: int = 20,
 ) -> dict[str, Any]:
     if batch_size < 1 or max_errors < 1:
         raise ValueError("batch_size and max_errors must be positive")
-    coverage = audit_view(release_dir, view_dir)
+    coverage = (
+        audit_cumulative_view(release_dir, d3_release_dir, view_dir, check_images=True)
+        if d3_release_dir is not None
+        else audit_view(release_dir, view_dir)
+    )
     collate = make_collate_fn(input_packer=build_a1_input_packer())
     summary: dict[str, Any] = {
         "status": "PASS",
@@ -99,15 +105,20 @@ def validate_inputs(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate every A3 D2 sample with A1 input packing")
+    parser = argparse.ArgumentParser(description="Validate every signed A3 sample with A1 input packing")
     parser.add_argument("--release-dir", type=Path, default=Path("challenge/dataset/releases/d2_v1_1"))
+    parser.add_argument(
+        "--d3-release-dir", type=Path,
+        help="Enable cumulative D2+D3 audit with this detached-signed add-on.",
+    )
     parser.add_argument("--view-dir", type=Path, default=Path("artifacts/a3_d2_v1_1_positive_view_v1"))
     parser.add_argument("--asset-root", type=Path, default=Path("."))
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--output", type=Path, default=Path("artifacts/a3_d2_prep/a1_full_input_check.json"))
     args = parser.parse_args()
     report = validate_inputs(
-        args.release_dir, args.view_dir, args.asset_root, batch_size=args.batch_size,
+        args.release_dir, args.view_dir, args.asset_root,
+        d3_release_dir=args.d3_release_dir, batch_size=args.batch_size,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
