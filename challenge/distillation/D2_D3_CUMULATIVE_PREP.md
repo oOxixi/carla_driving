@@ -45,10 +45,36 @@ Validation 为 normal 571、complex 177、safety-critical 49。计划长度仍�
 
 ## 下一步
 
-1. 使用 `d2_d3_cumulative_formal_config.yaml` 运行正式多 epoch FP32 训练；不要复用 Smoke
-   输出目录。
-2. 比较 D2-only 基线与 D2+D3 的逐 Head、风险分层和 hard-case 指标；低收益或退化时先
-   查分布与权重，不盲目增加 epoch。
+1. 正式多 epoch FP32 训练：**已完成**，使用独立 v2 输出目录。
+2. D2-only 与 D2+D3 的同一 D2 Val 诊断比较：**已完成**；安全关键速度回归退化已保留，
+   未被总体均值掩盖。
 3. 正式候选继续保持 `PENDING_A3_FP32_GATE`，交给 B2 的同一冻结独立 Validation 包做
    Teacher/Student 配对评价。
 4. 在 B2 返回 hash-bound 证据前，不运行真实 promotion，也不宣称泛化通过。
+
+## 正式 FP32 v2 结果
+
+正式训练使用提交 `0abb2053d1d7842e86824de59ef8a9e0fd91a124`、配置
+`a3-b1-d2-v1-1-plus-d3-wave1-fp32-v2`，完成 3 epochs / 1530 updates。结构化开发集
+指标 behavior、plan sequence、target pointer、target lane、completion 和
+safety-critical behavior recall 均为 1.0；target-speed MAE 为 0.5215 m/s，Val loss 为
+0.1796。候选权重 SHA256 为
+`909cbf7cb275fc65628ef2d27047e6cbcfe5424a7a197c79b2e02678a3824964`，状态仍为
+`PENDING_A3_FP32_GATE`。
+
+v1 首次训练暴露出单一 `plan_sequence_accuracy` 饱和后总保留第一轮的问题：第一轮速度
+MAE 1.1539 m/s，而第三轮已降到 0.5215 m/s。通用选模已改为主指标优先，同分时依次选择
+更低 Val loss 和更低速度 MAE；v2 因此正确选择第三轮。该规则不允许用速度收益覆盖结构
+准确率下降。
+
+在同一 D2 v1.1 Validation 489 条上的诊断回放中，D2-only 与 D2+D3 的结构化指标均保持
+1.0；总体速度 MAE 从 0.9795 降到 0.5484 m/s，normal 从 0.8839 降到 0.3086，complex
+从 1.0932 降到 0.6108，但 safety-critical 从 1.2356 上升到 1.6626 m/s。该结果说明普通和
+复杂样本有改善，但安全关键速度回归仍需 B2 独立数据复核，不能据此直接晋级。
+
+当前 B2 待验包位于服务器：
+
+```text
+/home/tiaozhansai/carla-driving-challenge/
+  artifacts/challenge/distillation/a3_d2_d3_fp32_candidate_handoff_v2/
+```

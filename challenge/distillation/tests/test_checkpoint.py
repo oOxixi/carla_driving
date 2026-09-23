@@ -47,6 +47,38 @@ def test_checkpoint_restores_model_optimizer_and_progress(tmp_path: Path) -> Non
         assert torch.equal(value, expected[name])
 
 
+def test_checkpoint_can_skip_rng_restore_for_evaluation(tmp_path: Path) -> None:
+    model = torch.nn.Linear(3, 2)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.01)
+    path = save_checkpoint(
+        tmp_path / "evaluation.pt", model=model, optimizer=optimizer,
+        epoch=0, global_step=1, best_metric=0.5,
+        metadata={"dataset_version": "mock-v1"},
+    )
+    before = torch.get_rng_state().clone()
+    load_checkpoint(path, model=model, restore_rng=False)
+    assert torch.equal(torch.get_rng_state(), before)
+
+
+def test_checkpoint_resume_rejects_changed_cuda_topology(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model = torch.nn.Linear(3, 2)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.01)
+    path = save_checkpoint(
+        tmp_path / "topology.pt", model=model, optimizer=optimizer,
+        epoch=0, global_step=1, best_metric=0.5,
+        metadata={"dataset_version": "mock-v1"},
+    )
+    payload = torch.load(path, weights_only=False)
+    payload["rng"]["torch_cuda"] = [torch.get_rng_state(), torch.get_rng_state()]
+    torch.save(payload, path)
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr(torch.cuda, "device_count", lambda: 1)
+    with pytest.raises(RuntimeError, match="CUDA RNG topology mismatch"):
+        load_checkpoint(path, model=model)
+
+
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is unavailable")
 def test_checkpoint_loaded_on_cuda_keeps_rng_states_on_required_devices(tmp_path: Path) -> None:
     model = torch.nn.Linear(3, 2).cuda()

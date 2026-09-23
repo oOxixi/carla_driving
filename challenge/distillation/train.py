@@ -368,7 +368,7 @@ def run_training(
 
     if not best_path.is_file():
         raise RuntimeError("training produced no finite validation candidate")
-    load_checkpoint(best_path, model=model, map_location=device)
+    load_checkpoint(best_path, model=model, map_location=device, restore_rng=False)
     # The best categorical score can tie across epochs while regression heads
     # continue changing. Candidate evidence must describe the loaded weights,
     # not whichever epoch happened to run last.

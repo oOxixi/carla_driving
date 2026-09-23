@@ -10,13 +10,17 @@ The current A3-owned deliverable is a pending candidate, not an accuracy approva
 | gate status | `PENDING_A3_FP32_GATE` |
 | model ID | `student-v0-r3-fp32` |
 | config ID | `student-v0-r3-structure-20260911` |
-| training Git SHA | `a299169c8bf5c2a2cdd4adf800c655bd14cd5db8` |
-| weights SHA256 | `896562058948175ac21fd8d26b45a244aeb40f37ec0a7a88b1f03fe4ff9f65ca` |
-| dataset | `b1_d2_v1_1_a3_strict_positive_v1` |
-| release manifest SHA256 | `cf153d2f536f9180241f02a9d644aca6da2a508beb785591399dbb75b847462f` |
-| A3 view manifest SHA256 | `f797725014f297bf1ca43444b95a9aa43bf566abb4fcaebfc1841b4851cd8fcf` |
-| train/development Val | `2332 / 489` |
-| development hard cases | `217`, all categorized as target-speed errors |
+| training Git SHA | `0abb2053d1d7842e86824de59ef8a9e0fd91a124` |
+| weights SHA256 | `909cbf7cb275fc65628ef2d27047e6cbcfe5424a7a197c79b2e02678a3824964` |
+| source checkpoint SHA256 | `c83b3a28cb394df347b97a596effe1558bc24df67dd559aaee65c086a8ebe37c` |
+| dataset | `b1_d2_v1_1_plus_d3_wave1_a3_strict_positive_v1` |
+| D2 release SHA256 | `cf153d2f536f9180241f02a9d644aca6da2a508beb785591399dbb75b847462f` |
+| D3 release SHA256 | `dcd1bd1d0a34683e62e70a206760e691c0cd04b779f063d58a1fcf98837554bd` |
+| D3 B1 signature SHA256 | `10d9892551dbfe4e61377f9f835bd89d8043209f32a459ab92028ee1d93c7228` |
+| source evidence SHA256 | `6ec35d771df36b63864efd3c3e06f9a0ab2991bd53a60f44740cf19a0f7fe827` |
+| A3 view manifest SHA256 | `e07112b52ae8ecf8dd944d562e30304478fc8c22ef9cb86f4585181281fc2ff9` |
+| train/development Val | `4079 / 797` |
+| development hard cases | `103`, all categorized as target-speed errors |
 
 The Development Val plan accuracy is not independent generalization evidence. It must not be
 quoted as the B2 score or used to rename this package as passed.
@@ -27,7 +31,7 @@ The verified package is stored outside Git because the pure state dict is about 
 
 ```text
 /home/tiaozhansai/carla-driving-challenge/
-  artifacts/challenge/distillation/a3_fp32_candidate_handoff_v1/
+  artifacts/challenge/distillation/a3_d2_d3_fp32_candidate_handoff_v2/
 ```
 
 It contains the exact pure state dict, original candidate manifest, training summary/report/log,
@@ -47,6 +51,9 @@ python -m challenge.distillation.candidate_handoff \
 
 The command refuses to overwrite an existing directory. Do not delete or mutate the current
 package in place; a replacement candidate requires a new package version and new weights SHA.
+
+The earlier D2-only package `a3_fp32_candidate_handoff_v1` remains historical and is not deleted.
+It must not be confused with the current cumulative candidate.
 
 ## What B2 must return
 
