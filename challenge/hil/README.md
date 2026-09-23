@@ -57,6 +57,7 @@ challenge/hil/
 ├── utilization_policy.py         异构利用率公式的接入与校验（公式本身归 B2/A4）
 ├── carla_measurement.ps1         CARLA 可重复测量入口（固定解释器/PYTHONPATH + 清单）
 ├── carla_measurement_entry.py    该入口调用的单场景驱动脚本
+├── pc_deployment_plan.md         PC 端（WSL2+Docker+OE）部署作业单与差距核对
 ├── report.py                     报告生成与可信范围守卫
 ├── cli.py                        命令行入口（12 个子命令）
 ├── group_map.example.json        `--group-map` 的格式示例（不是 B2 分组）
@@ -488,3 +489,18 @@ B3 采样过的字段时**才计算比例。状态是分层的，任何一种都
 
 修复后 30 分钟运行漂移 **3.49 MiB（1.1%）**，曲线约 7 分钟后走平；作废那轮的数字已在
 F10 与本目录证据说明里标明不得引用。
+
+### 11.8 团队清单 §13 点名的三项 B3 审计修复（2026-09-23）
+
+团队《挑战赛道当前未完成工作清单与后续推进顺序》§13 列出"B3 当前还应先修"三项，逐项状态：
+
+| 审计项 | 修复内容 | 验证 |
+|---|---|---|
+| Board trace 重复 mark 风险 | Runtime 打点优先，宿主只补缺失阶段；未知字段记 `ignored_stages`；非单调抛 `AdapterError` | `tests/test_board_adapter.py` 4 条；用完整 T0–T7 的假板端命令跑通 |
+| consistency 未直接调用真实被测 infer | `consistency` 新增 `--adapter` 模式：**驱动被测 runtime 的 infer**，并与参考图经同一 `StudentPlanAdapter` 解码出的计划比对；原图级逐张量比对保留为 `graph` 块 | 真实 CLI：`--adapter onnx` 在 3 例上 `plan`/`graph` 双 PASS |
+| OnnxModelRuntime full_chain/READY 语义不统一 | `full_chain=False`（本链无 PlanValidator）、`outcome_detail` 写明 `plan_validated=false`；`READY` 的**唯一**含义"产出了计划"写入 `StageTrace.finish` docstring | `tests/test_interfaces.py` ONNX 语义测试 |
+
+计划级比对的判据是"**结构精确 + 数值容差**"：行为顺序、target_id、completion 类型等离散语义必须
+完全一致；`confidence` 这类模型数值按 `rtol/atol` 容忍。首轮实测中两链 `confidence` 相差
+6e-8（图级 logits 差 9.5e-6 传播而来），已确认属浮点噪声而**不是**计划不一致——这条经验
+写进了测试 `test_compare_plans_tolerates_float_noise_but_not_semantic_change`。

@@ -471,13 +471,19 @@ class OnnxModelRuntime:
             config_id=self.config_id,
         )
         self.capabilities = RuntimeCapabilities(
-            full_chain=True,
+            # NOT a full chain: preprocessing → ONNX forward → adapter decode, with no
+            # PlanValidator.  Claiming `full_chain` here made `READY` mean two
+            # different things depending on the adapter (audited item F12), so the
+            # capability now says what this chain actually is.
+            full_chain=False,
             model_only=True,
             plan_validator=False,
             stage_source="INSTRUMENTED",
             notes=(
-                "model-only chain; adapter runs on host tensors converted from numpy",
-                "no PlanValidator: A4/J6P runtime owns the deployed validation step",
+                "model-only + adapter chain; the adapter runs on host tensors converted from numpy",
+                "no PlanValidator here, so plans from this chain are UNVALIDATED: "
+                "the deployed A4/J6P runtime owns validation",
+                "use --adapter inprocess (or both) when a validated full chain is required",
             ),
         )
 
@@ -529,7 +535,7 @@ class OnnxModelRuntime:
             trace.finish(
                 "READY",
                 reason_code=str(plan.get("reason_code", "")),
-                detail="plan_validator_not_part_of_model_only_chain",
+                detail="plan_produced_without_validator:plan_validated=false",
             )
             return plan, trace
         except Exception as error:

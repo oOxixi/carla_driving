@@ -206,3 +206,29 @@ input_arrival`，运行中断；而不输出打点时反而"正常"。
 
 **影响**：2026-09-21 第一轮 30 分钟长稳的漂移数字**作废**，不得作为"漂移受控"的依据；
 `soak_summary.json` 的 `drift_note` 已写明新口径。
+
+## F11（环境前提）本机不满足官方 OE 工具链的 "原生 Ubuntu + Docker" 要求
+
+**背景**：赛事通知要求挑战赛道统一在 J6P 上部署调试、最终以 docker 镜像提交，并指向地平线
+官方文档（`doc.oe.horizon.auto`）与 OE 下载页（`oe.horizon.auto/download/oe`）。官方
+"安装前准备/软件安装"给出的开发机要求是 **原生 Ubuntu 22.04 + Docker ≥20.10.10**
+（GPU 版另需 NVIDIA Container Toolkit ≥1.16.2）。
+
+**2026-09-23 对本机实测**：
+
+| 项 | 官方要求 | 本机 | 差距 |
+|---|---|---|---|
+| 系统 | 原生 Ubuntu 22.04 | Windows 11（build 26200） | 不满足；WSL 未安装 |
+| Docker | ≥20.10.10 | 未安装 | 不满足 |
+| NVIDIA Container Toolkit | ≥1.16.2（GPU 版） | 无 | 仅 GPU 版需要 |
+| GPU | CUDA 12.8、驱动 ≥550.163.01 | RTX 4060 Laptop 8 GB、驱动 580.88 | 驱动够新，显存偏小 |
+| 内存 / CPU | ≥16 GB / i3 以上 | 23.7 GB / Intel 13 代 | 满足 |
+| 磁盘 | — | C 32.5 GB / D 45.3 GB 可用 | 偏紧，WSL 数据盘需放 D |
+
+**B3 的落地方案**：WSL2 + Ubuntu 22.04 + Docker + **CPU 版 OE 镜像**
+（`openexplorer/ai_toolchain_ubuntu_22_j6_cpu`）——量化、编译、X86 仿真这条链不需要 GPU
+直通，避开 8 GB 显存与 Container Toolkit 限制。分步命令见
+`challenge/hil/pc_deployment_plan.md`。
+
+**顺带记录**：OE 下载页需要登录（点"立即下载"提示"请先登录后再访问此页面"）；官方 **用户手册
+本身公开可读**，板端评测/资源评估/X86 仿真的口径都能直接引用，不需账号。

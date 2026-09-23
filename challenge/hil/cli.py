@@ -20,6 +20,7 @@ from .consistency import (
     DEFAULT_RTOL,
     OnnxOutputSource,
     TorchOutputSource,
+    compare_plans,
     compare_sources,
 )
 from .contract import check_runtime_contract
@@ -684,6 +685,17 @@ def build_parser() -> argparse.ArgumentParser:
     consistency.add_argument("--atol", type=float, default=DEFAULT_ATOL)
     consistency.add_argument("--model-seed", type=int, default=20260911)
     consistency.add_argument("--out", help="optional report path")
+    consistency.add_argument(
+        "--adapter",
+        choices=["inprocess", "onnx", "board"],
+        help="also drive the runtime under test through its own infer path",
+    )
+    consistency.add_argument("--board-command", help="A4 runtime command for --adapter board")
+    consistency.add_argument("--board-artifact", help="board artifact for identity hashing")
+    consistency.add_argument("--weights-manifest", help="A3 weight manifest JSON")
+    consistency.add_argument("--model-id", default=UNRESOLVED)
+    consistency.add_argument("--config-id", default=UNRESOLVED)
+    consistency.add_argument("--dataset-version", default=UNRESOLVED)
     consistency.set_defaults(func=command_consistency)
 
     handoff = sub.add_parser("handoff", help="export failures for A3 (hard cases + vectors)")
@@ -822,8 +834,65 @@ def command_consistency(args: argparse.Namespace) -> int:
         reference, candidate, requests, rtol=args.rtol, atol=args.atol
     )
     report["request_source"] = info
+
+    plan_report = None
+    if getattr(args, "adapter", None):
+        # The audited gap: the graph-only comparison above never drives the object
+        # being measured.  With --adapter the runtime under test is exercised
+        # through its own infer path and its plans are compared with the plans
+        # decoded from the reference graph.
+        runtime = _build_runtime(args)
+        try:
+            plan_report = compare_plans(
+                runtime,
+                cases[: max(1, args.limit)],
+                reference=reference,
+                decode_reference=_reference_plan_decoder(args.repo),
+                rtol=args.rtol,
+                atol=args.atol,
+            )
+        finally:
+            runtime.close()
+        report = {
+            "schema_version": "1.0",
+            "mode": "plan_and_graph",
+            "passed": bool(report["passed"] and plan_report["passed"]),
+            "graph": report,
+            "plan": plan_report,
+        }
+
     if args.out:
         write_json(args.out, report)
+
+    if plan_report is not None:
+        print(
+            json.dumps(
+                {
+                    "mode": report["mode"],
+                    "passed": report["passed"],
+                    "graph": {
+                        "passed": report["graph"]["passed"],
+                        "max_abs_diff_over_all_cases": report["graph"][
+                            "max_abs_diff_over_all_cases"
+                        ],
+                    },
+                    "plan": {
+                        "runtime": plan_report["runtime"]["name"],
+                        "requests": plan_report["request_count"],
+                        "passed": plan_report["passed"],
+                        "mismatched_cases": [
+                            row["case_id"]
+                            for row in plan_report["cases"]
+                            if not row["same_plan"]
+                        ],
+                    },
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 0 if report["passed"] else 1
+
     print(
         json.dumps(
             {
@@ -843,6 +912,27 @@ def command_consistency(args: argparse.Namespace) -> int:
         )
     )
     return 0 if report["passed"] else 1
+
+
+def _reference_plan_decoder(repo_root: str | Path) -> Any:
+    """Decode raw reference outputs into a plan with the production adapter.
+
+    Using the same `StudentPlanAdapter` on both sides is what makes the
+    plan-level comparison meaningful: any difference is in the numbers, not in
+    how a plan is assembled.
+    """
+    from .runtime_adapter import _RepoModules
+
+    modules = _RepoModules(repo_root)
+    torch = modules.get("torch")
+    StudentPlanAdapter = modules.get("challenge.planner.student_adapter.StudentPlanAdapter")
+    adapter = StudentPlanAdapter()
+
+    def decode(request: Mapping[str, Any], outputs: Mapping[str, Any]) -> Any:
+        tensors = {name: torch.from_numpy(value) for name, value in outputs.items()}
+        return adapter.decode(request, tensors)
+
+    return decode
 
 
 def _tensor_dir_name(case_id: str) -> str:

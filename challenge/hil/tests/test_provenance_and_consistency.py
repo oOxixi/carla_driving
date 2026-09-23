@@ -6,8 +6,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from ..consistency import compare_outputs, compare_sources
+from ..consistency import compare_outputs, compare_plans, compare_sources
+from ..identity import CandidateIdentity
 from ..provenance import teacher_baseline, teacher_baselines
+from ..stages import StageTrace
 
 
 def _outputs(**overrides):
@@ -55,6 +57,128 @@ class _FakeSource:
 
     def close(self):
         self.closed = True
+
+
+class _PlanRuntime:
+    """Minimal runtime whose infer path returns a fixed plan."""
+
+    name = "plan-fake"
+    identity = CandidateIdentity(
+        git_sha="0" * 40,
+        model_id="m",
+        model_sha256="1" * 64,
+        dataset_version="d",
+        config_id="c",
+    )
+
+    def __init__(self, plan):
+        self._plan = plan
+
+    def infer(self, request, *, case_id, round_index, phase="measured"):
+        trace = StageTrace(trace_id=str(case_id), case_id=case_id, round_index=round_index)
+        trace.mark("input_arrival", timestamp_ns=1_000)
+        trace.mark("plan_ready", timestamp_ns=2_000)
+        trace.finish("READY")
+        return json.loads(json.dumps(self._plan)), trace
+
+    def close(self):
+        return None
+
+
+class _ZeroSource:
+    name = "zero"
+    identity = {"model_id": "m"}
+
+    def outputs(self, request):
+        return {"head": np.zeros((1, 2), dtype=np.float32)}
+
+    def close(self):
+        return None
+
+
+def _case(request_id: str):
+    from ..replay import ReplayCase
+
+    return ReplayCase(
+        case_id=request_id,
+        sample_id=request_id,
+        scenario_id="SCN",
+        request={"request_id": request_id, "command_id": "c"},
+        teacher_plan=None,
+        rgb_path=None,
+        rgb_sha256=None,
+        rgb_resolved=False,
+        rgb_source="test",
+        source_file="test",
+    )
+
+
+def test_compare_plans_drives_the_runtime_under_test():
+    """The audited gap: consistency must exercise the SUT's own infer path."""
+    plan = {"schema_version": "2.0", "steps": [{"behavior": "FOLLOW"}]}
+    runtime = _PlanRuntime(plan)
+    calls: list[str] = []
+
+    def decode(request, outputs):
+        calls.append(request["request_id"])
+        return {"schema_version": "2.0", "steps": [{"behavior": "FOLLOW"}]}
+
+    report = compare_plans(
+        runtime,
+        [_case("r1"), _case("r2")],
+        reference=_ZeroSource(),
+        decode_reference=decode,
+    )
+    assert calls == ["r1", "r2"], "the SUT runtime must be driven per case"
+    assert report["passed"] is True
+    assert report["mode"] == "plan_vs_reference_graph"
+    assert report["runtime"]["name"] == "plan-fake"
+
+
+def test_compare_plans_fails_when_the_runtime_plan_differs():
+    plan = {"schema_version": "2.0", "steps": [{"behavior": "STOP"}]}
+    report = compare_plans(
+        _PlanRuntime(plan),
+        [_case("r1")],
+        reference=_ZeroSource(),
+        decode_reference=lambda request, outputs: {
+            "schema_version": "2.0",
+            "steps": [{"behavior": "FOLLOW"}],
+        },
+    )
+    assert report["passed"] is False
+    assert report["cases"][0]["same_plan"] is False
+
+
+def test_compare_plans_tolerates_float_noise_but_not_semantic_change():
+    """A 6e-8 difference in `confidence` is float32 noise, not a mismatch."""
+    base = {
+        "schema_version": "2.0",
+        "confidence": 0.37850677967071533,
+        "steps": [{"behavior": "FOLLOW", "target": {"target_id": "C-0001"}}],
+    }
+    noisy = json.loads(json.dumps(base))
+    noisy["confidence"] = 0.37850672006607056  # Δ ≈ 6e-8, the real observed drift
+    report = compare_plans(
+        _PlanRuntime(noisy),
+        [_case("r1")],
+        reference=_ZeroSource(),
+        decode_reference=lambda request, outputs: base,
+    )
+    assert report["passed"] is True, report["cases"][0]
+    assert report["cases"][0]["numeric_max_abs_diff"] < 1e-6
+
+    # A different behaviour is a semantic change and must fail.
+    changed = json.loads(json.dumps(base))
+    changed["steps"][0]["behavior"] = "STOP"
+    report2 = compare_plans(
+        _PlanRuntime(changed),
+        [_case("r1")],
+        reference=_ZeroSource(),
+        decode_reference=lambda request, outputs: base,
+    )
+    assert report2["passed"] is False
+    assert any("behavior" in item for item in report2["cases"][0]["structural_diffs"])
 
 
 def test_compare_sources_aggregates_cases_and_survives_errors():

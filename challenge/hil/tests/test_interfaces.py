@@ -61,6 +61,7 @@ def _request(index: int = 0) -> dict:
         "source_text": "keep lane",
         "targets": [],
         "created_at_ns": 1_000,
+        "deadline_ns": 10_000,
         "scene_summary": {"traffic_light": "GREEN", "risk_level": "LOW"},
         "constraints": {"must_stop": False, "allowed_behaviors": ["FOLLOW", "KEEP_LANE"]},
         "command_hint": {"intent": "KEEP_LANE"},
@@ -180,3 +181,24 @@ def test_dump_records_the_artifact_digest_it_used(tmp_path: Path):
         assert entry["size_bytes"] > 0
     assert manifest["request_id"] == "req-3"
     assert sha256_file(out / "rgb.npy") == manifest["files"]["rgb.npy"]["sha256"]
+
+
+def test_onnx_chain_does_not_claim_a_validated_full_chain():
+    """Audited item: `full_chain`/`READY` meant two different things per adapter."""
+    from ..runtime_adapter import OnnxModelRuntime
+
+    repo = Path(__file__).resolve().parents[3]
+    onnx = repo / "challenge" / "student_v0_fp32.onnx"
+    if not onnx.is_file():
+        pytest.skip("student_v0_fp32.onnx is not present in this checkout")
+
+    runtime = OnnxModelRuntime(repo, onnx)
+    assert runtime.capabilities.full_chain is False
+    assert runtime.capabilities.plan_validator is False
+    assert any("UNVALIDATED" in note for note in runtime.capabilities.notes)
+
+    _, trace = runtime.infer(_request(), case_id="c1", round_index=1)
+    # READY keeps its single meaning ("a plan was produced"); validation is
+    # recorded separately instead of being implied by the outcome.
+    assert trace.outcome == "READY"
+    assert "plan_validated=false" in (trace.outcome_detail or "")
