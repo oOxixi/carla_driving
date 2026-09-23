@@ -16,7 +16,7 @@
 | 10 | [Student 结构与预处理](modules/challenge-structure.md) | **本轮完成**：5份实现页、23处占位改写，四路张量/十Head/预处理/训练mask及M10-01保留 |
 | 11 | [Student Planner](modules/challenge-planner.md) | **本轮完成**：8份实现页、22处占位改写，双Backend/解码/修复/就绪身份及M11-01保留 |
 | 12 | [Teacher 数据治理](modules/challenge-data.md) | **本轮完成**：33份实现页、301处占位改写，采集/release/view/切分/身份与M12-01保留 |
-| 13 | [蒸馏与晋级](modules/challenge-training.md) | **本轮完成**：25份实现/配置页、19页103处占位改写，标签/loss/checkpoint/Gate与A01保留 |
+| 13 | [蒸馏与晋级](modules/challenge-training.md) | **本轮完成**：25份实现/配置页、19页103处占位改写；A01已在后续代码轮关闭，真实B2证据仍缺 |
 | 14 | [导出与部署](modules/challenge-export.md) | **本轮完成**：6份实现页、4页13处占位改写，随机ONNX/真实权重/X86/J6P边界与R01/R03保留 |
 | 15 | [HIL 与测量](modules/challenge-hil.md) | **本轮完成**：20份实现/资源页、17页139处占位改写，Runtime/trace/身份/证据与A02/A03/R02保留 |
 | 16 | [语音链](modules/support-voice.md) | **本轮完成**：14份实现/语义页、50处占位改写，音频/文本分层、级联复核、授权与声学证据边界；A09保留 |
@@ -135,7 +135,7 @@
 ## 第13模块完成记录
 
 - 核对25份实现/配置页；19个Python实现页共103处占位改写，补齐preflight→标签→loss→训练→checkpoint→候选→promote顺序。
-- 明确soft蒸馏只覆盖两个Head、mask/分母、max_updates=0、checkpoint与纯权重区别，以及A01 Student评估身份缺口。
+- 明确soft蒸馏只覆盖两个Head、mask/分母、max_updates=0、checkpoint与纯权重区别；当时登记的A01 Student评估身份缺口已于2026-09-22关闭。
 - 服务器distillation、A1与交付测试 **65 passed in 43.00s**；未运行正式训练或精度Gate。
 - 下一项是第14模块“导出与部署”。
 

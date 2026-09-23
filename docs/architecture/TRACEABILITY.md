@@ -19,7 +19,7 @@
 | [数据发布](modules/challenge-data.md) | run/sample/cohort、split/hash、excluded原因；Wave2原始证据缺失 | [原始样本、冻结发布与派生训练视图](functions/dataset-release-view.md) |
 | [输入张量](modules/challenge-structure.md) | contract、目标排序、截断、dtype/shape；shape一致不足以验收 | [预处理真实变换与信息损失](functions/student-preprocessing.md) |
 | [Student计划](modules/challenge-planner.md) | head、pointer/NONE、修复原因、权重身份；需对应真实输入 | [Head解码、约束修复和就绪判定](functions/student-plan-decoding.md) |
-| [训练与晋级](modules/challenge-training.md) | dataset/checkpoint/RNG、权重SHA与评估身份；缺口见AUDIT A01 | [各Head损失、mask与加权](functions/distillation-objective.md) |
+| [训练与晋级](modules/challenge-training.md) | dataset/checkpoint/RNG、权重SHA与评估身份；A01已关闭，真实B2证据仍缺 | [各Head损失、mask与加权](functions/distillation-objective.md) |
 | [部署产物](modules/challenge-export.md) | 权重SHA、ONNX IO、数值对齐、编译配置；随机导出见AUDIT R01 | [随机结构导出、来源SHA与报告](functions/onnx-delivery.md) |
 | [性能测量](modules/challenge-hil.md) | 原始trace、阶段次数、时钟域；重复mark见AUDIT A02，未硬件验收 | [Adapter能力、时钟域与测量范围](functions/hil-trace-semantics.md) |
 | [环境交付](modules/support-delivery.md) | 镜像依赖、cwd、模型路径/manifest；确认宿主容器映射 | [运行入口、依赖和产物维护](functions/environment-delivery.md) |

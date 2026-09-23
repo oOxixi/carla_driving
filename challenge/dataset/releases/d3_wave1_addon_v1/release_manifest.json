@@ -47,7 +47,7 @@
     }
   },
   "image_set": {
-    "canonical_sha256": "10b4dff7a8782e91b991c4767e845d776d00d88d80bf26c8a70f9130fe4fe501",
+    "canonical_sha256": "015f961090907d03b52a4d6a195a5b743502e3fdc73ba07a6f6d5693663646d2",
     "count": 2363
   },
   "release_type": "additive",

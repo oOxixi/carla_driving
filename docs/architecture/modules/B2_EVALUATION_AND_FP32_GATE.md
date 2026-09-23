@@ -25,7 +25,7 @@ B2 如何在不泄露 Frozen Benchmark 的前提下给出最终验收结果。
 |---|---|---|
 | A3 逐 Head 开发 Val | 已实现 | `challenge/distillation/evaluate.py`、`metrics.py` |
 | FP32 candidate 导出 | 已实现 | 状态保持 `PENDING_A3_FP32_GATE` |
-| FP32 promotion 判定器 | 已实现基础规则 | `artifacts.py`、`promote.py`，目前只在合成测试中证明规则可执行 |
+| FP32 promotion 判定器 | 已实现基础规则 | 支持 `frozen_manifest` 与正式 signed D2 多cohort身份；目前只在合成测试中证明规则可执行 |
 | B2 独立评价生成器 | 未实现 | 仓库没有生成 Teacher/Student evaluation JSON 的 B2 入口 |
 | 真实独立评价 JSON | 未交付 | 仓库中没有实际 `evaluation_id` 结果文件 |
 | B2 Frozen Benchmark | 未冻结 | Seen/Variant/Unseen case 清单和正式判分策略缺失 |
@@ -97,8 +97,15 @@ Val 指标只用于解释训练过程，不能直接复制成独立评价结果�
 字段。其余身份字段和六项指标两边都必须提供。
 
 Teacher 和 Student 必须在同一份不可变 case manifest 上、用同一 label encoder 和指标
-实现运行。当前代码尚未校验 case manifest SHA、样本数或 evaluator Git SHA，因此 B2
-正式交付不能只满足上述“最小结构”，还必须补充第 8 节的证据字段。
+实现运行。上述是legacy `frozen_manifest` 的最小结构；正式B2交付还必须满足下方signed
+D2附加校验和第8节证据要求。当前代码仍未校验 evaluator Git SHA、环境和原始预测hash。
+
+对 `signed_d2_release_formal` 候选，当前代码已把合同提高为：两份评价都必须匹配候选的
+`release_manifest_sha256` 与 `a3_view_manifest_sha256`，并提供相同且合法的
+`benchmark_manifest_sha256`、`policy_manifest_sha256`、`case_set_digest`、
+`evaluator_git_sha` 和正整数 `sample_count`；两端分别提供合法 `predictions_sha256`，Student
+评价还必须提供与候选一致的 `weights_sha256`。两份评价的Teacher字段必须精确匹配冻结
+Teacher v4，不能把训练数据的多cohort sentinel当作Gate Teacher。Smoke identity policy明确拒绝。
 
 ## 6. 当前 Gate 规则
 
@@ -132,14 +139,14 @@ CLI 返回码：PASS 为 `0`，指标不达标并成功写出 FAILED manifest �
 |---|---|---|
 | candidate 状态 | 只接受 `PENDING_A3_FP32_GATE` | 无 |
 | Git 清洁性 | 要求 `source_worktree_dirty=false` | 未复核远端 commit 可达性 |
-| 权重身份 | 重新计算并比对 weights SHA256 | evaluation 未绑定该 SHA |
-| Teacher 身份 | 比对四项 Teacher 字段 | 多 cohort policy 尚未统一 |
+| 权重身份 | 重新计算候选权重SHA256，并要求Student评价绑定同一SHA；两端各绑定predictions SHA | 尚未读取原始预测文件重算SHA |
+| Teacher 身份 | legacy比对候选字段；signed D2强制冻结Teacher v4、绑定release/view并拒绝Smoke policy | B2仍需实际生成v4评价 |
 | split 防泄露 | 拒绝 Test/Frozen，只接受 Val/Dev 别名 | 未绑定具体 split manifest SHA |
-| 数据身份 | 比对 `dataset_version` | 未比对 release/view/case-set digest |
-| 评价运行 | 要求非空 `evaluation_id` | 未校验 evaluator Git/config/env/时间/样本数 |
+| 数据身份 | 比对 `dataset_version`；signed D2比对release/view SHA | legacy `frozen_manifest`尚未强制case-set digest |
+| 评价运行 | 要求非空 `evaluation_id`；signed D2绑定benchmark/policy/case-set/evaluator Git、样本数和predictions SHA | 未校验evaluator config/env/时间，也未重算原始预测hash |
 | 指标合法性 | 六项必需、有限且在 `[0,1]` | 没有 denominator、置信区间或切片覆盖门禁 |
 | 阈值 | 输出实际使用的 drop threshold | CLI 可任意放宽，未绑定 B2 policy manifest |
-| 结果 | 原子写出 PASS/FAILED manifest | 没有签名/批准人和原始预测哈希 |
+| 结果 | 原子写出 PASS/FAILED manifest并嵌入结构化`gate_evidence`摘要 | 没有签名/批准人，原始文件仍由B2保管 |
 
 ## 8. B2 正式评价包的完成合同
 
@@ -234,8 +241,8 @@ python -m challenge.distillation.promote \
 ```
 
 不得在没有 B2 policy 的情况下使用 `--max-core-drop` 或 `--max-safety-drop` 放宽默认值。
-当前 D2 正式 candidate 还会先因 `signed_d2_release_formal` 与 promotion 只接受
-`frozen_manifest` 的策略不一致而失败。
+当前D2正式candidate的identity policy已可进入判定器，但B2尚未交付合规的independent
+Validation评价包，所以现在仍不能实际生成PASS manifest。
 
 ## 12. 当前阻塞与完成定义
 
@@ -244,8 +251,8 @@ python -m challenge.distillation.promote \
 | 没有 B2 独立评价入口 | 提交可复现的 Teacher/Student 成对 evaluator、schema 和测试 |
 | 没有真实评价包 | 按第 8 节签发 independent Validation 包 |
 | policy 可由 CLI 临时改变 | 阈值与指标绑定不可变 policy manifest，并由 Gate 校验哈希 |
-| evaluation 身份校验不足 | 绑定 case/policy/evaluator/weights/release/view SHA 和样本分母 |
-| Teacher identity policy 不一致 | 支持并严格验证正式 signed multi-cohort policy，加入端到端测试 |
+| evaluation 身份校验不足 | **W5代码项已关闭**：绑定case/policy/evaluator/weights/release/view/predictions SHA和样本分母；B2真实文件重算与签发仍缺 |
+| Teacher identity policy 不一致 | **已关闭代码合同**：正式signed multi-cohort训练来源与Teacher v4 Gate身份分离；错配/Smoke拒绝测试覆盖；真实B2证据仍缺 |
 | Reserved 与 Frozen 术语混用 | B2 签发独立 benchmark ID；旧候选池继续明确标为 candidate |
 | 没有最终 Benchmark | 冻结 Seen/Variant/Unseen、执行正式评测并只交付批准范围的证据 |
 

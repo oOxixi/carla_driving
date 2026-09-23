@@ -104,8 +104,11 @@ A3 不直接编辑 B1 发布文件，而是在 `artifacts/` 生成派生视图�
 场景 ID 高度重合，因此它只用于开发回归和同分布模型选择，不能证明未见指令或未见场景
 泛化。详细结果见 `challenge/distillation/D2_FP32_BASELINE_FINDINGS.md`。
 
-训练候选仍不能晋级：D2 正式配置写入的 `signed_d2_release_formal` 与 promotion 当前只
-接受的 `frozen_manifest` 不一致。该阻塞及修复完成定义见
+训练与promotion的identity policy已经统一：`signed_d2_release_formal` 会严格核对
+release/view SHA，并要求B2评价携带一致的benchmark/policy SHA、case-set digest、
+evaluator Git SHA、样本数，逐端绑定predictions SHA并绑定Student权重SHA；正式Teacher
+对照固定为v4。当前仍没有B2真实独立Validation包，所以这只是关闭代码合同阻塞，不代表已有候选
+晋级。剩余完成定义见
 [`MODEL_AND_WEIGHT_LIFECYCLE.md`](MODEL_AND_WEIGHT_LIFECYCLE.md#6-fp32-晋级门禁)。
 
 标准复现顺序：

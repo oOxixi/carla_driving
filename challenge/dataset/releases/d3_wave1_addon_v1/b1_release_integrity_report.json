@@ -1,0 +1,109 @@
+{
+  "schema_version": "1.0",
+  "report_type": "B1_D3_WAVE1_RELEASE_INTEGRITY",
+  "generated_at_utc": "2026-09-23T13:28:02.828162+00:00",
+  "dataset_version": "b1_d3_wave1_addon_v1",
+  "release_status": "B1_RELEASE_CANDIDATE",
+  "teacher": {
+    "teacher_profile": "b1-pinned-teacher-v4",
+    "teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_fingerprint": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "quantization": null,
+    "dtype": "bfloat16"
+  },
+  "counts": {
+    "hard_negative_addition": 308,
+    "images": 2363,
+    "quarantine": 35,
+    "train_addition": 1747,
+    "val_addition": 308
+  },
+  "image_set": {
+    "count": 2363,
+    "canonical_sha256": "015f961090907d03b52a4d6a195a5b743502e3fdc73ba07a6f6d5693663646d2",
+    "expected_canonical_sha256": "015f961090907d03b52a4d6a195a5b743502e3fdc73ba07a6f6d5693663646d2",
+    "pass": true
+  },
+  "file_checks": {
+    "cumulative_view_manifest.json": {
+      "exists": true,
+      "sha256": "f0f06f0a0e1d07423bb9851a37f335bd48179e62e7fba60c6debd1c4c4080867",
+      "expected_sha256": "f0f06f0a0e1d07423bb9851a37f335bd48179e62e7fba60c6debd1c4c4080867",
+      "size_bytes": 962,
+      "expected_size_bytes": 962,
+      "pass": true
+    },
+    "governance_report.json": {
+      "exists": true,
+      "sha256": "6a97749e5d8444ae05ce4d2cc2fd2b3060db495cb5160ed7be96668ba9d56350",
+      "expected_sha256": "6a97749e5d8444ae05ce4d2cc2fd2b3060db495cb5160ed7be96668ba9d56350",
+      "size_bytes": 1107,
+      "expected_size_bytes": 1107,
+      "pass": true
+    },
+    "hard_negative_addition.jsonl": {
+      "exists": true,
+      "sha256": "c0b3a3c5374c9ebfcfe2a0be90bab5fdf52d5b0a754c720a17aa0798232ad585",
+      "expected_sha256": "c0b3a3c5374c9ebfcfe2a0be90bab5fdf52d5b0a754c720a17aa0798232ad585",
+      "size_bytes": 1531461,
+      "expected_size_bytes": 1531461,
+      "pass": true
+    },
+    "provenance_manifest.json": {
+      "exists": true,
+      "sha256": "b0b6cb68f2a37f0fde7e9bbccd33ed55d8ae1e3ab74c81034c49f9efb9fa431a",
+      "expected_sha256": "b0b6cb68f2a37f0fde7e9bbccd33ed55d8ae1e3ab74c81034c49f9efb9fa431a",
+      "size_bytes": 567,
+      "expected_size_bytes": 567,
+      "pass": true
+    },
+    "quarantine/terminal_inconsistent_positive.jsonl": {
+      "exists": true,
+      "sha256": "ef8b39a9edd7491ec25f61762325d2b436c964a9dd69df993559bccc4f3ddd51",
+      "expected_sha256": "ef8b39a9edd7491ec25f61762325d2b436c964a9dd69df993559bccc4f3ddd51",
+      "size_bytes": 177184,
+      "expected_size_bytes": 177184,
+      "pass": true
+    },
+    "rgb_mapping.json": {
+      "exists": true,
+      "sha256": "0cc77017f6690dc6acc1704683e40caf92b82c9f81a5596b2b046fdd454ed73f",
+      "expected_sha256": "0cc77017f6690dc6acc1704683e40caf92b82c9f81a5596b2b046fdd454ed73f",
+      "size_bytes": 602568,
+      "expected_size_bytes": 602568,
+      "pass": true
+    },
+    "split_manifest.json": {
+      "exists": true,
+      "sha256": "cd0fbe157d8ae34cade5358bd30a2a3a17c5a1fa03e3e6e499caa13b885406cc",
+      "expected_sha256": "cd0fbe157d8ae34cade5358bd30a2a3a17c5a1fa03e3e6e499caa13b885406cc",
+      "size_bytes": 318270,
+      "expected_size_bytes": 318270,
+      "pass": true
+    },
+    "train_addition.jsonl": {
+      "exists": true,
+      "sha256": "42bf9f12e54316c7563c41c95eda297cbeac4d8e2c448f6e366d7cb280e0e312",
+      "expected_sha256": "42bf9f12e54316c7563c41c95eda297cbeac4d8e2c448f6e366d7cb280e0e312",
+      "size_bytes": 8570727,
+      "expected_size_bytes": 8570727,
+      "pass": true
+    },
+    "val_addition.jsonl": {
+      "exists": true,
+      "sha256": "fa27a044fe8022d3de47a32685934cb2d98a21c17d79f1ef03d39865ddba6ad8",
+      "expected_sha256": "fa27a044fe8022d3de47a32685934cb2d98a21c17d79f1ef03d39865ddba6ad8",
+      "size_bytes": 1509411,
+      "expected_size_bytes": 1509411,
+      "pass": true
+    }
+  },
+  "release_manifest_sha256": "dcd1bd1d0a34683e62e70a206760e691c0cd04b779f063d58a1fcf98837554bd",
+  "cumulative_view_manifest_sha256": "f0f06f0a0e1d07423bb9851a37f335bd48179e62e7fba60c6debd1c4c4080867",
+  "release_provenance_sha256": "b0b6cb68f2a37f0fde7e9bbccd33ed55d8ae1e3ab74c81034c49f9efb9fa431a",
+  "teacher_manifest_sha256": "82aef8a13649cffdd17c9cd64003e3967448773548c2b5fcb15fd3b0d5b08220",
+  "execution_provenance_sha256": "18059bbe1fa2c7e48786c40b8e796eed1e8c094bd033e3d96b31b998f4d9e4ad",
+  "status": "PASS"
+}

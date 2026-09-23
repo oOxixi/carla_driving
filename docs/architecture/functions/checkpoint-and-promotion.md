@@ -16,7 +16,7 @@ checkpoint 使用临时文件再 replace。恢复会检查 format_version，加�
 
 mock/integration smoke 不能晋级生产。旧的 pinned Teacher 流程核验 Teacher 身份、候选权重 hash、Validation 类型和指标；D2 mixed-cohort 正式训练有独立策略，目前文档明确不授权晋级。
 
-已确认缺口：`_validate_evaluation_identity` 未绑定 Student 评测的 weights_sha256/model_id/config_id，故当前 Gate 不能充分证明分数属于当前候选。这个问题仅记录，尚未修复。后续不能用手工写 `A3_FP32_GATE_PASSED` 来弥补证据关联。
+原缺口已关闭：`_validate_evaluation_identity` 现在绑定Student评测的weights/model/config；signed D2正式策略还要求release/view、benchmark/policy、case-set、evaluator Git、sample count一致，逐端绑定predictions SHA，并强制正式Teacher对照为v4。当前缺的是B2真实独立评价包，不得用合成测试或手工写 `A3_FP32_GATE_PASSED` 代替。
 
 ## 修改建议的阅读顺序（不是本轮已实施行为）
 

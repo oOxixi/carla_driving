@@ -59269,14 +59269,14 @@
       "path": "challenge/distillation/artifacts.py",
       "module": "challenge",
       "kind": "python",
-      "sha256": "4984eb81fffecee7895121a3319daea8a921a0d7c168887a60c418f7b5c56cd4",
+      "sha256": "fbb56ef6ac338110b8164f74ca6f7bef285e4d41df5a9ec51c989e8c4d175689",
       "module_document": "modules/challenge-training.md",
       "function_document": "functions/challenge--distillation--artifacts--py.md",
       "doc": "A3 Student weight artifacts and fail-closed FP32 promotion gate.",
       "symbols": [
         {
           "name": "export_candidate_weights",
-          "line": 26,
+          "line": 39,
           "kind": "FunctionDef",
           "doc": "Write a pure state_dict plus a non-promoted provenance manifest.",
           "signature": "output_directory: str | Path, *, model: torch.nn.Module, identity: Mapping[str, Any], validation: Mapping[str, Any], checkpoint_sha256: str",
@@ -59284,7 +59284,7 @@
         },
         {
           "name": "promote_fp32_candidate",
-          "line": 70,
+          "line": 83,
           "kind": "FunctionDef",
           "doc": "Promote only independent Validation evidence; frozen Test is forbidden.",
           "signature": "candidate_manifest: Mapping[str, Any], *, weights_path: str | Path, teacher_evaluation: Mapping[str, Any], student_evaluation: Mapping[str, Any], output_path: str | Path, max_core_drop: float=0.015, max_safety_drop: float=0.0, core_metrics: Sequence[str]=CORE_METRICS, safety_metrics: Sequence[str]=SAFETY_METRICS",
@@ -59292,7 +59292,7 @@
         },
         {
           "name": "_validate_evaluation_identity",
-          "line": 130,
+          "line": 158,
           "kind": "FunctionDef",
           "doc": "",
           "signature": "candidate: Mapping[str, Any], evaluation: Mapping[str, Any], label: str",
@@ -59300,15 +59300,31 @@
         },
         {
           "name": "_validate_pinned_teacher_candidate",
-          "line": 152,
+          "line": 191,
           "kind": "FunctionDef",
           "doc": "",
           "signature": "candidate: Mapping[str, Any]",
           "returns": "None"
         },
         {
+          "name": "_validate_formal_evaluation_pair",
+          "line": 225,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "candidate: Mapping[str, Any], teacher: Mapping[str, Any], student: Mapping[str, Any]",
+          "returns": "None"
+        },
+        {
+          "name": "_require_hex",
+          "line": 268,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "value: str, length: int, message: str",
+          "returns": "None"
+        },
+        {
           "name": "_metrics",
-          "line": 165,
+          "line": 275,
           "kind": "FunctionDef",
           "doc": "",
           "signature": "evaluation: Mapping[str, Any], label: str",
@@ -59316,7 +59332,7 @@
         },
         {
           "name": "_drop_check",
-          "line": 172,
+          "line": 282,
           "kind": "FunctionDef",
           "doc": "",
           "signature": "name: str, teacher: Mapping[str, Any], student: Mapping[str, Any], max_drop: float, group: str",
@@ -59324,7 +59340,7 @@
         },
         {
           "name": "_write_json",
-          "line": 204,
+          "line": 314,
           "kind": "FunctionDef",
           "doc": "",
           "signature": "path: Path, value: Mapping[str, Any]",
@@ -59332,7 +59348,7 @@
         },
         {
           "name": "_json_safe",
-          "line": 214,
+          "line": 324,
           "kind": "FunctionDef",
           "doc": "",
           "signature": "value: Any",
@@ -59340,7 +59356,7 @@
         },
         {
           "name": "_sha256",
-          "line": 224,
+          "line": 334,
           "kind": "FunctionDef",
           "doc": "",
           "signature": "path: Path",
@@ -60516,22 +60532,54 @@
       "path": "challenge/distillation/tests/test_artifacts.py",
       "module": "challenge",
       "kind": "test",
-      "sha256": "f594bf3123a1f4736ab251418a34d0f9966ad62f509ee1d413532fdd51542fd6",
+      "sha256": "75ff6f35e54a9d8d63970e2415ac260a9fc8fa213edaf082c080ecb30d850805",
       "module_document": "modules/challenge-training.md",
       "function_document": "modules/challenge-training.md",
       "doc": "",
       "symbols": [
         {
+          "name": "test_formal_gate_teacher_identity_matches_frozen_v4_manifest",
+          "line": 21,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "",
+          "returns": "None"
+        },
+        {
           "name": "_evaluation",
-          "line": 19,
+          "line": 39,
           "kind": "FunctionDef",
           "doc": "",
           "signature": "evaluation_id: str, value: float, *, split: str='validation'",
           "returns": "dict"
         },
         {
+          "name": "_student_evaluation",
+          "line": 60,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "evaluation_id: str, value: float, weights_sha256: str, *, split: str='validation'",
+          "returns": "dict"
+        },
+        {
+          "name": "_formal_candidate",
+          "line": 76,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "weights_sha256: str",
+          "returns": "dict"
+        },
+        {
+          "name": "_formal_evaluation",
+          "line": 95,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "evaluation_id: str, value: float, *, weights_sha256: str | None=None",
+          "returns": "dict"
+        },
+        {
           "name": "test_candidate_is_not_promoted_without_independent_gate",
-          "line": 40,
+          "line": 122,
           "kind": "FunctionDef",
           "doc": "",
           "signature": "tmp_path: Path",
@@ -60539,7 +60587,7 @@
         },
         {
           "name": "test_candidate_serializes_undefined_metrics_as_null",
-          "line": 64,
+          "line": 146,
           "kind": "FunctionDef",
           "doc": "",
           "signature": "tmp_path: Path",
@@ -60547,7 +60595,63 @@
         },
         {
           "name": "test_fp32_gate_passes_small_drop_and_rejects_test_evidence",
-          "line": 86,
+          "line": 168,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "tmp_path: Path",
+          "returns": "None"
+        },
+        {
+          "name": "test_fp32_gate_rejects_mismatched_student_identity",
+          "line": 223,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "tmp_path: Path, field: str",
+          "returns": "None"
+        },
+        {
+          "name": "test_signed_d2_formal_candidate_accepts_matched_independent_evidence",
+          "line": 250,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "tmp_path: Path",
+          "returns": "None"
+        },
+        {
+          "name": "test_signed_d2_formal_candidate_rejects_mismatched_evaluation_identity",
+          "line": 294,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "tmp_path: Path, field: str, value: object, message: str",
+          "returns": "None"
+        },
+        {
+          "name": "test_signed_d2_formal_candidate_rejects_invalid_evidence_fields",
+          "line": 330,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "tmp_path: Path, field: str, value: object",
+          "returns": "None"
+        },
+        {
+          "name": "test_signed_d2_formal_candidate_requires_teacher_v4_gate_identity",
+          "line": 355,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "tmp_path: Path, field: str",
+          "returns": "None"
+        },
+        {
+          "name": "test_signed_d2_formal_candidate_requires_signed_data_hashes",
+          "line": 379,
+          "kind": "FunctionDef",
+          "doc": "",
+          "signature": "tmp_path: Path, field: str",
+          "returns": "None"
+        },
+        {
+          "name": "test_signed_d2_formal_candidate_rejects_smoke_policy",
+          "line": 401,
           "kind": "FunctionDef",
           "doc": "",
           "signature": "tmp_path: Path",
@@ -60558,6 +60662,7 @@
         "challenge.distillation.artifacts",
         "challenge.distillation.dummy_student",
         "hashlib",
+        "json",
         "pathlib",
         "pytest"
       ],

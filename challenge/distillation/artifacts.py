@@ -21,6 +21,19 @@ CORE_METRICS = (
     "plan_sequence_accuracy",
 )
 SAFETY_METRICS = ("safety_critical_behavior_recall",)
+SIGNED_D2_FORMAL_POLICY = "signed_d2_release_formal"
+SIGNED_D2_MULTI_TEACHER_ID = "MULTI_PINNED_B1_D2_V1_1"
+FORMAL_GATE_TEACHER_V4 = {
+    "teacher_profile": "b1-pinned-teacher-v4",
+    "teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+    "teacher_model_id": "Qwen/Qwen3.5-2B",
+    "teacher_model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "teacher_artifact_fingerprint_sha256": (
+        "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa"
+    ),
+    "teacher_quantization": None,
+    "teacher_dtype": "bfloat16",
+}
 
 
 def export_candidate_weights(
@@ -92,6 +105,11 @@ def promote_fp32_candidate(
         raise ValueError("gate drops must be in [0,1]")
     _validate_evaluation_identity(candidate_manifest, teacher_evaluation, "Teacher")
     _validate_evaluation_identity(candidate_manifest, student_evaluation, "Student")
+    _validate_formal_evaluation_pair(
+        candidate_manifest,
+        teacher_evaluation,
+        student_evaluation,
+    )
     teacher_metrics = _metrics(teacher_evaluation, "Teacher")
     student_metrics = _metrics(student_evaluation, "Student")
     checks = []
@@ -123,6 +141,16 @@ def promote_fp32_candidate(
         "teacher_evaluation_id": teacher_evaluation.get("evaluation_id"),
         "student_evaluation_id": student_evaluation.get("evaluation_id"),
     }
+    if candidate_manifest.get("teacher_identity_policy") == SIGNED_D2_FORMAL_POLICY:
+        report["gate_evidence"] = {
+            "benchmark_manifest_sha256": teacher_evaluation["benchmark_manifest_sha256"],
+            "policy_manifest_sha256": teacher_evaluation["policy_manifest_sha256"],
+            "case_set_digest": teacher_evaluation["case_set_digest"],
+            "evaluator_git_sha": teacher_evaluation["evaluator_git_sha"],
+            "sample_count": teacher_evaluation["sample_count"],
+            "teacher_predictions_sha256": teacher_evaluation["predictions_sha256"],
+            "student_predictions_sha256": student_evaluation["predictions_sha256"],
+        }
     _write_json(Path(output_path), report)
     return report
 
@@ -141,25 +169,107 @@ def _validate_evaluation_identity(
         raise ValueError(f"{label} evaluation dataset_version does not match candidate")
     if not str(evaluation.get("evaluation_id", "")).strip():
         raise ValueError(f"{label} evaluation_id is required")
-    for field in (
-        "teacher_git_sha", "teacher_model_id", "teacher_model_revision",
-        "teacher_artifact_fingerprint_sha256",
-    ):
-        if evaluation.get(field) != candidate.get(field):
-            raise ValueError(f"{label} evaluation {field} does not match candidate")
+    if candidate.get("teacher_identity_policy") == SIGNED_D2_FORMAL_POLICY:
+        for field, expected in FORMAL_GATE_TEACHER_V4.items():
+            if evaluation.get(field) != expected:
+                raise ValueError(
+                    f"{label} evaluation {field} does not match the frozen Teacher v4 gate identity"
+                )
+    else:
+        for field in (
+            "teacher_git_sha", "teacher_model_id", "teacher_model_revision",
+            "teacher_artifact_fingerprint_sha256",
+        ):
+            if evaluation.get(field) != candidate.get(field):
+                raise ValueError(f"{label} evaluation {field} does not match candidate")
+    if label == "Student":
+        for field in ("model_id", "config_id", "weights_sha256"):
+            if evaluation.get(field) != candidate.get(field):
+                raise ValueError(f"Student evaluation {field} does not match candidate")
 
 
 def _validate_pinned_teacher_candidate(candidate: Mapping[str, Any]) -> None:
-    if candidate.get("teacher_identity_policy") != "frozen_manifest":
-        raise ValueError("production candidate requires the pinned Teacher identity")
+    policy = str(candidate.get("teacher_identity_policy", ""))
+    if policy not in {"frozen_manifest", SIGNED_D2_FORMAL_POLICY}:
+        raise ValueError(
+            "production candidate requires frozen_manifest or "
+            "signed_d2_release_formal Teacher identity"
+        )
     revision = str(candidate.get("teacher_model_revision", ""))
     fingerprint = str(candidate.get("teacher_artifact_fingerprint_sha256", ""))
-    if len(revision) != 40 or any(char not in "0123456789abcdef" for char in revision.lower()):
-        raise ValueError("production candidate requires a full Teacher model revision")
-    if len(fingerprint) != 64 or any(
-        char not in "0123456789abcdef" for char in fingerprint.lower()
+    _require_hex(revision, 40, "production candidate requires a full Teacher model revision")
+    _require_hex(
+        fingerprint,
+        64,
+        "production candidate requires a valid Teacher artifact fingerprint",
+    )
+    if policy == "frozen_manifest":
+        _require_hex(
+            str(candidate.get("teacher_git_sha", "")),
+            40,
+            "frozen_manifest candidate requires a full Teacher Git SHA",
+        )
+        return
+    if candidate.get("teacher_git_sha") != SIGNED_D2_MULTI_TEACHER_ID:
+        raise ValueError(
+            "signed D2 candidate requires the fixed multi-cohort Teacher identity"
+        )
+    for field in ("release_manifest_sha256", "a3_view_manifest_sha256"):
+        _require_hex(
+            str(candidate.get(field, "")),
+            64,
+            f"signed D2 candidate requires a valid {field}",
+        )
+
+
+def _validate_formal_evaluation_pair(
+    candidate: Mapping[str, Any],
+    teacher: Mapping[str, Any],
+    student: Mapping[str, Any],
+) -> None:
+    if candidate.get("teacher_identity_policy") != SIGNED_D2_FORMAL_POLICY:
+        return
+    for evaluation, label in ((teacher, "Teacher"), (student, "Student")):
+        for field in ("release_manifest_sha256", "a3_view_manifest_sha256"):
+            if evaluation.get(field) != candidate.get(field):
+                raise ValueError(f"{label} evaluation {field} does not match candidate")
+        for field in (
+            "benchmark_manifest_sha256",
+            "policy_manifest_sha256",
+            "case_set_digest",
+            "predictions_sha256",
+        ):
+            _require_hex(
+                str(evaluation.get(field, "")),
+                64,
+                f"{label} evaluation requires a valid {field}",
+            )
+        _require_hex(
+            str(evaluation.get("evaluator_git_sha", "")),
+            40,
+            f"{label} evaluation requires a valid evaluator_git_sha",
+        )
+        sample_count = evaluation.get("sample_count")
+        if isinstance(sample_count, bool) or not isinstance(sample_count, int) or sample_count < 1:
+            raise ValueError(f"{label} evaluation sample_count must be a positive integer")
+    for field in (
+        "benchmark_manifest_sha256",
+        "policy_manifest_sha256",
+        "case_set_digest",
+        "evaluator_git_sha",
+        "sample_count",
     ):
-        raise ValueError("production candidate requires a valid Teacher artifact fingerprint")
+        if teacher.get(field) != student.get(field):
+            raise ValueError(f"Teacher and Student evaluation {field} must match")
+    if student.get("weights_sha256") != candidate.get("weights_sha256"):
+        raise ValueError("Student evaluation weights_sha256 does not match candidate")
+
+
+def _require_hex(value: str, length: int, message: str) -> None:
+    if len(value) != length or any(
+        char not in "0123456789abcdef" for char in value.lower()
+    ):
+        raise ValueError(message)
 
 
 def _metrics(evaluation: Mapping[str, Any], label: str) -> Mapping[str, Any]:
@@ -230,6 +340,8 @@ def _sha256(path: Path) -> str:
 
 
 __all__ = [
-    "CORE_METRICS", "SAFETY_METRICS", "export_candidate_weights",
+    "CORE_METRICS", "SAFETY_METRICS", "SIGNED_D2_FORMAL_POLICY",
+    "FORMAL_GATE_TEACHER_V4",
+    "export_candidate_weights",
     "promote_fp32_candidate",
 ]
