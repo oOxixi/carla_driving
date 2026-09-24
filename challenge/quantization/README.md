@@ -1,10 +1,12 @@
 # A2 INT8 量化执行入口
 
-当前代码可完成三件事：从 B1 D2 Train 生成确定性的开发校准集、用 ONNX Runtime QDQ
-跑通 INT8 PTQ 冒烟、生成十个 Head 的 FP32/INT8 原始输出漂移报告。
+当前代码可完成四件事：从 B1 D2 Train 生成确定性的开发校准集、用 ONNX Runtime QDQ
+跑通 INT8 PTQ 冒烟、生成十个 Head 的 FP32/INT8 原始输出漂移报告，以及生成可交给
+OpenExplorer 3.9.1 的四输入 NPY、Student J6P YAML 和身份清单。
 
-当前正式状态仍是 **BLOCKED**：仓库没有 `A3_FP32_GATE_PASSED` 权重/ONNX，没有 B1/B2
-签发的正式 Calibration，也没有 A4 提供的 OpenExplorer/J6P 工具链。开发产物强制标为
+当前正式状态仍是 **BLOCKED**：仓库没有 `A3_FP32_GATE_PASSED` 权重/ONNX，也没有 B1/B2
+签发的正式 Calibration。OpenExplorer 已锁定为 3.9.1、J6P march 已锁定为 `nash-p`，
+但官方镜像需从 OE 下载页取得，板端实测仍缺 J6P。开发产物强制标为
 `SMOKE_ONLY` 或 `A2_DEVELOPMENT_CALIBRATION_CANDIDATE`，不能用于申报成绩。
 
 Windows 上的 ONNX Runtime 1.30 在本机含中文的仓库路径生成 `-inferred.onnx` 时会破坏
@@ -52,9 +54,34 @@ python -m challenge.quantization.cli drift `
 报告包含每个 Head 的 mean/P95/P99/max absolute error，以及离散 Head 的 argmax
 一致率。这只是敏感层分析和 B2 Gate 前的诊断，不能替代真实标签精度评测。
 
+## 4. 准备 OpenExplorer 3.9.1 输入包
+
+```powershell
+python -m challenge.quantization.cli prepare-openexplorer `
+  --source-onnx challenge/student_v0_fp32.onnx `
+  --calibration-jsonl artifacts/a2/dev_calibration_400/calibration.jsonl `
+  --calibration-manifest artifacts/a2/dev_calibration_400/calibration_manifest.json `
+  --output artifacts/a2/openexplorer_smoke_oe391 `
+  --allow-smoke
+```
+
+输出包括四个严格对齐的 NPY 目录、`student_j6p_oe391.yaml` 和
+`openexplorer_input_manifest.json`。YAML 固定四输入名称/Shape、float32 featuremap、DDR
+输入、`march=nash-p`。正式模式会拒绝非 Gate 权重和非正式 Calibration；`--allow-smoke`
+只允许验证工具链。容器内执行：
+
+```bash
+hb_compile --model <FP32 ONNX> --march nash-p
+cd <OpenExplorer输入包>
+hb_compile -c student_j6p_oe391.yaml
+```
+
+正式 J6P 流程由 `hb_compile` 从 FP32 ONNX 完成校准、量化和编译。ORT QDQ产物只用于
+提前分析量化漂移，不作为 OpenExplorer 的正式输入。
+
 ## 正式运行前必须替换
 
 1. A3/B2 交付通过 Gate 的 FP32 权重、权重 manifest 和由该权重导出的 ONNX；
 2. B1/B2 签发 300～500 条正式 Calibration release；
-3. A4 锁定 J6P 型号、OpenExplorer/SDK 版本、量化配置和算子支持报告；
+3. A4/B3 在官方 OpenExplorer 3.9.1 镜像内验证 Student YAML，并返回算子/CPU回退报告；
 4. B2 固定 INT8 的逐 Head、safety-critical 和累计性能衰减政策。
