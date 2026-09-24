@@ -10,9 +10,9 @@
 ## 已完成
 
 1. 交接包 9 个内部文件 SHA256 全部通过。
-2. 从真实 state_dict 导出固定 Shape、opset 17 FP32 ONNX。
+2. 从真实 state_dict 导出固定 Shape、opset 17 FP32 ONNX；导出代码提交 `2036d8b1b9312df2babc3846f4f1a41f50ff5d67`，ONNX SHA256 为 `ee23b28e5e2ab7799db3bccd2fbdd0c5276bf5070efd4cc50c2137cf0a636c12`。
 3. 20 条真实样本上完成 PyTorch/ONNX 十 Head 一致性，状态 `PASS`，全局最大绝对误差 `9.5367431640625e-06`。
-4. 使用 400 条开发 Calibration 完成 ONNX Runtime QDQ PTQ 预演，产物状态 `A3_CANDIDATE_PRE_PTQ`；57 个 QuantizeLinear、107 个 DequantizeLinear。
+4. 使用 400 条开发 Calibration 完成 ONNX Runtime QDQ PTQ 预演，产物状态 `A3_CANDIDATE_PRE_PTQ`；57 个 QuantizeLinear、107 个 DequantizeLinear；INT8 ONNX SHA256 为 `0b1275dea795ae2eabf13c932a019312f070fdcbccec934f38bbdd2adaa3cf4c`。
 5. 在 100 条样本上完成 FP32/ORT-QDQ 原始输出漂移分析。离散 Head argmax 一致率：plan length 1.0000、behavior 0.9875、target pointer 0.9825、target lane 0.9650、completion 0.9875、failure 1.0000。速度 Head mean/max 绝对误差为 `0.214840/1.214098 m/s`。
 6. 生成 OpenExplorer 3.9.1、`nash-p` 的 400 组四输入 NPY、YAML 和身份清单，状态 `A3_CANDIDATE_OPENEXPLORER_INPUT_READY`。
 
