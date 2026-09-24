@@ -109,29 +109,48 @@ def identity_from_weight_manifest(
 
     The manifest's self-reported hash is never trusted: the SHA256 is recomputed
     from the artifact on disk.
+
+    Two layouts are accepted, because A3 ships both:
+
+    * flat — the five identifiers at the top level;
+    * nested — the five identifiers under `candidate_identity` (this is the shape of
+      `challenge/distillation/candidate_handoff.py`'s `handoff_manifest.json`).
+
+    Top-level keys win when a manifest carries both, and the layout that was used is
+    recorded in the verification block so a reader never has to guess which fields
+    were verified.
     """
     path = Path(weights)
     manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
     if not isinstance(manifest, Mapping):
         raise ValueError("weight manifest must be a JSON object")
+    nested = manifest.get("candidate_identity")
+    nested = nested if isinstance(nested, Mapping) else {}
+
+    def field(name: str) -> Any:
+        value = manifest.get(name)
+        return value if value not in (None, "") else nested.get(name)
+
     actual = sha256_file(path)
-    reported = str(manifest.get("weights_sha256", ""))
+    reported = str(field("weights_sha256") or "")
     if reported and reported.lower() != actual.lower():
         raise ValueError(
             f"weight manifest SHA256 mismatch: manifest={reported} actual={actual}"
         )
-    gate_status = str(manifest.get("gate_status") or "NOT_PROVIDED")
+    gate_status = str(field("gate_status") or "NOT_PROVIDED")
     return CandidateIdentity(
-        git_sha=str(manifest.get("git_sha") or UNRESOLVED),
-        model_id=str(manifest.get("model_id") or UNRESOLVED),
+        git_sha=str(field("git_sha") or UNRESOLVED),
+        model_id=str(field("model_id") or UNRESOLVED),
         model_sha256=actual,
-        dataset_version=str(manifest.get("dataset_version") or UNRESOLVED),
-        config_id=str(manifest.get("config_id") or UNRESOLVED),
+        dataset_version=str(field("dataset_version") or UNRESOLVED),
+        config_id=str(field("config_id") or UNRESOLVED),
         gate_status=gate_status,
         weights_manifest=str(manifest_path),
         verification={
             "method": VERIFICATION_METHOD_MANIFEST,
             "verified": True,
+            "layout": "nested_candidate_identity" if nested else "flat",
+            "identity_source": "candidate_identity" if nested else "top_level",
             "manifest_path": str(manifest_path),
             "manifest_sha256": sha256_file(manifest_path),
             "reported_weights_sha256": reported or None,

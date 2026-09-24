@@ -118,6 +118,50 @@ def test_identity_from_artifact_uses_the_real_file(tmp_path: Path):
     assert identity.git_sha == UNRESOLVED
 
 
+def test_identity_reads_a3_nested_candidate_identity_layout(tmp_path: Path):
+    """A3's handoff_manifest.json nests the identifiers under `candidate_identity`."""
+    weights = tmp_path / "student_v0_fp32_candidate.pt"
+    weights.write_bytes(b"pure-state-dict")
+    digest = sha256_file(weights)
+    manifest = tmp_path / "handoff_manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "package_status": "PENDING_B2_INDEPENDENT_VALIDATION",
+                "gate_status": "PENDING_A3_FP32_GATE",
+                "candidate_identity": {
+                    "git_sha": "1" * 40,
+                    "model_id": "student-v0-r3-fp32",
+                    "config_id": "student-v0-r3-structure-20260911",
+                    "weights_sha256": digest,
+                    "dataset_version": "b1_d2_v1_1_plus_d3_wave1_a3_strict_positive_v1",
+                },
+                "files": {"student_v0_fp32_candidate.pt": {"sha256": digest}},
+            }
+        ),
+        encoding="utf-8",
+    )
+    identity = identity_from_weight_manifest(weights, manifest)
+    assert identity.complete, identity.missing()
+    assert identity.model_id == "student-v0-r3-fp32"
+    assert identity.git_sha == "1" * 40
+    assert identity.gate_status == "PENDING_A3_FP32_GATE"
+    assert identity.verification["layout"] == "nested_candidate_identity"
+    assert identity.verification["reported_weights_sha256"] == digest
+
+    # A candidate that is still pending must not be promoted by the gate checks.
+    from ..gate import gate_verified
+
+    assert gate_verified(identity) is False
+
+    # Tampering with the nested digest is still rejected.
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    payload["candidate_identity"]["weights_sha256"] = "0" * 64
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="SHA256 mismatch"):
+        identity_from_weight_manifest(weights, manifest)
+
+
 def test_csv_writer_rejects_columns_outside_the_schema(tmp_path: Path):
     with pytest.raises(ValueError):
         write_csv(tmp_path / "x.csv", ("a", "b"), [{"a": 1, "b": 2, "c": 3}])
