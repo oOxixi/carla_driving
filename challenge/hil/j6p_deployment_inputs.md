@@ -87,6 +87,43 @@ hb_compile -c <config>.yaml                            # config 内指定 march/
 
 详见 `pc_deployment_plan.md` §6.4。
 
+### 4.1 队友如何获取这个镜像（2026-09-24 实测）
+
+**结论：走官方离线镜像包，不要指望 `docker pull`。**
+
+实测：`openexplorer/ai_toolchain_ubuntu_22_j6_cpu` 在 Docker Hub 上返回 **404**；
+`openexplorer` 命名空间共 13 个仓库，**没有一个含 j6**（最新只到 OE 2.x / X5 时代，
+如 `ai_toolchain_ubuntu_20_x5_cpu`）。所以官方手册里那句
+`docker pull openexplorer/ai_toolchain_ubuntu_22_j6_cpu:{version}` 与 `run_docker.sh` 的
+"自动拉取"在我们这条链上不可用，**必须用下载页提供的离线包**。
+
+步骤（每个队友用**自己的账号**登录，账号免费注册）：
+
+1. 打开 https://oe.horizon.auto/download/oe ，版本选 **3.9.1**；
+2. 在 12 个文件里找 **`docker_open_explorer_ubuntu_22_j6_cpu_v3.9.1.tar.gz`**
+   （描述"工具链集成开发环境-CPU版本"，约 **3.45 GB**）与
+   **`horizon_j6_open_explorer_v3.9.1-py310_20260821.tgz`**（全量开发包，约 **2.59 GB**）；
+3. 点该行"下载"，弹窗里会直接给出 **wget 直链**（`https://oe.horizon.auto/api/v1/downloads/<uuid>`，
+   会 302 到 `oss.oe.horizon.auto` 的限时签名地址，**无需 Cookie**，可直接用 curl/wget 拉）；
+4. 导入镜像并起容器：
+
+```bash
+docker load -i docker_open_explorer_ubuntu_22_j6_cpu_v3.9.1.tar.gz   # 导入后占 20.9 GB
+tar -xzf horizon_j6_open_explorer_v3.9.1-py310_20260821.tgz
+cd horizon_j6_open_explorer_v3.9.1-py310_20260821 && bash run_docker.sh data/ cpu
+```
+
+**队友之间互传（没人能登录下载页时）**：已导入过镜像的人导出后再给对方导入——
+注意 `docker save` 输出是**未压缩的 ~20 GB**，务必管道压缩：
+
+```bash
+docker save openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1 | gzip > oe_cpu_v3.9.1.tar.gz  # ~3.4 GB
+# 对方： docker load -i oe_cpu_v3.9.1.tar.gz
+```
+
+我这边可以现场导出分卷，但需要先定一个传输渠道（网盘/内网服务器/U 盘）——20.9 GB 的镜像
+不适合走聊天工具。
+
 ## 5. 板端运行示例 —— 🔶 官方示例能给，板端实测示例要等板卡；**但 A4 写 `j6p_run.sh` 更需要的是契约**
 
 **官方现成示例**（都在 OE 包里，A4 可直接参考）
