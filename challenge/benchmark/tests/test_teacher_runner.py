@@ -19,6 +19,10 @@ from challenge.benchmark.teacher_runner import (
     run_teacher_cases,
 )
 
+from challenge.benchmark.evaluation_summary import (
+    summarize_prediction_coverage,
+)
+
 
 def _request(index: int) -> dict[str, Any]:
     return {
@@ -259,3 +263,37 @@ def test_failure_record_is_written_into_hashed_evidence(
     assert digest != prediction_records_sha256(
         [records[0]]
     )
+
+def test_teacher_records_feed_coverage_accounting_without_filtering() -> None:
+    class MixedClient:
+        def infer(
+            self,
+            request: dict[str, Any],
+        ) -> dict[str, Any]:
+            if request["request_id"] == "request-2":
+                raise RuntimeError("service unavailable")
+            return _plan(request)
+
+    cases = [
+        _case(1),
+        _case(2),
+        _case(3),
+    ]
+
+    records = run_teacher_cases(
+        cases,
+        client=MixedClient(),
+    )
+
+    summary = summarize_prediction_coverage(
+        cases,
+        records,
+    )
+
+    assert summary["sample_count"] == 3
+    assert summary["success_count"] == 2
+    assert summary["failed_count"] == 1
+    assert summary["inference_error_count"] == 1
+    assert summary["invalid_output_count"] == 0
+
+    assert len(records) == summary["sample_count"]
