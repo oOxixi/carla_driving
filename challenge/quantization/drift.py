@@ -44,6 +44,9 @@ def analyze_drift(
     cand_names = [item.name for item in cand_session.get_outputs()]
     if base_names != cand_names:
         raise ValueError(f"output order mismatch: {base_names} != {cand_names}")
+    baseline_status = base_session.get_modelmeta().custom_metadata_map.get(
+        "weights_status", "UNRESOLVED"
+    )
 
     absolute: dict[str, list[np.ndarray]] = defaultdict(list)
     argmax_equal: CounterLike = defaultdict(int)
@@ -109,7 +112,12 @@ def analyze_drift(
     markdown = [
         "# A2 PTQ 敏感输出初筛（开发诊断）",
         "",
-        "> 当前结果基于随机初始化 Student 和开发 Calibration，只用于验证分析流程，不能作为正式敏感层或精度结论。",
+        (
+            "> 当前结果基于待 A3 Gate 的真实候选权重和开发 Calibration，只用于 Gate 前诊断，"
+            "不能作为正式敏感层或精度结论。"
+            if baseline_status == "PENDING_A3_FP32_GATE" else
+            "> 当前结果使用开发 Calibration，只用于验证分析流程，不能作为正式敏感层或精度结论。"
+        ),
         "",
         "| 排名 | 输出 Head | Mean abs error | P95 | Max | Argmax agreement |",
         "|---:|---|---:|---:|---:|---:|",

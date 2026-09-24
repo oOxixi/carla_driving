@@ -42,6 +42,7 @@ def quantize_qdq(
     calibration_manifest: str | Path,
     output_onnx: str | Path,
     allow_smoke: bool = False,
+    allow_candidate: bool = False,
 ) -> dict[str, Any]:
     """Generate an INT8 QDQ candidate with strict provenance labelling."""
     # Keep the spelling of an ASCII junction instead of calling resolve().
@@ -55,9 +56,12 @@ def quantize_qdq(
     metadata = _metadata(source)
     source_status = metadata.get("weights_status", "UNRESOLVED")
     formal_source = source_status == "A3_FP32_GATE_PASSED"
+    pending_candidate = source_status == "PENDING_A3_FP32_GATE"
     formal_calibration = calibration.get("formal_release") is True
-    if not formal_source and not allow_smoke:
-        raise ValueError("source ONNX is not A3_FP32_GATE_PASSED; use --allow-smoke only for toolchain smoke")
+    if pending_candidate and not allow_candidate:
+        raise ValueError("pending A3 candidate requires explicit --allow-candidate")
+    if not formal_source and not pending_candidate and not allow_smoke:
+        raise ValueError("unapproved source ONNX requires --allow-smoke for toolchain smoke")
     if formal_source and not formal_calibration:
         raise ValueError("formal FP32 input requires a B1/B2-signed formal Calibration release")
 
@@ -91,7 +95,10 @@ def quantize_qdq(
     graph = onnx.load(str(output))
     props = {item.key: item.value for item in graph.metadata_props}
     props.update({
-        "quantization_status": "FORMAL_INT8_CANDIDATE" if formal_source else "SMOKE_ONLY",
+        "quantization_status": (
+            "FORMAL_INT8_CANDIDATE" if formal_source else
+            "A3_CANDIDATE_PRE_PTQ" if pending_candidate else "SMOKE_ONLY"
+        ),
         "quantization_method": "onnxruntime_static_qdq_int8_minmax_symmetric_per_channel",
         "source_fp32_sha256": sha256_file(source),
         "calibration_manifest_sha256": sha256_file(manifest_path),
@@ -108,7 +115,10 @@ def quantize_qdq(
 
     structure = {
         "schema_version": "1.0",
-        "status": "SMOKE_ONLY" if not formal_source else "FORMAL_INT8_CANDIDATE_PENDING_B2_GATE",
+        "status": (
+            "FORMAL_INT8_CANDIDATE_PENDING_B2_GATE" if formal_source else
+            "A3_CANDIDATE_PRE_PTQ" if pending_candidate else "SMOKE_ONLY"
+        ),
         "artifact": output.name,
         "artifact_sha256": artifact_sha,
         "model_id": props.get("model_id"),
@@ -125,7 +135,10 @@ def quantize_qdq(
     result = {
         "schema_version": "1.0",
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "status": "FORMAL_INT8_CANDIDATE_PENDING_B2_GATE" if formal_source else "SMOKE_ONLY",
+        "status": (
+            "FORMAL_INT8_CANDIDATE_PENDING_B2_GATE" if formal_source else
+            "A3_CANDIDATE_PRE_PTQ" if pending_candidate else "SMOKE_ONLY"
+        ),
         "j6p_ready": False,
         "source": {
             "path": str(source.relative_to(repo)),
@@ -168,9 +181,9 @@ def quantize_qdq(
             "B3_J6P_HIL_measurement",
         ],
         "toolchain_note": (
-            "Portable ONNX Runtime QDQ smoke only. OpenExplorer operator support, "
-            "fallbacks and J6P performance remain A4/B3-owned."
-        ),
+            "A3 candidate pre-PTQ diagnostic; not formal INT8 approval. "
+            if pending_candidate else "Portable ONNX Runtime QDQ smoke only. "
+        ) + "OpenExplorer operator support, fallbacks and J6P performance remain A4/B3-owned.",
     }
     _write_json(output.parent / "int8_manifest.json", result)
     return result

@@ -41,6 +41,7 @@ def export_student_v0(
     source_git_sha: str | None = None,
     weights: str | Path | None = None,
     weights_manifest: str | Path | None = None,
+    allow_pending_candidate: bool = False,
 ) -> Path:
     torch.manual_seed(seed)
     contract = StudentShapeContract()
@@ -50,6 +51,7 @@ def export_student_v0(
         model,
         weights=weights,
         weights_manifest=weights_manifest,
+        allow_pending_candidate=allow_pending_candidate,
     )
     export_model = StudentOnnxExportWrapper(model).eval()
     inputs = tuple(torch.zeros(shape, dtype=torch.float32) for shape in contract.input_shapes.values())
@@ -100,11 +102,10 @@ def export_student_v0(
         "config_id", "parameters", "precision", "input_shapes",
     )}
     structure.update({
-        "status": (
-            "A3_FP32_GATE_PASSED_ONNX_EXPORTED"
-            if metadata["weights_status"] == "A3_FP32_GATE_PASSED"
-            else "A1_STRUCTURE_READY_A3_WEIGHTS_PENDING"
-        ),
+        "status": {
+            "A3_FP32_GATE_PASSED": "A3_FP32_GATE_PASSED_ONNX_EXPORTED",
+            "PENDING_A3_FP32_GATE": "A3_CANDIDATE_FP32_ONNX_EXPORTED",
+        }.get(metadata["weights_status"], "A1_STRUCTURE_READY_A3_WEIGHTS_PENDING"),
         "artifact": path.name,
         "artifact_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "opset": 17,
@@ -132,8 +133,9 @@ def _load_verified_weights(
     *,
     weights: str | Path | None,
     weights_manifest: str | Path | None,
+    allow_pending_candidate: bool = False,
 ) -> dict[str, str]:
-    """Load a Gate-passed state_dict, or explicitly retain random smoke state."""
+    """Load a verified state_dict while preserving its exact Gate status."""
     if weights is None and weights_manifest is None:
         return {
             "weights_status": "random_initialization_for_export_smoke_only",
@@ -148,8 +150,15 @@ def _load_verified_weights(
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if not isinstance(manifest, dict):
         raise ValueError("weights manifest must be a JSON object")
-    if manifest.get("gate_status") != "A3_FP32_GATE_PASSED":
-        raise ValueError("formal ONNX export requires gate_status=A3_FP32_GATE_PASSED")
+    gate_status = manifest.get("gate_status")
+    allowed = {"A3_FP32_GATE_PASSED"}
+    if allow_pending_candidate:
+        allowed.add("PENDING_A3_FP32_GATE")
+    if gate_status not in allowed:
+        raise ValueError(
+            "formal ONNX export requires gate_status=A3_FP32_GATE_PASSED; "
+            "use --allow-pending-candidate only for a hash-verified A3 candidate"
+        )
     if manifest.get("model_id") != model.model_id:
         raise ValueError("weights manifest model_id does not match Student")
     if manifest.get("config_id") != model.config.config_id:
@@ -162,7 +171,7 @@ def _load_verified_weights(
         raise ValueError("weights must contain a pure state_dict")
     model.load_state_dict(state_dict, strict=True)
     return {
-        "weights_status": "A3_FP32_GATE_PASSED",
+        "weights_status": str(gate_status),
         "dataset_version": str(manifest.get("dataset_version", "")),
         "source_weights_sha256": actual_sha,
         "weights_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
@@ -175,12 +184,14 @@ def main() -> int:
     parser.add_argument("--source-git-sha")
     parser.add_argument("--weights")
     parser.add_argument("--weights-manifest")
+    parser.add_argument("--allow-pending-candidate", action="store_true")
     args = parser.parse_args()
     path = export_student_v0(
         args.output,
         source_git_sha=args.source_git_sha,
         weights=args.weights,
         weights_manifest=args.weights_manifest,
+        allow_pending_candidate=args.allow_pending_candidate,
     )
     print(path)
     return 0

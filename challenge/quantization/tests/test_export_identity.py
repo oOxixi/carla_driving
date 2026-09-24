@@ -28,6 +28,13 @@ def test_formal_weight_loader_requires_gate_and_digest(tmp_path: Path) -> None:
             StudentPlannerV0(), weights=weights, weights_manifest=manifest_path,
         )
 
+    candidate = _load_verified_weights(
+        StudentPlannerV0(), weights=weights, weights_manifest=manifest_path,
+        allow_pending_candidate=True,
+    )
+    assert candidate["weights_status"] == "PENDING_A3_FP32_GATE"
+    assert candidate["source_weights_sha256"] == manifest["weights_sha256"]
+
     manifest["gate_status"] = "A3_FP32_GATE_PASSED"
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     result = _load_verified_weights(

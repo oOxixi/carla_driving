@@ -7,7 +7,25 @@ OpenExplorer 3.9.1 的四输入 NPY、Student J6P YAML 和身份清单。
 当前正式状态仍是 **BLOCKED**：仓库没有 `A3_FP32_GATE_PASSED` 权重/ONNX，也没有 B1/B2
 签发的正式 Calibration。OpenExplorer 已锁定为 3.9.1、J6P march 已锁定为 `nash-p`，
 但官方镜像需从 OE 下载页取得，板端实测仍缺 J6P。开发产物强制标为
-`SMOKE_ONLY` 或 `A2_DEVELOPMENT_CALIBRATION_CANDIDATE`，不能用于申报成绩。
+`SMOKE_ONLY`、`A3_CANDIDATE_PRE_PTQ` 或 `A2_DEVELOPMENT_CALIBRATION_CANDIDATE`，不能用于申报成绩。
+
+## A3 候选权重预演
+
+收到 `PENDING_A3_FP32_GATE` 的纯 state_dict 和候选 manifest 后，可显式导出候选 ONNX：
+
+```powershell
+python -m challenge.export.export_onnx `
+  --output artifacts/a2/a3_candidate_v3/student_v0_fp32_candidate.onnx `
+  --weights <student_v0_fp32_candidate.pt> `
+  --weights-manifest <student_v0_fp32_candidate.json> `
+  --allow-pending-candidate
+```
+
+该开关仍校验 model/config/权重 SHA256，并在 ONNX 中保留
+`weights_status=PENDING_A3_FP32_GATE`，不会生成正式 Gate 标记。导出后可用
+`export-consistency` 在真实样本上比较 PyTorch 与 ONNX 的十个原始 Head。
+候选 ONNX 执行 PTQ 和 OpenExplorer 输入准备时使用 `--allow-candidate`；
+`--allow-smoke` 只用于随机初始化等普通工具链冒烟，二者不会混淆标记。
 
 Windows 上的 ONNX Runtime 1.30 在本机含中文的仓库路径生成 `-inferred.onnx` 时会破坏
 路径编码。实际 PTQ 应从不解析回中文目标的 ASCII 工作路径或容器内运行；代码会保留

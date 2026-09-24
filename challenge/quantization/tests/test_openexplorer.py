@@ -38,7 +38,7 @@ def _record(rgb: Path) -> dict[str, object]:
     }
 
 
-def _onnx(path: Path) -> None:
+def _onnx(path: Path, weights_status: str = "random_initialization_for_export_smoke_only") -> None:
     contract = StudentShapeContract()
     inputs = [
         helper.make_tensor_value_info(name, TensorProto.FLOAT, list(shape))
@@ -47,7 +47,7 @@ def _onnx(path: Path) -> None:
     outputs = [helper.make_tensor_value_info("rgb_out", TensorProto.FLOAT, list(contract.input_shapes["rgb"]))]
     graph = helper.make_graph([helper.make_node("Identity", ["rgb"], ["rgb_out"])], "student", inputs, outputs)
     model = helper.make_model(graph, opset_imports=[helper.make_opsetid("", 17)])
-    helper.set_model_props(model, {"weights_status": "random_initialization_for_export_smoke_only"})
+    helper.set_model_props(model, {"weights_status": weights_status})
     onnx.save(model, path)
 
 
@@ -101,3 +101,27 @@ def test_prepare_openexplorer_rejects_nonformal_by_default(tmp_path: Path) -> No
             calibration_manifest="cal/calibration_manifest.json",
             output_directory="oe",
         )
+
+
+def test_pending_candidate_requires_explicit_candidate_mode(tmp_path: Path) -> None:
+    rgb = tmp_path / "rgb.png"
+    Image.new("RGB", (4, 4)).save(rgb)
+    source = tmp_path / "train.jsonl"
+    source.write_text(json.dumps(_record(rgb), ensure_ascii=False) + "\n", encoding="utf-8")
+    build_development_calibration(tmp_path, source_jsonl=source, output_directory="cal", count=1)
+    model = tmp_path / "student.onnx"
+    _onnx(model, "PENDING_A3_FP32_GATE")
+    with pytest.raises(ValueError, match="--allow-candidate"):
+        prepare_openexplorer_bundle(
+            tmp_path, source_onnx=model,
+            calibration_jsonl="cal/calibration.jsonl",
+            calibration_manifest="cal/calibration_manifest.json",
+            output_directory="rejected",
+        )
+    result = prepare_openexplorer_bundle(
+        tmp_path, source_onnx=model,
+        calibration_jsonl="cal/calibration.jsonl",
+        calibration_manifest="cal/calibration_manifest.json",
+        output_directory="accepted", allow_candidate=True,
+    )
+    assert result["status"] == "A3_CANDIDATE_OPENEXPLORER_INPUT_READY"

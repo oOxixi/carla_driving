@@ -75,6 +75,7 @@ def prepare_openexplorer_bundle(
     output_directory: str | Path,
     limit: int | None = None,
     allow_smoke: bool = False,
+    allow_candidate: bool = False,
 ) -> dict[str, Any]:
     """Write aligned NPY inputs, hb_compile YAML and an identity manifest."""
     repo = Path(repo_root).resolve()
@@ -107,7 +108,10 @@ def prepare_openexplorer_bundle(
         onnx_identity["weights_status"] == "A3_FP32_GATE_PASSED"
         and calibration_identity.get("formal_release") is True
     )
-    if not formal and not allow_smoke:
+    pending_candidate = onnx_identity["weights_status"] == "PENDING_A3_FP32_GATE"
+    if pending_candidate and not allow_candidate:
+        raise ValueError("pending A3 candidate requires explicit --allow-candidate")
+    if not formal and not pending_candidate and not allow_smoke:
         raise ValueError(
             "formal OpenExplorer preparation requires A3_FP32_GATE_PASSED ONNX "
             "and a formal Calibration release; pass --allow-smoke only for development"
@@ -190,7 +194,10 @@ compiler_parameters:
     config_path.write_text(yaml_text, encoding="utf-8", newline="\n")
     manifest = {
         "schema_version": "1.0",
-        "status": "A2_OPENEXPLORER_FORMAL_INPUT_READY" if formal else "SMOKE_ONLY",
+        "status": (
+            "A2_OPENEXPLORER_FORMAL_INPUT_READY" if formal else
+            "A3_CANDIDATE_OPENEXPLORER_INPUT_READY" if pending_candidate else "SMOKE_ONLY"
+        ),
         "formal_release": formal,
         "toolchain": {
             "openexplorer_version": OPENEXPLORER_VERSION,
