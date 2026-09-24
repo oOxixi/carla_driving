@@ -1,0 +1,53 @@
+{
+  "case_dir": "/work/dumps/ACC_A01_lead_brake_0000",
+  "onnx": "/work/student/student_v0_fp32.onnx",
+  "onnxruntime_ms": 16.974,
+  "artifacts": {
+    "/work/student/.hb_compile/student_v0_fp32.hbm": {
+      "cosine": {
+        "plan_length_logits": 0.79346,
+        "behavior_logits": 0.876491,
+        "target_pointer_logits": 0.84,
+        "target_lane_logits": 0.851552,
+        "target_speed_mps": 0.99752,
+        "completion_type_logits": 0.921171,
+        "on_failure_logits": 0.850498,
+        "confidence": 1.0,
+        "requires_confirmation_logits": 1.0,
+        "replan_condition_logits": 0.859126
+      },
+      "min_cosine": 0.79346,
+      "mean_cosine": 0.898982,
+      "latency_ms": {
+        "n": 1,
+        "mean": 24254.751,
+        "p50": 24254.751,
+        "p95": 24254.751,
+        "max": 24254.751
+      }
+    },
+    "/work/student/.hb_compile/student_v0_fp32_quantized_model.bc": {
+      "cosine": {
+        "plan_length_logits": 0.79346,
+        "behavior_logits": 0.876491,
+        "target_pointer_logits": 0.84,
+        "target_lane_logits": 0.851552,
+        "target_speed_mps": 0.99752,
+        "completion_type_logits": 0.921171,
+        "on_failure_logits": 0.850498,
+        "confidence": 1.0,
+        "requires_confirmation_logits": 1.0,
+        "replan_condition_logits": 0.859126
+      },
+      "min_cosine": 0.79346,
+      "mean_cosine": 0.898982,
+      "latency_ms": {
+        "n": 20,
+        "mean": 318.454,
+        "p50": 280.053,
+        "p95": 592.835,
+        "max": 637.741
+      }
+    }
+  }
+}

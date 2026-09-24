@@ -1,5 +1,13 @@
 # B3：HIL 与 J6P 独立实测
 
+> ⚠️ **本目录当前的所有数字都是"替代条件下的可行性演练"，不是最终测试结果。**
+> 当前没有 A3 真实权重、没有 A4 契约 Runtime、没有 A2 官方 INT8 产物、没有 B2 冻结 Benchmark、
+> 也没有 J6P 板卡与功耗探针；为了不空等，B3 用仓库内已有的资产（A1 随机初始化结构、B1 冻结请求集、
+> OE 3.9.1 编译产物与 X86 仿真运行时）先把**同一条测量链路**跑通。
+> 这些运行只能证明"链路与机制可用、数字可解释、缺陷可复现"，**不得作为达标结论、
+> 性能结论或精度结论引用**。替代条件与正式条件的逐项差异见第 4、5 节与
+> [`x86_simulation_scope.md`](x86_simulation_scope.md)；真实输入到位后需原样重跑。
+
 > B3 的前置输入、证据等级、正式测试矩阵、门禁和完成定义见
 > [`docs/architecture/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](../../docs/architecture/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md)。
 
@@ -58,12 +66,14 @@ challenge/hil/
 ├── carla_measurement.ps1         CARLA 可重复测量入口（固定解释器/PYTHONPATH + 清单）
 ├── carla_measurement_entry.py    该入口调用的单场景驱动脚本
 ├── pc_deployment_plan.md         PC 端（WSL2+Docker+OE）部署作业单与差距核对
+├── x86_simulation_scope.md       X86 仿真能测/不能测什么 + 本轮实测数字与口径（2026-09-24）
 ├── report.py                     报告生成与可信范围守卫
 ├── cli.py                        命令行入口（12 个子命令）
 ├── group_map.example.json        `--group-map` 的格式示例（不是 B2 分组）
 ├── frozen/
 │   ├── smoke_v0_snapshot/        早期冻结输入基线（B1 smoke，30 例）
 │   └── d2_v1_1_val/              当前输入基线（B1 D2 v1.1 的 val 划分，539 例）
+├── harness/x86_sim/              X86 仿真复现脚本（编译/一致性/dump 对照/校准集，见其 README）
 ├── evidence/
 │   ├── x86_prevalidation_20260918/  Planner 链的 X86 预验证证据
 │   ├── carla_smoke_20260918/        CARLA 闭环可行性冒烟（无 Student/Teacher）
@@ -71,7 +81,8 @@ challenge/hil/
 │   ├── carla_chain_coverage_20260918/      CARLA 链路覆盖 / 多轮 / 稳定性（37 次运行）
 │   ├── shortcut_probe_20260921/            B3 独立复核的查表捷径（模板泄漏）事实
 │   ├── carla_measurement_20260921/         用固定入口脚本重跑的 CARLA 闭环（25/25）
-│   └── soak_30min_20260921/                X86 30 分钟长稳（1800 s / 123,611 次迭代）
+│   ├── soak_30min_20260921/                X86 30 分钟长稳（1800 s / 123,611 次迭代）
+│   └── x86_simulation_20260924/            X86 仿真四件套：编译预检/产物结构/三路一致性/校准对照
 ├── schemas/                      导出的列定义
 └── tests/                        101 项自测
 ```
@@ -88,7 +99,8 @@ challenge/hil/
 | `hard_cases_handoff.md` | B3 → A3 失败样本交接格式与使用规则 | A3 接入补训数据前 |
 | `repo_environment_findings.md` | 验证中发现的仓库环境问题 F1–F10 与绕行方式 | 在新机器上复现环境时 |
 | `MERGE_INTO_REPO.md` | 入库过程记录（历史文件，不代表当前状态） | 追溯产物来源时 |
-| `evidence/*/README.md` | 五份策展证据各自的说明与限制 | 引用具体数字前 |
+| `x86_simulation_scope.md` | X86 仿真能测/不能测什么、本轮实测数字与口径、复现要点 | 要在无板卡条件下推进 B3 时 |
+| `evidence/*/README.md` | 各份策展证据的说明与限制 | 引用具体数字前 |
 
 ## 3. 快速开始
 
@@ -139,20 +151,26 @@ py -3.12 -m challenge.hil.cli run `
 状态口径：`已完成` = 机制已实现并有可核验产出；`部分完成` = 机制就绪但缺少板端或
 真实模型等前置条件；`未完成` = 尚未开始或前置条件完全缺失。
 
+> **2026-09-24 口径更新**：本轮要求改为**暂不在 J6P 板卡上开发、只做 X86 仿真**。
+> 因此所有依赖板端的项统一标 `NOT_MEASURED`（= 本轮不测，等有硬件时补测，**不作为本轮交付阻塞**），
+> 不再记为"未完成"；X86 上能做的检查已经跑齐，见
+> [`x86_simulation_scope.md`](x86_simulation_scope.md) 与
+> [`evidence/x86_simulation_20260924/`](evidence/x86_simulation_20260924/README.md)。
+
 ### 5.1 职责（文档「负责内容」10 条）
 
 | # | 文档要求 | 状态 | 依据 |
 |---:|---|---|---|
 | 1 | 建 HIL/回放输入输出链 | **已完成** | `replay.py` + 三种适配器（进程内 / ONNX / 板端 CLI）+ `freeze.py` 快照；已在 539 例 D2 val 快照上跑通 300 次回放。另用仓库自研 runner 跑通一个 CARLA 闭环冒烟（`SUCCEEDED`，600 帧，A/B/C/D 全链被调用，见 `evidence/carla_smoke_20260918/`） |
 | 2 | 记录时间戳 | **已完成** | `stages.py` 8 个计时点，强制单调与顺序；`perf_counter_ns` + UTC 双时钟 |
-| 3 | 记录板端硬件/软件环境 | **部分完成** | 每次运行已记录电源、系统负载、CPU 标定、库版本、时钟源；**BPU 架构 / OpenExplorer 版本 / governor / 散热待 J6P** |
+| 3 | 记录板端硬件/软件环境 | **部分完成** | 每次运行已记录电源、系统负载、CPU 标定、库版本、时钟源；X86 侧新增 OE 工具链版本与编译 march（`evidence/x86_simulation_20260924/00_environment.log`）；**板端字段（BPU 架构 / governor / 散热）`NOT_MEASURED`** |
 | 4 | 测 P50/P95/P99/max | **已完成** | 线性插值百分位（与 `metrics/reference_5070` 口径一致），报告输出全部四个分位 |
 | 5 | 测运行内存 | **已完成** | RSS / 峰值 RSS；psutil 与 Win32 两条路径均实现并有测试 |
-| 6 | 测平均/峰值功耗 | **未完成** | 列定义、采样器与取电点字段已就绪，但本机无探针，当前行内容为 `NOT_APPLICABLE`（未用估算值填充） |
-| 7 | 测 CPU/BPU 利用率与异构调度 | **部分完成** | CPU 已实测；**BPU 待 J6P**；"异构算力利用率"公式待 A4/B2 确认 |
+| 6 | 测平均/峰值功耗 | **NOT_MEASURED** | 列定义、采样器与取电点字段已就绪，但本机无探针，行内容为 `NOT_APPLICABLE`（未用估算值填充）；本轮口径为只做 X86 仿真，功耗不测 |
+| 7 | 测 CPU/BPU 利用率与异构调度 | **部分完成** | CPU 已实测；**BPU 利用率 `NOT_MEASURED`**；"异构算力利用率"公式待 A4/B2 确认 |
 | 8 | 运行 Seen/Variant/Unseen | **未完成** | 依赖 B2 冻结的 case 清单与 A3 权重。链路侧已跑 13 个场景（smoke + `safety_D`），但**不是 B2 冻结的三类分组，也没有 Student 在环** |
-| 9 | 做异常和长时间稳定性测试 | **部分完成** | 异常：软件用例 10 例 + **CARLA 8 个安全场景全部通过**（红灯、行人、前车急刹、偏离、NaN 控制、油门刹车冲突、低 TTC、红灯冲突）。长稳：**X86 30 分钟已完成一次**（1800/1800 s、123,611 次迭代、0 失败、恢复探针 10/10、RSS 漂移 3.49 MiB 且曲线约 7 分钟后走平，见 `evidence/soak_30min_20260921/`）+ CARLA 连续 7.1 分钟 15 轮无失败；**正式 30 分钟板端长稳待 J6P** |
-| 10 | 同配置至少重复 3 轮 | **部分完成** | X86：3 轮 × 100 例。CARLA：**5 个 smoke 场景各 3 轮 + 3 个代表场景各 3 轮，结果一致**；**交付配置（J6P）上的 ≥3 轮待硬件** |
+| 9 | 做异常和长时间稳定性测试 | **部分完成** | 异常：软件用例 10 例 + **CARLA 8 个安全场景全部通过**（红灯、行人、前车急刹、偏离、NaN 控制、油门刹车冲突、低 TTC、红灯冲突）。长稳：**X86 30 分钟已完成一次**（1800/1800 s、123,611 次迭代、0 失败、恢复探针 10/10、RSS 漂移 3.49 MiB 且曲线约 7 分钟后走平，见 `evidence/soak_30min_20260921/`）+ CARLA 连续 7.1 分钟 15 轮无失败；**板端 30 分钟长稳 `NOT_MEASURED`** |
+| 10 | 同配置至少重复 3 轮 | **部分完成** | X86：3 轮 × 100 例。CARLA：**5 个 smoke 场景各 3 轮 + 3 个代表场景各 3 轮，结果一致**；**交付配置（J6P）上的 ≥3 轮 `NOT_MEASURED`** |
 
 ### 5.2 计时拆分（文档「计时必须拆分」）
 
@@ -161,7 +179,7 @@ py -3.12 -m challenge.hil.cli run `
 | 输入到达 | **已完成** | `input_arrival`（T0） |
 | 预处理 | **已完成** | `preprocess_end`（T1） |
 | Token/Target packing | **已完成** | `packing_end`（T2） |
-| BPU inference | **部分完成** | 计时点已实现（`inference_start`/`inference_end`，T3/T4）；**当前在 X86 上测的是 ONNX Runtime CPU 前向，BPU 实测待 J6P** |
+| BPU inference | **部分完成** | 计时点已实现（`inference_start`/`inference_end`，T3/T4）；**当前在 X86 上测的是 ONNX Runtime CPU 前向**；本轮另用 OE 编译产物在 X86 仿真的 BPU 模拟器上跑通数值链路（见 `x86_simulation_scope.md`），但**仿真耗时不可当作 BPU 实测，BPU 时延 `NOT_MEASURED`** |
 | 后处理 | **已完成** | `postprocess_end`（T5） |
 | Student Adapter | **已完成** | `adapter_end`（T6） |
 | ManeuverPlan 输出 | **已完成** | `plan_ready`（T7，含 `PlanValidator`，单列校验开销） |
@@ -175,16 +193,19 @@ py -3.12 -m challenge.hil.cli run `
 | `hardware_env.json` | **已完成** | 每次运行生成，含环境指纹、五标识与 v1/v4 双 Teacher pin |
 | `latency_raw.csv` | **已完成** | 每请求一行，8 个纳秒戳与全部推导时段，逐行带五标识 |
 | `memory_raw.csv` | **已完成** | RSS 与峰值 RSS（进程级） |
-| `power_raw.csv` | **部分完成** | 列定义与写入已实现；**当前行内容为 `NOT_APPLICABLE`**（无探针） |
-| `utilization_raw.csv` | **部分完成** | CPU 已实测；**BPU 字段待 J6P** |
-| `stability_logs/` | **部分完成** | `soak.jsonl`（流式写入）、`soak_summary.json`、`memory_during_soak.csv` 均已产出；已有一次 30 分钟 X86 运行（123,611 次迭代）；**板端 30 分钟待 J6P** |
-| `j6p_test_report.md` | **未完成** | 报告名由证据核验结果决定：只有完整板端证据链才生成该名，当前尚无板端运行。`--device-class J6P_BOARD` 单独出现时生成 `j6p_unverified_report.md`，不含任何板端结论 |
+| `power_raw.csv` | **NOT_MEASURED** | 列定义与写入已实现；行内容为 `NOT_APPLICABLE`（无探针）；本轮口径不测功耗 |
+| `utilization_raw.csv` | **部分完成** | CPU 已实测；**BPU 字段 `NOT_MEASURED`** |
+| `stability_logs/` | **部分完成** | `soak.jsonl`（流式写入）、`soak_summary.json`、`memory_during_soak.csv` 均已产出；已有一次 30 分钟 X86 运行（123,611 次迭代）；**板端 30 分钟 `NOT_MEASURED`** |
+| `j6p_test_report.md` | **NOT_MEASURED** | 报告名由证据核验结果决定：只有完整板端证据链才生成该名，当前尚无板端运行。`--device-class J6P_BOARD` 单独出现时生成 `j6p_unverified_report.md`，不含任何板端结论 |
 | `failure_cases/` | **已完成** | 10 个用例逐个落盘 + `failure_summary.json` |
 
 ### 5.4 完成标准（文档「完成标准」5 条）
 
 文档给出的五条"完成标准"是对 **B3 最终交付物**（A4 板端 Runtime 在 CARLA/HIL/J6P
 上的实测）的验收条件，其被测对象尚未交付，**因此五条现在一条都未达成**。
+
+> 其中四条需要板端：按 2026-09-24 的口径更新，它们记为 `NOT_MEASURED`（本轮不测、不阻塞），
+> 而不是"做不了"。X86 上可替代的那部分已经跑完，见 [`x86_simulation_scope.md`](x86_simulation_scope.md)。
 
 必须区分"完成标准是否达成"与"工具链是否就绪"这两件事——后者是前者的必要条件，
 不是达成本身：
@@ -234,10 +255,30 @@ B2 Benchmark、J6P 硬件）。其中 A3 权重与 A4 契约入口是两条主�
 
 独立 ONNX 模型压测（CPU EP，batch=1，warmup=5）：P50 2.96 ms。
 
+### 6.1 补充：X86 仿真跑通 OE 编译产物（2026-09-24）
+
+> 这一小节同样是**替代条件下的可行性演练**：替代对象为 A1 随机初始化结构、自建 30 例校准集与
+> X86 仿真运行时。下表只能读作"测量链可用性"的证据，不能读作性能或精度结论。
+> 正式条件与本轮替代条件的逐项对照见 [`x86_simulation_scope.md`](x86_simulation_scope.md) §1.0。
+
+上一节的数字来自 Planner 链的 X86 预验证，**没有经过 OE 工具链**。本轮补上了这一段：
+把 `challenge/student_v0_fp32.onnx` 用 `hb_compile --march nash-p` 编译成 `.hbm`/`.bc`，
+再在 X86 仿真运行时（`HB_UCP_SIM_PLATFORM_TYPE=nash-p`）上跑通，并用三条独立路径互证。
+
+| 结论 | 证据 |
+|---|---|
+| 结构在 J6P 上无算子不支持、无需 CPU fallback | `01_model_info.log` + `hb_compile` 日志：25.5 s、0 warning、opset 17→19 |
+| 浮点 ONNX ↔ int8 `.bc` 一致性检查可用 | `06_hb_verifier.log`（未校准）与 `08_hb_verifier_cal.log`（已校准），各 16 行余弦 |
+| 三条路径数字一致（verifier / HBRuntime / CLI dump） | `04_sim_consistency.log`、`05_dump_vs_onnx.json`、`12_dump_vs_onnx_cal.json` 逐头相同 |
+| 校准数据是低余弦根因：40 个阈值中 38 个曾退化为默认 `1.0` | `09_thresholds.log`；补齐自建 30 例校准集后，十头余弦 **0.793–1.000 → 0.9991–1.000** |
+| 仿真耗时不能外推 | `.bc` 228–318 ms、`.hbm` 19–34 s/次，而原生浮点 ONNX 3.09 ms |
+
+细节与限制见 [`x86_simulation_scope.md`](x86_simulation_scope.md)。
+
 ### 限制（必读）
 
 1. 权重是**随机初始化**的（`torch.manual_seed=20260911`），所有行为对比只验证工具链。
-2. 功耗与 BPU 利用率是 `NOT_APPLICABLE`（本机无探针）。
+2. 功耗与 BPU 利用率是 `NOT_APPLICABLE` / `NOT_MEASURED`（本机无探针；本轮口径只做 X86 仿真）。
 3. 长稳只跑了 15 秒冒烟，正式要求 30 分钟。
 4. 全部结果标记 `X86 PRE-VALIDATED` / `J6P PENDING`。
 5. 延迟对机器状态高度敏感。同一台机器、同一份代码，B3 观察到过 ONNX 推理 P50

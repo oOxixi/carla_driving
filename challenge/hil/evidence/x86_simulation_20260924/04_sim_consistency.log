@@ -1,0 +1,30 @@
+onnxruntime reference ok: 10 outputs, 17.0 ms
+== /work/student/.hb_compile/student_v0_fp32.hbm
+========= Model Input Info =========
+========= Model Run Success =========
+========= Model Input Info =========
+========= Model Run Success =========
+   latency mean=24254.751 ms p50=24254.751 p95=24254.751 (n=1)
+   cosine plan_length_logits     0.793460
+   cosine target_pointer_logits  0.840000
+   cosine on_failure_logits      0.850498
+   cosine target_lane_logits     0.851552
+   cosine replan_condition_logits 0.859126
+   cosine behavior_logits        0.876491
+   cosine completion_type_logits 0.921171
+   cosine target_speed_mps       0.997520
+   cosine confidence             1.000000
+   cosine requires_confirmation_logits 1.000000
+== /work/student/.hb_compile/student_v0_fp32_quantized_model.bc
+   latency mean=318.454 ms p50=280.053 p95=592.835 (n=20)
+   cosine plan_length_logits     0.793460
+   cosine target_pointer_logits  0.840000
+   cosine on_failure_logits      0.850498
+   cosine target_lane_logits     0.851552
+   cosine replan_condition_logits 0.859126
+   cosine behavior_logits        0.876491
+   cosine completion_type_logits 0.921171
+   cosine target_speed_mps       0.997520
+   cosine confidence             1.000000
+   cosine requires_confirmation_logits 1.000000
+wrote /work/x86_sim/logs/sim_consistency.json
