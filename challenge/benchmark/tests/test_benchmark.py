@@ -93,3 +93,29 @@ def test_benchmark_config_matches_a3_gate_contract() -> None:
 
     for field, expected in FORMAL_GATE_TEACHER_V4.items():
         assert teacher[field] == expected
+    metric_policy = config["gate_metric_policy"]
+
+    assert metric_policy["metric_implementation"] == (
+        "challenge.distillation.metrics.compute_batch_metrics"
+    )
+    assert metric_policy["denominator_implementation"] == (
+        "challenge.distillation.metrics.metric_denominators"
+    )
+    assert metric_policy["aggregation"] == "micro"
+    assert metric_policy["denominator_source"] == (
+        "frozen_reference_labels"
+    )
+    assert metric_policy["empty_denominator"] == "null"
+
+    failure_handling = metric_policy["failure_handling"]
+
+    assert failure_handling["statuses"] == [
+        "INFERENCE_ERROR",
+        "INVALID_OUTPUT",
+    ]
+    assert failure_handling["numerator_credit"] == 0
+    assert failure_handling["denominator"] == (
+        "include_reference_eligible_opportunities"
+    )
+
+    assert metric_policy["success_only_filter_allowed"] is False

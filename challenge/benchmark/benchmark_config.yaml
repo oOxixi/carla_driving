@@ -78,3 +78,19 @@ replay_transport:
   preserve_request_id: true
   preserve_command_id: true
   preserve_semantic_fields: true
+
+gate_metric_policy:
+  metric_implementation: "challenge.distillation.metrics.compute_batch_metrics"
+  denominator_implementation: "challenge.distillation.metrics.metric_denominators"
+  aggregation: "micro"
+  denominator_source: "frozen_reference_labels"
+  empty_denominator: "null"
+
+  failure_handling:
+    statuses:
+      - INFERENCE_ERROR
+      - INVALID_OUTPUT
+    numerator_credit: 0
+    denominator: "include_reference_eligible_opportunities"
+
+  success_only_filter_allowed: false
