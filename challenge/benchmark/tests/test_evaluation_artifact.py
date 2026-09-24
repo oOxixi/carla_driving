@@ -9,6 +9,9 @@ pytest.importorskip("torch")
 from challenge.benchmark.evaluation_artifact import (
     EvaluationArtifactError,
     build_teacher_evaluation,
+    canonical_evaluation_json,
+    evaluation_artifact_sha256,
+    write_evaluation_artifact,
 )
 from challenge.benchmark.raw_predictions import (
     prediction_records_sha256,
@@ -18,6 +21,8 @@ from challenge.distillation.artifacts import (
 )
 from challenge.distillation.dataset import build_mock_records
 
+import hashlib
+import json
 
 def _success_record(case: dict) -> dict:
     return {
@@ -172,3 +177,93 @@ def test_formal_source_evidence_bindings_are_preserved() -> None:
     assert artifact["a3_view_manifest_sha256"] == (
         "f" * 64
     )
+
+def test_writer_round_trips_exact_teacher_evaluation_bytes(
+    tmp_path,
+) -> None:
+    artifact = _build(
+        copy.deepcopy(
+            build_mock_records(5)
+        )
+    )
+    path = tmp_path / "teacher_evaluation.json"
+
+    digest = write_evaluation_artifact(
+        path,
+        artifact,
+    )
+
+    payload = path.read_bytes()
+
+    assert payload == canonical_evaluation_json(
+        artifact
+    )
+    assert digest == hashlib.sha256(
+        payload
+    ).hexdigest()
+    assert digest == evaluation_artifact_sha256(
+        artifact
+    )
+
+    assert json.loads(
+        payload.decode("utf-8")
+    ) == artifact
+
+    assert payload.endswith(b"\n")
+    assert b"\r\n" not in payload
+
+
+def test_evaluation_digest_ignores_mapping_key_order() -> None:
+    artifact = _build(
+        copy.deepcopy(
+            build_mock_records(5)
+        )
+    )
+
+    reordered = dict(
+        reversed(
+            list(artifact.items())
+        )
+    )
+
+    assert canonical_evaluation_json(
+        artifact
+    ) == canonical_evaluation_json(
+        reordered
+    )
+
+    assert evaluation_artifact_sha256(
+        artifact
+    ) == evaluation_artifact_sha256(
+        reordered
+    )
+
+
+def test_non_json_value_does_not_overwrite_existing_artifact(
+    tmp_path,
+) -> None:
+    path = tmp_path / "teacher_evaluation.json"
+    original = b"existing-artifact\n"
+
+    path.write_bytes(original)
+
+    with pytest.raises(
+        EvaluationArtifactError,
+        match="not canonical JSON",
+    ):
+        write_evaluation_artifact(
+            path,
+            {
+                "metric": float("nan"),
+            },
+        )
+
+    assert path.read_bytes() == original
+
+
+def test_empty_evaluation_artifact_fails_closed() -> None:
+    with pytest.raises(
+        EvaluationArtifactError,
+        match="must be a non-empty object",
+    ):
+        canonical_evaluation_json({})

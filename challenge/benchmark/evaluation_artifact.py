@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 from collections.abc import Iterable, Mapping
+from pathlib import Path
 from typing import Any
 
 from challenge.distillation.artifacts import (
@@ -167,6 +170,65 @@ def build_teacher_evaluation(
 
     return artifact
 
+def canonical_evaluation_json(
+    artifact: Mapping[str, Any],
+) -> bytes:
+    """Serialize an evaluation artifact to deterministic UTF-8 JSON."""
+    if not isinstance(artifact, Mapping) or not artifact:
+        raise EvaluationArtifactError(
+            "evaluation artifact must be a non-empty object"
+        )
+
+    try:
+        encoded = json.dumps(
+            dict(artifact),
+            ensure_ascii=False,
+            sort_keys=True,
+            indent=2,
+            allow_nan=False,
+        )
+    except (TypeError, ValueError) as error:
+        raise EvaluationArtifactError(
+            "evaluation artifact is not canonical JSON"
+        ) from error
+
+    return (encoded + "\n").encode("utf-8")
+
+
+def evaluation_artifact_sha256(
+    artifact: Mapping[str, Any],
+) -> str:
+    """Return SHA256 of the exact canonical evaluation JSON bytes."""
+    payload = canonical_evaluation_json(
+        artifact
+    )
+    return hashlib.sha256(payload).hexdigest()
+
+
+def write_evaluation_artifact(
+    path: str | Path,
+    artifact: Mapping[str, Any],
+) -> str:
+    """
+    Atomically write canonical evaluation JSON and return its SHA256.
+    """
+    destination = Path(path)
+    payload = canonical_evaluation_json(
+        artifact
+    )
+
+    destination.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    temporary = destination.with_name(
+        destination.name + ".tmp"
+    )
+    temporary.write_bytes(payload)
+    temporary.replace(destination)
+
+    return hashlib.sha256(payload).hexdigest()
 
 def _required_text(
     value: Any,
