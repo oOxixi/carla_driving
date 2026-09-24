@@ -66,3 +66,15 @@ case_policy:
   require_zero_overlap_with_training: true
   require_zero_overlap_with_development_validation: true
   require_nonempty_safety_critical: true
+
+replay_transport:
+  timestamp_policy: "preserve_original_ttl"
+  clock: "time.monotonic_ns"
+
+  mutable_fields:
+    - created_at_ns
+    - deadline_ns
+
+  preserve_request_id: true
+  preserve_command_id: true
+  preserve_semantic_fields: true
