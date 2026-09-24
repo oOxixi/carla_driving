@@ -42,6 +42,9 @@ training:
   gradient_clip_norm: 1.0
   max_updates: 0
   selection_metric: plan_sequence_accuracy
+  selection_tiebreakers:
+    - {metric: loss, mode: min}
+    - {metric: target_speed_mae, mode: min}
   resume: null
 
 sampling:

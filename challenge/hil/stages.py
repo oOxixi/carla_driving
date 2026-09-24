@@ -151,6 +151,16 @@ class StageTrace:
         reason_code: str | None = None,
         detail: str | None = None,
     ) -> None:
+        """Close the trace.
+
+        ``outcome="READY"`` has exactly one meaning on every chain: **a plan was
+        produced**.  Whether that plan passed a `PlanValidator` is *not* encoded
+        here — it is recorded by the chain's capabilities (`full_chain`,
+        `plan_validator`) and, for chains without a validator, spelled out in
+        ``outcome_detail`` (``plan_validated=false``).  Keeping those two facts
+        apart is what stops "READY" from quietly meaning different things per
+        adapter.
+        """
         if not isinstance(outcome, str) or not outcome:
             raise ValueError("outcome must be a non-empty string")
         self.outcome = outcome

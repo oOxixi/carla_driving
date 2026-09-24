@@ -7,6 +7,8 @@ import copy
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+from .gate import replay_conclusion
+from .groups import GROUP_KEYS, normalize_group
 from .identity import sha256_file
 from .run_io import read_json, read_jsonl
 from .runtime_adapter import PlannerRuntime
@@ -50,6 +52,9 @@ class ReplayCase:
     rgb_resolved: bool
     rgb_source: str
     source_file: str
+    #: B2's Seen/Variant/Unseen label when the input carries one.  B3 records it
+    #: and groups by it; it never derives or redefines the label itself.
+    group: str | None = None
 
 
 @dataclass(slots=True)
@@ -171,6 +176,14 @@ def load_replay_cases(
         if rgb_resolved and rgb_path is not None:
             rewritten["rgb_ref"] = rgb_path
         teacher_plan = record.get("teacher_plan")
+        group = next(
+            (
+                normalize_group(record.get(key))
+                for key in GROUP_KEYS
+                if normalize_group(record.get(key))
+            ),
+            normalize_group(metadata.get("group")),
+        )
         cases.append(
             ReplayCase(
                 case_id=f"{scenario_id}#{index:04d}",
@@ -183,6 +196,7 @@ def load_replay_cases(
                 rgb_resolved=rgb_resolved,
                 rgb_source=rgb_source,
                 source_file=str(source),
+                group=group,
             )
         )
         if limit is not None and len(cases) >= limit:
@@ -284,6 +298,9 @@ def run_replay(
     phase: str = "measured",
 ) -> ReplayResult:
     identity = runtime.identity.to_dict()
+    # The Teacher comparison is only a gate-eligible input when the candidate
+    # identity is machine-verified; the writer must not decide that by itself.
+    conclusion = replay_conclusion(runtime.identity)
     rows: list[dict[str, Any]] = []
     traces: list[StageTrace] = []
     plans: list[dict[str, Any]] = []
@@ -341,7 +358,7 @@ def run_replay(
                 "target_match_ratio": _match_ratio(teacher_targets, student_targets),
                 "plan_step_count": len(student_behaviors),
                 "structural_failures": "|".join(failures),
-                "diagnostic_only": True,
+                "diagnostic_only": conclusion["diagnostic_only"],
                 **{key: identity.get(key, "") for key in
                    ("model_id", "model_sha256", "config_id", "dataset_version", "git_sha")},
             }
@@ -356,11 +373,11 @@ def run_replay(
         "ready_rate": (ready / total) if total else None,
         "rgb_resolution_rate": (rgb_ok / total) if total else None,
         "structural_pass_rate": (structural_ok / total) if total else None,
-        "teacher_comparison": "DIAGNOSTIC_ONLY",
-        "teacher_comparison_reason": (
-            "Student weights are not A3-gated in this run; behaviour match is recorded "
-            "for toolchain validation and must not be read as accuracy."
-        ),
+        "teacher_comparison": conclusion["teacher_comparison"],
+        "teacher_comparison_reason": conclusion["teacher_comparison_reason"],
+        "gate_verified": conclusion["gate_verified"],
+        "gate_checks": conclusion["gate_checks"],
+        "gate_failed_checks": conclusion["gate_failed_checks"],
     }
     return ReplayResult(rows=rows, traces=traces, plans=plans, summary=summary)
 

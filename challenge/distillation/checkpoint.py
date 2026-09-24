@@ -53,6 +53,7 @@ def load_checkpoint(
     optimizer: torch.optim.Optimizer | None = None,
     scheduler: Any = None,
     map_location: str | torch.device = "cpu",
+    restore_rng: bool = True,
 ) -> dict[str, Any]:
     source = Path(path)
     payload = torch.load(source, map_location=map_location, weights_only=False)
@@ -63,15 +64,24 @@ def load_checkpoint(
         optimizer.load_state_dict(payload["optimizer_state"])
     if scheduler is not None and payload.get("scheduler_state") is not None:
         scheduler.load_state_dict(payload["scheduler_state"])
-    rng = payload.get("rng", {})
-    if rng.get("python") is not None:
-        random.setstate(rng["python"])
-    if rng.get("torch") is not None:
-        # ``map_location=cuda`` is correct for model/optimizer tensors but
-        # must never move the process-wide CPU generator state off CPU.
-        torch.set_rng_state(rng["torch"].cpu())
-    if torch.cuda.is_available() and rng.get("torch_cuda") is not None:
-        torch.cuda.set_rng_state_all([state.cpu() for state in rng["torch_cuda"]])
+    if restore_rng:
+        rng = payload.get("rng", {})
+        if rng.get("python") is not None:
+            random.setstate(rng["python"])
+        if rng.get("torch") is not None:
+            # ``map_location=cuda`` is correct for model/optimizer tensors but
+            # must never move the process-wide CPU generator state off CPU.
+            torch.set_rng_state(rng["torch"].cpu())
+        cuda_states = rng.get("torch_cuda")
+        if torch.cuda.is_available() and cuda_states is not None:
+            visible = torch.cuda.device_count()
+            if len(cuda_states) != visible:
+                raise RuntimeError(
+                    "checkpoint CUDA RNG topology mismatch: "
+                    f"saved={len(cuda_states)} visible={visible}; resume with the same "
+                    "CUDA_VISIBLE_DEVICES topology or load with restore_rng=False for evaluation"
+                )
+            torch.cuda.set_rng_state_all([state.cpu() for state in cuda_states])
     return payload
 
 

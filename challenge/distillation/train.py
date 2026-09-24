@@ -28,10 +28,12 @@ import yaml
 from challenge.student import StudentModelConfig, StudentPlannerV0
 from challenge.dataset.validate_d2_release import canonical_text_sha256, validate_release
 from challenge.dataset.build_a3_d2_view import VIEW_VERSION
+from challenge.dataset.build_a3_cumulative_view import CUMULATIVE_VIEW_VERSION
 
 from .class_balance import compute_class_weights
 from .artifacts import export_candidate_weights
 from .audit_d2_view import audit_view
+from .audit_cumulative_view import audit_cumulative_view
 from .checkpoint import load_checkpoint, save_checkpoint, sha256_file
 from .dataset import (
     DistillationDataset,
@@ -104,6 +106,7 @@ def run_training(
                 if dataset_cfg.get("verify_teacher_identity")
                 and cfg["teacher"].get("identity_policy") not in {
                     "signed_d2_release_smoke", "signed_d2_release_formal",
+                    "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
                 }
                 else None
             ),
@@ -225,14 +228,32 @@ def run_training(
     }
     if cfg["teacher"].get("identity_policy") in {
         "signed_d2_release_smoke", "signed_d2_release_formal",
+        "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
     }:
         repo = Path(__file__).resolve().parents[2]
-        metadata["release_manifest_sha256"] = canonical_text_sha256(
-            repo / str(cfg["dataset"]["release_manifest_path"])
-        )
         metadata["a3_view_manifest_sha256"] = canonical_text_sha256(
             repo / str(cfg["dataset"]["view_manifest_path"])
         )
+        if cfg["teacher"].get("identity_policy") in {
+            "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
+        }:
+            view = json.loads(
+                (repo / str(cfg["dataset"]["view_manifest_path"])).read_text(encoding="utf-8")
+            )
+            metadata["release_manifest_sha256"] = view["source_evidence"]["d3"][
+                "release_manifest_sha256"
+            ]
+            metadata["d2_release_manifest_sha256"] = view["source_evidence"]["d2"][
+                "release_manifest_sha256"
+            ]
+            metadata["b1_signature_sha256"] = view["source_evidence"]["d3"][
+                "b1_signature_sha256"
+            ]
+            metadata["source_evidence_sha256"] = view["source_evidence_sha256"]
+        else:
+            metadata["release_manifest_sha256"] = canonical_text_sha256(
+                repo / str(cfg["dataset"]["release_manifest_path"])
+            )
     start_epoch = 0
     global_step = 0
     best_metric = -math.inf
@@ -244,9 +265,17 @@ def run_training(
         start_epoch = int(restored["epoch"]) + 1
         global_step = int(restored["global_step"])
         best_metric = float(restored["best_metric"])
-        data_generator_state = restored.get("extra_state", {}).get("data_generator_state")
+        restored_extra = restored.get("extra_state", {})
+        data_generator_state = restored_extra.get("data_generator_state")
         if data_generator_state is not None:
             generator.set_state(data_generator_state.cpu())
+        restored_key = restored_extra.get("best_selection_key")
+        best_selection_key = (
+            tuple(float(value) for value in restored_key)
+            if restored_key is not None else (best_metric,)
+        )
+    else:
+        best_selection_key = None
 
     log_path = output_dir / "training.jsonl"
     best_path = output_dir / "student_fp32_best.pt"
@@ -254,6 +283,7 @@ def run_training(
     epochs = int(training["epochs"])
     max_updates = int(training.get("max_updates", 0))
     selection_metric = str(training.get("selection_metric", "plan_sequence_accuracy"))
+    selection_tiebreakers = _selection_tiebreakers(training.get("selection_tiebreakers"))
     if not resume_path and log_path.is_file():
         log_path.unlink()
     history: list[dict[str, Any]] = []
@@ -287,7 +317,10 @@ def run_training(
         )
         if selection_metric not in validation:
             raise ValueError(f"unknown selection metric: {selection_metric}")
-        candidate = float(validation[selection_metric])
+        candidate_key = _selection_key(
+            validation, selection_metric=selection_metric,
+            tiebreakers=selection_tiebreakers,
+        )
         entry = {
             "epoch": epoch,
             "global_step": global_step,
@@ -297,8 +330,11 @@ def run_training(
         history.append(entry)
         with log_path.open("a", encoding="utf-8") as stream:
             stream.write(json.dumps(_strict_json(entry), ensure_ascii=False) + "\n")
-        if math.isfinite(candidate) and candidate > best_metric:
-            best_metric = candidate
+        if candidate_key is not None and (
+            best_selection_key is None or candidate_key > best_selection_key
+        ):
+            best_selection_key = candidate_key
+            best_metric = candidate_key[0]
             save_checkpoint(
                 best_path,
                 model=model,
@@ -307,7 +343,10 @@ def run_training(
                 global_step=global_step,
                 best_metric=best_metric,
                 metadata=metadata,
-                extra_state={"data_generator_state": generator.get_state()},
+                extra_state={
+                    "data_generator_state": generator.get_state(),
+                    "best_selection_key": list(best_selection_key),
+                },
             )
         save_checkpoint(
             last_path,
@@ -317,14 +356,19 @@ def run_training(
             global_step=global_step,
             best_metric=best_metric,
             metadata=metadata,
-            extra_state={"data_generator_state": generator.get_state()},
+            extra_state={
+                "data_generator_state": generator.get_state(),
+                "best_selection_key": (
+                    list(best_selection_key) if best_selection_key is not None else None
+                ),
+            },
         )
         if max_updates and global_step >= max_updates:
             break
 
     if not best_path.is_file():
         raise RuntimeError("training produced no finite validation candidate")
-    load_checkpoint(best_path, model=model, map_location=device)
+    load_checkpoint(best_path, model=model, map_location=device, restore_rng=False)
     # The best categorical score can tie across epochs while regression heads
     # continue changing. Candidate evidence must describe the loaded weights,
     # not whichever epoch happened to run last.
@@ -361,6 +405,8 @@ def run_training(
         "epochs_completed": len(history),
         "global_step": global_step,
         "selection_metric": selection_metric,
+        "selection_tiebreakers": selection_tiebreakers,
+        "best_selection_key": list(best_selection_key or ()),
         "best_metric": best_metric,
         "best_validation": best_validation,
         "best_checkpoint": str(best_path),
@@ -512,13 +558,68 @@ def _validate_config(value: Mapping[str, Any]) -> dict[str, Any]:
     return cfg
 
 
+def _selection_tiebreakers(value: object) -> list[dict[str, str]]:
+    """Normalize deterministic checkpoint tie-breakers.
+
+    The historical selector maximized one categorical metric and kept the
+    first checkpoint forever after saturation.  Lower Validation loss and
+    speed MAE are safe, general tie-breakers because they use the same
+    development split and never consult Test data.
+    """
+    if value is None:
+        value = [
+            {"metric": "loss", "mode": "min"},
+            {"metric": "target_speed_mae", "mode": "min"},
+        ]
+    if not isinstance(value, list):
+        raise ValueError("training.selection_tiebreakers must be a list")
+    normalized: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in value:
+        if isinstance(item, str):
+            metric, mode = item, "min"
+        elif isinstance(item, Mapping):
+            metric = str(item.get("metric", "")).strip()
+            mode = str(item.get("mode", "min")).strip().lower()
+        else:
+            raise ValueError("selection tie-breaker must be a metric name or mapping")
+        if not metric or metric in seen:
+            raise ValueError("selection tie-breaker metrics must be non-empty and unique")
+        if mode not in {"min", "max"}:
+            raise ValueError("selection tie-breaker mode must be min or max")
+        normalized.append({"metric": metric, "mode": mode})
+        seen.add(metric)
+    return normalized
+
+
+def _selection_key(
+    validation: Mapping[str, Any],
+    *,
+    selection_metric: str,
+    tiebreakers: list[dict[str, str]],
+) -> tuple[float, ...] | None:
+    if selection_metric not in validation:
+        raise ValueError(f"unknown selection metric: {selection_metric}")
+    values = [float(validation[selection_metric])]
+    for item in tiebreakers:
+        metric = item["metric"]
+        if metric not in validation:
+            raise ValueError(f"unknown selection tie-breaker: {metric}")
+        value = float(validation[metric])
+        values.append(value if item["mode"] == "max" else -value)
+    if not all(math.isfinite(value) for value in values):
+        return None
+    return tuple(values)
+
+
 def _validate_frozen_identities(
     cfg: Mapping[str, Any], *, integration_smoke: bool = False,
 ) -> None:
     policy = str(cfg["teacher"].get("identity_policy", "frozen_manifest"))
     if policy not in {
         "frozen_manifest", "legacy_unpinned_smoke", "signed_d2_release_smoke",
-        "signed_d2_release_formal",
+        "signed_d2_release_formal", "signed_cumulative_release_smoke",
+        "signed_cumulative_release_formal",
     }:
         raise ValueError(f"unsupported teacher identity_policy: {policy}")
     manifest_path = Path(__file__).resolve().parents[1] / "teacher_baseline_manifest.json"
@@ -533,13 +634,23 @@ def _validate_frozen_identities(
         key: cfg["teacher"].get(key) for key in expected_teacher
     }
     dataset_cfg = cfg["dataset"]
-    if policy in {"signed_d2_release_smoke", "signed_d2_release_formal"}:
+    if policy in {
+        "signed_d2_release_smoke", "signed_d2_release_formal",
+        "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
+    }:
         if policy == "signed_d2_release_smoke" and not integration_smoke:
             raise ValueError("signed D2 release policy is limited to integration smoke")
-        if policy == "signed_d2_release_formal" and integration_smoke:
-            raise ValueError("formal signed D2 policy cannot be used for integration smoke")
-        if actual_teacher["git_sha"] != "MULTI_PINNED_B1_D2_V1_1":
-            raise ValueError("signed D2 release must identify mixed Teacher baselines")
+        if policy == "signed_cumulative_release_smoke" and not integration_smoke:
+            raise ValueError("signed cumulative release smoke policy is limited to integration smoke")
+        if policy in {"signed_d2_release_formal", "signed_cumulative_release_formal"} and integration_smoke:
+            raise ValueError("formal signed release policy cannot be used for integration smoke")
+        expected_multi_teacher = (
+            "MULTI_PINNED_B1_D2_V1_1_PLUS_D3_WAVE1"
+            if policy in {"signed_cumulative_release_smoke", "signed_cumulative_release_formal"}
+            else "MULTI_PINNED_B1_D2_V1_1"
+        )
+        if actual_teacher["git_sha"] != expected_multi_teacher:
+            raise ValueError("signed release must identify the exact mixed Teacher cohorts")
         for field in ("model_id", "model_revision", "artifact_fingerprint_sha256"):
             if actual_teacher[field] != expected_teacher[field]:
                 raise ValueError(f"signed D2 release Teacher {field} mismatch")
@@ -552,6 +663,30 @@ def _validate_frozen_identities(
         repo = Path(__file__).resolve().parents[2]
         view_path = (repo / str(dataset_cfg["view_manifest_path"])).resolve()
         view = json.loads(view_path.read_text(encoding="utf-8"))
+        if policy in {"signed_cumulative_release_smoke", "signed_cumulative_release_formal"}:
+            if (
+                view.get("view_version") != CUMULATIVE_VIEW_VERSION
+                or dataset_cfg.get("version") != CUMULATIVE_VIEW_VERSION
+            ):
+                raise ValueError("signed cumulative release view version mismatch")
+            d2_dir = (repo / str(dataset_cfg["d2_release_dir_path"])).resolve()
+            d3_dir = (repo / str(dataset_cfg["d3_release_dir_path"])).resolve()
+            for split, config_key in (("train", "train_path"), ("val", "val_path")):
+                path = (repo / str(dataset_cfg[config_key])).resolve()
+                if path != view_path.parent / f"{split}.jsonl":
+                    raise ValueError(f"A3 cumulative {split} path does not match signed view")
+                if canonical_text_sha256(path) != view["files"][f"{split}.jsonl"]["sha256"]:
+                    raise ValueError(f"A3 cumulative {split} hash does not match signed view")
+            for relative, expected_sha in view["cohort_manifest_shas"].items():
+                if canonical_text_sha256(repo / relative) != expected_sha:
+                    raise ValueError(f"Teacher cohort manifest changed: {relative}")
+            if (repo / str(dataset_cfg["asset_root"])).resolve() != repo:
+                raise ValueError("signed cumulative release RGB asset_root must be repository root")
+            audit_cumulative_view(d2_dir, d3_dir, view_path.parent, check_images=True)
+            if cfg["model"].get("model_id") == StudentPlannerV0.model_id:
+                if cfg["model"].get("config_id") != StudentModelConfig().config_id:
+                    raise ValueError("Student config_id does not match A1 V0 r3")
+            return
         if view.get("view_version") != VIEW_VERSION or dataset_cfg.get("version") != VIEW_VERSION:
             raise ValueError("signed D2 release view version mismatch")
         release_path = (repo / str(dataset_cfg["release_manifest_path"])).resolve()

@@ -59,7 +59,7 @@ def run_ablation(config_path: Path, output_dir: Path) -> dict[str, Any]:
         raise ValueError("best checkpoint hash mismatch")
 
     model = build_a1_student({"max_steps": 4, "max_targets": 8})
-    load_checkpoint(checkpoint, model=model, map_location="cpu")
+    load_checkpoint(checkpoint, model=model, map_location="cpu", restore_rng=False)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     records = load_jsonl(dataset_cfg["val_path"])

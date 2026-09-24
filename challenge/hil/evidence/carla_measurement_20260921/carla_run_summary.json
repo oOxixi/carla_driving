@@ -1,0 +1,27 @@
+{
+  "runner": "repo",
+  "command": [
+    "C:\\Users\\吴奕铭\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-m",
+    "integration.carla_runner",
+    "--scenario-file",
+    "D:\\nana\\carla_driving-new\\carla_driving-new\\scenarios\\smoke\\S01_set_speed_20.json",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "2000",
+    "--timeout-s",
+    "180.0",
+    "--log-dir",
+    "artifacts\\b3\\carla_measurement_20260921\\S01_set_speed_20\\logs",
+    "--realtime"
+  ],
+  "returncode": 0,
+  "stdout_tail": "le\": 0.34796032254855547, \"brake\": 0.0, \"steer\": -2.0857964970081222e-07}, \"safety\": \"NONE\", \"safety_reason_category\": \"NONE\", \"safety_override\": false, \"qwen_status\": \"DISABLED\"}\n{\"record_type\": \"frame\", \"scenario\": \"S01_set_speed_20\", \"perception_mode\": \"sensors\", \"frame\": 1938, \"sim_time_s\": 35.71426361054182, \"elapsed_s\": 28.05000041797757, \"speed_mps\": 5.338137945741245, \"x_m\": 89.45710754394531, \"y_m\": -3.644303560256958, \"z_m\": 0.001844005542807281, \"yaw_deg\": -179.1442108154297, \"lane_id\": \"-1\", \"target_speed_mps\": 5.555555555555555, \"longitudinal_state\": \"LANE_FOLLOW\", \"ttc_s\": null, \"lead_distance_m\": null, \"distance_to_stop_line_m\": null, \"control\": {\"schema_version\": \"1.0\", \"throttle\": 0.34795979236065594, \"brake\": 0.0, \"steer\": -1.590008785352214e-07}, \"safety\": \"NONE\", \"safety_reason_category\": \"NONE\", \"safety_override\": false, \"qwen_status\": \"DISABLED\"}\n{\"record_type\": \"frame\", \"scenario\": \"S01_set_speed_20\", \"perception_mode\": \"sensors\", \"frame\": 1948, \"sim_time_s\": 36.2142636179924, \"elapsed_s\": 28.550000425428152, \"speed_mps\": 5.331890069785452, \"x_m\": 86.79021453857422, \"y_m\": -3.6814494132995605, \"z_m\": 0.023497752845287323, \"yaw_deg\": -179.20428466796875, \"lane_id\": \"-1\", \"target_speed_mps\": 5.555555555555555, \"longitudinal_state\": \"LANE_FOLLOW\", \"ttc_s\": null, \"lead_distance_m\": null, \"distance_to_stop_line_m\": null, \"control\": {\"schema_version\": \"1.0\", \"throttle\": 0.3459839969816336, \"brake\": 0.0, \"steer\": 0.0034838568369296506}, \"safety\": \"NONE\", \"safety_reason_category\": \"NONE\", \"safety_override\": false, \"qwen_status\": \"DISABLED\"}\n{\"record_type\": \"frame\", \"scenario\": \"S01_set_speed_20\", \"perception_mode\": \"sensors\", \"frame\": 1958, \"sim_time_s\": 36.71426362544298, \"elapsed_s\": 29.050000432878733, \"speed_mps\": 5.3112720623516285, \"x_m\": 84.13195037841797, \"y_m\": -3.7179601192474365, \"z_m\": 0.040427837520837784, \"yaw_deg\": -179.03492736816406, \"lane_id\": \"-1\", \"target_speed_mps\": 5.555555555555555, \"longitudinal_state\": \"LANE_FOLLOW\", \"ttc_s\": null, \"lead_distance_m\": null, \"distance_to_stop_line_m\": null, \"control\": {\"schema_version\": \"1.0\", \"throttle\": 0.3561001033240899, \"brake\": 0.0, \"steer\": -0.00012792157435097457}, \"safety\": \"NONE\", \"safety_reason_category\": \"NONE\", \"safety_override\": false, \"qwen_status\": \"DISABLED\"}\n{\"record_type\": \"frame\", \"scenario\": \"S01_set_speed_20\", \"perception_mode\": \"sensors\", \"frame\": 1968, \"sim_time_s\": 37.21426363289356, \"elapsed_s\": 29.550000440329313, \"speed_mps\": 5.44495093313383, \"x_m\": 81.43004608154297, \"y_m\": -3.758448362350464, \"z_m\": 0.028744716197252274, \"yaw_deg\": -179.20599365234375, \"lane_id\": \"-1\", \"target_speed_mps\": 5.555555555555555, \"longitudinal_state\": \"LANE_FOLLOW\", \"ttc_s\": null, \"lead_distance_m\": null, \"distance_to_stop_line_m\": null, \"control\": {\"schema_version\": \"1.0\", \"throttle\": 0.3122399402598529, \"brake\": 0.0, \"steer\": 0.004974325959584311}, \"safety\": \"NONE\", \"safety_reason_category\": \"NONE\", \"safety_override\": false, \"qwen_status\": \"DISABLED\"}\n{\"record_type\": \"frame\", \"scenario\": \"S01_set_speed_20\", \"perception_mode\": \"sensors\", \"frame\": 1977, \"sim_time_s\": 37.664263639599085, \"elapsed_s\": 30.000000447034836, \"speed_mps\": 5.482227371160594, \"x_m\": 78.96524810791016, \"y_m\": -3.798447370529175, \"z_m\": 0.023479290306568146, \"yaw_deg\": -179.4318389892578, \"lane_id\": \"-1\", \"target_speed_mps\": 5.555555555555555, \"longitudinal_state\": \"LANE_FOLLOW\", \"ttc_s\": null, \"lead_distance_m\": null, \"distance_to_stop_line_m\": null, \"control\": {\"schema_version\": \"1.0\", \"throttle\": 0.25951404963699864, \"brake\": 0.0, \"steer\": 0.010853436796518845}, \"safety\": \"NONE\", \"safety_reason_category\": \"NONE\", \"safety_override\": false, \"qwen_status\": \"DISABLED\"}\n{\"record_type\": \"scenario_acceptance\", \"scenario\": \"S01_set_speed_20\", \"status\": \"SUCCEEDED\", \"score\": 25.0, \"checks\": 6, \"failed_keys\": [], \"unsupported_keys\": []}\nINFO:  Found the required file in cache!  Carla/Maps/Nav/Town10HD_Opt.bin \nINFO:  Found the required file in cache!  Carla/Maps/Nav/Town03_Opt.bin \n",
+  "stderr_tail": "",
+  "scenario_file": "D:\\nana\\carla_driving-new\\carla_driving-new\\scenarios\\smoke\\S01_set_speed_20.json",
+  "log_dir": "artifacts\\b3\\carla_measurement_20260921\\S01_set_speed_20\\logs",
+  "scenario": "S01_set_speed_20",
+  "status": "SUCCEEDED",
+  "python": "C:\\Users\\吴奕铭\\AppData\\Local\\Programs\\Python\\Python312\\python.exe"
+}

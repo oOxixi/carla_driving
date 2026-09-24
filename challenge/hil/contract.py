@@ -17,10 +17,142 @@ from .stages import STAGES
 PASS = "PASS"
 FAIL = "FAIL"
 WARN = "WARN"
+NOT_RUN = "NOT_RUN"
+
+#: Fields A4's `--describe` must return (a4_runtime_contract.md §4).
+DESCRIBE_REQUIRED_FIELDS: tuple[str, ...] = (
+    "git_sha",
+    "model_id",
+    "model_sha256",
+    "dataset_version",
+    "config_id",
+    "precision",
+    "batch",
+    "input_shapes",
+)
 
 
 def _check(name: str, status: str, detail: str) -> dict[str, str]:
     return {"check": name, "status": status, "detail": detail}
+
+
+def _interface_checks(
+    runtime: PlannerRuntime,
+    requests: Sequence[Mapping[str, Any]],
+    *,
+    expected_model_sha256: str | None = None,
+    model_only_tensor_dir: str | None = None,
+) -> list[dict[str, str]]:
+    """The three entries §16 of the B3 gate document asks B3 to check itself.
+
+    `--describe`, resident/batch mode and the model-only path all used to be
+    untested prose.  Each one is driven here, and a mode that cannot be driven is
+    reported as FAIL with the reason rather than quietly skipped: a runtime that
+    cannot answer `--describe` cannot be bound to a model digest, and one that
+    cannot serve a batch makes every end-to-end number include its start-up cost.
+    """
+    checks: list[dict[str, str]] = []
+
+    try:
+        described = runtime.describe()
+    except Exception as error:
+        checks.append(
+            _check(
+                "describe_endpoint",
+                FAIL,
+                f"cannot be driven: {type(error).__name__}: {error}",
+            )
+        )
+        described = None
+    if isinstance(described, Mapping):
+        missing = [name for name in DESCRIBE_REQUIRED_FIELDS if not described.get(name)]
+        checks.append(
+            _check(
+                "describe_endpoint",
+                PASS if not missing else FAIL,
+                f"missing={missing}" if missing else "all required fields present",
+            )
+        )
+        if expected_model_sha256:
+            reported = str(described.get("model_sha256") or "")
+            match = reported.lower() == expected_model_sha256.lower()
+            checks.append(
+                _check(
+                    "describe_matches_artifact",
+                    PASS if match else FAIL,
+                    (
+                        "described model_sha256 equals the artifact on disk"
+                        if match
+                        else f"described={reported[:16]}… expected={expected_model_sha256[:16]}…"
+                    ),
+                )
+            )
+
+    batch_requests = list(requests[:2])
+    try:
+        plans = runtime.run_batch(batch_requests)
+    except Exception as error:
+        checks.append(
+            _check(
+                "batch_mode",
+                FAIL,
+                (
+                    f"one process could not serve {len(batch_requests)} requests: "
+                    f"{type(error).__name__}: {error}"
+                ),
+            )
+        )
+    else:
+        echo_ok = len(plans) == len(batch_requests) and all(
+            isinstance(plan, Mapping)
+            and plan.get("request_id") == request.get("request_id")
+            for plan, request in zip(plans, batch_requests, strict=True)
+        )
+        checks.append(
+            _check(
+                "batch_mode",
+                PASS if echo_ok else FAIL,
+                (
+                    f"one process answered {len(plans)}/{len(batch_requests)} requests "
+                    "with echoed request_id"
+                ),
+            )
+        )
+
+    if not model_only_tensor_dir:
+        checks.append(
+            _check(
+                "model_only_mode",
+                NOT_RUN,
+                "no tensor dump supplied (create one with `dump-tensors`)",
+            )
+        )
+    else:
+        try:
+            result = runtime.run_model_only(model_only_tensor_dir)
+        except Exception as error:
+            checks.append(
+                _check(
+                    "model_only_mode",
+                    FAIL,
+                    f"cannot be driven: {type(error).__name__}: {error}",
+                )
+            )
+        else:
+            outputs = result.get("outputs")
+            ok = result.get("status") == "OK" and isinstance(outputs, Mapping) and outputs
+            checks.append(
+                _check(
+                    "model_only_mode",
+                    PASS if ok else FAIL,
+                    (
+                        f"{len(outputs)} output digests reported from {result.get('mode')}"
+                        if ok
+                        else f"status={result.get('status')} (no comparable output digest)"
+                    ),
+                )
+            )
+    return checks
 
 
 def check_runtime_contract(
@@ -28,6 +160,8 @@ def check_runtime_contract(
     requests: Sequence[Mapping[str, Any]],
     *,
     latency_budget_ms: float = 1000.0,
+    expected_model_sha256: str | None = None,
+    model_only_tensor_dir: str | None = None,
 ) -> dict[str, Any]:
     checks: list[dict[str, str]] = []
     if not requests:
@@ -170,6 +304,15 @@ def check_runtime_contract(
         )
     )
 
+    checks.extend(
+        _interface_checks(
+            runtime,
+            requests,
+            expected_model_sha256=expected_model_sha256,
+            model_only_tensor_dir=model_only_tensor_dir,
+        )
+    )
+
     failures = [item for item in checks if item["status"] == FAIL]
     warnings = [item for item in checks if item["status"] == WARN]
     return {
@@ -185,4 +328,11 @@ def check_runtime_contract(
     }
 
 
-__all__ = ["check_runtime_contract", "PASS", "FAIL", "WARN"]
+__all__ = [
+    "check_runtime_contract",
+    "DESCRIBE_REQUIRED_FIELDS",
+    "FAIL",
+    "NOT_RUN",
+    "PASS",
+    "WARN",
+]

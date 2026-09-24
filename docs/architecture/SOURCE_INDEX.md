@@ -126,6 +126,7 @@
 | [challenge/distillation/ablation_eval.py](../../challenge/distillation/ablation_eval.py) | python | [模块](modules/challenge-training.md) | [记录](functions/challenge--distillation--ablation_eval--py.md) |
 | [challenge/distillation/artifacts.py](../../challenge/distillation/artifacts.py) | python | [模块](modules/challenge-training.md) | [记录](functions/challenge--distillation--artifacts--py.md) |
 | [challenge/distillation/audit_d2_view.py](../../challenge/distillation/audit_d2_view.py) | python | [模块](modules/challenge-training.md) | [记录](functions/challenge--distillation--audit_d2_view--py.md) |
+| [challenge/distillation/candidate_handoff.py](../../challenge/distillation/candidate_handoff.py) | python | [模块](modules/challenge-training.md) | [记录](functions/checkpoint-and-promotion.md) |
 | [challenge/distillation/b1_smoke_config.yaml](../../challenge/distillation/b1_smoke_config.yaml) | configuration | [模块](modules/challenge-training.md) | [记录](functions/challenge--distillation--b1_smoke_config--yaml.md) |
 | [challenge/distillation/checkpoint.py](../../challenge/distillation/checkpoint.py) | python | [模块](modules/challenge-training.md) | [记录](functions/challenge--distillation--checkpoint--py.md) |
 | [challenge/distillation/class_balance.py](../../challenge/distillation/class_balance.py) | python | [模块](modules/challenge-training.md) | [记录](functions/challenge--distillation--class_balance--py.md) |
@@ -147,6 +148,7 @@
 | [challenge/distillation/tests/test_a1_integration.py](../../challenge/distillation/tests/test_a1_integration.py) | test | [模块](modules/challenge-training.md) | [记录](modules/challenge-training.md) |
 | [challenge/distillation/tests/test_ablation_eval.py](../../challenge/distillation/tests/test_ablation_eval.py) | test | [模块](modules/challenge-training.md) | [记录](modules/challenge-training.md) |
 | [challenge/distillation/tests/test_artifacts.py](../../challenge/distillation/tests/test_artifacts.py) | test | [模块](modules/challenge-training.md) | [记录](modules/challenge-training.md) |
+| [challenge/distillation/tests/test_candidate_handoff.py](../../challenge/distillation/tests/test_candidate_handoff.py) | test | [模块](modules/challenge-training.md) | [记录](modules/challenge-training.md) |
 | [challenge/distillation/tests/test_audit_d2_view.py](../../challenge/distillation/tests/test_audit_d2_view.py) | test | [模块](modules/challenge-training.md) | [记录](modules/challenge-training.md) |
 | [challenge/distillation/tests/test_b1_d1_interface.py](../../challenge/distillation/tests/test_b1_d1_interface.py) | test | [模块](modules/challenge-training.md) | [记录](modules/challenge-training.md) |
 | [challenge/distillation/tests/test_b1_smoke_integration.py](../../challenge/distillation/tests/test_b1_smoke_integration.py) | test | [模块](modules/challenge-training.md) | [记录](modules/challenge-training.md) |

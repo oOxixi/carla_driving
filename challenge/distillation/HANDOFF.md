@@ -46,8 +46,10 @@ A3 只接收 B1 签发的 release，不接收聊天附件、临时路径或未�
 
 当前状态：
 
-- 正式训练路径：`challenge/dataset/releases/d2_v1_1/`；
-- D3 Wave1：additive candidate，完成全部 release/preflight 门禁前不得替换 D2；
+- D2 单发布正式训练路径：`challenge/dataset/releases/d2_v1_1/`；
+- D3 Wave1：manifest 保持不可变 candidate，由 `B1_SIGNED_PASS.json` 旁路签发；
+- D2+D3 累积路径使用 `signed_cumulative_release_formal`，同时绑定两个 release、
+  D3 签名、Teacher v4、派生视图与源证据摘要；
 - `normal`、`complex`、`safety_critical` 是当前支持的样本风险类别；
 - B1 原始字段与 A3 派生 label 可以并存，但派生 label 必须能回溯到原始 plan。
 
@@ -68,11 +70,16 @@ A3 向 B2 交付待验 FP32 candidate 与 manifest，至少包括：
 - Training/Validation 指标、hard-case 汇总和已知限制；
 - 明确的 candidate 状态，不得提前写 `A3_FP32_GATE_PASSED`。
 
+使用 `python -m challenge.distillation.candidate_handoff` 生成不可覆盖的待验包；工具会
+复算candidate权重与来源checkpoint SHA，核对训练摘要、数据预检和hard-case计数，并从
+训练Git提交提取配置快照。当前已冻结候选及服务器持久路径见
+[`A3_CANDIDATE_HANDOFF.md`](A3_CANDIDATE_HANDOFF.md)。
+
 B2 独立保管 Frozen Test 并给出最终 PASS/FAIL。A3 只能消费 B2 返回的聚合结果和错误
 分类，训练、样本加权、checkpoint 选择与 hard-case mining 都不能读取 Frozen Test。
 
-`signed_d2_release_formal` 与 promotion 的策略不一致已关闭：校验器现在同时支持单一
-`frozen_manifest` 和正式 D2 多 cohort 签名策略；后者额外绑定 release/view、B2
+正式签名策略与 promotion 的合同已统一：校验器支持单一 `frozen_manifest`、D2 多
+cohort 以及 D2+D3 累积策略；正式签名策略额外绑定 release/view、B2
 benchmark/policy、case-set digest、evaluator Git SHA、样本数、两端 predictions SHA 与
 Student 权重 SHA。正式 Gate 的 Teacher 对照强制为冻结的 Teacher v4；历史多 cohort 标识
 只描述训练数据 provenance，不会被冒充为新的 Gate Teacher。这个修改只打通候选验证合同；B2 尚未交付

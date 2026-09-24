@@ -82,6 +82,46 @@ def test_soak_reports_success_and_drift(tmp_path: Path):
     assert "latency_note" in summary
 
 
+def test_soak_streams_rows_instead_of_accumulating_them(tmp_path: Path):
+    """A long soak must not grow the harness: rows go to disk as they happen."""
+    from ..replay import ReplayCase
+
+    case = ReplayCase(
+        case_id="c1",
+        sample_id="s1",
+        scenario_id="SCN",
+        request=_request(),
+        teacher_plan=None,
+        rgb_path=None,
+        rgb_sha256=None,
+        rgb_resolved=True,
+        rgb_source="test",
+        source_file="test",
+    )
+    row_path = tmp_path / "soak.jsonl"
+    result = run_soak(
+        FakeRuntime(),
+        [case],
+        run_id="r",
+        duration_s=0.2,
+        telemetry=TelemetrySpec(interval_s=0.05),
+        recovery_probe_cases=1,
+        row_path=row_path,
+    )
+
+    assert result["rows"] is None
+    assert result["row_path"] == str(row_path)
+    lines = [line for line in row_path.read_text(encoding="utf-8").splitlines() if line]
+    assert len(lines) == result["summary"]["iterations"]
+    assert json.loads(lines[0])["iteration"] == 0
+
+    summary = result["summary"]
+    assert summary["memory_drift_source"] == "telemetry_1hz"
+    assert summary["memory_drift_kib"] is not None
+    assert summary["latency_ms"]["samples"] > 0
+    assert summary["latency_ms"]["overall_max"] is not None
+
+
 def test_soak_fails_when_the_runtime_is_broken():
     from ..replay import ReplayCase
 

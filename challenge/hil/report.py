@@ -5,6 +5,15 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Mapping, Sequence
 
+from .gate import (
+    J6P_MEASURED_SCOPES,
+    SCOPE_J6P_BRINGUP,
+    SCOPE_J6P_ON_DEVICE,
+    SCOPE_J6P_UNVERIFIED,
+    failed_names,
+    scope_checks,
+    scope_decision,
+)
 from .identity import CandidateIdentity
 from .stages import SEGMENT_NAMES
 
@@ -45,54 +54,109 @@ SEGMENT_LABELS: dict[str, str] = {
 
 
 REPORT_FILENAME_J6P = "j6p_test_report.md"
+REPORT_FILENAME_J6P_BRINGUP = "j6p_bringup_report.md"
+REPORT_FILENAME_J6P_UNVERIFIED = "j6p_unverified_report.md"
 REPORT_FILENAME_X86 = "x86_test_report.md"
 
+SCOPE_FILENAMES: dict[str, str] = {
+    SCOPE_J6P_ON_DEVICE: REPORT_FILENAME_J6P,
+    SCOPE_J6P_BRINGUP: REPORT_FILENAME_J6P_BRINGUP,
+    SCOPE_J6P_UNVERIFIED: REPORT_FILENAME_J6P_UNVERIFIED,
+}
 
-def report_filename(device_class: str) -> str:
-    """Name the report after the environment it actually measured.
 
-    The challenge deliverable is named ``j6p_test_report.md``; an X86
-    pre-validation run must not produce a file with that name, or a reader will
-    mistake it for board evidence.
+def report_filename(scope: str | Mapping[str, Any]) -> str:
+    """Name the report after the scope the evidence actually supports.
+
+    The challenge deliverable is ``j6p_test_report.md``.  Only a scope that was
+    derived from a complete board evidence chain may produce that name: a bare
+    ``--device-class J6P_BOARD`` string has no evidence behind it, so it maps to
+    the X86 pre-validation name instead of being mistaken for board evidence.
     """
-    return REPORT_FILENAME_J6P if device_class == "J6P_BOARD" else REPORT_FILENAME_X86
+    value = scope.get("scope") if isinstance(scope, Mapping) else scope
+    return SCOPE_FILENAMES.get(str(value or ""), REPORT_FILENAME_X86)
+
+
+_FORBIDDEN_BASE: tuple[str, ...] = (
+    "把 X86 或桌面 GPU 结果写成 J6P 实机达标",
+    "把模型文件大小当作运行内存",
+    "用 INT8 体积下降代替 FLOPs 下降",
+    "用估算值或 TDP 代替实测功耗",
+    "用未确认公式给出“异构算力利用率 = xx%”结论",
+)
 
 
 def claim_scope(
     *,
     device_class: str,
-    power_measured: bool,
-    bpu_measured: bool,
+    identity: Any = None,
+    artifact: Mapping[str, Any] | None = None,
+    runtime: Mapping[str, Any] | None = None,
+    hardware_env: Mapping[str, Any] | None = None,
+    telemetry: Mapping[str, Any] | None = None,
+    board_runtime: Mapping[str, Any] | None = None,
+    rounds_measured: int | None = None,
+    stability: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    if device_class == "J6P_BOARD":
-        scope = "J6P_ON_DEVICE"
-        j6p_status = "J6P_MEASURED"
+    """Derive the claim scope from verified evidence.
+
+    There is deliberately no flag that can raise the scope on its own: every
+    input is either material produced by the run (artifact digest, trace source,
+    board log, telemetry probe source, verified weight manifest) or a summary of
+    it.  Missing evidence lowers the scope, so a board-classified run without the
+    full chain is reported as unverified rather than as measured.
+    """
+    capabilities = (runtime or {}).get("capabilities") if isinstance(runtime, Mapping) else None
+    checks = scope_checks(
+        device_class=device_class,
+        identity=identity,
+        artifact=artifact,
+        capabilities=capabilities if isinstance(capabilities, Mapping) else None,
+        hardware_env=hardware_env,
+        telemetry=telemetry,
+        board_runtime=board_runtime,
+        rounds_measured=rounds_measured,
+        stability=stability,
+    )
+    decision = scope_decision(device_class=device_class, checks=checks)
+    passed = {str(item["name"]): bool(item.get("passed")) for item in checks}
+    power_ok = passed.get("power_probe_verified", False)
+    bpu_ok = passed.get("bpu_probe_verified", False)
+
+    if decision.scope == SCOPE_J6P_ON_DEVICE:
         allowed = ["J6P 板端实测延时与内存结论"]
-        if power_measured:
+        if power_ok:
             allowed.append("J6P 实测评均/峰值功耗结论")
-        if bpu_measured:
+        if bpu_ok:
             allowed.append("J6P BPU 利用率原始采样值（公式未确认前不给结论）")
+    elif decision.scope == SCOPE_J6P_BRINGUP:
+        allowed = [
+            "J6P bring-up：模型加载与功能一致性",
+            "被测 Runtime 的请求/计划接口通过性",
+        ]
+    elif decision.scope == SCOPE_J6P_UNVERIFIED:
+        allowed = ["仅记录本次运行的原始事实，不得据此给出任何 J6P 结论"]
     else:
-        scope = "X86_PRE_VALIDATED"
-        j6p_status = "J6P_PENDING"
         allowed = [
             "工具链与测量流程的正确性",
             "相对趋势（同一主机、同一配置下的版本间比较）",
         ]
-    forbidden = [
-        "把 X86 或桌面 GPU 结果写成 J6P 实机达标",
-        "把模型文件大小当作运行内存",
-        "用 INT8 体积下降代替 FLOPs 下降",
-        "用估算值或 TDP 代替实测功耗",
-        "用未确认公式给出“异构算力利用率 = xx%”结论",
-    ]
-    if not power_measured:
+        if decision.scope == "X86_CANDIDATE_PREVALIDATED":
+            allowed.append("已核验身份的 candidate 在 X86 上的同机复现与预验证")
+
+    forbidden = list(_FORBIDDEN_BASE)
+    if decision.scope not in J6P_MEASURED_SCOPES:
+        forbidden.append("把本次运行写成 J6P 实机达标")
+    if not power_ok:
         forbidden.append("在功耗未实测时给出功耗达标结论")
-    if not bpu_measured:
+    if not bpu_ok:
         forbidden.append("在 BPU 未实测时给出 BPU 利用率结论")
     return {
-        "scope": scope,
-        "j6p_status": j6p_status,
+        "scope": decision.scope,
+        "evidence_level": decision.evidence_level,
+        "j6p_status": decision.j6p_status,
+        "checks": checks,
+        "failed_checks": failed_names(checks),
         "allowed_claims": allowed,
         "forbidden_claims": forbidden,
     }
@@ -133,6 +197,87 @@ def _latency_table(metrics: Mapping[str, Any]) -> list[str]:
     return _table(["时段", "n", "mean", "P50", "P95", "P99", "max"], rows)
 
 
+def _group_lines(groups: Mapping[str, Any] | None) -> list[str]:
+    """Render the per-group table; labels come from B2, B3 only counts."""
+    if not isinstance(groups, Mapping) or not groups.get("groups"):
+        return []
+    lines = ["", "### 7.1 分组统计（标签来源：" + str(groups.get("group_map_path") or "冻结输入/未标注") + "）", ""]
+    rows = []
+    for name in sorted(groups["groups"]):
+        item = groups["groups"][name]
+        rows.append(
+            [
+                name,
+                item.get("case_count"),
+                _number(item.get("ready_rate"), 4),
+                _number(item.get("structural_pass_rate"), 4),
+                item.get("distinct_student_outputs"),
+                item.get("distinct_teacher_outputs"),
+                _number(item.get("dominant_student_output_share"), 4),
+                "是" if item.get("teacher_varies_student_constant") else "否",
+                item.get("distinct_source_texts"),
+                _number(item.get("cases_per_distinct_source_text"), 2),
+            ]
+        )
+    lines.extend(
+        _table(
+            [
+                "组",
+                "n",
+                "产出率",
+                "结构通过率",
+                "Student 不同输出",
+                "Teacher 不同输出",
+                "最大同输出占比",
+                "Teacher 变而 Student 恒定",
+                "不同指令文本",
+                "每条指令平均用例数",
+            ],
+            rows,
+        )
+    )
+    lines.append("")
+    labeled = groups.get("labeled_cases")
+    total = groups.get("case_count")
+    lines.append(
+        f"> 已标注用例 {labeled}/{total}；"
+        "`UNLABELED` 表示冻结输入没有携带分组标签（B2 的 Seen/Variant/Unseen manifest 到位前"
+        "这是正常状态）。分组标签由 B2 定义，B3 只做计数与归因。"
+    )
+    collapsed = groups.get("template_collapse_groups") or []
+    if collapsed:
+        lines.append("")
+        lines.append(
+            "> **模板化信号**：以下组内 Teacher 输出有差异、Student 输出却完全一致——"
+            "该组不能支撑泛化结论，需按文档 §11 归因："
+            + "、".join(f"`{item}`" for item in collapsed)
+        )
+    collapsed_text = groups.get("instruction_text_collapsed_groups") or []
+    if collapsed_text:
+        lines.append("")
+        lines.append(
+            "> **指令文本重复**：以下组内所有用例的 `source_text` 相同，"
+            "行为对比只能说明记忆/查表，不能说明泛化："
+            + "、".join(f"`{item}`" for item in collapsed_text)
+        )
+    reused_text = groups.get("instruction_text_reused_groups") or []
+    if reused_text:
+        lines.append("")
+        lines.append(
+            "> **指令文本复用**：以下组内平均每条指令被 ≥2 个用例复用，"
+            "该组的行为/目标匹配率不能当作独立指令上的泛化指标："
+            + "、".join(f"`{item}`" for item in reused_text)
+        )
+    unrecognized = groups.get("unrecognized_group_labels") or []
+    if unrecognized:
+        lines.append("")
+        lines.append(
+            "> 未识别的分组标签（B3 不解释，原样保留）："
+            + "、".join(f"`{item}`" for item in unrecognized)
+        )
+    return lines
+
+
 def build_report(
     *,
     run_id: str,
@@ -147,17 +292,33 @@ def build_report(
     blocked_on: Sequence[str],
     extra_notes: Sequence[str] = (),
     stability_summary: Mapping[str, Any] | None = None,
+    scope: Mapping[str, Any] | None = None,
+    board_runtime: Mapping[str, Any] | None = None,
+    rounds_measured: int | None = None,
+    utilization_policy: Mapping[str, Any] | None = None,
 ) -> str:
-    scope = claim_scope(
-        device_class=str(hardware_env.get("device_class", "X86_WORKSTATION")),
-        power_measured=bool((telemetry or {}).get("power", {}).get("measured")),
-        bpu_measured=bool((telemetry or {}).get("utilization", {}).get("bpu_measured")),
-    )
+    # The scope comes from `claim_scope`, never from the file name or a flag.  A
+    # caller that already derived it passes the same mapping in, so the report
+    # and the manifest can never disagree about how far the numbers may be
+    # quoted.
+    if scope is None:
+        scope = claim_scope(
+            device_class=str(hardware_env.get("device_class", "X86_WORKSTATION")),
+            identity=identity,
+            artifact=hardware_env.get("model_artifact"),
+            runtime={"name": None, "capabilities": capabilities},
+            hardware_env=hardware_env,
+            telemetry=telemetry,
+            board_runtime=board_runtime,
+            rounds_measured=rounds_measured,
+            stability=stability_summary,
+        )
     lines: list[str] = []
     lines.append(f"# B3 HIL / J6P 实测报告 — `{run_id}`")
     lines.append("")
     lines.append(f"- 生成时间（UTC）：`{datetime.now(timezone.utc).isoformat()}`")
     lines.append(f"- 可信范围：`{scope['scope']}`")
+    lines.append(f"- 证据层级：`{scope.get('evidence_level')}`")
     lines.append(f"- J6P 状态：`{scope['j6p_status']}`")
     lines.append("")
     lines.append("> 本报告的全部数字来源于同一次运行目录内的原始文件，")
@@ -341,6 +502,28 @@ def build_report(
         "> “异构算力利用率 ≥80%”的正式公式由 A4/B2 确认前，"
         "本报告只提供原始采样值，不给结论行。"
     )
+    if utilization_policy:
+        lines.append("")
+        status = utilization_policy.get("status")
+        lines.append(f"公式接入状态：`{status}`")
+        lines.append("")
+        lines.append(f"> {utilization_policy.get('detail', '')}")
+        policy = utilization_policy.get("policy")
+        if isinstance(policy, Mapping):
+            lines.append("")
+            lines.extend(
+                _table(
+                    ["策略字段", "值"],
+                    [
+                        ["policy_id", policy.get("policy_id")],
+                        ["signer", policy.get("signer")],
+                        ["sampling_window", policy.get("sampling_window")],
+                        ["probe_scope", policy.get("probe_scope")],
+                        ["exclusive_use", policy.get("exclusive_use")],
+                        ["policy_sha256", policy.get("policy_sha256")],
+                    ],
+                )
+            )
     lines.append("")
 
     lines.append("## 7. 回放与输入输出一致性")
@@ -360,6 +543,11 @@ def build_report(
         )
         lines.append("")
         lines.append(f"> {replay_summary.get('teacher_comparison_reason', '')}")
+        gate_failed = replay_summary.get("gate_failed_checks") or []
+        if gate_failed:
+            lines.append("")
+            lines.append("> 未满足的 Gate 核验项：" + "、".join(f"`{item}`" for item in gate_failed))
+        lines.extend(_group_lines(replay_summary.get("groups")))
     else:
         lines.append("（本次运行未执行回放）")
     lines.append("")
@@ -396,13 +584,32 @@ def build_report(
                     ["整体 P95 (ms)", _number(latency.get("overall_p95"))],
                     ["内存漂移 (KiB)", _number(stability_summary.get("memory_drift_kib"), 1)],
                     ["内存漂移比例", _number(stability_summary.get("memory_drift_ratio"), 5)],
+                    ["漂移来源", stability_summary.get("memory_drift_source")],
                     ["recovery probe 失败数", (stability_summary.get("recovery_probe") or {}).get("errors")],
-                    ["长稳结论", "通过" if stability_summary.get("success") else "未通过"],
+                    # The four pass criteria are duration, failures, recovery and
+                    # telemetry — none of them is a drift threshold, so the two
+                    # rows are kept apart instead of one "结论" that a reader
+                    # could mistake for "drift is acceptable".
+                    [
+                        "长稳判据（时长/失败/恢复/遥测）",
+                        "通过" if stability_summary.get("success") else "未通过",
+                    ],
+                    [
+                        "漂移判定",
+                        (
+                            "阈值未冻结（B2/A4 定义），仅报告数字"
+                            if stability_summary.get("memory_drift_kib") is not None
+                            else "无漂移数据"
+                        ),
+                    ],
                 ],
             )
         )
         lines.append("")
         lines.append("判定条件：" + "；".join(stability_summary.get("criteria", [])))
+        if stability_summary.get("drift_note"):
+            lines.append("")
+            lines.append(f"> 漂移口径：{stability_summary.get('drift_note')}")
     else:
         lines.append("（本次运行未执行长稳）")
     lines.append("")
@@ -426,6 +633,28 @@ def build_report(
 
     lines.append("## 11. 可信范围与禁止表述")
     lines.append("")
+    lines.append(
+        "范围由 `claim_scope` 依据本次运行的证据逐项核验得出，"
+        "任何单项证据缺失都只会降低范围，不会提高范围。核验明细："
+    )
+    lines.append("")
+    lines.extend(
+        _table(
+            ["核验项", "结果", "依据"],
+            [
+                [item.get("name"), "通过" if item.get("passed") else "未满足", item.get("detail")]
+                for item in scope.get("checks", ())
+            ],
+        )
+    )
+    lines.append("")
+    if scope.get("failed_checks"):
+        lines.append(
+            "未满足的核验项："
+            + "、".join(f"`{item}`" for item in scope["failed_checks"])
+            + "。未满足项决定当前只能给出下面的允许结论。"
+        )
+        lines.append("")
     lines.append("允许的结论：")
     lines.append("")
     for item in scope["allowed_claims"]:
@@ -455,5 +684,8 @@ __all__ = [
     "SEGMENT_ORDER",
     "SEGMENT_LABELS",
     "REPORT_FILENAME_J6P",
+    "REPORT_FILENAME_J6P_BRINGUP",
+    "REPORT_FILENAME_J6P_UNVERIFIED",
     "REPORT_FILENAME_X86",
+    "SCOPE_FILENAMES",
 ]

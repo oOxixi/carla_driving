@@ -11,7 +11,7 @@ from pathlib import Path
 import shlex
 import sys
 import time
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 from .columns import FILE_SCHEMAS
 from .artifact import verify_onnx_artifact
@@ -20,12 +20,23 @@ from .consistency import (
     DEFAULT_RTOL,
     OnnxOutputSource,
     TorchOutputSource,
+    compare_plans,
     compare_sources,
 )
 from .contract import check_runtime_contract
 from .failure_cases import build_failure_cases, run_failure_cases
 from .freeze import freeze_snapshot, load_frozen_snapshot
+from .gate import replay_conclusion
+from .groups import (
+    UNLABELED,
+    apply_group_map,
+    group_report,
+    groups_from_rows,
+    read_group_map,
+    source_text_of,
+)
 from .handoff import export_handoff
+from .leakage import probe_files as leakage_probe_files
 from .identity import UNRESOLVED, CandidateIdentity, git_head, sha256_file
 from .provenance import teacher_baselines
 from .replay import load_replay_cases
@@ -48,6 +59,8 @@ from .samplers import (
     power_source,
 )
 from .stability import run_soak, write_soak_files
+from .tensors import dump_tensors_for_request
+from .utilization_policy import apply_policy, load_policy
 from .stages import (
     CLOCK_SOURCE,
     STAGES,
@@ -220,7 +233,191 @@ def _telemetry_spec(args: argparse.Namespace) -> TelemetrySpec:
     )
 
 
-def _build_runtime(args: argparse.Namespace) -> PlannerRuntime:
+def _board_runtime_evidence(
+    args: argparse.Namespace,
+    runtime: PlannerRuntime,
+) -> dict[str, Any] | None:
+    """What the harness itself observed about the board runtime.
+
+    Returned only for the board adapter, because a scope decision may not treat
+    an X86 run as board evidence no matter what device class was typed in.
+    """
+    if args.adapter != "board":
+        return None
+    log_path = getattr(runtime, "log_path", None)
+    return {
+        "adapter": "board",
+        "command": args.board_command or "",
+        "artifact": args.board_artifact,
+        "trace_emitted": bool(getattr(runtime, "emitted_trace", False)),
+        "log_path": str(log_path) if log_path else None,
+        "log_lines": int(getattr(runtime, "log_lines", 0) or 0),
+    }
+
+
+def _derive_scope(
+    args: argparse.Namespace,
+    *,
+    runtime: PlannerRuntime,
+    hardware_env: Mapping[str, Any],
+    telemetry: Mapping[str, Any] | None,
+    rounds_measured: int | None = None,
+    stability: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Derive one scope per run so report, file name and manifest agree."""
+    return claim_scope(
+        device_class=args.device_class,
+        identity=runtime.identity,
+        artifact=hardware_env.get("model_artifact"),
+        runtime={"name": runtime.name, "capabilities": runtime.capabilities.to_dict()},
+        hardware_env=hardware_env,
+        telemetry=telemetry,
+        board_runtime=_board_runtime_evidence(args, runtime),
+        rounds_measured=rounds_measured,
+        stability=stability,
+    )
+
+
+def _replay_group_report(
+    cases: Sequence[Any],
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    group_map_path: str | Path | None = None,
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """Per-group facts for one replay, using only labels provided to B3.
+
+    Returns the report and the `case_id -> label` mapping it was built from, so
+    the caller can persist the mapping next to the run and a later re-derivation
+    does not depend on the original map file still being where it was.
+    """
+    override = read_group_map(group_map_path) if group_map_path else None
+    groups = (
+        apply_group_map(cases, override)
+        if cases
+        else groups_from_rows(rows, override)
+    )
+    report = group_report(
+        rows,
+        groups=groups,
+        source_texts={case.case_id: source_text_of(case) for case in cases},
+    )
+    report["group_map_path"] = str(group_map_path) if group_map_path else None
+    report["labeled_cases"] = sum(1 for value in groups.values() if value != UNLABELED)
+    report["labeled_case_share"] = (
+        (report["labeled_cases"] / len(groups)) if groups else None
+    )
+    return report, groups
+
+
+def _utilization_policy_status(
+    args: argparse.Namespace,
+    telemetry: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Record (and only then apply) the B2/A4 utilization formula.
+
+    A policy file that was explicitly requested but cannot be read is a hard
+    error: silently running without the formula the caller asked for would put a
+    report in the tree that does not match its inputs.
+    """
+    path = getattr(args, "utilization_policy", None)
+    if not path:
+        return apply_policy(None, samples=None)
+    try:
+        policy = load_policy(path)
+    except (OSError, ValueError) as error:
+        raise AdapterError(f"utilization policy is unusable: {error}") from error
+    utilization = (telemetry or {}).get("utilization")
+    utilization = utilization if isinstance(utilization, Mapping) else {}
+    samples = {
+        "cpu_percent": utilization.get("cpu_percent_max"),
+        "bpu_percent": utilization.get("bpu_percent_mean"),
+    }
+    return apply_policy(
+        policy,
+        samples=samples,
+        sample_count=utilization.get("sample_count"),
+    )
+
+
+def _artifact_preflight(
+    args: argparse.Namespace,
+    artifact: str | Path | None,
+) -> dict[str, Any]:
+    """`artifact_report.json` for every run, including the not-applicable case.
+
+    §13 lists the artifact report among the files a formal run must carry.  A run
+    on a non-ONNX artifact cannot produce one, and saying so explicitly is better
+    than an absent file a reader has to interpret.
+    """
+    if artifact is None:
+        return {
+            "schema_version": "1.0",
+            "passed": None,
+            "status": "NO_ARTIFACT",
+            "reason": "no artifact was passed to this run",
+        }
+    path = Path(artifact)
+    if not path.is_file():
+        return {
+            "schema_version": "1.0",
+            "passed": None,
+            "status": "ARTIFACT_MISSING",
+            "reason": f"{path} does not exist",
+        }
+    if path.suffix.lower() != ".onnx":
+        return {
+            "schema_version": "1.0",
+            "passed": None,
+            "status": "NOT_APPLICABLE",
+            "reason": (
+                f"the ONNX structural checks only apply to .onnx artifacts; "
+                f"this run used {path.name}"
+            ),
+            "artifact": {
+                "path": str(path.resolve()),
+                "sha256": sha256_file(path),
+                "size_bytes": path.stat().st_size,
+            },
+        }
+    structure = Path(args.repo) / "challenge" / "model_structure.json"
+    report = verify_onnx_artifact(
+        path,
+        repo_root=args.repo,
+        reference_structure=structure if structure.is_file() else None,
+        expected_opset=17,
+    )
+    report["status"] = "CHECKED"
+    return report
+
+
+def _contract_preflight(
+    args: argparse.Namespace,
+    runtime: PlannerRuntime,
+    cases: Sequence[Any],
+    latency_budget_ms: float = 1000.0,
+) -> dict[str, Any]:
+    """`contract_report.json` for the run directory, not just the `contract` command."""
+    requests = [case.request for case in cases[: max(1, min(5, len(cases)))]]
+    expected_digest = None
+    if args.board_artifact and Path(args.board_artifact).is_file():
+        expected_digest = sha256_file(args.board_artifact)
+    report = check_runtime_contract(
+        runtime,
+        requests,
+        latency_budget_ms=latency_budget_ms,
+        expected_model_sha256=expected_digest,
+        model_only_tensor_dir=getattr(args, "model_only_input_dir", None),
+    )
+    report["adapter"] = args.adapter
+    report["status"] = "CHECKED"
+    return report
+
+
+def _build_runtime(
+    args: argparse.Namespace,
+    *,
+    board_log_path: str | Path | None = None,
+) -> PlannerRuntime:
     if args.adapter in {"inprocess", "both"}:
         return InProcessStudentRuntime(
             args.repo,
@@ -240,6 +437,7 @@ def _build_runtime(args: argparse.Namespace) -> PlannerRuntime:
             model_id=args.model_id,
             config_id=args.config_id,
             dataset_version=args.dataset_version,
+            log_path=board_log_path,
         )
     raise AdapterError(f"unsupported adapter: {args.adapter}")
 
@@ -308,9 +506,17 @@ def command_selftest(_: argparse.Namespace) -> int:
     if set(report["rows"][0]) != expected_columns:
         failures.append("latency CSV row does not match the frozen column set")
 
-    scope = claim_scope(device_class="X86_WORKSTATION", power_measured=False, bpu_measured=False)
+    scope = claim_scope(device_class="X86_WORKSTATION")
     if scope["j6p_status"] != "J6P_PENDING":
         failures.append("X86 runs must report J6P_PENDING")
+    if scope["scope"] != "X86_PRE_VALIDATED":
+        failures.append("an X86 run without a verified candidate must stay X86_PRE_VALIDATED")
+    scope_with_flag = claim_scope(
+        device_class="J6P_BOARD",
+        hardware_env={"device_class": "J6P_BOARD"},
+    )
+    if scope_with_flag["scope"] == "J6P_ON_DEVICE":
+        failures.append("a declared device class may not promote a run to board evidence")
 
     if failures:
         print(json.dumps({"status": "FAIL", "failures": failures}, indent=2, ensure_ascii=False))
@@ -369,6 +575,16 @@ def _add_shared_args(parser: argparse.ArgumentParser, *, out_help: str) -> None:
         default="bpu_percent,cpu_percent,ddr_bandwidth_gbps",
     )
     parser.add_argument("--telemetry-interval-s", type=float, default=1.0)
+    parser.add_argument(
+        "--model-only-input-dir",
+        default=None,
+        help="tensor dump directory produced by `dump-tensors`, for the model-only check",
+    )
+    parser.add_argument(
+        "--utilization-policy",
+        default=None,
+        help="B2/A4-issued JSON formula for the heterogeneous utilization Gate",
+    )
     parser.add_argument("--quiet", action="store_true")
 
 
@@ -402,6 +618,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="prove the instrumented stage path matches StudentBackend.infer",
     )
+    run.add_argument(
+        "--group-map",
+        default=None,
+        help="B2-supplied JSON mapping case/sample/scenario id -> Seen/Variant/Unseen",
+    )
+    run.add_argument(
+        "--latency-budget-ms",
+        type=float,
+        default=1000.0,
+        help="latency budget used by the in-run contract preflight",
+    )
     run.set_defaults(func=command_run)
 
     soak = sub.add_parser("soak", help="long-duration stability run with recovery probe")
@@ -409,6 +636,12 @@ def build_parser() -> argparse.ArgumentParser:
     soak.add_argument("--limit", type=int, default=None, help="cap the number of cases")
     soak.add_argument("--duration-minutes", type=float, default=30.0)
     soak.add_argument("--recovery-probe-cases", type=int, default=10)
+    soak.add_argument(
+        "--latency-budget-ms",
+        type=float,
+        default=1000.0,
+        help="latency budget used by the in-run contract preflight",
+    )
     soak.set_defaults(func=command_soak)
 
     contract = sub.add_parser(
@@ -452,12 +685,59 @@ def build_parser() -> argparse.ArgumentParser:
     consistency.add_argument("--atol", type=float, default=DEFAULT_ATOL)
     consistency.add_argument("--model-seed", type=int, default=20260911)
     consistency.add_argument("--out", help="optional report path")
+    consistency.add_argument(
+        "--adapter",
+        choices=["inprocess", "onnx", "board"],
+        help="also drive the runtime under test through its own infer path",
+    )
+    consistency.add_argument("--board-command", help="A4 runtime command for --adapter board")
+    consistency.add_argument("--board-artifact", help="board artifact for identity hashing")
+    consistency.add_argument("--weights-manifest", help="A3 weight manifest JSON")
+    consistency.add_argument("--model-id", default=UNRESOLVED)
+    consistency.add_argument("--config-id", default=UNRESOLVED)
+    consistency.add_argument("--dataset-version", default=UNRESOLVED)
     consistency.set_defaults(func=command_consistency)
 
     handoff = sub.add_parser("handoff", help="export failures for A3 (hard cases + vectors)")
     handoff.add_argument("--run", required=True, help="finished run directory")
     handoff.add_argument("--out", help="output directory (defaults to <run>/handoff)")
     handoff.set_defaults(func=command_handoff)
+
+    groups = sub.add_parser(
+        "groups",
+        help="re-derive Seen/Variant/Unseen statistics from a finished run",
+    )
+    groups.add_argument("--run", required=True, help="finished run directory")
+    groups.add_argument("--group-map", help="JSON mapping id -> group label")
+    groups.add_argument("--out", help="output path (defaults to <run>/replay_groups.json)")
+    groups.set_defaults(func=command_groups)
+
+    probe = sub.add_parser(
+        "leakage-probe",
+        help="check whether a validation split can be answered by table lookup alone",
+    )
+    probe.add_argument("--train", required=True, help="training split JSONL")
+    probe.add_argument(
+        "--validation",
+        required=True,
+        help="validation split or frozen cases JSONL",
+    )
+    probe.add_argument("--out", help="optional output path or directory")
+    probe.set_defaults(func=command_leakage_probe)
+
+    tensors = sub.add_parser(
+        "dump-tensors",
+        help="write fixed input tensors for A4's --model-only mode",
+    )
+    _add_shared_args(tensors, out_help="output root for the tensor dumps")
+    tensors.add_argument("--limit", type=int, default=1, help="how many cases to dump")
+    tensors.add_argument("--name", default=None, help="directory name (single case only)")
+    tensors.add_argument(
+        "--index-file",
+        action="store_true",
+        help="also write dump_index.json for a single-case dump",
+    )
+    tensors.set_defaults(func=command_dump_tensors)
     return parser
 
 
@@ -554,8 +834,65 @@ def command_consistency(args: argparse.Namespace) -> int:
         reference, candidate, requests, rtol=args.rtol, atol=args.atol
     )
     report["request_source"] = info
+
+    plan_report = None
+    if getattr(args, "adapter", None):
+        # The audited gap: the graph-only comparison above never drives the object
+        # being measured.  With --adapter the runtime under test is exercised
+        # through its own infer path and its plans are compared with the plans
+        # decoded from the reference graph.
+        runtime = _build_runtime(args)
+        try:
+            plan_report = compare_plans(
+                runtime,
+                cases[: max(1, args.limit)],
+                reference=reference,
+                decode_reference=_reference_plan_decoder(args.repo),
+                rtol=args.rtol,
+                atol=args.atol,
+            )
+        finally:
+            runtime.close()
+        report = {
+            "schema_version": "1.0",
+            "mode": "plan_and_graph",
+            "passed": bool(report["passed"] and plan_report["passed"]),
+            "graph": report,
+            "plan": plan_report,
+        }
+
     if args.out:
         write_json(args.out, report)
+
+    if plan_report is not None:
+        print(
+            json.dumps(
+                {
+                    "mode": report["mode"],
+                    "passed": report["passed"],
+                    "graph": {
+                        "passed": report["graph"]["passed"],
+                        "max_abs_diff_over_all_cases": report["graph"][
+                            "max_abs_diff_over_all_cases"
+                        ],
+                    },
+                    "plan": {
+                        "runtime": plan_report["runtime"]["name"],
+                        "requests": plan_report["request_count"],
+                        "passed": plan_report["passed"],
+                        "mismatched_cases": [
+                            row["case_id"]
+                            for row in plan_report["cases"]
+                            if not row["same_plan"]
+                        ],
+                    },
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 0 if report["passed"] else 1
+
     print(
         json.dumps(
             {
@@ -575,6 +912,136 @@ def command_consistency(args: argparse.Namespace) -> int:
         )
     )
     return 0 if report["passed"] else 1
+
+
+def _reference_plan_decoder(repo_root: str | Path) -> Any:
+    """Decode raw reference outputs into a plan with the production adapter.
+
+    Using the same `StudentPlanAdapter` on both sides is what makes the
+    plan-level comparison meaningful: any difference is in the numbers, not in
+    how a plan is assembled.
+    """
+    from .runtime_adapter import _RepoModules
+
+    modules = _RepoModules(repo_root)
+    torch = modules.get("torch")
+    StudentPlanAdapter = modules.get("challenge.planner.student_adapter.StudentPlanAdapter")
+    adapter = StudentPlanAdapter()
+
+    def decode(request: Mapping[str, Any], outputs: Mapping[str, Any]) -> Any:
+        tensors = {name: torch.from_numpy(value) for name, value in outputs.items()}
+        return adapter.decode(request, tensors)
+
+    return decode
+
+
+def _tensor_dir_name(case_id: str) -> str:
+    return "".join(char if char.isalnum() or char in "-_." else "_" for char in case_id)
+
+
+def command_dump_tensors(args: argparse.Namespace) -> int:
+    """Write the fixed input tensors A4's `--model-only` mode must consume.
+
+    §5 of the A4 contract asks B3 to produce these, and the same dump is what
+    makes the model-only contract check runnable: both sides then hash the raw
+    outputs of one identical input.
+    """
+    cases, info = _load_cases(args)
+    limit = args.limit if args.limit is not None else 1
+    selected = list(cases[: max(1, limit)])
+    root = Path(args.out)
+    root.mkdir(parents=True, exist_ok=True)
+    dumps: list[dict[str, Any]] = []
+    for index, case in enumerate(selected):
+        name = args.name or _tensor_dir_name(case.case_id or f"case_{index:04d}")
+        target = root / name
+        manifest = dump_tensors_for_request(
+            args.repo,
+            case.request,
+            target,
+            case_id=case.case_id,
+            frame_label=case.scenario_id,
+        )
+        manifest["directory"] = str(target)
+        manifest["rgb_sha256"] = case.rgb_sha256
+        manifest["rgb_resolved"] = case.rgb_resolved
+        write_json(target / "manifest.json", manifest)
+        dumps.append(manifest)
+    summary = {
+        "schema_version": "1.0",
+        "request_source": info,
+        "dump_count": len(dumps),
+        "dumps": [
+            {
+                "directory": item["directory"],
+                "case_id": item["case_id"],
+                "request_id": item["request_id"],
+                "request_sha256": item["request_sha256"],
+                "tensors": {
+                    name: {"shape": entry["shape"], "dtype": entry["dtype"]}
+                    for name, entry in item["files"].items()
+                },
+            }
+            for item in dumps
+        ],
+    }
+    if len(dumps) > 1 or args.index_file:
+        write_json(root / "dump_index.json", summary)
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    return 0
+
+
+def command_leakage_probe(args: argparse.Namespace) -> int:
+    """Re-derive the lookup-shortcut facts for one train/validation pair.
+
+    Independent verification is B3's remit, so A3's leakage finding is checked
+    here from the files rather than quoted from A3's report.
+    """
+    report = leakage_probe_files(args.train, args.validation)
+    target = Path(args.out) if args.out else None
+    if target is not None:
+        if target.is_dir():
+            target = target / "shortcut_probe.json"
+        write_json(target, report)
+        report["report_path"] = str(target)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0
+
+
+def command_groups(args: argparse.Namespace) -> int:
+    """Re-derive per-group facts from a finished run, without re-measuring.
+
+    B2 has to be able to recompute B3's numbers; grouping is the part most likely
+    to be revisited once the formal Seen/Variant/Unseen manifest is issued, so it
+    can be recomputed from the saved rows plus a `--group-map` alone.
+    """
+    run_root = Path(args.run).resolve()
+    replay_path = run_root / "hil_replay.jsonl"
+    if not replay_path.is_file():
+        raise AdapterError(f"missing {replay_path}")
+    rows = read_jsonl(replay_path)
+    cases: list[Any] = []
+    summary_path = run_root / "hil_replay_summary.json"
+    if summary_path.is_file():
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        snapshot = (summary.get("requests") or {}).get("snapshot")
+        if snapshot and Path(snapshot).is_dir():
+            cases, _ = load_frozen_snapshot(snapshot)
+    group_map_path = args.group_map
+    saved_map = run_root / "replay_groups_map.json"
+    if group_map_path is None and saved_map.is_file():
+        # Faithful re-derivation: reuse the mapping the run actually applied.
+        group_map_path = saved_map
+    report, _ = _replay_group_report(cases, rows, group_map_path=group_map_path)
+    report["cases_loaded"] = len(cases)
+    report["run_dir"] = str(run_root)
+    target = Path(args.out) if args.out else run_root / "replay_groups.json"
+    if target.is_dir():
+        target = target / "replay_groups.json"
+    write_json(target, report)
+    report["report_path"] = str(target)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0
 
 
 def command_handoff(args: argparse.Namespace) -> int:
@@ -623,12 +1090,23 @@ def command_artifact(args: argparse.Namespace) -> int:
 
 
 def command_contract(args: argparse.Namespace) -> int:
-    runtime = _build_runtime(args)
+    runtime = _build_runtime(
+        args, board_log_path=Path(args.out) / "logs" / "board_runtime.jsonl"
+    )
     cases, info = _load_cases(args)
     limit = args.limit if args.limit is not None else 5
     requests = [case.request for case in cases[: max(1, limit)]]
+    expected_digest = None
+    if args.board_artifact and Path(args.board_artifact).is_file():
+        # A4's --describe must report the digest of the artifact that is really
+        # loaded, not of the ONNX that was exported before conversion.
+        expected_digest = sha256_file(args.board_artifact)
     report = check_runtime_contract(
-        runtime, requests, latency_budget_ms=args.latency_budget_ms
+        runtime,
+        requests,
+        latency_budget_ms=args.latency_budget_ms,
+        expected_model_sha256=expected_digest,
+        model_only_tensor_dir=args.model_only_input_dir,
     )
     report["request_source"] = info
     report["adapter"] = args.adapter
@@ -649,13 +1127,23 @@ def command_soak(args: argparse.Namespace) -> int:
         if not args.quiet:
             print(f"[{run_id}] {message}", flush=True)
 
-    runtime = _build_runtime(args)
+    runtime = _build_runtime(
+        args, board_log_path=run_dir.path("logs", "board_runtime.jsonl")
+    )
     artifact = args.weights or args.board_artifact or args.onnx
     hardware_env = _build_hardware_env(args, runtime.identity, artifact)
     run_dir.write_hardware_env(hardware_env)
     cases, info = _load_cases(args)
     log(f"soak over {len(cases)} cases for {args.duration_minutes} minutes")
     _warn_if_busy(hardware_env, log)
+    artifact_report = _artifact_preflight(args, artifact)
+    write_json(run_dir.path("artifact_report.json"), artifact_report)
+    contract_report = _contract_preflight(args, runtime, cases, args.latency_budget_ms)
+    write_json(run_dir.path("contract_report.json"), contract_report)
+    log(
+        f"preflight: contract passed={contract_report['passed']} "
+        f"artifact status={artifact_report['status']}"
+    )
     result = run_soak(
         runtime,
         cases,
@@ -664,12 +1152,20 @@ def command_soak(args: argparse.Namespace) -> int:
         telemetry=_telemetry_spec(args),
         recovery_probe_cases=args.recovery_probe_cases,
         progress=lambda message: log(message),
+        # Stream per-iteration rows so a long soak measures the runtime's memory,
+        # not its own bookkeeping.
+        row_path=run_dir.path("stability_logs", "soak.jsonl"),
     )
     stability_summary = write_soak_files(run_dir, result)
-    scope = claim_scope(
-        device_class=args.device_class,
-        power_measured=bool(args.power_probe_command),
-        bpu_measured=bool(args.utilization_probe_command),
+    scope = _derive_scope(
+        args,
+        runtime=runtime,
+        hardware_env=hardware_env,
+        telemetry=result["summary"]["telemetry"],
+        stability=stability_summary,
+    )
+    utilization_status = _utilization_policy_status(
+        args, result["summary"]["telemetry"]
     )
     report_text = build_report(
         run_id=run_id,
@@ -695,17 +1191,33 @@ def command_soak(args: argparse.Namespace) -> int:
         },
         blocked_on=BLOCKED_ON_DEFAULT if not runtime.identity.complete else (),
         stability_summary=stability_summary,
+        scope=scope,
+        board_runtime=_board_runtime_evidence(args, runtime),
+        utilization_policy=utilization_status,
     )
-    run_dir.path(report_filename(args.device_class)).write_text(report_text, encoding="utf-8")
+    run_dir.path(report_filename(scope)).write_text(report_text, encoding="utf-8")
     manifest = run_dir.build_manifest(
         identity=runtime.identity,
         claim_scope=scope["scope"],
         extra={
+            "evidence_level": scope["evidence_level"],
             "j6p_status": scope["j6p_status"],
+            "scope_checks": scope["checks"],
+            "scope_failed_checks": scope["failed_checks"],
             "capabilities": runtime.capabilities.to_dict(),
             "stability": stability_summary,
             "request_source": info,
             "teacher_baselines": hardware_env.get("teacher_baselines"),
+            "preflight": {
+                "contract_passed": contract_report["passed"],
+                "contract_failed_checks": [
+                    item["name"] for item in contract_report["checks"]
+                    if item["status"] == "FAIL"
+                ],
+                "artifact_status": artifact_report["status"],
+                "artifact_passed": artifact_report.get("passed"),
+            },
+            "utilization_policy": utilization_status,
         },
     )
     log(
@@ -728,7 +1240,9 @@ def command_run(args: argparse.Namespace) -> int:
 
     if args.adapter in {"inprocess", "both"} and args.weights is None:
         log("no --weights given: running the random-initialized structure (toolchain validation only)")
-    runtime = _build_runtime(args)
+    runtime = _build_runtime(
+        args, board_log_path=run_dir.path("logs", "board_runtime.jsonl")
+    )
     artifact = args.weights or args.board_artifact or args.onnx
     if artifact is None and args.adapter in {"onnx", "both"}:
         artifact = Path(args.repo) / "challenge" / "student_v0_fp32.onnx"
@@ -753,6 +1267,17 @@ def command_run(args: argparse.Namespace) -> int:
     unresolved_rgb = len(cases) - int(case_info.get("rgb_resolved", 0))
     if unresolved_rgb:
         log(f"warning: {unresolved_rgb} cases have no resolvable RGB frame")
+
+    # §13 lists both preflight reports among the files a formal run must carry;
+    # writing them here means the manifest hashes them together with the numbers.
+    artifact_report = _artifact_preflight(args, artifact)
+    write_json(run_dir.path("artifact_report.json"), artifact_report)
+    contract_report = _contract_preflight(args, runtime, cases, args.latency_budget_ms)
+    write_json(run_dir.path("contract_report.json"), contract_report)
+    log(
+        f"preflight: contract passed={contract_report['passed']} "
+        f"artifact status={artifact_report['status']}"
+    )
 
     result = run_rounds(
         runtime,
@@ -784,6 +1309,11 @@ def command_run(args: argparse.Namespace) -> int:
         ready = sum(1 for row in result.replay_rows if row["outcome"] == "READY")
         rgb_ok = sum(1 for row in result.replay_rows if row["rgb_resolved"])
         structural = sum(1 for row in result.replay_rows if not row["structural_failures"])
+        # The Teacher-comparison verdict is derived from the verified candidate
+        # identity, not typed in here: a run with real A3-gated weights must not
+        # stay labelled diagnostic, and a run without them must not be relabelled
+        # by hand.
+        conclusion = replay_conclusion(runtime.identity)
         replay_summary = {
             "case_count": total,
             "ready": ready,
@@ -792,13 +1322,22 @@ def command_run(args: argparse.Namespace) -> int:
             "ready_rate": ready / total,
             "rgb_resolution_rate": rgb_ok / total,
             "structural_pass_rate": structural / total,
-            "teacher_comparison": "DIAGNOSTIC_ONLY",
-            "teacher_comparison_reason": (
-                "Student weights are not A3-gated in this run; behaviour match is recorded "
-                "for toolchain validation and must not be read as accuracy."
-            ),
+            "teacher_comparison": conclusion["teacher_comparison"],
+            "teacher_comparison_reason": conclusion["teacher_comparison_reason"],
+            "gate_verified": conclusion["gate_verified"],
+            "gate_checks": conclusion["gate_checks"],
+            "gate_failed_checks": conclusion["gate_failed_checks"],
             "requests": case_info,
         }
+        group_analysis, case_groups = _replay_group_report(
+            cases, result.replay_rows, group_map_path=args.group_map
+        )
+        replay_summary["groups"] = group_analysis
+        write_json(run_dir.path("replay_groups.json"), group_analysis)
+        if group_analysis["labeled_cases"]:
+            # Keep the applied mapping inside the run so the grouping can be
+            # re-derived later from the run alone, not from a mutable file path.
+            write_json(run_dir.path("replay_groups_map.json"), case_groups)
         write_json(run_dir.path("hil_replay_summary.json"), replay_summary)
 
     extra_notes: list[str] = []
@@ -902,11 +1441,19 @@ def command_run(args: argparse.Namespace) -> int:
             )
         )
 
-    scope = claim_scope(
-        device_class=args.device_class,
-        power_measured=bool(args.power_probe_command),
-        bpu_measured=bool(args.utilization_probe_command),
+    telemetry = {
+        "memory": (result.rounds[-1].telemetry if result.rounds else {}).get("memory", {}),
+        "power": (result.rounds[-1].telemetry if result.rounds else {}).get("power", {}),
+        "utilization": (result.rounds[-1].telemetry if result.rounds else {}).get("utilization", {}),
+    }
+    scope = _derive_scope(
+        args,
+        runtime=runtime,
+        hardware_env=hardware_env,
+        telemetry=telemetry,
+        rounds_measured=len(result.rounds),
     )
+    utilization_status = _utilization_policy_status(args, telemetry)
     report_text = build_report(
         run_id=run_id,
         identity=runtime.identity,
@@ -914,23 +1461,26 @@ def command_run(args: argparse.Namespace) -> int:
         hardware_env=hardware_env,
         latency_report={k: v for k, v in latency_report.items() if k != "rows"},
         replay_summary=replay_summary,
-        telemetry={
-            "memory": (result.rounds[-1].telemetry if result.rounds else {}).get("memory", {}),
-            "power": (result.rounds[-1].telemetry if result.rounds else {}).get("power", {}),
-            "utilization": (result.rounds[-1].telemetry if result.rounds else {}).get("utilization", {}),
-        },
+        telemetry=telemetry,
         failure_summary=failure_summary,
         run_summary=result.summary(),
         blocked_on=BLOCKED_ON_DEFAULT if not runtime.identity.complete else (),
         extra_notes=extra_notes,
+        scope=scope,
+        board_runtime=_board_runtime_evidence(args, runtime),
+        rounds_measured=len(result.rounds),
+        utilization_policy=utilization_status,
     )
-    run_dir.path(report_filename(args.device_class)).write_text(report_text, encoding="utf-8")
+    run_dir.path(report_filename(scope)).write_text(report_text, encoding="utf-8")
 
     manifest = run_dir.build_manifest(
         identity=runtime.identity,
         claim_scope=scope["scope"],
         extra={
+            "evidence_level": scope["evidence_level"],
             "j6p_status": scope["j6p_status"],
+            "scope_checks": scope["checks"],
+            "scope_failed_checks": scope["failed_checks"],
             "capabilities": runtime.capabilities.to_dict(),
             "replay_requests": case_info,
             "teacher_baselines": hardware_env.get("teacher_baselines"),
@@ -950,6 +1500,16 @@ def command_run(args: argparse.Namespace) -> int:
                 None if handoff_summary is None else handoff_summary["counts"]
             ),
             "backend_consistency": backend_consistency,
+            "preflight": {
+                "contract_passed": contract_report["passed"],
+                "contract_failed_checks": [
+                    item["name"] for item in contract_report["checks"]
+                    if item["status"] == "FAIL"
+                ],
+                "artifact_status": artifact_report["status"],
+                "artifact_passed": artifact_report.get("passed"),
+            },
+            "utilization_policy": utilization_status,
         },
     )
     log(f"claim_scope={scope['scope']} files={manifest['file_count']}")

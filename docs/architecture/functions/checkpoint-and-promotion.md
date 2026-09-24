@@ -18,6 +18,11 @@ mock/integration smoke 不能晋级生产。旧的 pinned Teacher 流程核验 T
 
 原缺口已关闭：`_validate_evaluation_identity` 现在绑定Student评测的weights/model/config；signed D2正式策略还要求release/view、benchmark/policy、case-set、evaluator Git、sample count一致，逐端绑定predictions SHA，并强制正式Teacher对照为v4。当前缺的是B2真实独立评价包，不得用合成测试或手工写 `A3_FP32_GATE_PASSED` 代替。
 
+`candidate_handoff.py` 在promotion前生成不可覆盖的B2待验包：复算纯权重和来源checkpoint
+SHA，交叉核对candidate/training summary、正式非Smoke身份、数据preflight与hard-case计数，
+并从训练commit提取配置快照。输出仍是`PENDING_B2_INDEPENDENT_VALIDATION`和
+`PENDING_A3_FP32_GATE`；打包成功不改变Gate状态。
+
 ## 修改建议的阅读顺序（不是本轮已实施行为）
 
 改 checkpoint：先读 train 的 resume 调用及元数据兼容检查，再改 save/load，最后验证连续训练与恢复训练一致性。
