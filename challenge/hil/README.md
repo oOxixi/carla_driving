@@ -504,3 +504,33 @@ F10 与本目录证据说明里标明不得引用。
 完全一致；`confidence` 这类模型数值按 `rtol/atol` 容忍。首轮实测中两链 `confidence` 相差
 6e-8（图级 logits 差 9.5e-6 传播而来），已确认属浮点噪声而**不是**计划不一致——这条经验
 写进了测试 `test_compare_plans_tolerates_float_noise_but_not_semantic_change`。
+
+### 11.9 收到 A3 候选包后的两步校验（2026-09-24）
+
+上游新增了接收侧校验器（提交 `1d6cc93`，`challenge/distillation/candidate_handoff.py`）。
+B3 拿到候选包时按两步走，两步都不需要板卡：
+
+**第一步：包完整性（A3 提供，任何人可跑；不信任文件名与自报哈希）**
+
+```bash
+python -m challenge.distillation.candidate_handoff --verify-package <候选包目录>
+```
+
+它会拒绝：缺 `handoff_manifest.json`、schema 版本不符、`package_status` 不再是
+`PENDING_B2_INDEPENDENT_VALIDATION`、`gate_status` 不再是 `PENDING_A3_FP32_GATE`、
+`candidate_identity` 缺字段或摘要不是 64 位、签名文件集与实际文件不一致、**包内出现符号链接**、
+逐文件大小/SHA256 不符、candidate manifest 与 handoff 身份不符、权重文件 SHA 不符。
+
+**第二步：B3 侧身份与结论（我们的路径）**
+
+```powershell
+py -3.12 -m challenge.hil.cli run --repo . --adapter inprocess `
+  --weights <student_v0_fp32_candidate.pt> `
+  --weights-manifest <handoff_manifest.json> `
+  --frozen <冻结快照> --limit 100 --rounds 3 --out <输出目录>
+```
+
+`identity_from_weight_manifest` 接受两种 manifest 布局（顶层字段，或 A3 的嵌套
+`candidate_identity`，见提交 `3b09f1f`），会**重算权重 SHA256 并与 manifest 比对**；
+由于 `gate_status` 仍是 `PENDING_A3_FP32_GATE`，回放结论保持 **`DIAGNOSTIC_ONLY`**——
+只有 B2 签发 `A3_FP32_GATE_PASSED` 后才可能晋级为 `GATE_ELIGIBLE`。
