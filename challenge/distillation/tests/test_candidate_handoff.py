@@ -4,7 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from challenge.distillation.candidate_handoff import build_candidate_handoff
+from challenge.distillation.candidate_handoff import (
+    build_candidate_handoff,
+    verify_candidate_handoff,
+)
 
 
 def _write_json(path: Path, value: dict) -> None:
@@ -87,6 +90,51 @@ def test_build_candidate_handoff_is_hash_bound_and_pending(tmp_path: Path) -> No
     written = json.loads((output / "handoff_manifest.json").read_text())
     assert written["gate_status"] == "PENDING_A3_FP32_GATE"
 
+    verification = verify_candidate_handoff(output)
+    assert verification["valid"] is True
+    assert verification["files_checked"] == 9
+    assert verification["weights_sha256"] == manifest["candidate_identity"]["weights_sha256"]
+
+
+@pytest.mark.parametrize("mutation", ("payload", "extra", "identity", "status"))
+def test_verify_candidate_handoff_rejects_changed_or_unsigned_content(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    source = _source(tmp_path)
+    output = tmp_path / "handoff"
+    build_candidate_handoff(
+        source,
+        output,
+        config_snapshot=b"config_id: formal\n",
+        config_source={"git_sha": "a" * 40, "path": "config.yaml"},
+    )
+    if mutation == "payload":
+        (output / "training_config.yaml").write_text("changed", encoding="utf-8")
+    elif mutation == "extra":
+        (output / "unsigned.txt").write_text("extra", encoding="utf-8")
+    elif mutation == "identity":
+        candidate_path = output / "student_v0_fp32_candidate.json"
+        candidate = json.loads(candidate_path.read_text())
+        candidate["model_id"] = "different-student"
+        _write_json(candidate_path, candidate)
+        handoff_path = output / "handoff_manifest.json"
+        handoff = json.loads(handoff_path.read_text())
+        content = candidate_path.read_bytes()
+        handoff["files"]["student_v0_fp32_candidate.json"] = {
+            "sha256": hashlib.sha256(content).hexdigest(),
+            "size_bytes": len(content),
+        }
+        _write_json(handoff_path, handoff)
+    else:
+        handoff_path = output / "handoff_manifest.json"
+        handoff = json.loads(handoff_path.read_text())
+        handoff["gate_status"] = "A3_FP32_GATE_PASSED"
+        _write_json(handoff_path, handoff)
+
+    with pytest.raises(ValueError):
+        verify_candidate_handoff(output)
+
 
 def test_build_cumulative_candidate_handoff_preserves_signed_evidence(tmp_path: Path) -> None:
     source = _source(tmp_path)
@@ -113,6 +161,8 @@ def test_build_cumulative_candidate_handoff_preserves_signed_evidence(tmp_path: 
     )
     assert manifest["candidate_identity"]["b1_signature_sha256"] == "2" * 64
     assert manifest["candidate_identity"]["source_evidence_sha256"] == "3" * 64
+    verification = verify_candidate_handoff(tmp_path / "cumulative-handoff")
+    assert verification["valid"] is True
 
 
 @pytest.mark.parametrize(
