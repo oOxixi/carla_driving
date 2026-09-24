@@ -1,0 +1,74 @@
+{
+  "counts": {
+    "hard_negative_addition": 0,
+    "images": 374,
+    "quarantine": 0,
+    "source_runs": 499,
+    "source_samples": 499,
+    "strict_positive": 374,
+    "train_addition": 318,
+    "val_addition": 56
+  },
+  "cumulative_view_manifest_sha256": "477258abbda157ee69dc5f55f1ca20904828f35835c11eecfa53e2e2bba48dca",
+  "dataset_version": "b1_d3_wave2_safe_short_v1",
+  "execution_provenance_sha256": "ed57404dac68a08fc0d6fd7ff02bfc2e97db74490d0e6692a8cf36f6965c9dce",
+  "file_checks": {
+    "README.md": {
+      "sha256": "367881f8df5d0579b34f646f568f82036946f580ada08fe32be1d23f80438c75",
+      "size_bytes": 765
+    },
+    "cumulative_view_manifest.json": {
+      "sha256": "477258abbda157ee69dc5f55f1ca20904828f35835c11eecfa53e2e2bba48dca",
+      "size_bytes": 1265
+    },
+    "governance_report.json": {
+      "sha256": "948be448ace4d06f4d9e32e99c134cc08a9efc95ff16157c27963b3f27de63f3",
+      "size_bytes": 994
+    },
+    "hard_negative_addition.jsonl": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    "provenance_manifest.json": {
+      "sha256": "792001682e880ad0b1177ff60246a73a0d4f5a5ef65bfa515d141ac1a6586009",
+      "size_bytes": 1850
+    },
+    "rgb_mapping.json": {
+      "sha256": "d5c2b8dcc508b189bf58fed50b5b4d2c39c8a55dda70ab2912c09604cf43a07c",
+      "size_bytes": 97243
+    },
+    "split_manifest.json": {
+      "sha256": "eacd95e057cdca590bb13af60d1235fe8340f5f86ade30f1f45a1d19729d9760",
+      "size_bytes": 73397
+    },
+    "train_addition.jsonl": {
+      "sha256": "a547e379ad340503b51e1bad1cd2b1e80845d446236b34ff8507037ed7248c0f",
+      "size_bytes": 1707032
+    },
+    "val_addition.jsonl": {
+      "sha256": "59f524d2aa5fca399806182b156a3f7b58d07e8f2ec858e9a5cb41156ec1636f",
+      "size_bytes": 301786
+    }
+  },
+  "generated_at_utc": "2026-09-24T16:18:37.680193+00:00",
+  "image_set": {
+    "canonical_sha256": "15ec858016f5a88053cb7c1074c42ddd827c7468ae722ff311f063735a210e3e",
+    "count": 374
+  },
+  "release_manifest_sha256": "b8056484a3c5b7345d59536edbae5516a602d29811151fb3736ce25aff4fa57b",
+  "release_provenance_sha256": "792001682e880ad0b1177ff60246a73a0d4f5a5ef65bfa515d141ac1a6586009",
+  "release_status": "B1_RELEASE_CANDIDATE",
+  "report_type": "B1_RELEASE_INTEGRITY",
+  "schema_version": "1.0",
+  "status": "PASS",
+  "teacher": {
+    "artifact_fingerprint": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "dtype": "bfloat16",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "quantization": null,
+    "teacher_git_sha": "252984d37e49ddc11eaddcde2bfb26d0d6f2086b",
+    "teacher_profile": "b1-pinned-teacher-v4-wave2-scenario-sync-v1"
+  },
+  "teacher_manifest_sha256": "1b1105685ab0d7bf8a1cf1a102d1a41a58f8c129eb54ce2a5e9b13c66bdf7b32"
+}

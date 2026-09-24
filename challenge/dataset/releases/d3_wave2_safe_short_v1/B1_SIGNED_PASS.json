@@ -1,0 +1,20 @@
+{
+  "dataset_version": "b1_d3_wave2_safe_short_v1",
+  "gate": "B1_SIGNED_PASS",
+  "image_set_canonical_sha256": "15ec858016f5a88053cb7c1074c42ddd827c7468ae722ff311f063735a210e3e",
+  "integrity_report_sha256": "1207f71d5004b88e6fa8f7aa9f54a714112336bd17cd90c0dc3dfa23908acc25",
+  "release_lock_sha256": "a9da3515210b5734fafa13d37ff9011d6f6c78452f869e4453756bb4a5747160",
+  "release_manifest_sha256": "b8056484a3c5b7345d59536edbae5516a602d29811151fb3736ce25aff4fa57b",
+  "schema_version": "1.0",
+  "signed_at_utc": "2026-09-24T16:18:37.686795+00:00",
+  "status": "PASS",
+  "teacher": {
+    "artifact_fingerprint": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "dtype": "bfloat16",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "quantization": null,
+    "teacher_git_sha": "252984d37e49ddc11eaddcde2bfb26d0d6f2086b",
+    "teacher_profile": "b1-pinned-teacher-v4-wave2-scenario-sync-v1"
+  }
+}
