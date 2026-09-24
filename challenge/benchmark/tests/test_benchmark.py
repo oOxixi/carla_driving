@@ -53,3 +53,43 @@ def test_canonical_hash_is_stable_across_line_endings(
     crlf_path.write_bytes(b'{"sample": 1}\r\n{"sample": 2}\r\n')
 
     assert canonical_lf_sha256(lf_path) == canonical_lf_sha256(crlf_path)
+
+def test_benchmark_config_matches_a3_gate_contract() -> None:
+    """B2 policy must stay aligned with the A3 FP32 promotion contract."""
+    import yaml
+
+    from challenge.distillation.artifacts import (
+        CORE_METRICS,
+        FORMAL_GATE_TEACHER_V4,
+        SAFETY_METRICS,
+    )
+
+    config_path = (
+        ROOT / "challenge" / "benchmark" / "benchmark_config.yaml"
+    )
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+
+    assert config["purpose"] == "A3_FP32_GATE"
+
+    dataset = config["dataset"]
+    assert dataset["split"] == "validation"
+    assert dataset["independence_required"] is True
+    assert dataset["development_val_allowed"] is False
+    assert dataset["frozen_test_allowed"] is False
+
+    # Until B1 provides/finalizes the independent Validation package,
+    # B2 must fail closed rather than silently use Development Val.
+    assert config["status"] == "WAITING_FOR_INDEPENDENT_VALIDATION"
+    assert dataset["case_manifest_path"] is None
+
+    assert tuple(config["metrics"]["core"]) == CORE_METRICS
+    assert tuple(config["metrics"]["safety"]) == SAFETY_METRICS
+
+    assert config["gate"]["schema_validity_required"] == 1.0
+    assert config["gate"]["max_core_drop"] == 0.015
+    assert config["gate"]["max_safety_drop"] == 0.0
+
+    teacher = config["teacher"]
+
+    for field, expected in FORMAL_GATE_TEACHER_V4.items():
+        assert teacher[field] == expected
