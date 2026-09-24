@@ -94,3 +94,12 @@ gate_metric_policy:
     denominator: "include_reference_eligible_opportunities"
 
   success_only_filter_allowed: false
+
+formal_policy:
+  status: "WAITING_FOR_POLICY_COMPLETION"
+  policy_version: null
+
+  # Must be frozen by B2 before a formal policy manifest can be signed.
+  # Do not infer these values from Development Val or candidate results.
+  slice_minimum_denominators: null
+  multi_run_merge_rule: null

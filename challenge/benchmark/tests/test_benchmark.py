@@ -119,3 +119,12 @@ def test_benchmark_config_matches_a3_gate_contract() -> None:
     )
 
     assert metric_policy["success_only_filter_allowed"] is False
+
+    formal_policy = config["formal_policy"]
+
+    assert formal_policy["status"] == (
+        "WAITING_FOR_POLICY_COMPLETION"
+    )
+    assert formal_policy["policy_version"] is None
+    assert formal_policy["slice_minimum_denominators"] is None
+    assert formal_policy["multi_run_merge_rule"] is None
