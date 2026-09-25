@@ -25,6 +25,11 @@ from .policy_manifest import (
     write_policy_manifest,
 )
 
+from .case_manifest import (
+    CaseManifestError,
+    compute_case_set_digest,
+    extract_case_identities,
+)
 
 def write_formal_teacher_bundle(
     destination: str | Path,
@@ -36,6 +41,7 @@ def write_formal_teacher_bundle(
     case_manifest: Mapping[str, Any],
     evaluator_git_sha: str,
     evidence_bindings: Mapping[str, str] | None = None,
+    template_ids: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """
     Publish a Teacher package bound to actual benchmark and policy manifests.
@@ -68,6 +74,45 @@ def write_formal_teacher_bundle(
         policy_manifest = build_policy_manifest(
             benchmark_config,
         )
+        try:
+            actual_case_identities = extract_case_identities(
+                [
+                    dict(case)
+                    for case in case_rows
+                ],
+                template_ids=template_ids,
+            )
+        except CaseManifestError as error:
+            raise EvaluationPackageError(
+                f"cannot bind actual case set: {error}"
+            ) from error
+
+        actual_sample_count = len(
+            actual_case_identities
+        )
+        actual_case_set_digest = (
+            compute_case_set_digest(
+                actual_case_identities
+            )
+        )
+
+        if (
+            actual_sample_count
+            != benchmark_manifest["sample_count"]
+        ):
+            raise EvaluationPackageError(
+                "benchmark manifest sample_count "
+                "does not match actual cases"
+            )
+
+        if (
+            actual_case_set_digest
+            != benchmark_manifest["case_set_digest"]
+        ):
+            raise EvaluationPackageError(
+                "benchmark manifest case_set_digest "
+                "does not match actual cases"
+            )
 
         benchmark_sha256 = benchmark_manifest_sha256(
             benchmark_manifest

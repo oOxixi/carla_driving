@@ -10,6 +10,11 @@ import yaml
 
 pytest.importorskip("torch")
 
+from challenge.benchmark.case_manifest import (
+    compute_case_set_digest,
+    extract_case_identities,
+)
+
 from challenge.benchmark.evaluation_package import (
     EvaluationPackageError,
 )
@@ -63,22 +68,152 @@ def _complete_config() -> dict:
 
     return config
 
+def _b1_cases(
+    count: int = 5,
+) -> list[dict]:
+    mock_records = copy.deepcopy(
+        build_mock_records(count)
+    )
+
+    cases: list[dict] = []
+
+    for index, record in enumerate(
+        mock_records
+    ):
+        request = copy.deepcopy(
+            record["input"]
+        )
+        teacher_plan = copy.deepcopy(
+            record["teacher"]["maneuver_plan"]
+        )
+
+        run_id = f"formal-run-{index:05d}"
+        command_id = request["command_id"]
+        request_id = request["request_id"]
+        frame_id = request[
+            "scene_summary"
+        ]["frame_id"]
+
+        event_identity = {
+            "run_id": run_id,
+            "command_id": command_id,
+            "request_id": request_id,
+            "frame_id": frame_id,
+        }
+
+        canonical_identity = json.dumps(
+            event_identity,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+
+        supervision_event_key = (
+            hashlib.sha256(
+                canonical_identity
+            ).hexdigest()
+        )
+
+        sample_id = (
+            "td_"
+            + supervision_event_key[:24]
+        )
+
+        metadata = copy.deepcopy(
+            record["metadata"]
+        )
+        metadata.update(
+            {
+                "scenario_id": (
+                    f"formal-scenario-{index:05d}"
+                ),
+                "template_id": (
+                    f"formal-template-{index:05d}"
+                ),
+                "group_key": (
+                    f"formal-group-{index:05d}"
+                ),
+                "run_id": run_id,
+                "command_id": command_id,
+                "request_id": request_id,
+                "frame_id": frame_id,
+            }
+        )
+
+        rgb_sha256 = hashlib.sha256(
+            f"formal-rgb-{index:05d}".encode(
+                "utf-8"
+            )
+        ).hexdigest()
+
+        cases.append(
+            {
+                "sample_id": sample_id,
+                "metadata": metadata,
+                "model_request": request,
+                "teacher_plan": teacher_plan,
+                "visual_input": {
+                    "rgb_sha256": rgb_sha256,
+                },
+            }
+        )
+
+    return cases
 
 def _case_manifest(
+    cases: list[dict],
     *,
-    sample_count: int = 5,
+    sample_count: int | None = None,
 ) -> dict:
     config = _repository_config()
 
+    identities = extract_case_identities(
+        cases
+    )
+
+    actual_count = len(cases)
+    declared_count = (
+        actual_count
+        if sample_count is None
+        else sample_count
+    )
+
+    risk_counts = {
+        "normal": 0,
+        "complex": 0,
+        "safety_critical": 0,
+    }
+
+    for case in cases:
+        sample_class = case[
+            "metadata"
+        ]["sample_class"]
+        risk_counts[sample_class] += 1
+
+    # Keep the deliberately mismatched sample-count
+    # fixture structurally valid so the formal bundle,
+    # rather than the manifest parser, catches it.
+    risk_counts["normal"] += (
+        declared_count - actual_count
+    )
+
     return {
-        "benchmark_id": config["benchmark_id"],
+        "benchmark_id": config[
+            "benchmark_id"
+        ],
         "benchmark_version": "1.0",
-        "benchmark_kind": "independent_validation",
-        "dataset_version": (
-            config["dataset"]["dataset_version"]
+        "benchmark_kind": (
+            "independent_validation"
         ),
-        "sample_count": sample_count,
-        "case_set_digest": "a" * 64,
+        "dataset_version": config[
+            "dataset"
+        ]["dataset_version"],
+        "sample_count": declared_count,
+        "case_set_digest": (
+            compute_case_set_digest(
+                identities
+            )
+        ),
         "rgb_set_sha256": "b" * 64,
         "split_rule": (
             "template_scenario_group_disjoint"
@@ -87,15 +222,13 @@ def _case_manifest(
             "no_group_key_cross_split_overlap"
         ),
         "cohort_counts": {
-            "seen": sample_count,
+            "seen": declared_count,
             "variant": 0,
             "unseen": 0,
         },
-        "risk_category_denominators": {
-            "normal": sample_count - 1,
-            "complex": 0,
-            "safety_critical": 1,
-        },
+        "risk_category_denominators": (
+            risk_counts
+        ),
         "frozen_at_utc": (
             "2026-09-24T00:00:00Z"
         ),
@@ -110,7 +243,7 @@ def _records(
             "sample_id": case["sample_id"],
             "status": "SUCCESS",
             "prediction": copy.deepcopy(
-                case["teacher"]["maneuver_plan"]
+                case["teacher_plan"]
             ),
             "error": None,
         }
@@ -121,9 +254,7 @@ def _records(
 def test_formal_bundle_binds_real_manifest_hashes(
     tmp_path,
 ) -> None:
-    cases = copy.deepcopy(
-        build_mock_records(5)
-    )
+    cases = _b1_cases(5)
 
     destination = (
         tmp_path
@@ -137,7 +268,7 @@ def test_formal_bundle_binds_real_manifest_hashes(
         _records(cases),
         evaluation_id="formal-test",
         benchmark_config=_complete_config(),
-        case_manifest=_case_manifest(),
+        case_manifest=_case_manifest(cases),
         evaluator_git_sha="d" * 40,
     )
 
@@ -190,17 +321,25 @@ def test_formal_bundle_binds_real_manifest_hashes(
         "policy_manifest_sha256"
     ] == policy_sha256
 
-    assert evaluation["case_set_digest"] == (
-        "a" * 64
+    actual_case_set_digest = (
+    compute_case_set_digest(
+        extract_case_identities(cases)
     )
+)
+
+    assert evaluation[
+        "case_set_digest"
+    ] == actual_case_set_digest
+
+    assert result[
+        "case_set_digest"
+    ] == actual_case_set_digest
 
 
 def test_current_repository_state_cannot_publish_formal_bundle(
     tmp_path,
 ) -> None:
-    cases = copy.deepcopy(
-        build_mock_records(5)
-    )
+    cases = _b1_cases(5)
 
     destination = (
         tmp_path
@@ -218,7 +357,7 @@ def test_current_repository_state_cannot_publish_formal_bundle(
             _records(cases),
             evaluation_id="blocked",
             benchmark_config=_repository_config(),
-            case_manifest=_case_manifest(),
+            case_manifest=_case_manifest(cases),
             evaluator_git_sha="d" * 40,
         )
 
@@ -228,9 +367,7 @@ def test_current_repository_state_cannot_publish_formal_bundle(
 def test_manifest_sample_count_must_match_actual_evaluation(
     tmp_path,
 ) -> None:
-    cases = copy.deepcopy(
-        build_mock_records(5)
-    )
+    cases = _b1_cases(5)
 
     destination = (
         tmp_path
@@ -249,12 +386,55 @@ def test_manifest_sample_count_must_match_actual_evaluation(
             evaluation_id="count-mismatch",
             benchmark_config=_complete_config(),
             case_manifest=_case_manifest(
+                cases,
                 sample_count=6
             ),
             evaluator_git_sha="d" * 40,
         )
 
     assert not destination.exists()
+    assert not destination.with_name(
+        destination.name + ".formal.tmp"
+    ).exists()
+
+def test_actual_case_identity_tamper_fails_closed(
+    tmp_path,
+) -> None:
+    original_cases = _b1_cases(5)
+
+    case_manifest = _case_manifest(
+        original_cases
+    )
+
+    tampered_cases = copy.deepcopy(
+        original_cases
+    )
+    tampered_cases[0]["metadata"][
+        "scenario_id"
+    ] = "tampered-scenario"
+
+    destination = (
+        tmp_path
+        / "b2_evaluation"
+        / "tampered"
+    )
+
+    with pytest.raises(
+        EvaluationPackageError,
+        match="case_set_digest.*actual cases",
+    ):
+        write_formal_teacher_bundle(
+            destination,
+            tampered_cases,
+            _records(tampered_cases),
+            evaluation_id="tampered",
+            benchmark_config=_complete_config(),
+            case_manifest=case_manifest,
+            evaluator_git_sha="d" * 40,
+        )
+
+    assert not destination.exists()
+
     assert not destination.with_name(
         destination.name + ".formal.tmp"
     ).exists()
