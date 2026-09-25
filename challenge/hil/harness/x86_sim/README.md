@@ -45,7 +45,7 @@ export HB_UCP_SIM_PLATFORM_TYPE=nash-p     # 否则加载 nash-p 产物会报 ma
 | `run_calibrated_infer.sh` | 对校准产物跑 CLI `infer` + dump 对照 |
 | `collect_evidence.sh` | 汇总 `logs/` 为文本证据（剥离 ANSI、按需裁剪）到 `evidence/` |
 | `cal_config_d3w2.yaml` | 用 **B1 签名 D3 Wave2 train 64 例**校准的 PTQ 配置（2026-09-25） |
-| `batch_verify.sh` | 对一个 dump set 逐例跑 `hb_verifier`（浮点 ONNX ↔ int8 `.bc`） |
+| `batch_verify.sh` | 对一个 dump set 逐例跑 `hb_verifier`（浮点 ONNX ↔ int8 `.bc`）；第 4 个参数是并行度（容器 20 核时用 8 合适） |
 | `summarise_verify.py` | 把批量 `hb_verifier` 日志汇总成逐头 min/p05/p50/mean/max 分布 |
 | `run_d3w2_verify.sh` | 一键：D3 Wave2 批量一致性 + 分布汇总 |
 | `run_d3w2_cli_check.sh` | D3 Wave2 产物在 CLI（X86 仿真）路径上的单例互证 |
@@ -68,3 +68,13 @@ bash collect_evidence.sh
   `target_pointer_logits`(9→16)、`target_lane_logits`(6→8) 会算出假低相似度；
 - 不要用 `hb_compile --fast-perf` 做接口对照——它会按 NV12 重建输入（`rgb_y`/`rgb_uv`）；
 - `hb_verifier` 当前只支持 `onnx↔bc`，`onnx↔hbm` 会直接报不支持。
+
+## 批量规模参考（2026-09-25 实测）
+
+| 场景 | 命令要点 | 规模与耗时 |
+|---|---|---|
+| D3 Wave2 val | `batch_verify.sh /work/dumps_d3w2 <bc> <logdir> 1` | 56 例 ≈ 4 分钟（单进程） |
+| D2 v1.1 val 全量 | `batch_verify.sh /work/dumps_d2 <bc> <logdir> 8` | **539 例 ≈ 21 分钟**（8 进程；容器 20 核，load 会到 ~39，说明已饱和） |
+
+长稳对照提示：`cli soak --duration-minutes 1` 做同刻 A/B，比跨会话比较绝对吞吐可靠——
+2026-09-21 与 2026-09-25 两次 30 分钟长稳的吞吐差 5.5×，1 分钟对照证明来自主机状态。
