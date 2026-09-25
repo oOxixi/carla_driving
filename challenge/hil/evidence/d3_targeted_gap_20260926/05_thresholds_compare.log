@@ -1,0 +1,5 @@
+build                        layers values distinct       min     max   ==1.0
+skip-calibration                 59     40        2    0.7311       1   38/40
+smoke30-train                    60     40       21    0.3466      50    4/40
+d3w2-64train                     60     40       21    0.3296      50    4/40
+gap-128train                     60     40       21    0.4618      50    4/40

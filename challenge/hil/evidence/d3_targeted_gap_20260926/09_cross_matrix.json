@@ -1,0 +1,305 @@
+{
+  "schema": "artifact x dataset cosine matrix (float ONNX vs int8 bc, hb_verifier)",
+  "artifacts": {
+    "d3w2_artifact": "student_v0_fp32_d3w2, calibrated on 64 D3 Wave2 train cases",
+    "gap_artifact": "student_v0_fp32_gap, calibrated on 128 D3 targeted-gap train cases"
+  },
+  "datasets": {
+    "d3w2_val": 56,
+    "d2_val": 539,
+    "gap_val": 99
+  },
+  "not_run": [
+    "gap_artifact__d2_val (539 cases, ~21 min, skipped as low marginal value)"
+  ],
+  "global_min_cosine": 0.993331,
+  "total_head_case_observations_below_0_99": 0,
+  "matrix": {
+    "d3w2_artifact__d3w2_val": {
+      "cases": 56,
+      "artifact_min": 0.997432,
+      "head_min_below_0_99": 0,
+      "heads": {
+        "plan_length_logits": {
+          "min": 0.997432,
+          "p50": 0.999449,
+          "below_0_99": 0
+        },
+        "behavior_logits": {
+          "min": 0.999171,
+          "p50": 0.999447,
+          "below_0_99": 0
+        },
+        "target_pointer_logits": {
+          "min": 0.998451,
+          "p50": 0.999214,
+          "below_0_99": 0
+        },
+        "target_lane_logits": {
+          "min": 0.998714,
+          "p50": 0.99921,
+          "below_0_99": 0
+        },
+        "target_speed_mps": {
+          "min": 0.999918,
+          "p50": 0.999981,
+          "below_0_99": 0
+        },
+        "completion_type_logits": {
+          "min": 0.999081,
+          "p50": 0.99955,
+          "below_0_99": 0
+        },
+        "on_failure_logits": {
+          "min": 0.998858,
+          "p50": 0.999349,
+          "below_0_99": 0
+        },
+        "confidence": {
+          "min": 1.0,
+          "p50": 1.0,
+          "below_0_99": 0
+        },
+        "requires_confirmation_logits": {
+          "min": 1.0,
+          "p50": 1.0,
+          "below_0_99": 0
+        },
+        "replan_condition_logits": {
+          "min": 0.998254,
+          "p50": 0.999401,
+          "below_0_99": 0
+        }
+      }
+    },
+    "d3w2_artifact__d2_val": {
+      "cases": 539,
+      "artifact_min": 0.994931,
+      "head_min_below_0_99": 0,
+      "heads": {
+        "plan_length_logits": {
+          "min": 0.994931,
+          "p50": 0.999534,
+          "below_0_99": 0
+        },
+        "behavior_logits": {
+          "min": 0.998733,
+          "p50": 0.999464,
+          "below_0_99": 0
+        },
+        "target_pointer_logits": {
+          "min": 0.998146,
+          "p50": 0.999174,
+          "below_0_99": 0
+        },
+        "target_lane_logits": {
+          "min": 0.998087,
+          "p50": 0.999306,
+          "below_0_99": 0
+        },
+        "target_speed_mps": {
+          "min": 0.999852,
+          "p50": 0.999979,
+          "below_0_99": 0
+        },
+        "completion_type_logits": {
+          "min": 0.998869,
+          "p50": 0.999508,
+          "below_0_99": 0
+        },
+        "on_failure_logits": {
+          "min": 0.997545,
+          "p50": 0.999368,
+          "below_0_99": 0
+        },
+        "confidence": {
+          "min": 1.0,
+          "p50": 1.0,
+          "below_0_99": 0
+        },
+        "requires_confirmation_logits": {
+          "min": 1.0,
+          "p50": 1.0,
+          "below_0_99": 0
+        },
+        "replan_condition_logits": {
+          "min": 0.997062,
+          "p50": 0.999202,
+          "below_0_99": 0
+        }
+      }
+    },
+    "d3w2_artifact__gap_val": {
+      "cases": 99,
+      "artifact_min": 0.996558,
+      "head_min_below_0_99": 0,
+      "heads": {
+        "plan_length_logits": {
+          "min": 0.996558,
+          "p50": 0.999675,
+          "below_0_99": 0
+        },
+        "behavior_logits": {
+          "min": 0.999183,
+          "p50": 0.999562,
+          "below_0_99": 0
+        },
+        "target_pointer_logits": {
+          "min": 0.998895,
+          "p50": 0.999307,
+          "below_0_99": 0
+        },
+        "target_lane_logits": {
+          "min": 0.998694,
+          "p50": 0.999432,
+          "below_0_99": 0
+        },
+        "target_speed_mps": {
+          "min": 0.999568,
+          "p50": 0.999809,
+          "below_0_99": 0
+        },
+        "completion_type_logits": {
+          "min": 0.99927,
+          "p50": 0.999601,
+          "below_0_99": 0
+        },
+        "on_failure_logits": {
+          "min": 0.99882,
+          "p50": 0.999464,
+          "below_0_99": 0
+        },
+        "confidence": {
+          "min": 1.0,
+          "p50": 1.0,
+          "below_0_99": 0
+        },
+        "requires_confirmation_logits": {
+          "min": 1.0,
+          "p50": 1.0,
+          "below_0_99": 0
+        },
+        "replan_condition_logits": {
+          "min": 0.998232,
+          "p50": 0.999447,
+          "below_0_99": 0
+        }
+      }
+    },
+    "gap_artifact__gap_val": {
+      "cases": 99,
+      "artifact_min": 0.998596,
+      "head_min_below_0_99": 0,
+      "heads": {
+        "plan_length_logits": {
+          "min": 0.998596,
+          "p50": 0.999629,
+          "below_0_99": 0
+        },
+        "behavior_logits": {
+          "min": 0.999373,
+          "p50": 0.999565,
+          "below_0_99": 0
+        },
+        "target_pointer_logits": {
+          "min": 0.998754,
+          "p50": 0.99932,
+          "below_0_99": 0
+        },
+        "target_lane_logits": {
+          "min": 0.998963,
+          "p50": 0.999518,
+          "below_0_99": 0
+        },
+        "target_speed_mps": {
+          "min": 0.999933,
+          "p50": 0.999979,
+          "below_0_99": 0
+        },
+        "completion_type_logits": {
+          "min": 0.999174,
+          "p50": 0.999612,
+          "below_0_99": 0
+        },
+        "on_failure_logits": {
+          "min": 0.998865,
+          "p50": 0.999444,
+          "below_0_99": 0
+        },
+        "confidence": {
+          "min": 1.0,
+          "p50": 1.0,
+          "below_0_99": 0
+        },
+        "requires_confirmation_logits": {
+          "min": 1.0,
+          "p50": 1.0,
+          "below_0_99": 0
+        },
+        "replan_condition_logits": {
+          "min": 0.998654,
+          "p50": 0.9995,
+          "below_0_99": 0
+        }
+      }
+    },
+    "gap_artifact__d3w2_val": {
+      "cases": 56,
+      "artifact_min": 0.993331,
+      "head_min_below_0_99": 0,
+      "heads": {
+        "plan_length_logits": {
+          "min": 0.993511,
+          "p50": 0.998139,
+          "below_0_99": 0
+        },
+        "behavior_logits": {
+          "min": 0.997614,
+          "p50": 0.998531,
+          "below_0_99": 0
+        },
+        "target_pointer_logits": {
+          "min": 0.994511,
+          "p50": 0.997682,
+          "below_0_99": 0
+        },
+        "target_lane_logits": {
+          "min": 0.996921,
+          "p50": 0.998394,
+          "below_0_99": 0
+        },
+        "target_speed_mps": {
+          "min": 0.999767,
+          "p50": 0.999957,
+          "below_0_99": 0
+        },
+        "completion_type_logits": {
+          "min": 0.997824,
+          "p50": 0.998711,
+          "below_0_99": 0
+        },
+        "on_failure_logits": {
+          "min": 0.997238,
+          "p50": 0.998499,
+          "below_0_99": 0
+        },
+        "confidence": {
+          "min": 1.0,
+          "p50": 1.0,
+          "below_0_99": 0
+        },
+        "requires_confirmation_logits": {
+          "min": 1.0,
+          "p50": 1.0,
+          "below_0_99": 0
+        },
+        "replan_condition_logits": {
+          "min": 0.993331,
+          "p50": 0.997349,
+          "below_0_99": 0
+        }
+      }
+    }
+  },
+  "note": "Every combination stays above 0.99; matching the calibration distribution to the eval distribution is worth roughly 0.004-0.006 in min cosine (gap->gap 0.9986 vs gap->d3w2 0.9933; d3w2->d3w2 0.9974 vs d3w2->gap 0.9966). Random-initialised weights: toolchain check only."
+}

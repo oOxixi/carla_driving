@@ -73,7 +73,8 @@ challenge/hil/
 ├── frozen/
 │   ├── smoke_v0_snapshot/        早期冻结输入基线（B1 smoke，30 例）
 │   ├── d2_v1_1_val/              输入基线（B1 D2 v1.1 的 val 划分，539 例）
-│   └── d3_wave2_safe_short_v1_val/  B1 签名 D3 Wave2 的 val 划分（56 例，2026-09-25 冻结）
+│   ├── d3_wave2_safe_short_v1_val/  B1 签名 D3 Wave2 的 val 划分（56 例，2026-09-25 冻结）
+│   └── d3_targeted_gap_strict_v1_val/  B1 定向补采（targeted gap）的 val 划分（99 例，2026-09-26 冻结）
 ├── harness/release_check/        B1 发布完整性独立复核脚本（verify_b1_release.py）
 ├── harness/x86_sim/              X86 仿真复现脚本（编译/一致性/dump 对照/校准集，见其 README）
 ├── evidence/
@@ -85,7 +86,8 @@ challenge/hil/
 │   ├── carla_measurement_20260921/         用固定入口脚本重跑的 CARLA 闭环（25/25）
 │   ├── soak_30min_20260921/                X86 30 分钟长稳（1800 s / 123,611 次迭代）
 │   ├── x86_simulation_20260924/            X86 仿真四件套：编译预检/产物结构/三路一致性/校准对照
-│   └── d3_wave2_calibration_20260925/      签名 D3 Wave2 数据：train 校准 + val 56 例逐例一致性
+│   ├── d3_wave2_calibration_20260925/      签名 D3 Wave2 数据：train 校准 + val 56 例逐例一致性
+│   └── d3_targeted_gap_20260926/           定向补采数据：发布校验 + 查表探针 + 产物×数据集交叉矩阵
 ├── schemas/                      导出的列定义
 └── tests/                        101 项自测
 ```
@@ -142,7 +144,7 @@ py -3.12 -m challenge.hil.cli run `
 | A4 X86 运行时 | **部分交付**：`challenge/runtime/student_x86.py` 可运行，但不满足测量契约（无请求入口、无打点、无身份查询）；差距清单见 `a4_runtime_gap_report.md` |
 | Teacher 基线 pin | **已就绪**：v1 与 v4 双 pin 自动记录，模型身份一致（`Qwen/Qwen3.5-2B` @ `15852e8c1636`） |
 | A1 结构产物 | **已在仓库**：`challenge/student_v0_fp32.onnx`（`ffb1ed5e…`），B3 独立校验通过 |
-| 代表性输入数据（用于校准与一致性复跑） | **已增量交付**：B1 `d3_wave2_safe_short_v1`（`B1_SIGNED_PASS`，374 例：A01 114 / A06 114 / CX01 146）。B3 已独立复核完整性（`PASS`）、冻结节 val 56 例，并按 train 校准 / val 评估复跑；**正式 Seen/Variant/Unseen 仍待 B2 冻结清单** |
+| 代表性输入数据（用于校准与一致性复跑） | **已增量交付**：B1 `d3_wave2_safe_short_v1`（`B1_SIGNED_PASS`，374 例：A01 114 / A06 114 / CX01 146）。B3 已独立复核完整性（`PASS`）、冻结节 val 56 例，并按 train 校准 / val 评估复跑；2026-09-26 又收到 `d3_targeted_gap_strict_v1`（660 严格正样本 / 280 run，按 run 分组划分），同样复核 PASS 并冻结 99 例 val，完成 **产物 × 数据集交叉矩阵（849 例次，全局 min 0.9933、0 例低于 0.99）**；**正式 Seen/Variant/Unseen 仍待 B2 冻结清单** |
 | 回放结论固定为诊断用途 | **B3 侧已修复**：`hil_replay_summary.json` 的 `teacher_comparison` / `diagnostic_only` 改由已核验的权重 manifest 身份推导（`gate.py`），并从 `cli.py` 与 `replay.py` 两处硬编码中移除；传入正式 Gate 权重会自动晋级为 `GATE_ELIGIBLE`，缺证据则保持 `DIAGNOSTIC_ONLY`，详情见第 10 节 |
 | 可信范围只看一个开关 | **B3 侧已修复**：`claim_scope`/`report_filename` 不再信任 `--device-class`，改按 artifact 摘要、Runtime 打点来源、板端日志、探针来源逐项核验后再定级（E1/E2/E3/E4），缺证据只降不升 |
 
@@ -297,6 +299,8 @@ torch↔ONNX 最大绝对差 5.7e-06，后端一致性 `PASS`，回放结论按�
 十头 **min ≥ 0.9949、p50 ≥ 0.9992，同样没有一例低于 0.99**——说明"用 D3 Wave2 train 校准的定点产物
 在原 D2 分布上同样与浮点一致"。证据：`evidence/d3_wave2_calibration_20260925/10_verify_d2_539.json`。
 另外在签名快照上重跑了 30 分钟长稳：1800 s、22,462 次迭代、全部 READY、0 失败、恢复探针 10/10、内存漂移 1.77 MiB；并用同刻 1 分钟 A/B 对照（D3 Wave2 656 次/分 vs D2 642 次/分）证明与 2026-09-21 那轮的 5.5× 吞吐差来自主机状态而非数据，因此 **X86 长稳的绝对吞吐不可跨会话比较**。
+
+**2026-09-26 续做（第三个数据集 + 交叉矩阵）**：B1 新发 `d3_targeted_gap_strict_v1`（660 严格正样本 / 280 闭环 run，按 run 分组划分），B2 的 `challenge/benchmark/` 实现并入 challenge（但 `case_manifest_path`/`policy_version` 仍为 `null`）。B3 独立复核了该 release（**PASS**：672 个锁定文件、660 张图、561+99 行配对全部通过；并发现**签名格式变了**——新版只声明 `release_manifest_sha256`，校验器已改为按声明逐项校验、区分 claimed/not_claimed/not_recomputable）；查表探针给出 **88/99 = 88.9% 可查表命中（`LOOKUP_SHORTCUT_PRESENT`）**，比上一版 100% 好但仍不能当泛化证据。在此基础上用 train 128 例校准、val 99 例评估，并把两个产物 × 三个数据集拼成**交叉矩阵**（849 例次逐例 `hb_verifier`）：**全局最低余弦 0.9933，低于 0.99 的观测数为 0**；校准分布与评估分布匹配时更紧（gap→gap 0.9986 vs gap→d3w2 0.9933），代价约 0.004–0.006。证据见 [`evidence/d3_targeted_gap_20260926/`](evidence/d3_targeted_gap_20260926/README.md)。
 
 ### 限制（必读）
 

@@ -82,30 +82,59 @@ def check_lock(release: Path, *, allow_lf_normalise: bool) -> dict:
 
 
 def check_signed_pass(release: Path, *, allow_lf_normalise: bool) -> dict:
+    """Verify the digests the signed pass actually claims.
+
+    B1 has shipped two shapes so far: the D3 Wave2 pass claims
+    release_lock_sha256 / release_manifest_sha256 / integrity_report_sha256
+    (plus a teacher block), while the targeted-gap pass only claims
+    release_manifest_sha256. A key that is not claimed is reported as
+    not_claimed rather than treated as a failure -- but every claimed digest
+    must match, and any claimed digest we cannot recompute is surfaced.
+    """
     signed = read_json(release / "B1_SIGNED_PASS.json")
     pairs = {
-        "release_lock_sha256": release / "b1_release_lock.sha256",
-        "release_manifest_sha256": release / "release_manifest.json",
-        "integrity_report_sha256": release / "b1_release_integrity_report.json",
+        "release_lock_sha256": "b1_release_lock.sha256",
+        "release_manifest_sha256": "release_manifest.json",
+        "integrity_report_sha256": "b1_release_integrity_report.json",
     }
-    results, failures = {}, []
-    for key, path in pairs.items():
+    # Digests B1 may claim that this checker cannot recompute on its own.
+    not_recomputable_keys = ("image_set_canonical_sha256",)
+    results, failures, not_claimed, not_recomputable = {}, [], [], []
+    for key, relative in pairs.items():
         expected = signed.get(key)
+        if expected is None:
+            not_claimed.append(key)
+            continue
+        path = release / relative
         if not path.is_file():
             results[key] = {"expected": expected, "actual": None, "match": False,
-                            "matched_via": "missing"}
-            failures.append({"digest": key, "expected": expected, "actual": None})
+                            "matched_via": "missing_file", "file": relative}
+            failures.append({"digest": key, "reason": "signed_file_missing",
+                             "expected": expected, "actual": None, "file": relative})
             continue
-        match, actual, how = sha256_matches(path, str(expected or ""),
+        match, actual, how = sha256_matches(path, str(expected),
                                             allow_lf_normalise=allow_lf_normalise)
-        results[key] = {"expected": expected, "actual": actual, "match": match, "matched_via": how}
+        results[key] = {"expected": expected, "actual": actual, "match": match,
+                        "matched_via": how, "file": relative}
         if not match:
-            failures.append({"digest": key, "expected": expected, "actual": actual})
+            failures.append({"digest": key, "reason": "sha256_mismatch",
+                             "expected": expected, "actual": actual, "file": relative})
+    for key in not_recomputable_keys:
+        if signed.get(key):
+            not_recomputable.append(key)
+    for key in signed:
+        if (key.endswith("_sha256") and key not in pairs
+                and key not in not_recomputable_keys):
+            not_recomputable.append(key)
     return {"gate": signed.get("gate"), "status": signed.get("status"),
             "dataset_version": signed.get("dataset_version"),
             "signed_at_utc": signed.get("signed_at_utc"),
             "teacher": signed.get("teacher"),
-            "image_set_canonical_sha256": signed.get("image_set_canonical_sha256"),
+            "counts": {k: signed[k] for k in ("strict_positive_runs", "strict_positive_samples")
+                       if k in signed},
+            "claimed_digests": sorted(results),
+            "not_claimed_digests": not_claimed,
+            "not_recomputable_digests": sorted(set(not_recomputable)),
             "results": results, "failures": failures}
 
 
@@ -211,11 +240,20 @@ def main() -> int:
     report["failure_count"] = len(failures)
     report["status"] = "PASS" if not failures else "FAIL"
 
+    pass_info = report["signed_pass"]
     print(f"release      : {release.name}")
-    print(f"signed gate  : {report['signed_pass']['gate']} / "
-          f"status {report['signed_pass']['status']} at {report['signed_pass']['signed_at_utc']}")
-    print(f"teacher      : {report['signed_pass']['teacher']['model_id']} @ "
-          f"{report['signed_pass']['teacher']['model_revision'][:12]}")
+    gate = pass_info.get("gate") or "(not claimed)"
+    print(f"signed gate  : {gate} / status {pass_info.get('status')} "
+          f"at {pass_info.get('signed_at_utc') or '(not stamped)'}")
+    teacher = pass_info.get("teacher")
+    if isinstance(teacher, dict):
+        print(f"teacher      : {teacher.get('model_id')} @ "
+              f"{str(teacher.get('model_revision'))[:12]}")
+    if pass_info.get("counts"):
+        print(f"declared     : {pass_info['counts']}")
+    print(f"digests      : claimed={pass_info['claimed_digests']} "
+          f"not_claimed={pass_info['not_claimed_digests']} "
+          f"not_recomputable={pass_info['not_recomputable_digests']}")
     print(f"locked files : {report['lock']['files_checked']} checked; "
           f"{report['lock']['matched_after_lf_normalisation']} matched only after "
           f"CRLF->LF normalisation (eol mode: {report['eol_mode']})")
