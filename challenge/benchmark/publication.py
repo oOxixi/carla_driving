@@ -9,11 +9,25 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from .accuracy_report import (
+    AccuracyReportError,
+    verify_accuracy_report,
+    write_accuracy_report,
+)
+from .comparison_artifact import (
+    ComparisonArtifactError,
+    verify_model_comparison_csv,
+    write_model_comparison_csv,
+)
 from .gate_decision_package import (
     GateDecisionPackageError,
     verify_gate_decision_package,
 )
 from .policy_manifest import policy_manifest_sha256
+from .teacher_baseline import (
+    TeacherBaselineError,
+    write_teacher_baseline,
+)
 
 class PublicationError(ValueError):
     """Raised when a B2 publication cannot be published safely."""
@@ -43,6 +57,9 @@ _TOP_LEVEL = frozenset(
     {
         "raw_results",
         "gate_decisions",
+        "teacher_baseline.json",
+        "model_comparison.csv",
+        "accuracy_report.md",
     }
 )
 
@@ -121,6 +138,61 @@ def publish_b2_publication(
         shutil.copytree(
             gate,
             staging / "gate_decisions",
+        )
+
+        teacher_evaluation_path = (
+            staging
+            / "raw_results"
+            / "teacher"
+            / "teacher_evaluation.json"
+        )
+
+        student_evaluation_path = (
+            staging
+            / "raw_results"
+            / "student"
+            / "student_evaluation.json"
+        )
+
+        teacher_evaluation = _read_json_object(
+            teacher_evaluation_path,
+            label="Teacher evaluation",
+        )
+
+        student_evaluation = _read_json_object(
+            student_evaluation_path,
+            label="Student evaluation",
+        )
+
+        gate_decision = _read_json_object(
+            staging
+            / "gate_decisions"
+            / "gate_decision.json",
+            label="Gate decision",
+        )
+
+        teacher_evaluation_sha = _sha256(
+            teacher_evaluation_path
+        )
+
+        write_teacher_baseline(
+            staging / "teacher_baseline.json",
+            teacher_evaluation_path=teacher_evaluation_path,
+            teacher_evaluation_sha256=teacher_evaluation_sha,
+        )
+
+        write_model_comparison_csv(
+            staging / "model_comparison.csv",
+            teacher_evaluation=teacher_evaluation,
+            student_evaluation=student_evaluation,
+        )
+
+        write_accuracy_report(
+            staging / "accuracy_report.md",
+            gate_decision=gate_decision,
+            model_comparison_path=(
+                staging / "model_comparison.csv"
+            ),
         )
 
         verified = verify_b2_publication(staging)
@@ -202,6 +274,11 @@ def verify_b2_publication(
         label="Student evaluation",
     )
 
+    gate_decision = _read_json_object(
+        gate / "gate_decision.json",
+        label="Gate decision",
+    )
+
     _require_same_identity(
         teacher_evaluation,
         student_evaluation,
@@ -271,6 +348,59 @@ def verify_b2_publication(
     student_evaluation_sha = _canonical_mapping_sha256(
         student_evaluation
     )
+    teacher_baseline = root / "teacher_baseline.json"
+
+    try:
+        teacher_baseline_bytes = teacher_baseline.read_bytes()
+        teacher_evaluation_bytes = (
+            teacher / "teacher_evaluation.json"
+        ).read_bytes()
+    except OSError as error:
+        raise PublicationError(
+            "cannot read Teacher baseline evidence"
+        ) from error
+
+    if teacher_baseline_bytes != teacher_evaluation_bytes:
+        raise PublicationError(
+            "Teacher baseline does not match "
+            "published Teacher evaluation"
+        )
+
+    teacher_baseline_sha = _sha256(
+        teacher_baseline
+    )
+
+    teacher_evaluation_file_sha = _sha256(
+        teacher / "teacher_evaluation.json"
+    )
+
+    if teacher_baseline_sha != teacher_evaluation_file_sha:
+        raise PublicationError(
+            "Teacher baseline SHA256 does not match "
+            "published Teacher evaluation"
+        )
+
+    try:
+        comparison_result = verify_model_comparison_csv(
+            root / "model_comparison.csv",
+            gate_decision=gate_decision,
+        )
+
+        report_result = verify_accuracy_report(
+            root / "accuracy_report.md",
+            gate_decision=gate_decision,
+            model_comparison_path=(
+                root / "model_comparison.csv"
+            ),
+        )
+    except (
+        ComparisonArtifactError,
+        AccuracyReportError,
+        OSError,
+    ) as error:
+        raise PublicationError(
+            f"invalid publication report artifact: {error}"
+        ) from error
 
     if (
         gate_result["teacher_evaluation_sha256"]
@@ -312,6 +442,9 @@ def verify_b2_publication(
         "gate_manifest_sha256": gate_result[
             "manifest_sha256"
         ],
+        "teacher_baseline_sha256": teacher_baseline_sha,
+        "model_comparison_sha256": comparison_result["sha256"],
+        "accuracy_report_sha256": report_result["sha256"],
     }
 
 

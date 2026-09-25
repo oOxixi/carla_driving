@@ -20,6 +20,9 @@ from challenge.benchmark.publication import (
 from challenge.benchmark.policy_manifest import (
     policy_manifest_sha256,
 )
+from challenge.benchmark.evaluation_artifact import (
+    canonical_evaluation_json,
+)
 
 def _canonical_json_bytes(value: Any) -> bytes:
     return (
@@ -136,13 +139,18 @@ def _make_evidence_bundle(
     },
 }
 
-    _write_json(
-        bundle / f"{role}_evaluation.json",
-        evaluation,
+    evaluation_path = bundle / f"{role}_evaluation.json"
+
+    evaluation_bytes = canonical_evaluation_json(
+        evaluation
+    )
+
+    _write_bytes(
+        evaluation_path,
+        evaluation_bytes,
     )
 
     return bundle, evaluation
-
 
 def _make_gate_package(
     root: Path,
@@ -455,3 +463,94 @@ def test_publication_cleans_staging_on_failure(
 
     assert not destination.exists()
     assert not staging.exists()
+
+def test_verify_rejects_teacher_baseline_tampering(
+    tmp_path: Path,
+) -> None:
+    teacher, student, gate = _make_complete_sources(
+        tmp_path / "sources"
+    )
+
+    destination = tmp_path / "publication"
+
+    publish_b2_publication(
+        destination,
+        teacher_bundle=teacher,
+        student_bundle=student,
+        gate_decision_package=gate,
+    )
+
+    baseline_path = (
+        destination / "teacher_baseline.json"
+    )
+
+    with baseline_path.open("ab") as handle:
+        handle.write(b" ")
+
+    with pytest.raises(
+        PublicationError,
+        match="Teacher baseline does not match",
+    ):
+        verify_b2_publication(destination)
+
+
+def test_verify_rejects_model_comparison_tampering(
+    tmp_path: Path,
+) -> None:
+    teacher, student, gate = _make_complete_sources(
+        tmp_path / "sources"
+    )
+
+    destination = tmp_path / "publication"
+
+    publish_b2_publication(
+        destination,
+        teacher_bundle=teacher,
+        student_bundle=student,
+        gate_decision_package=gate,
+    )
+
+    comparison_path = (
+        destination / "model_comparison.csv"
+    )
+
+    with comparison_path.open(
+        "a",
+        encoding="utf-8",
+        newline="",
+    ) as handle:
+        handle.write("tampered\n")
+
+    with pytest.raises(PublicationError):
+        verify_b2_publication(destination)
+
+
+def test_verify_rejects_accuracy_report_tampering(
+    tmp_path: Path,
+) -> None:
+    teacher, student, gate = _make_complete_sources(
+        tmp_path / "sources"
+    )
+
+    destination = tmp_path / "publication"
+
+    publish_b2_publication(
+        destination,
+        teacher_bundle=teacher,
+        student_bundle=student,
+        gate_decision_package=gate,
+    )
+
+    report_path = (
+        destination / "accuracy_report.md"
+    )
+
+    with report_path.open(
+        "a",
+        encoding="utf-8",
+        newline="",
+    ) as handle:
+        handle.write("\nTAMPERED\n")
+
+    with pytest.raises(PublicationError):
+        verify_b2_publication(destination)
