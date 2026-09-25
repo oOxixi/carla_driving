@@ -10,6 +10,7 @@ from typing import Any
 
 from .evaluation_artifact import (
     EvaluationArtifactError,
+    build_student_evaluation,
     build_teacher_evaluation,
     write_evaluation_artifact,
 )
@@ -173,8 +174,159 @@ def write_teacher_evidence_package(
         "teacher_evaluation_sha256": evaluation_sha256,
     }
 
+def write_student_evidence_package(
+    destination: str | Path,
+    cases: Iterable[Mapping[str, Any]],
+    records: Iterable[Mapping[str, Any]],
+    *,
+    evaluation_id: str,
+    dataset_version: str,
+    benchmark_manifest_sha256: str,
+    policy_manifest_sha256: str,
+    case_set_digest: str,
+    evaluator_git_sha: str,
+    model_id: str,
+    config_id: str,
+    weights_sha256: str,
+    evidence_bindings: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Publish one immutable Student evidence sub-package."""
+
+    target = Path(destination)
+    temporary = target.with_name(
+        target.name + ".tmp"
+    )
+
+    if target.exists():
+        raise EvaluationPackageError(
+            "evaluation package destination already exists"
+        )
+
+    if temporary.exists():
+        raise EvaluationPackageError(
+            "evaluation package temporary directory already exists"
+        )
+
+    case_rows = list(cases)
+    record_rows = list(records)
+
+    try:
+        artifact = build_student_evaluation(
+            case_rows,
+            record_rows,
+            evaluation_id=evaluation_id,
+            dataset_version=dataset_version,
+            benchmark_manifest_sha256=benchmark_manifest_sha256,
+            policy_manifest_sha256=policy_manifest_sha256,
+            case_set_digest=case_set_digest,
+            evaluator_git_sha=evaluator_git_sha,
+            model_id=model_id,
+            config_id=config_id,
+            weights_sha256=weights_sha256,
+            evidence_bindings=evidence_bindings,
+        )
+    except (
+        EvaluationArtifactError,
+        RawPredictionError,
+    ) as error:
+        raise EvaluationPackageError(
+            f"cannot build Student evaluation package: {error}"
+        ) from error
+
+    target.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    temporary.mkdir()
+
+    try:
+        predictions_path = (
+            temporary / "student_predictions.jsonl"
+        )
+        evaluation_path = (
+            temporary / "student_evaluation.json"
+        )
+        checksum_path = (
+            temporary / "predictions.sha256"
+        )
+
+        predictions_sha256 = write_prediction_records(
+            predictions_path,
+            record_rows,
+        )
+
+        if (
+            predictions_sha256
+            != artifact["predictions_sha256"]
+        ):
+            raise EvaluationPackageError(
+                "written prediction SHA256 does not match "
+                "Student evaluation artifact"
+            )
+
+        evaluation_sha256 = write_evaluation_artifact(
+            evaluation_path,
+            artifact,
+        )
+
+        actual_predictions_sha256 = hashlib.sha256(
+            predictions_path.read_bytes()
+        ).hexdigest()
+
+        if actual_predictions_sha256 != predictions_sha256:
+            raise EvaluationPackageError(
+                "written prediction file failed SHA256 verification"
+            )
+
+        checksum_path.write_bytes(
+            (
+                f"{predictions_sha256}"
+                "  student_predictions.jsonl\n"
+            ).encode("ascii")
+        )
+
+        temporary.replace(target)
+
+    except (
+        EvaluationArtifactError,
+        EvaluationPackageError,
+        OSError,
+        RawPredictionError,
+    ) as error:
+        if temporary.exists():
+            shutil.rmtree(
+                temporary,
+                ignore_errors=True,
+            )
+
+        if isinstance(
+            error,
+            EvaluationPackageError,
+        ):
+            raise
+
+        raise EvaluationPackageError(
+            f"cannot publish Student evaluation package: {error}"
+        ) from error
+
+    return {
+        "evaluation_id": artifact["evaluation_id"],
+        "directory": str(target),
+        "student_predictions": str(
+            target / "student_predictions.jsonl"
+        ),
+        "student_evaluation": str(
+            target / "student_evaluation.json"
+        ),
+        "predictions_checksum": str(
+            target / "predictions.sha256"
+        ),
+        "predictions_sha256": predictions_sha256,
+        "student_evaluation_sha256": evaluation_sha256,
+    }
 
 __all__ = [
     "EvaluationPackageError",
+    "write_student_evidence_package",
     "write_teacher_evidence_package",
 ]

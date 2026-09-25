@@ -8,6 +8,7 @@ pytest.importorskip("torch")
 
 from challenge.benchmark.evaluation_artifact import (
     EvaluationArtifactError,
+    build_student_evaluation,
     build_teacher_evaluation,
     canonical_evaluation_json,
     evaluation_artifact_sha256,
@@ -267,3 +268,129 @@ def test_empty_evaluation_artifact_fails_closed() -> None:
         match="must be a non-empty object",
     ):
         canonical_evaluation_json({})
+
+def test_student_artifact_binds_candidate_identity() -> None:
+    cases = copy.deepcopy(
+        build_mock_records(5)
+    )
+    records = [
+        _success_record(case)
+        for case in cases
+    ]
+
+    artifact = build_student_evaluation(
+        cases,
+        records,
+        evaluation_id="b2-student-test-001",
+        dataset_version="test-dataset-v1",
+        benchmark_manifest_sha256="a" * 64,
+        policy_manifest_sha256="b" * 64,
+        case_set_digest="c" * 64,
+        evaluator_git_sha="d" * 40,
+        model_id="student-v0-r3-fp32",
+        config_id="student-v0-r3-structured",
+        weights_sha256="e" * 64,
+    )
+
+    assert artifact["evaluation_role"] == "student"
+    assert artifact["model_id"] == "student-v0-r3-fp32"
+    assert artifact["config_id"] == (
+        "student-v0-r3-structured"
+    )
+    assert artifact["weights_sha256"] == "e" * 64
+    assert artifact["sample_count"] == 5
+    assert artifact["predictions_sha256"] == (
+        prediction_records_sha256(records)
+    )
+
+    for value in artifact["metrics"].values():
+        assert value == 1.0
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("model_id", ""),
+        ("config_id", ""),
+        ("weights_sha256", "not-a-sha"),
+    ],
+)
+def test_student_artifact_rejects_invalid_candidate_identity(
+    field: str,
+    value: str,
+) -> None:
+    cases = copy.deepcopy(
+        build_mock_records(5)
+    )
+    records = [
+        _success_record(case)
+        for case in cases
+    ]
+
+    kwargs = {
+        "evaluation_id": "b2-student-test-002",
+        "dataset_version": "test-dataset-v1",
+        "benchmark_manifest_sha256": "a" * 64,
+        "policy_manifest_sha256": "b" * 64,
+        "case_set_digest": "c" * 64,
+        "evaluator_git_sha": "d" * 40,
+        "model_id": "student-v0-r3-fp32",
+        "config_id": "student-v0-r3-structured",
+        "weights_sha256": "e" * 64,
+    }
+    kwargs[field] = value
+
+    with pytest.raises(
+        EvaluationArtifactError,
+        match=field,
+    ):
+        build_student_evaluation(
+            cases,
+            records,
+            **kwargs,
+        )
+
+
+def test_teacher_and_student_share_evaluation_identity() -> None:
+    cases = copy.deepcopy(
+        build_mock_records(5)
+    )
+    records = [
+        _success_record(case)
+        for case in cases
+    ]
+
+    common = {
+        "dataset_version": "test-dataset-v1",
+        "benchmark_manifest_sha256": "a" * 64,
+        "policy_manifest_sha256": "b" * 64,
+        "case_set_digest": "c" * 64,
+        "evaluator_git_sha": "d" * 40,
+    }
+
+    teacher = build_teacher_evaluation(
+        cases,
+        records,
+        evaluation_id="b2-teacher-test-shared",
+        **common,
+    )
+
+    student = build_student_evaluation(
+        cases,
+        records,
+        evaluation_id="b2-student-test-shared",
+        model_id="student-v0-r3-fp32",
+        config_id="student-v0-r3-structured",
+        weights_sha256="e" * 64,
+        **common,
+    )
+
+    for field in (
+        "dataset_version",
+        "benchmark_manifest_sha256",
+        "policy_manifest_sha256",
+        "case_set_digest",
+        "evaluator_git_sha",
+        "sample_count",
+    ):
+        assert student[field] == teacher[field]

@@ -19,7 +19,12 @@ from challenge.benchmark.evaluation_package import (
     EvaluationPackageError,
 )
 from challenge.benchmark.formal_bundle import (
+    write_formal_student_bundle,
     write_formal_teacher_bundle,
+)
+
+from challenge.distillation.candidate_handoff import (
+    build_candidate_handoff,
 )
 from challenge.distillation.dataset import (
     build_mock_records,
@@ -250,6 +255,146 @@ def _records(
         for case in cases
     ]
 
+def _write_json(
+    path: Path,
+    value: dict,
+) -> None:
+    path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    path.write_text(
+        json.dumps(value),
+        encoding="utf-8",
+    )
+
+
+def _candidate_handoff(
+    tmp_path: Path,
+    *,
+    dataset_version: str,
+) -> Path:
+    source = tmp_path / "a3-run"
+    source.mkdir()
+
+    weights = b"formal-candidate-weights"
+    checkpoint = b"formal-best-checkpoint"
+
+    (
+        source / "student_v0_fp32_candidate.pt"
+    ).write_bytes(weights)
+
+    (
+        source / "student_fp32_best.pt"
+    ).write_bytes(checkpoint)
+
+    candidate = {
+        "git_sha": "a" * 40,
+        "source_worktree_dirty": False,
+        "teacher_git_sha": "MULTI_PINNED_B1_D2_V1_1",
+        "teacher_model_id": "Qwen/Qwen3.5-2B",
+        "teacher_model_revision": "b" * 40,
+        "teacher_artifact_fingerprint_sha256": "c" * 64,
+        "teacher_identity_policy": "signed_d2_release_formal",
+        "model_id": "student-v0-r3-fp32",
+        "config_id": "student-v0-r3-structure-test",
+        "weights_sha256": hashlib.sha256(
+            weights
+        ).hexdigest(),
+        "source_checkpoint_sha256": hashlib.sha256(
+            checkpoint
+        ).hexdigest(),
+        "dataset_version": dataset_version,
+        "release_manifest_sha256": "d" * 64,
+        "a3_view_manifest_sha256": "e" * 64,
+        "gate_status": "PENDING_A3_FP32_GATE",
+    }
+
+    _write_json(
+        source / "student_v0_fp32_candidate.json",
+        candidate,
+    )
+
+    _write_json(
+        source / "training_summary.json",
+        {
+            "git_sha": candidate["git_sha"],
+            "teacher_git_sha": candidate["teacher_git_sha"],
+            "teacher_model_id": candidate["teacher_model_id"],
+            "teacher_model_revision": candidate[
+                "teacher_model_revision"
+            ],
+            "teacher_artifact_fingerprint_sha256": candidate[
+                "teacher_artifact_fingerprint_sha256"
+            ],
+            "teacher_identity_policy": candidate[
+                "teacher_identity_policy"
+            ],
+            "model_id": candidate["model_id"],
+            "model_config_id": candidate["config_id"],
+            "dataset_version": candidate["dataset_version"],
+            "release_manifest_sha256": candidate[
+                "release_manifest_sha256"
+            ],
+            "a3_view_manifest_sha256": candidate[
+                "a3_view_manifest_sha256"
+            ],
+            "candidate_weights_sha256": candidate[
+                "weights_sha256"
+            ],
+            "best_checkpoint_sha256": candidate[
+                "source_checkpoint_sha256"
+            ],
+            "candidate_gate_status": candidate["gate_status"],
+            "smoke_only": False,
+            "integration_smoke_only": False,
+            "train_samples": 10,
+            "validation_samples": 3,
+            "hard_case_count": 2,
+        },
+    )
+
+    _write_json(
+        source / "dataset_preflight.json",
+        {
+            "valid": True,
+            "error_count": 0,
+            "expected_dataset_version": dataset_version,
+        },
+    )
+
+    _write_json(
+        source / "hard_cases" / "summary.json",
+        {"hard_case_count": 2},
+    )
+
+    (
+        source / "training_report.md"
+    ).write_text(
+        "report",
+        encoding="utf-8",
+    )
+
+    (
+        source / "training.jsonl"
+    ).write_text(
+        "{}\n",
+        encoding="utf-8",
+    )
+
+    output = tmp_path / "a3-handoff"
+
+    build_candidate_handoff(
+        source,
+        output,
+        config_snapshot=b"config_id: formal\n",
+        config_source={
+            "git_sha": "a" * 40,
+            "path": "config.yaml",
+        },
+    )
+
+    return output
 
 def test_formal_bundle_binds_real_manifest_hashes(
     tmp_path,
@@ -431,6 +576,198 @@ def test_actual_case_identity_tamper_fails_closed(
             benchmark_config=_complete_config(),
             case_manifest=case_manifest,
             evaluator_git_sha="d" * 40,
+        )
+
+    assert not destination.exists()
+
+    assert not destination.with_name(
+        destination.name + ".formal.tmp"
+    ).exists()
+
+def test_formal_student_bundle_binds_verified_candidate(
+    tmp_path,
+) -> None:
+    cases = _b1_cases(5)
+    config = _complete_config()
+
+    handoff = _candidate_handoff(
+        tmp_path,
+        dataset_version=config["dataset"]["dataset_version"],
+    )
+
+    destination = (
+        tmp_path
+        / "b2_evaluation"
+        / "formal-student-test"
+    )
+
+    result = write_formal_student_bundle(
+        destination,
+        cases,
+        _records(cases),
+        evaluation_id="formal-student-test",
+        benchmark_config=config,
+        case_manifest=_case_manifest(cases),
+        evaluator_git_sha="f" * 40,
+        candidate_handoff=handoff,
+    )
+
+    assert sorted(
+        path.name
+        for path in destination.iterdir()
+    ) == [
+        "benchmark_manifest.json",
+        "policy_manifest.json",
+        "predictions.sha256",
+        "student_evaluation.json",
+        "student_predictions.jsonl",
+    ]
+
+    evaluation = json.loads(
+        (
+            destination / "student_evaluation.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert evaluation["evaluation_role"] == "student"
+    assert evaluation["model_id"] == (
+        "student-v0-r3-fp32"
+    )
+    assert evaluation["config_id"] == (
+        "student-v0-r3-structure-test"
+    )
+
+    actual_weights_sha256 = hashlib.sha256(
+        (
+            handoff / "student_v0_fp32_candidate.pt"
+        ).read_bytes()
+    ).hexdigest()
+
+    assert evaluation["weights_sha256"] == (
+        actual_weights_sha256
+    )
+
+    assert result[
+        "candidate_handoff_manifest_sha256"
+    ] == hashlib.sha256(
+        (
+            handoff / "handoff_manifest.json"
+        ).read_bytes()
+    ).hexdigest()
+
+    benchmark_sha256 = hashlib.sha256(
+        (
+            destination / "benchmark_manifest.json"
+        ).read_bytes()
+    ).hexdigest()
+
+    policy_sha256 = hashlib.sha256(
+        (
+            destination / "policy_manifest.json"
+        ).read_bytes()
+    ).hexdigest()
+
+    assert evaluation[
+        "benchmark_manifest_sha256"
+    ] == benchmark_sha256
+
+    assert evaluation[
+        "policy_manifest_sha256"
+    ] == policy_sha256
+
+    assert evaluation["case_set_digest"] == (
+        compute_case_set_digest(
+            extract_case_identities(cases)
+        )
+    )
+
+    assert evaluation["sample_count"] == len(cases)
+
+def test_formal_student_bundle_rejects_tampered_candidate_weights(
+    tmp_path,
+) -> None:
+    cases = _b1_cases(5)
+    config = _complete_config()
+
+    handoff = _candidate_handoff(
+        tmp_path,
+        dataset_version=config["dataset"]["dataset_version"],
+    )
+
+    # Tamper with the actual candidate after A3 created the signed handoff.
+    (
+        handoff / "student_v0_fp32_candidate.pt"
+    ).write_bytes(
+        b"tampered-formal-candidate-weights"
+    )
+
+    destination = (
+        tmp_path
+        / "b2_evaluation"
+        / "tampered-student"
+    )
+
+    with pytest.raises(
+        EvaluationPackageError,
+        match="cannot verify Student candidate",
+    ):
+        write_formal_student_bundle(
+            destination,
+            cases,
+            _records(cases),
+            evaluation_id="tampered-student",
+            benchmark_config=config,
+            case_manifest=_case_manifest(cases),
+            evaluator_git_sha="f" * 40,
+            candidate_handoff=handoff,
+        )
+
+    assert not destination.exists()
+
+    assert not destination.with_name(
+        destination.name + ".formal.tmp"
+    ).exists()
+
+def test_formal_student_bundle_rejects_tampered_actual_cases(
+    tmp_path,
+) -> None:
+    cases = _b1_cases(5)
+    config = _complete_config()
+
+    # Freeze the manifest against the original case set.
+    frozen_case_manifest = _case_manifest(cases)
+
+    handoff = _candidate_handoff(
+        tmp_path,
+        dataset_version=config["dataset"]["dataset_version"],
+    )
+
+    # Mutate one identity-bearing field only after the manifest is frozen.
+    tampered_cases = copy.deepcopy(cases)
+
+    tampered_cases[0]["model_request"]["text"] = (
+        "tampered independent-validation request"
+    )
+
+    destination = (
+        tmp_path
+        / "b2_evaluation"
+        / "tampered-case-set"
+    )
+
+    with pytest.raises(
+        EvaluationPackageError,
+        match="case_set_digest",
+    ):
+        write_formal_student_bundle(
+            destination,
+            tampered_cases,
+            _records(tampered_cases),
+            evaluation_id="tampered-case-set",
+            benchmark_config=config,
+            case_manifest=frozen_case_manifest,
+            evaluator_git_sha="f" * 40,
+            candidate_handoff=handoff,
         )
 
     assert not destination.exists()
