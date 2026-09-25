@@ -72,7 +72,9 @@ challenge/hil/
 ├── group_map.example.json        `--group-map` 的格式示例（不是 B2 分组）
 ├── frozen/
 │   ├── smoke_v0_snapshot/        早期冻结输入基线（B1 smoke，30 例）
-│   └── d2_v1_1_val/              当前输入基线（B1 D2 v1.1 的 val 划分，539 例）
+│   ├── d2_v1_1_val/              输入基线（B1 D2 v1.1 的 val 划分，539 例）
+│   └── d3_wave2_safe_short_v1_val/  B1 签名 D3 Wave2 的 val 划分（56 例，2026-09-25 冻结）
+├── harness/release_check/        B1 发布完整性独立复核脚本（verify_b1_release.py）
 ├── harness/x86_sim/              X86 仿真复现脚本（编译/一致性/dump 对照/校准集，见其 README）
 ├── evidence/
 │   ├── x86_prevalidation_20260918/  Planner 链的 X86 预验证证据
@@ -82,7 +84,8 @@ challenge/hil/
 │   ├── shortcut_probe_20260921/            B3 独立复核的查表捷径（模板泄漏）事实
 │   ├── carla_measurement_20260921/         用固定入口脚本重跑的 CARLA 闭环（25/25）
 │   ├── soak_30min_20260921/                X86 30 分钟长稳（1800 s / 123,611 次迭代）
-│   └── x86_simulation_20260924/            X86 仿真四件套：编译预检/产物结构/三路一致性/校准对照
+│   ├── x86_simulation_20260924/            X86 仿真四件套：编译预检/产物结构/三路一致性/校准对照
+│   └── d3_wave2_calibration_20260925/      签名 D3 Wave2 数据：train 校准 + val 56 例逐例一致性
 ├── schemas/                      导出的列定义
 └── tests/                        101 项自测
 ```
@@ -139,6 +142,7 @@ py -3.12 -m challenge.hil.cli run `
 | A4 X86 运行时 | **部分交付**：`challenge/runtime/student_x86.py` 可运行，但不满足测量契约（无请求入口、无打点、无身份查询）；差距清单见 `a4_runtime_gap_report.md` |
 | Teacher 基线 pin | **已就绪**：v1 与 v4 双 pin 自动记录，模型身份一致（`Qwen/Qwen3.5-2B` @ `15852e8c1636`） |
 | A1 结构产物 | **已在仓库**：`challenge/student_v0_fp32.onnx`（`ffb1ed5e…`），B3 独立校验通过 |
+| 代表性输入数据（用于校准与一致性复跑） | **已增量交付**：B1 `d3_wave2_safe_short_v1`（`B1_SIGNED_PASS`，374 例：A01 114 / A06 114 / CX01 146）。B3 已独立复核完整性（`PASS`）、冻结节 val 56 例，并按 train 校准 / val 评估复跑；**正式 Seen/Variant/Unseen 仍待 B2 冻结清单** |
 | 回放结论固定为诊断用途 | **B3 侧已修复**：`hil_replay_summary.json` 的 `teacher_comparison` / `diagnostic_only` 改由已核验的权重 manifest 身份推导（`gate.py`），并从 `cli.py` 与 `replay.py` 两处硬编码中移除；传入正式 Gate 权重会自动晋级为 `GATE_ELIGIBLE`，缺证据则保持 `DIAGNOSTIC_ONLY`，详情见第 10 节 |
 | 可信范围只看一个开关 | **B3 侧已修复**：`claim_scope`/`report_filename` 不再信任 `--device-class`，改按 artifact 摘要、Runtime 打点来源、板端日志、探针来源逐项核验后再定级（E1/E2/E3/E4），缺证据只降不升 |
 
@@ -274,6 +278,19 @@ B2 Benchmark、J6P 硬件）。其中 A3 权重与 A4 契约入口是两条主�
 | 仿真耗时不能外推 | `.bc` 228–318 ms、`.hbm` 19–34 s/次，而原生浮点 ONNX 3.09 ms |
 
 细节与限制见 [`x86_simulation_scope.md`](x86_simulation_scope.md)。
+
+**2026-09-25 续做（数据条件升级）**：B1 发布签名数据 `d3_wave2_safe_short_v1` 后，
+改用 **train 前 64 例校准 / val 56 例评估**，并先独立复核了发布完整性（`PASS`，顺带发现
+`repo_environment_findings.md` F12：Windows 检出会把文本哈希全部改成 CRLF，导致字节级校验假失败）。
+56 例逐例 `hb_verifier` 结果：十头 **min ≥ 0.9974、p50 ≥ 0.9992，没有任何一例低于 0.99**；
+CLI 路径同量级（min 0.9992）。证据见
+[`evidence/d3_wave2_calibration_20260925/`](evidence/d3_wave2_calibration_20260925/README.md)。
+权重仍是 A1 随机初始化结构，**结论等级不变**。
+
+同一批数据上还跑了 B3 的完整回放链（56 例 × 3 轮）：`ready/structural` 均 168/168，
+torch↔ONNX 最大绝对差 5.7e-06，后端一致性 `PASS`，回放结论按门禁为 `DIAGNOSTIC_ONLY`
+（权重未过 A3 闸），可信范围 `X86_PRE_VALIDATED`。顺带用独立统计发现该增量发布**只有
+3 个不同指令文本、6 个场景 id**（GAP-09/GAP-12 的同类现象），已作为事实记录给 B2 参考。
 
 ### 限制（必读）
 

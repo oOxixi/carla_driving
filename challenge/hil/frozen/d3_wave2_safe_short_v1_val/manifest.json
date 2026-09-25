@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "name": "d3_wave2_safe_short_v1_val",
+  "created_at_utc": "2026-09-25T05:03:04.740164+00:00",
+  "source": {
+    "delivery_root": "challenge/dataset/releases/d3_wave2_safe_short_v1",
+    "requests_path": "D:\\nana\\carla_driving-new\\carla_driving-new\\challenge\\dataset\\releases\\d3_wave2_safe_short_v1\\val_addition.jsonl",
+    "repo_root": ".",
+    "source_preference": [
+      "data/smoke_valid.jsonl",
+      "data/smoke_train_eligible.jsonl",
+      "val.jsonl",
+      "data/train.jsonl",
+      "data/val.jsonl",
+      "train.jsonl"
+    ]
+  },
+  "counts": {
+    "cases": 56,
+    "rgb_resolved": 56,
+    "rgb_copied": 56,
+    "teacher_plans": 56
+  },
+  "case_set_digest_sha256": "79513aa82ff2f717249a218aaee9b8288222f52e308f09ab2d77ee90aed6ae3f",
+  "files": {
+    "cases.jsonl": {
+      "size_bytes": 180414,
+      "sha256": "cc5b7998cefba8ab4d292458e50f92869acabd57df7b470a61c95278cc3fc928"
+    }
+  },
+  "notes": "Replay inputs are frozen here so later runs and B2 recomputation use byte-identical requests; the RGB copies are content-addressed by SHA256."
+}

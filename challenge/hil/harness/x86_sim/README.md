@@ -44,6 +44,13 @@ export HB_UCP_SIM_PLATFORM_TYPE=nash-p     # 否则加载 nash-p 产物会报 ma
 | `check_calibrated.sh` | 对比未校准/已校准的阈值分布，并对校准产物重跑 `hb_verifier` |
 | `run_calibrated_infer.sh` | 对校准产物跑 CLI `infer` + dump 对照 |
 | `collect_evidence.sh` | 汇总 `logs/` 为文本证据（剥离 ANSI、按需裁剪）到 `evidence/` |
+| `cal_config_d3w2.yaml` | 用 **B1 签名 D3 Wave2 train 64 例**校准的 PTQ 配置（2026-09-25） |
+| `batch_verify.sh` | 对一个 dump set 逐例跑 `hb_verifier`（浮点 ONNX ↔ int8 `.bc`） |
+| `summarise_verify.py` | 把批量 `hb_verifier` 日志汇总成逐头 min/p05/p50/mean/max 分布 |
+| `run_d3w2_verify.sh` | 一键：D3 Wave2 批量一致性 + 分布汇总 |
+| `run_d3w2_cli_check.sh` | D3 Wave2 产物在 CLI（X86 仿真）路径上的单例互证 |
+| `thresholds_report.py` | 对比多次编译的量化阈值分布（是否退化为默认 1.0） |
+| `collect_d3w2_evidence.py` | 汇总 D3 Wave2 轮的证据（编译日志、分布、阈值、CLI 互证） |
 
 ## 典型用法
 

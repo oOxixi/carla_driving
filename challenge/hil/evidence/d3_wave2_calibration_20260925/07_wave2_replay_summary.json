@@ -1,0 +1,91 @@
+{
+  "run_id": "b3-20260925T051255Z-f5bab353",
+  "snapshot": "challenge/hil/frozen/d3_wave2_safe_short_v1_val",
+  "case_set_digest_sha256": "79513aa82ff2f717249a218aaee9b8288222f52e308f09ab2d77ee90aed6ae3f",
+  "rounds": 3,
+  "cases_per_round": 56,
+  "case_runs": 168,
+  "ready_rate": 1.0,
+  "structural_pass_rate": 1.0,
+  "rgb_resolution_rate": 1.0,
+  "teacher_comparison": "DIAGNOSTIC_ONLY",
+  "teacher_comparison_reason": "Student weights are not A3-gated in this run (failed checks: gate_status_passed, weights_manifest_verified, digest_matches_identity); the behaviour and target match is recorded for toolchain validation and must not be read as accuracy.",
+  "gate_verified": false,
+  "gate_failed_checks": [
+    "gate_status_passed",
+    "weights_manifest_verified",
+    "digest_matches_identity"
+  ],
+  "torch_vs_onnx": {
+    "passed": true,
+    "max_abs_diff": null
+  },
+  "backend_consistency_status": "PASS",
+  "latency_ms": {
+    "preprocess_ms": {
+      "p50": 32.57885,
+      "p95": 49.018005
+    },
+    "packing_ms": {
+      "p50": 2.26,
+      "p95": 3.25368
+    },
+    "inference_setup_ms": {
+      "p50": 0.0097,
+      "p95": 0.013295000000000003
+    },
+    "model_inference_ms": {
+      "p50": 33.3416,
+      "p95": 61.57397
+    },
+    "postprocess_ms": {
+      "p50": 0.1222,
+      "p95": 0.18944000000000014
+    },
+    "adapter_ms": {
+      "p50": 0.7744500000000001,
+      "p95": 1.18601
+    },
+    "plan_validation_ms": {
+      "p50": 1.78905,
+      "p95": 3.2202050000000018
+    },
+    "pre_model_ms": {
+      "p50": 34.758449999999996,
+      "p95": 51.658004999999996
+    },
+    "post_model_ms": {
+      "p50": 2.7950999999999997,
+      "p95": 5.110725000000002
+    },
+    "planner_e2e_ms": {
+      "p50": 74.83,
+      "p95": 111.524755
+    },
+    "model_only_ms": {
+      "p50": 33.3416,
+      "p95": 61.57397
+    },
+    "planner_overhead_ms": {
+      "p50": 38.21595000000001,
+      "p95": 55.613685000000004
+    }
+  },
+  "groups_signal": {
+    "labeled_cases": 0,
+    "instruction_text_reuse_signal": true,
+    "distinct_source_texts": 3
+  },
+  "release_text_novelty": {
+    "train_addition.jsonl": {
+      "rows": 318,
+      "distinct_source_text": 3
+    },
+    "val_addition.jsonl": {
+      "rows": 56,
+      "distinct_source_text": 3
+    }
+  },
+  "claim_scope": "X86_PRE_VALIDATED",
+  "note": "Random-initialised A1 structure; the verdict is DIAGNOSTIC_ONLY by design because no A3-gated weights were supplied. Latency numbers are X86 in-process figures and must not be read as J6P performance."
+}

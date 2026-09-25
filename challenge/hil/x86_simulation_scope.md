@@ -34,10 +34,10 @@
 | 项 | 正式要求 | 本轮替代条件 | 对结论的影响 |
 |---|---|---|---|
 | 被测模型权重 | A3 真实 FP32 权重 + `weights_manifest.json`（`A3_FP32_GATE_PASSED`） | A1 结构 `challenge/student_v0_fp32.onnx`，随机初始化（seed 20260911） | 只能验证工具链，不能给精度结论；结论等级锁在 `DIAGNOSTIC_ONLY` / `X86 PRE-VALIDATED` |
-| 量化产物 | A2 官方 INT8 产物 + 校准配置与校准集说明 | B3 自建校准集（冻结请求集前 30 例）自行 PTQ | 量化流程可用，但校准分布不代表部署分布 |
+| 量化产物 | A2 官方 INT8 产物 + 校准配置与校准集说明 | B3 自行 PTQ：先用冻结冒烟输入 30 例，2026-09-25 起改用 **B1 签名的 D3 Wave2 train 前 64 例** | 量化流程与 train/val 划分方法可用；仍不是 A2 的官方校准配置 |
 | Runtime 入口 | A4 契约 Runtime（请求入口 + 打点 + describe + 常驻） | B3 自建适配器（inprocess / ONNX / 假板端命令） | 契约检查机制可用，A4 真实入口行为未验证 |
 | 部署硬件 | J6P 板卡 + 功耗探针 | X86 仿真运行时（`HB_UCP_SIM_PLATFORM_TYPE=nash-p`） | 只能验数值与结构；延迟/占用/功耗/结温一律 `NOT_MEASURED` |
-| Benchmark | B2 冻结 Seen/Variant/Unseen 清单与判据 | B3 自己的开发 val 快照（539 例）与场景标签 | 分组统计机制可用，正式分组结论仍待 B2 |
+| Benchmark | B2 冻结 Seen/Variant/Unseen 清单与判据 | B3 自己的开发 val 快照（D2 v1.1 val 539 例；2026-09-25 起另有 D3 Wave2 val 56 例）与场景标签 | 分组统计机制可用，正式分组结论仍待 B2 |
 | 结论用途 | 最终交付与达标判定 | **可行性演练：链路是否可用、数字是否可解释、缺陷是否可复现** | **不得作为最终测试结果或达标证据** |
 
 环境：OE `v3.9.1`（`openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1`），
@@ -78,6 +78,35 @@
 | `replan_condition_logits` | (1,7) | 0.859126 | **0.999154** |
 
 视觉骨干（`hb_verifier` 额外给出）：未校准 0.809–0.892；已校准 **0.9996–1.0000**。
+
+### 2.1 2026-09-25：换成签名 D3 Wave2 数据，并按 train/val 分离复跑
+
+上一节用的是 B3 自建的 30 例冒烟校准。B1 发布 `d3_wave2_safe_short_v1`（`B1_SIGNED_PASS`，
+374 例严格正样本）后，这一环改成方法上站得住的划分：**train 前 64 例做校准、val 56 例做评估**，
+数据全部来自签名发布；B3 先独立复核了发布完整性（11 个锁定文件、374 张图、318+56 行配对，
+`PASS`，见 `repo_environment_findings.md` F12 关于 CRLF 的说明）。
+
+56 例逐例 `hb_verifier`（浮点 ONNX ↔ int8 `.bc`），十头分布：
+
+| 输出头 | min | p05 | p50 | mean | 低于 0.99 的例数 |
+|---|---:|---:|---:|---:|---:|
+| `plan_length_logits` | 0.9974 | 0.9979 | 0.9994 | 0.9993 | 0 |
+| `behavior_logits` | 0.9992 | 0.9992 | 0.9994 | 0.9994 | 0 |
+| `target_pointer_logits` | 0.9985 | 0.9987 | 0.9992 | 0.9991 | 0 |
+| `target_lane_logits` | 0.9987 | 0.9989 | 0.9992 | 0.9992 | 0 |
+| `target_speed_mps` | 0.9999 | 0.9999 | 1.0000 | 1.0000 | 0 |
+| `completion_type_logits` | 0.9991 | 0.9993 | 0.9996 | 0.9995 | 0 |
+| `on_failure_logits` | 0.9989 | 0.9990 | 0.9993 | 0.9994 | 0 |
+| `confidence` | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 0 |
+| `requires_confirmation_logits` | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 0 |
+| `replan_condition_logits` | 0.9983 | 0.9984 | 0.9994 | 0.9992 | 0 |
+
+视觉骨干 6 个中间张量最差 min 0.9995；**没有任何一例、任何一个头低于 0.99**。
+CLI 路径（`hrt_model_exec infer --enable_dump`）在同一产物上给出同量级结果（min 0.9992），
+三路互证依旧成立。逐例明细与脚本见
+[`evidence/d3_wave2_calibration_20260925/`](evidence/d3_wave2_calibration_20260925/README.md)。
+
+**这条提升只针对"数据条件"**：权重仍是 A1 随机初始化结构，结论等级不变（仍是可行性演练）。
 
 **为什么未校准会掉到 0.79**：不是"量化本身不行"，而是**没有校准数据时阈值退化为默认值**。
 `quant_info.json` 证据：
