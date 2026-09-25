@@ -140,6 +140,9 @@ def build_teacher_evaluation(
         "case_set_digest": case_set_digest,
         "evaluator_git_sha": evaluator_git_sha,
         "sample_count": sample_count,
+        "schema_validity": (
+            coverage["success_count"] / sample_count
+        ),
         "predictions_sha256": prediction_records_sha256(
             record_rows
         ),
@@ -295,6 +298,9 @@ def build_student_evaluation(
         "case_set_digest": case_set_digest,
         "evaluator_git_sha": evaluator_git_sha,
         "sample_count": sample_count,
+        "schema_validity": (
+           coverage["success_count"] / sample_count
+        ),
         "predictions_sha256": prediction_records_sha256(
             record_rows
         ),

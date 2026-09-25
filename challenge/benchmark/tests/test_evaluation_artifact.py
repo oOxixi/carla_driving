@@ -35,6 +35,23 @@ def _success_record(case: dict) -> dict:
         "error": None,
     }
 
+def _failure_record(
+    case: dict,
+    *,
+    status: str,
+    code: str = "TEST_FAILURE",
+) -> dict:
+    return {
+        "sample_id": case["sample_id"],
+        "status": status,
+        "prediction": None,
+        "error": {
+            "code": code,
+            "type": "RuntimeError",
+            "message": "test failure",
+        },
+    }
+
 
 def _build(cases: list[dict]) -> dict:
     records = [
@@ -70,6 +87,7 @@ def test_teacher_artifact_exposes_a3_flat_metrics_and_b2_evidence() -> None:
     )
     assert artifact["split"] == "validation"
     assert artifact["sample_count"] == 5
+    assert artifact["schema_validity"] == 1.0
 
     for field, expected in FORMAL_GATE_TEACHER_V4.items():
         assert artifact[field] == expected
@@ -394,3 +412,34 @@ def test_teacher_and_student_share_evaluation_identity() -> None:
         "sample_count",
     ):
         assert student[field] == teacher[field]
+
+def test_student_schema_validity_is_derived_from_invalid_output() -> None:
+    cases = copy.deepcopy(
+        build_mock_records(5)
+    )
+    records = [
+        _success_record(case)
+        for case in cases
+    ]
+    records[-1] = _failure_record(
+        cases[-1],
+        status="INVALID_OUTPUT",
+        code="INVALID_PLAN_SCHEMA",
+    )
+
+    artifact = build_student_evaluation(
+        cases,
+        records,
+        evaluation_id="b2-student-schema-validity",
+        dataset_version="test-dataset-v1",
+        benchmark_manifest_sha256="a" * 64,
+        policy_manifest_sha256="b" * 64,
+        case_set_digest="c" * 64,
+        evaluator_git_sha="d" * 40,
+        model_id="student-v0-r3-fp32",
+        config_id="student-v0-r3-structured",
+        weights_sha256="e" * 64,
+    )
+
+    assert artifact["coverage"]["invalid_output_count"] == 1
+    assert artifact["schema_validity"] == pytest.approx(4 / 5)
