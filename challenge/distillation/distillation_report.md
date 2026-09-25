@@ -47,11 +47,74 @@ records are not Student accuracy and cannot pass the A3 FP32 Gate.
 - fail-closed formal Teacher identity checks at config, per-record preflight,
   candidate export and FP32 promotion
 
-## Remaining external handoffs
+## Current frozen v3 candidate
 
-- B1: newly recollected, pinned-Teacher, versioned and disjoint Train and
-  Validation JSONL manifests
-- B2: independent, version-matched Teacher and Student Validation metrics
+The current B2 handoff remains the risk-balanced v3 candidate.  Preparing a
+new development view does not mutate or silently replace this identity.
 
-Until both arrive, no production weight can truthfully receive
-`A3_FP32_GATE_PASSED`.
+| Field | Frozen value |
+|---|---|
+| model ID | `student-v0-r3-fp32` |
+| config ID | `student-v0-r3-structure-20260911` |
+| training Git SHA | `151efbbfa0c8920bfc78e29262d984bcfae1877f` |
+| dataset version | `b1_d2_v1_1_plus_d3_wave1_a3_strict_positive_v1` |
+| weights SHA256 | `1afb8ebd11e401d4d7e6181d244ed39438421183c5303f1ce4a4391cee8cc68c` |
+| handoff manifest SHA256 | `966e16c78457e4022fb1a3eaab11eb6da9ee23d8231e50631437808f03bf7e92` |
+| status | `PENDING_B2_INDEPENDENT_VALIDATION` |
+| Gate | `PENDING_A3_FP32_GATE` |
+
+The package verifier checks nine signed payload files.  The package and pure
+state dict are server artifacts rather than Git blobs; the immutable archive
+identity is documented in `A3_CANDIDATE_HANDOFF.md`.
+
+## D3 Wave2 derived-view preparation
+
+B1's detached-signed `b1_d3_wave2_safe_short_v1` release is now available.
+Its complete local release validation passed for 374/374 RGB files and pinned
+Teacher-v4-wave2-sync provenance:
+
+- Teacher model: `Qwen/Qwen3.5-2B`
+- Teacher revision: `15852e8c16360a2fea060d615a32b45270f8a8fc`
+- Teacher artifact fingerprint:
+  `4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa`
+- Teacher collection Git SHA: `252984d37e49ddc11eaddcde2bfb26d0d6f2086b`
+- B1 release manifest SHA256:
+  `b8056484a3c5b7345d59536edbae5516a602d29811151fb3736ce25aff4fa57b`
+- Additive samples: 318 Train + 56 development Validation; zero hard negatives
+
+The new builder creates the separately versioned development identity
+`b1_d2_v1_1_plus_d3_wave1_plus_d3_wave2_safe_short_a3_strict_positive_v1`.
+It adds Wave2 without changing the v3 files or dataset version.  The prepared
+partition contains 4,397 Train, 853 development Validation and 539 audit-only
+excluded samples.  Sample IDs and group keys are disjoint across Train and
+Validation; Reserved/Frozen Test use is explicitly false.
+
+The local partial clone lacks some historical D3 Wave1 RGB blobs.  Therefore
+the preparation run used `--skip-images` for the already-existing base view
+and is not formal training evidence.  Its deterministic metadata audit passed:
+
+- view manifest canonical SHA256:
+  `20d15be92c7f4bf2681d6e1a20be9da45acd99569ce78c5f3cf7290ed579c296`
+- source evidence SHA256:
+  `c8f179c67369d598b156ae1dbea68fb912613808958c29b466a6944f47774995`
+
+A full server build without `--skip-images` must reproduce the partition and
+hashes before any Wave2 training is started.  If the team chooses to train on
+this view, the output must be a new candidate version with a new config ID,
+dataset identity and weights SHA; it must not overwrite or rename v3.
+
+## Current external handoffs and blockers
+
+- B1 data required for the prepared Wave2 view has arrived and its detached
+  signature, release hashes, Teacher provenance and 374-image set validate.
+- B2's evaluator, comparison, decision and evidence-publication tooling is in
+  Git, but the independent Validation case manifest and formal policy are not
+  frozen.  Actual Teacher/Student paired evaluation JSON and Gate PASS/FAIL
+  evidence for the exact v3 weights are still absent.
+- A1/A4 may consume the verified v3 package for true FP32 ONNX export work,
+  but an ONNX artifact is not an A3 accuracy approval.
+- A2 PTQ and any A3 QAT decision remain downstream of a valid B2 FP32 Gate,
+  true ONNX export and the B1/B2 calibration release.
+
+Until B2 returns independent, identity-matched evidence, no production weight
+can truthfully receive `A3_FP32_GATE_PASSED`.
