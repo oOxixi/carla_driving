@@ -1,0 +1,1872 @@
+{
+  "td_0194f9655bcebcac3ba976d5": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0194f9655bcebcac3ba976d5.jpg",
+    "sha256": "e228b172d37b52609f045117814642e106cc2969467d7f7645f8ff00021eab0f",
+    "size_bytes": 6248
+  },
+  "td_022329fbd2908fc2fd8ea3a2": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_022329fbd2908fc2fd8ea3a2.jpg",
+    "sha256": "32d91528e2961f0e2835c246a3621000b579935528cf6d79322796ddb3fa67c3",
+    "size_bytes": 4163
+  },
+  "td_030686f87de3a84dbaf1c03c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_030686f87de3a84dbaf1c03c.jpg",
+    "sha256": "7cc0dd661bd67c4894e588825786410cfc68b731ae165e7eef0e68f8f45d7cc3",
+    "size_bytes": 4440
+  },
+  "td_030a4cb3a284504b7d7e7113": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_030a4cb3a284504b7d7e7113.jpg",
+    "sha256": "19ab925fd8534f0cce32189a9f4dd497eb880e8469799d1d0a5da76b10dd67df",
+    "size_bytes": 4449
+  },
+  "td_037ffa99e973fd4f12ccc2b6": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_037ffa99e973fd4f12ccc2b6.jpg",
+    "sha256": "ca22565f969a9287606b273c4f95137f1a986dee07e34a210f818ea8d40e1b8a",
+    "size_bytes": 4375
+  },
+  "td_05af93d25d3ffb455222f344": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_05af93d25d3ffb455222f344.jpg",
+    "sha256": "d0a7a1c856c97cc9fba33c1fec23730c78c64fecab16763967dbb5221743b480",
+    "size_bytes": 6301
+  },
+  "td_08298d33874e0d35563bf244": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_08298d33874e0d35563bf244.jpg",
+    "sha256": "729c3f8e3bb1ccdeb5bdf55868db443041f6c99d0fa6f3f1ff57495727d0176b",
+    "size_bytes": 5822
+  },
+  "td_0834dac387e55572f5ca5428": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0834dac387e55572f5ca5428.jpg",
+    "sha256": "dc13e0237659a4a70f771f68b4fd50d672ac989d992f2ace98580ece124fee48",
+    "size_bytes": 4320
+  },
+  "td_085c5e7e2192db7c49807de0": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_085c5e7e2192db7c49807de0.jpg",
+    "sha256": "b436a02a8bf754a561575666e18849376889ed6c7ea67b89bb11114c9e7488db",
+    "size_bytes": 4862
+  },
+  "td_09c713d11314e2d5db480186": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_09c713d11314e2d5db480186.jpg",
+    "sha256": "d66e3a4043ad85d491ed9f2545e3bd213e26a03fb14bcd4a91ada3d18327a45d",
+    "size_bytes": 6340
+  },
+  "td_0a4c20f0173f71d29b85db93": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0a4c20f0173f71d29b85db93.jpg",
+    "sha256": "91cad8894b175b90e9335d8bc18b5d0fe8853104660719d9cb41534e596af54a",
+    "size_bytes": 4514
+  },
+  "td_0aa134678a4346a34487d38c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0aa134678a4346a34487d38c.jpg",
+    "sha256": "a1491b1611c73fa8f905a68c334ce9c537e5f2ecc05c0cda908db5b21077d99e",
+    "size_bytes": 4291
+  },
+  "td_0bcc0e5517ef7ae9ca515e29": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0bcc0e5517ef7ae9ca515e29.jpg",
+    "sha256": "e4cbd8137d894c9757b69c677e5ffb2e10a13eec14ebcc991725cf920d90c8be",
+    "size_bytes": 6233
+  },
+  "td_0c47a3100224e97bd2ff8295": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0c47a3100224e97bd2ff8295.jpg",
+    "sha256": "8a54f4a6b2d9f65f66115799257105c796fe4ffc10934305291c4352a7d3c23c",
+    "size_bytes": 6250
+  },
+  "td_0c83e6037e436a3a196ef400": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0c83e6037e436a3a196ef400.jpg",
+    "sha256": "9d38b2a73138cdf4eec89392f0b6be3a6f8ba179dc222fb65427e50d54d2dcb8",
+    "size_bytes": 6268
+  },
+  "td_0d98a56d82edc93d127413f0": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0d98a56d82edc93d127413f0.jpg",
+    "sha256": "c58f0ce243c0b737ce53163222ca9f85e8ba9d09f54f1aab001bacf9061c8159",
+    "size_bytes": 6206
+  },
+  "td_0dc910ac6ec6db9f8f2757a7": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0dc910ac6ec6db9f8f2757a7.jpg",
+    "sha256": "13d1c5e4fa24d7c12b192967f7025a0c4506549ec301aed1dbf3dcddd6622c9a",
+    "size_bytes": 4439
+  },
+  "td_0e06c9bd830fb2015fa9d43c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0e06c9bd830fb2015fa9d43c.jpg",
+    "sha256": "827905611eb61528a5642eb2d0c0db1f245d7a3a7b4cee86ca6e8e7e1b89e3b8",
+    "size_bytes": 5862
+  },
+  "td_0e33cca685b20f8994bdd79a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0e33cca685b20f8994bdd79a.jpg",
+    "sha256": "0e775eb8d49211c1bccc45f0950441d5f8f8e874709f5c2ca69b2f0e7230980b",
+    "size_bytes": 4525
+  },
+  "td_0e7c421c515b28dab4e2153a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0e7c421c515b28dab4e2153a.jpg",
+    "sha256": "3298f0e407b0774c05066bf17811f8895f8fe488735b4eb0ce12008710f76617",
+    "size_bytes": 4602
+  },
+  "td_0f525d411f12e24351b2a659": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_0f525d411f12e24351b2a659.jpg",
+    "sha256": "61ec40945d1749f29d0e4cc1da7bd0fc2befb766c6ccde44b4d66946aacb0ef1",
+    "size_bytes": 4146
+  },
+  "td_10cdf04f44327b96059e23cb": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_10cdf04f44327b96059e23cb.jpg",
+    "sha256": "39bcff3af7e4535c19d30a2a871893d13ca7e4451e549c6f416d11013c993b25",
+    "size_bytes": 6196
+  },
+  "td_11938e447f60dbc0a2264e05": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_11938e447f60dbc0a2264e05.jpg",
+    "sha256": "750c48f580aff1b44f471b94b16ff49d6fe9adbb3f5936670b85703c18f31db9",
+    "size_bytes": 4827
+  },
+  "td_12bf969ab695eb81e3ef8c57": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_12bf969ab695eb81e3ef8c57.jpg",
+    "sha256": "3cc7850b409ebb02035c9258f0c5c31c5da2f36690a2582407561d7393d63b78",
+    "size_bytes": 5859
+  },
+  "td_12df6625b4b2ff4859db8b3b": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_12df6625b4b2ff4859db8b3b.jpg",
+    "sha256": "f02c654839059fa432783b35745bd49db6e9b9073a30b73b35ba47ba14d23617",
+    "size_bytes": 4288
+  },
+  "td_133134d6d560e3f3e739111a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_133134d6d560e3f3e739111a.jpg",
+    "sha256": "a6f953a468303f96ff3dcd544bcecbcf76c4fac78f0cc0c63b9642d3ce272880",
+    "size_bytes": 5898
+  },
+  "td_134edc060a8eb3b1422b3a04": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_134edc060a8eb3b1422b3a04.jpg",
+    "sha256": "28eea046118b8d912f28b0b9c4833688b1e4e1f3a3666c07782cf389029c2e4e",
+    "size_bytes": 6227
+  },
+  "td_1354bce0828903b8f8b4286d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1354bce0828903b8f8b4286d.jpg",
+    "sha256": "f1eff0bfd50d6fbd8a0505e98b2e9ef37bf4298a5933d2a43f8df780b3932187",
+    "size_bytes": 4607
+  },
+  "td_1357d722997637f9c7cc1269": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1357d722997637f9c7cc1269.jpg",
+    "sha256": "80add4fe972ce5fbf3a4cc4987916a67f68630c18f1d36951e4cab0bc2ff7e58",
+    "size_bytes": 6042
+  },
+  "td_13b90d018f126eeedc904690": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_13b90d018f126eeedc904690.jpg",
+    "sha256": "ae1137b56bf78b62b87836aea85781317e56ef41e4d165c626300d14b2a96d08",
+    "size_bytes": 4498
+  },
+  "td_13cf4387d44afaeadaff22f9": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_13cf4387d44afaeadaff22f9.jpg",
+    "sha256": "71130f3cf7d6fd534ac451e3fcfd12496f1ef4872d6dcc70a456a134b2a96306",
+    "size_bytes": 4504
+  },
+  "td_15639121fc8566c52a05a463": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_15639121fc8566c52a05a463.jpg",
+    "sha256": "07b684f57b69e5a12becf4ce71efe3f3ba40a341bd52aff46313c19f5e9ffc35",
+    "size_bytes": 6106
+  },
+  "td_159d76f14ee0b0b245fba510": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_159d76f14ee0b0b245fba510.jpg",
+    "sha256": "d0ade1614bb5be27d00c7c861c2a9f70b0eed5197cce45608866b4143e475332",
+    "size_bytes": 6265
+  },
+  "td_15bb51b531f8e2dffba34744": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_15bb51b531f8e2dffba34744.jpg",
+    "sha256": "d8ab519c717560e5da465ce8da5b5784d56dbc306ea1fa289d48ebdc9151f9ce",
+    "size_bytes": 4268
+  },
+  "td_15fdecae6db8aab941e6f1e8": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_15fdecae6db8aab941e6f1e8.jpg",
+    "sha256": "8e8014e783bf2534fc8443b60fe2d06611d850a1be09fa3fb0783a826c08239e",
+    "size_bytes": 4219
+  },
+  "td_163326731d56ef4b76a98c97": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_163326731d56ef4b76a98c97.jpg",
+    "sha256": "fda7763af07a15360729d1c3f0cece556897c7bd1406ee9019f5ca37f1af83f2",
+    "size_bytes": 4208
+  },
+  "td_16c53c38813bf7a7b3208884": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_16c53c38813bf7a7b3208884.jpg",
+    "sha256": "97927c20075d70ad37be62169e383bc0567833dc55f3eb97098f303a906fad18",
+    "size_bytes": 5661
+  },
+  "td_177a1e81d9d7c2f057f7040c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_177a1e81d9d7c2f057f7040c.jpg",
+    "sha256": "ecae4f277323c58e0854959aa690c51840c241119c46232dacc211fdad620b5b",
+    "size_bytes": 5877
+  },
+  "td_1877895e81f5c97d4c9b9f2a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1877895e81f5c97d4c9b9f2a.jpg",
+    "sha256": "8e52f94c726cdcac1c6ada74660d0c74457a4af36182ddb896b600c072614d7b",
+    "size_bytes": 5661
+  },
+  "td_18a94c7bb0c3fe9b8666a52e": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_18a94c7bb0c3fe9b8666a52e.jpg",
+    "sha256": "abff9e9bfaa36d4aa4fdc35f59db0f9068a3d0aec4935fc0c99b83ec2eaceba5",
+    "size_bytes": 4246
+  },
+  "td_19a57031f346001c1dc1faf2": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_19a57031f346001c1dc1faf2.jpg",
+    "sha256": "83ff3d4839d0b1e634cd120fc97b2dc23215b7045b2c9d1233cb23649be5a3ee",
+    "size_bytes": 4430
+  },
+  "td_1aaf3007ae1178f90cc5783f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1aaf3007ae1178f90cc5783f.jpg",
+    "sha256": "6238359fdc9b3ab50a5694e32c100e583827e7e55803efa4ac328bdce1a82047",
+    "size_bytes": 5909
+  },
+  "td_1b332856f6e4aa1b28128272": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1b332856f6e4aa1b28128272.jpg",
+    "sha256": "373dc803f315d7f4c6ba151b2204bb51f6de069797319172164c5b3146efbacf",
+    "size_bytes": 5785
+  },
+  "td_1b813e0624072983e317cb1c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1b813e0624072983e317cb1c.jpg",
+    "sha256": "beb399562a8a70600013d31e3dddebcc28228719a4d5622cb41e08245fdf86e0",
+    "size_bytes": 4392
+  },
+  "td_1c2c155b5147f5f34c65e4ea": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1c2c155b5147f5f34c65e4ea.jpg",
+    "sha256": "4951df11e0fbd0626047a1320a9702119315ad9cc1ea5527a5cfa96723b26582",
+    "size_bytes": 4421
+  },
+  "td_1c3d511ea7e710116f09cc95": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1c3d511ea7e710116f09cc95.jpg",
+    "sha256": "50c53220d42e8aac4b29252ad6908939e8c5fe5c9d1644ad2a4f11e7dd5e9926",
+    "size_bytes": 6203
+  },
+  "td_1d30151ea50d564511fb7590": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1d30151ea50d564511fb7590.jpg",
+    "sha256": "954b16eb60c76fb8411cca203d398cbab40c00f8c3f13d739e33f955e676b9d4",
+    "size_bytes": 4235
+  },
+  "td_1dbf2f57d703823f27474d9b": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1dbf2f57d703823f27474d9b.jpg",
+    "sha256": "4cbf590bbc849c5d79250f448b25270d01fcaa4098993264e2c60606e66bdde6",
+    "size_bytes": 4715
+  },
+  "td_1e24499946a94f82b75c1d93": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1e24499946a94f82b75c1d93.jpg",
+    "sha256": "8a882d101bcc5ca0d2e945822e85560983d1c77be36d8dbc275330c9065785dc",
+    "size_bytes": 6219
+  },
+  "td_1eec2306b374b139ce54473a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1eec2306b374b139ce54473a.jpg",
+    "sha256": "44cadf46a8f2d153db0e317cc2cda66fb7428986df7304e68cc878f7d01aff00",
+    "size_bytes": 5841
+  },
+  "td_1fe0871d03af9da998d40e24": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_1fe0871d03af9da998d40e24.jpg",
+    "sha256": "deb14db46ee84b21f7bda53ea09009dc415da3206ab87e04abb4a49762651600",
+    "size_bytes": 6228
+  },
+  "td_200a46bb1ff00afbe4359f3d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_200a46bb1ff00afbe4359f3d.jpg",
+    "sha256": "7e3be47914e1ccf65e90cd92c03996019c26790dec86d55da2c7168873ba1595",
+    "size_bytes": 6224
+  },
+  "td_20a252f29d379f84b044e466": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_20a252f29d379f84b044e466.jpg",
+    "sha256": "4c6e80674dac21b1b791fc451e1bc3f449de282bb9461419bb48dbd32b3fc23d",
+    "size_bytes": 6225
+  },
+  "td_23bd0b1b4e76217fa0c60971": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_23bd0b1b4e76217fa0c60971.jpg",
+    "sha256": "ac708f02bd095c2ba92acf806d403f65d47ad80f2c72ad02a4e1a2530f908201",
+    "size_bytes": 4473
+  },
+  "td_25b2bd44ccb31ee76689d747": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_25b2bd44ccb31ee76689d747.jpg",
+    "sha256": "6df4dcdca3670719c2670d96bc060c68343a6745d5789891f9f75fcac937e23c",
+    "size_bytes": 4514
+  },
+  "td_265ebed37094e0343a36d2aa": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_265ebed37094e0343a36d2aa.jpg",
+    "sha256": "7d189762b1cbc2c457f634719431eb4e4fc6532591ad1ef9e6f36891bf38378d",
+    "size_bytes": 6007
+  },
+  "td_2661c5fdedb43d56d610e6c7": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_2661c5fdedb43d56d610e6c7.jpg",
+    "sha256": "3ec1ad8036fd5bff4fbee22113f324cdb474ca18c4f306b7d59159e36b8b5e9c",
+    "size_bytes": 4473
+  },
+  "td_268680f5366a53979ff694dd": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_268680f5366a53979ff694dd.jpg",
+    "sha256": "7faaeffb758d1215713806044c28e1a096f6ca9c749683d51a37515cd0900764",
+    "size_bytes": 5849
+  },
+  "td_272a7df0a4bc68a897217bae": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_272a7df0a4bc68a897217bae.jpg",
+    "sha256": "285e3448e7d5dd3c5fa258570f2bb52206f505cf84d6d848b750e7254f23bdb8",
+    "size_bytes": 4462
+  },
+  "td_275daa7f154dd682348e857d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_275daa7f154dd682348e857d.jpg",
+    "sha256": "c65ef5a5a70c48494f352bd966455aee32e0fc817954bfe7490cd1bf2a7b2f6f",
+    "size_bytes": 4205
+  },
+  "td_279615e480f134d1320bc5ad": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_279615e480f134d1320bc5ad.jpg",
+    "sha256": "caa135ee6e6ab131af87c9d6f864b05ca6e3e7a1e5c7b3b00eb494eed807b86e",
+    "size_bytes": 6028
+  },
+  "td_27d75510e6773da79724147a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_27d75510e6773da79724147a.jpg",
+    "sha256": "d5641ffab286775cccc4cbd0fcdd5d7854d7c4baa870aaffa704250d4ea7ecd1",
+    "size_bytes": 4464
+  },
+  "td_27ecea9a1e4b651b91ef386d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_27ecea9a1e4b651b91ef386d.jpg",
+    "sha256": "8418d3061b7e638f5061fb4d39d717f01d2a847542c79b898673c59c742a5784",
+    "size_bytes": 5777
+  },
+  "td_28198c1d1e5cab67a9843687": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_28198c1d1e5cab67a9843687.jpg",
+    "sha256": "ce50fa3e13503c48aefbd5bd66e1013585e2957dae74a455a7d7a7072c141d4d",
+    "size_bytes": 4238
+  },
+  "td_2898259c710fcaa90156879f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_2898259c710fcaa90156879f.jpg",
+    "sha256": "c0e4e8f0b355384c7b17e50ab5c74f0c356f832ef77280bd96de8ce5e7f74ffd",
+    "size_bytes": 4947
+  },
+  "td_28d8e971e07ce448fa17228f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_28d8e971e07ce448fa17228f.jpg",
+    "sha256": "f4d7fb2ee5845a53e70a6e2944379a0bd21a88b747969646606b07228f152527",
+    "size_bytes": 6146
+  },
+  "td_2a3609b02cc6d4055eab9c69": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_2a3609b02cc6d4055eab9c69.jpg",
+    "sha256": "8876ea079255a3d62dbe0ba41df3161a49527738104ca494610e8804d5b8d2c3",
+    "size_bytes": 4317
+  },
+  "td_2cb91f67a7d678bc3d844881": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_2cb91f67a7d678bc3d844881.jpg",
+    "sha256": "ac0de0701b047beec34437cfd056abe8e85d3a22865483016a2d50a3892a01a5",
+    "size_bytes": 6301
+  },
+  "td_2cc5e398d848a5494bfce76f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_2cc5e398d848a5494bfce76f.jpg",
+    "sha256": "81330ca8e7f47ebd2370164e59021bb913b194d28a65adc45a0bc327115da7a9",
+    "size_bytes": 6113
+  },
+  "td_2d98faed6bc51f9c98f233bb": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_2d98faed6bc51f9c98f233bb.jpg",
+    "sha256": "e1396632c9435e877b31f8d0f565d9f9ff5b212d48f24cd3de52715d1667e8fb",
+    "size_bytes": 4260
+  },
+  "td_2da845725ddae4af1176ea14": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_2da845725ddae4af1176ea14.jpg",
+    "sha256": "c3af785de2138af601d8a478eb1ee74f9db8b266554a722a2bfef03d20a3e39f",
+    "size_bytes": 6212
+  },
+  "td_2df5340a4fc85eab135e8d6c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_2df5340a4fc85eab135e8d6c.jpg",
+    "sha256": "8fb24aa592a19905a132b2f96a2fdf7464d168d4aaa63446064f04486909a3b7",
+    "size_bytes": 5903
+  },
+  "td_2e3042a1f538ef07d690f8f7": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_2e3042a1f538ef07d690f8f7.jpg",
+    "sha256": "dd4c3ecb56df9e1b932541b4acac58ea60e923bc323f4c7c2f012a9f4394e5eb",
+    "size_bytes": 6021
+  },
+  "td_2ea46bbd0962f304d9bbe2af": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_2ea46bbd0962f304d9bbe2af.jpg",
+    "sha256": "626cf8176770be9d7a779bf654328ed5fe79985fa5b33215a26bbca8873c5037",
+    "size_bytes": 4490
+  },
+  "td_2f238e6677c2b63d80c4c1d4": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_2f238e6677c2b63d80c4c1d4.jpg",
+    "sha256": "424cad4e8b7072440256156ae08688d720ec91b0d1b479bd53e8a1f693e87329",
+    "size_bytes": 4161
+  },
+  "td_2fc9d2e9728a39e409dc79eb": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_2fc9d2e9728a39e409dc79eb.jpg",
+    "sha256": "f4608b2e64a53529983e96d55a0147253db0970a3d871e8d5ace2f7bcf05e823",
+    "size_bytes": 6328
+  },
+  "td_3056497a72ced33da31c6af7": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3056497a72ced33da31c6af7.jpg",
+    "sha256": "339d14314c37625d91ce50dad53a58c7b4f65fb3907dfb20fa531f26dd45a9ac",
+    "size_bytes": 4194
+  },
+  "td_307e2e78dc028065eed9c997": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_307e2e78dc028065eed9c997.jpg",
+    "sha256": "7ae1ff13fb272d86093d488d9e4dede51a7514412c50582562daa80f93f200d5",
+    "size_bytes": 6339
+  },
+  "td_309e740ce89fb6a5acc8077e": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_309e740ce89fb6a5acc8077e.jpg",
+    "sha256": "9e7091f5ba3379ab93975097d77c1dd966379ae5fdca1ce3974e803e8e9b3499",
+    "size_bytes": 5599
+  },
+  "td_31eb58155269c35f84f40151": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_31eb58155269c35f84f40151.jpg",
+    "sha256": "f99c3188523b0d963d5752a03cbe713b8ca356e152bee4248628a96b929828d7",
+    "size_bytes": 5806
+  },
+  "td_3243eceac0f9700fa5872d6d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3243eceac0f9700fa5872d6d.jpg",
+    "sha256": "a7c2372bc30e1b3f3a94a5ff01256050dfcd759d4f40dff281ab328a14773c57",
+    "size_bytes": 6319
+  },
+  "td_3259e92a6ef06c63d7f00320": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3259e92a6ef06c63d7f00320.jpg",
+    "sha256": "d61dd3989bc5897a75a82b6e1f948c9e6a0a84798be98289b73c7e31e693dbeb",
+    "size_bytes": 4590
+  },
+  "td_32e74592f0460aa27bb98679": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_32e74592f0460aa27bb98679.jpg",
+    "sha256": "7a64d5852970037a9fa3af26573f33cc76e193fec1762fff7efcefcac3130748",
+    "size_bytes": 4215
+  },
+  "td_32feb69cfa8bfc63637a3ce8": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_32feb69cfa8bfc63637a3ce8.jpg",
+    "sha256": "57565ffefa4d4dfbc2701aa6c27347bb9d98a3e32e6865857de1a78a9dcb1a25",
+    "size_bytes": 6210
+  },
+  "td_338bc72ac5c6631babe00ef2": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_338bc72ac5c6631babe00ef2.jpg",
+    "sha256": "18c36b35281360e1c02aa28eaf32756af810be423e2e51a1c2cd9e4d26b3956c",
+    "size_bytes": 4557
+  },
+  "td_33b002dfd2bbaa882a3e782d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_33b002dfd2bbaa882a3e782d.jpg",
+    "sha256": "d1232f48fde3442574ca4d54622f19b8121d9597f960d38bf61e97e07ac75211",
+    "size_bytes": 6244
+  },
+  "td_33c1dace3fa0d70c58e382a8": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_33c1dace3fa0d70c58e382a8.jpg",
+    "sha256": "cec43ff8e14eccd6dcf0fa2086e39a67780d762de52c5951862583aa90c644bf",
+    "size_bytes": 5618
+  },
+  "td_346887c378d758c1ab6bf0ad": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_346887c378d758c1ab6bf0ad.jpg",
+    "sha256": "37703df01bab45c02eb61231939107c45b349d8372e0a29ac7b916fc4e23d7bf",
+    "size_bytes": 4510
+  },
+  "td_346d1db559f5a82b001367ee": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_346d1db559f5a82b001367ee.jpg",
+    "sha256": "acc2cf3988549f0dbe54a627d35b135b75efeb4e15b2b8a42b3aa87373180f84",
+    "size_bytes": 4200
+  },
+  "td_34f1ad48f78958552bcf2598": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_34f1ad48f78958552bcf2598.jpg",
+    "sha256": "dae848696c4050f1178d1b73e13c1eda151dfb1d7f74baac6b543d1140ac093d",
+    "size_bytes": 4392
+  },
+  "td_350d5f43392a07762af7fccf": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_350d5f43392a07762af7fccf.jpg",
+    "sha256": "0c279eefc19b22cd53f80d4bf52c785982bc7ee9dfe6dd3a750c6017a4a3f4b8",
+    "size_bytes": 4385
+  },
+  "td_3786007c1716f8ecd651bf7a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3786007c1716f8ecd651bf7a.jpg",
+    "sha256": "3dc62e5e2e789af59791385451c54caec7cc35607ee3676476e80b849e4539c8",
+    "size_bytes": 6225
+  },
+  "td_378c59f9a1bc439fb2d0b66c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_378c59f9a1bc439fb2d0b66c.jpg",
+    "sha256": "8e5dfb31d2a37234066b4e6baa86a6ca5656912a714cb46602da4ca52aaba3c0",
+    "size_bytes": 4349
+  },
+  "td_3796904851b0bd746434bcf2": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3796904851b0bd746434bcf2.jpg",
+    "sha256": "1f4c0f9c97408e6bfac0aa7307fcbde5e8326f0c036bd9e8a55d2208ea81d972",
+    "size_bytes": 4301
+  },
+  "td_37b9464e6277d69a6ae5d7d5": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_37b9464e6277d69a6ae5d7d5.jpg",
+    "sha256": "9657058b22c4175811b6bc0584e8a96a48e60b809d507a208a6046a50a23c8c5",
+    "size_bytes": 4182
+  },
+  "td_39a1fe9d52e54181ff4b674e": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_39a1fe9d52e54181ff4b674e.jpg",
+    "sha256": "6ba46bfff5ca78a37fd583d45da6197cd6a271455954258d3c3f43e95d51e4d2",
+    "size_bytes": 4162
+  },
+  "td_3a0a9b2de39d8df284dc8fed": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3a0a9b2de39d8df284dc8fed.jpg",
+    "sha256": "50d34ea70afa0f4bc0d75d8d431026d64279caa52d64a59d7f9c6554aaa918f9",
+    "size_bytes": 4219
+  },
+  "td_3a310feed7eb7664e74388ca": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3a310feed7eb7664e74388ca.jpg",
+    "sha256": "83b9e2fd7e2ffce49779e47cc87b54cb3543df5307c39c4a7ad169d51b6c1c03",
+    "size_bytes": 4368
+  },
+  "td_3b52c656a14ed70e164557d1": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3b52c656a14ed70e164557d1.jpg",
+    "sha256": "bb5d643a3757bb4ab948cc338c3899d7303259d254570dc5b699383113de77ce",
+    "size_bytes": 6242
+  },
+  "td_3ba53670e7f65ea1bf03b201": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3ba53670e7f65ea1bf03b201.jpg",
+    "sha256": "089c30a60c4fd97bece22beb2932670f14a694f1cc3a88604e1d82e43e3f92f1",
+    "size_bytes": 4230
+  },
+  "td_3bc52a1d3c922dcc42f3b226": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3bc52a1d3c922dcc42f3b226.jpg",
+    "sha256": "172fab64d63db6a427d72557ef844ffe351440aa38d9972d2322221e52dfc6d6",
+    "size_bytes": 5799
+  },
+  "td_3e6cd0446f571b96a611d609": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3e6cd0446f571b96a611d609.jpg",
+    "sha256": "1bf04a733135a833c33c3c6be759e0648b30b7fc2dd2a9b4680cccb6e4785ae4",
+    "size_bytes": 6116
+  },
+  "td_3eb188f1254b9d19efb526ed": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3eb188f1254b9d19efb526ed.jpg",
+    "sha256": "79d6d99fd66353d203462ddc7674fda9a0ac58416cda256bba774fbc8cb3a8d6",
+    "size_bytes": 4219
+  },
+  "td_3ebca89aed9daa6dfaca701d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3ebca89aed9daa6dfaca701d.jpg",
+    "sha256": "a74d5499a0a0faf4379ac3db578dbdf4f5891078dc98e5efc0e4350fd3fb9267",
+    "size_bytes": 4628
+  },
+  "td_3f8912be8c9f061762bd0fbd": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_3f8912be8c9f061762bd0fbd.jpg",
+    "sha256": "66617cf175d340e14fc1db9c049824849586ba1ae650bc815f3265f05d77c013",
+    "size_bytes": 6328
+  },
+  "td_4019bab892a7b85c3cc0c629": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4019bab892a7b85c3cc0c629.jpg",
+    "sha256": "36fd534be7f8e3ca7198428937a3eadc86181933985719fbd03fe67aa3fe4b5b",
+    "size_bytes": 6328
+  },
+  "td_403ab7c4f3217fb58bba65d2": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_403ab7c4f3217fb58bba65d2.jpg",
+    "sha256": "81cecf4cbb413e298ad90e077d32e8b8406a3f46f652d8c2702a40a62dade959",
+    "size_bytes": 6195
+  },
+  "td_40b3324eeb86f19725845a9f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_40b3324eeb86f19725845a9f.jpg",
+    "sha256": "ee3339238d8d27ea4c6dc853f84d184bca07abf444f1dbf0e3d1d2fb877afaf9",
+    "size_bytes": 5606
+  },
+  "td_40b7ba8a7555866f1fc9eb58": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_40b7ba8a7555866f1fc9eb58.jpg",
+    "sha256": "dd0761ac98eca1056eec634369dd364e4e92ab98e959004efe78c6dcb950470a",
+    "size_bytes": 5626
+  },
+  "td_41339f7b7f994ca942193444": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_41339f7b7f994ca942193444.jpg",
+    "sha256": "a67a342ee0348e93215d6ce1bb2f03daae4d2b0cd9bd371adfc69d5a2bd3c7cc",
+    "size_bytes": 6329
+  },
+  "td_41eee2d2ae9f8aac3ff30796": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_41eee2d2ae9f8aac3ff30796.jpg",
+    "sha256": "9bfce31ece5a6e5d58cbd190a0721125eea106df319d75ba331c34e324c3f817",
+    "size_bytes": 4238
+  },
+  "td_4211925aa4312a02b3fe495b": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4211925aa4312a02b3fe495b.jpg",
+    "sha256": "178b9827708a6131bc2aad498194e4cf4f6e01cfc322e14cfe16dd55c475afcc",
+    "size_bytes": 6020
+  },
+  "td_4313676672b1ea2a01293a97": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4313676672b1ea2a01293a97.jpg",
+    "sha256": "9d839dcd569843d4c23add6ec0f0046b3a927078e5815da2f8049362c4248e6b",
+    "size_bytes": 4401
+  },
+  "td_440748bfc0b339313397f281": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_440748bfc0b339313397f281.jpg",
+    "sha256": "72651716c5c4d39a9b7838d9dbd7783e5ba342825abca445b5b51081f0d5caee",
+    "size_bytes": 4752
+  },
+  "td_440dc24f1311812ea09a4713": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_440dc24f1311812ea09a4713.jpg",
+    "sha256": "f15db6d1f6cd0994c6d4c310cb035d70dcb3edd6643f6dbdbbbb7e9db9fec2e5",
+    "size_bytes": 5860
+  },
+  "td_449cdcc9f58d27fd4124fd59": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_449cdcc9f58d27fd4124fd59.jpg",
+    "sha256": "709d9fd114c006d29d2953f7bf7fd86bb9ba04334e0c122bd2050f9d009f24c7",
+    "size_bytes": 6207
+  },
+  "td_450ce1294e06bf09fd34e021": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_450ce1294e06bf09fd34e021.jpg",
+    "sha256": "c85f003f59fca6a261dd0ae6880e33b53e128a742ad2f1331294a2649d7cd374",
+    "size_bytes": 4577
+  },
+  "td_458435afd272ef05aabc8a8a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_458435afd272ef05aabc8a8a.jpg",
+    "sha256": "bc128039aa51db9783f4115c11493d0fdfb747617d3eeb70a7b59a8cd46eacf1",
+    "size_bytes": 6189
+  },
+  "td_46fe897f253434c6bf672ee4": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_46fe897f253434c6bf672ee4.jpg",
+    "sha256": "a58cee3d866041ed34072bf3863c6bd4172f482d2cac92cf52cb5cf27535b39c",
+    "size_bytes": 6101
+  },
+  "td_47d8c6f36dfdccde438a17be": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_47d8c6f36dfdccde438a17be.jpg",
+    "sha256": "3e1f320e1e43fde2bd54b8eb7be1eb24d6a85488b3230899f6b4bcdb50265742",
+    "size_bytes": 6027
+  },
+  "td_48649322e8044568fdb7571b": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_48649322e8044568fdb7571b.jpg",
+    "sha256": "202bbe71ba2d131e30485c80eb3f6195edb771f1e493c412484321f2261adb2a",
+    "size_bytes": 6240
+  },
+  "td_48dc9677d7441130b88a7389": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_48dc9677d7441130b88a7389.jpg",
+    "sha256": "63d9c487a549d84b72f19d504cc8601af0ecfa8d421482877d8e825ab889db7b",
+    "size_bytes": 4519
+  },
+  "td_48f324f7b615cfb63672cdea": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_48f324f7b615cfb63672cdea.jpg",
+    "sha256": "78d5142a06528de92f68f5cad3b45304162aec0bea2747c2c24c6f6e8aeef42f",
+    "size_bytes": 5917
+  },
+  "td_499d061db655952d423f79c0": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_499d061db655952d423f79c0.jpg",
+    "sha256": "96468e68591a8f48d63869ec254d938e457fc6547756424c82f7e76ce7ea91f8",
+    "size_bytes": 6256
+  },
+  "td_49a94327dbcb4b08f23febba": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_49a94327dbcb4b08f23febba.jpg",
+    "sha256": "54e959c95e2cffa153581e1c9ccb02efdbbd88703bd7d95e31b192ecb8ad3c0b",
+    "size_bytes": 4575
+  },
+  "td_4a8480e6ec2ac6ac85527a68": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4a8480e6ec2ac6ac85527a68.jpg",
+    "sha256": "76be74ebe06a07734bf356ecbe3b3229bac8ffd7de84cc624a5d198b916b0426",
+    "size_bytes": 5814
+  },
+  "td_4b0d34f5fe2e2627160b9316": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4b0d34f5fe2e2627160b9316.jpg",
+    "sha256": "6cc44b94c59243b1334eab250e696bc9a7678ec6d29127ca2c77ecaa81154323",
+    "size_bytes": 5814
+  },
+  "td_4bd9172121c7d66e9ef551ea": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4bd9172121c7d66e9ef551ea.jpg",
+    "sha256": "d2e957caa5803c3ce9074b3e8c479bd25df049fa00154be56cb6a588211d7bcb",
+    "size_bytes": 6339
+  },
+  "td_4c39e6a009bbf89f47183c17": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4c39e6a009bbf89f47183c17.jpg",
+    "sha256": "37acef5d345d0703a00f1e663c16b9f2563ba577281146a2d9ebb5f1b4062f18",
+    "size_bytes": 4271
+  },
+  "td_4cd3e509edd3992b02ba9c05": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4cd3e509edd3992b02ba9c05.jpg",
+    "sha256": "7d7ebc71e056f752c22933de1e38e10e3bec4b5eab408e481c64791521778843",
+    "size_bytes": 6189
+  },
+  "td_4ce6766e9eced24f5f9517de": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4ce6766e9eced24f5f9517de.jpg",
+    "sha256": "2f46ecd5224071f4e2e8ff31ded199e5f09011de402b9ad29a9f116571291ac9",
+    "size_bytes": 5898
+  },
+  "td_4d5c77b1713e191214e5f188": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4d5c77b1713e191214e5f188.jpg",
+    "sha256": "b4c8e10fdd92d063c70f75f008d3e244d65797f992f93e861fe498d5505ef879",
+    "size_bytes": 6033
+  },
+  "td_4d78b9eafa1c246ab5902899": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4d78b9eafa1c246ab5902899.jpg",
+    "sha256": "a3d5b9bc54cf283671572dcf321adfe314727ac03ee545e12e3e10f52a47c137",
+    "size_bytes": 4255
+  },
+  "td_4db7ef804720cb98573fec0e": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4db7ef804720cb98573fec0e.jpg",
+    "sha256": "60d73dbdb6582df1f36e57b843a79c0a00a76469a39c5b830a1b3bb369618b7f",
+    "size_bytes": 6223
+  },
+  "td_4e61bd8496567489136b8113": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4e61bd8496567489136b8113.jpg",
+    "sha256": "84f605b6f53f1fb17b4f2655645d56d55fac455f08520304355d7d16e9ad32ef",
+    "size_bytes": 4256
+  },
+  "td_4ed81ec0b36a3b88c0a37d55": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4ed81ec0b36a3b88c0a37d55.jpg",
+    "sha256": "86b2ca553f149b69e21263da9bb2d883da6104d5da12b5e0c6a3fc7386cfdbca",
+    "size_bytes": 4933
+  },
+  "td_4fd06c3892bc27837785552b": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_4fd06c3892bc27837785552b.jpg",
+    "sha256": "035cb1e206a130b9786fe1ba524784d71bc860413dae7076515cd5f3f814c170",
+    "size_bytes": 6102
+  },
+  "td_506075b2544bb894a5fba2e0": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_506075b2544bb894a5fba2e0.jpg",
+    "sha256": "e9bf787551a0d2fe354f8d8a62e9b43bb57f732ec859d187102d42272876195d",
+    "size_bytes": 4252
+  },
+  "td_50a1038d058543e79a94ebc6": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_50a1038d058543e79a94ebc6.jpg",
+    "sha256": "39952db8b1e7ca1718872e158517fac7670347ca51af2a7aa8939c292a2a02cc",
+    "size_bytes": 4561
+  },
+  "td_5387fa475be380895ffd5ace": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5387fa475be380895ffd5ace.jpg",
+    "sha256": "e371b75ed410a721a156323b3575bfbcca75abdb33336cca588a90ecee64b2b1",
+    "size_bytes": 4205
+  },
+  "td_5424500032f08eced1c6fc33": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5424500032f08eced1c6fc33.jpg",
+    "sha256": "f782afb4dedea18f7de3338cd2fafbccc38ce40f2bd74f7f784f39c16cb9ffc5",
+    "size_bytes": 4748
+  },
+  "td_54a535b97adcdb8fa31ac3e2": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_54a535b97adcdb8fa31ac3e2.jpg",
+    "sha256": "d55cc323a7b389ffe0578d8d048d96debc4c3bd8d92d08e43da10c24858bc322",
+    "size_bytes": 4835
+  },
+  "td_54f31a8000fee7cb9b9889b0": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_54f31a8000fee7cb9b9889b0.jpg",
+    "sha256": "938c3d579133d743876e1e09e2ab1d47ac822c2a39b36369621966c77a71176d",
+    "size_bytes": 4466
+  },
+  "td_5594565fdde0d96333e8cf7b": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5594565fdde0d96333e8cf7b.jpg",
+    "sha256": "aed6da4f48605009674acf4e3cbfb813cd4c641e655b14b40e346ff936063b7b",
+    "size_bytes": 4856
+  },
+  "td_56d36c163cbf6905c064a12a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_56d36c163cbf6905c064a12a.jpg",
+    "sha256": "3bcd2b37a7026a9964b8937cdc0a4b586b3734952f3d5b42b688e965347fcff8",
+    "size_bytes": 6235
+  },
+  "td_57c2d814ebc01ab0309cd2ba": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_57c2d814ebc01ab0309cd2ba.jpg",
+    "sha256": "008e7e4179dce21ab5fb4499bef1a3161e5648a40fa57520f79c413459e567b3",
+    "size_bytes": 5623
+  },
+  "td_5810ef4f985b76b9ac7e971f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5810ef4f985b76b9ac7e971f.jpg",
+    "sha256": "0ec1ce6af4b5a1b157967df5fcfcda8de027cc71fda45e8430ef609b0400b932",
+    "size_bytes": 4151
+  },
+  "td_58b9e5a0b48a5665be7a819d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_58b9e5a0b48a5665be7a819d.jpg",
+    "sha256": "f70a8e043dd2dd27eff6be5ea5bf7983aef32d0443146918ce1e0a025017a5e4",
+    "size_bytes": 4382
+  },
+  "td_5964e1b8c06e421264a92873": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5964e1b8c06e421264a92873.jpg",
+    "sha256": "a44e947534af8fa1f1aef3292d4bd4dd7aa2d4c2b7929e5bd3a56d339817bda9",
+    "size_bytes": 4193
+  },
+  "td_5a87a29c96786344ef652aeb": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5a87a29c96786344ef652aeb.jpg",
+    "sha256": "e7cc235a5088ca891d27c0e570f92a43e0b9f3172a7cbb494710a5e0bf4dd383",
+    "size_bytes": 5661
+  },
+  "td_5af53f4f68e4a4aeb3861c8a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5af53f4f68e4a4aeb3861c8a.jpg",
+    "sha256": "a83475cea17d11376877539ec20878b059af042c3bdb5794f9bf823cf6df1c6b",
+    "size_bytes": 4255
+  },
+  "td_5b164f68f6cd81fed9869078": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5b164f68f6cd81fed9869078.jpg",
+    "sha256": "09f92575c9d45b74565e197a4cf97dd01976440180c8d93b55440535048c51c7",
+    "size_bytes": 4230
+  },
+  "td_5c5d8b210674ceb20972f841": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5c5d8b210674ceb20972f841.jpg",
+    "sha256": "9bd1bf9572993a88f5912aa9ef1f52ed55c3d67fb9026f57c764024f2cbe16e2",
+    "size_bytes": 4527
+  },
+  "td_5c8e88b578a6077da120580a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5c8e88b578a6077da120580a.jpg",
+    "sha256": "d5278e547569775d530baa4243818a803f09ff73c910c545c288214f0ef04882",
+    "size_bytes": 6245
+  },
+  "td_5c9138512d8de411df31234c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5c9138512d8de411df31234c.jpg",
+    "sha256": "d2e8f973ba7f3b023b290fedfd71e0f07b5f6ada798f20a33d9a386246fceece",
+    "size_bytes": 5828
+  },
+  "td_5e4b9758e02f20611efa6184": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5e4b9758e02f20611efa6184.jpg",
+    "sha256": "ce2bbf852cb247686cc0105ed9e23276da58b267071c9c24da5a36efff32e7c1",
+    "size_bytes": 5822
+  },
+  "td_5e848cc6848e4b005a306856": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5e848cc6848e4b005a306856.jpg",
+    "sha256": "82ff937637418a3b9ddd9ae635c3d7e9382d49d896cd50124443bf20aa07ab3f",
+    "size_bytes": 5861
+  },
+  "td_5ee63e0c4cd1f6b20f2b3f2c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5ee63e0c4cd1f6b20f2b3f2c.jpg",
+    "sha256": "13dc7ef2b600cff1313169d70a2544b1fd2b143c3f4d79d115747b5896948d51",
+    "size_bytes": 4662
+  },
+  "td_5f910799f48cd5044b65e62a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5f910799f48cd5044b65e62a.jpg",
+    "sha256": "665be516393cef58d230ead898b45506de0c9dc401b3c282de4f578aba683be9",
+    "size_bytes": 4251
+  },
+  "td_5fbe306b8d42b9d00cb10c98": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_5fbe306b8d42b9d00cb10c98.jpg",
+    "sha256": "a1a16aa9bd7019fad6b57367f9d4e05040d74449736b9941cd0932e67909984f",
+    "size_bytes": 6186
+  },
+  "td_61e0be7dbc254c54add26d3f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_61e0be7dbc254c54add26d3f.jpg",
+    "sha256": "cfbcbf3431202f6765d7866f78bf7d537c124b5b29c08ac6296b674bca078af6",
+    "size_bytes": 4492
+  },
+  "td_62e27c9dd5ef8fc6e0207112": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_62e27c9dd5ef8fc6e0207112.jpg",
+    "sha256": "92239e48f4d95c3e2e949ea2da3840713ddf02eff766881f1205bf1b9f681771",
+    "size_bytes": 6010
+  },
+  "td_63316241d390ad4c557dc558": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_63316241d390ad4c557dc558.jpg",
+    "sha256": "387038faf690ca85abf7474f54ae18a270caa306885a080808999d8c4de28caf",
+    "size_bytes": 5918
+  },
+  "td_6337b8874b532171bdd6feb2": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_6337b8874b532171bdd6feb2.jpg",
+    "sha256": "49692b1fd79ae0e96928737a756692666a04425feb63e4ab33aa29bcb171ceed",
+    "size_bytes": 6103
+  },
+  "td_637e0bf9b4fad20781c60e10": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_637e0bf9b4fad20781c60e10.jpg",
+    "sha256": "d087a3dc5a2a439a18a03be4929b447bf2fa52799ec972136f833882422ab46c",
+    "size_bytes": 4232
+  },
+  "td_6482bd783da8f601bb0d8d76": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_6482bd783da8f601bb0d8d76.jpg",
+    "sha256": "18ab3174edbd9e6a7a56d7cc4f654cf6eb9eeb13659a6c6bf7c9e6a35ad24249",
+    "size_bytes": 4454
+  },
+  "td_64878903051d7bd496ec0418": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_64878903051d7bd496ec0418.jpg",
+    "sha256": "ce58044ffe2fd8287526a474a72bee27d3eedf944886a3f83c591d4eb8fd4b59",
+    "size_bytes": 4250
+  },
+  "td_659c85396b1c93dd8c7d1975": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_659c85396b1c93dd8c7d1975.jpg",
+    "sha256": "930240d9aa0a3295ceeb6a9f96068d20e55caf96587a07dfa40729e74673e47f",
+    "size_bytes": 4439
+  },
+  "td_6602b6526c3ca65cb53a1619": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_6602b6526c3ca65cb53a1619.jpg",
+    "sha256": "335c6a38030e49b58647d5fb7849d080b345cef1418b39a1f392281d31394e99",
+    "size_bytes": 5782
+  },
+  "td_66e9c814427afa190d4ff857": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_66e9c814427afa190d4ff857.jpg",
+    "sha256": "4a460dd4ca55d979ca4e6437e8b23a8c25a13fb2e2a07cb6de4b7e41684ba542",
+    "size_bytes": 5820
+  },
+  "td_687e7ad5bdf6cc630b379dd6": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_687e7ad5bdf6cc630b379dd6.jpg",
+    "sha256": "10fd48f37d5b7d752507b24e29549eccf5c9f21940536a939d80b1bc1a703941",
+    "size_bytes": 4264
+  },
+  "td_6897c4937b99e23d788445fe": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_6897c4937b99e23d788445fe.jpg",
+    "sha256": "8f7ceea2728b48a297c806d458b44f3025a7ffdd18fa7caac3aa94098568ac41",
+    "size_bytes": 4593
+  },
+  "td_69fe7ddff01063f937a88aae": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_69fe7ddff01063f937a88aae.jpg",
+    "sha256": "4ffffa13d73ab06736f53488f21d5a3c8e6ad54871eea54afeea044d8805b85a",
+    "size_bytes": 6200
+  },
+  "td_6a2c5f5b799ae08c594e51db": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_6a2c5f5b799ae08c594e51db.jpg",
+    "sha256": "1e081b512ffbd5a77c38d384daa131f8672a7c39b299bd84520d2a8f1f289f31",
+    "size_bytes": 5800
+  },
+  "td_6acab0d43b4aa9886ce73fc6": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_6acab0d43b4aa9886ce73fc6.jpg",
+    "sha256": "e3a3eb0d01e0302069c7691df05fd2855e3bd5a5176ae97e1cb2e438d9b59f64",
+    "size_bytes": 6117
+  },
+  "td_6b0f09441471bbbfb77562d8": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_6b0f09441471bbbfb77562d8.jpg",
+    "sha256": "196693fd84ca5eca2399c53f8e3897a55abd559346e042c2fbd14ab2f6b9097f",
+    "size_bytes": 4913
+  },
+  "td_6c741f9fa70ae5dcec9f0b85": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_6c741f9fa70ae5dcec9f0b85.jpg",
+    "sha256": "00005058d4b6807e04ba9830c1cdd1f905f74d5b364404d9007b8e7e0b97b745",
+    "size_bytes": 6245
+  },
+  "td_6e82e4a052be322622bdde67": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_6e82e4a052be322622bdde67.jpg",
+    "sha256": "30c5cdd97e7764c3aaa84b00d34ed542e0b9f400f505ce70767ac1bc5560fa34",
+    "size_bytes": 5685
+  },
+  "td_6ea65e388763b8cda432c373": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_6ea65e388763b8cda432c373.jpg",
+    "sha256": "4e0abe727e2de274086fc36bc14b2d95cbacfe46ceaecea60544b1a7b0abfb2b",
+    "size_bytes": 6194
+  },
+  "td_6eb77413c6f41b546cafb7ef": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_6eb77413c6f41b546cafb7ef.jpg",
+    "sha256": "f472f4349ac5c68132fe1849782f754bb6085b07848c76d75adc208cb6813635",
+    "size_bytes": 4676
+  },
+  "td_6f058ae3de32aabcd4acef3d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_6f058ae3de32aabcd4acef3d.jpg",
+    "sha256": "1917c2c9c57e003c892afa3fc26143e8b2cc14d7726757725ab57d86bb660986",
+    "size_bytes": 4744
+  },
+  "td_70e749c8e3922fce4adf1791": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_70e749c8e3922fce4adf1791.jpg",
+    "sha256": "84728502287042f6de4260ddd055a373435d65c292d0e77fe9e172e2ee2c680a",
+    "size_bytes": 4446
+  },
+  "td_71ea1bb6e3038f37ca4d00c6": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_71ea1bb6e3038f37ca4d00c6.jpg",
+    "sha256": "c287d10b34a878aa08af79ba6429c2c16fc44f836a0af3e406a042a01e603a44",
+    "size_bytes": 4231
+  },
+  "td_72bdfb426991bb645a7b5bb5": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_72bdfb426991bb645a7b5bb5.jpg",
+    "sha256": "4403431530d5e3be37c785000e48fd36fffdc50c9e19218443e69e50d0d08fbf",
+    "size_bytes": 5830
+  },
+  "td_74a7056a5a1ad9fe1e7c4a8e": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_74a7056a5a1ad9fe1e7c4a8e.jpg",
+    "sha256": "d84acb3401e37c620765eb69ee682e40b83032e1006ab1b818deb371ab91c287",
+    "size_bytes": 6122
+  },
+  "td_777bdf20a67e6f33dc3a122f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_777bdf20a67e6f33dc3a122f.jpg",
+    "sha256": "a252fd40c00ba8d5b712012bc89bbdba7c15cbb6c5d09f8b3df6884001993bae",
+    "size_bytes": 5853
+  },
+  "td_786dac1ae280f259ba243656": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_786dac1ae280f259ba243656.jpg",
+    "sha256": "9cd41b20c9dc97c019737d68f83adbf8aab7c5ff9fe48d874e94a4d1b46ee4fa",
+    "size_bytes": 4484
+  },
+  "td_79fb230a6cf4c13db0172492": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_79fb230a6cf4c13db0172492.jpg",
+    "sha256": "81848a7d4cf040e7961cbf24d3e5eaf93dc51e453e34982f8a62763d9054a88a",
+    "size_bytes": 4246
+  },
+  "td_7a560bbe69034448b1d53956": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7a560bbe69034448b1d53956.jpg",
+    "sha256": "086970d5e6454ab21de7f1d8f0d7ce56b666eb30eec18eb44c82ca223fa0ff46",
+    "size_bytes": 5922
+  },
+  "td_7a70954c273cf79246906b2d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7a70954c273cf79246906b2d.jpg",
+    "sha256": "98cf62b25ac0193821b28c1d0f93ef88516b5c6f19ab6ad8a336e2cafa967e32",
+    "size_bytes": 4392
+  },
+  "td_7a976d03014d991cab112493": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7a976d03014d991cab112493.jpg",
+    "sha256": "ca60465ff449e139c45883564a9752946a0007f70caf79ce0156979a593c4ddd",
+    "size_bytes": 6038
+  },
+  "td_7b42cb84b31016d696620dd4": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7b42cb84b31016d696620dd4.jpg",
+    "sha256": "6577a0d795908ce1045f74fed5adfbc52e23e6a3f29bcc11dda516e47dea46c1",
+    "size_bytes": 6189
+  },
+  "td_7c39c87f8a7af221bd9bbeb6": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7c39c87f8a7af221bd9bbeb6.jpg",
+    "sha256": "81cd413dec4813d50c160e620dc1ab3f01537391ed0540f77595bcafb0608682",
+    "size_bytes": 4343
+  },
+  "td_7cea20deced6a6f7fc73f813": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7cea20deced6a6f7fc73f813.jpg",
+    "sha256": "4f59001161f406d9c129514a68dfac408d8dff7de7419976857b3d28f5986f5c",
+    "size_bytes": 4355
+  },
+  "td_7d21294c4dcb7430a7ae4fe5": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7d21294c4dcb7430a7ae4fe5.jpg",
+    "sha256": "36e6a60c56c074ae9fdb9fd2a7abbd191f03e357c1d27c588bad6587be92baf3",
+    "size_bytes": 4316
+  },
+  "td_7d30aa271d2cfb49486027ae": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7d30aa271d2cfb49486027ae.jpg",
+    "sha256": "80cafb6e0b24b9c304fa0c485a69fe7fcacafbda601930b30ced62e21c8734a1",
+    "size_bytes": 4220
+  },
+  "td_7d58190037c1457625e03e23": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7d58190037c1457625e03e23.jpg",
+    "sha256": "2da98a70db194e862d5eb3fc92c1695b58046e7664f9a928be5df5108e0a7e4f",
+    "size_bytes": 4391
+  },
+  "td_7d67ce4d121b417699863919": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7d67ce4d121b417699863919.jpg",
+    "sha256": "308dd0e2d319f0d2e7ca8b7f3a8f6d78830cf5788e85577aa9af23ef75622a6a",
+    "size_bytes": 4388
+  },
+  "td_7da1000b2105c4dd85d7f3e5": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7da1000b2105c4dd85d7f3e5.jpg",
+    "sha256": "f3bbd429aebf2753a8a6235e36fe348f16d634f6e7aebacd8e497eb4cf6a70f6",
+    "size_bytes": 4362
+  },
+  "td_7e0c7260007c3b7fad0ef923": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7e0c7260007c3b7fad0ef923.jpg",
+    "sha256": "3ded54e9bbff858835fb3db1f81b8b06a51b7968bd42969311ac10c4e30a1c0f",
+    "size_bytes": 5666
+  },
+  "td_7e766e6becdd5b588057d9ab": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7e766e6becdd5b588057d9ab.jpg",
+    "sha256": "2cb5d88810da770429a3f185a596cef414bbf6392cc815323886678cf558de12",
+    "size_bytes": 5803
+  },
+  "td_7e867fb808c2f2561d829a66": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_7e867fb808c2f2561d829a66.jpg",
+    "sha256": "5e1f7441ae79e8c9a08f3fb79df8c4a3afcf0732fa71102ff8b0c9eb84e0792d",
+    "size_bytes": 4387
+  },
+  "td_80466b2e137daa4a2eddc61d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_80466b2e137daa4a2eddc61d.jpg",
+    "sha256": "2444d8325a8222bbafe1f4ea41fa8b1da9357fb98d069b023dab1ddfcb27b1b7",
+    "size_bytes": 6256
+  },
+  "td_804be3f16dd64e3a1de7f016": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_804be3f16dd64e3a1de7f016.jpg",
+    "sha256": "0efcfe205a107170129a00a33c266bc1b793dff85c54061831fbcdf0e32ca5f6",
+    "size_bytes": 4199
+  },
+  "td_81612eb1adb88718efbc31c5": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_81612eb1adb88718efbc31c5.jpg",
+    "sha256": "4b12c8462565f2631185e07d49bb8d25ad70d4d28b5a76f51c9478887d9de885",
+    "size_bytes": 4898
+  },
+  "td_81a85c544fb8ae50eecb8b44": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_81a85c544fb8ae50eecb8b44.jpg",
+    "sha256": "9582a287bd2c25233a0de1facef542fdebb4cd9cf88f1265fb5a8b02b17a0ff4",
+    "size_bytes": 6038
+  },
+  "td_8261a74764b8f119dff1a201": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8261a74764b8f119dff1a201.jpg",
+    "sha256": "3252a6d0c6276373855d33661bd6842d7f7746878a19770f096262929ac96c8d",
+    "size_bytes": 4410
+  },
+  "td_8458694d85b9484317419a14": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8458694d85b9484317419a14.jpg",
+    "sha256": "dff8dfbefc214e9f3993a77c882c05649c5b907a6bef6efd44cbfde368b55cd2",
+    "size_bytes": 4616
+  },
+  "td_84d2d7d2cee4bef605be1260": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_84d2d7d2cee4bef605be1260.jpg",
+    "sha256": "0ba748347cd0f4a9e4b4576ffaf5ce80aac1dbf22eb73a387b87ea8c7994b622",
+    "size_bytes": 5766
+  },
+  "td_865216254deffabb39020910": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_865216254deffabb39020910.jpg",
+    "sha256": "897ad8081cb4d5395eeef6f9840fd0c20abc0a83f71022be87a0ba140e91ec0d",
+    "size_bytes": 5758
+  },
+  "td_8672ac009bf9ccd7cc02c842": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8672ac009bf9ccd7cc02c842.jpg",
+    "sha256": "28c0c26e55ddbe6315b07d46a3ca908ebc716734423d69854b78c5f126fb0a61",
+    "size_bytes": 4224
+  },
+  "td_8725a765ecad55980ea356c9": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8725a765ecad55980ea356c9.jpg",
+    "sha256": "91cbe76c4028f27f32507cecef83b5c732504c42b36b213b35098c25b3ed4e04",
+    "size_bytes": 5855
+  },
+  "td_885796aefc651a58cd049140": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_885796aefc651a58cd049140.jpg",
+    "sha256": "d2df07faed7bbc4a85813faf964eb8b81a2045b396c37b6b7e27792fb876bfbb",
+    "size_bytes": 6214
+  },
+  "td_8868e6360eb65791ce175844": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8868e6360eb65791ce175844.jpg",
+    "sha256": "3fc420ef7a92f0a7b81f5a26773aff421ee857e3902e9deae802909f14b57a56",
+    "size_bytes": 6249
+  },
+  "td_88d7d7ccd3864e3404758110": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_88d7d7ccd3864e3404758110.jpg",
+    "sha256": "81a07a9a25c642e9c4b9065b267efeee1bcc64fee27b2bf3d810372d2c78ddff",
+    "size_bytes": 4432
+  },
+  "td_89656f6f5efeb504158655bc": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_89656f6f5efeb504158655bc.jpg",
+    "sha256": "76f41e81339f643b7faf20c2fbcf0f02428c4835094d316652526b47769e4280",
+    "size_bytes": 6103
+  },
+  "td_897562ea67517e25b1bfa6ee": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_897562ea67517e25b1bfa6ee.jpg",
+    "sha256": "a4c6211f8e55033e13229749fd1aed559bf85641d7696a567a10fb1a3b970c67",
+    "size_bytes": 5772
+  },
+  "td_897f034bfe847da38e9aac71": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_897f034bfe847da38e9aac71.jpg",
+    "sha256": "17650f2ad59482cfae0b00531197343c2f1336e517eb9d8de8a622e7bb96949f",
+    "size_bytes": 4508
+  },
+  "td_8a1065afc6c60cbb53974b1a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8a1065afc6c60cbb53974b1a.jpg",
+    "sha256": "a57084596dc288a607f99d9a5cfca648f9bc39e7ff4138bf9252b04cbf532344",
+    "size_bytes": 4442
+  },
+  "td_8adac4c133e210592f03e0ed": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8adac4c133e210592f03e0ed.jpg",
+    "sha256": "cffa8e9d54214d3f2eeaf792c555f7203d6280c210c841fe7d54e4fe7300cee5",
+    "size_bytes": 6200
+  },
+  "td_8bdd8cfa08d2b147465f6f71": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8bdd8cfa08d2b147465f6f71.jpg",
+    "sha256": "843c78d6816867b95a999a0404d76436369bf95d1797f245a1bf774682ce9db0",
+    "size_bytes": 6206
+  },
+  "td_8d772b2c3ed8beb0afac2410": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8d772b2c3ed8beb0afac2410.jpg",
+    "sha256": "baefaee279de850865f4913df0f48fd326e801de4286b0a70b3f8c52a00b8669",
+    "size_bytes": 4456
+  },
+  "td_8e01cc70d020376662a786e7": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8e01cc70d020376662a786e7.jpg",
+    "sha256": "3030f3ba926a5f3b6edb448fa20744d19ea0e08e6bf8b709372520cf6e9a20d5",
+    "size_bytes": 6262
+  },
+  "td_8e43ad4a553a2962b17b31c3": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8e43ad4a553a2962b17b31c3.jpg",
+    "sha256": "ac4774317caf25b44427d8101d78582833c906276b8d7922f5d6708a0023a351",
+    "size_bytes": 4407
+  },
+  "td_8f159a522427e76508acae11": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8f159a522427e76508acae11.jpg",
+    "sha256": "a4f8e096f25cef02cb3f7ead4f5e6133cc842967a04723b31c067d6543e367c6",
+    "size_bytes": 6332
+  },
+  "td_8f67fd1aca082141a6d2fe99": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8f67fd1aca082141a6d2fe99.jpg",
+    "sha256": "2505ade1dc60c022a6202b0f7ca01d03ac5b120dbd769bfc4e1722985801421a",
+    "size_bytes": 4250
+  },
+  "td_8fab9a6ca4d533886f513cc8": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_8fab9a6ca4d533886f513cc8.jpg",
+    "sha256": "be767f847e8646506c2a6297f271987961db99cf639304adf24731da9adfe2ee",
+    "size_bytes": 4480
+  },
+  "td_908b62bbc6d322c5f5e52226": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_908b62bbc6d322c5f5e52226.jpg",
+    "sha256": "ca2ca234b68b425dbd031e8ace10561da3b373998309af88a4125bacb6eb9102",
+    "size_bytes": 5619
+  },
+  "td_9100d21a7c61ad4e2b7f588c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9100d21a7c61ad4e2b7f588c.jpg",
+    "sha256": "a77f5ec259834274ddbb3087de502da05f9948add009ad20078504fdca9372a9",
+    "size_bytes": 4227
+  },
+  "td_913eec556a187fa81bd3770f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_913eec556a187fa81bd3770f.jpg",
+    "sha256": "b5b9b617c02761a82d47fdb6d1ce6262ce6f46345ba3352a114c35ad18c77b11",
+    "size_bytes": 5670
+  },
+  "td_91be5a50fe1fc7b0c7d4bf2e": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_91be5a50fe1fc7b0c7d4bf2e.jpg",
+    "sha256": "4a03fdcb9b15411ae789e332a4dde7d1168530ee34f5c6a825b9720ef80ed40a",
+    "size_bytes": 4417
+  },
+  "td_91d55b977006e92738db0ef5": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_91d55b977006e92738db0ef5.jpg",
+    "sha256": "7f6e289c101d3e927833a9224408bf99d0f85528469619744a61ed9ea7b847e7",
+    "size_bytes": 4534
+  },
+  "td_91e77adb839e44c39f8c9397": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_91e77adb839e44c39f8c9397.jpg",
+    "sha256": "594919ba4276e5b16d301ef151f17d0c409b2540e67d53c39d7fd4f8779b9651",
+    "size_bytes": 4236
+  },
+  "td_927589a645bebeed6e37bdb7": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_927589a645bebeed6e37bdb7.jpg",
+    "sha256": "981fb138b611781493b28d310ff25f269f8e56a9f31a73a33517cf3e986afbdf",
+    "size_bytes": 5808
+  },
+  "td_92e399fbf5104ef4ff2c57a2": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_92e399fbf5104ef4ff2c57a2.jpg",
+    "sha256": "2390143dd147f5d56ce45319d788429c77607d1134a6a6e0165f5e36205bf865",
+    "size_bytes": 4457
+  },
+  "td_9439d83773d7dfeb483d398a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9439d83773d7dfeb483d398a.jpg",
+    "sha256": "8148226e449e9e089df3815cc17ce75fc5ee66fd668a5f42bd1155c2ab189329",
+    "size_bytes": 4261
+  },
+  "td_95dc94ae341d2a089999375c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_95dc94ae341d2a089999375c.jpg",
+    "sha256": "468cc25a75aa664e9c14760335ca0eb5fd10e30291fcef5757dc3bb1761fb52a",
+    "size_bytes": 4317
+  },
+  "td_9606e40b4e70c0e31b1f27e3": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9606e40b4e70c0e31b1f27e3.jpg",
+    "sha256": "5fab08ae8c8b7453470ea8a1a09e040e60c9dc8749c3a3db51509d596a12d9b8",
+    "size_bytes": 4985
+  },
+  "td_960aa0701fbcaf129f0541bf": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_960aa0701fbcaf129f0541bf.jpg",
+    "sha256": "c3c0c71a01cbfb7e32ee4545d3d164ee7034503c6d98fb032eb695f5fa98a6fe",
+    "size_bytes": 4635
+  },
+  "td_9689383509fb5bd7a8ac2745": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9689383509fb5bd7a8ac2745.jpg",
+    "sha256": "5275cb7e327dc63e7a70eb994bbc9d9cc9ba728f0cb2d936d4d45ec7d95e72a3",
+    "size_bytes": 4325
+  },
+  "td_96dbde7200032b9e12193e75": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_96dbde7200032b9e12193e75.jpg",
+    "sha256": "95a91b9bc49e4c85ae1ddd81f4cd7ce20c529c8c8a951ebe68bdad7b698a7555",
+    "size_bytes": 4449
+  },
+  "td_96e66aa1931e9257c4e9014c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_96e66aa1931e9257c4e9014c.jpg",
+    "sha256": "3ae71e47eec5fbe43c44d91406af6a01414aab19c8d5b2631888be8432a953e5",
+    "size_bytes": 4450
+  },
+  "td_971ecc3fd581cafa16a44a6d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_971ecc3fd581cafa16a44a6d.jpg",
+    "sha256": "64933bfcfa7cc4fa9eba3f5f22498d9aed96591961181a5084041626cab5f1c5",
+    "size_bytes": 4421
+  },
+  "td_97a42c5b4f484ce0c9cde08c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_97a42c5b4f484ce0c9cde08c.jpg",
+    "sha256": "53bd1bed57b6e2c815058046f574556ca4590f6330f6e95bd71c4ac5b69d578f",
+    "size_bytes": 4237
+  },
+  "td_97d3b09e1248c2fd7538a6bf": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_97d3b09e1248c2fd7538a6bf.jpg",
+    "sha256": "c8da7bbeb8abeffeecbbac1f1875f58b1e45e85bbba4c74bc5122acde7c6739f",
+    "size_bytes": 5875
+  },
+  "td_97db540ab938c9b47dfabca5": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_97db540ab938c9b47dfabca5.jpg",
+    "sha256": "2c1438fb30c913bf84b1d87bf16686748b5b6fa7c3884308842ee2d794696680",
+    "size_bytes": 6104
+  },
+  "td_9876da7914e88b90b3a0011a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9876da7914e88b90b3a0011a.jpg",
+    "sha256": "44d9cd4042863dbe6cf3bd1a96f30cca0c77887d6fe22a8e96e47198675e6bdd",
+    "size_bytes": 4334
+  },
+  "td_9ad3e81a1850373bd133b0af": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9ad3e81a1850373bd133b0af.jpg",
+    "sha256": "8e7306ab417f61ad680fea50a5d119ec3a836640cd00f4f8b3547022fadb7523",
+    "size_bytes": 5835
+  },
+  "td_9cfe4372837059b0fbc5c933": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9cfe4372837059b0fbc5c933.jpg",
+    "sha256": "6832520cacaa2714040d35bf4a370caaa627b601e216170c32b289f190af867e",
+    "size_bytes": 6236
+  },
+  "td_9d144d84f7c1d8d5a00b8919": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9d144d84f7c1d8d5a00b8919.jpg",
+    "sha256": "6bd4029ee5dae05e3b961371299e8c05cfbac1df6f8921565c47a4e03fa0a9f4",
+    "size_bytes": 4309
+  },
+  "td_9d8441e603f542c0ab77c44a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9d8441e603f542c0ab77c44a.jpg",
+    "sha256": "8b7f77aea6bd8199b134b14977a82c4145930c72bc0ac85f291358eb7837302d",
+    "size_bytes": 6211
+  },
+  "td_9e3299c5b90542bc935089dc": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9e3299c5b90542bc935089dc.jpg",
+    "sha256": "ef51eab10278be73ba8e1e31d8a30927309b1e0b508948f2430981ab72660f04",
+    "size_bytes": 4929
+  },
+  "td_9e5fad9fd2e297e3a0a18a28": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9e5fad9fd2e297e3a0a18a28.jpg",
+    "sha256": "7caf3aad3e4f41f706cabd096adbffd61d9cfc95b22d2d71d5d7568f10a8baa6",
+    "size_bytes": 6021
+  },
+  "td_9f8b3dbd44a547a2926df9d6": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9f8b3dbd44a547a2926df9d6.jpg",
+    "sha256": "30c9a7414e7faed6cfcf6303e151126cba47a26030bee59e87f285ec737a3286",
+    "size_bytes": 4467
+  },
+  "td_9fb8c99c35c7a4bdebd6f3b9": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_9fb8c99c35c7a4bdebd6f3b9.jpg",
+    "sha256": "6f35af1828d8467bb8a463035caa846467846595b24a2f02dfe723eda915e007",
+    "size_bytes": 4255
+  },
+  "td_a03113e498c4e54e6ef884ef": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_a03113e498c4e54e6ef884ef.jpg",
+    "sha256": "f7c4c603647dca3a2bff20d217bde06d45211c3d67f93682070803ee8c97b566",
+    "size_bytes": 5907
+  },
+  "td_a16335b15dd70667726bc88d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_a16335b15dd70667726bc88d.jpg",
+    "sha256": "e36f81bb0d602816b5ef5c31b875c8a830c41b8cc1004c433304feda839d509c",
+    "size_bytes": 4622
+  },
+  "td_a200d14773ee90fc3eecc264": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_a200d14773ee90fc3eecc264.jpg",
+    "sha256": "7021942dbc35c7cf6d6b4cf1172b37dcecfa5926ce3e6c32f1778b1d6c84f441",
+    "size_bytes": 4148
+  },
+  "td_a3919f9037f383ad883d146b": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_a3919f9037f383ad883d146b.jpg",
+    "sha256": "ba8cbe63a30b04081ef6a0febe2e04b1681fd219b2b8ed16b82c4e48c6537a89",
+    "size_bytes": 6337
+  },
+  "td_a3a618befa82e280c1026332": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_a3a618befa82e280c1026332.jpg",
+    "sha256": "38c2e888240d9c57b09c09f12437cc484ad83b0f587dec77426faf8444b8ff5c",
+    "size_bytes": 4515
+  },
+  "td_a4816f8d27079ae703bea01f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_a4816f8d27079ae703bea01f.jpg",
+    "sha256": "5d9ef51efbb4fa55682f13070a4158ab6057348864da11709fd724719754a253",
+    "size_bytes": 5777
+  },
+  "td_a633149d24aa569c4d54e3ff": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_a633149d24aa569c4d54e3ff.jpg",
+    "sha256": "4cdce0293ea47e7b6c95677ec37d1c971ddad1e9e08634b9d803dc1f22be48ce",
+    "size_bytes": 6119
+  },
+  "td_a63b178084ff00e542455bcf": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_a63b178084ff00e542455bcf.jpg",
+    "sha256": "cc4d851798dc399fc3626296e46794017bd77eec92de87e76834f338c0e68b76",
+    "size_bytes": 6201
+  },
+  "td_a6aef6842d7b8c2c8142e58d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_a6aef6842d7b8c2c8142e58d.jpg",
+    "sha256": "c917c6f6365264b507163dfe0dffe17955357e03c6371cb58608464ddaa503b6",
+    "size_bytes": 4503
+  },
+  "td_a87ebd1d1feb7ea9849ab5bf": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_a87ebd1d1feb7ea9849ab5bf.jpg",
+    "sha256": "eb0c0fd9372d14c1428617f9d41319fca2931384e554606f5878715068bdd4d5",
+    "size_bytes": 4170
+  },
+  "td_a895b55f61fd7b2558ca9fbf": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_a895b55f61fd7b2558ca9fbf.jpg",
+    "sha256": "916ad84b4daa50a535366332c72bbf8f3d4fb6fac22a5ccbbd8e9f5b99147903",
+    "size_bytes": 4189
+  },
+  "td_ab2ea2c117f9c4e82200ed4a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ab2ea2c117f9c4e82200ed4a.jpg",
+    "sha256": "cd8cd6525444e597dc31a6e18d05d9232f68a0dcc1b46910b5e8a7d47bf09cd8",
+    "size_bytes": 4267
+  },
+  "td_ab4503c69f5f3cbb29c8f9b6": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ab4503c69f5f3cbb29c8f9b6.jpg",
+    "sha256": "485b2684a9ef04fab655f7132842a86c4b138a811e9c3d326fe78c9082105457",
+    "size_bytes": 5766
+  },
+  "td_ac7b5e47d0c3246708bc09df": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ac7b5e47d0c3246708bc09df.jpg",
+    "sha256": "7b7cb961bf9b08be97245d93b2fe5303f490df261adb86505e0913b1b278aef5",
+    "size_bytes": 4221
+  },
+  "td_ad0ffe69e7147b204dcb6d59": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ad0ffe69e7147b204dcb6d59.jpg",
+    "sha256": "18daf369f1c87c56769cf49ec0b85fff5ec2b00d5e72b6332cf2dddc9dc5b5cd",
+    "size_bytes": 6045
+  },
+  "td_add2b7fc930d575f745100bc": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_add2b7fc930d575f745100bc.jpg",
+    "sha256": "8a619589f27959ce6d68a536431bb804d70e2f12cb116f3cdd0f05b64d927ab5",
+    "size_bytes": 6197
+  },
+  "td_af073ac7db69e1ef7d3a251b": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_af073ac7db69e1ef7d3a251b.jpg",
+    "sha256": "3ab95600946ec3fd9d596970bc7b57f48fc9ad9cd1cc918ad74d8f619d9f3b16",
+    "size_bytes": 6024
+  },
+  "td_af2730ca9e39526d1a455a61": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_af2730ca9e39526d1a455a61.jpg",
+    "sha256": "d89aa2bf65f79caf9bdef27f459b9b7fb29a227e4e320aed6bac91c6f6d71dde",
+    "size_bytes": 4454
+  },
+  "td_af8335a629651e7616337872": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_af8335a629651e7616337872.jpg",
+    "sha256": "c179ca81cc212e26aa6a94d73c24eafe4a4368c4a794a2772165fc4903840ccc",
+    "size_bytes": 6257
+  },
+  "td_af95f4dd577d94dbebb62322": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_af95f4dd577d94dbebb62322.jpg",
+    "sha256": "7672f7c95d2d533b4b696b7eaf191398480e16dcdbe28d1fb1bc7eec0be20c69",
+    "size_bytes": 4324
+  },
+  "td_b123142691d412dec88f9c7a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_b123142691d412dec88f9c7a.jpg",
+    "sha256": "eac5f77ad27a4fd1b374519bd4041c37725cb255d01e6c9fd0fbc3e96b09ec1e",
+    "size_bytes": 4434
+  },
+  "td_b1beb79997435399d63b496a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_b1beb79997435399d63b496a.jpg",
+    "sha256": "f07055e03c82beda80ef7eafa84da86eff83aea5b9e5868167235eff70a6f0ac",
+    "size_bytes": 4441
+  },
+  "td_b2839ba09cd639520b153c20": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_b2839ba09cd639520b153c20.jpg",
+    "sha256": "f10216b99e195a07208103c26cc87c275e61306fab837f2cc4c48c3eac5c5ce3",
+    "size_bytes": 4507
+  },
+  "td_b38df6754c0a17f2c47fe2b8": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_b38df6754c0a17f2c47fe2b8.jpg",
+    "sha256": "5afe5aeeb367c9d7e9449040eca62ceed3b3aa28e33a33ba4cca43f48ec02813",
+    "size_bytes": 6040
+  },
+  "td_b4bdc33af5c9f8f553bff5b6": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_b4bdc33af5c9f8f553bff5b6.jpg",
+    "sha256": "50d2c00b617bb1e70b7eb2ee333c458d5df1525c366f20a8eb61ef83417ef481",
+    "size_bytes": 4189
+  },
+  "td_b4f802adeb7a1d3aca7eb283": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_b4f802adeb7a1d3aca7eb283.jpg",
+    "sha256": "901bd2d550d97568fadbbce5c9bbe27d38d4786166ce45c6dfb6f6668e359f2e",
+    "size_bytes": 4190
+  },
+  "td_b5aeffa6baa83dc5e623c62a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_b5aeffa6baa83dc5e623c62a.jpg",
+    "sha256": "65834c50ff32defdcabe63c9f5649c8bd0c647eb0e8137f50ec4c20b0e930831",
+    "size_bytes": 6235
+  },
+  "td_b66b9dc465e722f8234b1427": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_b66b9dc465e722f8234b1427.jpg",
+    "sha256": "f412ab9ee291dfdeeaac0052382b9f84ae6b1a8328d398f3140b48bd3ca7ec38",
+    "size_bytes": 5869
+  },
+  "td_b71df30e101172313e4ac4c3": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_b71df30e101172313e4ac4c3.jpg",
+    "sha256": "1de942a47f96c8ed0c1c9b0aac20f18a2cb2beb5e9116317e33f7f506bc9b43b",
+    "size_bytes": 4411
+  },
+  "td_b746976f16f0addbf4061502": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_b746976f16f0addbf4061502.jpg",
+    "sha256": "4c7579a2689d637421b21e138e4aeda8236cf98b4d1a06ca51c1495c3fdd04ba",
+    "size_bytes": 4293
+  },
+  "td_b843f0bc3912191976e96eaa": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_b843f0bc3912191976e96eaa.jpg",
+    "sha256": "07c0be853c81d6c9caddb2ef7955d50c4de806af9b4d73c51b067f879b2ea502",
+    "size_bytes": 4137
+  },
+  "td_bbc1c86f5e789a38f8fcc468": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_bbc1c86f5e789a38f8fcc468.jpg",
+    "sha256": "3f43304de62167146a13434c646cf5ba7067692d4400a5245c07c411fd5dabd0",
+    "size_bytes": 5620
+  },
+  "td_bc09584f117c64fe149e1ca4": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_bc09584f117c64fe149e1ca4.jpg",
+    "sha256": "1cfc25cb28adfdbfd5d82cec966ed3758d5c3f5a816b2afca8eadaa0dd212cf3",
+    "size_bytes": 4271
+  },
+  "td_bd7eedd7f7ae10434e844c5a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_bd7eedd7f7ae10434e844c5a.jpg",
+    "sha256": "22f02ff1bb005eeb3a7873fbeb994fae6391dfd2ce1e9d0b13df99355e4c68e8",
+    "size_bytes": 4486
+  },
+  "td_bf047a0393d5778f79fb3f62": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_bf047a0393d5778f79fb3f62.jpg",
+    "sha256": "00eef218ceb83c01ac9161d1564576ffc47b93e728d45660b20733722396dbe5",
+    "size_bytes": 5679
+  },
+  "td_bf5e468fd8b0b78984f41325": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_bf5e468fd8b0b78984f41325.jpg",
+    "sha256": "baf5ce2af2415ec1d05a87fdce5140515f4d82586671df06acba35a9522fb338",
+    "size_bytes": 6208
+  },
+  "td_c0530b5e5fb016d6d857db72": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_c0530b5e5fb016d6d857db72.jpg",
+    "sha256": "66e17a490b556c40a3dc46fd77c28bec34d69bbc7b9c2d52b3fadf46316b881e",
+    "size_bytes": 4579
+  },
+  "td_c209349dde87ce1957cdd8c7": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_c209349dde87ce1957cdd8c7.jpg",
+    "sha256": "3b06b90728e1c48e3528d0327b5acc861f224a6049226744491a6b79f35df6bc",
+    "size_bytes": 5019
+  },
+  "td_c3a8d0206971f2449a736bce": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_c3a8d0206971f2449a736bce.jpg",
+    "sha256": "2fbf008f6c1870a23a127882f441986e547a914c11b61b0fe44abeada260352d",
+    "size_bytes": 4354
+  },
+  "td_c42367a482a734369744624f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_c42367a482a734369744624f.jpg",
+    "sha256": "00cf7a84faf151cf0c3095902d6e06d6a8209a76d27dd5efbbbdb475e590ac33",
+    "size_bytes": 4232
+  },
+  "td_c432cfeb106679be3d68f113": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_c432cfeb106679be3d68f113.jpg",
+    "sha256": "b7696245721654cf2b559fd07640406a600f826e1e7544cf6f3723f16a275ea9",
+    "size_bytes": 5999
+  },
+  "td_c4ad919edff1c012ad2d889e": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_c4ad919edff1c012ad2d889e.jpg",
+    "sha256": "fc10b5d5cabf66b1d41cee90da6b86e728975293ccbd51fd653a1c65452491c4",
+    "size_bytes": 5626
+  },
+  "td_c59ffb7d35f1ac7a7c689459": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_c59ffb7d35f1ac7a7c689459.jpg",
+    "sha256": "ea059d0525c9ea6f59a1fbab35e5dc229738de54669e1135ab45f4915e7b3763",
+    "size_bytes": 6036
+  },
+  "td_c6d28d99301f034428196866": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_c6d28d99301f034428196866.jpg",
+    "sha256": "def36106ba82a069430ab0e3a997a62905c6e475d0956b375fb4ed89abb53486",
+    "size_bytes": 4310
+  },
+  "td_c6d9df68c9752073a2506732": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_c6d9df68c9752073a2506732.jpg",
+    "sha256": "aeeb8d7b9f101a7ac27a4863adca935c6f24c5aef2c011ec04e4adc27ebe54fc",
+    "size_bytes": 4384
+  },
+  "td_c751b1dfcc9bd3752925edd4": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_c751b1dfcc9bd3752925edd4.jpg",
+    "sha256": "36cad884e12ee4be8da005823b40c67b1e3bf1addb87272b3e61c17531b19abf",
+    "size_bytes": 5917
+  },
+  "td_c9c02a1bb35b20e692e5b58a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_c9c02a1bb35b20e692e5b58a.jpg",
+    "sha256": "fc186c193e4436fe32d66f57312f24239985ec7f795ad691719659d6f23b04aa",
+    "size_bytes": 4211
+  },
+  "td_caa3840185dbe30eb50750d3": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_caa3840185dbe30eb50750d3.jpg",
+    "sha256": "b512212c7667d4e590c94a5f0d047e282a8b23956ec51250d0c6f4377799e505",
+    "size_bytes": 4497
+  },
+  "td_cafb71b3c54d790e6fad52dc": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_cafb71b3c54d790e6fad52dc.jpg",
+    "sha256": "58e014c1f0c7deeef411edbfc9d68dbe03d46711f4201195f30211c1b143440d",
+    "size_bytes": 4282
+  },
+  "td_cc7dc2da8c58d054b71352b6": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_cc7dc2da8c58d054b71352b6.jpg",
+    "sha256": "6b4ed5232fa138a3630af87fc8edd73e6957c27d8cbf9ec95288809eb9136e72",
+    "size_bytes": 4330
+  },
+  "td_ce0224c41532b136ec85f888": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ce0224c41532b136ec85f888.jpg",
+    "sha256": "48b6ac727bc57373a6940dee435e03788a1ccbe90d0685b78c13d67cf1e9c27a",
+    "size_bytes": 4222
+  },
+  "td_ce165326e1a90641076fce67": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ce165326e1a90641076fce67.jpg",
+    "sha256": "a581f01c4a3fdf96c236d16a9abb9ce7eac2070e1ab34ebe4b1e943264eec840",
+    "size_bytes": 4894
+  },
+  "td_d01314854320c60606be75b9": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d01314854320c60606be75b9.jpg",
+    "sha256": "fb1f9e09dfeda98dfdfcbe0c0b0df8993a1dfa46291bffc9bdac62025e068485",
+    "size_bytes": 4180
+  },
+  "td_d0f749c929aedc6f88d03d0b": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d0f749c929aedc6f88d03d0b.jpg",
+    "sha256": "978dc3423b66b56c9789fe4ce8cdb59ab8bb18ff6eb8eb0bf077b7664dd4d305",
+    "size_bytes": 4230
+  },
+  "td_d1bcef3243697cb0d58a20e0": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d1bcef3243697cb0d58a20e0.jpg",
+    "sha256": "4a951a65f5f7f76d0610bedcbbff9faf683196a7bd8856295699024e393f3f08",
+    "size_bytes": 5837
+  },
+  "td_d4687fa31224613d076b2838": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d4687fa31224613d076b2838.jpg",
+    "sha256": "d02853d3d721c05078ee014eecde6c018b139c246c45744972dffbff9c51bf84",
+    "size_bytes": 6224
+  },
+  "td_d4b49e1953e673a381f03a57": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d4b49e1953e673a381f03a57.jpg",
+    "sha256": "bd54067cc0a878ca78df8508439019b1c90f513a8e6c931635308ab9ffdfaffc",
+    "size_bytes": 4334
+  },
+  "td_d50a42616fdc6cc538a32ac0": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d50a42616fdc6cc538a32ac0.jpg",
+    "sha256": "2169ff5a066d32aa1e09bc7b6725b57c1e306effaa50854ee7229d24f50767ec",
+    "size_bytes": 4537
+  },
+  "td_d76ec338ed52c26ea37d1fc0": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d76ec338ed52c26ea37d1fc0.jpg",
+    "sha256": "cc1cf21f122f7474486b01db675289487efbf38f36e92c02e3111c9130418395",
+    "size_bytes": 6044
+  },
+  "td_d7e34d3a4b78858687bcdf63": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d7e34d3a4b78858687bcdf63.jpg",
+    "sha256": "77a8449ae92a69b09b9bc9d7fca43acb981fc924636a576d9ac8a4a795906fdf",
+    "size_bytes": 4313
+  },
+  "td_d876bb071bf91793add3a540": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d876bb071bf91793add3a540.jpg",
+    "sha256": "73e92053fb4cce3b4d2003c8617f644233cc94fcf7ae786dc935f7598b68cb6c",
+    "size_bytes": 4262
+  },
+  "td_d8a45c6e409c5c9aecd7d6f6": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d8a45c6e409c5c9aecd7d6f6.jpg",
+    "sha256": "f68254ca4f4f40d9d8e5fe9773a3aba3db67bce5618cf51046b19ee24671d78c",
+    "size_bytes": 4210
+  },
+  "td_d90e1b929a647352f2db33b4": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d90e1b929a647352f2db33b4.jpg",
+    "sha256": "57bab1e1c78150bdb5b8952ab67ed8f7503abccf17ccdc593723130763f62f8d",
+    "size_bytes": 6202
+  },
+  "td_d96265cb24c6b0bff7fa5adb": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d96265cb24c6b0bff7fa5adb.jpg",
+    "sha256": "4889e71ab0e6e6934465dd17495830ef1b0abeae1597fa3a5a48c22696f33146",
+    "size_bytes": 4238
+  },
+  "td_d965645c746c18f06d38680d": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_d965645c746c18f06d38680d.jpg",
+    "sha256": "cf9201de1a3c5b82971f4bd53b1c3a7d01a1dadf9831b4964090c95074690c06",
+    "size_bytes": 6031
+  },
+  "td_da6c162bee000de73b453b20": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_da6c162bee000de73b453b20.jpg",
+    "sha256": "784992bfefbbc53e3d2e3fa24efacfa2edace3023171efd1ceabb60d05e621c6",
+    "size_bytes": 4314
+  },
+  "td_db59fbd6460354a15d6d3630": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_db59fbd6460354a15d6d3630.jpg",
+    "sha256": "695a4b0085361eb6443827c0b97fe109c6f2b6c7840e2ef4b14de8c17ce47d5c",
+    "size_bytes": 4414
+  },
+  "td_db6cf6c14598af0065bda950": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_db6cf6c14598af0065bda950.jpg",
+    "sha256": "d6231acebd21cf08e662eb65fb9f15d75d83a723a7a5b8f17f4b011a42758dec",
+    "size_bytes": 6239
+  },
+  "td_db8ffd20b21d91579e2b089f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_db8ffd20b21d91579e2b089f.jpg",
+    "sha256": "e2fd1b20e534eb7d376b28854b58166fbd3cd11ee84a92be18e44cfeae023914",
+    "size_bytes": 5793
+  },
+  "td_dc02fddb149bb3c13376acf2": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_dc02fddb149bb3c13376acf2.jpg",
+    "sha256": "3f2fae943c706d3aae10de5c9ecc3bd4d7b4bf28177bad105ce836e89b83c896",
+    "size_bytes": 5782
+  },
+  "td_dc713adf1934d8135fa6b8c8": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_dc713adf1934d8135fa6b8c8.jpg",
+    "sha256": "316d4379f612c6e522902fb5046f53ec7002b8d3bed4dbff30bff3f454c55eda",
+    "size_bytes": 4351
+  },
+  "td_dca664eed6c905df3aaf18f5": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_dca664eed6c905df3aaf18f5.jpg",
+    "sha256": "193eddc0b4b618e52c68e5a2e5eb8db62a57fe65ca61f9995914b62d36ceaeeb",
+    "size_bytes": 4540
+  },
+  "td_dd55eed709745e2eb57b985f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_dd55eed709745e2eb57b985f.jpg",
+    "sha256": "a0f20906517c816a261a71370fb8ac015465cc8b2fbac73071037e2c0631a279",
+    "size_bytes": 5662
+  },
+  "td_dded7580dc0cc26b2480960c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_dded7580dc0cc26b2480960c.jpg",
+    "sha256": "23f1be996d9002b3e7ef4147a7faa9700cca723bde2ae2121c40615009102ca2",
+    "size_bytes": 4516
+  },
+  "td_ddfc26495208712762221e2c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ddfc26495208712762221e2c.jpg",
+    "sha256": "bb7f8651562328c26d9288cc8bfab644c82b68456deda8d10efca2e05087e66f",
+    "size_bytes": 5773
+  },
+  "td_e2636b331c076fda72ce1bc4": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e2636b331c076fda72ce1bc4.jpg",
+    "sha256": "b68391e5f92513dc169981a566032f92dc8ef797cf588de6a27671fbb007c15c",
+    "size_bytes": 5674
+  },
+  "td_e279daec8c2bc9bc6b92733c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e279daec8c2bc9bc6b92733c.jpg",
+    "sha256": "38c44d60fd7a0255d1a2acd822f7afdb003b691f2e96da22873a946dfc2beedb",
+    "size_bytes": 6229
+  },
+  "td_e2f54d64dfbb514614cdca13": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e2f54d64dfbb514614cdca13.jpg",
+    "sha256": "c4850be6f35bd1d000d2d81099af59938e1cdfd8886e7d73c4950651d990855a",
+    "size_bytes": 4259
+  },
+  "td_e304f1cb7ebc7c7feef7e4b0": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e304f1cb7ebc7c7feef7e4b0.jpg",
+    "sha256": "064bca1fcc43abb7cba4da6a949c17ae19fc372d204475dea1d010f582876da8",
+    "size_bytes": 4421
+  },
+  "td_e3861934993196b980fb81f3": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e3861934993196b980fb81f3.jpg",
+    "sha256": "b768121b57a02393e5a30e034f600baac6df0f1169059e2c8c688e885d00e035",
+    "size_bytes": 6128
+  },
+  "td_e3dfd5ee4d1dd2e813034c05": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e3dfd5ee4d1dd2e813034c05.jpg",
+    "sha256": "24770be6013a8de74a023728d9336e77a0ac8736a9cffee386a183e781e87443",
+    "size_bytes": 4466
+  },
+  "td_e432cca7dcdf999099edd783": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e432cca7dcdf999099edd783.jpg",
+    "sha256": "f080381028b9fc07a151101627592c39d13bd8839b91562a9bfebf0b6a08ef96",
+    "size_bytes": 6313
+  },
+  "td_e4ce369dd8e6f9e276fe8555": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e4ce369dd8e6f9e276fe8555.jpg",
+    "sha256": "e94a566bfcb7ae1303d97073128266d25499d10158eaa09e8bf8e5e9c2b08a48",
+    "size_bytes": 6240
+  },
+  "td_e606ba69de126ef44b6eba27": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e606ba69de126ef44b6eba27.jpg",
+    "sha256": "e16e37f5e6d0e16ae97c580230c47db152e4a2192c1c8bd257f9044a4dddf1c6",
+    "size_bytes": 4535
+  },
+  "td_e66cfbfb8008ee003fbf7815": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e66cfbfb8008ee003fbf7815.jpg",
+    "sha256": "b08c5211871d0771f89157ff1a0e05e0d20077881af4cc769e4bc3d442f7a4ff",
+    "size_bytes": 5812
+  },
+  "td_e77ad2bedc3f48ab2d94cfc9": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e77ad2bedc3f48ab2d94cfc9.jpg",
+    "sha256": "e3f7d9fd8458111e4afd0394b10a1000466a3d36d55cb891d60d4690274c805a",
+    "size_bytes": 6231
+  },
+  "td_e7f159745c9966a9ec017ec4": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e7f159745c9966a9ec017ec4.jpg",
+    "sha256": "6d2ac54ff4d32074b1683ecfeb9f0799475298d59b366f2c5ebac7af87046d46",
+    "size_bytes": 4549
+  },
+  "td_e82c1078dc2c0763eacc3f1c": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e82c1078dc2c0763eacc3f1c.jpg",
+    "sha256": "4ad7e738b181fa4856b606ffb791698e719e909aab71ad7b20230aca1eee984c",
+    "size_bytes": 6270
+  },
+  "td_e9c6b02c783d69f8840d55c2": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_e9c6b02c783d69f8840d55c2.jpg",
+    "sha256": "5be3228ffebdab2bd648ea725f9081b053566149233e41df615ccbfb30348e43",
+    "size_bytes": 4541
+  },
+  "td_eaa350cf64bf72bdae3876dd": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_eaa350cf64bf72bdae3876dd.jpg",
+    "sha256": "0ca04bc92bfbbf92fd29c6818b91a0f10fa83d282ecb55250b1d8c572e1b1168",
+    "size_bytes": 5812
+  },
+  "td_eb0005486c0f130c79c62346": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_eb0005486c0f130c79c62346.jpg",
+    "sha256": "7b846f6800d11cbdd7ca7f0ff32122c2cd1aaba2cda8e6d750405e25938da160",
+    "size_bytes": 4966
+  },
+  "td_ec85a1828c24d6536969f904": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ec85a1828c24d6536969f904.jpg",
+    "sha256": "86689c7de7cbf248a99427c620c04324860e759c2715dd17978cade1efa0bd59",
+    "size_bytes": 4472
+  },
+  "td_ed0b06dd579c34e713277f49": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ed0b06dd579c34e713277f49.jpg",
+    "sha256": "0855c6a592f8597fb93148f3efe51634b025b33cf895381c10ccb1339b7b5cce",
+    "size_bytes": 4255
+  },
+  "td_ed37f5d6a84237bbaa7560ae": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ed37f5d6a84237bbaa7560ae.jpg",
+    "sha256": "6459fca89dc1395ba0b9178515f1f9ef659c6af2a527f261ce7f363bfc2c2df9",
+    "size_bytes": 4240
+  },
+  "td_f0c283a584de0ea97ae7166f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f0c283a584de0ea97ae7166f.jpg",
+    "sha256": "a8006e9d6a22526f0d5d793eb5f5114dec00893af75b0ab7850192100a2660c8",
+    "size_bytes": 5903
+  },
+  "td_f260c86bf8583521940a1208": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f260c86bf8583521940a1208.jpg",
+    "sha256": "b1efbb6e3d4f3b4efe3d873b2c4a810482f62ad10c5628cdcd1060b56db9d959",
+    "size_bytes": 4499
+  },
+  "td_f28d99e3fff1ffcd74bb6dcf": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f28d99e3fff1ffcd74bb6dcf.jpg",
+    "sha256": "c5c9160f3a96204b1c0383c67cb6f961b338ead9cb7bff79e133d01beddf0cbd",
+    "size_bytes": 4628
+  },
+  "td_f370c314fd274773f94cbdde": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f370c314fd274773f94cbdde.jpg",
+    "sha256": "ddb2429f087eb8bf414d8464e7076c595759099764ce31286065dd356d86d9b3",
+    "size_bytes": 5778
+  },
+  "td_f38051607bbab29bed77ed95": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f38051607bbab29bed77ed95.jpg",
+    "sha256": "4ee632e1433339efeb79d25c2d33b5b5738f89b346596213b20a0d955bf06126",
+    "size_bytes": 6018
+  },
+  "td_f3ab9c749df506abe696e953": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f3ab9c749df506abe696e953.jpg",
+    "sha256": "b25ae11c25c9eccbd93d5d49a8b78383ca486e889eefab5f849b5c1a6c130049",
+    "size_bytes": 4593
+  },
+  "td_f429d175b0ec8592592dc4f7": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f429d175b0ec8592592dc4f7.jpg",
+    "sha256": "0f59b5d9cc71e77a45862e85ce87658e7922db63d6390f75ed22087690e3d86e",
+    "size_bytes": 4624
+  },
+  "td_f4377f2c5f32d5a52a627200": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f4377f2c5f32d5a52a627200.jpg",
+    "sha256": "96b05e9b7873410275f50191f5199a8c62c3b2af31eeb376147339f3da8b2f41",
+    "size_bytes": 4428
+  },
+  "td_f5954632d152b72afccc8288": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f5954632d152b72afccc8288.jpg",
+    "sha256": "e54ca686b41fe240478b0114c1c914f2b6d8ebabec7eac5e386b6be70ebdddfc",
+    "size_bytes": 6318
+  },
+  "td_f596e260e7b91e216804f87f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f596e260e7b91e216804f87f.jpg",
+    "sha256": "e4fe9f709b2ec99c76d337c429de76cd600c2e841322ea2b3bd2bc9b6c7e4160",
+    "size_bytes": 5608
+  },
+  "td_f5e21a824db3d790fbe9abc6": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f5e21a824db3d790fbe9abc6.jpg",
+    "sha256": "1a37cedaa5c55e8280abdcbb03ca89b09fdaf275838b1dc6c725d04f4a67d169",
+    "size_bytes": 6123
+  },
+  "td_f5f11c5e15767ee0efbbe6dd": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f5f11c5e15767ee0efbbe6dd.jpg",
+    "sha256": "d75015b4680a5a2b4de48ac06ccde4329538ba5ccc62fcb58f75a42abaff036d",
+    "size_bytes": 6197
+  },
+  "td_f648c1c2f5d9e96fd4a96641": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f648c1c2f5d9e96fd4a96641.jpg",
+    "sha256": "308598e5fb45dcc0b20363cd10d3e0acdb8a0237d8f70d7624fc5f2175dfe542",
+    "size_bytes": 4192
+  },
+  "td_f8fb3ff5f25e8e3150135b8b": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f8fb3ff5f25e8e3150135b8b.jpg",
+    "sha256": "30e26142b511cac18452ffdf76280cd3299d3ef3896b70d00e1a3c31b4d03f26",
+    "size_bytes": 4637
+  },
+  "td_f9984c4eec305340706a6120": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_f9984c4eec305340706a6120.jpg",
+    "sha256": "5b4645ca59f1ebd0ba53a7c7c1c60668dd08a5f7ae71095bfc917b2b4c63882d",
+    "size_bytes": 5671
+  },
+  "td_fa8435291aa7a85b5adf1038": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_fa8435291aa7a85b5adf1038.jpg",
+    "sha256": "c0f83a54cfde1440a964f2346574aa052b36434cd5c3f4cf1266c284fb07d6fc",
+    "size_bytes": 6045
+  },
+  "td_fb3dbece79219f9c09dc8f96": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_fb3dbece79219f9c09dc8f96.jpg",
+    "sha256": "ff5d0b020a3956ce991f5dd38c13d50ac3f61c14ffe41a123e55a2799b1e783d",
+    "size_bytes": 6081
+  },
+  "td_fc454ac0334f2b5b2c6e276b": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_fc454ac0334f2b5b2c6e276b.jpg",
+    "sha256": "4132a66bdbae22d521b62c7caa1ba6ddc5594a2fb86f5f607087785f984c1823",
+    "size_bytes": 4450
+  },
+  "td_fd80a3f92e1f477d65b779df": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_fd80a3f92e1f477d65b779df.jpg",
+    "sha256": "7d07af93405f4d5154f3fcbb7aed5046510523a713ca65889e0403a5fcfa687a",
+    "size_bytes": 6276
+  },
+  "td_feed3a02315d7fb36c546b1a": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_feed3a02315d7fb36c546b1a.jpg",
+    "sha256": "f2a4bfd7e3c93138347fae757768f3b431bc987806b955b68d0f5338cca6623d",
+    "size_bytes": 4264
+  },
+  "td_ff24be9051901ef2598d4dac": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ff24be9051901ef2598d4dac.jpg",
+    "sha256": "08ee5d7e4e98d75bcfbd8baa95f4c9a364e3573e81aecbc7436c3d4a29355469",
+    "size_bytes": 4316
+  },
+  "td_ff2d7d83a7edf2e404669eef": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ff2d7d83a7edf2e404669eef.jpg",
+    "sha256": "dde0cc6fc8d21e00128e41f294af9ced83c212ec189037bdfe20626a642bb709",
+    "size_bytes": 4433
+  },
+  "td_ff56d23e94cb2ae36726ecf0": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ff56d23e94cb2ae36726ecf0.jpg",
+    "sha256": "c80dab9237441297f60a8aed0c0b8aebce10405a9c15c52a05d7f6b9b00c00f0",
+    "size_bytes": 5814
+  },
+  "td_ff5d28b5b67c70584254c686": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ff5d28b5b67c70584254c686.jpg",
+    "sha256": "316f52f5274bf4fb59818b33a400c40327972e4c2a059c83336542009c475533",
+    "size_bytes": 4436
+  },
+  "td_ffc11681d5aad9825187f66f": {
+    "release_rgb_ref": "challenge/dataset/releases/d3_wave2_safe_short_v1/images/td_ffc11681d5aad9825187f66f.jpg",
+    "sha256": "6fd447b58859b4288952194ca9efe69c9832b1c02937436214a28b17cb2a72d1",
+    "size_bytes": 5607
+  }
+}

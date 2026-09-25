@@ -1,0 +1,69 @@
+{
+  "requested_duration_s": 1800.0,
+  "observed_duration_s": 1800.0779999999995,
+  "duration_met": true,
+  "iterations": 22462,
+  "outcomes": {
+    "READY": 22462
+  },
+  "error_count": 0,
+  "success_rate": 1.0,
+  "latency_ms": {
+    "first_window_p95": 90.99682999999999,
+    "last_window_p95": 124.78681,
+    "overall_p95": 117.54873500000001,
+    "overall_max": 362.0134,
+    "samples": 22462,
+    "overall_percentiles_bounded": true
+  },
+  "memory_drift_kib": 1816.4745762711973,
+  "memory_drift_ratio": 0.005676896790783092,
+  "memory_drift_source": "telemetry_1hz",
+  "memory_drift_window_samples": {
+    "head": 177,
+    "tail": 177
+  },
+  "recovery_probe": {
+    "requests": 10,
+    "outcomes": {
+      "READY": 10
+    },
+    "errors": 0,
+    "p95_ms": 118.04930499999999
+  },
+  "telemetry": {
+    "memory": {
+      "sample_count": 1772,
+      "rss_kib_max": 323196.0,
+      "peak_rss_kib_max": 324376.0,
+      "peak_rss_mib_max": 316.7734375,
+      "source": "psutil"
+    },
+    "power": {
+      "sample_count": 0,
+      "power_w_mean": null,
+      "power_w_max": null,
+      "source": "NOT_APPLICABLE",
+      "probe_point": "NOT_MEASURED",
+      "measured": false
+    },
+    "utilization": {
+      "sample_count": 1772,
+      "cpu_percent_max": 392.2,
+      "bpu_percent_mean": null,
+      "bpu_percent_max": null,
+      "bpu_measured": false,
+      "source": "psutil"
+    },
+    "errors": []
+  },
+  "success": true,
+  "criteria": [
+    "wall-clock duration met",
+    "no failed request during the soak",
+    "recovery probe produced no failed request",
+    "no telemetry sampling error"
+  ],
+  "latency_note": "soak latency includes the telemetry sampling used to detect drift; compare it with latency_raw.csv only as a trend, not as an absolute percentile. overall_p95 comes from a bounded reservoir when the run produced more samples than the reservoir holds.",
+  "drift_note": "memory_drift_kib is measured from the monitor's time-based RSS samples (memory_during_soak.csv), not from a per-iteration sample, so it is not inflated by the harness's own bookkeeping. No drift threshold is frozen yet (B2/A4 own the criterion): the number is reported, not judged."
+}

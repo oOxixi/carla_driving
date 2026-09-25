@@ -1,0 +1,8 @@
+/work/student/.hb_compile/student_v0_fp32_quant_info.json
+  layers=59 values=40 distinct=2 min=0.731059 max=1
+  first 8 distinct: [0.731059, 1.0]
+  values exactly 1.0: 38/40
+/work/student/.hb_compile_cal/student_v0_fp32_cal_quant_info.json
+  layers=60 values=40 distinct=21 min=0.34664 max=50
+  first 8 distinct: [0.34664, 0.506596, 0.772081, 0.995926, 0.996292, 0.999985, 1.0, 1.140014]
+  values exactly 1.0: 4/40

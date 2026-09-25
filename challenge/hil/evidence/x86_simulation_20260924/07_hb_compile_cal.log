@@ -1,0 +1,67 @@
+2026-09-24 19:25:21,080 WARNING Please note that the parameter norm_type has been deprecated and will be determined by the specification of the mean/scale/std parameters
+2026-09-24 19:25:21,086 WARNING The input node rgb's input_source is not be specified, it will be specified as None by default
+2026-09-24 19:25:21,087 WARNING The input node text_tokens's input_source is not be specified, it will be specified as None by default
+2026-09-24 19:25:21,089 WARNING The input node targets's input_source is not be specified, it will be specified as None by default
+2026-09-24 19:25:21,090 WARNING The input node state's input_source is not be specified, it will be specified as None by default
+2026-09-24 19:25:21,099 INFO Processing calibration set data for input[rgb]
+2026-09-24 19:25:21,153 INFO First calibration picture name: /work/cal/rgb/sample_0000.npy
+2026-09-24 19:25:21,163 INFO First calibration picture md5: 2ab0d1bdfb988287f7afe025bdbb9994
+2026-09-24 19:25:21,390 INFO Processing calibration set data for input[text_tokens]
+2026-09-24 19:25:21,563 INFO First calibration picture name: /work/cal/text_tokens/sample_0000.npy
+2026-09-24 19:25:21,576 INFO First calibration picture md5: 6416c03adb6ae86b1e952c30ff028a66
+2026-09-24 19:25:21,792 INFO Processing calibration set data for input[targets]
+2026-09-24 19:25:21,853 INFO First calibration picture name: /work/cal/targets/sample_0000.npy
+2026-09-24 19:25:21,858 INFO First calibration picture md5: 23ad5bf239a14df603303d00f9ca4ea2
+2026-09-24 19:25:21,997 INFO Processing calibration set data for input[state]
+2026-09-24 19:25:22,048 INFO First calibration picture name: /work/cal/state/sample_0000.npy
+2026-09-24 19:25:22,052 INFO First calibration picture md5: 63de9cfdea9b0384dcf8625ca8c5c7ab
+2026-09-24 19:25:25,805 INFO The activation calibration configuration:
+    calibration_type:     ['max', 'kl']
+2026-09-24 19:25:25,876 INFO Provided calibration data md5: f58bfbbc92d2e43749cd907c72cced65
+2026-09-24 19:25:27,341 INFO Run calibration model with modelwise search method.
+calibration in progress:   0%|          | 0/4 [00:00<?, ?it/s]2026-09-24 19:25:28.007827374 [E:onnxruntime:, sequential_executor.cc:516 ExecuteKernel] Non-zero status code returned while running Reshape node. Name:'/model/vision_encoder/projection/Gemm_transpose_in_reshape' Status Message: /onnxruntime_src/onnxruntime/core/providers/cpu/tensor/reshape_helper.h:45 onnxruntime::ReshapeHelper::ReshapeHelper(const onnxruntime::TensorShape&, onnxruntime::TensorShapeVector&, bool) input_shape_size == size was false. The input tensor cannot be reshaped to the requested shape. Input shape:{8,384,3,3}, requested shape:{1,3456,1,1}
+calibration in progress:   0%|          | 0/4 [00:00<?, ?it/s]
+calibration in progress:   0%|          | 0/30 [00:00<?, ?it/s]
+calibration in progress:   3%|▎         | 1/30 [00:00<00:05,  5.77it/s]
+calibration in progress:   7%|▋         | 2/30 [00:00<00:04,  5.95it/s]
+calibration in progress:  10%|█         | 3/30 [00:00<00:04,  5.79it/s]
+calibration in progress:  13%|█▎        | 4/30 [00:00<00:04,  5.80it/s]
+calibration in progress:  17%|█▋        | 5/30 [00:00<00:04,  5.66it/s]
+calibration in progress:  20%|██        | 6/30 [00:01<00:04,  5.34it/s]
+calibration in progress:  23%|██▎       | 7/30 [00:01<00:04,  5.47it/s]
+calibration in progress:  27%|██▋       | 8/30 [00:01<00:03,  5.62it/s]
+calibration in progress:  30%|███       | 9/30 [00:01<00:03,  5.68it/s]
+calibration in progress:  33%|███▎      | 10/30 [00:01<00:03,  5.55it/s]
+calibration in progress:  37%|███▋      | 11/30 [00:01<00:03,  5.34it/s]
+calibration in progress:  40%|████      | 12/30 [00:02<00:03,  5.49it/s]
+calibration in progress:  43%|████▎     | 13/30 [00:02<00:03,  5.43it/s]
+calibration in progress:  47%|████▋     | 14/30 [00:02<00:02,  5.55it/s]
+calibration in progress:  50%|█████     | 15/30 [00:02<00:02,  5.48it/s]
+calibration in progress:  53%|█████▎    | 16/30 [00:02<00:02,  5.65it/s]
+calibration in progress:  57%|█████▋    | 17/30 [00:03<00:02,  5.63it/s]
+calibration in progress:  60%|██████    | 18/30 [00:03<00:02,  5.69it/s]
+calibration in progress:  63%|██████▎   | 19/30 [00:03<00:01,  5.56it/s]
+calibration in progress:  67%|██████▋   | 20/30 [00:03<00:01,  5.57it/s]
+calibration in progress:  70%|███████   | 21/30 [00:03<00:01,  5.36it/s]
+calibration in progress:  73%|███████▎  | 22/30 [00:03<00:01,  5.27it/s]
+calibration in progress:  77%|███████▋  | 23/30 [00:04<00:01,  5.48it/s]
+calibration in progress:  80%|████████  | 24/30 [00:04<00:01,  5.66it/s]
+calibration in progress:  83%|████████▎ | 25/30 [00:04<00:00,  5.49it/s]
+calibration in progress:  87%|████████▋ | 26/30 [00:04<00:00,  5.53it/s]
+calibration in progress:  90%|█████████ | 27/30 [00:04<00:00,  5.44it/s]
+calibration in progress:  93%|█████████▎| 28/30 [00:05<00:00,  5.44it/s]
+calibration in progress:  97%|█████████▋| 29/30 [00:05<00:00,  5.48it/s]
+calibration in progress: 100%|██████████| 30/30 [00:05<00:00,  5.55it/s]
+calibration in progress: 100%|██████████| 30/30 [00:05<00:00,  5.54it/s]
+2026-09-24 19:26:04,393 INFO BPU march           : nash-p
+2026-09-24 19:26:04,492 INFO ############# calibration_parameters info #############
+2026-09-24 19:26:04,494 INFO calibration_type    : default
+2026-09-24 19:26:04,513 INFO ############# memory info #############
+2026-09-24 19:26:04,518 INFO input memory        : 603136
+2026-09-24 19:26:04,521 INFO output memory       : 2560
+2026-09-24 19:26:04,523 INFO static memory       : 23580160
+2026-09-24 19:26:04,525 INFO dynamic memory      : 605696
+2026-09-24 19:26:04,527 INFO intermediate memory : 0
+2026-09-24 19:26:04,528 INFO temporary memory    : 0
+2026-09-24 19:26:04,529 INFO min memory requirement: 24185856
+2026-09-24 19:26:04,658 INFO The hb_compile completes running.

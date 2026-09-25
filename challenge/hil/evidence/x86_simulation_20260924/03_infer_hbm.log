@@ -1,0 +1,35 @@
+[UCP]: log level = 3
+[UCP]: UCP version = 3.15.8
+[VP]: log level = 3
+[DNN]: log level = 3
+[HPL]: log level = 3
+[UCPT]: log level = 6
+/open_explorer/samples/ucp_tutorial/tools/hrt_model_exec/output_shared_J6_x86/x86/bin/hrt_model_exec infer --model_file=/work/student/.hb_compile/student_v0_fp32.hbm --input_file=/work/x86_sim/bins/rgb.bin,/work/x86_sim/bins/text_tokens.bin,/work/x86_sim/bins/targets.bin,/work/x86_sim/bins/state.bin --enable_dump=true
+[I][7463][09-24][19:18:42:801][main.cpp:324][hrt_model_exec][HRT_MODEL_EXEC] dump_path: ./ exsit
+[DNN]: 3.15.8_(4.11.11 HBRT)
+Load model to DDR cost 402.846ms.
+[I][7463][09-24][19:18:43:208][file_util.cpp:128][hrt_model_exec][HRT_MODEL_EXEC] read file /work/x86_sim/bins/rgb.bin length: 602112
+[I][7463][09-24][19:18:43:220][file_util.cpp:128][hrt_model_exec][HRT_MODEL_EXEC] read file /work/x86_sim/bins/text_tokens.bin length: 128
+[I][7463][09-24][19:18:43:221][file_util.cpp:155][hrt_model_exec][HRT_MODEL_EXEC] Input [/work/x86_sim/bins/text_tokens.bin] will padding, validShape: (1,32), stride: (128,4)
+[I][7463][09-24][19:18:43:225][file_util.cpp:128][hrt_model_exec][HRT_MODEL_EXEC] read file /work/x86_sim/bins/targets.bin length: 448
+[I][7463][09-24][19:18:43:226][file_util.cpp:155][hrt_model_exec][HRT_MODEL_EXEC] Input [/work/x86_sim/bins/targets.bin] will padding, validShape: (1,8,14), stride: (512,64,4)
+[I][7463][09-24][19:18:43:230][file_util.cpp:128][hrt_model_exec][HRT_MODEL_EXEC] read file /work/x86_sim/bins/state.bin length: 256
+
+---------------------Frame 0 begin---------------------
+Infer time: 33587.2 ms
+---------------------Frame 0 end---------------------
+[I][7463][09-24][19:19:16:834][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_input_0_rgb.bin
+[I][7463][09-24][19:19:16:839][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_input_1_text_tokens.bin
+[I][7463][09-24][19:19:16:845][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_input_2_targets.bin
+[I][7463][09-24][19:19:16:850][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_input_3_state.bin
+[I][7463][09-24][19:19:16:856][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_0_plan_length_logits.bin
+[I][7463][09-24][19:19:16:862][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_1_behavior_logits.bin
+[I][7463][09-24][19:19:16:871][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_2_target_pointer_logits.bin
+[I][7463][09-24][19:19:16:877][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_3_target_lane_logits.bin
+[I][7463][09-24][19:19:16:881][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_4_target_speed_mps.bin
+[I][7463][09-24][19:19:16:887][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_5_completion_type_logits.bin
+[I][7463][09-24][19:19:16:893][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_6_on_failure_logits.bin
+[I][7463][09-24][19:19:16:899][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_7_confidence.bin
+[I][7463][09-24][19:19:16:904][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_8_requires_confirmation_logits.bin
+[I][7463][09-24][19:19:16:910][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_9_replan_condition_logits.bin
+

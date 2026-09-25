@@ -1,0 +1,20 @@
+2026-09-24 19:23:31,325 INFO verifier tool version: 3.5.16
+2026-09-24 19:23:35,485 INFO Start to inference onnx model student_v0_fp32
+2026-09-24 19:23:35,502 INFO Start to inference bc model student_v0_fp32_quantized_model
+2026-09-24 19:23:35,883 INFO | NodeName                                       | TensorName                                              | CosineSimilarity |
+2026-09-24 19:23:35,890 INFO | /model/vision_encoder/features/features.1/Relu | /model/vision_encoder/features/features.1/Relu_output_0 | 0.848059         |
+2026-09-24 19:23:35,895 INFO | /model/vision_encoder/features/features.3/Relu | /model/vision_encoder/features/features.3/Relu_output_0 | 0.825071         |
+2026-09-24 19:23:35,899 INFO | /model/vision_encoder/features/features.5/Relu | /model/vision_encoder/features/features.5/Relu_output_0 | 0.809550         |
+2026-09-24 19:23:35,903 INFO | /model/vision_encoder/features/features.7/Relu | /model/vision_encoder/features/features.7/Relu_output_0 | 0.832069         |
+2026-09-24 19:23:35,906 INFO | /model/vision_encoder/features/features.9/Relu | /model/vision_encoder/features/features.9/Relu_output_0 | 0.840897         |
+2026-09-24 19:23:35,910 INFO | /model/vision_encoder/pool/AveragePool         | /model/vision_encoder/pool/AveragePool_output_0         | 0.891810         |
+2026-09-24 19:23:35,914 INFO | /model/plan_length_head/Gemm                   | plan_length_logits                                      | 0.793460         |
+2026-09-24 19:23:35,920 INFO | /model/Reshape                                 | behavior_logits                                         | 0.876491         |
+2026-09-24 19:23:35,923 INFO | /model/Reshape_1                               | target_pointer_logits                                   | 0.840000         |
+2026-09-24 19:23:35,927 INFO | /model/Reshape_2                               | target_lane_logits                                      | 0.851552         |
+2026-09-24 19:23:35,930 INFO | /model/Mul                                     | target_speed_mps                                        | 0.997520         |
+2026-09-24 19:23:35,934 INFO | /model/Reshape_4                               | completion_type_logits                                  | 0.921171         |
+2026-09-24 19:23:35,937 INFO | /model/Reshape_5                               | on_failure_logits                                       | 0.850498         |
+2026-09-24 19:23:35,940 INFO | /model/Sigmoid_1                               | confidence                                              | 1.000000         |
+2026-09-24 19:23:35,944 INFO | /model/confirmation_head/Gemm                  | requires_confirmation_logits                            | 1.000000         |
+2026-09-24 19:23:35,947 INFO | /model/replan_head/Gemm                        | replan_condition_logits                                 | 0.859126         |

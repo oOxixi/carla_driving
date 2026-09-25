@@ -1,0 +1,17 @@
+== kernel ==
+Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+
+== distro ==
+PRETTY_NAME="Ubuntu 22.04.3 LTS"
+
+== toolchain ==
+hb_verifier, version 3.5.16
+hb_compile / hb_model_info: /usr/local/bin/hb_compile, /usr/local/bin/hb_model_info
+hrt_model_exec: -rwxrwxrwx 1 root root 7855088 Sep 24 19:07 /open_explorer/samples/ucp_tutorial/tools/hrt_model_exec/output_shared_J6_x86/x86/bin/hrt_model_exec
+
+== artifacts ==
+000a7e02fab45f6ab9bac86433ee7c32  /work/student/.hb_compile/student_v0_fp32.hbm
+a9dc1f1a7fe52c44a92be3516e6882b4  /work/student/.hb_compile/student_v0_fp32_quantized_model.bc
+
+== simulation env ==
+HB_UCP_SIM_PLATFORM_TYPE=nash-p

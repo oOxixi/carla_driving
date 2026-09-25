@@ -40,6 +40,28 @@ human-readable README and `handoff_manifest.json` with per-file SHA256 and sizes
 checkpoint itself is verified against `source_checkpoint_sha256` but is not duplicated into the
 B2 package.
 
+The current transfer archive is next to the package directory:
+
+```text
+a3_d2_d3_fp32_candidate_handoff_v3.tar.gz
+```
+
+Its SHA256 is
+`f88540d1e271bc85d2c0dd5bccd3122f0a8e264f97dd0f69b407830967fd64d3`.
+After checking that archive digest and extracting it, the receiver must verify the signed payload:
+
+```bash
+python -m challenge.distillation.candidate_handoff \
+  --verify-package artifacts/challenge/distillation/a3_d2_d3_fp32_candidate_handoff_v3
+```
+
+The current package verification result is `valid=true`, with 9 signed payload files checked,
+handoff manifest SHA256
+`966e16c78457e4022fb1a3eaab11eb6da9ee23d8231e50631437808f03bf7e92`, and weights SHA256
+`1afb8ebd11e401d4d7e6181d244ed39438421183c5303f1ce4a4391cee8cc68c`.
+This proves transfer integrity only; the reported Gate status intentionally remains
+`PENDING_A3_FP32_GATE`.
+
 Rebuild only into a new versioned output directory:
 
 ```bash

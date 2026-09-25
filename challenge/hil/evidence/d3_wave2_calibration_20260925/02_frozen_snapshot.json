@@ -1,0 +1,14 @@
+{
+  "snapshot": "challenge/hil/frozen/d3_wave2_safe_short_v1_val",
+  "source_release": "challenge/dataset/releases/d3_wave2_safe_short_v1",
+  "source_requests": "challenge/dataset/releases/d3_wave2_safe_short_v1/val_addition.jsonl",
+  "cases": 56,
+  "rgb_copied": 56,
+  "teacher_plans": 56,
+  "case_set_digest_sha256": "79513aa82ff2f717249a218aaee9b8288222f52e308f09ab2d77ee90aed6ae3f",
+  "reload_check": {
+    "cases": 56,
+    "rgb_resolved": 56
+  },
+  "note": "Frozen by B3 with `cli freeze`; rgb copies are content-addressed by SHA256. The snapshot is a development val split from a B1 additive release, not B2's frozen benchmark."
+}
