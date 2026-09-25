@@ -87,3 +87,21 @@ manifest and policy. The paired evaluation JSON files must satisfy the promotion
 predictions SHA and Student model/config/weights identity. A3 consumes only the approved evidence;
 it does not receive Frozen Test labels or use B2 cases for training.
 
+## B2 intake readiness
+
+As of `challenge` commit `3c0ac24a384ae432bbb5dc190eb6ff104a00946d`, B2's fail-closed
+readiness entry accepts and verifies the current v3 package. Run on the formal server with:
+
+```bash
+python -m challenge.benchmark.readiness \
+  --config challenge/benchmark/benchmark_config.yaml \
+  --student-candidate \
+    artifacts/challenge/distillation/a3_d2_d3_fp32_candidate_handoff_v3
+```
+
+The verified A3 subsection reports `ready=true`; the candidate dataset version exactly matches
+`b1_d2_v1_1_plus_d3_wave1_a3_strict_positive_v1` in B2's benchmark configuration. Overall
+readiness remains `BLOCKED` only because B2 has not yet frozen the independent Validation case
+manifest or its formal policy (policy version, slice minimum denominators and multi-run merge
+rule). This is an intake result, not an accuracy result or Gate approval.
+

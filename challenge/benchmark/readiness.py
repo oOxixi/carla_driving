@@ -40,7 +40,10 @@ def check_b2_readiness(
     independent = _check_independent_validation(config)
     policy = _check_formal_policy(config)
     student = _check_student_candidate(
-        student_candidate_directory
+        student_candidate_directory,
+        expected_dataset_version=independent.get(
+            "dataset_version"
+        ),
     )
 
     blockers = [
@@ -82,6 +85,7 @@ def _check_independent_validation(
     case_manifest_path = dataset.get(
         "case_manifest_path"
     )
+    dataset_version = dataset.get("dataset_version")
 
     blockers: list[str] = []
 
@@ -98,10 +102,19 @@ def _check_independent_validation(
             "Independent Validation case manifest is missing"
         )
 
+    if (
+        not isinstance(dataset_version, str)
+        or not dataset_version.strip()
+    ):
+        blockers.append(
+            "Independent Validation dataset_version is missing"
+        )
+
     return {
         "ready": not blockers,
         "status": status,
         "case_manifest_path": case_manifest_path,
+        "dataset_version": dataset_version,
         "blockers": blockers,
     }
 
@@ -174,6 +187,8 @@ def _check_formal_policy(
 
 def _check_student_candidate(
     package_directory: str | Path | None,
+    *,
+    expected_dataset_version: Any = None,
 ) -> dict[str, Any]:
     if package_directory is None:
         return {
@@ -203,11 +218,26 @@ def _check_student_candidate(
             ],
         }
 
+    blockers: list[str] = []
+    if (
+        not isinstance(expected_dataset_version, str)
+        or not expected_dataset_version.strip()
+    ):
+        blockers.append(
+            "B2 benchmark dataset_version is unavailable for candidate binding"
+        )
+    elif identity.get("dataset_version") != expected_dataset_version:
+        blockers.append(
+            "A3 Student candidate dataset_version does not match "
+            "the B2 benchmark configuration"
+        )
+
     return {
-        "ready": True,
+        "ready": not blockers,
         "package_directory": str(package),
         "identity": identity,
-        "blockers": [],
+        "expected_dataset_version": expected_dataset_version,
+        "blockers": blockers,
     }
 
 
