@@ -1,0 +1,29 @@
+{
+  "dataset_version": "b1_d3_targeted_gap_strict_v1",
+  "excluded_runs": 220,
+  "hard_negative": 0,
+  "historical_failure_policy": "The 220 non-positive runs from the frozen 500-run acquisition are excluded. They may only be recollected under a new recovery cohort after root-cause fixes; this release does not relabel their historical evidence.",
+  "published_family_counts": {
+    "ACC_C04": 20,
+    "SUP_C07": 20,
+    "TC_E01": 120,
+    "TC_F01": 450,
+    "TC_G01": 50
+  },
+  "quarantine": 0,
+  "schema_version": "1.0",
+  "source_runs": 500,
+  "source_samples": 660,
+  "strict_positive_rule": {
+    "closed_loop_quality.collision_count": 0,
+    "closed_loop_quality.command_terminal_status": "SUCCEEDED",
+    "closed_loop_quality.plan_terminal_state": "SUCCEEDED",
+    "closed_loop_quality.run_status": "SUCCEEDED",
+    "closed_loop_quality.scenario_acceptance_passed": true,
+    "quality.rgb_exists": true,
+    "quality.training_role": "POSITIVE",
+    "quality.valid_for_training": true
+  },
+  "strict_positive_runs": 280,
+  "strict_positive_samples": 660
+}

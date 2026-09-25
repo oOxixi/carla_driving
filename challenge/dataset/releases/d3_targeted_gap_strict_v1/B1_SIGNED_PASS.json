@@ -1,0 +1,8 @@
+{
+  "dataset_version": "b1_d3_targeted_gap_strict_v1",
+  "release_manifest_sha256": "6fb35bdfd06556dfce01ca09e868c1289b7c440e803fc9fdc4176f31299ff59d",
+  "schema_version": "1.0",
+  "status": "PASS",
+  "strict_positive_runs": 280,
+  "strict_positive_samples": 660
+}
