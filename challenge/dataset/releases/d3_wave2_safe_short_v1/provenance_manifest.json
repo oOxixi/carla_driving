@@ -1,0 +1,35 @@
+{
+  "base_release": "d2_v1_1",
+  "dataset_version": "b1_d3_wave2_safe_short_v1",
+  "excluded_historical_family": {
+    "CX02": 125
+  },
+  "prior_addon_release": "d3_wave1_addon_v1",
+  "published_families": {
+    "A01": 114,
+    "A06": 114,
+    "CX01": 146
+  },
+  "raw_source_immutable": true,
+  "release_type": "additive",
+  "schema_version": "1.0",
+  "source_artifact": "artifacts/b1_d3_wave2_safe_short_499_exec_v2_v1",
+  "source_dataset_file": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_d3_wave2/artifacts/b1_d3_wave2_safe_short_499_exec_v2_v1/dataset/d2_valid.jsonl",
+  "source_dataset_version": "teacher_distill_v0.6_d3_expansion_wave2_targeted_v4_sync_v1",
+  "source_execution_provenance_sha256": "ed57404dac68a08fc0d6fd7ff02bfc2e97db74490d0e6692a8cf36f6965c9dce",
+  "source_plan": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_d3_wave2/artifacts/b1_d3_wave2_execution_plan_v2/d3_wave2_execution_plan_v2.json",
+  "source_plan_sha256": "02be62fee78ef53a6d0b0933e7c6323cc31c8cccec5e56c3682fb4315ad8fcdc",
+  "source_selection": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_d3_wave2/artifacts/b1_d3_wave2_selection_safe_short_v2/safe_short_selection.json",
+  "source_selection_sha256": "4902888443cf5f06b04d01965b9a03ec75b3251a150a20a791b3717969069aac",
+  "teacher_git_sha": [
+    "252984d37e49ddc11eaddcde2bfb26d0d6f2086b"
+  ],
+  "teacher_manifest": "challenge/teacher_pinned_manifest_wave2_sync_v1.json",
+  "teacher_manifest_sha256": "1b1105685ab0d7bf8a1cf1a102d1a41a58f8c129eb54ce2a5e9b13c66bdf7b32",
+  "teacher_model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+  "teacher_model_id": [
+    "Qwen/Qwen3.5-2B"
+  ],
+  "teacher_model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "teacher_profile": "b1-pinned-teacher-v4-wave2-scenario-sync-v1"
+}

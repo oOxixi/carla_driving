@@ -1,0 +1,224 @@
+2026-09-26 00:56:10,477 WARNING Please note that the parameter norm_type has been deprecated and will be determined by the specification of the mean/scale/std parameters
+2026-09-26 00:56:10,491 WARNING The input node rgb's input_source is not be specified, it will be specified as None by default
+2026-09-26 00:56:10,494 WARNING The input node text_tokens's input_source is not be specified, it will be specified as None by default
+2026-09-26 00:56:10,497 WARNING The input node targets's input_source is not be specified, it will be specified as None by default
+2026-09-26 00:56:10,500 WARNING The input node state's input_source is not be specified, it will be specified as None by default
+2026-09-26 00:56:10,518 INFO Processing calibration set data for input[rgb]
+2026-09-26 00:56:11,132 INFO First calibration picture name: /work/cal_gap/rgb/sample_0000.npy
+2026-09-26 00:56:11,147 INFO First calibration picture md5: 15dc0ea65e3fcf6b3052a82097f40720
+2026-09-26 00:56:12,918 INFO Processing calibration set data for input[text_tokens]
+2026-09-26 00:56:13,477 INFO First calibration picture name: /work/cal_gap/text_tokens/sample_0000.npy
+2026-09-26 00:56:13,486 INFO First calibration picture md5: 54aa44da91f7f1e7b732d56020dd7e11
+2026-09-26 00:56:14,752 INFO Processing calibration set data for input[targets]
+2026-09-26 00:56:15,315 INFO First calibration picture name: /work/cal_gap/targets/sample_0000.npy
+2026-09-26 00:56:15,326 INFO First calibration picture md5: d619cf3a596bb5e98fb81ae242ad55a8
+2026-09-26 00:56:16,604 INFO Processing calibration set data for input[state]
+2026-09-26 00:56:17,162 INFO First calibration picture name: /work/cal_gap/state/sample_0000.npy
+2026-09-26 00:56:17,171 INFO First calibration picture md5: 844b25c622f5a21353bb898545067fc3
+2026-09-26 00:56:22,593 INFO The activation calibration configuration:
+    calibration_type:     ['max', 'kl']
+2026-09-26 00:56:22,711 INFO Provided calibration data md5: 298bcb296d2bef1307e6426a8081178c
+2026-09-26 00:56:26,126 INFO Run calibration model with modelwise search method.
+calibration in progress:   0%|          | 0/16 [00:00<?, ?it/s]2026-09-26 00:56:27.111303462 [E:onnxruntime:, sequential_executor.cc:516 ExecuteKernel] Non-zero status code returned while running Reshape node. Name:'/model/vision_encoder/projection/Gemm_transpose_in_reshape' Status Message: /onnxruntime_src/onnxruntime/core/providers/cpu/tensor/reshape_helper.h:45 onnxruntime::ReshapeHelper::ReshapeHelper(const onnxruntime::TensorShape&, onnxruntime::TensorShapeVector&, bool) input_shape_size == size was false. The input tensor cannot be reshaped to the requested shape. Input shape:{8,384,3,3}, requested shape:{1,3456,1,1}
+calibration in progress:   0%|          | 0/16 [00:00<?, ?it/s]
+calibration in progress:   0%|          | 0/128 [00:00<?, ?it/s]
+calibration in progress:   1%|          | 1/128 [00:00<00:26,  4.73it/s]
+calibration in progress:   2%|▏         | 2/128 [00:00<00:26,  4.84it/s]
+calibration in progress:   2%|▏         | 3/128 [00:00<00:24,  5.05it/s]
+calibration in progress:   3%|▎         | 4/128 [00:00<00:25,  4.89it/s]
+calibration in progress:   4%|▍         | 5/128 [00:00<00:23,  5.15it/s]
+calibration in progress:   5%|▍         | 6/128 [00:01<00:23,  5.13it/s]
+calibration in progress:   5%|▌         | 7/128 [00:01<00:23,  5.13it/s]
+calibration in progress:   6%|▋         | 8/128 [00:01<00:24,  4.93it/s]
+calibration in progress:   7%|▋         | 9/128 [00:01<00:25,  4.75it/s]
+calibration in progress:   8%|▊         | 10/128 [00:02<00:25,  4.66it/s]
+calibration in progress:   9%|▊         | 11/128 [00:02<00:29,  4.01it/s]
+calibration in progress:   9%|▉         | 12/128 [00:02<00:28,  4.04it/s]
+calibration in progress:  10%|█         | 13/128 [00:02<00:27,  4.20it/s]
+calibration in progress:  11%|█         | 14/128 [00:03<00:26,  4.25it/s]
+calibration in progress:  12%|█▏        | 15/128 [00:03<00:26,  4.24it/s]
+calibration in progress:  12%|█▎        | 16/128 [00:03<00:25,  4.32it/s]
+calibration in progress:  13%|█▎        | 17/128 [00:03<00:25,  4.37it/s]
+calibration in progress:  14%|█▍        | 18/128 [00:03<00:25,  4.32it/s]
+calibration in progress:  15%|█▍        | 19/128 [00:04<00:25,  4.27it/s]
+calibration in progress:  16%|█▌        | 20/128 [00:04<00:24,  4.36it/s]
+calibration in progress:  16%|█▋        | 21/128 [00:04<00:24,  4.42it/s]
+calibration in progress:  17%|█▋        | 22/128 [00:04<00:24,  4.37it/s]
+calibration in progress:  18%|█▊        | 23/128 [00:05<00:24,  4.26it/s]
+calibration in progress:  19%|█▉        | 24/128 [00:05<00:23,  4.41it/s]
+calibration in progress:  20%|█▉        | 25/128 [00:05<00:22,  4.49it/s]
+calibration in progress:  20%|██        | 26/128 [00:05<00:23,  4.38it/s]
+calibration in progress:  21%|██        | 27/128 [00:06<00:23,  4.27it/s]
+calibration in progress:  22%|██▏       | 28/128 [00:06<00:23,  4.35it/s]
+calibration in progress:  23%|██▎       | 29/128 [00:06<00:24,  4.12it/s]
+calibration in progress:  23%|██▎       | 30/128 [00:06<00:23,  4.12it/s]
+calibration in progress:  24%|██▍       | 31/128 [00:07<00:23,  4.16it/s]
+calibration in progress:  25%|██▌       | 32/128 [00:07<00:22,  4.28it/s]
+calibration in progress:  26%|██▌       | 33/128 [00:07<00:21,  4.36it/s]
+calibration in progress:  27%|██▋       | 34/128 [00:07<00:21,  4.41it/s]
+calibration in progress:  27%|██▋       | 35/128 [00:07<00:20,  4.48it/s]
+calibration in progress:  28%|██▊       | 36/128 [00:08<00:20,  4.47it/s]
+calibration in progress:  29%|██▉       | 37/128 [00:08<00:20,  4.36it/s]
+calibration in progress:  30%|██▉       | 38/128 [00:08<00:20,  4.34it/s]
+calibration in progress:  30%|███       | 39/128 [00:08<00:20,  4.43it/s]
+calibration in progress:  31%|███▏      | 40/128 [00:09<00:20,  4.37it/s]
+calibration in progress:  32%|███▏      | 41/128 [00:09<00:19,  4.35it/s]
+calibration in progress:  33%|███▎      | 42/128 [00:09<00:20,  4.30it/s]
+calibration in progress:  34%|███▎      | 43/128 [00:09<00:19,  4.27it/s]
+calibration in progress:  34%|███▍      | 44/128 [00:09<00:19,  4.33it/s]
+calibration in progress:  35%|███▌      | 45/128 [00:10<00:19,  4.33it/s]
+calibration in progress:  36%|███▌      | 46/128 [00:10<00:19,  4.29it/s]
+calibration in progress:  37%|███▋      | 47/128 [00:10<00:18,  4.32it/s]
+calibration in progress:  38%|███▊      | 48/128 [00:10<00:18,  4.33it/s]
+calibration in progress:  38%|███▊      | 49/128 [00:11<00:18,  4.35it/s]
+calibration in progress:  39%|███▉      | 50/128 [00:11<00:18,  4.27it/s]
+calibration in progress:  40%|███▉      | 51/128 [00:11<00:17,  4.32it/s]
+calibration in progress:  41%|████      | 52/128 [00:11<00:17,  4.43it/s]
+calibration in progress:  41%|████▏     | 53/128 [00:12<00:16,  4.44it/s]
+calibration in progress:  42%|████▏     | 54/128 [00:12<00:16,  4.52it/s]
+calibration in progress:  43%|████▎     | 55/128 [00:12<00:15,  4.59it/s]
+calibration in progress:  44%|████▍     | 56/128 [00:12<00:16,  4.31it/s]
+calibration in progress:  45%|████▍     | 57/128 [00:12<00:16,  4.34it/s]
+calibration in progress:  45%|████▌     | 58/128 [00:13<00:15,  4.41it/s]
+calibration in progress:  46%|████▌     | 59/128 [00:13<00:15,  4.42it/s]
+calibration in progress:  47%|████▋     | 60/128 [00:13<00:15,  4.26it/s]
+calibration in progress:  48%|████▊     | 61/128 [00:13<00:15,  4.33it/s]
+calibration in progress:  48%|████▊     | 62/128 [00:14<00:15,  4.35it/s]
+calibration in progress:  49%|████▉     | 63/128 [00:14<00:15,  4.27it/s]
+calibration in progress:  50%|█████     | 64/128 [00:14<00:15,  4.27it/s]
+calibration in progress:  51%|█████     | 65/128 [00:14<00:14,  4.25it/s]
+calibration in progress:  52%|█████▏    | 66/128 [00:15<00:14,  4.31it/s]
+calibration in progress:  52%|█████▏    | 67/128 [00:15<00:14,  4.08it/s]
+calibration in progress:  53%|█████▎    | 68/128 [00:15<00:14,  4.14it/s]
+calibration in progress:  54%|█████▍    | 69/128 [00:15<00:14,  4.16it/s]
+calibration in progress:  55%|█████▍    | 70/128 [00:16<00:14,  4.14it/s]
+calibration in progress:  55%|█████▌    | 71/128 [00:16<00:13,  4.22it/s]
+calibration in progress:  56%|█████▋    | 72/128 [00:16<00:13,  4.13it/s]
+calibration in progress:  57%|█████▋    | 73/128 [00:16<00:13,  4.14it/s]
+calibration in progress:  58%|█████▊    | 74/128 [00:16<00:12,  4.27it/s]
+calibration in progress:  59%|█████▊    | 75/128 [00:17<00:12,  4.25it/s]
+calibration in progress:  59%|█████▉    | 76/128 [00:17<00:12,  4.08it/s]
+calibration in progress:  60%|██████    | 77/128 [00:17<00:12,  3.99it/s]
+calibration in progress:  61%|██████    | 78/128 [00:18<00:13,  3.84it/s]
+calibration in progress:  62%|██████▏   | 79/128 [00:18<00:12,  3.77it/s]
+calibration in progress:  62%|██████▎   | 80/128 [00:18<00:12,  3.81it/s]
+calibration in progress:  63%|██████▎   | 81/128 [00:18<00:11,  3.94it/s]
+calibration in progress:  64%|██████▍   | 82/128 [00:19<00:11,  4.08it/s]
+calibration in progress:  65%|██████▍   | 83/128 [00:19<00:10,  4.17it/s]
+calibration in progress:  66%|██████▌   | 84/128 [00:19<00:10,  4.10it/s]
+calibration in progress:  66%|██████▋   | 85/128 [00:19<00:10,  4.10it/s]
+calibration in progress:  67%|██████▋   | 86/128 [00:19<00:10,  4.15it/s]
+calibration in progress:  68%|██████▊   | 87/128 [00:20<00:09,  4.24it/s]
+calibration in progress:  69%|██████▉   | 88/128 [00:20<00:09,  4.20it/s]
+calibration in progress:  70%|██████▉   | 89/128 [00:20<00:09,  4.19it/s]
+calibration in progress:  70%|███████   | 90/128 [00:20<00:09,  4.17it/s]
+calibration in progress:  71%|███████   | 91/128 [00:21<00:08,  4.30it/s]
+calibration in progress:  72%|███████▏  | 92/128 [00:21<00:08,  4.29it/s]
+calibration in progress:  73%|███████▎  | 93/128 [00:21<00:08,  4.31it/s]
+calibration in progress:  73%|███████▎  | 94/128 [00:21<00:07,  4.39it/s]
+calibration in progress:  74%|███████▍  | 95/128 [00:22<00:07,  4.36it/s]
+calibration in progress:  75%|███████▌  | 96/128 [00:22<00:07,  4.35it/s]
+calibration in progress:  76%|███████▌  | 97/128 [00:22<00:07,  4.17it/s]
+calibration in progress:  77%|███████▋  | 98/128 [00:22<00:07,  4.21it/s]
+calibration in progress:  77%|███████▋  | 99/128 [00:23<00:06,  4.25it/s]
+calibration in progress:  78%|███████▊  | 100/128 [00:23<00:06,  4.16it/s]
+calibration in progress:  79%|███████▉  | 101/128 [00:23<00:06,  4.26it/s]
+calibration in progress:  80%|███████▉  | 102/128 [00:23<00:06,  4.23it/s]
+calibration in progress:  80%|████████  | 103/128 [00:23<00:05,  4.21it/s]
+calibration in progress:  81%|████████▏ | 104/128 [00:24<00:05,  4.28it/s]
+calibration in progress:  82%|████████▏ | 105/128 [00:24<00:05,  4.23it/s]
+calibration in progress:  83%|████████▎ | 106/128 [00:24<00:05,  4.24it/s]
+calibration in progress:  84%|████████▎ | 107/128 [00:24<00:04,  4.30it/s]
+calibration in progress:  84%|████████▍ | 108/128 [00:25<00:04,  4.36it/s]
+calibration in progress:  85%|████████▌ | 109/128 [00:25<00:04,  4.42it/s]
+calibration in progress:  86%|████████▌ | 110/128 [00:25<00:04,  4.32it/s]
+calibration in progress:  87%|████████▋ | 111/128 [00:25<00:04,  4.24it/s]
+calibration in progress:  88%|████████▊ | 112/128 [00:26<00:03,  4.27it/s]
+calibration in progress:  88%|████████▊ | 113/128 [00:26<00:03,  4.20it/s]
+calibration in progress:  89%|████████▉ | 114/128 [00:26<00:03,  4.28it/s]
+calibration in progress:  90%|████████▉ | 115/128 [00:26<00:02,  4.41it/s]
+calibration in progress:  91%|█████████ | 116/128 [00:26<00:02,  4.43it/s]
+calibration in progress:  91%|█████████▏| 117/128 [00:27<00:02,  4.37it/s]
+calibration in progress:  92%|█████████▏| 118/128 [00:27<00:02,  4.28it/s]
+calibration in progress:  93%|█████████▎| 119/128 [00:27<00:02,  4.37it/s]
+calibration in progress:  94%|█████████▍| 120/128 [00:27<00:01,  4.34it/s]
+calibration in progress:  95%|█████████▍| 121/128 [00:28<00:01,  4.42it/s]
+calibration in progress:  95%|█████████▌| 122/128 [00:28<00:01,  4.30it/s]
+calibration in progress:  96%|█████████▌| 123/128 [00:28<00:01,  4.21it/s]
+calibration in progress:  97%|█████████▋| 124/128 [00:28<00:00,  4.08it/s]
+calibration in progress:  98%|█████████▊| 125/128 [00:29<00:00,  4.05it/s]
+calibration in progress:  98%|█████████▊| 126/128 [00:29<00:00,  4.01it/s]
+calibration in progress:  99%|█████████▉| 127/128 [00:29<00:00,  3.92it/s]
+calibration in progress: 100%|██████████| 128/128 [00:29<00:00,  3.98it/s]
+calibration in progress: 100%|██████████| 128/128 [00:29<00:00,  4.28it/s]
+2026-09-26 00:57:11,109 INFO | ...sion_encoder/features/features.0/Conv | Conv        | BPU | 2.605142  | 0.999987          | 0.999960         | si8              |
+2026-09-26 00:57:11,112 INFO | ...sion_encoder/features/features.1/Relu | Relu        | BPU | fused     | 0.999976          | 0.999960         | si8              |
+2026-09-26 00:57:11,115 INFO | ...sion_encoder/features/features.2/Conv | Conv        | BPU | 8.387064  | 0.999927          | 0.999884         | si8              |
+2026-09-26 00:57:11,118 INFO | ...sion_encoder/features/features.3/Relu | Relu        | BPU | fused     | 0.999878          | 0.999884         | si8              |
+2026-09-26 00:57:11,122 INFO | ...sion_encoder/features/features.4/Conv | Conv        | BPU | 8.402074  | 0.999842          | 0.999791         | si8              |
+2026-09-26 00:57:11,125 INFO | ...sion_encoder/features/features.5/Relu | Relu        | BPU | fused     | 0.999791          | 0.999791         | si8              |
+2026-09-26 00:57:11,128 INFO | ...sion_encoder/features/features.6/Conv | Conv        | BPU | 9.941008  | 0.999762          | 0.999701         | si8              |
+2026-09-26 00:57:11,131 INFO | ...sion_encoder/features/features.7/Relu | Relu        | BPU | fused     | 0.999701          | 0.999701         | si8              |
+2026-09-26 00:57:11,134 INFO | ...sion_encoder/features/features.8/Conv | Conv        | BPU | 9.866993  | 0.999641          | 0.999643         | si8              |
+2026-09-26 00:57:11,138 INFO | ...sion_encoder/features/features.9/Relu | Relu        | BPU | fused     | 0.999646          | 0.999643         | si8              |
+2026-09-26 00:57:11,141 INFO | /model/vision_encoder/pool/AveragePool   | AveragePool | BPU | 7.213821  | 0.999784          | 0.999781         | si8              |
+2026-09-26 00:57:11,144 INFO | .../projection/Gemm_transpose_in_reshape | Reshape     | BPU | 7.213821  | 0.999784          | 0.999781         | si8              |
+2026-09-26 00:57:11,147 INFO | /model/vision_encoder/projection/Gemm    | Conv        | BPU | 7.213821  | 0.999772          | 0.999786         | si8              |
+2026-09-26 00:57:11,150 INFO | /model/vision_encoder/activation/Relu    | Relu        | BPU | fused     | 0.999798          | 0.999786         | si8              |
+2026-09-26 00:57:11,154 INFO | ...rs/layers.0/Gemm_transpose_in_reshape | Reshape     | BPU | 0.996292  | 0.999990          | 0.999990         | si8              |
+2026-09-26 00:57:11,157 INFO | /model/text_encoder/layers/layers.0/Gemm | Conv        | BPU | 0.996292  | 0.999983          | 0.999965         | si8              |
+2026-09-26 00:57:11,160 INFO | /model/text_encoder/layers/layers.1/Relu | Relu        | BPU | fused     | 0.999965          | 0.999965         | si8              |
+2026-09-26 00:57:11,163 INFO | /model/text_encoder/layers/layers.2/Gemm | Conv        | BPU | 0.461844  | 0.999955          | 0.995110         | si8              |
+2026-09-26 00:57:11,165 INFO | /model/text_encoder/layers/layers.3/Relu | Relu        | BPU | fused     | 0.995110          | 0.995110         | si8              |
+2026-09-26 00:57:11,169 INFO | ...rs/layers.0/Gemm_transpose_in_reshape | Reshape     | BPU | 1.0       | 0.999997          | 0.999997         | si8              |
+2026-09-26 00:57:11,172 INFO | ...l/target_encoder/layers/layers.0/Gemm | Conv        | BPU | 1.0       | 0.999988          | 0.999823         | si8              |
+2026-09-26 00:57:11,175 INFO | ...l/target_encoder/layers/layers.1/Relu | Relu        | BPU | fused     | 0.999823          | 0.999823         | si8              |
+2026-09-26 00:57:11,179 INFO | ...l/target_encoder/layers/layers.2/Gemm | Conv        | BPU | 0.819819  | 0.999812          | 0.981995         | si8              |
+2026-09-26 00:57:11,182 INFO | ...l/target_encoder/layers/layers.3/Relu | Relu        | BPU | fused     | 0.981995          | 0.981995         | si8              |
+2026-09-26 00:57:11,185 INFO | ...rs/layers.0/Gemm_transpose_in_reshape | Reshape     | BPU | 1.0       | 0.999999          | 0.999999         | si8              |
+2026-09-26 00:57:11,189 INFO | ...el/state_encoder/layers/layers.0/Gemm | Conv        | BPU | 1.0       | 0.999992          | 0.999937         | si8              |
+2026-09-26 00:57:11,192 INFO | ...el/state_encoder/layers/layers.1/Relu | Relu        | BPU | fused     | 0.999937          | 0.999937         | si8              |
+2026-09-26 00:57:11,195 INFO | ...el/state_encoder/layers/layers.2/Gemm | Conv        | BPU | 0.861249  | 0.999931          | 0.995288         | si8              |
+2026-09-26 00:57:11,199 INFO | ...el/state_encoder/layers/layers.3/Relu | Relu        | BPU | fused     | 0.995288          | 0.995288         | si8              |
+2026-09-26 00:57:11,205 INFO | /model/Concat                            | Concat      | BPU | 5.876421  | 0.999722          | 0.999712         | si8              |
+2026-09-26 00:57:11,208 INFO | /model/fusion/fusion.0/Gemm              | Conv        | BPU | 5.876421  | 0.999738          | 0.999702         | si8              |
+2026-09-26 00:57:11,211 INFO | /model/fusion/fusion.1/Relu              | Relu        | BPU | fused     | 0.999724          | 0.999702         | si8              |
+2026-09-26 00:57:11,214 INFO | /model/fusion/fusion.2/Gemm              | Conv        | BPU | 2.21995   | 0.999717          | 0.999670         | si8              |
+2026-09-26 00:57:11,217 INFO | /model/fusion/fusion.3/Relu              | Relu        | BPU | fused     | 0.999686          | 0.999670         | si8              |
+2026-09-26 00:57:11,220 INFO | /model/fusion/fusion.4/Gemm              | Conv        | BPU | 1.493927  | 0.999664          | 0.999610         | si8              |
+2026-09-26 00:57:11,224 INFO | /model/fusion/fusion.5/Relu              | Relu        | BPU | fused     | 0.999656          | 0.999610         | si8              |
+2026-09-26 00:57:11,227 INFO | /model/plan_length_head/Gemm             | Conv        | BPU | 1.203255  | 0.999811          | 0.999463         | f32              |
+2026-09-26 00:57:11,230 INFO | .../plan_length_head/Gemm_reshape_output | Reshape     | BPU | fused     | 0.999811          | 0.999463         | f32              |
+2026-09-26 00:57:11,234 INFO | /model/behavior_head/Gemm                | Conv        | BPU | 1.203255  | 0.999721          | 0.999580         | f32              |
+2026-09-26 00:57:11,237 INFO | /model/Reshape                           | Reshape     | BPU | fused     | 0.999721          | 0.999580         | f32              |
+2026-09-26 00:57:11,239 INFO | /model/target_pointer_head/Gemm          | Conv        | BPU | 1.203255  | 0.999446          | 0.999279         | f32              |
+2026-09-26 00:57:11,243 INFO | /model/Reshape_1                         | Reshape     | BPU | fused     | 0.999446          | 0.999279         | f32              |
+2026-09-26 00:57:11,246 INFO | /model/target_lane_head/Gemm             | Conv        | BPU | 1.203255  | 0.999203          | 0.999291         | f32              |
+2026-09-26 00:57:11,249 INFO | /model/Reshape_2                         | Reshape     | BPU | fused     | 0.999203          | 0.999291         | f32              |
+2026-09-26 00:57:11,251 INFO | /model/target_speed_head/Gemm            | Conv        | BPU | 1.203255  | 0.998812          | 0.998812         | si8              |
+2026-09-26 00:57:11,255 INFO | /model/Sigmoid                           | Sigmoid     | BPU | 5.49897   | 0.999987          | fused            | fused            |
+2026-09-26 00:57:11,257 INFO | /model/Mul                               | Mul         | BPU | 0.995926  | 0.999987          | 0.999987         | si16             |
+2026-09-26 00:57:11,261 INFO | /model/Mul_target_speed_mps_Reshape      | Reshape     | BPU | 32.867649 | 0.999987          | 0.999987         | f32,si16         |
+2026-09-26 00:57:11,264 INFO | /model/completion_head/Gemm              | Conv        | BPU | 1.203255  | 0.999709          | 0.999575         | f32              |
+2026-09-26 00:57:11,267 INFO | /model/Reshape_4                         | Reshape     | BPU | fused     | 0.999709          | 0.999575         | f32              |
+2026-09-26 00:57:11,270 INFO | /model/failure_head/Gemm                 | Conv        | BPU | 1.203255  | 0.999535          | 0.999233         | f32              |
+2026-09-26 00:57:11,273 INFO | /model/Reshape_5                         | Reshape     | BPU | fused     | 0.999535          | 0.999233         | f32              |
+2026-09-26 00:57:11,275 INFO | /model/confidence_head/Gemm              | Conv        | BPU | 1.203255  | 1.000000          | 1.000000         | si16             |
+2026-09-26 00:57:11,279 INFO | /model/Sigmoid_1                         | Sigmoid     | BPU | 11.09031  | 1.000000          | 1.000000         | fused            |
+2026-09-26 00:57:11,281 INFO | /model/Sigmoid_1_confidence_Reshape      | Reshape     | BPU | 0.999985  | 1.000000          | 1.000000         | f32,si16         |
+2026-09-26 00:57:11,284 INFO | /model/confirmation_head/Gemm            | Conv        | BPU | 1.203255  | 1.000000          | fused            | fused            |
+2026-09-26 00:57:11,287 INFO | ...confirmation_head/Gemm_reshape_output | Reshape     | BPU | fused     | 1.000000          | 1.000000         | f32              |
+2026-09-26 00:57:11,290 INFO | /model/replan_head/Gemm                  | Conv        | BPU | 1.203255  | 0.999031          | 0.999326         | f32              |
+2026-09-26 00:57:11,293 INFO | /model/replan_head/Gemm_reshape_output   | Reshape     | BPU | fused     | 0.999031          | 0.999326         | f32              |
+2026-09-26 00:57:31,823 INFO BPU march           : nash-p
+2026-09-26 00:57:32,004 INFO ############# calibration_parameters info #############
+2026-09-26 00:57:32,007 INFO calibration_type    : default
+2026-09-26 00:57:32,051 INFO ############# memory info #############
+2026-09-26 00:57:32,060 INFO input memory        : 603136
+2026-09-26 00:57:32,063 INFO output memory       : 2560
+2026-09-26 00:57:32,065 INFO static memory       : 23580160
+2026-09-26 00:57:32,069 INFO dynamic memory      : 605696
+2026-09-26 00:57:32,071 INFO intermediate memory : 0
+2026-09-26 00:57:32,075 INFO temporary memory    : 0
+2026-09-26 00:57:32,078 INFO min memory requirement: 24185856
+2026-09-26 00:57:32,312 INFO The hb_compile completes running.

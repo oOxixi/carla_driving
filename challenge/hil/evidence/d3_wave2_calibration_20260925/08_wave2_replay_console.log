@@ -1,0 +1,32 @@
+$ py -3.12 -m challenge.hil.cli run --repo . --adapter both --onnx challenge/student_v0_fp32.onnx \
+    --frozen challenge/hil/frozen/d3_wave2_safe_short_v1_val \
+    --rounds 3 --warmup 5 --limit 56 \
+    --verify-consistency --verify-backend-consistency --out artifacts/b3/d3w2_replay
+
+[b3-20260925T051255Z-f5bab353] no --weights given: running the random-initialized structure (toolchain validation only)
+[b3-20260925T051255Z-f5bab353] loaded 56 frozen cases from challenge/hil/frozen/d3_wave2_safe_short_v1_val (set digest 79513aa82ff2)
+[b3-20260925T051255Z-f5bab353] preflight: contract passed=True artifact status=CHECKED
+[b3-20260925T051255Z-f5bab353] warmup done: 5 samples
+[b3-20260925T051255Z-f5bab353] round 1/3: cases=56 ready=56 structural_pass=56
+[b3-20260925T051255Z-f5bab353] round 2/3: cases=56 ready=56 structural_pass=56
+[b3-20260925T051255Z-f5bab353] round 3/3: cases=56 ready=56 structural_pass=56
+[b3-20260925T051255Z-f5bab353] abnormal input suite: {'OBSERVED_PLAN_PRODUCED': 7, 'OBSERVED_FAIL_CLOSED': 3}
+[b3-20260925T051255Z-f5bab353] torch vs onnx: passed=True max_abs_diff=5.722e-06
+[b3-20260925T051255Z-f5bab353] handoff: trainable=0 robustness=10
+[b3-20260925T051255Z-f5bab353] backend consistency: PASS
+[b3-20260925T051255Z-f5bab353] claim_scope=X86_PRE_VALIDATED files=32
+
+run_id : b3-20260925T051255Z-f5bab353
+git_sha: 4b9d58ab380a826c5e98f9959a119e9bddd2006c
+
+X86 in-process planner chain, 168 case-runs (56 cases x 3 rounds), P50 / P95 (ms):
+  preprocess            32.579 /  49.018
+  packing                2.260 /   3.254
+  model inference       33.342 /  61.574
+  postprocess            0.122 /   0.189
+  adapter                0.774 /   1.186
+  plan validation        1.789 /   3.220
+  planner E2E           74.830 / 111.525
+  planner overhead      38.216 /  55.614
+
+These are X86 figures from a random-initialised structure and are NOT J6P performance.

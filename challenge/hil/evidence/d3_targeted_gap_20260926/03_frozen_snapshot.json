@@ -1,0 +1,14 @@
+{
+  "snapshot": "challenge/hil/frozen/d3_targeted_gap_strict_v1_val",
+  "source_release": "challenge/dataset/releases/d3_targeted_gap_strict_v1",
+  "source_requests": "challenge/dataset/releases/d3_targeted_gap_strict_v1/val_addition.jsonl",
+  "cases": 99,
+  "rgb_copied": 99,
+  "teacher_plans": 99,
+  "case_set_digest_sha256": "5e2cd6cbd62244a20d7d884eb9d6a90c5c01c28f3b04ff3800cdc4adadaeb5bb",
+  "reload_check": {
+    "cases": 99,
+    "rgb_resolved": 99
+  },
+  "note": "Frozen by B3 with `cli freeze`; rgb copies are content-addressed by SHA256. Development val split from a B1 additive release, not B2's frozen benchmark."
+}

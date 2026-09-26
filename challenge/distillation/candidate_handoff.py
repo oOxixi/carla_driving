@@ -25,6 +25,7 @@ REQUIRED_SOURCE_FILES = (
 PACKAGE_FILES = tuple(
     relative for relative in REQUIRED_SOURCE_FILES if relative != "student_fp32_best.pt"
 )
+HANDOFF_PAYLOAD_FILES = frozenset((*PACKAGE_FILES, "README.md", "training_config.yaml"))
 
 
 def build_candidate_handoff(
@@ -106,6 +107,102 @@ def build_candidate_handoff(
         shutil.rmtree(temporary, ignore_errors=True)
         raise
     return manifest
+
+
+def verify_candidate_handoff(package_directory: str | Path) -> dict[str, Any]:
+    """Verify a received handoff without trusting filenames or reported hashes."""
+    root = Path(package_directory).resolve()
+    if not root.is_dir():
+        raise ValueError(f"handoff package directory does not exist: {root}")
+    manifest_path = root / "handoff_manifest.json"
+    if not manifest_path.is_file():
+        raise ValueError("handoff package is missing handoff_manifest.json")
+    manifest = _read_object(manifest_path)
+    if manifest.get("schema_version") != "1.0":
+        raise ValueError("unsupported handoff schema_version")
+    if manifest.get("package_status") != "PENDING_B2_INDEPENDENT_VALIDATION":
+        raise ValueError("handoff package_status must remain pending B2 validation")
+    if manifest.get("gate_status") != "PENDING_A3_FP32_GATE":
+        raise ValueError("handoff gate_status must remain pending A3 FP32 gate")
+
+    identity = manifest.get("candidate_identity")
+    if not isinstance(identity, Mapping):
+        raise ValueError("handoff manifest requires candidate_identity")
+    for field, length in (
+        ("git_sha", 40),
+        ("weights_sha256", 64),
+        ("release_manifest_sha256", 64),
+        ("a3_view_manifest_sha256", 64),
+    ):
+        _require_hex(str(identity.get(field, "")), length, field)
+    for field in ("model_id", "config_id", "dataset_version", "teacher_identity_policy"):
+        if not str(identity.get(field, "")).strip():
+            raise ValueError(f"candidate_identity requires {field}")
+    cumulative_identity_fields: tuple[str, ...] = ()
+    if identity.get("teacher_identity_policy") == "signed_cumulative_release_formal":
+        cumulative_identity_fields = (
+            "d2_release_manifest_sha256",
+            "b1_signature_sha256",
+            "source_evidence_sha256",
+        )
+        for field in cumulative_identity_fields:
+            _require_hex(str(identity.get(field, "")), 64, field)
+
+    files = manifest.get("files")
+    if not isinstance(files, Mapping):
+        raise ValueError("handoff manifest requires a files object")
+    signed_names = set(files)
+    if signed_names != HANDOFF_PAYLOAD_FILES:
+        missing = sorted(HANDOFF_PAYLOAD_FILES - signed_names)
+        extra = sorted(signed_names - HANDOFF_PAYLOAD_FILES)
+        raise ValueError(f"handoff signed file set mismatch: missing={missing}, extra={extra}")
+
+    actual_names: set[str] = set()
+    for path in root.rglob("*"):
+        if path.is_symlink():
+            raise ValueError(f"handoff package must not contain symlinks: {path}")
+        if path.is_file():
+            actual_names.add(path.relative_to(root).as_posix())
+    expected_actual = {*HANDOFF_PAYLOAD_FILES, "handoff_manifest.json"}
+    if actual_names != expected_actual:
+        missing = sorted(expected_actual - actual_names)
+        extra = sorted(actual_names - expected_actual)
+        raise ValueError(f"handoff payload file set mismatch: missing={missing}, extra={extra}")
+
+    for relative in sorted(HANDOFF_PAYLOAD_FILES):
+        record = files.get(relative)
+        if not isinstance(record, Mapping):
+            raise ValueError(f"handoff file record must be an object: {relative}")
+        path = root / relative
+        if path.stat().st_size != record.get("size_bytes"):
+            raise ValueError(f"handoff file size mismatch: {relative}")
+        if _sha256(path) != record.get("sha256"):
+            raise ValueError(f"handoff file SHA256 mismatch: {relative}")
+
+    candidate = _read_object(root / "student_v0_fp32_candidate.json")
+    identity_pairs = (
+        "git_sha", "model_id", "config_id", "weights_sha256", "dataset_version",
+        "release_manifest_sha256", "a3_view_manifest_sha256", "teacher_identity_policy",
+        *cumulative_identity_fields,
+    )
+    for field in identity_pairs:
+        if candidate.get(field) != identity.get(field):
+            raise ValueError(f"candidate manifest {field} does not match handoff identity")
+    if candidate.get("gate_status") != manifest.get("gate_status"):
+        raise ValueError("candidate manifest gate_status does not match handoff manifest")
+    weights_sha = _sha256(root / "student_v0_fp32_candidate.pt")
+    if weights_sha != identity.get("weights_sha256"):
+        raise ValueError("candidate weights do not match handoff identity")
+
+    return {
+        "valid": True,
+        "package_status": manifest["package_status"],
+        "gate_status": manifest["gate_status"],
+        "files_checked": len(HANDOFF_PAYLOAD_FILES),
+        "manifest_sha256": _sha256(manifest_path),
+        "weights_sha256": weights_sha,
+        "candidate_identity": dict(identity),
+    }
 
 
 def _validate_candidate(
@@ -242,14 +339,26 @@ def _readme(manifest: Mapping[str, Any]) -> str:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", required=True)
-    parser.add_argument("--output", required=True)
+    parser.add_argument("--source")
+    parser.add_argument("--output")
+    parser.add_argument(
+        "--verify-package",
+        help="verify one received package instead of building a new package",
+    )
     parser.add_argument("--repo-root", default=".")
     parser.add_argument(
         "--config-path",
         default="challenge/distillation/d2_v1_1_formal_config.yaml",
     )
     args = parser.parse_args(argv)
+    if args.verify_package:
+        if args.source or args.output:
+            parser.error("--verify-package cannot be combined with --source or --output")
+        report = verify_candidate_handoff(args.verify_package)
+        print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+    if not args.source or not args.output:
+        parser.error("--source and --output are required when building a package")
     source = Path(args.source)
     candidate = _read_object(source / "student_v0_fp32_candidate.json")
     config = _config_from_git(Path(args.repo_root).resolve(), candidate["git_sha"], args.config_path)

@@ -1,0 +1,8 @@
+[I][502][09-24][19:26:27:317][main.cpp:324][hrt_model_exec][HRT_MODEL_EXEC] dump_path: ./ exsit
+[I][502][09-24][19:26:27:552][file_util.cpp:128][hrt_model_exec][HRT_MODEL_EXEC] read file /work/x86_sim/bins/rgb.bin length: 602112
+[I][502][09-24][19:26:27:556][file_util.cpp:128][hrt_model_exec][HRT_MODEL_EXEC] read file /work/x86_sim/bins/text_tokens.bin length: 128
+[I][502][09-24][19:26:27:556][file_util.cpp:155][hrt_model_exec][HRT_MODEL_EXEC] Input [/work/x86_sim/bins/text_tokens.bin] will padding, validShape: (1,32), stride: (128,4)
+[I][502][09-24][19:26:27:558][file_util.cpp:128][hrt_model_exec][HRT_MODEL_EXEC] read file /work/x86_sim/bins/targets.bin length: 448
+[I][502][09-24][19:26:27:559][file_util.cpp:155][hrt_model_exec][HRT_MODEL_EXEC] Input [/work/x86_sim/bins/targets.bin] will padding, validShape: (1,8,14), stride: (512,64,4)
+[I][502][09-24][19:26:27:561][file_util.cpp:128][hrt_model_exec][HRT_MODEL_EXEC] read file /work/x86_sim/bins/state.bin length: 256
+Infer time: 19429.8 ms

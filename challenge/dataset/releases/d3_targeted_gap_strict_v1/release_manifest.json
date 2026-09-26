@@ -1,0 +1,59 @@
+{
+  "base_release": "d2_v1_1",
+  "counts": {
+    "hard_negative_addition": 0,
+    "images": 660,
+    "quarantine": 0,
+    "source_runs": 500,
+    "strict_positive_runs": 280,
+    "strict_positive_samples": 660,
+    "train_addition": 561,
+    "val_addition": 99
+  },
+  "dataset_version": "b1_d3_targeted_gap_strict_v1",
+  "files": {
+    "README.md": {
+      "sha256": "85327c4ec53fa57dbeb38cc7ded04f742befb079b5b87d9ce19f5137cf9b1223",
+      "size_bytes": 929
+    },
+    "cumulative_view_manifest.json": {
+      "sha256": "58a283d3eab15c7e6c85778d06ce2c7518378afcc2cb71e7bbd8f7b654183b25",
+      "size_bytes": 1525
+    },
+    "governance_report.json": {
+      "sha256": "1100a5a30db8708714b009c2832f4b3d92e5abf0cbd93b4e3eea4491a488df21",
+      "size_bytes": 1063
+    },
+    "hard_negative_addition.jsonl": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    "provenance_manifest.json": {
+      "sha256": "e330dc5adb6a4f3bba481455dddc8675764a33daa49cfc2fbda40a4fab891390",
+      "size_bytes": 1373
+    },
+    "rgb_mapping.json": {
+      "sha256": "28516b9166f2f58de69915f50c45281b69d2b7d5cb1b30daa284f54fa647479b",
+      "size_bytes": 283183
+    },
+    "split_manifest.json": {
+      "sha256": "1e544f7651b91b698682e7182bd7572aaa63b96ad6620906e46ef7d3bdff2f76",
+      "size_bytes": 54965
+    },
+    "train_addition.jsonl": {
+      "sha256": "b07cd6f590710904b74ac8c63c0ca21c95e3be53766816fd0357b3d3b9ce11f3",
+      "size_bytes": 2983890
+    },
+    "val_addition.jsonl": {
+      "sha256": "3600a30a8edb317a005bb6166580711ea0f4616b90664471481122e0ce56d34f",
+      "size_bytes": 529392
+    }
+  },
+  "image_set": {
+    "canonical_sha256": "d1fcf7d183703799581e5ad01c0b57c2725b02c3a3d7c2fa8b4350743e990504",
+    "count": 660
+  },
+  "release_type": "additive",
+  "schema_version": "1.0",
+  "status": "B1_RELEASE_CANDIDATE"
+}

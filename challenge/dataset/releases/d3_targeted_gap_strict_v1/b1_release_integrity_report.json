@@ -1,0 +1,17 @@
+{
+  "checks": {
+    "copied_images": 660,
+    "hard_negative_rows": 0,
+    "rejected_canonical_rows": 0,
+    "source_groups": 280,
+    "source_rows": 660,
+    "source_runs": 280,
+    "strict_positive_rows": 660,
+    "train_val_group_overlap": 0,
+    "unique_sample_ids": 660
+  },
+  "dataset_version": "b1_d3_targeted_gap_strict_v1",
+  "release_manifest_sha256": "6fb35bdfd06556dfce01ca09e868c1289b7c440e803fc9fdc4176f31299ff59d",
+  "schema_version": "1.0",
+  "status": "PASS"
+}

@@ -1,0 +1,27 @@
+{
+  "dataset_version": "b1_d3_wave2_safe_short_v1",
+  "excluded_family_counts": {
+    "CX02": 125
+  },
+  "exclusion_policy": "Exclude the entire historical CX02 cohort. Although 100 historical CX02 rows were positive, CX02 was subsequently root-cause diagnosed and fixed. Historical raw data remain immutable and must not be relabeled using the later fix.",
+  "hard_negative": 0,
+  "published_family_counts": {
+    "A01": 114,
+    "A06": 114,
+    "CX01": 146
+  },
+  "quarantine_scenarios": {},
+  "schema_version": "1.0",
+  "source_runs": 499,
+  "source_samples": 499,
+  "strict_positive": 374,
+  "strict_positive_rule": {
+    "closed_loop_quality.command_terminal_status": "SUCCEEDED",
+    "closed_loop_quality.plan_terminal_state": "SUCCEEDED",
+    "closed_loop_quality.run_status": "SUCCEEDED",
+    "closed_loop_quality.scenario_acceptance_passed": true,
+    "quality.training_role": "POSITIVE",
+    "quality.valid_for_training": true
+  },
+  "terminal_inconsistent_positive_quarantined": 0
+}

@@ -1,0 +1,168 @@
+{
+  "case_dir": "/work/dumps/ACC_A01_lead_brake_0000",
+  "dump_dir": "/work/x86_sim",
+  "outputs": {
+    "plan_length_logits": {
+      "index": 0,
+      "shape": [
+        1,
+        4
+      ],
+      "stride_bytes": [
+        16,
+        4
+      ],
+      "dump_floats": 4,
+      "valid_floats": 4,
+      "cosine": 0.79346,
+      "max_abs_diff": 0.371091
+    },
+    "behavior_logits": {
+      "index": 1,
+      "shape": [
+        1,
+        4,
+        14
+      ],
+      "stride_bytes": [
+        256,
+        64,
+        4
+      ],
+      "dump_floats": 64,
+      "valid_floats": 56,
+      "cosine": 0.876491,
+      "max_abs_diff": 0.585573
+    },
+    "target_pointer_logits": {
+      "index": 2,
+      "shape": [
+        1,
+        4,
+        9
+      ],
+      "stride_bytes": [
+        256,
+        64,
+        4
+      ],
+      "dump_floats": 64,
+      "valid_floats": 36,
+      "cosine": 0.84,
+      "max_abs_diff": 0.610704
+    },
+    "target_lane_logits": {
+      "index": 3,
+      "shape": [
+        1,
+        4,
+        6
+      ],
+      "stride_bytes": [
+        128,
+        32,
+        4
+      ],
+      "dump_floats": 32,
+      "valid_floats": 24,
+      "cosine": 0.851552,
+      "max_abs_diff": 0.619931
+    },
+    "target_speed_mps": {
+      "index": 4,
+      "shape": [
+        1,
+        4
+      ],
+      "stride_bytes": [
+        16,
+        4
+      ],
+      "dump_floats": 4,
+      "valid_floats": 4,
+      "cosine": 0.99752,
+      "max_abs_diff": 30.080507
+    },
+    "completion_type_logits": {
+      "index": 5,
+      "shape": [
+        1,
+        4,
+        8
+      ],
+      "stride_bytes": [
+        128,
+        32,
+        4
+      ],
+      "dump_floats": 32,
+      "valid_floats": 32,
+      "cosine": 0.921171,
+      "max_abs_diff": 0.725387
+    },
+    "on_failure_logits": {
+      "index": 6,
+      "shape": [
+        1,
+        4,
+        4
+      ],
+      "stride_bytes": [
+        64,
+        16,
+        4
+      ],
+      "dump_floats": 16,
+      "valid_floats": 16,
+      "cosine": 0.850498,
+      "max_abs_diff": 0.640698
+    },
+    "confidence": {
+      "index": 7,
+      "shape": [
+        1,
+        1
+      ],
+      "stride_bytes": [
+        4,
+        4
+      ],
+      "dump_floats": 1,
+      "valid_floats": 1,
+      "cosine": 1.0,
+      "max_abs_diff": 0.101109
+    },
+    "requires_confirmation_logits": {
+      "index": 8,
+      "shape": [
+        1,
+        1
+      ],
+      "stride_bytes": [
+        4,
+        4
+      ],
+      "dump_floats": 1,
+      "valid_floats": 1,
+      "cosine": 1.0,
+      "max_abs_diff": 0.210613
+    },
+    "replan_condition_logits": {
+      "index": 9,
+      "shape": [
+        1,
+        7
+      ],
+      "stride_bytes": [
+        28,
+        4
+      ],
+      "dump_floats": 7,
+      "valid_floats": 7,
+      "cosine": 0.859126,
+      "max_abs_diff": 0.400221
+    }
+  },
+  "min_cosine": 0.79346,
+  "mean_cosine": 0.898982
+}

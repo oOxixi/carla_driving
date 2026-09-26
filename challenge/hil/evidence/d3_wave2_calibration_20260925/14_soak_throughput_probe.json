@@ -1,0 +1,33 @@
+{
+  "note": "1-minute A/B probes run back-to-back on the same host state, to separate data effects from host-load effects.",
+  "probes": {
+    "d3_wave2_safe_short_v1_val": {
+      "run_id": "b3-soak-20260925T062159Z-4c74f6a2",
+      "observed_duration_s": 60.015,
+      "iterations": 656,
+      "iterations_per_s": 10.93,
+      "latency_p95_ms": 125.491,
+      "error_count": 0
+    },
+    "d2_v1_1_val": {
+      "run_id": "b3-soak-20260925T062320Z-b87f8ab5",
+      "observed_duration_s": 60.078,
+      "iterations": 642,
+      "iterations_per_s": 10.69,
+      "latency_p95_ms": 124.4,
+      "error_count": 0
+    }
+  },
+  "thirty_minute_run": {
+    "run_id": "b3-soak-20260925T055126Z-3e8873cb",
+    "observed_duration_s": 1800.078,
+    "iterations": 22462,
+    "iterations_per_s": 12.48,
+    "latency_p95_ms": 117.549,
+    "error_count": 0,
+    "success_rate": 1.0,
+    "memory_drift_kib": 1816.5,
+    "memory_drift_ratio": 0.005677
+  },
+  "historical_note": "The 2026-09-21 30-minute soak on the same command shape produced 123,611 iterations (14.6 per second). Today the same command produces ~22k per 30 minutes (~12.5 per second) on BOTH snapshots, so the difference is host-state related, not data related; absolute throughput from X86 soaks must not be compared across sessions."
+}

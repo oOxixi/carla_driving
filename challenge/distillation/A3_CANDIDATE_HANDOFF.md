@@ -40,6 +40,28 @@ human-readable README and `handoff_manifest.json` with per-file SHA256 and sizes
 checkpoint itself is verified against `source_checkpoint_sha256` but is not duplicated into the
 B2 package.
 
+The current transfer archive is next to the package directory:
+
+```text
+a3_d2_d3_fp32_candidate_handoff_v3.tar.gz
+```
+
+Its SHA256 is
+`f88540d1e271bc85d2c0dd5bccd3122f0a8e264f97dd0f69b407830967fd64d3`.
+After checking that archive digest and extracting it, the receiver must verify the signed payload:
+
+```bash
+python -m challenge.distillation.candidate_handoff \
+  --verify-package artifacts/challenge/distillation/a3_d2_d3_fp32_candidate_handoff_v3
+```
+
+The current package verification result is `valid=true`, with 9 signed payload files checked,
+handoff manifest SHA256
+`966e16c78457e4022fb1a3eaab11eb6da9ee23d8231e50631437808f03bf7e92`, and weights SHA256
+`1afb8ebd11e401d4d7e6181d244ed39438421183c5303f1ce4a4391cee8cc68c`.
+This proves transfer integrity only; the reported Gate status intentionally remains
+`PENDING_A3_FP32_GATE`.
+
 Rebuild only into a new versioned output directory:
 
 ```bash
@@ -64,4 +86,22 @@ manifest and policy. The paired evaluation JSON files must satisfy the promotion
 `artifacts.py`, including benchmark/policy/case-set/evaluator/sample identities, per-side
 predictions SHA and Student model/config/weights identity. A3 consumes only the approved evidence;
 it does not receive Frozen Test labels or use B2 cases for training.
+
+## B2 intake readiness
+
+As of `challenge` commit `3c0ac24a384ae432bbb5dc190eb6ff104a00946d`, B2's fail-closed
+readiness entry accepts and verifies the current v3 package. Run on the formal server with:
+
+```bash
+python -m challenge.benchmark.readiness \
+  --config challenge/benchmark/benchmark_config.yaml \
+  --student-candidate \
+    artifacts/challenge/distillation/a3_d2_d3_fp32_candidate_handoff_v3
+```
+
+The verified A3 subsection reports `ready=true`; the candidate dataset version exactly matches
+`b1_d2_v1_1_plus_d3_wave1_a3_strict_positive_v1` in B2's benchmark configuration. Overall
+readiness remains `BLOCKED` only because B2 has not yet frozen the independent Validation case
+manifest or its formal policy (policy version, slice minimum denominators and multi-run merge
+rule). This is an intake result, not an accuracy result or Gate approval.
 

@@ -1,0 +1,11 @@
+release      : d3_wave2_safe_short_v1
+signed gate  : B1_SIGNED_PASS / status PASS at 2026-09-24T16:18:37.686795+00:00
+teacher      : Qwen/Qwen3.5-2B @ 15852e8c1636
+locked files : 11 checked; 10 matched only after CRLF->LF normalisation (eol mode: auto)
+images       : 374 checked
+train_addition.jsonl           rows=318  no_request=0 no_plan=0 rgb_unresolved=0 rgb_mismatch=0 {'COMPLEX': 90, 'SAFETY_CRITICAL': 97, 'NORMAL': 131}
+val_addition.jsonl             rows=56   no_request=0 no_plan=0 rgb_unresolved=0 rgb_mismatch=0 {'COMPLEX': 24, 'NORMAL': 15, 'SAFETY_CRITICAL': 17}
+hard_negative_addition.jsonl   rows=0    no_request=0 no_plan=0 rgb_unresolved=0 rgb_mismatch=0 {}
+failures     : 0
+status       : PASS
+wrote challenge/hil/evidence/d3_wave2_calibration_20260925/01_release_integrity_compact.json

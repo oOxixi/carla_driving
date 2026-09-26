@@ -1,0 +1,63 @@
+{
+  "dtype": "bfloat16",
+  "legacy_smoke_note": "Previous B1 Smoke used a shared local Qwen/Qwen3.5-2B service whose exact Hugging Face revision was not recorded. This pinned revision must not be retroactively attributed to the legacy Smoke dataset.",
+  "max_model_len": 2048,
+  "model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+  "model_id": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "parent_teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+  "parent_teacher_profile": "b1-pinned-teacher-v4",
+  "previous_teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+  "quantization": null,
+  "qwen_mode": "planner_v2",
+  "scenario_sync": {
+    "challenge_scenario_contract_git_sha": "71e0442d2054cd898aeefb204fc42e3fc6529be8",
+    "changed_committed_generalization_fixtures": 6,
+    "deterministic_regeneration_parity": "6/6 PASS",
+    "focused_regression": {
+      "diff_check": "PASS",
+      "generalization_scenario_contracts": "49 passed",
+      "py_compile": "PASS",
+      "scenario_extensions_and_runner_helpers": "189 passed"
+    },
+    "generalization_gate": "A01/CX02/S3 each 27/27 PASS",
+    "reason": "Synchronize committed A01, CX02, and S3 generalization fixtures with their current base scenario contracts for D3 Wave2 execution.",
+    "schema_version": "1.0",
+    "teacher_parent_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+    "teacher_sync_git_sha": "252984d37e49ddc11eaddcde2bfb26d0d6f2086b"
+  },
+  "schema_version": "1.0",
+  "serving": {
+    "flashinfer_sampler": false,
+    "gpu_memory_utilization": 0.7,
+    "image_max_side": 224,
+    "max_num_seqs": 1,
+    "torch_version": "2.13.0+cu132",
+    "vllm_version": "0.29.0"
+  },
+  "teacher_git_sha": "252984d37e49ddc11eaddcde2bfb26d0d6f2086b",
+  "teacher_profile": "b1-pinned-teacher-v4-wave2-scenario-sync-v1",
+  "teacher_tag": "teacher-v4-wave2-scenario-sync-v1",
+  "verification": {
+    "challenge_main_test_suite_parity": "968/968 PASS",
+    "challenge_regression": "965 passed, 3 skipped",
+    "cold_start_observation": {
+      "note": "First request after service launch showed elevated latency; do not use as warm latency result."
+    },
+    "directional_closed_loop_gate": "8/8 SUCCEEDED",
+    "directional_semantic_gate": "8/8 PASS",
+    "main_regression": "965 passed, 3 skipped",
+    "service_gate": {
+      "cases": {
+        "B06_left_turn": "SUCCEEDED",
+        "B08_lane_change_left": "SUCCEEDED",
+        "QWF_01_turn_then_speed": "SUCCEEDED",
+        "QWR_05_turn_requires_qwen": "SUCCEEDED"
+      },
+      "infra_error_scan": "PASS",
+      "status": "PASS"
+    },
+    "service_health": "PASS (READY, production_ready=true, planner_v2)"
+  },
+  "verification_scope_note": "The original Teacher-v4 model/code verification block is inherited from parent 95e97b. Commit 252984d changes only six committed generalization scenario JSON fixtures; sync-specific verification is recorded under scenario_sync."
+}

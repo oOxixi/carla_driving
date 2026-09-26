@@ -232,3 +232,35 @@ input_arrival`，运行中断；而不输出打点时反而"正常"。
 
 **顺带记录**：OE 下载页需要登录（点"立即下载"提示"请先登录后再访问此页面"）；官方 **用户手册
 本身公开可读**，板端评测/资源评估/X86 仿真的口径都能直接引用，不需账号。
+
+## F12. Windows 检出会把 B1 发布包的文本哈希全部改掉（CRLF），字节级校验在本地假失败
+
+**现象**：B1 交付 D3 Wave2 release（`challenge/dataset/releases/d3_wave2_safe_short_v1/`）后，
+B3 在**本机**独立复核它的完整性：`b1_release_lock.sha256` 列的 11 个文件里 **10 个哈希不匹配**，
+再加上 `B1_SIGNED_PASS.json` 里 3 个摘要，共 **13 处失败**；但 **374 张图片全部通过**。
+
+**根因**：不是数据损坏，是**行尾转换**。本机 `core.autocrlf=true`，而仓库 `.gitattributes`
+没有给 `challenge/dataset/releases/**` 固定 `eol`，所以文本文件在 Windows 检出时被改写成 CRLF；
+B1 的摘要是在 **LF** 内容上计算的。把内容 CRLF→LF 归一化后，逐个哈希与 lock **完全一致**：
+
+| 文件 | lock 中的 sha256 | LF 归一化后 |
+|---|---|---|
+| `README.md` | `367881f8df5d0579…` | ✅ 一致 |
+| `rgb_mapping.json` | `d5c2b8dcc508b189…` | ✅ 一致 |
+| `train_addition.jsonl` | `a547e379ad340503…` | ✅ 一致 |
+| `val_addition.jsonl` | `59f524d2aa5fca39…` | ✅ 一致 |
+
+（`hard_negative_addition.jsonl` 是 0 字节，原始哈希也匹配，所以归一的只有 10 个。）
+
+**影响**：任何在 Windows 上做字节级哈希校验的消费方——B3 的发布复核、B4 的复现链、
+B2 的独立验证、以及"本地校验通过再打包"的流程——**都会看到假失败**；反过来若摘要在
+Windows 上生成、在 Linux 上校验，同样会假失败。图片等二进制文件不受影响。
+
+**绕行**：校验前对文本内容做 CRLF→LF 归一。B3 已把这条固化进
+`challenge/hil/harness/release_check/verify_b1_release.py`：默认 `--eol auto`（归一后比对，
+并单独报出"只有归一后才匹配"的文件数），`--eol raw` 保留严格字节比对。
+两种模式都跑过：`auto` = PASS / 0 失败；`raw` = FAIL / 13 失败。
+
+**归属**：仓库级或发布级（给发布目录在 `.gitattributes` 里固定行尾，仓库里已有先例——
+`CARLA-Language-Benchmark/...json text eol=crlf`、`metrics/reference_5070/** text eol=crlf`
+都是为字节级校验显式 pin 的）。B3 只记录事实与绕行，不改别人的发布流程。

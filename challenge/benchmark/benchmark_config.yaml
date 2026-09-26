@@ -1,0 +1,105 @@
+schema_version: "1.0"
+benchmark_id: "b2-a3-fp32-independent-validation-v1"
+status: "WAITING_FOR_INDEPENDENT_VALIDATION"
+purpose: "A3_FP32_GATE"
+
+dataset:
+  dataset_version: "b1_d2_v1_1_plus_d3_wave1_a3_strict_positive_v1"
+  split: "validation"
+
+  # Formal B2 Gate must use a separately frozen independent Validation
+  # case manifest. Development Val and Frozen Test are both forbidden here.
+  independence_required: true
+  development_val_allowed: false
+  frozen_test_allowed: false
+  case_manifest_path: null
+
+teacher:
+  teacher_profile: "b1-pinned-teacher-v4"
+  teacher_git_sha: "95e97b00def8ec36f12937da34ce8bb9082c4a04"
+  teacher_model_id: "Qwen/Qwen3.5-2B"
+  teacher_model_revision: "15852e8c16360a2fea060d615a32b45270f8a8fc"
+  teacher_artifact_fingerprint_sha256: "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa"
+  teacher_quantization: null
+  teacher_dtype: "bfloat16"
+
+metrics:
+  core:
+    - behavior_accuracy
+    - target_pointer_accuracy
+    - target_lane_accuracy
+    - completion_accuracy
+    - plan_sequence_accuracy
+
+  safety:
+    - safety_critical_behavior_recall
+
+  diagnostics:
+    - target_speed_mae
+    - failure_accuracy
+    - plan_length_accuracy
+    - confirmation_accuracy
+    - replan_recall
+
+gate:
+  schema_validity_required: 1.0
+  max_core_drop: 0.015
+  max_safety_drop: 0.0
+
+evidence:
+  teacher_student_must_match:
+    - benchmark_manifest_sha256
+    - policy_manifest_sha256
+    - case_set_digest
+    - evaluator_git_sha
+    - sample_count
+
+  require_predictions_sha256: true
+
+  student_identity:
+    - model_id
+    - config_id
+    - weights_sha256
+
+case_policy:
+  require_unique_sample_id: true
+  require_zero_overlap_with_training: true
+  require_zero_overlap_with_development_validation: true
+  require_nonempty_safety_critical: true
+
+replay_transport:
+  timestamp_policy: "preserve_original_ttl"
+  clock: "time.monotonic_ns"
+
+  mutable_fields:
+    - created_at_ns
+    - deadline_ns
+
+  preserve_request_id: true
+  preserve_command_id: true
+  preserve_semantic_fields: true
+
+gate_metric_policy:
+  metric_implementation: "challenge.distillation.metrics.compute_batch_metrics"
+  denominator_implementation: "challenge.distillation.metrics.metric_denominators"
+  aggregation: "micro"
+  denominator_source: "frozen_reference_labels"
+  empty_denominator: "null"
+
+  failure_handling:
+    statuses:
+      - INFERENCE_ERROR
+      - INVALID_OUTPUT
+    numerator_credit: 0
+    denominator: "include_reference_eligible_opportunities"
+
+  success_only_filter_allowed: false
+
+formal_policy:
+  status: "WAITING_FOR_POLICY_COMPLETION"
+  policy_version: null
+
+  # Must be frozen by B2 before a formal policy manifest can be signed.
+  # Do not infer these values from Development Val or candidate results.
+  slice_minimum_denominators: null
+  multi_run_merge_rule: null

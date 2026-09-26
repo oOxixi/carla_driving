@@ -33,6 +33,10 @@ COHORTS = {
         "95e97b00def8ec36f12937da34ce8bb9082c4a04",
         "challenge/teacher_pinned_manifest_v4.json",
     ),
+    "teacher_distill_v0.6_d3_expansion_wave2_targeted_v4_sync_v1": (
+        "252984d37e49ddc11eaddcde2bfb26d0d6f2086b",
+        "challenge/teacher_pinned_manifest_wave2_sync_v1.json",
+    ),
 }
 
 

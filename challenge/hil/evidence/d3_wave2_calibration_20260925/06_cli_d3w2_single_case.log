@@ -1,0 +1,39 @@
+case: /work/dumps_d3w2/ACC_A01_lead_brake__GEN_000_0009
+artefact: /work/student/.hb_compile_d3w2/student_v0_fp32_d3w2.hbm (calibrated on 64 D3 Wave2 train cases)
+cli: hrt_model_exec infer --enable_dump=true, HB_UCP_SIM_PLATFORM_TYPE=nash-p
+
+[I][4181][09-25][13:10:56:503][file_util.cpp:128][hrt_model_exec][HRT_MODEL_EXEC] read file /work/x86_sim/bins_d3w2/rgb.bin length: 602112
+[I][4181][09-25][13:10:56:506][file_util.cpp:128][hrt_model_exec][HRT_MODEL_EXEC] read file /work/x86_sim/bins_d3w2/text_tokens.bin length: 128
+[I][4181][09-25][13:10:56:507][file_util.cpp:155][hrt_model_exec][HRT_MODEL_EXEC] Input [/work/x86_sim/bins_d3w2/text_tokens.bin] will padding, validShape: (1,32), stride: (128,4)
+[I][4181][09-25][13:10:56:509][file_util.cpp:128][hrt_model_exec][HRT_MODEL_EXEC] read file /work/x86_sim/bins_d3w2/targets.bin length: 448
+[I][4181][09-25][13:10:56:509][file_util.cpp:155][hrt_model_exec][HRT_MODEL_EXEC] Input [/work/x86_sim/bins_d3w2/targets.bin] will padding, validShape: (1,8,14), stride: (512,64,4)
+[I][4181][09-25][13:10:56:511][file_util.cpp:128][hrt_model_exec][HRT_MODEL_EXEC] read file /work/x86_sim/bins_d3w2/state.bin length: 256
+Infer time: 20115.5 ms
+[I][4181][09-25][13:11:16:645][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_input_0_rgb.bin
+[I][4181][09-25][13:11:16:653][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_input_1_text_tokens.bin
+[I][4181][09-25][13:11:16:658][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_input_2_targets.bin
+[I][4181][09-25][13:11:16:663][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_input_3_state.bin
+[I][4181][09-25][13:11:16:671][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_0_plan_length_logits.bin
+[I][4181][09-25][13:11:16:676][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_1_behavior_logits.bin
+[I][4181][09-25][13:11:16:681][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_2_target_pointer_logits.bin
+[I][4181][09-25][13:11:16:687][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_3_target_lane_logits.bin
+[I][4181][09-25][13:11:16:692][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_4_target_speed_mps.bin
+[I][4181][09-25][13:11:16:699][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_5_completion_type_logits.bin
+[I][4181][09-25][13:11:16:706][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_6_on_failure_logits.bin
+[I][4181][09-25][13:11:16:714][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_7_confidence.bin
+[I][4181][09-25][13:11:16:721][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_8_requires_confirmation_logits.bin
+[I][4181][09-25][13:11:16:727][function_util.cpp:1156][hrt_model_exec][HRT_MODEL_EXEC] Dump path: ./model_infer_output_9_replan_condition_logits.bin
+idx output                          shape                raw    cosine     max_abs
+0   plan_length_logits              (1, 4)                 4  0.999343   1.087e-02
+1   behavior_logits                 (1, 4, 14)            64  0.999576   2.524e-02
+2   target_pointer_logits           (1, 4, 9)             64  0.999193   2.654e-02
+3   target_lane_logits              (1, 4, 6)             32  0.999156   3.470e-02
+4   target_speed_mps                (1, 4)                 4  0.999918   4.978e-01
+5   completion_type_logits          (1, 4, 8)             32  0.999421   2.415e-02
+6   on_failure_logits               (1, 4, 4)             16  0.999359   2.266e-02
+7   confidence                      (1, 1)                 1  1.000000   3.427e-03
+8   requires_confirmation_logits    (1, 1)                 1  1.000000   1.820e-02
+9   replan_condition_logits         (1, 7)                 7  0.999436   1.974e-02
+
+min=0.999156 mean=0.99954
+wrote /work/x86_sim/logs/26_dump_vs_onnx_d3w2.json

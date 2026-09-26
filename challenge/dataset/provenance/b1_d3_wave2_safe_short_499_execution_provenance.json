@@ -1,0 +1,74 @@
+{
+  "acquisition": {
+    "invocation_failed_count": 0,
+    "invocation_selected_runs": 499,
+    "invocation_success_count": 499,
+    "max_runs": null,
+    "output_root": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_d3_wave2/artifacts/b1_d3_wave2_safe_short_499_exec_v2_v1",
+    "resume": false,
+    "resume_already_succeeded": 0,
+    "selection_file": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_d3_wave2/artifacts/b1_d3_wave2_selection_safe_short_v2/safe_short_selection.json",
+    "selection_file_sha256": "4902888443cf5f06b04d01965b9a03ec75b3251a150a20a791b3717969069aac",
+    "selection_id_count": 499,
+    "selection_type": "SAFE_SHORT_EXECUTION_WHITELIST",
+    "selection_version": "b1_d3_wave2_safe_short_v2",
+    "start_index": 0,
+    "state_failed_runs": 0,
+    "state_path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_d3_wave2/artifacts/b1_d3_wave2_safe_short_499_exec_v2_v1/run_state.json",
+    "state_recorded_runs": 499,
+    "state_succeeded_runs": 499
+  },
+  "collector": {
+    "challenge_branch": "b1/d3-wave2-targeted",
+    "challenge_repo_git_sha": "8ae8d65b5f4c2f85b97cc2107e576cdd92468dd3",
+    "path": "challenge/dataset/collect_d3_wave2.py",
+    "sha256": "7db6e160276ae7c545118535807fd0b98d970c433e23563f4d0635d99d3565a2"
+  },
+  "dataset_version": "teacher_distill_v0.6_d3_expansion_wave2_targeted_v4_sync_v1",
+  "plan": {
+    "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_d3_wave2/artifacts/b1_d3_wave2_execution_plan_v2/d3_wave2_execution_plan_v2.json",
+    "plan_canonical_sha256": "21910dcd5a0e4cc80badfb49d7dcb8887706750b9a19cfa3e93a1c3b5464ed71",
+    "plan_file_sha256": "02be62fee78ef53a6d0b0933e7c6323cc31c8cccec5e56c3682fb4315ad8fcdc",
+    "plan_repo_git_sha": "5081d4289c645d7eb42cf4799642fc9dd2259553",
+    "plan_version": "b1_d3_expansion_wave2_targeted_exec_v2",
+    "planned_runs": 1000
+  },
+  "schema_version": "1.0",
+  "teacher": {
+    "teacher_execution_repo": {
+      "git_sha": "252984d37e49ddc11eaddcde2bfb26d0d6f2086b",
+      "repo_root": "/home/dcase_task2/dongfeng_voice/carla_main_teacher_wave2_scenario_sync",
+      "tracked_worktree_clean": true
+    },
+    "teacher_git_sha": "252984d37e49ddc11eaddcde2bfb26d0d6f2086b",
+    "teacher_manifest_path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1_d3_wave2/challenge/teacher_pinned_manifest_wave2_sync_v1.json",
+    "teacher_manifest_sha256": "1b1105685ab0d7bf8a1cf1a102d1a41a58f8c129eb54ce2a5e9b13c66bdf7b32",
+    "teacher_model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "teacher_model_id": "Qwen/Qwen3.5-2B",
+    "teacher_model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "teacher_profile": "b1-pinned-teacher-v4-wave2-scenario-sync-v1",
+    "teacher_qwen_mode": "planner_v2",
+    "teacher_runtime_health": {
+      "active_requests": 0,
+      "gpu": {
+        "available": true,
+        "device_index": 0,
+        "device_name": "NVIDIA GeForce RTX 3090",
+        "memory_allocated_bytes": 0,
+        "memory_free_bytes": 9167372288,
+        "memory_reserved_bytes": 0,
+        "memory_total_bytes": 25296044032
+      },
+      "max_concurrency": 1,
+      "model_id": "Qwen/Qwen3.5-2B",
+      "production_ready": true,
+      "qwen_mode": "planner_v2",
+      "reason": "vLLM planner endpoint configured: Qwen/Qwen3.5-2B",
+      "schema_version": "1.0",
+      "status": "READY",
+      "timeout_ms": 5000.0
+    },
+    "teacher_service_url": "http://127.0.0.1:18008",
+    "teacher_tag": "teacher-v4-wave2-scenario-sync-v1"
+  }
+}

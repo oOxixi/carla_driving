@@ -1,0 +1,110 @@
+{
+  "release_dir": "D:\\nana\\carla_driving-new\\carla_driving-new\\challenge\\dataset\\releases\\d3_wave2_safe_short_v1",
+  "eol_mode": "auto",
+  "status": "PASS",
+  "failure_count": 0,
+  "failures": [],
+  "signed_pass": {
+    "gate": "B1_SIGNED_PASS",
+    "status": "PASS",
+    "dataset_version": "b1_d3_wave2_safe_short_v1",
+    "signed_at_utc": "2026-09-24T16:18:37.686795+00:00",
+    "teacher": {
+      "artifact_fingerprint": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "dtype": "bfloat16",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "quantization": null,
+      "teacher_git_sha": "252984d37e49ddc11eaddcde2bfb26d0d6f2086b",
+      "teacher_profile": "b1-pinned-teacher-v4-wave2-scenario-sync-v1"
+    },
+    "image_set_canonical_sha256": "15ec858016f5a88053cb7c1074c42ddd827c7468ae722ff311f063735a210e3e",
+    "failures": []
+  },
+  "lock": {
+    "files_checked": 11,
+    "matched_after_lf_normalisation": 10,
+    "matched_via": {
+      "README.md": "lf_normalised",
+      "b1_release_integrity_report.json": "lf_normalised",
+      "cumulative_view_manifest.json": "lf_normalised",
+      "governance_report.json": "lf_normalised",
+      "hard_negative_addition.jsonl": "raw",
+      "provenance_manifest.json": "lf_normalised",
+      "release_manifest.json": "lf_normalised",
+      "rgb_mapping.json": "lf_normalised",
+      "split_manifest.json": "lf_normalised",
+      "train_addition.jsonl": "lf_normalised",
+      "val_addition.jsonl": "lf_normalised"
+    }
+  },
+  "signed_digests": {
+    "release_lock_sha256": {
+      "match": true,
+      "matched_via": "lf_normalised"
+    },
+    "release_manifest_sha256": {
+      "match": true,
+      "matched_via": "lf_normalised"
+    },
+    "integrity_report_sha256": {
+      "match": true,
+      "matched_via": "lf_normalised"
+    }
+  },
+  "images": {
+    "images_in_mapping": 374,
+    "failures": 0
+  },
+  "rows": {
+    "train_addition.jsonl": {
+      "rows": 318,
+      "missing_model_request": 0,
+      "missing_teacher_plan": 0,
+      "rows_without_resolved_rgb": 0,
+      "rgb_sha256_mismatch": 0,
+      "sample_class": {
+        "COMPLEX": 90,
+        "SAFETY_CRITICAL": 97,
+        "NORMAL": 131
+      },
+      "scenario_counts": {
+        "ACC_A01_lead_brake__GEN_000": 40,
+        "ACC_A01_lead_brake__GEN_001": 50,
+        "ACC_A06_obstacle_detour_return__GEN_000": 43,
+        "ACC_A06_obstacle_detour_return__GEN_001": 54,
+        "CX01_urban_intersection_conflict__GEN_000": 65,
+        "CX01_urban_intersection_conflict__GEN_001": 66
+      }
+    },
+    "val_addition.jsonl": {
+      "rows": 56,
+      "missing_model_request": 0,
+      "missing_teacher_plan": 0,
+      "rows_without_resolved_rgb": 0,
+      "rgb_sha256_mismatch": 0,
+      "sample_class": {
+        "COMPLEX": 24,
+        "NORMAL": 15,
+        "SAFETY_CRITICAL": 17
+      },
+      "scenario_counts": {
+        "ACC_A01_lead_brake__GEN_000": 10,
+        "ACC_A01_lead_brake__GEN_001": 14,
+        "ACC_A06_obstacle_detour_return__GEN_000": 7,
+        "ACC_A06_obstacle_detour_return__GEN_001": 10,
+        "CX01_urban_intersection_conflict__GEN_000": 8,
+        "CX01_urban_intersection_conflict__GEN_001": 7
+      }
+    },
+    "hard_negative_addition.jsonl": {
+      "rows": 0,
+      "missing_model_request": 0,
+      "missing_teacher_plan": 0,
+      "rows_without_resolved_rgb": 0,
+      "rgb_sha256_mismatch": 0,
+      "sample_class": {},
+      "scenario_counts": {}
+    }
+  }
+}

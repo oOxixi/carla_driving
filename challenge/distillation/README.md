@@ -157,6 +157,18 @@ Smoke runs, dirty sources, mismatched weights/checkpoints, failed preflight,
 or inconsistent hard-case counts. Current candidate identity and the external
 server package record are in [A3_CANDIDATE_HANDOFF.md](A3_CANDIDATE_HANDOFF.md).
 
+After transfer, the receiver verifies the complete signed payload, rejects
+missing or unsigned extra files, recomputes every file hash and size, and
+cross-checks the candidate identity and weight digest:
+
+```bash
+python -m challenge.distillation.candidate_handoff \
+  --verify-package artifacts/challenge/distillation/a3_fp32_candidate_handoff_v1
+```
+
+Successful transfer verification keeps both pending statuses unchanged; it is
+not an FP32 Gate decision and cannot create `A3_FP32_GATE_PASSED`.
+
 The signed D3 add-on is consumed only through the cumulative fail-closed path:
 
 ```bash

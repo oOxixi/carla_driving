@@ -1,0 +1,12 @@
+release      : d3_targeted_gap_strict_v1
+signed gate  : (not claimed) / status PASS at (not stamped)
+declared     : {'strict_positive_runs': 280, 'strict_positive_samples': 660}
+digests      : claimed=['release_manifest_sha256'] not_claimed=['release_lock_sha256', 'integrity_report_sha256'] not_recomputable=[]
+locked files : 672 checked; 11 matched only after CRLF->LF normalisation (eol mode: auto)
+images       : 660 checked
+train_addition.jsonl           rows=561  no_request=0 no_plan=0 rgb_unresolved=0 rgb_mismatch=0 {'COMPLEX': 295, 'NORMAL': 234, 'SAFETY_CRITICAL': 32}
+val_addition.jsonl             rows=99   no_request=0 no_plan=0 rgb_unresolved=0 rgb_mismatch=0 {'NORMAL': 46, 'COMPLEX': 45, 'SAFETY_CRITICAL': 8}
+hard_negative_addition.jsonl   rows=0    no_request=0 no_plan=0 rgb_unresolved=0 rgb_mismatch=0 {}
+failures     : 0
+status       : PASS
+wrote challenge/hil/evidence/d3_targeted_gap_20260926/01_release_integrity_compact.json
