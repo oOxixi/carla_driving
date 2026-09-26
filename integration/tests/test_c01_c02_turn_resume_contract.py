@@ -104,3 +104,24 @@ def test_c02_resume_speed_requires_turn_success():
     _assert_resume_waits_for_turn_success(
         ScenarioSpec.load(C02)
     )
+
+
+def test_c02_turn_resumes_immediately_after_successful_yield() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    spec = ScenarioSpec.load(
+        root
+        / "targeted_collection"
+        / "batch_a"
+        / "TC_C02_yield_left_3step.json"
+    )
+
+    assert [item.phase_id for item in spec.commands] == [
+        "C2_YIELD",
+        "C2_TURN",
+        "C2_SPEED",
+    ]
+
+    assert spec.commands[1].trigger == {
+        "type": "previous_command_succeeded",
+        "phase_id": "C2_YIELD",
+    }
