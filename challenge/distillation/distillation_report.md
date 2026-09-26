@@ -67,6 +67,29 @@ The package verifier checks nine signed payload files.  The package and pure
 state dict are server artifacts rather than Git blobs; the immutable archive
 identity is documented in `A3_CANDIDATE_HANDOFF.md`.
 
+### B3 real-weight diagnostic evidence
+
+B3 has now independently verified that same v3 package and run its real
+weights through replay, scratch ONNX/INT8 and a 30-minute x86 soak.  A3's
+`audit_b3_v3_diagnostic.py` binds the publication to the frozen candidate
+identity and accepts it only as `DIAGNOSTIC_EVIDENCE_ACCEPTED`, always with
+`eligible_for_promotion=false`.
+
+The useful signals are:
+
+- D2 v1.1 behavior/target match: `0.951763 / 0.971243`;
+- targeted-gap behavior/target match: `0.919192 / 0.919192`;
+- targeted-gap output coverage: 6 Student combinations versus 9 Teacher;
+- torch↔scratch-ONNX maximum absolute error: `7.62939453125e-06`;
+- real-weight x86 soak: 77,653 iterations, zero failures;
+- INT8 `target_speed_mps` minimum cosine changes from `0.999835` on
+  targeted-gap to `0.989066` on D3 Wave2, with 8/56 below 0.99.
+
+These development sets have known lookup shortcuts and every B3 replay remains
+`DIAGNOSTIC_ONLY`.  The candidate therefore remains unchanged and pending.
+The speed head and 6-versus-9 output coverage are improvement/calibration
+signals for a future versioned candidate, not permission to tune on B2 data.
+
 ## D3 Wave2 derived-view preparation
 
 B1's detached-signed `b1_d3_wave2_safe_short_v1` release is now available.
@@ -144,8 +167,13 @@ view.  Until then, these 660 rows are not merged into A3 training inputs.
   frozen; slice minimum denominators and multi-run merge rule are missing.
   Actual paired evaluation JSON and Gate PASS/FAIL evidence for the exact v3
   weights are still absent, while `student_candidate.ready=true`.
+- B3 has independently verified and exercised the exact v3 weights.  This
+  removes transfer-integrity uncertainty but none of B2's six formal blockers.
 - A1/A4 may consume the verified v3 package for true FP32 ONNX export work,
   but an ONNX artifact is not an A3 accuracy approval.
+- A2's required real-weight export interface and nested-manifest compatibility
+  are specified in `A2_REAL_WEIGHT_EXPORT_HANDOFF.md`.  B3's scratch ONNX is
+  diagnostic, not the formal A2 artifact.
 - A2 PTQ and any A3 QAT decision remain downstream of a valid B2 FP32 Gate,
   true ONNX export and the B1/B2 calibration release.
 

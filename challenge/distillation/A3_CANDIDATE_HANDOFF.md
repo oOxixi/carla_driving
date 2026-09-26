@@ -25,6 +25,39 @@ The current A3-owned deliverable is a pending candidate, not an accuracy approva
 The Development Val plan accuracy is not independent generalization evidence. It must not be
 quoted as the B2 score or used to rename this package as passed.
 
+## B3 independent diagnostic intake
+
+B3 independently verified the transferred v3 package and exercised the real
+weights.  A3 accepts that publication as diagnostic evidence for this exact
+candidate, not as an accuracy Gate:
+
+- all 9 handoff payload files and the `1afb8ebd...` weight digest match;
+- D2 v1.1 Validation replay reports behavior/target match
+  `0.951763 / 0.971243`;
+- targeted-gap Validation reports `0.919192 / 0.919192`, with 6 Student output
+  combinations versus 9 Teacher combinations;
+- the B3 scratch real-weight ONNX passes 10/10 torch comparisons with maximum
+  absolute difference `7.62939453125e-06`;
+- the 30-minute x86 soak completed 77,653 iterations with zero errors;
+- cross-distribution INT8 diagnostics identify `target_speed_mps` as the
+  sensitive head (`0.989066` minimum cosine and 8/56 D3 Wave2 samples below
+  0.99).
+
+Every replay correctly reports `DIAGNOSTIC_ONLY`, `gate_verified=false` and
+only `gate_status_passed` as the failed Gate check.  The development splits
+also have known lookup shortcuts, so the reported match ratios are not
+independent generalization evidence.
+
+A3 verifies this boundary with:
+
+```bash
+python challenge/distillation/audit_b3_v3_diagnostic.py \
+  --output artifacts/challenge/distillation/a3_b3_v3_diagnostic_intake.json
+```
+
+An accepted report always has `eligible_for_promotion=false`; only B2's frozen
+independent Validation Gate can change the candidate status.
+
 ## Durable server package
 
 The verified package is stored outside Git because the pure state dict is about 92 MB:
@@ -104,4 +137,8 @@ The verified A3 subsection reports `ready=true`; the candidate dataset version e
 readiness remains `BLOCKED` only because B2 has not yet frozen the independent Validation case
 manifest or its formal policy (policy version, slice minimum denominators and multi-run merge
 rule). This is an intake result, not an accuracy result or Gate approval.
+
+The B3 diagnostic does not remove any of those B2 blockers.  It does confirm
+that B2 can evaluate the already delivered package without requesting a new
+A3 weight file.
 

@@ -169,6 +169,20 @@ python -m challenge.distillation.candidate_handoff \
 Successful transfer verification keeps both pending statuses unchanged; it is
 not an FP32 Gate decision and cannot create `A3_FP32_GATE_PASSED`.
 
+B3's independently published real-weight replay/ONNX/INT8/soak evidence can be
+accepted without weakening that boundary:
+
+```bash
+python challenge/distillation/audit_b3_v3_diagnostic.py \
+  --output artifacts/challenge/distillation/a3_b3_v3_diagnostic_intake.json
+```
+
+The audit binds all evidence to the exact v3 identity and requires every replay
+to remain fail-closed.  Its successful state is
+`DIAGNOSTIC_EVIDENCE_ACCEPTED`, never `A3_FP32_GATE_PASSED`.  The formal
+real-weight export requirements exposed by that exercise are recorded in
+[A2_REAL_WEIGHT_EXPORT_HANDOFF.md](A2_REAL_WEIGHT_EXPORT_HANDOFF.md).
+
 The signed D3 add-on is consumed only through the cumulative fail-closed path:
 
 ```bash
