@@ -110,14 +110,40 @@ team chooses to train on this view, the output must be a new candidate version
 with a new config ID, dataset identity and weights SHA; it must not overwrite
 or rename v3.
 
+## D3 targeted-gap intake
+
+B1 subsequently published `b1_d3_targeted_gap_strict_v1`.  A3's fail-closed
+intake independently verified the transport/data layer:
+
+- 672 locked files and 660/660 RGB assets pass;
+- 561 Train + 99 development Validation rows are strict-positive;
+- Train/Validation group overlap is zero;
+- sample overlap with the existing D2 + D3 Wave1 + D3 Wave2 partition is zero.
+
+The release is nevertheless `BLOCKED` for A3 formal distillation.  Its rows
+identify `Qwen/Qwen3.5-2B` and acquisition Git SHA
+`a6743feb52015031f70e2c21a94aef0abae0a65a`, but provide neither an exact model
+revision nor artifact fingerprint.  No repository Teacher manifest matches
+that acquisition SHA, and `B1_SIGNED_PASS.json` does not bind a Teacher block.
+Earlier Teacher-v4 identity values are not retroactively assigned.
+
+The executable audit is `audit_targeted_gap_intake.py`; B1's exact requested
+addendum is documented in `B1_TARGETED_GAP_PROVENANCE_REQUEST.md`.  After B1
+publishes signed cohort provenance, A3 can create another versioned cumulative
+view.  Until then, these 660 rows are not merged into A3 training inputs.
+
 ## Current external handoffs and blockers
 
 - B1 data required for the prepared Wave2 view has arrived and its detached
   signature, release hashes, Teacher provenance and 374-image set validate.
+  The later targeted-gap release passes byte integrity but still requires the
+  signed Teacher-provenance addendum described above.
 - B2's evaluator, comparison, decision and evidence-publication tooling is in
-  Git, but the independent Validation case manifest and formal policy are not
-  frozen.  Actual Teacher/Student paired evaluation JSON and Gate PASS/FAIL
-  evidence for the exact v3 weights are still absent.
+  Git.  A fresh server readiness run still reports six blockers: benchmark and
+  case manifest are not frozen; formal policy and policy version are not
+  frozen; slice minimum denominators and multi-run merge rule are missing.
+  Actual paired evaluation JSON and Gate PASS/FAIL evidence for the exact v3
+  weights are still absent, while `student_candidate.ready=true`.
 - A1/A4 may consume the verified v3 package for true FP32 ONNX export work,
   but an ONNX artifact is not an A3 accuracy approval.
 - A2 PTQ and any A3 QAT decision remain downstream of a valid B2 FP32 Gate,
