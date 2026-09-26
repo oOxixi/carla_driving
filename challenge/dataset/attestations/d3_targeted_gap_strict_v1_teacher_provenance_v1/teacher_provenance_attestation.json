@@ -1,0 +1,35 @@
+{
+  "attestation_type": "teacher_provenance_supplement",
+  "binding": {
+    "algorithm": "SHA256",
+    "canonicalization": "UTF-8 JSON sort_keys=True separators=(',',':')",
+    "payload": {
+      "acquisition_git_sha": "a6743feb52015031f70e2c21a94aef0abae0a65a",
+      "dataset_version": "b1_d3_targeted_gap_strict_v1",
+      "original_provenance_manifest_sha256": "e330dc5adb6a4f3bba481455dddc8675764a33daa49cfc2fbda40a4fab891390",
+      "published_release_git_sha": "31e8653a7b6cc9c83bbf563647c363b035d37fa1",
+      "source_dataset_sha256": "9541807a3aa9b668363e452c8983c3bff06c6ec2dfd87a9565f53b2bef7b66d4",
+      "teacher_git_sha": "a6743feb52015031f70e2c21a94aef0abae0a65a",
+      "teacher_mode": "planner_v2",
+      "teacher_model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "teacher_model_id": "Qwen/Qwen3.5-2B",
+      "teacher_model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc"
+    },
+    "sha256": "f3a8fdb5346c1f8fd055376b58426c96756c4ac22e8961740e2b08721a04e625"
+  },
+  "canonical_samples": 660,
+  "release_is_immutable": true,
+  "schema_version": "1.0",
+  "signature_note": "Cryptographically content-bound to acquisition, release, dataset and Teacher artifact. No local GPG secret signing key was configured.",
+  "signature_status": "CONTENT_BOUND_UNSIGNED",
+  "status": "PASS",
+  "strict_positive_runs": 280,
+  "supplements_without_mutating_release": true,
+  "teacher_provenance": {
+    "fingerprint_tool": "challenge/dataset/teacher_model_fingerprint.py",
+    "model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "model_file_count": 13,
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc"
+  }
+}
