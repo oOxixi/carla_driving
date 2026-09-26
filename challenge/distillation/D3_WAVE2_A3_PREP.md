@@ -66,7 +66,7 @@ manifest hashes.
 For metadata-only development checks, `--skip-images` is available on both
 commands.  Outputs produced that way are never formal training evidence.
 
-## Local preparation evidence
+## Preparation and full server evidence
 
 The local partial checkout validated the full D3 Wave2 release, including
 374/374 images.  Some historical D3 Wave1 images are absent locally, so the
@@ -78,8 +78,23 @@ source_evidence_sha256 = c8f179c67369d598b156ae1dbea68fb912613808958c29b466a6944
 audit_status = PASS
 ```
 
-These hashes are a reproducibility target for the full server regeneration,
-not a claim that the local metadata-only view is ready for formal training.
+The committed builder was subsequently run on the complete `tiaozhansai`
+checkout at `challenge@5604b48a` without `--skip-images`.  The full build and
+read-only audit passed and reproduced the same canonical identities:
+
+```text
+view_manifest_sha256 = 20d15be92c7f4bf2681d6e1a20be9da45acd99569ce78c5f3cf7290ed579c296
+source_evidence_sha256 = c8f179c67369d598b156ae1dbea68fb912613808958c29b466a6944f47774995
+train_jsonl_sha256 = 7c8abb984047779c208e1154009e869085cda2ac56ef952f45ec6392959dc5b6
+val_jsonl_sha256 = 24d45ea6dab5e325d075e017a806969c052083cd23cbabbff3349b02a2289167
+d3_wave2_images_checked = 374
+audit_status = PASS
+```
+
+The server artifact is at
+`artifacts/a3_d2_d3_wave2_cumulative_positive_view_v1/`.  This establishes
+input integrity and reproducibility only; it is not a Student accuracy result
+and does not alter the v3 B2 Gate state.
 
 ## Promotion rule
 

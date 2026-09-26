@@ -89,19 +89,26 @@ partition contains 4,397 Train, 853 development Validation and 539 audit-only
 excluded samples.  Sample IDs and group keys are disjoint across Train and
 Validation; Reserved/Frozen Test use is explicitly false.
 
-The local partial clone lacks some historical D3 Wave1 RGB blobs.  Therefore
-the preparation run used `--skip-images` for the already-existing base view
-and is not formal training evidence.  Its deterministic metadata audit passed:
+The initial local partial clone lacked some historical D3 Wave1 RGB blobs, so
+its first preparation run was metadata-only.  The same committed builder was
+then run on the complete `tiaozhansai` checkout at `challenge@5604b48a`
+without `--skip-images`.  All source release/image gates, view reconstruction
+and the read-only audit passed.  The server reproduced the expected identity:
 
 - view manifest canonical SHA256:
   `20d15be92c7f4bf2681d6e1a20be9da45acd99569ce78c5f3cf7290ed579c296`
 - source evidence SHA256:
   `c8f179c67369d598b156ae1dbea68fb912613808958c29b466a6944f47774995`
+- Train JSONL SHA256:
+  `7c8abb984047779c208e1154009e869085cda2ac56ef952f45ec6392959dc5b6`
+- development Validation JSONL SHA256:
+  `24d45ea6dab5e325d075e017a806969c052083cd23cbabbff3349b02a2289167`
+- full server audit: `PASS`; D3 Wave2 images checked: 374/374
 
-A full server build without `--skip-images` must reproduce the partition and
-hashes before any Wave2 training is started.  If the team chooses to train on
-this view, the output must be a new candidate version with a new config ID,
-dataset identity and weights SHA; it must not overwrite or rename v3.
+This proves the prepared view's input integrity, not Student accuracy.  If the
+team chooses to train on this view, the output must be a new candidate version
+with a new config ID, dataset identity and weights SHA; it must not overwrite
+or rename v3.
 
 ## Current external handoffs and blockers
 
