@@ -1,0 +1,87 @@
+{
+  "weights": {
+    "file": "student_v0_fp32_candidate.pt",
+    "sha256": "1afb8ebd11e401d4d7e6181d244ed39438421183c5303f1ce4a4391cee8cc68c",
+    "manifest_gate_status": "PENDING_A3_FP32_GATE",
+    "manifest_package_status": "PENDING_B2_INDEPENDENT_VALIDATION",
+    "model_id": "student-v0-r3-fp32",
+    "config_id": "student-v0-r3-structure-20260911",
+    "dataset_version": "b1_d2_v1_1_plus_d3_wave1_a3_strict_positive_v1",
+    "training_git_sha": "151efbbfa0c8920bfc78e29262d984bcfae1877f"
+  },
+  "runs": {
+    "d3_wave2_val_56x3": {
+      "run_id": "b3-20260926T072549Z-4d2a9654",
+      "case_runs": 168,
+      "ready_rate": 1.0,
+      "structural_pass_rate": 1.0,
+      "teacher_comparison": "DIAGNOSTIC_ONLY",
+      "gate_verified": false,
+      "gate_failed_checks": [
+        "gate_status_passed"
+      ],
+      "mean_behavior_match_ratio": 1.0,
+      "mean_target_match_ratio": 1.0,
+      "dominant_student_output": "FOLLOW||C-0001",
+      "dominant_student_output_share": 0.428571,
+      "distinct_student_outputs": 3,
+      "distinct_teacher_outputs": 3,
+      "constant_student_output": false,
+      "teacher_varies_student_constant": false,
+      "identity_gate_status": "PENDING_A3_FP32_GATE",
+      "identity_weights_sha256": "1afb8ebd11e401d4d7e6181d244ed39438421183c5303f1ce4a4391cee8cc68c",
+      "identity_verification": {
+        "method": "weights_manifest_vs_artifact_sha256",
+        "verified": true,
+        "layout": "nested_candidate_identity",
+        "identity_source": "candidate_identity",
+        "manifest_path": "D:\\nana\\a3_d2_d3_fp32_candidate_handoff_v3\\a3_d2_d3_fp32_candidate_handoff_v3\\handoff_manifest.json",
+        "manifest_sha256": "966e16c78457e4022fb1a3eaab11eb6da9ee23d8231e50631437808f03bf7e92",
+        "reported_weights_sha256": "1afb8ebd11e401d4d7e6181d244ed39438421183c5303f1ce4a4391cee8cc68c",
+        "artifact_path": "D:\\nana\\a3_d2_d3_fp32_candidate_handoff_v3\\a3_d2_d3_fp32_candidate_handoff_v3\\student_v0_fp32_candidate.pt",
+        "artifact_sha256": "1afb8ebd11e401d4d7e6181d244ed39438421183c5303f1ce4a4391cee8cc68c",
+        "gate_status": "PENDING_A3_FP32_GATE"
+      }
+    },
+    "gap_val_99x3": {
+      "run_id": "b3-20260926T072627Z-d304b660",
+      "case_runs": 297,
+      "ready_rate": 1.0,
+      "structural_pass_rate": 1.0,
+      "teacher_comparison": "DIAGNOSTIC_ONLY",
+      "gate_verified": false,
+      "gate_failed_checks": [
+        "gate_status_passed"
+      ],
+      "mean_behavior_match_ratio": 0.919192,
+      "mean_target_match_ratio": 0.919192,
+      "dominant_student_output": "SET_SPEED||NONE",
+      "dominant_student_output_share": 0.454545,
+      "distinct_student_outputs": 6,
+      "distinct_teacher_outputs": 9,
+      "constant_student_output": false,
+      "teacher_varies_student_constant": false,
+      "identity_gate_status": "PENDING_A3_FP32_GATE",
+      "identity_weights_sha256": "1afb8ebd11e401d4d7e6181d244ed39438421183c5303f1ce4a4391cee8cc68c",
+      "identity_verification": {
+        "method": "weights_manifest_vs_artifact_sha256",
+        "verified": true,
+        "layout": "nested_candidate_identity",
+        "identity_source": "candidate_identity",
+        "manifest_path": "D:\\nana\\a3_d2_d3_fp32_candidate_handoff_v3\\a3_d2_d3_fp32_candidate_handoff_v3\\handoff_manifest.json",
+        "manifest_sha256": "966e16c78457e4022fb1a3eaab11eb6da9ee23d8231e50631437808f03bf7e92",
+        "reported_weights_sha256": "1afb8ebd11e401d4d7e6181d244ed39438421183c5303f1ce4a4391cee8cc68c",
+        "artifact_path": "D:\\nana\\a3_d2_d3_fp32_candidate_handoff_v3\\a3_d2_d3_fp32_candidate_handoff_v3\\student_v0_fp32_candidate.pt",
+        "artifact_sha256": "1afb8ebd11e401d4d7e6181d244ed39438421183c5303f1ce4a4391cee8cc68c",
+        "gate_status": "PENDING_A3_FP32_GATE"
+      }
+    }
+  },
+  "random_weights_baseline": {
+    "source": "artifacts/b3/d3w2_replay (A1 randomly-initialised structure, same 56x3)",
+    "mean_behavior_match_ratio": 0.4643,
+    "mean_target_match_ratio": 0.4732,
+    "dominant_student_output": "STOP||NONE"
+  },
+  "reading": "The candidate reproduces the teacher plan on 100% of the D3 Wave2 development val it was trained on, and 91.9% on the newer targeted-gap val. Neither number is generalisation evidence: the D3 Wave2 split is template-overlapping with its own train set (B3 measured a lookup shortcut that recalls 100% of the teacher plans) and the gap split still allows 88.9%. The verdict stays DIAGNOSTIC_ONLY because the gate is PENDING_A3_FP32_GATE -- identity was verified (manifest nested layout, sha256 match) but the gate itself has not been passed. Random-initialised structure scores 46% on the same D3 Wave2 slice, so the weights do carry learned behaviour."
+}

@@ -75,7 +75,7 @@ challenge/hil/
 │   ├── d2_v1_1_val/              输入基线（B1 D2 v1.1 的 val 划分，539 例）
 │   ├── d3_wave2_safe_short_v1_val/  B1 签名 D3 Wave2 的 val 划分（56 例，2026-09-25 冻结）
 │   └── d3_targeted_gap_strict_v1_val/  B1 定向补采（targeted gap）的 val 划分（99 例，2026-09-26 冻结）
-├── harness/release_check/        B1 发布完整性独立复核脚本（verify_b1_release.py）
+├── harness/release_check/        交付包独立复核脚本（verify_b1_release.py：B1 发布；verify_a3_handoff.py：A3 候选交接包）
 ├── harness/x86_sim/              X86 仿真复现脚本（编译/一致性/dump 对照/校准集，见其 README）
 ├── evidence/
 │   ├── x86_prevalidation_20260918/  Planner 链的 X86 预验证证据
@@ -87,7 +87,8 @@ challenge/hil/
 │   ├── soak_30min_20260921/                X86 30 分钟长稳（1800 s / 123,611 次迭代）
 │   ├── x86_simulation_20260924/            X86 仿真四件套：编译预检/产物结构/三路一致性/校准对照
 │   ├── d3_wave2_calibration_20260925/      签名 D3 Wave2 数据：train 校准 + val 56 例逐例一致性
-│   └── d3_targeted_gap_20260926/           定向补采数据：发布校验 + 查表探针 + 产物×数据集交叉矩阵
+│   ├── d3_targeted_gap_20260926/           定向补采数据：发布校验 + 查表探针 + 产物×数据集交叉矩阵
+│   └── a3_fp32_candidate_v3_20260926/       A3 FP32 候选包独立校验 + 真实权重回放
 ├── schemas/                      导出的列定义
 └── tests/                        101 项自测
 ```
@@ -129,7 +130,7 @@ py -3.12 -m challenge.hil.cli run `
 
 | 需要的文件 | 提供方 | 拿到后立刻能做什么 |
 |---|---|---|
-| 真实 FP32 权重 + `weights_manifest.json`（五标识 + `A3_FP32_GATE_PASSED`） | A3 | 第一次有意义的回放：行为/目标对比、`handoff` 开始产出 `usable_for_training=true` 的样本 |
+| 真实 FP32 权重 + `weights_manifest.json`（五标识 + `A3_FP32_GATE_PASSED`） | A3＋B2 | **候选已到**（`a3_d2_d3_fp32_candidate_handoff_v3`，B3 独立校验 PASS、真实权重回放已跑，见 `evidence/a3_fp32_candidate_v3_20260926/`）**但闸未开**：`gate_status = PENDING_A3_FP32_GATE`、`package_status = PENDING_B2_INDEPENDENT_VALIDATION`。因此回放仍为 `DIAGNOSTIC_ONLY`、`handoff` 的 `trainable` 仍为 0；等 **B2 在独立冻结 Validation 上给出 PASS**、A3 签发 `A3_FP32_GATE_PASSED` 后，同一命令会自动晋级 |
 | 符合契约的 Runtime 入口（stdin `ModelRequest` → stdout `ManeuverPlan V2` + 打点） | A4 | 用 A4 的真实入口替换 B3 的自建适配器；缺口见 `a4_runtime_gap_report.md`，完整门禁见 [`A4_OPENEXPLORER_J6P_RUNTIME.md`](../../docs/architecture/modules/A4_OPENEXPLORER_J6P_RUNTIME.md) |
 | 板端 `.bin` 产物 + 启动脚本 + `contract_report.json` | A4 | 板端全部测量。契约检查已就绪，A4 可先自检 |
 | INT8 量化产物 + 校准配置与校准集说明 | A2 | 按 [`A2_INT8_QUANTIZATION_AND_QAT.md`](../../docs/architecture/modules/A2_INT8_QUANTIZATION_AND_QAT.md) 核对身份后，用 `consistency --baseline-onnx` 跑 INT8 vs FP32 逐输出偏差，再做量化后性能对照 |
@@ -301,6 +302,10 @@ torch↔ONNX 最大绝对差 5.7e-06，后端一致性 `PASS`，回放结论按�
 另外在签名快照上重跑了 30 分钟长稳：1800 s、22,462 次迭代、全部 READY、0 失败、恢复探针 10/10、内存漂移 1.77 MiB；并用同刻 1 分钟 A/B 对照（D3 Wave2 656 次/分 vs D2 642 次/分）证明与 2026-09-21 那轮的 5.5× 吞吐差来自主机状态而非数据，因此 **X86 长稳的绝对吞吐不可跨会话比较**。
 
 **2026-09-26 续做（第三个数据集 + 交叉矩阵）**：B1 新发 `d3_targeted_gap_strict_v1`（660 严格正样本 / 280 闭环 run，按 run 分组划分），B2 的 `challenge/benchmark/` 实现并入 challenge（但 `case_manifest_path`/`policy_version` 仍为 `null`）。B3 独立复核了该 release（**PASS**：672 个锁定文件、660 张图、561+99 行配对全部通过；并发现**签名格式变了**——新版只声明 `release_manifest_sha256`，校验器已改为按声明逐项校验、区分 claimed/not_claimed/not_recomputable）；查表探针给出 **88/99 = 88.9% 可查表命中（`LOOKUP_SHORTCUT_PRESENT`）**，比上一版 100% 好但仍不能当泛化证据。在此基础上用 train 128 例校准、val 99 例评估，并把两个产物 × 三个数据集拼成**交叉矩阵**（849 例次逐例 `hb_verifier`）：**全局最低余弦 0.9933，低于 0.99 的观测数为 0**；校准分布与评估分布匹配时更紧（gap→gap 0.9986 vs gap→d3w2 0.9933），代价约 0.004–0.006。证据见 [`evidence/d3_targeted_gap_20260926/`](evidence/d3_targeted_gap_20260926/README.md)。
+
+**2026-09-26 再续（真实权重首次到位）**：A3 交付 `a3_d2_d3_fp32_candidate_handoff_v3`（真实 FP32 权重，92,045,422 B，sha256 `1afb8ebd…`）。B3 先做独立包校验（**9 个文件全部匹配、权重摘要与 `candidate_identity` 一致 → PASS**），再用它跑回放：D3 Wave2 开发 val（56×3）**行为/目标匹配 1.0000**、定向补采 val（99×3）**0.9192**；同一 D3 Wave2 切片上随机初始化结构只有 0.4643/0.4732，说明权重确实带来了行为。但两个 run 都仍是 **`DIAGNOSTIC_ONLY`**——`gate_verified=false`，唯一失败项是 `gate_status_passed`（身份校验通过、闸未开，fail-closed 按设计生效）。而且这两个划分本身可查表（100% / 88.9%），所以 **1.0000 与 0.9192 都不是泛化证据**。证据见 [`evidence/a3_fp32_candidate_v3_20260926/`](evidence/a3_fp32_candidate_v3_20260926/README.md)。
+
+再补齐三件：① D2 v1.1 val **全量 539 例 × 3 轮**真实权重回放（行为 **0.9518** / 目标 **0.9712**，三数据集呈 1.0000 → 0.9518 → 0.9192 的下降趋势）；② 真实权重的 **FP32→ONNX** 导出与一致性（torch↔ONNX 最大绝对差 **7.6e-06**；过程中发现 A2 的导出器只读**扁平** manifest 字段、而 A3 用**嵌套 `candidate_identity`**，直接对接会报错——B3 已在 9/24 修过同一问题，建议 A2 复用 `challenge/hil/identity.py`）；③ 真实权重的 **INT8** 编译与 FP32↔INT8 逐例一致性（定向补采 val 99 例，**十头 min ≥ 0.999835、骨干最差 0.998213**，而随机权重下同一 val 只有 0.9933–0.9986）。**换到第二个数据集又暴露一条有用的信号**：同一个 INT8 产物在 D3 Wave2 val（56 例）上，**速度回归头 `target_speed_mps` min 掉到 0.9891、8/56 例低于 0.99**（定向补采 val 上同一头是 0.9998）——说明**校准集是否覆盖评估分布**直接影响速度头保真度，应作为给 A2/A3 的具体建议。真实权重 30 分钟长稳也已完成（77,653 次迭代、0 失败、漂移 −94 KiB）。
 
 ### 限制（必读）
 

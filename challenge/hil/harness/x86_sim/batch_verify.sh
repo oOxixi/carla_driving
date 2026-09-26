@@ -7,7 +7,7 @@ DUMP_ROOT=${1:?dump root}
 BC=${2:?quantized bc path}
 LOGDIR=${3:?log dir}
 JOBS=${4:-1}
-ONNX=/work/student/student_v0_fp32.onnx
+: "${ONNX:=/work/student/student_v0_fp32.onnx}"
 
 mkdir -p "$LOGDIR"
 export ONNX BC LOGDIR

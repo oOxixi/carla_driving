@@ -46,7 +46,9 @@ export HB_UCP_SIM_PLATFORM_TYPE=nash-p     # 否则加载 nash-p 产物会报 ma
 | `collect_evidence.sh` | 汇总 `logs/` 为文本证据（剥离 ANSI、按需裁剪）到 `evidence/` |
 | `cal_config_d3w2.yaml` | 用 **B1 签名 D3 Wave2 train 64 例**校准的 PTQ 配置（2026-09-25） |
 | `cal_config_gap.yaml` | 用 **B1 定向补采（targeted gap）train 128 例**校准的 PTQ 配置（2026-09-26） |
+| `cal_config_real.yaml` | 用 **A3 真实权重 ONNX** + 定向补采 train 128 例校准的 PTQ 配置（2026-09-26） |
 | `batch_verify.sh` | 对一个 dump set 逐例跑 `hb_verifier`（浮点 ONNX ↔ int8 `.bc`）；第 4 个参数是并行度（容器 20 核时用 8 合适） |
+| | 环境变量 `ONNX=<path>` 可覆盖参与比对的浮点 ONNX（默认 `student_v0_fp32.onnx`）；真实权重轮用的是 `student_v0_fp32_real.onnx` |
 | `summarise_verify.py` | 把批量 `hb_verifier` 日志汇总成逐头 min/p05/p50/mean/max 分布 |
 | `run_d3w2_verify.sh` | 一键：D3 Wave2 批量一致性 + 分布汇总 |
 | `run_d3w2_cli_check.sh` | D3 Wave2 产物在 CLI（X86 仿真）路径上的单例互证 |
@@ -54,6 +56,7 @@ export HB_UCP_SIM_PLATFORM_TYPE=nash-p     # 否则加载 nash-p 产物会报 ma
 | `collect_d3w2_evidence.py` | 汇总 D3 Wave2 轮的证据（编译日志、分布、阈值、CLI 互证） |
 | `collect_gap_evidence.py` | 汇总定向补采轮的证据（编译日志、阈值对照、三个分布摘要） |
 | `../release_check/verify_b1_release.py` | B1 发布完整性独立复核（按签名声明逐项校验；`--eol auto` 处理 CRLF） |
+| `../release_check/verify_a3_handoff.py` | A3 候选交接包独立复核（逐文件 SHA256+尺寸、权重摘要对身份、门禁状态） |
 
 ## 典型用法
 

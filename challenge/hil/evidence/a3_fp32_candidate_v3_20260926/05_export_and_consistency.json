@@ -1,0 +1,20 @@
+{
+  "why": "B3 needed an FP32 ONNX of the real weights to run quantisation checks. challenge/export/export_onnx.py on the merged branch cannot take --weights; A2's enhanced exporter lives on the unmerged a2-quantization branch, so B3 ran that file read-only from a scratch copy.",
+  "blocker_found": "A2's exporter reads FLAT manifest fields (model_id/config_id/weights_sha256 at the top level), while A3's handoff v3 uses the NESTED candidate_identity layout -> it fails with 'weights manifest model_id does not match Student'. B3 solved the same problem on 2026-09-24 for its own loaders (commit 3b09f1f).",
+  "workaround": "B3 derived a flat view of the manifest in a scratch directory (digest values copied verbatim, nothing invented) so the exporter could run.",
+  "derived_flat_manifest_sha256": "604e7568a3a6c33bda179121e0e41818dfdb183cc9c06ea68f97e9a05614f9af",
+  "onnx": {
+    "path": "D:/nana/oe/work/a3_export/student_v0_fp32_real.onnx",
+    "sha256": "c6d4f3ec119f12a6c0802e8d48f599bfb5c699c38261831ae5db6157fee70aab",
+    "size_bytes": 92040848,
+    "reported_in_consistency_report": "c6d4f3ec119f12a6c0802e8d48f599bfb5c699c38261831ae5db6157fee70aab"
+  },
+  "torch_vs_onnx": {
+    "passed": true,
+    "requests": 10,
+    "max_abs_diff_over_all_cases": 7.62939453125e-06,
+    "rtol": 0.0001,
+    "atol": 1e-05
+  },
+  "scope_note": "Raw output tensors are compared, so a pass implies identical decoded plans under the same adapter; this is a graph-equivalence check, not an accuracy claim."
+}

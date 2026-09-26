@@ -1,0 +1,43 @@
+{
+  "run_id": "b3-soak-20260926T075419Z-7e867ba3",
+  "weights": "student_v0_fp32_candidate.pt (PENDING_A3_FP32_GATE)",
+  "adapter": "inprocess",
+  "snapshot": "frozen/d2_v1_1_val (limit 8)",
+  "requested_duration_s": 1800.0,
+  "observed_duration_s": 1800.0,
+  "duration_met": true,
+  "iterations": 77653,
+  "iterations_per_s": 43.14,
+  "outcomes": {
+    "READY": 77653
+  },
+  "error_count": 0,
+  "success_rate": 1.0,
+  "latency_ms": {
+    "first_window_p95": 42.603,
+    "last_window_p95": 37.349,
+    "overall_p95": 38.477,
+    "overall_max": 65.597,
+    "samples": 77653,
+    "overall_percentiles_bounded": true
+  },
+  "memory_drift_kib": -94.2,
+  "memory_drift_ratio": -0.000282,
+  "recovery_probe": {
+    "requests": 10,
+    "outcomes": {
+      "READY": 10
+    },
+    "errors": 0,
+    "p95_ms": 33.13127
+  },
+  "telemetry": {
+    "memory_samples": 1782,
+    "rss_kib_max": 336884.0,
+    "peak_rss_mib_max": 388.51171875,
+    "cpu_percent_max": 332.2,
+    "power_source": "NOT_APPLICABLE",
+    "bpu_measured": false
+  },
+  "throughput_caveat": "77,653 iterations here vs 22,462 on 2026-09-25 and 123,611 on 2026-09-21 for the same command shape -- X86 soak throughput varies with host state and must not be compared across sessions."
+}

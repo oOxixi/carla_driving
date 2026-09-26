@@ -1,0 +1,58 @@
+Weights: D:\nana\a3_d2_d3_fp32_candidate_handoff_v3\a3_d2_d3_fp32_candidate_handoff_v3\
+         student_v0_fp32_candidate.pt   (sha256 1afb8ebd..., 92045422 bytes)
+Manifest: .../handoff_manifest.json    (gate_status PENDING_A3_FP32_GATE,
+                                        package_status PENDING_B2_INDEPENDENT_VALIDATION)
+Adapter: inprocess (torch). No ONNX export of these weights exists yet, so
+--verify-consistency was not requested (the repo exporter on `challenge` cannot
+take --weights; A2's enhanced exporter is still on the unmerged a2-quantization branch).
+
+--- run 1: D3 Wave2 development val, 56 cases x 3 rounds ---
+$ py -3.12 -m challenge.hil.cli run --repo . --adapter inprocess \
+    --weights .../student_v0_fp32_candidate.pt \
+    --weights-manifest .../handoff_manifest.json \
+    --frozen challenge/hil/frozen/d3_wave2_safe_short_v1_val \
+    --rounds 3 --warmup 5 --limit 56 --out artifacts/b3/real_weights_d3w2
+
+[b3-20260926T072549Z-4d2a9654] loaded 56 frozen cases from challenge/hil/frozen/d3_wave2_safe_short_v1_val (set digest 79513aa82ff2)
+[b3-20260926T072549Z-4d2a9654] preflight: contract passed=True artifact status=NOT_APPLICABLE
+[b3-20260926T072549Z-4d2a9654] warmup done: 5 samples
+[b3-20260926T072549Z-4d2a9654] round 1/3: cases=56 ready=56 structural_pass=56
+[b3-20260926T072549Z-4d2a9654] round 2/3: cases=56 ready=56 structural_pass=56
+[b3-20260926T072549Z-4d2a9654] round 3/3: cases=56 ready=56 structural_pass=56
+[b3-20260926T072549Z-4d2a9654] abnormal input suite: {'OBSERVED_PLAN_PRODUCED': 7, 'OBSERVED_FAIL_CLOSED': 3}
+[b3-20260926T072549Z-4d2a9654] handoff: trainable=0 robustness=10
+[b3-20260926T072549Z-4d2a9654] claim_scope=X86_PRE_VALIDATED files=28
+
+identity: model_id=student-v0-r3-fp32  weights_sha256=1afb8ebd...  gate_status=PENDING_A3_FP32_GATE
+identity.verification: method=weights_manifest_vs_artifact_sha256 verified=true
+                       layout=nested_candidate_identity identity_source=candidate_identity
+verdict: DIAGNOSTIC_ONLY  (gate_verified=false, failed checks: gate_status_passed)
+groups.UNLABELED: behavior_match=1.0000 target_match=1.0000
+                  dominant=FOLLOW||C-0001 share=0.4286
+                  distinct_student=3 distinct_teacher=3 constant=false
+
+--- run 2: targeted-gap val, 99 cases x 3 rounds ---
+$ py -3.12 -m challenge.hil.cli run --repo . --adapter inprocess \
+    --weights .../student_v0_fp32_candidate.pt \
+    --weights-manifest .../handoff_manifest.json \
+    --frozen challenge/hil/frozen/d3_targeted_gap_strict_v1_val \
+    --rounds 3 --warmup 5 --limit 99 --out artifacts/b3/real_weights_gap
+
+[b3-20260926T072627Z-d304b660] loaded 99 frozen cases ... (set digest 5e2cd6cbd622)
+[b3-20260926T072627Z-d304b660] preflight: contract passed=True artifact status=NOT_APPLICABLE
+[b3-20260926T072627Z-d304b660] warmup done: 5 samples
+[b3-20260926T072627Z-d304b660] round 1/3: cases=99 ready=99 structural_pass=99
+[b3-20260926T072627Z-d304b660] round 2/3: cases=99 ready=99 structural_pass=99
+[b3-20260926T072627Z-d304b660] round 3/3: cases=99 ready=99 structural_pass=99
+[b3-20260926T072627Z-d304b660] abnormal input suite: {'OBSERVED_FAIL_CLOSED': 10}
+[b3-20260926T072627Z-d304b660] handoff: trainable=0 robustness=10
+[b3-20260926T072627Z-d304b660] claim_scope=X86_PRE_VALIDATED files=28
+
+verdict: DIAGNOSTIC_ONLY  (gate_verified=false, failed checks: gate_status_passed)
+groups.UNLABELED: behavior_match=0.9192 target_match=0.9192
+                  dominant=SET_SPEED||NONE share=0.4545
+                  distinct_student=6 distinct_teacher=9 constant=false
+
+--- same-slice baseline with the randomly-initialised structure ---
+artifacts/b3/d3w2_replay (56 x 3, no --weights):
+  behavior_match=0.4643 target_match=0.4732 dominant=STOP||NONE share=0.5536

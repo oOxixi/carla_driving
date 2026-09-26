@@ -1,0 +1,18 @@
+model_parameters:
+  onnx_model: '/work/student/student_v0_fp32_real.onnx'
+  march: 'nash-p'
+  output_model_file_prefix: 'student_v0_fp32_real'
+  working_dir: '/work/student/.hb_compile_real'
+input_parameters:
+  input_name: 'rgb;text_tokens;targets;state'
+  input_shape: '1x3x224x224;1x32;1x8x14;1x64'
+  input_type_rt: 'featuremap;featuremap;featuremap;featuremap'
+  input_type_train: 'featuremap;featuremap;featuremap;featuremap'
+  norm_type: 'no_preprocess;no_preprocess;no_preprocess;no_preprocess'
+calibration_parameters:
+  cal_data_dir: '/work/cal_gap/rgb;/work/cal_gap/text_tokens;/work/cal_gap/targets;/work/cal_gap/state'
+  calibration_type: 'default'
+compiler_parameters:
+  compile_mode: 'latency'
+  optimize_level: 'O2'
+  core_num: 1
