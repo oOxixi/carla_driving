@@ -1,0 +1,23 @@
+{
+  "binding": {
+    "algorithm": "SHA256",
+    "payload": {
+      "acquisition_audit_sha256": "86382c36ffff71829683e00ad5ab72c391fde77b838ca4206c828ef58b811691",
+      "acquisition_git_sha": "c7ecadf5ce1da1dd569681c458ccc09959c0b5d1",
+      "canonical_samples": 200,
+      "canonical_source_sha256": "3095a5ea29c4aebf923c546c91f8a867e30f61a3921b1546ce2622304a191afe",
+      "collector_commit": "912989f5bab4a864136f3774515e7cbd28e8dc24",
+      "collector_sha256": "792528d5564130ed8982f552e1207e3fa97eaaea3b992cdaaeea0370de002485",
+      "dataset_version": "b1_d3_turn_gap_60_strict_v1",
+      "strict_positive_runs": 60,
+      "teacher_model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "teacher_model_id": "Qwen/Qwen3.5-2B",
+      "teacher_model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc"
+    },
+    "sha256": "1f264294f76fbf31765ed336e8a6393525abde3a8c4e31f1f8143df4cd108800"
+  },
+  "dataset_version": "b1_d3_turn_gap_60_strict_v1",
+  "schema_version": "1.0",
+  "signature_status": "CONTENT_BOUND_UNSIGNED",
+  "status": "PASS"
+}

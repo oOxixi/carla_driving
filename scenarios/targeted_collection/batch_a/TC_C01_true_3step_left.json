@@ -1,0 +1,138 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "TC_C01_true_3step_left",
+  "category": "qwen_fullchain",
+  "official_level": "advanced",
+  "description": "Targeted Collection: 接近路口、左转、转后定速的真实三阶段闭环链。",
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 250101,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 65
+  },
+  "ego_spawn": {
+    "x": 0,
+    "y": 0,
+    "z": 0.5,
+    "yaw_deg": 0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0,
+        0
+      ],
+      [
+        25,
+        0
+      ],
+      [
+        35,
+        8
+      ],
+      [
+        35,
+        40
+      ],
+      [
+        35,
+        70
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "保持当前车道接近前方路口",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 15
+      },
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "C1_APPROACH",
+      "trigger": {
+        "type": "scenario_started"
+      }
+    },
+    {
+      "time_s": 0,
+      "source_text": "到前方路口后左转",
+      "intent": "TURN_LEFT",
+      "parameters": {
+        "target_speed_kph": 10
+      },
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "C1_TURN",
+      "trigger": {
+        "all": [
+          {
+            "type": "previous_command_succeeded",
+            "phase_id": "C1_APPROACH"
+          },
+          {
+            "type": "route_progress_greater_than_m",
+            "value": 8
+          }
+        ]
+      }
+    },
+    {
+      "time_s": 0,
+      "source_text": "左转完成后，把速度设置为十五公里每小时",
+      "intent": "SET_SPEED",
+      "parameters": {
+        "target_speed_kph": 15
+      },
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "C1_SPEED",
+      "trigger": {
+        "type": "previous_command_succeeded",
+        "phase_id": "C1_TURN"
+      }
+    }
+  ],
+  "actors": [],
+  "qwen_expected": {
+    "route": "QWEN_PLAN",
+    "min_calls": 3,
+    "max_calls": 3,
+    "expected_behaviors": [
+      "KEEP_LANE",
+      "TURN_LEFT",
+      "SET_SPEED"
+    ],
+    "expected_terminal": "SUCCEEDED",
+    "allowed_replans": 0,
+    "forbidden_low_level_fields": true
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_no_route_deviation": true,
+    "must_finish_route": true,
+    "must_execute_commands_in_order": true
+  },
+  "extensions": {
+    "phase_plan": [
+      "C1_APPROACH",
+      "C1_TURN",
+      "C1_SPEED"
+    ],
+    "proposed_acceptance": {
+      "qwen_request_count": 3,
+      "all_commands_must_have_terminal_status": true,
+      "expected_phase_count": 3,
+      "all_phases_must_complete": true
+    }
+  }
+}

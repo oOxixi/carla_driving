@@ -73,6 +73,7 @@ from integration.carla_runner import (
     _scenario_requires_adjacent_lane_anchor,
     _scenario_requires_target_lane_occupancy,
     _scenario_startup_maneuver,
+    _scenario_anchor_maneuver,
     _scenario_actor_lanes_fit_route,
     _scenario_uses_dynamic_out_and_back,
     _scenario_maneuver,
@@ -2621,3 +2622,103 @@ def test_maneuver_junction_exited_fallback_is_turn_only():
         distance_from_start_m=20.0,
         behavior="CHANGE_LANE_LEFT",
     ) is False
+
+
+def test_c03_startup_anchor_requires_future_turn_topology() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    spec = ScenarioSpec.load(
+        root
+        / "targeted_collection"
+        / "batch_a"
+        / "TC_C03_true_4step_follow_left.json"
+    )
+
+    # Runtime behavior remains FOLLOW until the TURN phase is triggered.
+    assert _scenario_startup_maneuver(spec) == "FOLLOW"
+
+    # Startup topology must nevertheless make the future left turn reachable.
+    assert _scenario_anchor_maneuver(spec) == "TURN_LEFT"
+
+
+def test_turn_route_does_not_reuse_prevalidated_lane_change_route(monkeypatch):
+    """TURN must build its own directional route even when a cached route is nearby."""
+    from types import SimpleNamespace
+
+    import integration.carla_runner as runner
+    from car_control_A.routing import RouteReference
+
+    cached_route = RouteReference(
+        points_xy_m=((0.0, 0.0), (20.0, 0.0)),
+        curvature_per_m=0.0,
+        target_speed_mps=5.0,
+    )
+
+    turn_route = RouteReference(
+        points_xy_m=(
+            (0.0, 0.0),
+            (5.0, 0.0),
+            (8.0, -3.0),
+            (8.0, -10.0),
+        ),
+        curvature_per_m=0.1,
+        target_speed_mps=10.0 / 3.6,
+    )
+
+    class Ego:
+        def get_location(self):
+            return SimpleNamespace(x=0.0, y=0.0)
+
+    observed = {}
+
+    def fake_build_route_reference(
+        world_map,
+        anchor,
+        target_speed_mps,
+        *,
+        turn_direction,
+        distance_m,
+        **kwargs,
+    ):
+        observed["turn_direction"] = turn_direction
+        observed["target_speed_mps"] = target_speed_mps
+        observed["distance_m"] = distance_m
+        return turn_route
+
+    monkeypatch.setattr(
+        runner,
+        "build_route_reference",
+        fake_build_route_reference,
+    )
+
+    compiled = {
+        "steps": [
+            {
+                "behavior": "TURN_LEFT",
+                "target": {
+                    "target_speed_mps": 10.0 / 3.6,
+                },
+            },
+        ],
+    }
+
+    route, speed, behavior = runner._apply_compiled_plan_route(
+        compiled,
+        world_map=object(),
+        ego=Ego(),
+        current_route=cached_route,
+        requested_speed_mps=5.0,
+        distance_m=80.0,
+        prevalidated_maneuver_route=cached_route,
+    )
+
+    assert behavior == "TURN_LEFT"
+    assert speed == pytest.approx(10.0 / 3.6)
+
+    # RC-TURN-02 regression:
+    # TURN must not reuse a cached/prevalidated lane-change route.
+    assert route is turn_route
+    assert route is not cached_route
+
+    assert observed["turn_direction"] == "LEFT"
+    assert observed["target_speed_mps"] == pytest.approx(10.0 / 3.6)
+    assert observed["distance_m"] == pytest.approx(80.0)

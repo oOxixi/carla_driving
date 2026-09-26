@@ -1,0 +1,16 @@
+{
+  "checks": {
+    "copied_images": 200,
+    "group_overlap": 0,
+    "hard_negative_samples": 0,
+    "rejected_samples": 0,
+    "source_runs": 60,
+    "strict_positive_runs": 60,
+    "strict_positive_samples": 200,
+    "unique_sample_ids": 200
+  },
+  "dataset_version": "b1_d3_turn_gap_60_strict_v1",
+  "release_manifest_sha256": "f28e67ba9a1d6fce43f865334541e6c32bdb14fb15e49abc78cfb1b87fac791f",
+  "schema_version": "1.0",
+  "status": "PASS"
+}
