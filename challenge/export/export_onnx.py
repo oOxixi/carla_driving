@@ -14,6 +14,7 @@ from challenge.student.contract import OUTPUT_NAMES, StudentShapeContract
 from challenge.student.model import StudentModelConfig, StudentPlannerV0
 from challenge.planner.frozen_contracts import FROZEN_CONTRACT_SHA256
 from challenge.export.compute_flops import analyze_model
+from challenge.hil.identity import identity_from_weight_manifest
 
 
 def _source_git_sha() -> str:
@@ -83,6 +84,8 @@ def export_student_v0(
         "config_id": config.config_id,
         "source_weights_sha256": weight_metadata["source_weights_sha256"],
         "weights_manifest_sha256": weight_metadata["weights_manifest_sha256"],
+        "source_weights_git_sha": weight_metadata["source_weights_git_sha"],
+        "weights_identity_layout": weight_metadata["weights_identity_layout"],
         "model_request_sha256": FROZEN_CONTRACT_SHA256["model_request"],
         "maneuver_plan_sha256": FROZEN_CONTRACT_SHA256["maneuver_plan"],
     })
@@ -142,15 +145,15 @@ def _load_verified_weights(
             "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
             "source_weights_sha256": "UNRESOLVED_RANDOM_INIT",
             "weights_manifest_sha256": "UNRESOLVED_RANDOM_INIT",
+            "source_weights_git_sha": "UNRESOLVED_RANDOM_INIT",
+            "weights_identity_layout": "random_initialization",
         }
     if weights is None or weights_manifest is None:
         raise ValueError("--weights and --weights-manifest must be provided together")
     weights_path = Path(weights)
     manifest_path = Path(weights_manifest)
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if not isinstance(manifest, dict):
-        raise ValueError("weights manifest must be a JSON object")
-    gate_status = manifest.get("gate_status")
+    identity = identity_from_weight_manifest(weights_path, manifest_path)
+    gate_status = identity.gate_status
     allowed = {"A3_FP32_GATE_PASSED"}
     if allow_pending_candidate:
         allowed.add("PENDING_A3_FP32_GATE")
@@ -159,22 +162,22 @@ def _load_verified_weights(
             "formal ONNX export requires gate_status=A3_FP32_GATE_PASSED; "
             "use --allow-pending-candidate only for a hash-verified A3 candidate"
         )
-    if manifest.get("model_id") != model.model_id:
+    if identity.model_id != model.model_id:
         raise ValueError("weights manifest model_id does not match Student")
-    if manifest.get("config_id") != model.config.config_id:
+    if identity.config_id != model.config.config_id:
         raise ValueError("weights manifest config_id does not match Student")
-    actual_sha = hashlib.sha256(weights_path.read_bytes()).hexdigest()
-    if manifest.get("weights_sha256") != actual_sha:
-        raise ValueError("weights SHA256 does not match manifest")
+    actual_sha = identity.model_sha256
     state_dict = torch.load(weights_path, map_location="cpu", weights_only=True)
     if not isinstance(state_dict, dict):
         raise ValueError("weights must contain a pure state_dict")
     model.load_state_dict(state_dict, strict=True)
     return {
         "weights_status": str(gate_status),
-        "dataset_version": str(manifest.get("dataset_version", "")),
+        "dataset_version": identity.dataset_version,
         "source_weights_sha256": actual_sha,
-        "weights_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+        "weights_manifest_sha256": str(identity.verification["manifest_sha256"]),
+        "source_weights_git_sha": identity.git_sha,
+        "weights_identity_layout": str(identity.verification["layout"]),
     }
 
 
