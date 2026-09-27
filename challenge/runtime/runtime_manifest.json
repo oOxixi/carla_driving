@@ -1,0 +1,58 @@
+{
+  "runtime_id": "student-x86-onnxruntime",
+  "backend": "onnxruntime",
+  "model_path": "challenge/student_v0_fp32.onnx",
+  "serve_command": "python -m challenge.runtime.student_x86 --serve --model challenge/student_v0_fp32.onnx",
+  "profile_path": "challenge/runtime/runtime_profile_x86.json",
+  "contract_report_path": "challenge/runtime/contract_report_x86.json",
+  "features": {
+    "describe": true,
+    "trace": true,
+    "model_only": true,
+    "resident_batch": true
+  },
+  "git_sha": "c5c8e110c86484ae02f1ff6cc4ff4d7e8f04637e",
+  "model_id": "student-v0-r3-fp32",
+  "model_sha256": "ffb1ed5e9b23aa7100343bb4f02c8cfef3da5049e9c5eba4c0e66247c96ee243",
+  "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
+  "config_id": "student-v0-r3-structure-20260911",
+  "precision": "fp32",
+  "batch": 1,
+  "input_shapes": {
+    "rgb": [
+      1,
+      3,
+      224,
+      224
+    ],
+    "text_tokens": [
+      1,
+      32
+    ],
+    "targets": [
+      1,
+      8,
+      14
+    ],
+    "state": [
+      1,
+      64
+    ]
+  },
+  "output_names": [
+    "plan_length_logits",
+    "behavior_logits",
+    "target_pointer_logits",
+    "target_lane_logits",
+    "target_speed_mps",
+    "completion_type_logits",
+    "on_failure_logits",
+    "confidence",
+    "requires_confirmation_logits",
+    "replan_condition_logits"
+  ],
+  "execution_provider": "CPUExecutionProvider",
+  "openexplorer_version": "N/A_FOR_X86",
+  "model_only": true,
+  "resident": true
+}
