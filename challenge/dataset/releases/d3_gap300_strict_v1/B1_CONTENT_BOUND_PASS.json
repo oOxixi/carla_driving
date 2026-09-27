@@ -1,0 +1,9 @@
+{
+  "attestation_type": "CONTENT_BOUND_UNSIGNED",
+  "dataset_version": "b1_d3_gap300_strict_v1",
+  "release_manifest_sha256": "a2fbe23674dfa984bba9e5623b931583f0ed53479ac5846b1fe3535a2a465427",
+  "schema_version": "1.0",
+  "status": "PASS",
+  "strict_positive_runs": 280,
+  "strict_positive_samples": 820
+}

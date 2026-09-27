@@ -1,0 +1,59 @@
+{
+  "base_release": "d2_v1_1",
+  "counts": {
+    "hard_negative_addition": 0,
+    "images": 820,
+    "quarantine": 0,
+    "source_runs": 300,
+    "strict_positive_runs": 280,
+    "strict_positive_samples": 820,
+    "train_addition": 697,
+    "val_addition": 123
+  },
+  "dataset_version": "b1_d3_gap300_strict_v1",
+  "files": {
+    "README.md": {
+      "sha256": "debdce7f185ebe5f7adfc315451fb9a3be2ea1d72607912e4dcaf7d23c674086",
+      "size_bytes": 897
+    },
+    "cumulative_view_manifest.json": {
+      "sha256": "1ed65fac105795803041982c00f3c2670e32e5f0cb483d3e937867a7317968cf",
+      "size_bytes": 2161
+    },
+    "governance_report.json": {
+      "sha256": "1638dc4eb02557cf19b14b55194e8fa5449537009eb76f8f621a445532bb5d64",
+      "size_bytes": 992
+    },
+    "hard_negative_addition.jsonl": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    "provenance_manifest.json": {
+      "sha256": "20ea6be56175808f6dfd923cbd3ad58840f37308a00df946224168bf9a859fc8",
+      "size_bytes": 1393
+    },
+    "rgb_mapping.json": {
+      "sha256": "2fbc2258dc740a1aaaba9ca5f1c561215e44ee38525111394eba33d2aa1a55e2",
+      "size_bytes": 312423
+    },
+    "split_manifest.json": {
+      "sha256": "15796bb1d3a6c7824c2fdb5a22d3ab0a15fd0654f453fe20cf40aab79f8fa8f5",
+      "size_bytes": 55430
+    },
+    "train_addition.jsonl": {
+      "sha256": "02353ccdeee75bdb21fd4bf2d0ca602b487823d66475329c877c344d7eac3149",
+      "size_bytes": 3574208
+    },
+    "val_addition.jsonl": {
+      "sha256": "3ec4158a654ad3f5416b4fa4b7f70de2bb7ea97b25aec910625aa80e4ad14407",
+      "size_bytes": 628979
+    }
+  },
+  "image_set": {
+    "canonical_sha256": "a31c1b1c1a155ff85b72e97a7b1b38da947567c39f1dde64ba4895e7862bb172",
+    "count": 820
+  },
+  "release_type": "additive",
+  "schema_version": "1.0",
+  "status": "B1_RELEASE_CANDIDATE"
+}

@@ -1,0 +1,1993 @@
+{
+  "counts": {
+    "hard_negative_addition": 0,
+    "quarantine": 0,
+    "source_runs": 300,
+    "strict_positive": 820,
+    "strict_positive_runs": 280,
+    "train_addition": 697,
+    "val_addition": 123
+  },
+  "dataset_version": "b1_d3_gap300_strict_v1",
+  "groups": {
+    "train_addition": [
+      {
+        "group_id": "70ddcaeb70c40fcff53a",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252166
+      },
+      {
+        "group_id": "32a4418cea55e6bd4af0",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252268
+      },
+      {
+        "group_id": "88b7729760f4bc39af40",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252098
+      },
+      {
+        "group_id": "4949baa24c2604db2b1c",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252070
+      },
+      {
+        "group_id": "e6609f3d430f476be5ad",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252112
+      },
+      {
+        "group_id": "b2929f138e6119b3b8b3",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252285
+      },
+      {
+        "group_id": "cc37c4b4d7495dd10402",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252265
+      },
+      {
+        "group_id": "e627d2230de8e94761aa",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252066
+      },
+      {
+        "group_id": "3a5e99e3c6d973732eb6",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252144
+      },
+      {
+        "group_id": "407dc21e55122679a411",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252009
+      },
+      {
+        "group_id": "24989b1fc2fe9e3c09d9",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252134
+      },
+      {
+        "group_id": "66cd6f2e9dc586d11d20",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252181
+      },
+      {
+        "group_id": "bce5c4f3ac9ed1ebe763",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252252
+      },
+      {
+        "group_id": "f489bb863ba090bbef07",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252020
+      },
+      {
+        "group_id": "1107e57052ab749c1838",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252240
+      },
+      {
+        "group_id": "42513f41b5026f2cd1f6",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252208
+      },
+      {
+        "group_id": "bf2384bd16d4b0a40482",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252005
+      },
+      {
+        "group_id": "00905ef84d1b012c4a8c",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252027
+      },
+      {
+        "group_id": "f2ab45824acee945909c",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252248
+      },
+      {
+        "group_id": "66f7e2e72bb2b34062fd",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252212
+      },
+      {
+        "group_id": "1f1f265370067280a126",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252110
+      },
+      {
+        "group_id": "07fa044faadbf1efd695",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252047
+      },
+      {
+        "group_id": "20228397aa218acf1f2d",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252156
+      },
+      {
+        "group_id": "6158797a39033650b6b9",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252184
+      },
+      {
+        "group_id": "1031f8c30205f45faf4c",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252193
+      },
+      {
+        "group_id": "a113c104d12c9a623884",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252291
+      },
+      {
+        "group_id": "4bff19ffe31b76c21df2",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252021
+      },
+      {
+        "group_id": "7ddd1a7e4a0a9ac3c170",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252074
+      },
+      {
+        "group_id": "2bf31eff3e555d85a98e",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252106
+      },
+      {
+        "group_id": "ee70d11a98ea8e797505",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252169
+      },
+      {
+        "group_id": "2932abce29e06a2cabcd",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252083
+      },
+      {
+        "group_id": "47909e3f5df70cd4de96",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252062
+      },
+      {
+        "group_id": "8af1f339a70dcff250e9",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252210
+      },
+      {
+        "group_id": "30923903e67c2a580307",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252043
+      },
+      {
+        "group_id": "fd7013d35f4e35233e51",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252188
+      },
+      {
+        "group_id": "1881dd44175f932f6ad9",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252191
+      },
+      {
+        "group_id": "419ad37a6ad1a6949d3c",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252115
+      },
+      {
+        "group_id": "f6914de89d277064f2d5",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252163
+      },
+      {
+        "group_id": "58e33756539a98b0ee03",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252044
+      },
+      {
+        "group_id": "2bb552f19ebae1fc9451",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252067
+      },
+      {
+        "group_id": "34f216b85c3be1a1671e",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252228
+      },
+      {
+        "group_id": "2452c6dbce83050c78be",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252033
+      },
+      {
+        "group_id": "cc544ae035f20ab3454f",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252213
+      },
+      {
+        "group_id": "93b8e5cd43ded8585020",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252270
+      },
+      {
+        "group_id": "9e886406508233eb659e",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252053
+      },
+      {
+        "group_id": "d7d2fba29b590163f327",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252258
+      },
+      {
+        "group_id": "0e04d1cac209bec0da68",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252260
+      },
+      {
+        "group_id": "34128a7ec91151d7527f",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252195
+      },
+      {
+        "group_id": "bfe8aa58f9d4d3b0c816",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252262
+      },
+      {
+        "group_id": "f9d012bb3c1d61991e29",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252064
+      },
+      {
+        "group_id": "715c4d8f2c857f780fe4",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252118
+      },
+      {
+        "group_id": "bcb8f77b53bad23aef74",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252081
+      },
+      {
+        "group_id": "c36300970236647a362d",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252103
+      },
+      {
+        "group_id": "b0a1f4630affed43571c",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252146
+      },
+      {
+        "group_id": "8174d84b5d136203e29e",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252092
+      },
+      {
+        "group_id": "077356a19d535e52bb91",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252029
+      },
+      {
+        "group_id": "87d903a5c7e5ce7d4968",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252007
+      },
+      {
+        "group_id": "e77fcdae8f4c506a5970",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252159
+      },
+      {
+        "group_id": "d1728e097e0e8d83c17c",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252160
+      },
+      {
+        "group_id": "4d24c46c234d44bfe350",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252281
+      },
+      {
+        "group_id": "46a6d613ac384f637ad7",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252095
+      },
+      {
+        "group_id": "ed1760b3c1ce45555892",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252111
+      },
+      {
+        "group_id": "4aa50a39c44d19ff27a7",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252016
+      },
+      {
+        "group_id": "1f165f9fc8e76295a3ba",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252028
+      },
+      {
+        "group_id": "41b6761024e00b356260",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252203
+      },
+      {
+        "group_id": "044bb024572244a1a5d4",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252241
+      },
+      {
+        "group_id": "79b3d85ab1bd3ecd3f70",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252218
+      },
+      {
+        "group_id": "9c73604c985a7ee42bb2",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252180
+      },
+      {
+        "group_id": "8e015f83eb2162b5c50b",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252120
+      },
+      {
+        "group_id": "04e23d64f07cd61530f3",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252197
+      },
+      {
+        "group_id": "512adc7ed2233e788573",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252061
+      },
+      {
+        "group_id": "fdb7ee2749b325919f48",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252088
+      },
+      {
+        "group_id": "6b607f184de030785ee5",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252187
+      },
+      {
+        "group_id": "0b6c1b8e81ee63b09afe",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252137
+      },
+      {
+        "group_id": "3775b6928a19363522d3",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252010
+      },
+      {
+        "group_id": "b109648013136e520d1d",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252075
+      },
+      {
+        "group_id": "49d8bccd9262ac414591",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252119
+      },
+      {
+        "group_id": "a303885b1a5e938969eb",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252174
+      },
+      {
+        "group_id": "4b25a814a73376f6174d",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252014
+      },
+      {
+        "group_id": "3392bc31a4a1bdfea908",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252032
+      },
+      {
+        "group_id": "d0f9e8b40a8822405e85",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252094
+      },
+      {
+        "group_id": "57dfcb8639e70ef7fc0d",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252131
+      },
+      {
+        "group_id": "782b1dd92db7dd9827f2",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252277
+      },
+      {
+        "group_id": "a79632e1b3f8d66e1f81",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252055
+      },
+      {
+        "group_id": "73e02a7e416bc4e466bb",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252116
+      },
+      {
+        "group_id": "92b94890f6161bec3029",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252227
+      },
+      {
+        "group_id": "25b0e42c39c5cefeec3e",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252165
+      },
+      {
+        "group_id": "ca6716bcaeea63b0e73c",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252189
+      },
+      {
+        "group_id": "94fc56e23c92987234e0",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252295
+      },
+      {
+        "group_id": "e692b6ac0b089c33dae2",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252045
+      },
+      {
+        "group_id": "ab8e6a3680576d445a2d",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252298
+      },
+      {
+        "group_id": "c53e835016d154638df1",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252288
+      },
+      {
+        "group_id": "8f5d875696aca41fa044",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252127
+      },
+      {
+        "group_id": "66dba987c567e006bdbf",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252192
+      },
+      {
+        "group_id": "ab5583c7a87c34fa6f76",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252282
+      },
+      {
+        "group_id": "4269031e167ad1874531",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252237
+      },
+      {
+        "group_id": "ba1953a4170be5476ca4",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252201
+      },
+      {
+        "group_id": "660110dc41209b17afca",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252052
+      },
+      {
+        "group_id": "37a9e53ce5846a8c0a61",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252145
+      },
+      {
+        "group_id": "909055fffc03640ccb75",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252080
+      },
+      {
+        "group_id": "43fc1d5bbf474c17bbad",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252105
+      },
+      {
+        "group_id": "0275946f9938df16fa07",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252149
+      },
+      {
+        "group_id": "5ffd069d2566f4e52123",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252155
+      },
+      {
+        "group_id": "6faee7cb16a047c7f892",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252247
+      },
+      {
+        "group_id": "3d416b0bfd3464a3d085",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252152
+      },
+      {
+        "group_id": "cbdc70535f6d16821ddd",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252172
+      },
+      {
+        "group_id": "bc07ce1b1ec9e580c092",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252077
+      },
+      {
+        "group_id": "cb00ec2056c6868c3750",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252273
+      },
+      {
+        "group_id": "7258a8370ca58bf331e1",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252272
+      },
+      {
+        "group_id": "b45f6bad5e5220405719",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252143
+      },
+      {
+        "group_id": "288d7e13938abf594cec",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252022
+      },
+      {
+        "group_id": "0414dcb49e831c8c1f63",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252157
+      },
+      {
+        "group_id": "45818e01daa1b24edad0",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252038
+      },
+      {
+        "group_id": "505dfbe5acaae090a234",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252220
+      },
+      {
+        "group_id": "df27a4cfb942bd4fed7c",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252135
+      },
+      {
+        "group_id": "b9ec27f4d93fa2b8fdc7",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252211
+      },
+      {
+        "group_id": "96ad96ce68cb8377e393",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252002
+      },
+      {
+        "group_id": "6da2d2d7bb3823867a7e",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252147
+      },
+      {
+        "group_id": "3179df559ee2fbb40a98",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252012
+      },
+      {
+        "group_id": "8551edc963b952dbf2c5",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252153
+      },
+      {
+        "group_id": "9e841cd469abec5ff2aa",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252194
+      },
+      {
+        "group_id": "1bd9bf02188849e7e7b8",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252246
+      },
+      {
+        "group_id": "534461ebd1f36bf57cb9",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252049
+      },
+      {
+        "group_id": "6e7a20b4e6fc57c64673",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252039
+      },
+      {
+        "group_id": "fafcddf127dc032ee821",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252130
+      },
+      {
+        "group_id": "f0780561d39848d94738",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252041
+      },
+      {
+        "group_id": "e293ddbf6d596c5d0cfd",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252206
+      },
+      {
+        "group_id": "e49b1f3de85b1fb278d6",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252108
+      },
+      {
+        "group_id": "c713416eef21ce2fc13d",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252068
+      },
+      {
+        "group_id": "bb8a9a0db68759e8cb2b",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252266
+      },
+      {
+        "group_id": "9836badee32efb5e5569",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252026
+      },
+      {
+        "group_id": "455aa7b8ecf1dac07a8d",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252056
+      },
+      {
+        "group_id": "8b6cbfd6919ba755a137",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252142
+      },
+      {
+        "group_id": "4b78bb843bb30418d91e",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252125
+      },
+      {
+        "group_id": "74048c6472b489afa4ea",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252082
+      },
+      {
+        "group_id": "86d98600a39275ded101",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252087
+      },
+      {
+        "group_id": "67ff2d28b1144c769753",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252076
+      },
+      {
+        "group_id": "f14eabdf235487b8105d",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252257
+      },
+      {
+        "group_id": "9c003e9f9dff8cf89a31",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252280
+      },
+      {
+        "group_id": "0890f4dc7361150201fc",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252017
+      },
+      {
+        "group_id": "f29ecde81bfc9f7e7b59",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252253
+      },
+      {
+        "group_id": "f74ab132f9de4b19739a",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252182
+      },
+      {
+        "group_id": "d2411cc5bc48098d6786",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252089
+      },
+      {
+        "group_id": "cd17dd90e3dcbf304df6",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252173
+      },
+      {
+        "group_id": "d44b5b93f087f9b7cb51",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252263
+      },
+      {
+        "group_id": "1e4ebd4d3189ad79655b",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252223
+      },
+      {
+        "group_id": "439df3ad83135dc77b03",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252040
+      },
+      {
+        "group_id": "93e0e54b13ccacd1dead",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252161
+      },
+      {
+        "group_id": "7a0833cf538f258b854d",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252185
+      },
+      {
+        "group_id": "a0d65ff7bfb6974d3c21",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252034
+      },
+      {
+        "group_id": "75e5799bf30ceafe558a",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252121
+      },
+      {
+        "group_id": "8e89eeca0e4855ba02c2",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252122
+      },
+      {
+        "group_id": "baecb1a228c2ce1f8da2",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252175
+      },
+      {
+        "group_id": "c68bb0f8336e713917a5",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252141
+      },
+      {
+        "group_id": "9a4391ac949d9c95ad8c",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252222
+      },
+      {
+        "group_id": "d55dac36463b7b1cd54f",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252128
+      },
+      {
+        "group_id": "58c31ced093501872ca7",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252215
+      },
+      {
+        "group_id": "e6551d669a9cbd655eb1",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252046
+      },
+      {
+        "group_id": "7affe9c7dc6a1e3eb28b",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252158
+      },
+      {
+        "group_id": "66872fbedc3079751344",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252231
+      },
+      {
+        "group_id": "6da57ee7935800a12e0f",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252199
+      },
+      {
+        "group_id": "9788a1d36d100cddc0ff",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252177
+      },
+      {
+        "group_id": "891960e1cb7e24862e3a",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252202
+      },
+      {
+        "group_id": "1d1b9b7714df36ab22e3",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252018
+      },
+      {
+        "group_id": "484b64300c91a3185061",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252084
+      },
+      {
+        "group_id": "c2490275dae9c33fff9b",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252148
+      },
+      {
+        "group_id": "dce179c73307bfe23cb6",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252117
+      },
+      {
+        "group_id": "41a0b6347654d2a0f214",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252276
+      },
+      {
+        "group_id": "bfe3fec57c83c8cfc6cc",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252186
+      },
+      {
+        "group_id": "dbcc18d1217b15e75d0e",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252162
+      },
+      {
+        "group_id": "b60637a943b7c9c97dec",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252042
+      },
+      {
+        "group_id": "11f523e96bfcb71fc656",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252099
+      },
+      {
+        "group_id": "0bb4274e5721a8bef4ae",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252096
+      },
+      {
+        "group_id": "d54e61b740a5fcebc10d",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252011
+      },
+      {
+        "group_id": "09e3bd539ac56a5925d8",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252025
+      },
+      {
+        "group_id": "f42639eaab0ad95fdf00",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252100
+      },
+      {
+        "group_id": "6081f081cbbae352b74c",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252037
+      },
+      {
+        "group_id": "f2d453eb60f9b81bc130",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252139
+      },
+      {
+        "group_id": "8a0259a3bb645e928e84",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252008
+      },
+      {
+        "group_id": "e1a4b74cf197fff6db71",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252013
+      },
+      {
+        "group_id": "e4bc7911ecc5241cb230",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252086
+      },
+      {
+        "group_id": "f6c9481a68d1ce312220",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252255
+      },
+      {
+        "group_id": "2c17093d98e9300d77c7",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252286
+      },
+      {
+        "group_id": "6627e3e54243a5526dc2",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252104
+      },
+      {
+        "group_id": "1d36e5726c0d22d574da",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252140
+      },
+      {
+        "group_id": "db8b8141fde3c5cfe9e7",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252278
+      },
+      {
+        "group_id": "fa64e2591191550fe21e",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252164
+      },
+      {
+        "group_id": "50c1d59f574ddfbf747a",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252006
+      },
+      {
+        "group_id": "d3a681d913f6c7d9f83f",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252261
+      },
+      {
+        "group_id": "8f223f131dc14b3d3ca6",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252243
+      },
+      {
+        "group_id": "61de055b4e53ff5bf3e9",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252245
+      },
+      {
+        "group_id": "ade428c1888a141e31c7",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252031
+      },
+      {
+        "group_id": "01bcfcaf96b9d8c2a534",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252233
+      },
+      {
+        "group_id": "f2453c490c80ca47b803",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252176
+      },
+      {
+        "group_id": "97eec3ae35e81c9ba945",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252097
+      },
+      {
+        "group_id": "b1a0d92c9c7de76039b4",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252035
+      },
+      {
+        "group_id": "26644b547f0d0f204961",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252283
+      },
+      {
+        "group_id": "d2da1a1960cfa9fb508d",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252138
+      },
+      {
+        "group_id": "d17f2d38dadeb374bb93",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252232
+      },
+      {
+        "group_id": "cbe07f57693e4cde1b9f",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252085
+      },
+      {
+        "group_id": "76d9dfe4d9349ab70008",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252292
+      },
+      {
+        "group_id": "9c4f30db9f6427fe4789",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252030
+      },
+      {
+        "group_id": "7d76d9bb7f7de520c0b1",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252015
+      },
+      {
+        "group_id": "97aa04467d56a5288620",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252205
+      },
+      {
+        "group_id": "0ed915c25073585d1dbd",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252050
+      },
+      {
+        "group_id": "e1e5ffd60694ac6b77b6",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252004
+      },
+      {
+        "group_id": "a0385b6b66ec3c2f2f50",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252230
+      },
+      {
+        "group_id": "4755b23f035678965657",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252267
+      },
+      {
+        "group_id": "d2319670caa6ffb8cabc",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252000
+      },
+      {
+        "group_id": "29ab92cb45d85c459b54",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252183
+      },
+      {
+        "group_id": "acf339249eb61ff25e21",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252235
+      },
+      {
+        "group_id": "66c54c4a9550a08ff81a",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252221
+      },
+      {
+        "group_id": "11f460696f7366e2f791",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252296
+      },
+      {
+        "group_id": "8cd73ecbcbe74d71caf0",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252251
+      },
+      {
+        "group_id": "9c8d1fee45a8ffb65644",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252151
+      },
+      {
+        "group_id": "726b01b83083c5f47159",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252168
+      },
+      {
+        "group_id": "e94ec8d714c1491cfb8b",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252271
+      },
+      {
+        "group_id": "5de46ecf4ea0dd284582",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252132
+      },
+      {
+        "group_id": "95974bc12f8808564a41",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252065
+      },
+      {
+        "group_id": "fe746f2c1c79f5e12a4a",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252051
+      },
+      {
+        "group_id": "9636c982b4f5e770da7d",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252107
+      },
+      {
+        "group_id": "5d43a139b255242c2eb0",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252226
+      },
+      {
+        "group_id": "1713f98501fd76a6dcc3",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252171
+      },
+      {
+        "group_id": "522cf4da0578d6c3dba0",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252133
+      },
+      {
+        "group_id": "9012ae90f593296f3bc3",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252293
+      },
+      {
+        "group_id": "4920a6b46a22229c94ea",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252109
+      },
+      {
+        "group_id": "3fed6c421d9ee46a788d",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252236
+      },
+      {
+        "group_id": "7a69414caaff2e721ede",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252102
+      },
+      {
+        "group_id": "5a0e42bc0a3c9f361b5e",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252297
+      },
+      {
+        "group_id": "cd7caa06984d237c442f",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252073
+      },
+      {
+        "group_id": "d16be9c693c29de8e074",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252060
+      },
+      {
+        "group_id": "43523ddbdd9cb7198723",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252079
+      },
+      {
+        "group_id": "58fe042b3b87e80317a8",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252217
+      },
+      {
+        "group_id": "3e428b9a90e1117d3a42",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252238
+      },
+      {
+        "group_id": "e43c4587af7826aee652",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252123
+      },
+      {
+        "group_id": "722c2580a3aa44087214",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252113
+      },
+      {
+        "group_id": "75508049d237c32b8370",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252216
+      },
+      {
+        "group_id": "2aa4fbb1d7895fb49630",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252001
+      }
+    ],
+    "val_addition": [
+      {
+        "group_id": "e1167c6078e293c568bc",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252091
+      },
+      {
+        "group_id": "5ca93807873e1ba95250",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252101
+      },
+      {
+        "group_id": "063bdb0209de87119732",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252129
+      },
+      {
+        "group_id": "de958e23a0f49197d562",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252207
+      },
+      {
+        "group_id": "dedc841f820257a72f7c",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252196
+      },
+      {
+        "group_id": "ae7894368f64cac5c52a",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252126
+      },
+      {
+        "group_id": "3589e044e35bfd75a56f",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252200
+      },
+      {
+        "group_id": "0fff273325799a9286d8",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252150
+      },
+      {
+        "group_id": "4ed7f65209ba2af3bbc6",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252063
+      },
+      {
+        "group_id": "4951c6ee46525d9a2b71",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252290
+      },
+      {
+        "group_id": "5f7d2d893f23225a0eea",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252114
+      },
+      {
+        "group_id": "65b4a2ae98863f9fcf47",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252059
+      },
+      {
+        "group_id": "a37a6c2dcd54257cafb5",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252250
+      },
+      {
+        "group_id": "d25e4a67a34f360acfd2",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252023
+      },
+      {
+        "group_id": "1354b975284e422463d0",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252154
+      },
+      {
+        "group_id": "94b2e616fc5de3110832",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252058
+      },
+      {
+        "group_id": "337eb602836cca55e3d2",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252256
+      },
+      {
+        "group_id": "73749a1263349c3e1353",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252071
+      },
+      {
+        "group_id": "48f92f544a22d76cfe6c",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252078
+      },
+      {
+        "group_id": "22ea1d2d76ed5a03b368",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252019
+      },
+      {
+        "group_id": "424433a65f4ee6715c7b",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252024
+      },
+      {
+        "group_id": "8c2bb9266cf427733f89",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252069
+      },
+      {
+        "group_id": "033f4f4704f4e7b3b467",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252190
+      },
+      {
+        "group_id": "f5ed009cd6aabf30801b",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252170
+      },
+      {
+        "group_id": "48c786d8c64c4468ca6f",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252072
+      },
+      {
+        "group_id": "8564a9ea333af83dbf46",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252179
+      },
+      {
+        "group_id": "b231def568399becace4",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252178
+      },
+      {
+        "group_id": "77b2bf8e9a589dbd6aa1",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252275
+      },
+      {
+        "group_id": "05ae248b33a364726588",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252136
+      },
+      {
+        "group_id": "ee2e373585e1f07a0e50",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252093
+      },
+      {
+        "group_id": "b76cc265257ffb4e4261",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252287
+      },
+      {
+        "group_id": "dbf50964834de35403ab",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252242
+      },
+      {
+        "group_id": "4e0b82464c94c7b5277f",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252054
+      },
+      {
+        "group_id": "07c31b488bb58e1bdfe3",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252057
+      },
+      {
+        "group_id": "d0afc41d2769cddfe407",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252124
+      },
+      {
+        "group_id": "b50232dd4bc066e9611a",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252048
+      },
+      {
+        "group_id": "c20a9501e3f7324aa1f1",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252003
+      },
+      {
+        "group_id": "542753e1f7d772cbaaed",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252198
+      },
+      {
+        "group_id": "3a11bf43f9e170728d7c",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252090
+      },
+      {
+        "group_id": "c680b2bb2fc7d60f5105",
+        "map": "Town03",
+        "route_hash": "7cd5f306cd4c16d2",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252225
+      },
+      {
+        "group_id": "a05be21cc8d4ca737ca1",
+        "map": "Town03",
+        "route_hash": "69204bd602ec3ac0",
+        "scenario_family": "regression",
+        "seed": 252036
+      },
+      {
+        "group_id": "41a500fbab7cf159e4aa",
+        "map": "Town03",
+        "route_hash": "0d7ed25cde482987",
+        "scenario_family": "qwen_fullchain",
+        "seed": 252167
+      }
+    ]
+  },
+  "schema_version": "1.0",
+  "split_policy": {
+    "group_fields": [
+      "metadata.scenario_family",
+      "metadata.map",
+      "metadata.route_hash",
+      "metadata.seed"
+    ],
+    "note": "All command-level samples originating from the same closed-loop run/group remain in the same split.",
+    "target_ratio": {
+      "train_addition": 0.85,
+      "val_addition": 0.15
+    },
+    "type": "group_aware"
+  }
+}
