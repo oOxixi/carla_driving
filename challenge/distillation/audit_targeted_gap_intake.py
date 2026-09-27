@@ -8,6 +8,7 @@ distillation when its Teacher revision/fingerprint provenance is not signed.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,14 @@ from challenge.hil.harness.release_check.verify_b1_release import (
 
 DATASET_VERSION = "b1_d3_targeted_gap_strict_v1"
 DEFAULT_RELEASE = "challenge/dataset/releases/d3_targeted_gap_strict_v1"
+DEFAULT_ATTESTATION = (
+    "challenge/dataset/attestations/"
+    "d3_targeted_gap_strict_v1_teacher_provenance_v1"
+)
+EXPECTED_MODEL_REVISION = "15852e8c16360a2fea060d615a32b45270f8a8fc"
+EXPECTED_ARTIFACT_FINGERPRINT = (
+    "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa"
+)
 PRIOR_SPLITS = {
     "train": (
         "challenge/dataset/releases/d2_v1_1/train.jsonl",
@@ -42,6 +51,134 @@ def _load(path: Path) -> Any:
 def _rows(path: Path) -> list[dict[str, Any]]:
     with path.open(encoding="utf-8") as stream:
         return [json.loads(line) for line in stream if line.strip()]
+
+
+def _canonical_text_sha256(path: Path) -> str:
+    """Hash repository text bytes independent of Git's CRLF checkout mode."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
+def _validate_attestation(
+    repo: Path,
+    release_dir: Path,
+    *,
+    cohort_git_sha: str,
+    sample_count: int,
+) -> dict[str, Any]:
+    """Validate B1's immutable content-bound Teacher provenance supplement."""
+    directory = repo / DEFAULT_ATTESTATION
+    errors: list[str] = []
+    required = (
+        "teacher_model_manifest.json",
+        "teacher_provenance_attestation.json",
+        "attestation_lock.sha256",
+    )
+    for name in required:
+        if not (directory / name).is_file():
+            errors.append(f"Teacher attestation file missing: {name}")
+    repository_manifest = repo / "challenge/teacher_targeted_gap_manifest.json"
+    if not repository_manifest.is_file():
+        errors.append("repository targeted-gap Teacher manifest is missing")
+    if errors:
+        return {"valid": False, "errors": errors, "path": DEFAULT_ATTESTATION}
+
+    lock_entries: dict[str, str] = {}
+    for line in (directory / "attestation_lock.sha256").read_text(encoding="utf-8").splitlines():
+        digest, separator, name = line.partition("  ")
+        if not separator or name in lock_entries:
+            errors.append("malformed or duplicate Teacher attestation lock entry")
+            continue
+        lock_entries[name] = digest
+    expected_locked = {"teacher_model_manifest.json", "teacher_provenance_attestation.json"}
+    if set(lock_entries) != expected_locked:
+        errors.append("Teacher attestation lock file set mismatch")
+    for name, digest in lock_entries.items():
+        path = directory / name
+        if not path.is_file() or _canonical_text_sha256(path) != digest:
+            errors.append(f"Teacher attestation lock mismatch: {name}")
+
+    attestation = _load(directory / "teacher_provenance_attestation.json")
+    model_artifact = _load(directory / "teacher_model_manifest.json")
+    repository_teacher = _load(repository_manifest)
+    payload = (attestation.get("binding") or {}).get("payload") or {}
+    binding_actual = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    if (attestation.get("binding") or {}).get("sha256") != binding_actual:
+        errors.append("Teacher attestation canonical content binding mismatch")
+    if attestation.get("status") != "PASS":
+        errors.append("Teacher attestation is not PASS")
+    if attestation.get("signature_status") != "CONTENT_BOUND_UNSIGNED":
+        errors.append("unexpected Teacher attestation signature policy")
+    if attestation.get("supplements_without_mutating_release") is not True:
+        errors.append("Teacher attestation does not preserve the immutable release")
+
+    release_manifest_sha = _canonical_text_sha256(release_dir / "release_manifest.json")
+    release_lock_sha = _canonical_text_sha256(release_dir / "b1_release_lock.sha256")
+    source = attestation.get("source_release") or {}
+    if source.get("release_manifest_sha256") != release_manifest_sha:
+        errors.append("Teacher attestation does not bind the source release manifest")
+    if source.get("b1_release_lock_sha256") != release_lock_sha:
+        errors.append("Teacher attestation does not bind the source release lock")
+    repository_block = attestation.get("repository_teacher_manifest") or {}
+    if repository_block.get("path") != "challenge/teacher_targeted_gap_manifest.json":
+        errors.append("Teacher attestation repository manifest path mismatch")
+    if repository_block.get("sha256") != _canonical_text_sha256(repository_manifest):
+        errors.append("Teacher attestation repository manifest digest mismatch")
+
+    teacher = attestation.get("teacher") or {}
+    expected_identity = {
+        "teacher_git_sha": cohort_git_sha,
+        "acquisition_git_sha": cohort_git_sha,
+        "model_id": "Qwen/Qwen3.5-2B",
+        "model_revision": EXPECTED_MODEL_REVISION,
+        "artifact_fingerprint_sha256": EXPECTED_ARTIFACT_FINGERPRINT,
+        "dtype": "bfloat16",
+        "quantization": None,
+        "qwen_mode": "planner_v2",
+    }
+    for field, expected in expected_identity.items():
+        if teacher.get(field) != expected:
+            errors.append(f"Teacher attestation identity mismatch: {field}")
+    coverage = attestation.get("coverage") or {}
+    if (
+        coverage.get("all_samples_share_teacher_identity") is not True
+        or coverage.get("canonical_samples") != sample_count
+    ):
+        errors.append("Teacher attestation does not cover all canonical samples")
+    if payload.get("all_660_samples_share_teacher_identity") is not True:
+        errors.append("Teacher attestation payload lacks full-cohort identity binding")
+
+    manifest_identity = {
+        "teacher_git_sha": repository_teacher.get("teacher_git_sha"),
+        "model_id": repository_teacher.get("model_id"),
+        "model_revision": repository_teacher.get("model_revision"),
+        "artifact_fingerprint_sha256": repository_teacher.get("model_artifact_sha256"),
+    }
+    for field, expected in expected_identity.items():
+        if field in manifest_identity and manifest_identity[field] != expected:
+            errors.append(f"repository Teacher manifest mismatch: {field}")
+    if model_artifact.get("model_artifact_sha256") != EXPECTED_ARTIFACT_FINGERPRINT:
+        errors.append("Teacher artifact manifest fingerprint mismatch")
+    if model_artifact.get("model_revision") != EXPECTED_MODEL_REVISION:
+        errors.append("Teacher artifact manifest revision mismatch")
+
+    return {
+        "valid": not errors,
+        "path": DEFAULT_ATTESTATION,
+        "signature_status": attestation.get("signature_status"),
+        "cryptographic_signature_present": False,
+        "content_binding_sha256": binding_actual,
+        "attestation_sha256": _canonical_text_sha256(
+            directory / "teacher_provenance_attestation.json"
+        ),
+        "repository_teacher_manifest_sha256": _canonical_text_sha256(repository_manifest),
+        "source_release_manifest_sha256": release_manifest_sha,
+        "source_release_lock_sha256": release_lock_sha,
+        "teacher": teacher,
+        "coverage": coverage,
+        "errors": errors,
+    }
 
 
 def _teacher_values(row: dict[str, Any]) -> tuple[str, str, str, str]:
@@ -184,15 +321,17 @@ def audit_targeted_gap_intake(
 
     cohort_git_sha = next(iter(teacher_git_shas)) if len(teacher_git_shas) == 1 else ""
     matching_manifests = _known_teacher_manifests(repo, cohort_git_sha) if cohort_git_sha else []
+    attestation = _validate_attestation(
+        repo,
+        release_dir,
+        cohort_git_sha=cohort_git_sha,
+        sample_count=len(ids["train"] | ids["val"] | ids["hard_negative"]),
+    )
     blockers: list[str] = []
-    if not isinstance(signed.get("teacher"), dict):
-        blockers.append("B1_SIGNED_PASS.json does not bind a Teacher identity")
     if not matching_manifests:
-        blockers.append("no signed repository Teacher manifest matches the acquisition Git SHA")
-    if len(teacher_revisions) != 1:
-        blockers.append("rows do not provide one exact Teacher model revision")
-    if len(teacher_fingerprints) != 1:
-        blockers.append("rows do not provide one exact Teacher artifact fingerprint")
+        blockers.append("no repository Teacher manifest matches the acquisition Git SHA")
+    if not attestation["valid"]:
+        blockers.extend(attestation["errors"])
     if teacher_models != {"Qwen/Qwen3.5-2B"}:
         blockers.append("rows do not agree on the required Qwen/Qwen3.5-2B model ID")
     if len(teacher_git_shas) != 1:
@@ -223,18 +362,16 @@ def audit_targeted_gap_intake(
             "artifact_fingerprints": sorted(teacher_fingerprints),
             "matching_repository_manifests": matching_manifests,
             "signed_teacher_block": signed.get("teacher"),
+            "immutable_attestation": attestation,
         },
         "prior_release_overlap": overlap,
         "blockers": blockers,
-        "required_b1_followup": [
-            "publish a pinned Teacher manifest for acquisition Git SHA a6743feb52015031f70e2c21a94aef0abae0a65a",
-            "record exact model revision and artifact fingerprint without retroactive inference",
-            "bind that Teacher manifest/identity in a detached signed release artifact",
-            "reissue or add an immutable provenance addendum without rewriting historical rows",
+        "required_b1_followup": [] if eligible else [
+            "repair the immutable Teacher provenance attestation without rewriting historical rows",
         ],
         "note": (
-            "Byte integrity PASS does not authorize A3 training when exact Teacher "
-            "provenance is absent."
+            "The historical rows remain unchanged; the independently verified "
+            "content-bound addendum supplies their exact cohort Teacher identity."
         ),
     }
 

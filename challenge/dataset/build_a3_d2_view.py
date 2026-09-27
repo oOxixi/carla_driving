@@ -37,6 +37,14 @@ COHORTS = {
         "252984d37e49ddc11eaddcde2bfb26d0d6f2086b",
         "challenge/teacher_pinned_manifest_wave2_sync_v1.json",
     ),
+    "b1_d3_targeted_gap_strict_v1": (
+        "a6743feb52015031f70e2c21a94aef0abae0a65a",
+        "challenge/teacher_targeted_gap_manifest.json",
+    ),
+    "b1_d3_turn_gap_60_strict_v1": (
+        "c7ecadf5ce1da1dd569681c458ccc09959c0b5d1",
+        "challenge/dataset/releases/d3_turn_gap_60_strict_v1/provenance_manifest.json",
+    ),
 }
 
 
@@ -61,10 +69,18 @@ def _cohort_identity(repo: Path, row: dict[str, Any]) -> dict[str, str]:
         raise ValueError(f"{row['sample_id']}: collection Teacher SHA mismatch")
     manifest_path = repo / manifest_rel
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    baseline_sha = manifest.get("git_sha") or manifest.get("teacher_git_sha")
-    model_id = manifest["model_id"]
-    revision = manifest["model_revision"]
-    fingerprint = manifest.get("artifact_fingerprint_sha256") or manifest["model_artifact_sha256"]
+    teacher = manifest.get("teacher") if isinstance(manifest.get("teacher"), dict) else manifest
+    baseline_sha = (
+        teacher.get("git_sha")
+        or teacher.get("teacher_git_sha")
+        or teacher.get("acquisition_git_sha")
+    )
+    model_id = teacher["model_id"]
+    revision = teacher["model_revision"]
+    fingerprint = (
+        teacher.get("artifact_fingerprint_sha256")
+        or teacher["model_artifact_sha256"]
+    )
     if metadata.get("teacher_baseline_git_sha", baseline_sha) != baseline_sha:
         raise ValueError(f"{row['sample_id']}: baseline Teacher SHA mismatch")
     if (metadata.get("teacher_model_id") or row["teacher_plan"].get("model_id")) != model_id:
