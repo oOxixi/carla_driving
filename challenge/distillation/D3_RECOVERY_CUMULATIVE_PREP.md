@@ -44,6 +44,9 @@ python -m challenge.distillation.audit_targeted_gap_intake
 python -m challenge.dataset.validate_d3_turn_gap_release
 python -m challenge.dataset.build_a3_recovery_cumulative_view
 python -m challenge.distillation.audit_recovery_cumulative_view
+python -m challenge.distillation.train \
+  --config challenge/distillation/d3_recovery_cumulative_smoke_config.yaml \
+  --integration-smoke
 ```
 
 The builder rejects failed provenance, missing images, unsupported Teacher
@@ -102,3 +105,11 @@ candidate ID and weights SHA, then undergo independent B2 paired evaluation.
 Never overwrite, rename or reinterpret the current v3 package.  Until B2
 publishes identity-matched evaluation and Gate evidence, neither v3 nor a
 future recovery candidate may be labelled `A3_FP32_GATE_PASSED`.
+
+The committed recovery config uses the distinct
+`content_bound_recovery_cumulative_smoke` identity policy.  That policy
+rebuilds and audits the complete view with RGB checks before training, is
+limited to `--integration-smoke`, caps execution at two optimizer updates and
+exports only a `MOCK_ONLY` candidate.  A separate formal policy must not be
+invented until the team explicitly selects a new candidate experiment and its
+B2 comparison contract.

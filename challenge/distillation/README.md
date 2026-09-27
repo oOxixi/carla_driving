@@ -215,6 +215,9 @@ python -m challenge.distillation.audit_targeted_gap_intake
 python -m challenge.dataset.validate_d3_turn_gap_release
 python -m challenge.dataset.build_a3_recovery_cumulative_view
 python -m challenge.distillation.audit_recovery_cumulative_view
+python -m challenge.distillation.train \
+  --config challenge/distillation/d3_recovery_cumulative_smoke_config.yaml \
+  --integration-smoke
 ```
 
 Its strict-positive view contains 5,129 Train and 981 development-Validation
@@ -224,6 +227,9 @@ cryptographic signer is claimed.  The policy permits this class only as
 development input.  It is not Frozen Test evidence and does not change the
 current v3 candidate.  Exact hashes and full-server evidence are recorded in
 [D3_RECOVERY_CUMULATIVE_PREP.md](D3_RECOVERY_CUMULATIVE_PREP.md).
+The dedicated config is deliberately integration-smoke-only and capped at two
+optimizer updates; it cannot be reused as a formal training or promotion
+policy.
 
 After B1 and B2 deliver version-matched Validation evidence, promotion uses:
 
