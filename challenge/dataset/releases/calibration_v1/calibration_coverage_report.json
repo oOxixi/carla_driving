@@ -1,0 +1,232 @@
+{
+  "dataset_version": "b1_calibration_v1",
+  "joint_strata": [
+    {
+      "pool_count": 4,
+      "remaining_count": 2,
+      "scenario_family": "lateral_B",
+      "selected_count": 2,
+      "source": "D1",
+      "training_role": "LEGACY_D1"
+    },
+    {
+      "pool_count": 1,
+      "remaining_count": 0,
+      "scenario_family": "qwen_routing",
+      "selected_count": 1,
+      "source": "D1",
+      "training_role": "LEGACY_D1"
+    },
+    {
+      "pool_count": 4,
+      "remaining_count": 2,
+      "scenario_family": "regression",
+      "selected_count": 2,
+      "source": "D1",
+      "training_role": "LEGACY_D1"
+    },
+    {
+      "pool_count": 4,
+      "remaining_count": 2,
+      "scenario_family": "safety_D",
+      "selected_count": 2,
+      "source": "D1",
+      "training_role": "LEGACY_D1"
+    },
+    {
+      "pool_count": 1,
+      "remaining_count": 0,
+      "scenario_family": "smoke",
+      "selected_count": 1,
+      "source": "D1",
+      "training_role": "LEGACY_D1"
+    },
+    {
+      "pool_count": 23,
+      "remaining_count": 10,
+      "scenario_family": "lateral_B",
+      "selected_count": 13,
+      "source": "D2_WAVE1",
+      "training_role": "POSITIVE"
+    },
+    {
+      "pool_count": 8,
+      "remaining_count": 4,
+      "scenario_family": "qwen_fullchain",
+      "selected_count": 4,
+      "source": "D2_WAVE1",
+      "training_role": "POSITIVE"
+    },
+    {
+      "pool_count": 14,
+      "remaining_count": 6,
+      "scenario_family": "qwen_routing",
+      "selected_count": 8,
+      "source": "D2_WAVE1",
+      "training_role": "POSITIVE"
+    },
+    {
+      "pool_count": 2,
+      "remaining_count": 1,
+      "scenario_family": "regression",
+      "selected_count": 1,
+      "source": "D2_WAVE1",
+      "training_role": "HARD_NEGATIVE"
+    },
+    {
+      "pool_count": 28,
+      "remaining_count": 12,
+      "scenario_family": "regression",
+      "selected_count": 16,
+      "source": "D2_WAVE1",
+      "training_role": "POSITIVE"
+    },
+    {
+      "pool_count": 9,
+      "remaining_count": 4,
+      "scenario_family": "safety_D",
+      "selected_count": 5,
+      "source": "D2_WAVE1",
+      "training_role": "HARD_NEGATIVE"
+    },
+    {
+      "pool_count": 52,
+      "remaining_count": 23,
+      "scenario_family": "safety_D",
+      "selected_count": 29,
+      "source": "D2_WAVE1",
+      "training_role": "POSITIVE"
+    },
+    {
+      "pool_count": 16,
+      "remaining_count": 7,
+      "scenario_family": "smoke",
+      "selected_count": 9,
+      "source": "D2_WAVE1",
+      "training_role": "POSITIVE"
+    },
+    {
+      "pool_count": 1,
+      "remaining_count": 0,
+      "scenario_family": "lateral_B",
+      "selected_count": 1,
+      "source": "D2_WAVE2",
+      "training_role": "HARD_NEGATIVE"
+    },
+    {
+      "pool_count": 77,
+      "remaining_count": 34,
+      "scenario_family": "lateral_B",
+      "selected_count": 43,
+      "source": "D2_WAVE2",
+      "training_role": "POSITIVE"
+    },
+    {
+      "pool_count": 10,
+      "remaining_count": 5,
+      "scenario_family": "qwen_fullchain",
+      "selected_count": 5,
+      "source": "D2_WAVE2",
+      "training_role": "POSITIVE"
+    },
+    {
+      "pool_count": 1,
+      "remaining_count": 0,
+      "scenario_family": "qwen_routing",
+      "selected_count": 1,
+      "source": "D2_WAVE2",
+      "training_role": "HARD_NEGATIVE"
+    },
+    {
+      "pool_count": 19,
+      "remaining_count": 9,
+      "scenario_family": "qwen_routing",
+      "selected_count": 10,
+      "source": "D2_WAVE2",
+      "training_role": "POSITIVE"
+    },
+    {
+      "pool_count": 1,
+      "remaining_count": 0,
+      "scenario_family": "regression",
+      "selected_count": 1,
+      "source": "D2_WAVE2",
+      "training_role": "HARD_NEGATIVE"
+    },
+    {
+      "pool_count": 97,
+      "remaining_count": 43,
+      "scenario_family": "regression",
+      "selected_count": 54,
+      "source": "D2_WAVE2",
+      "training_role": "POSITIVE"
+    },
+    {
+      "pool_count": 17,
+      "remaining_count": 8,
+      "scenario_family": "safety_D",
+      "selected_count": 9,
+      "source": "D2_WAVE2",
+      "training_role": "HARD_NEGATIVE"
+    },
+    {
+      "pool_count": 125,
+      "remaining_count": 56,
+      "scenario_family": "safety_D",
+      "selected_count": 69,
+      "source": "D2_WAVE2",
+      "training_role": "POSITIVE"
+    },
+    {
+      "pool_count": 26,
+      "remaining_count": 12,
+      "scenario_family": "smoke",
+      "selected_count": 14,
+      "source": "D2_WAVE2",
+      "training_role": "POSITIVE"
+    }
+  ],
+  "pool_groups": 540,
+  "pool_samples": 540,
+  "remaining_family_counts": {
+    "lateral_B": 46,
+    "qwen_fullchain": 9,
+    "qwen_routing": 15,
+    "regression": 58,
+    "safety_D": 93,
+    "smoke": 19
+  },
+  "remaining_role_counts": {
+    "HARD_NEGATIVE": 13,
+    "LEGACY_D1": 6,
+    "POSITIVE": 221
+  },
+  "remaining_source_counts": {
+    "D1": 6,
+    "D2_WAVE1": 67,
+    "D2_WAVE2": 167
+  },
+  "schema_version": "1.0",
+  "selected_family_counts": {
+    "lateral_B": 59,
+    "qwen_fullchain": 9,
+    "qwen_routing": 20,
+    "regression": 74,
+    "safety_D": 114,
+    "smoke": 24
+  },
+  "selected_groups": 300,
+  "selected_role_counts": {
+    "HARD_NEGATIVE": 18,
+    "LEGACY_D1": 8,
+    "POSITIVE": 274
+  },
+  "selected_samples": 300,
+  "selected_source_counts": {
+    "D1": 8,
+    "D2_WAVE1": 85,
+    "D2_WAVE2": 207
+  },
+  "unallocated_groups": 240,
+  "unallocated_samples": 240
+}

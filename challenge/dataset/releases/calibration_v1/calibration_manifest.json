@@ -1,0 +1,34 @@
+{
+  "counts": {
+    "calibration": 300,
+    "source_pool": 540,
+    "unallocated_reserved": 240
+  },
+  "dataset_version": "b1_calibration_v1",
+  "governance": {
+    "calibration_is_dev": false,
+    "calibration_is_frozen_test": false,
+    "calibration_is_training": false,
+    "future_b2_policy": "B2 Frozen Benchmark must exclude all Calibration v1 sample_ids and group_keys.",
+    "remaining_240_are_frozen_test": false,
+    "remaining_240_policy": "UNALLOCATED_RESERVED_POOL; B2 must independently decide future benchmark membership.",
+    "source_release_mutated": false
+  },
+  "purpose": "PTQ calibration only",
+  "release_type": "calibration",
+  "schema_version": "1.0",
+  "selection": {
+    "allocation": "largest_remainder",
+    "group_atomic": true,
+    "ranking": "sha256",
+    "selection_salt": "b1-calibration-v1/source-family-role/sha256-rank-v1",
+    "strategy": "joint stratification by source x scenario_family x published D2 training_role"
+  },
+  "source_assignment_file": "challenge/dataset/releases/d2_v1_1/source_split_assignments.jsonl",
+  "source_release": "d2_v1_1",
+  "source_release_manifest_sha256": "cf153d2f536f9180241f02a9d644aca6da2a508beb785591399dbb75b847462f",
+  "source_reserved_pool": "challenge/dataset/releases/d2_v1_1/reserved_test_candidates.jsonl",
+  "source_rgb_mapping": "challenge/dataset/releases/d2_v1_1/rgb_mapping.json",
+  "status": "FROZEN_CALIBRATION",
+  "target_count": 300
+}
