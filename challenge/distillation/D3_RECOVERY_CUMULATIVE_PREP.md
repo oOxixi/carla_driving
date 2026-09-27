@@ -72,7 +72,8 @@ python -m pytest -q \
 The commands above ran on the complete `tiaozhansai` checkout at
 `challenge@fdf533480cb0543c151b08febebe7b40de3962cf` with image checks enabled.
 The read-only audit returned `PASS`, and the regression suite returned
-`7 passed`.
+`7 passed` before the integration gate was added.  The final combined recovery
+suite, including the smoke-only policy test, returned `8 passed`.
 
 ```text
 train = 5129
@@ -89,6 +90,24 @@ audit_status = PASS
 image_check_enabled = true
 current_v3_candidate_identity_unchanged = true
 ```
+
+The bounded integration smoke then ran on CUDA with the clean committed tree at
+`challenge@a9612e84824045be7229d2d49e94d7ec4365170f`:
+
+```text
+train_samples = 50
+validation_samples = 50
+epochs_completed = 1
+global_step = 2
+best_checkpoint_sha256 = a2d5ea18421a106cc4dceeb2a3c3f310529d113e741206a73ad890b19a9832e2
+candidate_weights_sha256 = 6d06624c8b59a9c99d9207d1ac03f6ecbce06ad23e322e7cab983e781e3950c6
+candidate_gate_status = MOCK_ONLY
+```
+
+The smoke completed data preflight, four-modal packing, forward/loss/backward,
+validation, checkpointing and candidate export.  Its metrics are not an
+accuracy claim because only two optimizer updates and bounded 50/50 samples
+were used.
 
 The server artifacts are:
 

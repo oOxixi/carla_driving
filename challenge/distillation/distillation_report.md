@@ -191,6 +191,13 @@ read-only reconstructed this view with image checks enabled.  Results:
   `2c943825b2a10f65f9e30d88a5aab1a994c266fcab16e6c08ec6797778877868`;
 - full audit: `PASS`; relevant regression suite: 7 passed.
 
+After adding the dedicated fail-closed integration policy, the combined suite
+passed 8/8 and the clean server checkout completed a CUDA integration smoke
+using 50 Train + 50 Validation records and exactly two optimizer updates.  It
+exercised preflight, four-modal input, loss/backward, evaluation, checkpoint and
+candidate export.  The exported status is correctly `MOCK_ONLY`; its bounded
+metrics are not Student accuracy evidence.
+
 This proves input integrity and reproducibility, not Student accuracy.  It does
 not alter or promote v3.  Any training decision must create a new config,
 checkpoint, candidate identity and B2 comparison.  Exact commands and evidence
