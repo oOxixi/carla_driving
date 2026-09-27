@@ -1,0 +1,51 @@
+{
+  "turn_artifact__turn_val": {
+    "cases": 29,
+    "worst_head": [
+      0.999889,
+      "target_speed_mps"
+    ],
+    "head_min": {
+      "plan_length_logits": 0.999994,
+      "behavior_logits": 0.999991,
+      "target_pointer_logits": 0.999989,
+      "target_lane_logits": 0.99999,
+      "target_speed_mps": 0.999889,
+      "completion_type_logits": 0.999988,
+      "on_failure_logits": 0.999993,
+      "confidence": 1.0,
+      "requires_confirmation_logits": 1.0,
+      "replan_condition_logits": 0.999999
+    },
+    "below_0_99_total": 0,
+    "backbone_worst": [
+      0.998404,
+      "/model/vision_encoder/features/features.9/Relu_output_0"
+    ]
+  },
+  "gap_artifact__turn_val": {
+    "cases": 29,
+    "worst_head": [
+      0.999886,
+      "target_speed_mps"
+    ],
+    "head_min": {
+      "plan_length_logits": 0.999993,
+      "behavior_logits": 0.999976,
+      "target_pointer_logits": 0.999987,
+      "target_lane_logits": 0.999985,
+      "target_speed_mps": 0.999886,
+      "completion_type_logits": 0.999975,
+      "on_failure_logits": 0.999992,
+      "confidence": 1.0,
+      "requires_confirmation_logits": 1.0,
+      "replan_condition_logits": 0.999998
+    },
+    "below_0_99_total": 0,
+    "backbone_worst": [
+      0.998397,
+      "/model/vision_encoder/features/features.9/Relu_output_0"
+    ]
+  },
+  "contrast": "On this cohort both artefacts keep every head at min cosine >= 0.999886 including the speed head, unlike D3 Wave2 val where the same gap-calibrated artefact dropped to 0.989066 on target_speed_mps (8/56 below 0.99). The speed-head sensitivity is distribution-specific rather than a property of this artefact alone."
+}
