@@ -143,24 +143,66 @@ intake independently verified the transport/data layer:
 - Train/Validation group overlap is zero;
 - sample overlap with the existing D2 + D3 Wave1 + D3 Wave2 partition is zero.
 
-The release is nevertheless `BLOCKED` for A3 formal distillation.  Its rows
-identify `Qwen/Qwen3.5-2B` and acquisition Git SHA
-`a6743feb52015031f70e2c21a94aef0abae0a65a`, but provide neither an exact model
-revision nor artifact fingerprint.  No repository Teacher manifest matches
-that acquisition SHA, and `B1_SIGNED_PASS.json` does not bind a Teacher block.
-Earlier Teacher-v4 identity values are not retroactively assigned.
+The original release lacked exact Teacher revision and artifact fingerprint,
+so A3 initially blocked it.  B1 has now published a cohort-specific immutable
+provenance addendum covering all 660 samples.  A3 verified:
 
-The executable audit is `audit_targeted_gap_intake.py`; B1's exact requested
-addendum is documented in `B1_TARGETED_GAP_PROVENANCE_REQUEST.md`.  After B1
-publishes signed cohort provenance, A3 can create another versioned cumulative
-view.  Until then, these 660 rows are not merged into A3 training inputs.
+- exact Teacher revision `15852e8c16360a2fea060d615a32b45270f8a8fc`;
+- artifact fingerprint
+  `4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa`;
+- acquisition Git SHA `a6743feb52015031f70e2c21a94aef0abae0a65a`;
+- attestation SHA256
+  `24c2690d8590fe2e1ecff48f75d391b03941e3405f08cd306aba6e99e6f878c5`;
+- content-binding SHA256
+  `505051b1c764a1f464dc31a6e44ea705d21693d4eb935cd99ffd289ff7b428b2`.
+
+The declared provenance class is `CONTENT_BOUND_UNSIGNED`: all byte and
+identity bindings pass, but no cryptographic signer identity is claimed.  A3's
+explicit development-input policy accepts this class without misreporting it
+as detached/GPG signed.  `audit_targeted_gap_intake.py` now returns `READY`.
+
+## D3 recovery cumulative preparation
+
+B1's additional `d3_turn_gap_60_strict_v1` release also passed full validation:
+200/200 RGB assets, 171 Train rows, 29 development Validation rows, exact
+pinned Teacher identity, strict-positive terminal success and zero split/group
+overlap.  Its provenance is likewise explicitly `CONTENT_BOUND_UNSIGNED`.
+
+A3 combines the previously verified Wave2 base, targeted-gap and turn-gap only
+through the new immutable view identity:
+
+```text
+b1_d2_v1_1_plus_d3_wave1_plus_d3_wave2_plus_targeted_gap_plus_turn_gap_a3_strict_positive_v1
+```
+
+The complete `tiaozhansai` checkout at `challenge@fdf53348` built and then
+read-only reconstructed this view with image checks enabled.  Results:
+
+- Train: 5,129 (targeted-gap +561, turn-gap +171);
+- development Validation: 981 (targeted-gap +99, turn-gap +29);
+- audit-only excluded: 539;
+- view manifest SHA256:
+  `63f26554a52e270447e7cca977e2df9b31e05753fee96859e8d0a701874f166b`;
+- source evidence SHA256:
+  `0867e9acfba5271b4af566a7ee9db34fa52248d052ebb093c5a38b5bfee5221d`;
+- Train JSONL SHA256:
+  `039a78c96ed13f6fa0af754e67a66c74dfff65631ad58556e707eeeeae82bcf7`;
+- development Validation JSONL SHA256:
+  `2c943825b2a10f65f9e30d88a5aab1a994c266fcab16e6c08ec6797778877868`;
+- full audit: `PASS`; relevant regression suite: 7 passed.
+
+This proves input integrity and reproducibility, not Student accuracy.  It does
+not alter or promote v3.  Any training decision must create a new config,
+checkpoint, candidate identity and B2 comparison.  Exact commands and evidence
+are in `D3_RECOVERY_CUMULATIVE_PREP.md`.
 
 ## Current external handoffs and blockers
 
 - B1 data required for the prepared Wave2 view has arrived and its detached
   signature, release hashes, Teacher provenance and 374-image set validate.
-  The later targeted-gap release passes byte integrity but still requires the
-  signed Teacher-provenance addendum described above.
+  The targeted-gap provenance addendum and the turn-gap release have also
+  arrived; both content-bound development cohorts now pass A3 intake and are
+  available through a separately versioned cumulative view.
 - B2's evaluator, comparison, decision and evidence-publication tooling is in
   Git.  A fresh server readiness run still reports six blockers: benchmark and
   case manifest are not frozen; formal policy and policy version are not

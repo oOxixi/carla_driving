@@ -207,6 +207,24 @@ evidence.
 The exact server-side preparation evidence and hashes are recorded in
 [D2_D3_CUMULATIVE_PREP.md](D2_D3_CUMULATIVE_PREP.md).
 
+The later targeted-gap provenance addendum and turn-gap release are consumed
+only through the next versioned recovery view:
+
+```bash
+python -m challenge.distillation.audit_targeted_gap_intake
+python -m challenge.dataset.validate_d3_turn_gap_release
+python -m challenge.dataset.build_a3_recovery_cumulative_view
+python -m challenge.distillation.audit_recovery_cumulative_view
+```
+
+Its strict-positive view contains 5,129 Train and 981 development-Validation
+records; 539 samples remain audit-only exclusions.  Both new cohorts declare
+`CONTENT_BOUND_UNSIGNED`: byte/identity binding is verified, while no
+cryptographic signer is claimed.  The policy permits this class only as
+development input.  It is not Frozen Test evidence and does not change the
+current v3 candidate.  Exact hashes and full-server evidence are recorded in
+[D3_RECOVERY_CUMULATIVE_PREP.md](D3_RECOVERY_CUMULATIVE_PREP.md).
+
 After B1 and B2 deliver version-matched Validation evidence, promotion uses:
 
 ```bash
