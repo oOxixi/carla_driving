@@ -16,12 +16,16 @@ candidate.  They are not yet eligible for the next formal A3 FP32 run because
 the immutable release does not bind an exact Teacher revision or artifact
 fingerprint.
 
-The rows currently record:
+The rows currently record one model ID but two acquisition Git SHAs:
 
 ```text
 model_id = Qwen/Qwen3.5-2B
-acquisition_git_sha = 95668ba3a466ae0dfcd73982f5a4a0d210b524c1
+95668ba3a466ae0dfcd73982f5a4a0d210b524c1 = 770 rows (C01/C02/C03)
+e150ae598d95cb024faebc1699b872d0de899e91 = 50 rows (D01/PULL_OVER)
 ```
+
+The release-level provenance manifest declares only `95668...`, so it does not
+currently explain or bind the 50 D01 rows collected at `e150...`.
 
 They do not record or content-bind:
 
@@ -50,14 +54,15 @@ challenge/teacher_gap300_manifest.json
 The content binding must cover:
 
 - dataset version and all 820 samples;
-- acquisition/Teacher Git SHA;
+- both observed acquisition/Teacher Git SHAs and their covered row sets;
 - `Qwen/Qwen3.5-2B`;
 - exact Hugging Face revision;
 - model artifact fingerprint SHA256;
 - dtype and quantization;
 - source `release_manifest.json` SHA256;
 - source `b1_release_lock.sha256` SHA256;
-- an explicit statement that all 820 samples share the identity.
+- an explicit statement whether all 820 samples share the same model artifact
+  identity despite the two acquisition code revisions.
 
 Do not rewrite the published rows or release lock.  The addendum must supplement
 the immutable release.  Once it arrives, A3 can admit Gap300 into a new view of

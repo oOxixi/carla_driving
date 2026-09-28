@@ -215,10 +215,12 @@ B1's new `d3_gap300_strict_v1` release adds 697 Train and 123 development
 Validation rows.  Across both partitions it contributes 230 `TURN_LEFT`, 75
 `YIELD` and 50 `PULL_OVER` steps.  Full byte/RGB/split validation passes and
 the release has zero overlap with prior A3 partitions.  Formal intake is still
-blocked because the release binds only `Qwen/Qwen3.5-2B` and acquisition Git
-SHA `95668ba3a466ae0dfcd73982f5a4a0d210b524c1`, not the exact model revision
-and artifact fingerprint.  The required immutable addendum is specified in
-`B1_GAP300_PROVENANCE_REQUEST.md`.
+blocked because the rows bind only `Qwen/Qwen3.5-2B`, not the exact model
+revision and artifact fingerprint.  They also contain two acquisition SHAs:
+770 rows use `95668ba3a466ae0dfcd73982f5a4a0d210b524c1`, while the 50 D01/PULL_OVER
+rows use `e150ae598d95cb024faebc1699b872d0de899e91`; the release-level provenance
+declares only the former.  The required immutable two-cohort addendum is
+specified in `B1_GAP300_PROVENANCE_REQUEST.md`.
 
 The next formal view will contain 5,826 strict-positive Train and 1,104
 development-Validation rows.  B1's 6,007 raw Train count includes 181 D2 hard

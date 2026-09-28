@@ -8,6 +8,7 @@ remaining ineligible for a new A3 FP32 candidate.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 from pathlib import Path
 from typing import Any
@@ -114,6 +115,7 @@ def audit_gap300_intake(
     git_shas: set[str] = set()
     revisions: set[str] = set()
     fingerprints: set[str] = set()
+    git_sha_counts: Counter[str] = Counter()
     ids: dict[str, set[str]] = {}
     groups: dict[str, set[str]] = {}
     behavior_counts: dict[str, int] = {}
@@ -130,6 +132,7 @@ def audit_gap300_intake(
                 models.add(model)
             if git_sha:
                 git_shas.add(git_sha)
+                git_sha_counts[git_sha] += 1
             if revision:
                 revisions.add(revision)
             if fingerprint:
@@ -153,7 +156,10 @@ def audit_gap300_intake(
     if models != {EXPECTED_MODEL_ID}:
         blockers.append("rows do not agree on Qwen/Qwen3.5-2B")
     if len(git_shas) != 1:
-        blockers.append("rows do not agree on one Teacher acquisition Git SHA")
+        blockers.append(
+            "rows contain multiple Teacher acquisition Git SHAs: "
+            + ", ".join(f"{sha}={count}" for sha, count in sorted(git_sha_counts.items()))
+        )
     cohort_git_sha = next(iter(git_shas)) if len(git_shas) == 1 else ""
     matching = _matching_teacher_manifests(repo, cohort_git_sha) if cohort_git_sha else []
     if not matching:
@@ -182,6 +188,7 @@ def audit_gap300_intake(
         "teacher_provenance": {
             "model_ids": sorted(models),
             "acquisition_git_shas": sorted(git_shas),
+            "acquisition_git_sha_counts": dict(sorted(git_sha_counts.items())),
             "model_revisions": sorted(revisions),
             "artifact_fingerprints": sorted(fingerprints),
             "matching_repository_manifests": matching,
@@ -194,7 +201,7 @@ def audit_gap300_intake(
         "blockers": blockers,
         "required_b1_followup": [] if eligible else [
             "publish an immutable cohort-specific Teacher provenance addendum covering all 820 samples",
-            "bind acquisition Git SHA, exact model revision and artifact fingerprint to the release manifest and lock",
+            "explain and bind both observed acquisition Git SHAs, exact model revision and artifact fingerprint to the release manifest and lock",
         ],
         "count_policy": {
             "b1_raw_train_rows_after_gap300": 6007,
