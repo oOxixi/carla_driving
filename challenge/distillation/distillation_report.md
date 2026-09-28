@@ -203,6 +203,29 @@ not alter or promote v3.  Any training decision must create a new config,
 checkpoint, candidate identity and B2 comparison.  Exact commands and evidence
 are in `D3_RECOVERY_CUMULATIVE_PREP.md`.
 
+## B3 TURN finding and Gap300 intake
+
+B3's diagnostic replay confirms why a new candidate is necessary: over 87
+turn-gap replay instances the old v3 candidate never emitted `TURN_LEFT` or
+`YIELD`; all 27 `TURN_LEFT` and 6 `YIELD` targets were predicted as
+`SET_SPEED`.  This is a training-distribution vocabulary gap, not evidence that
+the newly collected labels failed.
+
+B1's new `d3_gap300_strict_v1` release adds 697 Train and 123 development
+Validation rows.  Across both partitions it contributes 230 `TURN_LEFT`, 75
+`YIELD` and 50 `PULL_OVER` steps.  Full byte/RGB/split validation passes and
+the release has zero overlap with prior A3 partitions.  Formal intake is still
+blocked because the release binds only `Qwen/Qwen3.5-2B` and acquisition Git
+SHA `95668ba3a466ae0dfcd73982f5a4a0d210b524c1`, not the exact model revision
+and artifact fingerprint.  The required immutable addendum is specified in
+`B1_GAP300_PROVENANCE_REQUEST.md`.
+
+The next formal view will contain 5,826 strict-positive Train and 1,104
+development-Validation rows.  B1's 6,007 raw Train count includes 181 D2 hard
+negatives, which remain audit-only rather than being mislabeled as successful
+Teacher supervision.  No new FP32 training starts until the provenance gate
+is closed.
+
 ## Current external handoffs and blockers
 
 - B1 data required for the prepared Wave2 view has arrived and its detached

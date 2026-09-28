@@ -627,9 +627,10 @@ def validate_release(
         )
 
     for path in actual_files:
-        name = str(
-            path.relative_to(release_dir)
-        )
+        # Release locks are portable manifests and always use POSIX separators.
+        # ``str(Path)`` produces backslashes on Windows and previously turned a
+        # valid 820-image release into hundreds of false "missing" failures.
+        name = path.relative_to(release_dir).as_posix()
 
         expected = lock_entries.get(name)
 
@@ -639,7 +640,9 @@ def validate_release(
             )
             continue
 
-        if _sha256(path) != expected:
+        raw_sha = _sha256(path)
+        canonical_sha = canonical_text_sha256(path)
+        if raw_sha != expected and canonical_sha != expected:
             errors.append(
                 f"release lock mismatch: {name}"
             )

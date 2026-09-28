@@ -231,6 +231,20 @@ The dedicated config is deliberately integration-smoke-only and capped at two
 optimizer updates; it cannot be reused as a formal training or promotion
 policy.
 
+The later Gap300 release is checked separately:
+
+```bash
+python -m challenge.dataset.validate_d3_gap300_release
+python -m challenge.distillation.audit_gap300_intake
+```
+
+Its 820 rows and images pass the transport/data gate and materially add
+`TURN_LEFT`, `YIELD` and `PULL_OVER` supervision.  Formal A3 intake remains
+fail-closed until B1 supplies the cohort-specific exact Teacher provenance in
+[B1_GAP300_PROVENANCE_REQUEST.md](B1_GAP300_PROVENANCE_REQUEST.md).  The raw
+6,007-row B1 total includes 181 D2 hard negatives; A3's future ordinary
+positive-supervision view is 5,826 Train rows, not 6,007.
+
 After B1 and B2 deliver version-matched Validation evidence, promotion uses:
 
 ```bash
