@@ -30,6 +30,7 @@ def test_gap300_intake_blocks_missing_exact_teacher_provenance() -> None:
         "95668ba3a466ae0dfcd73982f5a4a0d210b524c1": 770,
         "e150ae598d95cb024faebc1699b872d0de899e91": 50,
     }
+    assert report["teacher_provenance"]["immutable_attestation"]["valid"] is False
     assert report["prior_release_overlap"] == {
         "sample_ids_with_any_prior_release": 0,
         "gap300_train_groups_in_prior_val": 0,

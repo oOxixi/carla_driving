@@ -64,6 +64,29 @@ The content binding must cover:
 - an explicit statement whether all 820 samples share the same model artifact
   identity despite the two acquisition code revisions.
 
+For direct compatibility with the committed A3 verifier, use these fields:
+
+```text
+teacher_provenance_attestation.json:
+  status = PASS
+  signature_status = CONTENT_BOUND_UNSIGNED
+  supplements_without_mutating_release = true
+  teacher.model_id / model_revision / artifact_fingerprint_sha256
+  teacher.dtype / quantization / qwen_mode
+  coverage.canonical_samples = 820
+  coverage.all_samples_share_teacher_identity = true
+  coverage.acquisition_git_sha_counts = {95668...: 770, e150...: 50}
+  source_release.release_manifest_sha256 / b1_release_lock_sha256
+  repository_teacher_manifest.path / sha256
+  binding.payload.all_820_samples_share_teacher_identity = true
+  binding.payload.acquisition_git_sha_counts = the same two-cohort mapping
+
+teacher_gap300_manifest.json:
+  teacher.model_id / model_revision / model_artifact_sha256
+  teacher.dtype / quantization / qwen_mode
+  acquisition_git_sha_counts = the same two-cohort mapping
+```
+
 Do not rewrite the published rows or release lock.  The addendum must supplement
 the immutable release.  Once it arrives, A3 can admit Gap300 into a new view of
 5,826 strict-positive Train rows and 1,104 development-Validation rows, then
