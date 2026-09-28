@@ -21,11 +21,15 @@ PINNED = ROOT / "challenge/teacher_pinned_manifest_v4.json"
 
 
 def sha256(path):
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
+    """Hash governed text with the repository's canonical LF representation.
+
+    Git may materialize text files with CRLF on Windows even though the
+    content-bound release was signed from LF bytes.  Every file checked by
+    this addendum validator is governed text, so normalizing CRLF here keeps
+    the same signed identity on Linux and Windows without weakening any
+    semantic or byte-content check.
+    """
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def load_json(path):

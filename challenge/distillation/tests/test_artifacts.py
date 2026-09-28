@@ -145,6 +145,32 @@ def _cumulative_evaluation(
     return evaluation
 
 
+def _final_candidate(weights_sha256: str) -> dict:
+    candidate = _formal_candidate(weights_sha256)
+    candidate.update({
+        "teacher_git_sha": "MULTI_PINNED_B1_D2_D3_FINAL_V1",
+        "teacher_identity_policy": "content_bound_final_cumulative_formal",
+        "d2_release_manifest_sha256": "9" * 64,
+        "gap300_teacher_attestation_sha256": "c" * 64,
+        "source_evidence_sha256": "b" * 64,
+    })
+    return candidate
+
+
+def _final_evaluation(
+    evaluation_id: str, value: float, *, weights_sha256: str | None = None,
+) -> dict:
+    evaluation = _formal_evaluation(
+        evaluation_id, value, weights_sha256=weights_sha256,
+    )
+    evaluation.update({
+        "d2_release_manifest_sha256": "9" * 64,
+        "gap300_teacher_attestation_sha256": "c" * 64,
+        "source_evidence_sha256": "b" * 64,
+    })
+    return evaluation
+
+
 def test_candidate_is_not_promoted_without_independent_gate(tmp_path: Path) -> None:
     identity = {
         "git_sha": "a" * 40,
@@ -472,4 +498,36 @@ def test_signed_cumulative_candidate_binds_both_releases_and_signature(
             teacher_evaluation=_cumulative_evaluation("teacher-cumulative", 0.95),
             student_evaluation=changed,
             output_path=tmp_path / "rejected.json",
+        )
+
+
+def test_content_bound_final_candidate_binds_gap300_attestation(
+    tmp_path: Path,
+) -> None:
+    weights = tmp_path / "student-final.pt"
+    weights.write_bytes(b"content-bound-final-student")
+    weights_sha = hashlib.sha256(weights.read_bytes()).hexdigest()
+    candidate = _final_candidate(weights_sha)
+    report = promote_fp32_candidate(
+        candidate,
+        weights_path=weights,
+        teacher_evaluation=_final_evaluation("teacher-final", 0.95),
+        student_evaluation=_final_evaluation(
+            "student-final", 0.95, weights_sha256=weights_sha,
+        ),
+        output_path=tmp_path / "final-promoted.json",
+    )
+    assert report["gate_status"] == "A3_FP32_GATE_PASSED"
+
+    changed = _final_evaluation(
+        "student-final-changed", 0.95, weights_sha256=weights_sha,
+    )
+    changed["gap300_teacher_attestation_sha256"] = "d" * 64
+    with pytest.raises(ValueError, match="gap300_teacher_attestation_sha256"):
+        promote_fp32_candidate(
+            candidate,
+            weights_path=weights,
+            teacher_evaluation=_final_evaluation("teacher-final", 0.95),
+            student_evaluation=changed,
+            output_path=tmp_path / "final-rejected.json",
         )
