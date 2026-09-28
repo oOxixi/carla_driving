@@ -1,0 +1,111 @@
+{
+  "attestation_type": "HISTORICAL_PROVENANCE_ADDENDUM_CONTENT_BOUND_UNSIGNED",
+  "current_pinned_teacher_policy": {
+    "artifact_fingerprint": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "dtype": "bfloat16",
+    "manifest_path": "challenge/teacher_pinned_manifest_v4.json",
+    "manifest_sha256": "82aef8a13649cffdd17c9cd64003e3967448773548c2b5fcb15fd3b0d5b08220",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "quantization": null,
+    "teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+    "teacher_profile": "b1-pinned-teacher-v4"
+  },
+  "dataset_version": "b1_d3_gap300_strict_v1",
+  "evidence_scope": {
+    "not_retroactively_verified_from_gap300_rows": [
+      "teacher_profile=b1-pinned-teacher-v4",
+      "teacher_git_sha=95e97b00def8ec36f12937da34ce8bb9082c4a04",
+      "model_revision=15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "artifact_fingerprint=4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "dtype=bfloat16",
+      "quantization=null"
+    ],
+    "policy": "Do not rewrite historical Gap300 rows or manifests. Teacher v4 identity applies to new formal Teacher work. Historical Gap300 retains its recorded provenance.",
+    "verified_from_gap300_rows": [
+      "Qwen/Qwen3.5-2B model_id for 820/820 rows",
+      "planner_v2 mode for 820/820 rows",
+      "service endpoint distribution",
+      "runtime/acquisition Git identity distribution",
+      "scenario-family distribution"
+    ]
+  },
+  "historical_field_semantics": {
+    "teacher_git_sha": "The historical field name must not be interpreted as the canonical pinned Teacher-model Git identity. In Gap300 it varies with acquisition/runtime checkout: 95668ba... for the 770 qwen_fullchain samples and e150ae... for the 50 D01 regression samples."
+  },
+  "historical_release_binding": {
+    "content_bound_pass_sha256": "e1aefc5a0c5df31f1738d400314d80d8bb2667e9a5468ee6819d705b3355b332",
+    "image_set_canonical_sha256": "a31c1b1c1a155ff85b72e97a7b1b38da947567c39f1dde64ba4895e7862bb172",
+    "provenance_manifest_sha256": "20ea6be56175808f6dfd923cbd3ad58840f37308a00df946224168bf9a859fc8",
+    "release_lock_sha256": "695905864b9133c27c1e9ee7a6b7e57ddfd2219ba8a64bc48a7bf9b81c20c3f7",
+    "release_manifest_sha256": "a2fbe23674dfa984bba9e5623b931583f0ed53479ac5846b1fe3535a2a465427",
+    "source_dataset_sha256": "f59db0e16e639f71052ba254f47fc6b96ba44cd3cee6c21ae29f344702b57951",
+    "source_image_set_sha256": "dbbcf43c179b525a9b3e5c7c4d9688782384cf3840f1ceabd7efa1a95978c771",
+    "source_release_manifest_sha256": "add470dbb91a9a445cb30bd49062f5308bf67666408250f2efa0f259737f6427"
+  },
+  "historical_release_counts": {
+    "excluded_runs": 20,
+    "source_runs": 300,
+    "strict_positive_runs": 280,
+    "strict_positive_samples": 820,
+    "train_addition": 697,
+    "val_addition": 123
+  },
+  "purpose": "Clarify historical Gap300 provenance without modifying the immutable published release.",
+  "sample_level_missing_identity_fields": [
+    "teacher_profile",
+    "model_revision",
+    "artifact_fingerprint",
+    "dtype",
+    "quantization"
+  ],
+  "sample_level_observed_identity": {
+    "recorded_teacher_git_sha_counts": {
+      "95668ba3a466ae0dfcd73982f5a4a0d210b524c1": 770,
+      "e150ae598d95cb024faebc1699b872d0de899e91": 50
+    },
+    "runtime_code_identities": [
+      {
+        "git_subject_if_resolvable": "fix: restore completed phase trigger context",
+        "recorded_teacher_git_sha": "95668ba3a466ae0dfcd73982f5a4a0d210b524c1",
+        "sample_count": 770,
+        "service_family_counts": [
+          {
+            "sample_count": 770,
+            "scenario_family": "qwen_fullchain",
+            "teacher_service_url": "http://127.0.0.1:18004"
+          }
+        ]
+      },
+      {
+        "git_subject_if_resolvable": "feat: add validated D01 pull-over support",
+        "recorded_teacher_git_sha": "e150ae598d95cb024faebc1699b872d0de899e91",
+        "sample_count": 50,
+        "service_family_counts": [
+          {
+            "sample_count": 50,
+            "scenario_family": "regression",
+            "teacher_service_url": "http://127.0.0.1:18009"
+          }
+        ]
+      }
+    ],
+    "scenario_family_counts": {
+      "qwen_fullchain": 770,
+      "regression": 50
+    },
+    "teacher_mode_counts": {
+      "planner_v2": 820
+    },
+    "teacher_model_id_counts": {
+      "Qwen/Qwen3.5-2B": 820
+    },
+    "teacher_service_url_counts": {
+      "http://127.0.0.1:18004": 770,
+      "http://127.0.0.1:18009": 50
+    },
+    "total_rows": 820
+  },
+  "schema_version": "1.0",
+  "status": "PASS_WITH_HISTORICAL_IDENTITY_LIMITATION"
+}
