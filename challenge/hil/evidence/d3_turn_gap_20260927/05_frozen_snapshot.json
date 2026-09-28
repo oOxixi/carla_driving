@@ -1,0 +1,14 @@
+{
+  "snapshot": "challenge/hil/frozen/d3_turn_gap_60_strict_v1_val",
+  "source_release": "challenge/dataset/releases/d3_turn_gap_60_strict_v1",
+  "source_requests": "challenge/dataset/releases/d3_turn_gap_60_strict_v1/val_addition.jsonl",
+  "cases": 29,
+  "rgb_copied": 29,
+  "teacher_plans": 29,
+  "case_set_digest_sha256": "77a66a9aebf4d7fcdf145b094f4e29ae27445768278ba9829ea59f191b875047",
+  "reload_check": {
+    "cases": 29,
+    "rgb_resolved": 29
+  },
+  "note": "Frozen by B3 with `cli freeze`. Development val split of the TURN-gap cohort, not B2's frozen benchmark."
+}

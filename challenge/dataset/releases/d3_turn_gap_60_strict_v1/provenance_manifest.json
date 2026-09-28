@@ -1,0 +1,41 @@
+{
+  "acquisition": {
+    "audit_sha256": "86382c36ffff71829683e00ad5ab72c391fde77b838ca4206c828ef58b811691",
+    "cohort": "turn_gap_60_v1",
+    "git_sha": "c7ecadf5ce1da1dd569681c458ccc09959c0b5d1",
+    "historical_smoke_runs_included": false,
+    "runs": 60,
+    "strict_pass_runs": 60
+  },
+  "base_release": "d2_v1_1",
+  "canonicalization": {
+    "canonical_samples": 200,
+    "collector_last_change_commit": "912989f5bab4a864136f3774515e7cbd28e8dc24",
+    "collector_sha256": "792528d5564130ed8982f552e1207e3fa97eaaea3b992cdaaeea0370de002485",
+    "rejected_samples": 0,
+    "source_dataset_sha256": "3095a5ea29c4aebf923c546c91f8a867e30f61a3921b1546ce2622304a191afe",
+    "source_dataset_version": "teacher_distill_v0.7_turn_gap_60_v1"
+  },
+  "dataset_version": "b1_d3_turn_gap_60_strict_v1",
+  "families": {
+    "C01": 60,
+    "C02": 60,
+    "C03": 80
+  },
+  "prior_addon_releases": [
+    "d3_wave1_addon_v1",
+    "d3_wave2_safe_short_v1",
+    "d3_targeted_gap_strict_v1"
+  ],
+  "raw_source_immutable": true,
+  "release_type": "additive_recovery",
+  "schema_version": "1.0",
+  "selection_policy": "Only strict-positive command-level supervision from the new 60-run TURN recovery acquisition is published. The earlier 5-seed smoke validation runs are excluded.",
+  "teacher": {
+    "git_sha": "c7ecadf5ce1da1dd569681c458ccc09959c0b5d1",
+    "mode": "planner_v2",
+    "model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc"
+  }
+}

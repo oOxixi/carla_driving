@@ -169,6 +169,20 @@ python -m challenge.distillation.candidate_handoff \
 Successful transfer verification keeps both pending statuses unchanged; it is
 not an FP32 Gate decision and cannot create `A3_FP32_GATE_PASSED`.
 
+B3's independently published real-weight replay/ONNX/INT8/soak evidence can be
+accepted without weakening that boundary:
+
+```bash
+python challenge/distillation/audit_b3_v3_diagnostic.py \
+  --output artifacts/challenge/distillation/a3_b3_v3_diagnostic_intake.json
+```
+
+The audit binds all evidence to the exact v3 identity and requires every replay
+to remain fail-closed.  Its successful state is
+`DIAGNOSTIC_EVIDENCE_ACCEPTED`, never `A3_FP32_GATE_PASSED`.  The formal
+real-weight export requirements exposed by that exercise are recorded in
+[A2_REAL_WEIGHT_EXPORT_HANDOFF.md](A2_REAL_WEIGHT_EXPORT_HANDOFF.md).
+
 The signed D3 add-on is consumed only through the cumulative fail-closed path:
 
 ```bash
@@ -192,6 +206,44 @@ supervision. D3 adds development coverage and is not independent unseen Test
 evidence.
 The exact server-side preparation evidence and hashes are recorded in
 [D2_D3_CUMULATIVE_PREP.md](D2_D3_CUMULATIVE_PREP.md).
+
+The later targeted-gap provenance addendum and turn-gap release are consumed
+only through the next versioned recovery view:
+
+```bash
+python -m challenge.distillation.audit_targeted_gap_intake
+python -m challenge.dataset.validate_d3_turn_gap_release
+python -m challenge.dataset.build_a3_recovery_cumulative_view
+python -m challenge.distillation.audit_recovery_cumulative_view
+python -m challenge.distillation.train \
+  --config challenge/distillation/d3_recovery_cumulative_smoke_config.yaml \
+  --integration-smoke
+```
+
+Its strict-positive view contains 5,129 Train and 981 development-Validation
+records; 539 samples remain audit-only exclusions.  Both new cohorts declare
+`CONTENT_BOUND_UNSIGNED`: byte/identity binding is verified, while no
+cryptographic signer is claimed.  The policy permits this class only as
+development input.  It is not Frozen Test evidence and does not change the
+current v3 candidate.  Exact hashes and full-server evidence are recorded in
+[D3_RECOVERY_CUMULATIVE_PREP.md](D3_RECOVERY_CUMULATIVE_PREP.md).
+The dedicated config is deliberately integration-smoke-only and capped at two
+optimizer updates; it cannot be reused as a formal training or promotion
+policy.
+
+The later Gap300 release is checked separately:
+
+```bash
+python -m challenge.dataset.validate_d3_gap300_release
+python -m challenge.distillation.audit_gap300_intake
+```
+
+Its 820 rows and images pass the transport/data gate and materially add
+`TURN_LEFT`, `YIELD` and `PULL_OVER` supervision.  Formal A3 intake remains
+fail-closed until B1 supplies the cohort-specific exact Teacher provenance in
+[B1_GAP300_PROVENANCE_REQUEST.md](B1_GAP300_PROVENANCE_REQUEST.md).  The raw
+6,007-row B1 total includes 181 D2 hard negatives; A3's future ordinary
+positive-supervision view is 5,826 Train rows, not 6,007.
 
 After B1 and B2 deliver version-matched Validation evidence, promotion uses:
 

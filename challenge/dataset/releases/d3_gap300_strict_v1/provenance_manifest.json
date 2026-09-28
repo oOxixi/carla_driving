@@ -1,0 +1,33 @@
+{
+  "acquisition_git_sha": "95668ba3a466ae0dfcd73982f5a4a0d210b524c1",
+  "base_release": "d2_v1_1",
+  "canonical_samples": 820,
+  "collector_last_change_commit": "912989f5bab4a864136f3774515e7cbd28e8dc24",
+  "collector_repo_git_sha": "95668ba3a466ae0dfcd73982f5a4a0d210b524c1",
+  "collector_sha256": "792528d5564130ed8982f552e1207e3fa97eaaea3b992cdaaeea0370de002485",
+  "dataset_version": "b1_d3_gap300_strict_v1",
+  "excluded_run_count": 20,
+  "excluded_runs": 20,
+  "prior_addon_releases": [
+    "d3_wave1_addon_v1",
+    "d3_wave2_safe_short_v1",
+    "d3_targeted_gap_strict_v1",
+    "d3_turn_gap_60_strict_v1"
+  ],
+  "published_families": {
+    "C01": 225,
+    "C02": 225,
+    "C03": 320,
+    "D01": 50
+  },
+  "raw_source_immutable": true,
+  "release_type": "additive",
+  "schema_version": "1.0",
+  "selection_policy": "Only contract-aware strict-positive closed-loop runs are canonicalized and published. Historical failed runs remain immutable and are not relabeled.",
+  "source_dataset_sha256": "f59db0e16e639f71052ba254f47fc6b96ba44cd3cee6c21ae29f344702b57951",
+  "source_dataset_version": "teacher_distill_v0.6_gap300_strict_v1",
+  "source_image_set_sha256": "dbbcf43c179b525a9b3e5c7c4d9688782384cf3840f1ceabd7efa1a95978c771",
+  "source_release_manifest_sha256": "add470dbb91a9a445cb30bd49062f5308bf67666408250f2efa0f259737f6427",
+  "source_runs": 300,
+  "strict_positive_runs": 280
+}

@@ -134,6 +134,14 @@ claimed / not_claimed / not_recomputable，声明了就必须匹配、没声明�
 | D3 Wave2 train 64 例 | min 0.9974 | min 0.9966 | min 0.9949 |
 | Gap train 128 例 | min 0.9933 | min 0.9986 | 未跑 |
 
+### 2.3 2026-09-27：TURN-gap 队列（第三种通行证 + 行为词表缺口）
+
+B1 新发 `d3_turn_gap_60_strict_v1`（200 严格样本 / 60 run，家族 C01/C02/C03 的转弯与让行），并且**换了第三种通行证格式**：没有 `B1_SIGNED_PASS.json`，改为 `B1_CONTENT_BOUND_PASS.json`（`signature_status = CONTENT_BOUND_UNSIGNED`）。B3 的校验器扩展为识别三种通行证并**显式输出 assurance level**：本次绑定摘要**可独立复算**（canonical JSON `sort_keys` + 紧凑分隔符 → `1f264294…` 一致），但内容绑定**不等于签名**，保证等级低于前两版签名 release。复核结果 PASS（211 个锁定文件、200 张图、171+29 行配对）。
+
+真实权重在该队列上的回放：**行为匹配 0.5517 / 目标匹配 0.8621**，明显低于前三个数据集（1.0000 / 0.9518 / 0.9192）。拆到行为层面原因明确：**候选从不产出 `TURN_LEFT` 与 `YIELD`**——33 例次 TURN_LEFT 与 6 例次 YIELD 全部被答成 `SET_SPEED`，其余四种行为完全复现；对应团队清单的 GAP-03（YIELD = 0）与 GAP-06（TURN_LEFT 严重不足）。
+
+INT8 在本队列上很干净：两个真实权重产物十头 **min ≥ 0.999886、0 例低于 0.99**；对照 D3 Wave2 上同一产物速度头 0.989066（8/56 低于 0.99），说明**速度头敏感是分布相关现象**。证据见 [`evidence/d3_turn_gap_20260927/`](evidence/d3_turn_gap_20260927/README.md)。
+
 **全局最低 0.993331；低于 0.99 的"头×例"观测数为 0。** 校准分布与评估分布匹配时更紧
 （gap→gap 0.9986 vs gap→d3w2 0.9933），代价约 0.004–0.006。证据见
 [`evidence/d3_targeted_gap_20260926/`](evidence/d3_targeted_gap_20260926/README.md)。

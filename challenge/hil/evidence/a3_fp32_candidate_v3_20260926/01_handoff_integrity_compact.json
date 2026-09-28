@@ -1,0 +1,85 @@
+{
+  "package_dir": "D:\\nana\\a3_d2_d3_fp32_candidate_handoff_v3\\a3_d2_d3_fp32_candidate_handoff_v3",
+  "schema_version": "1.0",
+  "gate_status": "PENDING_A3_FP32_GATE",
+  "package_status": "PENDING_B2_INDEPENDENT_VALIDATION",
+  "limitations": [
+    "This package is not A3_FP32_GATE_PASSED.",
+    "Development Validation is not independent generalization evidence.",
+    "B2 must evaluate the exact weights on its frozen independent Validation package."
+  ],
+  "identity": {
+    "a3_view_manifest_sha256": "e07112b52ae8ecf8dd944d562e30304478fc8c22ef9cb86f4585181281fc2ff9",
+    "b1_signature_sha256": "10d9892551dbfe4e61377f9f835bd89d8043209f32a459ab92028ee1d93c7228",
+    "config_id": "student-v0-r3-structure-20260911",
+    "d2_release_manifest_sha256": "cf153d2f536f9180241f02a9d644aca6da2a508beb785591399dbb75b847462f",
+    "dataset_version": "b1_d2_v1_1_plus_d3_wave1_a3_strict_positive_v1",
+    "git_sha": "151efbbfa0c8920bfc78e29262d984bcfae1877f",
+    "model_id": "student-v0-r3-fp32",
+    "release_manifest_sha256": "dcd1bd1d0a34683e62e70a206760e691c0cd04b779f063d58a1fcf98837554bd",
+    "source_evidence_sha256": "6ec35d771df36b63864efd3c3e06f9a0ab2991bd53a60f44740cf19a0f7fe827",
+    "teacher_identity_policy": "signed_cumulative_release_formal",
+    "weights_sha256": "1afb8ebd11e401d4d7e6181d244ed39438421183c5303f1ce4a4391cee8cc68c"
+  },
+  "weights_file": "student_v0_fp32_candidate.pt",
+  "training_evidence": {
+    "development_validation_only": true,
+    "hard_case_count": 310,
+    "source_checkpoint_sha256": "ff97125de1010d3c3949cac596571ab7479e2627d626aa44111d3f38784503a1",
+    "train_samples": 4079,
+    "validation_samples": 797
+  },
+  "files_checked": 9,
+  "normalised_text_files": [],
+  "failures": [],
+  "failure_count": 0,
+  "status": "PASS",
+  "gate_is_passed": false,
+  "file_matches": {
+    "README.md": {
+      "match": true,
+      "matched_via": "raw",
+      "size_ok": true
+    },
+    "dataset_preflight.json": {
+      "match": true,
+      "matched_via": "raw",
+      "size_ok": true
+    },
+    "hard_cases/summary.json": {
+      "match": true,
+      "matched_via": "raw",
+      "size_ok": true
+    },
+    "student_v0_fp32_candidate.json": {
+      "match": true,
+      "matched_via": "raw",
+      "size_ok": true
+    },
+    "student_v0_fp32_candidate.pt": {
+      "match": true,
+      "matched_via": "raw",
+      "size_ok": true
+    },
+    "training.jsonl": {
+      "match": true,
+      "matched_via": "raw",
+      "size_ok": true
+    },
+    "training_config.yaml": {
+      "match": true,
+      "matched_via": "raw",
+      "size_ok": true
+    },
+    "training_report.md": {
+      "match": true,
+      "matched_via": "raw",
+      "size_ok": true
+    },
+    "training_summary.json": {
+      "match": true,
+      "matched_via": "raw",
+      "size_ok": true
+    }
+  }
+}

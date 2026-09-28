@@ -1,0 +1,1502 @@
+{
+  "td_00f5de1629c87ceacd75c095": {
+    "sha256": "d14f7b783e0664dfca25643002d590675b5990628cbf9eb38e50f553419c036d",
+    "size_bytes": 6100,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_00f5de1629c87ceacd75c095.jpg"
+  },
+  "td_0149a75dab568690e38f8964": {
+    "sha256": "59c775fd5d6077333f92795b2a1562a9735b15342aca76e52b8c595d4fececc3",
+    "size_bytes": 5829,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_0149a75dab568690e38f8964.jpg"
+  },
+  "td_01ccbe9959c30c78197d3c7a": {
+    "sha256": "cfae1a655522e1748b48776b21783c7a84b96dadf23b1dde1bc44799de4bda68",
+    "size_bytes": 5637,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_01ccbe9959c30c78197d3c7a.jpg"
+  },
+  "td_02961c5e4f74dcd2caa1a1d0": {
+    "sha256": "59efbc8bae6d3460f44db46d1082e88a6c98f7feb58ec1c2445cbbd80ca161ff",
+    "size_bytes": 5952,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_02961c5e4f74dcd2caa1a1d0.jpg"
+  },
+  "td_0417fb6e26d4e3f231f0d99f": {
+    "sha256": "fbae8f9642e06f5b698b05e63fea38d0b2597d6e0bf81f9a0f831824859b5e8b",
+    "size_bytes": 5557,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_0417fb6e26d4e3f231f0d99f.jpg"
+  },
+  "td_04ca34b3873f8dcd2beed820": {
+    "sha256": "081c926346053da21692090a4ce77cbf1d0ecdcb962521f919ed79dd865ad5f1",
+    "size_bytes": 6018,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_04ca34b3873f8dcd2beed820.jpg"
+  },
+  "td_059943b938e3f3022bc598d5": {
+    "sha256": "d98aba30310f20e368fa511a353d2d7be7e75ff1ba707c4434fbaccc47f4ac79",
+    "size_bytes": 5085,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_059943b938e3f3022bc598d5.jpg"
+  },
+  "td_06c1e42e14ec7a66d8be07c3": {
+    "sha256": "9c7518a6dd9f2f8e3455fe8e6fe9b62268ce283707f371716d089b288b3b29bf",
+    "size_bytes": 6237,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_06c1e42e14ec7a66d8be07c3.jpg"
+  },
+  "td_08bc4405cb6f65cb04ec80d3": {
+    "sha256": "8e66e9069b5f9dd5a65575ae3c84cfd87ed516d7d8b38df6398440ae46eb48d6",
+    "size_bytes": 5780,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_08bc4405cb6f65cb04ec80d3.jpg"
+  },
+  "td_08cc2da0c8c67ce823798a36": {
+    "sha256": "f590eb128325cc35a206d943530fc76861bd156d52cc430c82f428ef06a28bf7",
+    "size_bytes": 5849,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_08cc2da0c8c67ce823798a36.jpg"
+  },
+  "td_094d5090f8af5e66bf0de3d8": {
+    "sha256": "5c0c243ce6764061d225d73edb8be0e589710c756e382b13216a67863826b406",
+    "size_bytes": 6117,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_094d5090f8af5e66bf0de3d8.jpg"
+  },
+  "td_0a6877a1156f2538da06fe00": {
+    "sha256": "dc49ff3c799803c036421032aa41152cb44e89343c76473b9228d3ae329116fa",
+    "size_bytes": 6115,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_0a6877a1156f2538da06fe00.jpg"
+  },
+  "td_0b2aeb8a2741fd0cb11ddf9b": {
+    "sha256": "3426379e112a912a445ee5ebbe525bb1f50164b3f13406737b9380d73674045d",
+    "size_bytes": 5992,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_0b2aeb8a2741fd0cb11ddf9b.jpg"
+  },
+  "td_0d159e89e3a172a6e7409b01": {
+    "sha256": "6501c7771a1a306a95c18898c2c8ebd7dcf432947d32d74224fea2b5840dafa3",
+    "size_bytes": 6101,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_0d159e89e3a172a6e7409b01.jpg"
+  },
+  "td_0dd634c0f3db79a33eddfc18": {
+    "sha256": "cf5f0a6eda9517c3653a79f3aaa5bbe85c91b0a13c1ffea966f1ca9d82957a44",
+    "size_bytes": 5737,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_0dd634c0f3db79a33eddfc18.jpg"
+  },
+  "td_0e92b5bcffb2518dcae51201": {
+    "sha256": "902ccf15e8530b44afeffdabe50f228d54e5758b0c1ef93c905db55987096977",
+    "size_bytes": 5835,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_0e92b5bcffb2518dcae51201.jpg"
+  },
+  "td_0ed731503b7c6dfdb0c52552": {
+    "sha256": "6fbed052720993c0bcd9022684121cefec0ec4837a5c95508b726eaeba045b4d",
+    "size_bytes": 5906,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_0ed731503b7c6dfdb0c52552.jpg"
+  },
+  "td_0fc83c1ec9e3fb974bb2d488": {
+    "sha256": "eac28e71b61a3f4c94f6c2388d3e3a671600f497e5106d59cbbe0582f8777f8d",
+    "size_bytes": 5546,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_0fc83c1ec9e3fb974bb2d488.jpg"
+  },
+  "td_0fccfe8fa19de22a05b2b716": {
+    "sha256": "376cec3bfc448418c80aa904d932926b92983920706a46116f9139f923c48039",
+    "size_bytes": 6209,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_0fccfe8fa19de22a05b2b716.jpg"
+  },
+  "td_100c1c091212fa6c24cf4e60": {
+    "sha256": "0917078c9f62570a8e4900170d170f45e841825d323f5fa66927974101b8ae58",
+    "size_bytes": 6527,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_100c1c091212fa6c24cf4e60.jpg"
+  },
+  "td_10858f953e020845f03ebb6f": {
+    "sha256": "e0e92b8fee6c7de3103b5aaef8cfd59034949d0d25ae9979fbcd7ae22f77b8dd",
+    "size_bytes": 6175,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_10858f953e020845f03ebb6f.jpg"
+  },
+  "td_10ebc5e200efdef65f69d2f8": {
+    "sha256": "3d9f1c5cdb9609fc4b998406c349b13836fce51c4da2e0e2631dbe13da2331ce",
+    "size_bytes": 5739,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_10ebc5e200efdef65f69d2f8.jpg"
+  },
+  "td_132c3cac43c0467130432cdc": {
+    "sha256": "4cf0f64e76458bfd57513a273e2c808bf2b01334e2ee5d0a5c88cde02d1d6ace",
+    "size_bytes": 5848,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_132c3cac43c0467130432cdc.jpg"
+  },
+  "td_134d746d693af0e41474efae": {
+    "sha256": "5f3f7e30277abbf4e0ef11ec27a02701e6d8d29472ce16aef7868073cd780995",
+    "size_bytes": 5952,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_134d746d693af0e41474efae.jpg"
+  },
+  "td_140d935ded43f5edace63020": {
+    "sha256": "9d5a8556c82174a54e69bad25b12cbefeef8e9216866a650ced72b02cd29834c",
+    "size_bytes": 5919,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_140d935ded43f5edace63020.jpg"
+  },
+  "td_14961f25bb3566af2fee6a17": {
+    "sha256": "3db2390bc588b0d89db5ab8a881ae4a2a8d403ee684d3a46c0521afa18dba296",
+    "size_bytes": 5918,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_14961f25bb3566af2fee6a17.jpg"
+  },
+  "td_14c7ab30b0a7e88dc89ac269": {
+    "sha256": "6485693c1fcb27dac801285cd05cd81a4f056809ee5d02395dd76c7411610815",
+    "size_bytes": 7152,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_14c7ab30b0a7e88dc89ac269.jpg"
+  },
+  "td_14dd30384b14b6f59c3a8ac9": {
+    "sha256": "612eb75379e3b3c63b179379634c9b5e1ecf7c3111976a36229e332e0254a7a6",
+    "size_bytes": 5664,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_14dd30384b14b6f59c3a8ac9.jpg"
+  },
+  "td_1547a67a98c0ed2ade3e87a7": {
+    "sha256": "4757311d7306d5289977e11304043c97600fa46fce2b5229319fa2b393e4ffda",
+    "size_bytes": 5787,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_1547a67a98c0ed2ade3e87a7.jpg"
+  },
+  "td_1677873ba6f58461d5746e82": {
+    "sha256": "6bbbaa29499b2e41efd69d93bcacca787375b83ee9b225524dace993e8331eaa",
+    "size_bytes": 5631,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_1677873ba6f58461d5746e82.jpg"
+  },
+  "td_17a70779d0885450a657ea89": {
+    "sha256": "083244fdb5e48a4f748c522c32b904d3f61d7d7273a7375d58256c6497c02e00",
+    "size_bytes": 6182,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_17a70779d0885450a657ea89.jpg"
+  },
+  "td_17c3a9c0dc4dd87f522775dc": {
+    "sha256": "abeec236bb603d06a2a9c8f7a04ea256805cb13d46aa895a856d8c2a5e1b12a2",
+    "size_bytes": 6099,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_17c3a9c0dc4dd87f522775dc.jpg"
+  },
+  "td_18256d250c0ab5d3ea26a7be": {
+    "sha256": "9d999d05b7b80047a5334d88228f80d66a60935456a7fc051d55d0cfea949b09",
+    "size_bytes": 5104,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_18256d250c0ab5d3ea26a7be.jpg"
+  },
+  "td_19a798a9c390a99ce7e34973": {
+    "sha256": "3d785ecd34e65d79c533d3daccb675461d31e610f66c3848f368f17a7de4a62f",
+    "size_bytes": 5968,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_19a798a9c390a99ce7e34973.jpg"
+  },
+  "td_19dcddb9a75d2f93d4d90c4e": {
+    "sha256": "b794de4d2451557c9ba13cb4fa351c3520268b07adc0b284af46e240a0babfc3",
+    "size_bytes": 5852,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_19dcddb9a75d2f93d4d90c4e.jpg"
+  },
+  "td_1a60c211fcf0f066961d9a0e": {
+    "sha256": "5260e034fb974a265e5e0336c228ea41f996f70d222b041bdbd5fe7df74af407",
+    "size_bytes": 6092,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_1a60c211fcf0f066961d9a0e.jpg"
+  },
+  "td_1b8228b0db1a2296dc87c258": {
+    "sha256": "a39226a5efe877d5895e8d3e4e104faca15536198e10a3deb4c6e0410df738bd",
+    "size_bytes": 5795,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_1b8228b0db1a2296dc87c258.jpg"
+  },
+  "td_1be63f501e9f06b583e882cf": {
+    "sha256": "d11452417a30ef3dc17442edd25ec88cbff7193c9f4c845c6a34565d44e10e17",
+    "size_bytes": 6025,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_1be63f501e9f06b583e882cf.jpg"
+  },
+  "td_1cb4db524ee06de68e51113b": {
+    "sha256": "fb9e04c31c4d58850302ce84b680cfc88ec513c66291ea8a6f02e3e1f5b2b3f9",
+    "size_bytes": 5967,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_1cb4db524ee06de68e51113b.jpg"
+  },
+  "td_1de17a3b457d4d14064499cb": {
+    "sha256": "c5fd969c8fcd81b4d0814f9ad2157cfdbb208e95499f56926d3c86239cd82030",
+    "size_bytes": 5220,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_1de17a3b457d4d14064499cb.jpg"
+  },
+  "td_21210a72116ffeeb7d51cc55": {
+    "sha256": "7c784784f85310628bae602b4f2d774f9cd76a144ca80ee57700ccd0fe6f14de",
+    "size_bytes": 5677,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_21210a72116ffeeb7d51cc55.jpg"
+  },
+  "td_21ae4f4e2e6bca5d0c1526be": {
+    "sha256": "d2ebd07ab386b6dcdc939a102e7a878426e6733e7217b7d98a790fa7787b8bd3",
+    "size_bytes": 5763,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_21ae4f4e2e6bca5d0c1526be.jpg"
+  },
+  "td_225f1e2579b6b1570c9427d8": {
+    "sha256": "7228b9707fcf6412213cf7d38012610243619bec9085f092d29967cf28846b72",
+    "size_bytes": 5870,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_225f1e2579b6b1570c9427d8.jpg"
+  },
+  "td_24c0c2bea2cedaf842eeeb96": {
+    "sha256": "0bc721821270f74e9ca5ae00c09002d1f89fd9f26993b0cf64d0e5d7ae5d99b8",
+    "size_bytes": 5785,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_24c0c2bea2cedaf842eeeb96.jpg"
+  },
+  "td_2570016fb719cff40f0b4494": {
+    "sha256": "238359adb3b79b9989ac2d34974765d8488326e6c5bcf7bf38e6e947261bce30",
+    "size_bytes": 5719,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2570016fb719cff40f0b4494.jpg"
+  },
+  "td_26fa5291d6581d57e2712222": {
+    "sha256": "22cc947cb16828dbd83b5e611ade5c2a251226ad39dc1a2fb277311207583fdf",
+    "size_bytes": 5851,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_26fa5291d6581d57e2712222.jpg"
+  },
+  "td_2706a564311ec971d024318d": {
+    "sha256": "9ef43b4e87a200b0484703aad6eb9ee8814eea8ab17be9884ac2eb6018d6796f",
+    "size_bytes": 6138,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2706a564311ec971d024318d.jpg"
+  },
+  "td_27bedb0afca74a02c977c542": {
+    "sha256": "5ec92b9bca43cf8dec424ae89bcde788e1f65e17b0c329725bb284c685355892",
+    "size_bytes": 6004,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_27bedb0afca74a02c977c542.jpg"
+  },
+  "td_2837dd5431d4fe30ef2eb472": {
+    "sha256": "05c7a86cd4e06f57b8747eb9c8c64fd599217c7b5205cd3649c5f7cb18cd57d5",
+    "size_bytes": 5771,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2837dd5431d4fe30ef2eb472.jpg"
+  },
+  "td_284bbe74adb530cca0d2683a": {
+    "sha256": "9144ee7007724b437d48d6133c95a1f8a63c8fdf95c994ffe5ae6075d89b2fc2",
+    "size_bytes": 5757,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_284bbe74adb530cca0d2683a.jpg"
+  },
+  "td_28b3fdb0fe283166e24277ce": {
+    "sha256": "5e6240b5e7d5a6be85182eee590386855323de8462afefbb8d176244a1fc23a1",
+    "size_bytes": 5921,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_28b3fdb0fe283166e24277ce.jpg"
+  },
+  "td_2a018b29e5ddad21e1dc3427": {
+    "sha256": "5d6cdfde51374c54c7a68494498cdc87699dbcff7a485a6341d5b174c433eae3",
+    "size_bytes": 6458,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2a018b29e5ddad21e1dc3427.jpg"
+  },
+  "td_2a13a2feb92d0a84718aca30": {
+    "sha256": "07f3948d7c3d683cd7becb1bba6a9fcb5e90ff0421227ef0e6aa84ce93621e12",
+    "size_bytes": 5766,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2a13a2feb92d0a84718aca30.jpg"
+  },
+  "td_2a3807905ce068ccf2e7e3dd": {
+    "sha256": "be575e5013ca84db9240678971579749baa352a36bef226a37c35ca12ffdfda0",
+    "size_bytes": 5753,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2a3807905ce068ccf2e7e3dd.jpg"
+  },
+  "td_2aee976d55673df959841ceb": {
+    "sha256": "ca45f1823289ee898deb662590355e54ba383d4303c8bb56a4e83524e720ab7a",
+    "size_bytes": 6243,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2aee976d55673df959841ceb.jpg"
+  },
+  "td_2b91152a1ec68ef963701718": {
+    "sha256": "3a205b9a9105d7fe7fcf5f5949da6ba884a5e75ef3350d0d6d7bdea555a45aef",
+    "size_bytes": 5766,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2b91152a1ec68ef963701718.jpg"
+  },
+  "td_2bda23b1d15e3e3207bbab6a": {
+    "sha256": "680357b657f4884312b864613a97e28686c6430a9cf25e855f0670c58e7d8257",
+    "size_bytes": 5840,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2bda23b1d15e3e3207bbab6a.jpg"
+  },
+  "td_2c03e6f0533fc03b2b1d31ab": {
+    "sha256": "0c81f6a9feba7d1d8be5a82db25d04b29a088af8922a5266a59890b492e1ae89",
+    "size_bytes": 5784,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2c03e6f0533fc03b2b1d31ab.jpg"
+  },
+  "td_2c56158aeb12c9fc31ded21c": {
+    "sha256": "e40387f44ecf1d11b3ffafbbe9dbf48475661e34f0eba9a788bbe9dc55fe7292",
+    "size_bytes": 5730,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2c56158aeb12c9fc31ded21c.jpg"
+  },
+  "td_2d8cb21f1eda1716d1d6badb": {
+    "sha256": "2aa812e7a89d8c59e787cc19a69e798803c7563f909344b77e3d63ef8e0f7dc1",
+    "size_bytes": 5672,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2d8cb21f1eda1716d1d6badb.jpg"
+  },
+  "td_2e82f99e16524bd87a4aefcb": {
+    "sha256": "9f6e949302c18c7d8179001520fb19304f3416d7a6d89e3353bf8f0e1b1891f6",
+    "size_bytes": 5785,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2e82f99e16524bd87a4aefcb.jpg"
+  },
+  "td_2f4d31360936d42d37f07aaa": {
+    "sha256": "ebbe6d8640a6bc64223873fd22a77b56cffb44c1f11f0ced53a53b73fb913658",
+    "size_bytes": 6148,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2f4d31360936d42d37f07aaa.jpg"
+  },
+  "td_2ff6cd2f8ca3c622fbd2ba9b": {
+    "sha256": "786ab1371d822a17084c92fb8f8ca9e49737a32230e9d43fc7d4597e8171aba1",
+    "size_bytes": 5981,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_2ff6cd2f8ca3c622fbd2ba9b.jpg"
+  },
+  "td_330dc247a09516095c9c31cb": {
+    "sha256": "130f59d12efc5f7d8922eafff0537eef95c5a299c7b5c232984fe44498acdefb",
+    "size_bytes": 6129,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_330dc247a09516095c9c31cb.jpg"
+  },
+  "td_33ad43d232c3fad7e0fd978d": {
+    "sha256": "822f0afb6ab94560c3c75a936024709f2f41b6d2d12b23927e5cf3522e66886a",
+    "size_bytes": 5876,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_33ad43d232c3fad7e0fd978d.jpg"
+  },
+  "td_340198ec83eb7609c2f0d34c": {
+    "sha256": "0d55787b02517fdf9ddf576f5809426cd24a1c69f1ef15bfcade029f42abb291",
+    "size_bytes": 5871,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_340198ec83eb7609c2f0d34c.jpg"
+  },
+  "td_35d6c078edb3e20fcf2c966f": {
+    "sha256": "aeafe67b4b46628fbbcde3d1bcf71b4f0bb48c96a77f1ec11f3fef126ae9b3a3",
+    "size_bytes": 5851,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_35d6c078edb3e20fcf2c966f.jpg"
+  },
+  "td_391d7abd36141c404f935c77": {
+    "sha256": "687a7c334fe396d12d9de6c939fd0964105923be68ab573ada33dc27458186d9",
+    "size_bytes": 5990,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_391d7abd36141c404f935c77.jpg"
+  },
+  "td_3935ab5066fa8346d4207e7e": {
+    "sha256": "2155ec572db32cece483da3e0907c073016e86997ea77e3574faa758e74d7bdb",
+    "size_bytes": 6096,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_3935ab5066fa8346d4207e7e.jpg"
+  },
+  "td_39b141de118c6d2c4bb9e3a1": {
+    "sha256": "ff0b0b6c0675351b6f052f6e7e9b51ceb23c53fcc911e594f5f7c0176b1be9f7",
+    "size_bytes": 5473,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_39b141de118c6d2c4bb9e3a1.jpg"
+  },
+  "td_3a0430c77d953f7f9340ae65": {
+    "sha256": "4e3fbdb5f4176d750497be7490907aef39b08ac5954b48b0076fb85817c1a16b",
+    "size_bytes": 6182,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_3a0430c77d953f7f9340ae65.jpg"
+  },
+  "td_3d0abddee16c79f3d745bd6b": {
+    "sha256": "e71738400db2b67df696b22da8edce380f52aedaa85273f0ddb58c189eb41cdf",
+    "size_bytes": 6211,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_3d0abddee16c79f3d745bd6b.jpg"
+  },
+  "td_3da7be4f6822ab2874b2e420": {
+    "sha256": "c7c786c9b4050e90ae4c347592215201f8442b5d676a2e0391734f9699dd4c60",
+    "size_bytes": 5771,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_3da7be4f6822ab2874b2e420.jpg"
+  },
+  "td_3e1fb3e5b3d011283f0fa7f3": {
+    "sha256": "c7e73d05c0576ad4a5dd0fd8f06542ef027b0120f0f70a21cb21b1bb2331ea7f",
+    "size_bytes": 5519,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_3e1fb3e5b3d011283f0fa7f3.jpg"
+  },
+  "td_3f4f80ba3a2ac96b214be9ea": {
+    "sha256": "3ad35c7b7b1c3936446689fc40579cf4e93192da735a1f750c371b387d9f038d",
+    "size_bytes": 6205,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_3f4f80ba3a2ac96b214be9ea.jpg"
+  },
+  "td_3ff590445c48adbb8d3cd3fe": {
+    "sha256": "b2bfaf0621982ed0c08368fe76bbdb37d9e1c8327f26c8016f348e16d0a98ddd",
+    "size_bytes": 6432,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_3ff590445c48adbb8d3cd3fe.jpg"
+  },
+  "td_40de64fb064ff5daa27a020f": {
+    "sha256": "548b7ebdb80a11536e9abc9e26bf134474b187390a546cedab45a9b97acd1e5e",
+    "size_bytes": 6023,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_40de64fb064ff5daa27a020f.jpg"
+  },
+  "td_40ed6a8f09fcd74c5bbb7256": {
+    "sha256": "4b841c6de625e9c97b66037f7445323729b8c621160ff912a8f6453d278a0b69",
+    "size_bytes": 6077,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_40ed6a8f09fcd74c5bbb7256.jpg"
+  },
+  "td_411a01019e09cf9a38cf7f00": {
+    "sha256": "1e5a977b34064ec25b8e490e2a3f83e797b4586fd923ee3f244ee97532dcd334",
+    "size_bytes": 6240,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_411a01019e09cf9a38cf7f00.jpg"
+  },
+  "td_42f4d27d8c30b6c8e22002f5": {
+    "sha256": "acd938b374617302788153256ce88b578697a3cc9fea1299fef78c5bca02384b",
+    "size_bytes": 6198,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_42f4d27d8c30b6c8e22002f5.jpg"
+  },
+  "td_4375c05e522fca69b93a7cbb": {
+    "sha256": "7f8b2ed46a30d9b587499145b4c66f4dd8b45126dac68f1c10b65f8d57196d11",
+    "size_bytes": 6090,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_4375c05e522fca69b93a7cbb.jpg"
+  },
+  "td_45ef5a057942f26aa4cf454c": {
+    "sha256": "bfe4f558be2171fb089ff910f8b35f68512ff6071f9fd95341d5b55efcf3686a",
+    "size_bytes": 5886,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_45ef5a057942f26aa4cf454c.jpg"
+  },
+  "td_460a4505178f942aeb39373c": {
+    "sha256": "a779dfc1a1e51ebc9747e7c89b49ca990cdf0f0c9638557c27715e33adf6d623",
+    "size_bytes": 5891,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_460a4505178f942aeb39373c.jpg"
+  },
+  "td_465ecfbbe40ad0f8b3924e44": {
+    "sha256": "857d201c23a82eb2bdb2aea643b3ed21281671b91f73e247e99cac480daf195f",
+    "size_bytes": 5100,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_465ecfbbe40ad0f8b3924e44.jpg"
+  },
+  "td_47cabec9f51aef7cdf94fbe0": {
+    "sha256": "44ce19043f629f0c6f58ab40fba0484d9e4f6a5b4b5f4592ce59942d2d4f28bb",
+    "size_bytes": 5913,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_47cabec9f51aef7cdf94fbe0.jpg"
+  },
+  "td_48256925275150a71ff90484": {
+    "sha256": "6e1dfbbbbf890ee44a2afcd1a62012709e90fae1c52cf653f2381d5e12378ec1",
+    "size_bytes": 6311,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_48256925275150a71ff90484.jpg"
+  },
+  "td_489f02ebff91657b43a5d06e": {
+    "sha256": "e0a9fd0992079054ef2f7fa9c0c2c0ee6560d64753e8684e2693eab4fd5d41f9",
+    "size_bytes": 6008,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_489f02ebff91657b43a5d06e.jpg"
+  },
+  "td_493514c83c9b4eb03974c185": {
+    "sha256": "d38114c60878763ad418bc20f909cab9fdc77a7cabde420977c382464ae0c38b",
+    "size_bytes": 5893,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_493514c83c9b4eb03974c185.jpg"
+  },
+  "td_4b31e91b08fdf1a79a9f0ca6": {
+    "sha256": "6c6b42bc3daff9f418c8a85e0d5f0330b3a95f9dc6d6dcb9b79f4f66e2275e5b",
+    "size_bytes": 6209,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_4b31e91b08fdf1a79a9f0ca6.jpg"
+  },
+  "td_4be9387f8d0ebccbaed41687": {
+    "sha256": "80629583395f0cadd08d700326de97fcd93b2e71f2592e1e6b73b03305772fb9",
+    "size_bytes": 5842,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_4be9387f8d0ebccbaed41687.jpg"
+  },
+  "td_4d106ed5ff44b2488b6f192a": {
+    "sha256": "074baa7af30de3759bbcd83b6a4e34bae372c416497920dc1c9bba8c31e5be89",
+    "size_bytes": 5757,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_4d106ed5ff44b2488b6f192a.jpg"
+  },
+  "td_50b84fe8ae6e804fdb205de5": {
+    "sha256": "981fa42359d8d63a38490b95e224c79a18fec0cdcf4cc1b1c557312584396ce1",
+    "size_bytes": 5756,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_50b84fe8ae6e804fdb205de5.jpg"
+  },
+  "td_50de9b80a8e1d8cf8b99636f": {
+    "sha256": "2247303c1de9e9217eabafdc043bebd8c9510c8282b067ab2f414695a02eeacd",
+    "size_bytes": 5777,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_50de9b80a8e1d8cf8b99636f.jpg"
+  },
+  "td_51b0059294e990418ba9614d": {
+    "sha256": "73ca7b7ee47da02c1dad5de1398a78f37647400671b36e6822c29305c64e0102",
+    "size_bytes": 5860,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_51b0059294e990418ba9614d.jpg"
+  },
+  "td_5248ef3384daafcfa13a0722": {
+    "sha256": "349c780e35c4d8cf86f7ffd97d40e027be1559fa3a359c9bc4e7220a63763f30",
+    "size_bytes": 6820,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_5248ef3384daafcfa13a0722.jpg"
+  },
+  "td_526ade90e60fbfa51f191c9e": {
+    "sha256": "867d56b5abf28ed17b9d881ce363dc0b7d166d287a3a9be68bdd0de304173193",
+    "size_bytes": 6083,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_526ade90e60fbfa51f191c9e.jpg"
+  },
+  "td_52b1f7b38830d0d0bc4a5578": {
+    "sha256": "7b5db355a9a479a4440588f1501f46bd5926d6cb729d9382cbfe2a648dc284a2",
+    "size_bytes": 5142,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_52b1f7b38830d0d0bc4a5578.jpg"
+  },
+  "td_5528f8b1cc81fd136f31ba1a": {
+    "sha256": "db635df6bc99070bb5e6132d879d5a091b425372200984763ff183b96cf2ad2b",
+    "size_bytes": 5841,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_5528f8b1cc81fd136f31ba1a.jpg"
+  },
+  "td_55d095bea262b6e5150f9ed3": {
+    "sha256": "91ecbbd754d52220183f7710fb0a8c9e71f5b94f7b3ee53cb7c98d10d5b8e3aa",
+    "size_bytes": 7145,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_55d095bea262b6e5150f9ed3.jpg"
+  },
+  "td_57df4d0747044272329957aa": {
+    "sha256": "7fe47f1e996bf0d165bf19bd6e668c3f0ff1487990f98e3f943f57f9c9061647",
+    "size_bytes": 5968,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_57df4d0747044272329957aa.jpg"
+  },
+  "td_58a2c82d8ffbf48615a2f923": {
+    "sha256": "d08c9a7499cd19ae8fb01bfcb80bac503b3968ae57a7ea431faab3d9b2947e08",
+    "size_bytes": 5750,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_58a2c82d8ffbf48615a2f923.jpg"
+  },
+  "td_591fc3d730d952160647affb": {
+    "sha256": "3474d5d4231ee30f8ccdeab08294ac96a7067ac974c5c9a0be425d46ad49d38c",
+    "size_bytes": 6044,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_591fc3d730d952160647affb.jpg"
+  },
+  "td_59a7baded41b2c3f7d49608b": {
+    "sha256": "be2887573da294978d5aae36c9e11c4b61d989ae6d7b97e615dcc1d909ba89a9",
+    "size_bytes": 6005,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_59a7baded41b2c3f7d49608b.jpg"
+  },
+  "td_5baefb75d233878b19708962": {
+    "sha256": "439971f04eb2dec4930b440cde25493a011f9fa24489001de296a10fcf8688c3",
+    "size_bytes": 6233,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_5baefb75d233878b19708962.jpg"
+  },
+  "td_5d70fb9f57acdaf5f7daac79": {
+    "sha256": "ca89b83d63f43a532dd0543f5d1aaf9a74535028082c9cd3ff09e2dafbb2d001",
+    "size_bytes": 6215,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_5d70fb9f57acdaf5f7daac79.jpg"
+  },
+  "td_5e404995c45e085432aef4bc": {
+    "sha256": "1d55ee847661042587a6b1e95b8046f5fc1abcc452e6d635fd7e43e64a72f15c",
+    "size_bytes": 5919,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_5e404995c45e085432aef4bc.jpg"
+  },
+  "td_5e752613622181598fce6f27": {
+    "sha256": "0b4a9d973dcc0e07f2e522c7efcb6ce7cac3f415e4102733ac1d1c437a6a166d",
+    "size_bytes": 5992,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_5e752613622181598fce6f27.jpg"
+  },
+  "td_5eabc57a3389de0137b2648a": {
+    "sha256": "01e6641da67bea750fc6c645edd4a552dd0a78ebbef3d77aa15d443c3230a1aa",
+    "size_bytes": 6079,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_5eabc57a3389de0137b2648a.jpg"
+  },
+  "td_5eabe218b1c1d2f930adf51f": {
+    "sha256": "c240e33633457e793273fc977ea5023b33f9dad36df1b7bd288376b821a7e2af",
+    "size_bytes": 5996,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_5eabe218b1c1d2f930adf51f.jpg"
+  },
+  "td_5ec6b9070484d55e699a6ad5": {
+    "sha256": "314adf8cebe4b4f6b616e56fdf5cea62cb2909449869dd19a011b64e3232ca31",
+    "size_bytes": 6693,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_5ec6b9070484d55e699a6ad5.jpg"
+  },
+  "td_5ff5b534f23bdfb7ba307803": {
+    "sha256": "8ffa126c105d46fd608d217155d8134486d3969631f8d398b6fb3e9399f5a9f7",
+    "size_bytes": 5953,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_5ff5b534f23bdfb7ba307803.jpg"
+  },
+  "td_60e1c11cf4bbf2672c41df71": {
+    "sha256": "91df9b1a4922fb5cc361e7c6b9ca7adbbe54c96f480152d4699f91fa72b05ff3",
+    "size_bytes": 5461,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_60e1c11cf4bbf2672c41df71.jpg"
+  },
+  "td_6146f1d236f2a667aa46d709": {
+    "sha256": "7c57fa39b740dd7b50fe2010c85be5fcae180401ecc32776bcb67e1da4bd5c39",
+    "size_bytes": 6039,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_6146f1d236f2a667aa46d709.jpg"
+  },
+  "td_61f93829cd5c1e4bf207d8ec": {
+    "sha256": "1a539d19fb18d51e179713619913522efd2e03718497908b895b3ee9a32c86c3",
+    "size_bytes": 6470,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_61f93829cd5c1e4bf207d8ec.jpg"
+  },
+  "td_6221b49a9f93526dc2cce48b": {
+    "sha256": "17a3b02321429326ad81332de81feebb6fe5164cd1d16b7f969cd8780326c62b",
+    "size_bytes": 5780,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_6221b49a9f93526dc2cce48b.jpg"
+  },
+  "td_6279b7edbb2e8140430caf48": {
+    "sha256": "1b8ac821bdd29b7756a8549ba6d3c8fcee165d65473f1bbe6670ee2931eb1cad",
+    "size_bytes": 6534,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_6279b7edbb2e8140430caf48.jpg"
+  },
+  "td_63a3fb99c688dfcf4f1d279d": {
+    "sha256": "5aa433d33206321c21b76776edddb83ab33f38d0c3161778bfdc855edf8f872c",
+    "size_bytes": 5667,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_63a3fb99c688dfcf4f1d279d.jpg"
+  },
+  "td_655dba4bcf6d582a290cc3df": {
+    "sha256": "5668f71dcf14a43a112cf16e07fa43d3409f313697990d73eb490b69bde89644",
+    "size_bytes": 6101,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_655dba4bcf6d582a290cc3df.jpg"
+  },
+  "td_6578787ac4b7cb6f2402d7fb": {
+    "sha256": "5e95fde288fda250d46d4eb23a09cbe55947b46702496f89105608aca0061ca1",
+    "size_bytes": 6197,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_6578787ac4b7cb6f2402d7fb.jpg"
+  },
+  "td_66516f84f6652838d7421314": {
+    "sha256": "090cfd2a00a95bcbd0a55d32b1c3f7cc87a312b9cc1261a130102b9c68bef36a",
+    "size_bytes": 5252,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_66516f84f6652838d7421314.jpg"
+  },
+  "td_676bf94c4ea903d53c688326": {
+    "sha256": "f9eb078e08b4a980e09534e2821675363e249613f9a87760ec570eadd090572b",
+    "size_bytes": 6547,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_676bf94c4ea903d53c688326.jpg"
+  },
+  "td_68091ceda12a0265220a5efa": {
+    "sha256": "eb274168fec55b16f72bc0005264c3e35a584c8f906f611b24e294594586cca2",
+    "size_bytes": 6121,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_68091ceda12a0265220a5efa.jpg"
+  },
+  "td_680e1f02bb564a63ea757cf4": {
+    "sha256": "a3a2a71e4fb2247c886263a7cc0bd69508b95d4d672bb4dc421346bb84824be5",
+    "size_bytes": 6101,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_680e1f02bb564a63ea757cf4.jpg"
+  },
+  "td_69eb502e85551b1c8fcb5cf9": {
+    "sha256": "69fddd5386c805a768488747936011ba49962fb9344b744c7f30095358734be1",
+    "size_bytes": 5783,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_69eb502e85551b1c8fcb5cf9.jpg"
+  },
+  "td_6a1968970ab2cf9d1a74309e": {
+    "sha256": "73a62bf9292d7824bcecf328049bd122ee15008983ede9c20ad4cf5413c3aa18",
+    "size_bytes": 5774,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_6a1968970ab2cf9d1a74309e.jpg"
+  },
+  "td_6a3408273c8e8ebf58d8aacc": {
+    "sha256": "f37560218628d792543ada9533a827dad927e6463726c5c3459bed0f163144ce",
+    "size_bytes": 5650,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_6a3408273c8e8ebf58d8aacc.jpg"
+  },
+  "td_6aa860e1b83e5a7220cb0a3a": {
+    "sha256": "044b86206cabe63568e7c0245947e4ab9418c8d643ca7257b7929bf4e97bf19f",
+    "size_bytes": 5904,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_6aa860e1b83e5a7220cb0a3a.jpg"
+  },
+  "td_6aee32be73ee9b15182815b7": {
+    "sha256": "cb1b7ab8240738bfcb36f8196ef00804e4fb15ae2fe9921c91c24f738ae5c9d5",
+    "size_bytes": 6392,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_6aee32be73ee9b15182815b7.jpg"
+  },
+  "td_6bb1d1cbd14c7557114b09c8": {
+    "sha256": "28fb9525f0da7e138675bb95f62db2647086c54048d637b900b56f539260f63c",
+    "size_bytes": 6537,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_6bb1d1cbd14c7557114b09c8.jpg"
+  },
+  "td_6bc08b378d7a7569b6a0d787": {
+    "sha256": "bf6cc15b0ade41e2c6fd3f32a65cf3886a22ed0c4c250a1f8df64d47d363a759",
+    "size_bytes": 5969,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_6bc08b378d7a7569b6a0d787.jpg"
+  },
+  "td_6fd2479a8951886ce4363809": {
+    "sha256": "c8ef9bf0b4165ea6ea6814ec36efa3da4783a31003b70493caa1d9d4fe31b2b6",
+    "size_bytes": 6020,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_6fd2479a8951886ce4363809.jpg"
+  },
+  "td_702cc8e98be5be32a9b2f3c3": {
+    "sha256": "d1ce10dded39b16ee5d35e2bb085a921951b24d373dbf852f167da9a30c07897",
+    "size_bytes": 5911,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_702cc8e98be5be32a9b2f3c3.jpg"
+  },
+  "td_71c27382f0b26070fd7b99cc": {
+    "sha256": "6a03afd773b5b206b0966117319392a7d6f834302f1944e91ef2888c921dffa9",
+    "size_bytes": 5997,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_71c27382f0b26070fd7b99cc.jpg"
+  },
+  "td_72c04923b80f03dde0ac4f30": {
+    "sha256": "ace9793b1bdc88cfa58b44c7ec91fe023a45b4eef1ba945ba326b60ba0f26ad1",
+    "size_bytes": 6043,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_72c04923b80f03dde0ac4f30.jpg"
+  },
+  "td_7abc380f8f1c5dc24c42ed5f": {
+    "sha256": "e5932e560da3facd4bbf3c68327400c5ea48d54786fa60eed39e6a95c765502f",
+    "size_bytes": 6140,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_7abc380f8f1c5dc24c42ed5f.jpg"
+  },
+  "td_7bc0156af95dd2f84a842fd1": {
+    "sha256": "546f5837e1def99ce39f7799686a828dfd1c1e75f4d99dfabfdbe092cb9f52a4",
+    "size_bytes": 6016,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_7bc0156af95dd2f84a842fd1.jpg"
+  },
+  "td_7c714dde5f28bb5cdc6d4ce2": {
+    "sha256": "e44bbb6243e7c62daea575043a11b2804fc1609ac81dc1a73e59bef590f956a2",
+    "size_bytes": 6524,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_7c714dde5f28bb5cdc6d4ce2.jpg"
+  },
+  "td_7c91a6f812db4811795de9c9": {
+    "sha256": "e0d1ed1b0f50084d9d3a9ffba85c54907ff40d9270d57bb1d4c1711a463e402c",
+    "size_bytes": 5952,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_7c91a6f812db4811795de9c9.jpg"
+  },
+  "td_7db19fd081b599ce3818c601": {
+    "sha256": "fce5145eb23ba9aed4e263bd76bb27e62c9f7a0e0952000bdf5aacfd3ef26973",
+    "size_bytes": 6248,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_7db19fd081b599ce3818c601.jpg"
+  },
+  "td_7f245882799bb664a6c6c1ad": {
+    "sha256": "7d1dfc558cf86b1bad4f870bd3925fc6321ecd654ad4018d2d7cfafd58693b02",
+    "size_bytes": 5868,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_7f245882799bb664a6c6c1ad.jpg"
+  },
+  "td_7f777b142107a88c3759ea9f": {
+    "sha256": "e3292daa753f9784c395de2f897697de2c49d0293e1bee0683d4008790a925fa",
+    "size_bytes": 6033,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_7f777b142107a88c3759ea9f.jpg"
+  },
+  "td_80010be4d85face5ce5693e8": {
+    "sha256": "8f1f8b5abd2277c56bf95d4df6384ee3dbc58b59e6aeca8f454bf1bebb097983",
+    "size_bytes": 5424,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_80010be4d85face5ce5693e8.jpg"
+  },
+  "td_8006d2ffa418bb6641bd8529": {
+    "sha256": "f0de44ecec145ae26b667ffc3fdb1dadf4d7def4fcbb9848ea9919dc66574f09",
+    "size_bytes": 5610,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8006d2ffa418bb6641bd8529.jpg"
+  },
+  "td_8050beca4c6119e4ff94ddfa": {
+    "sha256": "dcac87ee048a9cff62f197815f91f3e07383e4319e7dd68856157397b610ec84",
+    "size_bytes": 5735,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8050beca4c6119e4ff94ddfa.jpg"
+  },
+  "td_8129ef39298a4b4810b73113": {
+    "sha256": "672fc35fc9ff4d1647dd5c7ec9f9cf0b22676cac3f299b127c2acf52a0991111",
+    "size_bytes": 5450,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8129ef39298a4b4810b73113.jpg"
+  },
+  "td_836051f246973ea611fb951b": {
+    "sha256": "a5084d837e372a507cbad6a2093ac99147e3ceec429eff76f8bbc19307706b64",
+    "size_bytes": 5821,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_836051f246973ea611fb951b.jpg"
+  },
+  "td_8418650ec47e1885b065234a": {
+    "sha256": "8c05bbf26664747c47797cb431ff88e366c8c73fe07fc6282bd6f594eb7e6396",
+    "size_bytes": 5609,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8418650ec47e1885b065234a.jpg"
+  },
+  "td_852a692aa563e5006dc64a70": {
+    "sha256": "497c50d9852ef256616a6f28298032731f14ed67aa82080ae171ff1684a94ac0",
+    "size_bytes": 6212,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_852a692aa563e5006dc64a70.jpg"
+  },
+  "td_8562354367d380cca23f5921": {
+    "sha256": "530e77886b79850625effd5db97cc7a2b79b2016a2814317e6d1be4d0722f651",
+    "size_bytes": 6286,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8562354367d380cca23f5921.jpg"
+  },
+  "td_856f76c89b0b9a9d04afaa90": {
+    "sha256": "a4f6ad2b0ef3523ba19d72f85b6297cf51034abf4acbe7e1aba5395563d8da43",
+    "size_bytes": 6318,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_856f76c89b0b9a9d04afaa90.jpg"
+  },
+  "td_866dbdaa5eeb1623828ff189": {
+    "sha256": "ce21dbb7b998a0b2c56cbddfbd1225ccb135a2e7c17863dd5c6f79612a4f05a2",
+    "size_bytes": 5671,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_866dbdaa5eeb1623828ff189.jpg"
+  },
+  "td_86bdc8d0480ef7dbb9b8bf31": {
+    "sha256": "03d7b3268ccdb19c8e369a5af29e9b9a57a318679d2b050f1bd48d4ed55806df",
+    "size_bytes": 5631,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_86bdc8d0480ef7dbb9b8bf31.jpg"
+  },
+  "td_873eacdd270023ad6925acbd": {
+    "sha256": "69ca198df20b7a8d007d487363847013427c97ba2f72da37e6c11a895b7e64a0",
+    "size_bytes": 5775,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_873eacdd270023ad6925acbd.jpg"
+  },
+  "td_875255daf99ad378667f1be4": {
+    "sha256": "552a89fa1908c2b599f4ba19da7eb69a7230af4321957f5136c87f4c61092078",
+    "size_bytes": 5948,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_875255daf99ad378667f1be4.jpg"
+  },
+  "td_887847e52d44b8e3ec4104ce": {
+    "sha256": "49acfabca5ca12f975db30b966242c3559504d61751cc614fe850ca8914c28d9",
+    "size_bytes": 6103,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_887847e52d44b8e3ec4104ce.jpg"
+  },
+  "td_8886237b746f8edd8f91b288": {
+    "sha256": "06d9594aa069cc370db321b6df5271be9cb40e1345dc8e22d696600a3a91dcb5",
+    "size_bytes": 5951,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8886237b746f8edd8f91b288.jpg"
+  },
+  "td_8a32e802df1a9d0c1cd78935": {
+    "sha256": "f883f27382829a833e16ba0a28f8f927710a3c24de9eee060f215d4c495c31f6",
+    "size_bytes": 6070,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8a32e802df1a9d0c1cd78935.jpg"
+  },
+  "td_8b707cb42a8275cd18d8c380": {
+    "sha256": "27d586ec867eaf6e606bf56ad932e99b382e5d9f68973eb22d4b7b94ef46ac8e",
+    "size_bytes": 5986,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8b707cb42a8275cd18d8c380.jpg"
+  },
+  "td_8b8a0fea80607a0bb680922c": {
+    "sha256": "a34a61e3c469112a9d5da93efce9e2462c7efdce2d9950b99e8ee4a901656dfc",
+    "size_bytes": 5996,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8b8a0fea80607a0bb680922c.jpg"
+  },
+  "td_8dcc23d07d73fd76a0a7e64d": {
+    "sha256": "ea833bb4014367eaf8ef24a568f1007ab7386b4c4a1b2f17e11cd64178943083",
+    "size_bytes": 6132,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8dcc23d07d73fd76a0a7e64d.jpg"
+  },
+  "td_8dccc146c0042287190e00c9": {
+    "sha256": "a1e6b5e5cc31fe731b31e2e95005d0cbb8ad2cbb97eca545fc7e759a29bb87a4",
+    "size_bytes": 5981,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8dccc146c0042287190e00c9.jpg"
+  },
+  "td_8e1e82628e93054e07556887": {
+    "sha256": "9fa33a72095f667e988ac57af84449122b237fcea19f63a678a87d61b27d3a6f",
+    "size_bytes": 6660,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8e1e82628e93054e07556887.jpg"
+  },
+  "td_8eb6087c132cb169b5145b26": {
+    "sha256": "19cc37baad9582af8950d7896408c5efcfbd55126df22258a409e97015dcb16e",
+    "size_bytes": 6040,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8eb6087c132cb169b5145b26.jpg"
+  },
+  "td_8eb85e1ae8f5411fb9b5f6d6": {
+    "sha256": "9e19123615504d3b1185472b23a9996db7647785d11460898871f96b9ffe7fa0",
+    "size_bytes": 5526,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8eb85e1ae8f5411fb9b5f6d6.jpg"
+  },
+  "td_8f5c7bc5430260641a8afbf8": {
+    "sha256": "39181f7129b2c748ea1e86f85e9d3b9f3003d631ea53b1a9d9b4c4cd674718cc",
+    "size_bytes": 5850,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8f5c7bc5430260641a8afbf8.jpg"
+  },
+  "td_8f7d4b9ca353d1da6322e9b0": {
+    "sha256": "eac9e0cb4375e007251678e104d24714d794ecd2f83a120cf78f8b76b44ba8b1",
+    "size_bytes": 6213,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_8f7d4b9ca353d1da6322e9b0.jpg"
+  },
+  "td_9043d8fbf3e60db00f66ec27": {
+    "sha256": "b8769a694fea66b8a3ae399c39368d1b7f9a7d7f08c9fb5c5265646746e3a722",
+    "size_bytes": 5912,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_9043d8fbf3e60db00f66ec27.jpg"
+  },
+  "td_91840083a1ec183b4b63ca7f": {
+    "sha256": "1d3f53c1f89e2e8374a2c6bd27d4c435798fe9b2c03856a3117a312829807486",
+    "size_bytes": 6109,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_91840083a1ec183b4b63ca7f.jpg"
+  },
+  "td_92621abd53ef5219de6dc869": {
+    "sha256": "180a6fb305c05b486a89cd42a13fa4f835e0c014eadb92c3c77984ce936c75b9",
+    "size_bytes": 6251,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_92621abd53ef5219de6dc869.jpg"
+  },
+  "td_929ba564e1b716af217781b9": {
+    "sha256": "fc937e42ccc5bef3f9da69b6de68914c38323781ce6ac8ff6830e08c14482640",
+    "size_bytes": 5479,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_929ba564e1b716af217781b9.jpg"
+  },
+  "td_94f41f503d8b28d568e6075d": {
+    "sha256": "6a35670fec9ebe825ea6f8eadf94bc85a295ed0ea539cb304886c428036ee441",
+    "size_bytes": 6007,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_94f41f503d8b28d568e6075d.jpg"
+  },
+  "td_953ca08006326019ea285356": {
+    "sha256": "44970631ce3d934bd2ff98144bab1c313c7a7f78949ef341b9f9172562a655f1",
+    "size_bytes": 5865,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_953ca08006326019ea285356.jpg"
+  },
+  "td_95d1c532e1ea851ef20e7ca5": {
+    "sha256": "03fbc6c62bf63e63086cce11644678ecd56fc6046b8e3a9f3b789e9b9009fb8f",
+    "size_bytes": 6107,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_95d1c532e1ea851ef20e7ca5.jpg"
+  },
+  "td_97d0fe3b98483aadf121c2f2": {
+    "sha256": "e2bc4988cc8291b472381cde863c94b91ce1fd3c60ccdb7a936f8412866af117",
+    "size_bytes": 5881,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_97d0fe3b98483aadf121c2f2.jpg"
+  },
+  "td_98fab5597cfcf8a5743c51f7": {
+    "sha256": "f9f8ea2c392b0f896d4dd216d6f03b76fb0a623225ebc5c5a4b03f1d7d8e369d",
+    "size_bytes": 5658,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_98fab5597cfcf8a5743c51f7.jpg"
+  },
+  "td_9a4c83e8409776464d5c0af6": {
+    "sha256": "774d03e8d709a7904b06e7d023cd77de2b837c2a5101d85fe3417531146debc7",
+    "size_bytes": 5806,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_9a4c83e8409776464d5c0af6.jpg"
+  },
+  "td_9bb1cc8d22fdff314caa2d06": {
+    "sha256": "2b0265f1769b794a5ba7fed6f5b25fec980f4f051f2578dde90e2778cf7d54a4",
+    "size_bytes": 6041,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_9bb1cc8d22fdff314caa2d06.jpg"
+  },
+  "td_9d865c0415a956b808f33fc4": {
+    "sha256": "090085709ac7ede02f27ae7eccb68b366665f05442d1f63d2a3d16afa3a10bb2",
+    "size_bytes": 6565,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_9d865c0415a956b808f33fc4.jpg"
+  },
+  "td_9e2dbf48ce4a926151426677": {
+    "sha256": "330917faab538e39a6f1a27a935e00349fcef8fbe9cdc075c9fac76fbcbc13e9",
+    "size_bytes": 6209,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_9e2dbf48ce4a926151426677.jpg"
+  },
+  "td_9e5714758a147c89df135187": {
+    "sha256": "b4dda69aa89b7dc9c3bfc2356441e1d9e34dfea28f21105290ba334f6c9d159c",
+    "size_bytes": 5766,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_9e5714758a147c89df135187.jpg"
+  },
+  "td_9f8a9d81129ed7dc7012f302": {
+    "sha256": "1470a6a4dff6401286d87109f3be4ed3fa4be6977213b8d1006f843fa8209f2f",
+    "size_bytes": 5839,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_9f8a9d81129ed7dc7012f302.jpg"
+  },
+  "td_a154764ff03d14da7dc8f1cd": {
+    "sha256": "b081353b970520b16322ef9b77d6967e826ef00e6db6a418c5e61d858b81aa6d",
+    "size_bytes": 5965,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a154764ff03d14da7dc8f1cd.jpg"
+  },
+  "td_a246adde92649c6a0a2b8e9f": {
+    "sha256": "be760cf26768466426b67f518967457a9d71df54caa4f74667885565d82adc4a",
+    "size_bytes": 6112,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a246adde92649c6a0a2b8e9f.jpg"
+  },
+  "td_a26c78d76d5a3eb68443147c": {
+    "sha256": "36f0a1ab10866d3288a206f9aeb865dd3c455753c9041bc770ca8d02ec82c7b6",
+    "size_bytes": 6127,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a26c78d76d5a3eb68443147c.jpg"
+  },
+  "td_a2f112801195c364303eaf4a": {
+    "sha256": "8ac8027a81bbd41a8298e837dfc12276c8896c0935b311c97e8c2d404f4740c3",
+    "size_bytes": 5768,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a2f112801195c364303eaf4a.jpg"
+  },
+  "td_a41acd6a29fc72b09a07383b": {
+    "sha256": "c3003a93c8120c16f5f7c67db7d5ca4a6540ff8072fdb340d349ee8b1ede2d52",
+    "size_bytes": 5855,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a41acd6a29fc72b09a07383b.jpg"
+  },
+  "td_a4461f807e37b665743b0b03": {
+    "sha256": "574633899f19d1812d7f72e1e044041125e4c09ab7fff77d47a447ec3b0fa84e",
+    "size_bytes": 6178,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a4461f807e37b665743b0b03.jpg"
+  },
+  "td_a4f329367c18c6277e4fa931": {
+    "sha256": "108faefd9a12d81725ec9138b7472cd902aeffe98ef3299b00f1410ff4da8cef",
+    "size_bytes": 5982,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a4f329367c18c6277e4fa931.jpg"
+  },
+  "td_a55959f1ef9dba0e3d627619": {
+    "sha256": "075a11e9c75c3fdf0489f564d0e0f3088cff6e51a13f0047add019822834d078",
+    "size_bytes": 6089,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a55959f1ef9dba0e3d627619.jpg"
+  },
+  "td_a6ce6544788c0a73ee3ad1e2": {
+    "sha256": "8ca1d0ca40f628c67bf54e3cc67017b59055051cdfec97a3c6d3bdffea3de61f",
+    "size_bytes": 5496,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a6ce6544788c0a73ee3ad1e2.jpg"
+  },
+  "td_a70f64f336f66c325b68b36c": {
+    "sha256": "33a48ff8c30b4b5c43f26ca545b4a96b334f8e644f7d4c6cf1dbbf20885ed2df",
+    "size_bytes": 5851,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a70f64f336f66c325b68b36c.jpg"
+  },
+  "td_a768a544716c504f3c815bca": {
+    "sha256": "2652ddaae2a6548f0feefd5cfda0703e20c76c64c0c259120f07e2904a18dd08",
+    "size_bytes": 5867,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a768a544716c504f3c815bca.jpg"
+  },
+  "td_a89150f1a1b1be0bf47e1a45": {
+    "sha256": "fa7ed06d6d4e5e5fc2e3596ad88027ade7c5bd62dbdd1cd92b60216fd5b05015",
+    "size_bytes": 6549,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a89150f1a1b1be0bf47e1a45.jpg"
+  },
+  "td_a89617b5f9f8fa95f6c735b8": {
+    "sha256": "0a1b8c6242094bb81864018c75685a3e686a9ab092d29ffcdf41c953464dd9a6",
+    "size_bytes": 5976,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a89617b5f9f8fa95f6c735b8.jpg"
+  },
+  "td_a8d24ac96f56bcd7ecb82243": {
+    "sha256": "dc5590f1a39462bdc782ea627888ea08de707099868392c4e9d89cfe0f367c95",
+    "size_bytes": 6049,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a8d24ac96f56bcd7ecb82243.jpg"
+  },
+  "td_a993629b27c9631825726ce4": {
+    "sha256": "4cfaad6caef3e78a424b42c8fbe34c0338522d25e03652fd45a0dbff02a1d85f",
+    "size_bytes": 5676,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_a993629b27c9631825726ce4.jpg"
+  },
+  "td_aa06944a1d59899ecabbfc8a": {
+    "sha256": "ef2c201bd773f58006ba37e3e0b01af8bfc911d70c0658f9e862a2b3f48228a1",
+    "size_bytes": 5854,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_aa06944a1d59899ecabbfc8a.jpg"
+  },
+  "td_ab1e37300b1df33b33f6a1bb": {
+    "sha256": "837dd0e6f766cf6e322c4e3a6b8ebe5caef65e5eb03f145ad68b21c6e0539953",
+    "size_bytes": 6183,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ab1e37300b1df33b33f6a1bb.jpg"
+  },
+  "td_aba4716106a4dfbe964816ae": {
+    "sha256": "ef5f4b66ea9f5b6b50a16d8ee4e8565f057097c70f97f87f4327225fdacbd718",
+    "size_bytes": 5794,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_aba4716106a4dfbe964816ae.jpg"
+  },
+  "td_ad4021076fb28490585669dc": {
+    "sha256": "e504a4997d1a6a6d1d23699b53b066b674c082b4a463992d9320be4b64b40f02",
+    "size_bytes": 5733,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ad4021076fb28490585669dc.jpg"
+  },
+  "td_ad59f799f7f30895cb7b4c34": {
+    "sha256": "f31d7635ad58d842d0acdf5947e1baa0063a950496fb412c31c8bce54babd76b",
+    "size_bytes": 5829,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ad59f799f7f30895cb7b4c34.jpg"
+  },
+  "td_ad81f48620fb4094dfc2c117": {
+    "sha256": "ba570c71ab49b3850cf531a8ee4076bde702edd11ce49c0a734cd1bbf00f3b3d",
+    "size_bytes": 5404,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ad81f48620fb4094dfc2c117.jpg"
+  },
+  "td_af34e6636deb6dc2afb6be10": {
+    "sha256": "ebeb299b15d925932d3b37687621049e968be371f8fb9623156150284a0c734a",
+    "size_bytes": 6053,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_af34e6636deb6dc2afb6be10.jpg"
+  },
+  "td_b00bdb184f081858001ff093": {
+    "sha256": "6971f45f4c70f954bbe2bf4192599899db291006d756110fd89ca683837ae74f",
+    "size_bytes": 5535,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b00bdb184f081858001ff093.jpg"
+  },
+  "td_b05f0d26d1ce618edf52f482": {
+    "sha256": "5c8e658fc7b057fa0ec13b02dc62569e03159ab42a18083a1d464874657367ce",
+    "size_bytes": 5737,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b05f0d26d1ce618edf52f482.jpg"
+  },
+  "td_b0d4e94024dc579963ad026f": {
+    "sha256": "d2ccef7220be69f759eb0e8089f20fcad5b37dbbe6df8b9c5e3166d4affbf6a5",
+    "size_bytes": 5692,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b0d4e94024dc579963ad026f.jpg"
+  },
+  "td_b17493f1497669b93ed9a906": {
+    "sha256": "1f61236f9f22fb8ed996f4fdb11ad5a213940d59fe4e24bb8c5e6ab70f5bab14",
+    "size_bytes": 5416,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b17493f1497669b93ed9a906.jpg"
+  },
+  "td_b1f3f8bac364927942eca29b": {
+    "sha256": "a8d76d20e34c710889f20671c2c174a2526415579e87b664d046d171e77d2b54",
+    "size_bytes": 6083,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b1f3f8bac364927942eca29b.jpg"
+  },
+  "td_b3545fe0a533a8dd7d35a2f1": {
+    "sha256": "17648b08259c5041243a05e8e4a1f48ad6ca0eed2260c584cf8cd612ee7c9b40",
+    "size_bytes": 5802,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b3545fe0a533a8dd7d35a2f1.jpg"
+  },
+  "td_b3ce8a8d3475a2646f503c61": {
+    "sha256": "8f3d03df998a213c8678ff353a27ba0fdb2fc7bbfec80d0b7c31705e491eda45",
+    "size_bytes": 5691,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b3ce8a8d3475a2646f503c61.jpg"
+  },
+  "td_b402d5bce8126a1aedd6b09b": {
+    "sha256": "2f6ba9e39141651f471d4d99554b6a1e657ca4cfec6c5ad9b7bea6fbe655a47d",
+    "size_bytes": 5749,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b402d5bce8126a1aedd6b09b.jpg"
+  },
+  "td_b5017a02466e78712fdb9cde": {
+    "sha256": "c84da6c5674ed130b900c74ee6e8e93e09a36869fe1a7e84078465f666284f4a",
+    "size_bytes": 5970,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b5017a02466e78712fdb9cde.jpg"
+  },
+  "td_b6649f38d57ad23f9fa79a1a": {
+    "sha256": "f25e37b05642a538232c377a3d4bd1e90b16c7c3d1140ef98c69074a4b8aa5ac",
+    "size_bytes": 6278,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b6649f38d57ad23f9fa79a1a.jpg"
+  },
+  "td_b71c8f238eb4ac69075adc2c": {
+    "sha256": "ee3272f41a37583cb468433bb9e666c76d06a4db3fce0e98b909b68e45129c71",
+    "size_bytes": 6005,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b71c8f238eb4ac69075adc2c.jpg"
+  },
+  "td_b744a1ad674b09c674be636d": {
+    "sha256": "0d45a0c0d304e65cdd4a9f5c8c4dd7f9629947a3365ea72e1b2049d92b601ad0",
+    "size_bytes": 6215,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b744a1ad674b09c674be636d.jpg"
+  },
+  "td_b8a5b77fa728e0c6a59c42e7": {
+    "sha256": "cdcf63b1bfb7df491daaa2ac7b54ec14227427beef1b210c4aeb898383bea0d2",
+    "size_bytes": 6244,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_b8a5b77fa728e0c6a59c42e7.jpg"
+  },
+  "td_ba6ab05e043641435f5e6cc3": {
+    "sha256": "889ca71df693af67d2fa843d925d626f392c778d4564fea0bd3854adf342a307",
+    "size_bytes": 5940,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ba6ab05e043641435f5e6cc3.jpg"
+  },
+  "td_ba6fb4599751d54793d63d97": {
+    "sha256": "f0f157832e03e437163d1141bf880eaed129ee156cc5cdf993218dfcbbe3a71f",
+    "size_bytes": 6301,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ba6fb4599751d54793d63d97.jpg"
+  },
+  "td_bf7252eeb8ab7531b041c9a4": {
+    "sha256": "2be7a9a287c90e68491a984c46b65113142d506a6278abfd1efb691f0283c463",
+    "size_bytes": 6497,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_bf7252eeb8ab7531b041c9a4.jpg"
+  },
+  "td_c05226364c85513dd4331a4d": {
+    "sha256": "cd4d1f767f62f611713a1ddd2f508a352b884ed3087645f1e3e38efb4182d17b",
+    "size_bytes": 6542,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c05226364c85513dd4331a4d.jpg"
+  },
+  "td_c0935e36ab0659df331312bb": {
+    "sha256": "b970f9f082406d76964886701088212e284466182f4ef6d872e4a8df756ed441",
+    "size_bytes": 6070,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c0935e36ab0659df331312bb.jpg"
+  },
+  "td_c0c8e76fe709df23b272510f": {
+    "sha256": "958282d0daaf684e4d4e030c38aca444be5478d3858428bdd966393dfb6ec3df",
+    "size_bytes": 6107,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c0c8e76fe709df23b272510f.jpg"
+  },
+  "td_c10736980b0df802e6d0bca3": {
+    "sha256": "7ffb567fa54e08927857639ab9a40cd0e5d0fdab435646919cefba59c26981bc",
+    "size_bytes": 5976,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c10736980b0df802e6d0bca3.jpg"
+  },
+  "td_c180b6714f580f12dc7e5126": {
+    "sha256": "8bd21ec7cfa46b874d466cc3ed63cd997b1d6a3aa0e1dcac1970e504297cd29e",
+    "size_bytes": 6069,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c180b6714f580f12dc7e5126.jpg"
+  },
+  "td_c27e74ec5c0b55bc74ffb0dc": {
+    "sha256": "b6227ad1225f00410134672f2ee924bdb016cd7b5bab362afdb795a422339770",
+    "size_bytes": 6266,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c27e74ec5c0b55bc74ffb0dc.jpg"
+  },
+  "td_c280e2751dad22627f458dfc": {
+    "sha256": "f59b6c27dfe41a5301c9c5ed177429d9d0562eb4e4bdcb832c099253bdb1bb4b",
+    "size_bytes": 5907,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c280e2751dad22627f458dfc.jpg"
+  },
+  "td_c29ceb5971f1fac5f30ddcae": {
+    "sha256": "952c42c7f5d609a682e903e6dbbbc45e545d48c28cc58a58206a59bba5a9cfdd",
+    "size_bytes": 6547,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c29ceb5971f1fac5f30ddcae.jpg"
+  },
+  "td_c4634a00ccae0e06544f81bc": {
+    "sha256": "a3c50397e50649d25edd0d4cdd9207b0f03d4b2d210ccc483eae568b671241d9",
+    "size_bytes": 5977,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c4634a00ccae0e06544f81bc.jpg"
+  },
+  "td_c4ac52be2bdaa6d66066af8e": {
+    "sha256": "72c26136ae383e37f8f5983f525d5d0b7d9fe2559cde62e921abf26b3ccdec5c",
+    "size_bytes": 6088,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c4ac52be2bdaa6d66066af8e.jpg"
+  },
+  "td_c4dab6b0c5a43fcae8076385": {
+    "sha256": "af658f0fe0e8413232a91f0ea2338eb40029fed7e83b956b34a93f3308b1ac12",
+    "size_bytes": 5706,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c4dab6b0c5a43fcae8076385.jpg"
+  },
+  "td_c5e2d0cb51762d255332a0aa": {
+    "sha256": "a873415dae6137026060f44a97d34f240a531137f0e798b772857d5a51769afe",
+    "size_bytes": 6269,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c5e2d0cb51762d255332a0aa.jpg"
+  },
+  "td_c610a59885d5e499056ec125": {
+    "sha256": "a7c63452bd5de8daa7d61d30ed953b9de93cea30000e7495bc86afaba95a2908",
+    "size_bytes": 5878,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c610a59885d5e499056ec125.jpg"
+  },
+  "td_c6ce808ee2263e23e38a0f90": {
+    "sha256": "254777e1e00a5a709b8f983cfc13a46d94e9b1c66b2cf30409871da93e06c251",
+    "size_bytes": 6014,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c6ce808ee2263e23e38a0f90.jpg"
+  },
+  "td_c717ef23a78f60d18df07558": {
+    "sha256": "d92e6f83fcce0a5d9a8a7ef1b5dacca4ea338992400e5f0fe6fa7af20f78d35b",
+    "size_bytes": 5791,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c717ef23a78f60d18df07558.jpg"
+  },
+  "td_c7eceedc65449524b53f1d6d": {
+    "sha256": "38dfb38dc004f9cb0231df58709c6410f4f12528f2fff39ffc815e5f91f7e7e9",
+    "size_bytes": 5511,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c7eceedc65449524b53f1d6d.jpg"
+  },
+  "td_c8189b8b8916fd5f508f29b3": {
+    "sha256": "ba75d3570d815fc47f8f57e3ddaceeaacb10e88c847355b3839089f69639f882",
+    "size_bytes": 5957,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c8189b8b8916fd5f508f29b3.jpg"
+  },
+  "td_c85f02bca1d2fd2b46f61ef9": {
+    "sha256": "57d73cfd615b9cdc389a7675ad93a9886d1c8eedf2fb7b08dccbf589b37e1ab4",
+    "size_bytes": 5775,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c85f02bca1d2fd2b46f61ef9.jpg"
+  },
+  "td_c9085baf9e5b95758606ee2c": {
+    "sha256": "80ce91c37646071886153c0e09e101a91e6d8d2f6faf87ad696bbc4cc4244b55",
+    "size_bytes": 6107,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c9085baf9e5b95758606ee2c.jpg"
+  },
+  "td_c958a4994f982f5dd9a77eeb": {
+    "sha256": "9d0fa163282548016cba32baf2017e041481954833dcda162e9944fd3290b3a7",
+    "size_bytes": 5696,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_c958a4994f982f5dd9a77eeb.jpg"
+  },
+  "td_ca55e042ecc915a96171c93f": {
+    "sha256": "8c8d4f4ef6efdeedfcf5e8d695e811a33f99bb2493f6e1fafdbd5ab45af2aa7e",
+    "size_bytes": 6113,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ca55e042ecc915a96171c93f.jpg"
+  },
+  "td_cc263230cba9ffa8c04078c9": {
+    "sha256": "0f796dd9099078288fc8a1dfe7eefe7b602bb2f9544eaa2d129c05c3b666f22f",
+    "size_bytes": 6025,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_cc263230cba9ffa8c04078c9.jpg"
+  },
+  "td_cd34f7aa8d781add7da06aa0": {
+    "sha256": "2aafad0768f5ef710ac0c563329dcc93fa04af538b2f7d680f8193ab6903cf0b",
+    "size_bytes": 6043,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_cd34f7aa8d781add7da06aa0.jpg"
+  },
+  "td_cd3b6b6eb2ff42dd02adf0fc": {
+    "sha256": "a770a07b4ad036eeb76219af9277f3ab438ef6e42f703cca4d42d0093408e00c",
+    "size_bytes": 5885,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_cd3b6b6eb2ff42dd02adf0fc.jpg"
+  },
+  "td_cd4cbd3b6df00cb85426ba0c": {
+    "sha256": "6008dd89bff8720973cb4db69d54a840eeb75ce269d1183551cc55b692beef9f",
+    "size_bytes": 5861,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_cd4cbd3b6df00cb85426ba0c.jpg"
+  },
+  "td_cd6bbe0c75a06e05ff86c495": {
+    "sha256": "f9dce25d92f67271792bf5883d71cf3178292dfa99aa6a9ab895bdb9655e44eb",
+    "size_bytes": 5926,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_cd6bbe0c75a06e05ff86c495.jpg"
+  },
+  "td_cfe1dd2d2cc22d044ed78832": {
+    "sha256": "c5181d130f0c058728f1b7a1242c661fce6afba315239d7cf34f0e4a4c9de7f1",
+    "size_bytes": 5757,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_cfe1dd2d2cc22d044ed78832.jpg"
+  },
+  "td_d111ce56fa2327c04230ec6c": {
+    "sha256": "73f4fb91263f07eab755062569b593866e2d910d23b5dacbaa61654315b811e8",
+    "size_bytes": 6110,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_d111ce56fa2327c04230ec6c.jpg"
+  },
+  "td_d1a3dc6b4852b8e5aef2ee2d": {
+    "sha256": "1ac04d8c4bfa640ea735fca227c5925b0972d750d37a46b077359edd882926ea",
+    "size_bytes": 6249,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_d1a3dc6b4852b8e5aef2ee2d.jpg"
+  },
+  "td_d24db338320a454fe1810e6f": {
+    "sha256": "743642909e06360e605aaa228208c17b73d1b28e9b35991400da5e4cd3cdacc2",
+    "size_bytes": 6105,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_d24db338320a454fe1810e6f.jpg"
+  },
+  "td_d530a9355e2a896c057acd0d": {
+    "sha256": "3c53c036364fab18189708f6543ebc272c1d4c24b3e14e344791869abf1bd4bc",
+    "size_bytes": 6302,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_d530a9355e2a896c057acd0d.jpg"
+  },
+  "td_d56c7e158739cff636dcc373": {
+    "sha256": "e9c99100434e90467374af83602ed10c492be257d0e80280843f09069c3f4921",
+    "size_bytes": 5745,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_d56c7e158739cff636dcc373.jpg"
+  },
+  "td_d70b9b9fe3263dbe224be5bb": {
+    "sha256": "bb3be11b9bda9a7a7f7079ac78947eb962fe26a13b132f225ae109a17763761c",
+    "size_bytes": 5849,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_d70b9b9fe3263dbe224be5bb.jpg"
+  },
+  "td_d72db4a227d8f0de69f10853": {
+    "sha256": "828b841237d7c9d85a8ef4c72cd3dbe73d926011e29adf91e758898750dec796",
+    "size_bytes": 5439,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_d72db4a227d8f0de69f10853.jpg"
+  },
+  "td_d75e7932c8b641f405fe25d9": {
+    "sha256": "5a6d72795d763c237941aa38a026420fdb0b83006ff72edd2a3e69fc3c26f7c1",
+    "size_bytes": 5657,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_d75e7932c8b641f405fe25d9.jpg"
+  },
+  "td_d8115cd04908b9b0865299c4": {
+    "sha256": "516b5221ffef54566440b74ea84c9f1c7440fc773f7a61c2e3166580789c66a5",
+    "size_bytes": 5996,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_d8115cd04908b9b0865299c4.jpg"
+  },
+  "td_d81f3b19198e8987429fe6ee": {
+    "sha256": "e5691a891bd85f558ba4384ad1a344c6ed909a500a1acec084e6456b81546013",
+    "size_bytes": 6060,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_d81f3b19198e8987429fe6ee.jpg"
+  },
+  "td_d91f90781dc3b635902f9dfb": {
+    "sha256": "8e98574942b9bb27d1872317d86e6b5ff5fffa4f15e51a378397ca922fc47e74",
+    "size_bytes": 5756,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_d91f90781dc3b635902f9dfb.jpg"
+  },
+  "td_da862308c606c320fd4e11d8": {
+    "sha256": "a55623c07008b1d3f541283c28c5a1c223683ca2b9c278f29199de3c913535f1",
+    "size_bytes": 6212,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_da862308c606c320fd4e11d8.jpg"
+  },
+  "td_db0f8a60e9fd76738b53b63f": {
+    "sha256": "89b5b08676a1086d817ff81200b5e2f1f6cc3316cf227a3dd05c587780cdce34",
+    "size_bytes": 6128,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_db0f8a60e9fd76738b53b63f.jpg"
+  },
+  "td_dc2466975fac570758f46db1": {
+    "sha256": "6e5edfb1463da9585e0a73570bed6f03d09113467de70b78d0a843a46a941173",
+    "size_bytes": 5916,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_dc2466975fac570758f46db1.jpg"
+  },
+  "td_dd9f8db24e4dd9195d3f069c": {
+    "sha256": "ab83006f4106093d356a81c4e968c72739988cac5dca31902dd8287ff3bffa6a",
+    "size_bytes": 6109,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_dd9f8db24e4dd9195d3f069c.jpg"
+  },
+  "td_ddd8fa882c14be65071a3293": {
+    "sha256": "ba95888e25a787ad2dfeb0e647d15b3ceebbe88088a3deba8d6be18ae81df847",
+    "size_bytes": 6100,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ddd8fa882c14be65071a3293.jpg"
+  },
+  "td_ddf77cfd88e65e3509555129": {
+    "sha256": "346cdbc9a1150213dc722d4ab54ec44a42bc5ba6c62cb43d570e479beb1bb107",
+    "size_bytes": 5896,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ddf77cfd88e65e3509555129.jpg"
+  },
+  "td_dfcb5459cd7a0e9eb7d337fa": {
+    "sha256": "01bee8076d1338b6bc8b0cee23a5dd85eb1873163de34ce868e0522b019b2ed0",
+    "size_bytes": 6062,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_dfcb5459cd7a0e9eb7d337fa.jpg"
+  },
+  "td_e0d7febf5ccad8c83eac6e95": {
+    "sha256": "c033c1960e2e010a8c609c04cdb692a709425b59b8a261e91aed2699ed9822a9",
+    "size_bytes": 5711,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_e0d7febf5ccad8c83eac6e95.jpg"
+  },
+  "td_e193ef468b7999addc50e02d": {
+    "sha256": "0a83b89b81e9bef1a280f658c0c1a6bf96d41d680d3ce4ee767ac347566a6a6e",
+    "size_bytes": 6104,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_e193ef468b7999addc50e02d.jpg"
+  },
+  "td_e2ce100f286f370949e852f3": {
+    "sha256": "b38c7690c06cbf14090109f5523c342de9ca83f843e8b09c40903bff6a34c625",
+    "size_bytes": 6035,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_e2ce100f286f370949e852f3.jpg"
+  },
+  "td_e39ec8265ef89d4cee99049f": {
+    "sha256": "2772eb27bc5b69bf3f7eb2ebc1a5878d20b20632a6f80dd5beb0336e9994cae6",
+    "size_bytes": 5587,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_e39ec8265ef89d4cee99049f.jpg"
+  },
+  "td_e45022eda10c9770f46694f9": {
+    "sha256": "157d582aada0a9aea57cea801530c0c1d0d63192cfe32d5c6021936be2ee1878",
+    "size_bytes": 5572,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_e45022eda10c9770f46694f9.jpg"
+  },
+  "td_e49461dc69350d1b2c3499f6": {
+    "sha256": "2cdf4d011af30a77f98ee26dbd74eda9c570c103bbc18e284bd61f2219d894f6",
+    "size_bytes": 6579,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_e49461dc69350d1b2c3499f6.jpg"
+  },
+  "td_e514317458f8526c644ec4e7": {
+    "sha256": "dedd7094688f9eb7d9ef7762c7e094c05e8249e479f27e9fc1dbb45be46dd19f",
+    "size_bytes": 5901,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_e514317458f8526c644ec4e7.jpg"
+  },
+  "td_e74ff9e1c3c967c174edab08": {
+    "sha256": "0f17d3ca6149f92b3628474385c69ab05535e300779a7d5cbd728dabe061f657",
+    "size_bytes": 5904,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_e74ff9e1c3c967c174edab08.jpg"
+  },
+  "td_e75aafb3318cfbbd28361f35": {
+    "sha256": "b4e89088cc43979ee8c88e6ebe0a0387dfd1dd2cd182be3f3171a8a81a907cd7",
+    "size_bytes": 5907,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_e75aafb3318cfbbd28361f35.jpg"
+  },
+  "td_e76d64bcc7432d685bd25020": {
+    "sha256": "e8a20ddfdcd11410820361fe755edd8b19b9e4a5c9e44d56b64ea03ab229ddbb",
+    "size_bytes": 5594,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_e76d64bcc7432d685bd25020.jpg"
+  },
+  "td_e7aec5ac6f73ef6db25fa9d9": {
+    "sha256": "14fa25ab4adf167d40afa9e516e993d239e27a9870172c66167d5453550de4d3",
+    "size_bytes": 6276,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_e7aec5ac6f73ef6db25fa9d9.jpg"
+  },
+  "td_ea078c87a25856fa727ab49f": {
+    "sha256": "ed9ff1a382a4e2e90c04fb5ebc5f6cb586e15274dc5e280163bff090dcef1fdd",
+    "size_bytes": 6559,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ea078c87a25856fa727ab49f.jpg"
+  },
+  "td_ea19814258747d52cafa8059": {
+    "sha256": "c3ab0e39f76f684787dbeef297341004a1563fe4516c9dd39d16352ec85be485",
+    "size_bytes": 5691,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ea19814258747d52cafa8059.jpg"
+  },
+  "td_ec47d34548cf13c675a2e7f8": {
+    "sha256": "383a7ce7f61f49d37f01cce7b8a37af8cb757ac3052b4e72733e11d307a6be7d",
+    "size_bytes": 6052,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ec47d34548cf13c675a2e7f8.jpg"
+  },
+  "td_ecb89979f3a97d52c8c5718d": {
+    "sha256": "dc68ae0b002368f4cfc4f1f9bd7344f89717fb89d00c10daa528cd01cfad09ac",
+    "size_bytes": 6173,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ecb89979f3a97d52c8c5718d.jpg"
+  },
+  "td_ed4ed257e302cf15827f1874": {
+    "sha256": "0eb3c20999411bac232361c653a2848a14a177ac061eabd607041800884256b5",
+    "size_bytes": 5867,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ed4ed257e302cf15827f1874.jpg"
+  },
+  "td_ed85b59403d5aced1d63d1c4": {
+    "sha256": "56cce37412d52a9cdc6f3b24db431e297b40f133d54d8a8950969b7604688eba",
+    "size_bytes": 5584,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ed85b59403d5aced1d63d1c4.jpg"
+  },
+  "td_ed8bb83066b16fc4612713ef": {
+    "sha256": "fa8c71ee5f29267028d60503c40bd4e8ecfdc26a6ccc3bb68ee3c35a39085e09",
+    "size_bytes": 5118,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ed8bb83066b16fc4612713ef.jpg"
+  },
+  "td_efa359400d8a9018ecde7816": {
+    "sha256": "d5707454f2c35f749cbb6fe2c67ee8383e91ce300e7bad646a870c157c3d1c09",
+    "size_bytes": 6143,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_efa359400d8a9018ecde7816.jpg"
+  },
+  "td_f174f0297798ca6fe488d9b6": {
+    "sha256": "0f713f87ef53869b4aab2252ebfd32fa97db955f6838272faa3a03d94711f031",
+    "size_bytes": 5094,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_f174f0297798ca6fe488d9b6.jpg"
+  },
+  "td_f2a2822a24e25dd081e78931": {
+    "sha256": "3bc21df192397a6ec6dfa3902c295a95c286640ac1e71534c995dc10fee2583f",
+    "size_bytes": 5542,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_f2a2822a24e25dd081e78931.jpg"
+  },
+  "td_f3aaae0bc7d2f6f471d5bc9e": {
+    "sha256": "be6e11e2a30cb04fb0e18b1b8823a97d0c608add5549271007e445fdb6347bae",
+    "size_bytes": 5754,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_f3aaae0bc7d2f6f471d5bc9e.jpg"
+  },
+  "td_f4d48e9198d29402ee91807f": {
+    "sha256": "d6885dfb6c10d4456bc188aae1c61a52a6963fdef32ccfa4b281aa9a682a296d",
+    "size_bytes": 5871,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_f4d48e9198d29402ee91807f.jpg"
+  },
+  "td_f4fc1ec0253814fbc4dd5854": {
+    "sha256": "5525a50c685ee6998e446ca50a1b4cb8fd565bf1531d301e6b2b3c271aa98354",
+    "size_bytes": 5461,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_f4fc1ec0253814fbc4dd5854.jpg"
+  },
+  "td_f5a77ec9ad36485066602ed0": {
+    "sha256": "a5768bb41a5388ab69b0359e4d8653f9aa5598e53f329da470f0993df6ed0616",
+    "size_bytes": 5720,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_f5a77ec9ad36485066602ed0.jpg"
+  },
+  "td_f5b7114242786837e0f510d9": {
+    "sha256": "1969f192876db87bbaa61f59b44ca489d59d73b6d5dc286b601627ce8feac051",
+    "size_bytes": 6076,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_f5b7114242786837e0f510d9.jpg"
+  },
+  "td_f76b0b1eb6ed71b2862e0c25": {
+    "sha256": "ef4d86f58269eb4977499af4552a183a6e74d63949f2ce13b6453c93e5c8d25e",
+    "size_bytes": 6064,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_f76b0b1eb6ed71b2862e0c25.jpg"
+  },
+  "td_f8db7afc8cf0bd05af731ae0": {
+    "sha256": "dd46cafb13a18f9a1cb20cb346a6e2d9c2afd6a4a8e54c5f838400c29943e802",
+    "size_bytes": 6034,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_f8db7afc8cf0bd05af731ae0.jpg"
+  },
+  "td_f90ea50ddf706299325563d4": {
+    "sha256": "a5ff575711b6cd127f96f98b9628d559256c8dd28778d64de5988a06050afae2",
+    "size_bytes": 6023,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_f90ea50ddf706299325563d4.jpg"
+  },
+  "td_f91810449a2c8f873e3c4eef": {
+    "sha256": "2fb3ccf2a18773902cfe37a15a78f1f628020afd8e4b688a32a53cbffddf9f1a",
+    "size_bytes": 5569,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_f91810449a2c8f873e3c4eef.jpg"
+  },
+  "td_f97d70185c523c51d3bb7aac": {
+    "sha256": "15c9c7ee767685ea41c39af85ff770472e1d19d404f7c3af5dbd2a1baabdc46c",
+    "size_bytes": 5924,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_f97d70185c523c51d3bb7aac.jpg"
+  },
+  "td_fba1270afc28807249b972a3": {
+    "sha256": "54d209ba48cd021f9293b5a802029274a6d5c0110391006c998011734af1fb87",
+    "size_bytes": 6211,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_fba1270afc28807249b972a3.jpg"
+  },
+  "td_fbe883f13519b5155d561c63": {
+    "sha256": "06debb9fd7400c94bf8555a390be2d7692e1f42587c4b2ad735b5231a867113b",
+    "size_bytes": 6191,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_fbe883f13519b5155d561c63.jpg"
+  },
+  "td_fcbcdd8727716c384b6e6310": {
+    "sha256": "7f0f6798a8bb4ec11da4d0b68d6a7fa896f8606b4044e9c845d8e159eb30890c",
+    "size_bytes": 5948,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_fcbcdd8727716c384b6e6310.jpg"
+  },
+  "td_fda2725323a97b3f13371c87": {
+    "sha256": "bf7abc3c4389797420dffb835c969bbf0ba873fefc5aeb1ec7b85749247922b0",
+    "size_bytes": 5872,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_fda2725323a97b3f13371c87.jpg"
+  },
+  "td_ff30e303ad3b8fb0a01170bd": {
+    "sha256": "8f26c40154ddb4cf5ce025c731f99233d080ebe29b9f41780dc6b220b06ac198",
+    "size_bytes": 6168,
+    "source_rgb_ref": "challenge/dataset/releases/d2_v1_1/images/td_ff30e303ad3b8fb0a01170bd.jpg"
+  }
+}

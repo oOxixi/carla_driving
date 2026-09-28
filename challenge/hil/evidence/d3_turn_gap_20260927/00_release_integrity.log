@@ -1,0 +1,13 @@
+release      : d3_turn_gap_60_strict_v1
+pass schema  : B1_CONTENT_BOUND_PASS (assurance: content_bound_unsigned, signature_status: CONTENT_BOUND_UNSIGNED)
+signed gate  : (not claimed) / status PASS at (not stamped)
+digests      : claimed=[] not_claimed=['release_lock_sha256', 'release_manifest_sha256', 'integrity_report_sha256'] not_recomputable=[]
+content bind : match=True declared=1f264294f76fbf31765ed336e8a6393525abde3a8c4e31f1f8143df4cd108800 canonical=json.dumps(payload, sort_keys=True, separators=(',', ':'))
+locked files : 211 checked; 10 matched only after CRLF->LF normalisation (eol mode: auto)
+images       : 200 checked
+train_addition.jsonl           rows=171  no_request=0 no_plan=0 rgb_unresolved=0 rgb_mismatch=0 {'COMPLEX': 18, 'NORMAL': 135, 'SAFETY_CRITICAL': 18}
+val_addition.jsonl             rows=29   no_request=0 no_plan=0 rgb_unresolved=0 rgb_mismatch=0 {'NORMAL': 25, 'COMPLEX': 2, 'SAFETY_CRITICAL': 2}
+hard_negative_addition.jsonl   rows=0    no_request=0 no_plan=0 rgb_unresolved=0 rgb_mismatch=0 {}
+failures     : 0
+status       : PASS
+wrote challenge/hil/evidence/d3_turn_gap_20260927/01_release_integrity_compact.json

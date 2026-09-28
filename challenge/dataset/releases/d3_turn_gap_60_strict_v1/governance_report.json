@@ -1,0 +1,29 @@
+{
+  "dataset_version": "b1_d3_turn_gap_60_strict_v1",
+  "family_counts": {
+    "C01": 60,
+    "C02": 60,
+    "C03": 80
+  },
+  "gates": {
+    "all_runs_strict_pass": true,
+    "collector_rejected_zero": true,
+    "group_split_leakage_zero": true,
+    "historical_smoke_excluded": true,
+    "rgb_integrity": true,
+    "sample_ids_unique": true,
+    "turn_gap_60_live_audit": true
+  },
+  "hard_negative_samples": 0,
+  "immutability": {
+    "prior_releases_modified": false,
+    "raw_acquisition": true,
+    "release_immutable_after_publish": true
+  },
+  "quarantine_samples": 0,
+  "schema_version": "1.0",
+  "source_runs": 60,
+  "status": "PASS",
+  "strict_positive_runs": 60,
+  "strict_positive_samples": 200
+}

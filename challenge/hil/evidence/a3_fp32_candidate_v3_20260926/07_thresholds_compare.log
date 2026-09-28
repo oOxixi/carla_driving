@@ -1,0 +1,4 @@
+build                        layers values distinct       min     max   ==1.0
+real-weights                     60     40       21      0.48      50    4/40
+gap-128train                     60     40       21    0.4618      50    4/40
+skip-calibration                 59     40        2    0.7311       1   38/40

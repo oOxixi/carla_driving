@@ -717,6 +717,37 @@ def _scenario_startup_maneuver(spec: ScenarioSpec) -> str:
     return _scenario_maneuver(spec)
 
 
+
+def _scenario_anchor_maneuver(spec: ScenarioSpec) -> str:
+    """Select topology required by the full mission without executing it early."""
+    startup = _scenario_startup_maneuver(spec)
+
+    # Dynamic out-and-back lane changes deliberately start on the mission
+    # lane and construct their manoeuvre route only when the command arrives.
+    if _scenario_uses_dynamic_out_and_back(spec):
+        return startup
+
+    # A later TURN must be physically reachable from the selected startup
+    # anchor even when the vehicle initially follows the current lane.
+    for command in spec.commands:
+        envelope = command.envelope
+        intent = str(envelope.get("intent", "")).strip().upper()
+
+        if intent in {"TURN_LEFT", "TURN_RIGHT"}:
+            return intent
+
+        if intent == "TURN":
+            parameters = envelope.get("parameters", {})
+            direction = (
+                str(parameters.get("direction", "")).strip().upper()
+                if isinstance(parameters, Mapping)
+                else ""
+            )
+            if direction in {"LEFT", "RIGHT"}:
+                return f"TURN_{direction}"
+
+    return startup
+
 def _scenario_lane_change_profile(
     spec: ScenarioSpec | None,
 ) -> Mapping[str, object] | None:
@@ -848,7 +879,8 @@ def _apply_compiled_plan_route(
     if route_behavior is None:
         return replace(current_route, target_speed_mps=target_speed), target_speed, None
     if (
-        prevalidated_maneuver_route is not None
+        route_behavior in {"CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}
+        and prevalidated_maneuver_route is not None
         and (
             current_route.points_xy_m == prevalidated_maneuver_route.points_xy_m
             or _route_starts_near_ego(prevalidated_maneuver_route, ego)
@@ -3718,7 +3750,7 @@ def run(args: argparse.Namespace) -> None:
         if (
             road_fit_required or seeded_route_anchor or adjacent_lane_anchor_required
         ) and not managed_route_planning:
-            maneuver = _scenario_startup_maneuver(spec)
+            maneuver = _scenario_anchor_maneuver(spec)
             if configured_anchor_index is not None:
                 anchor_index = configured_anchor_index
                 topology_route = build_scenario_route_reference(

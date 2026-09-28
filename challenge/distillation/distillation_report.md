@@ -67,6 +67,29 @@ The package verifier checks nine signed payload files.  The package and pure
 state dict are server artifacts rather than Git blobs; the immutable archive
 identity is documented in `A3_CANDIDATE_HANDOFF.md`.
 
+### B3 real-weight diagnostic evidence
+
+B3 has now independently verified that same v3 package and run its real
+weights through replay, scratch ONNX/INT8 and a 30-minute x86 soak.  A3's
+`audit_b3_v3_diagnostic.py` binds the publication to the frozen candidate
+identity and accepts it only as `DIAGNOSTIC_EVIDENCE_ACCEPTED`, always with
+`eligible_for_promotion=false`.
+
+The useful signals are:
+
+- D2 v1.1 behavior/target match: `0.951763 / 0.971243`;
+- targeted-gap behavior/target match: `0.919192 / 0.919192`;
+- targeted-gap output coverage: 6 Student combinations versus 9 Teacher;
+- torch↔scratch-ONNX maximum absolute error: `7.62939453125e-06`;
+- real-weight x86 soak: 77,653 iterations, zero failures;
+- INT8 `target_speed_mps` minimum cosine changes from `0.999835` on
+  targeted-gap to `0.989066` on D3 Wave2, with 8/56 below 0.99.
+
+These development sets have known lookup shortcuts and every B3 replay remains
+`DIAGNOSTIC_ONLY`.  The candidate therefore remains unchanged and pending.
+The speed head and 6-versus-9 output coverage are improvement/calibration
+signals for a future versioned candidate, not permission to tune on B2 data.
+
 ## D3 Wave2 derived-view preparation
 
 B1's detached-signed `b1_d3_wave2_safe_short_v1` release is now available.
@@ -120,32 +143,111 @@ intake independently verified the transport/data layer:
 - Train/Validation group overlap is zero;
 - sample overlap with the existing D2 + D3 Wave1 + D3 Wave2 partition is zero.
 
-The release is nevertheless `BLOCKED` for A3 formal distillation.  Its rows
-identify `Qwen/Qwen3.5-2B` and acquisition Git SHA
-`a6743feb52015031f70e2c21a94aef0abae0a65a`, but provide neither an exact model
-revision nor artifact fingerprint.  No repository Teacher manifest matches
-that acquisition SHA, and `B1_SIGNED_PASS.json` does not bind a Teacher block.
-Earlier Teacher-v4 identity values are not retroactively assigned.
+The original release lacked exact Teacher revision and artifact fingerprint,
+so A3 initially blocked it.  B1 has now published a cohort-specific immutable
+provenance addendum covering all 660 samples.  A3 verified:
 
-The executable audit is `audit_targeted_gap_intake.py`; B1's exact requested
-addendum is documented in `B1_TARGETED_GAP_PROVENANCE_REQUEST.md`.  After B1
-publishes signed cohort provenance, A3 can create another versioned cumulative
-view.  Until then, these 660 rows are not merged into A3 training inputs.
+- exact Teacher revision `15852e8c16360a2fea060d615a32b45270f8a8fc`;
+- artifact fingerprint
+  `4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa`;
+- acquisition Git SHA `a6743feb52015031f70e2c21a94aef0abae0a65a`;
+- attestation SHA256
+  `24c2690d8590fe2e1ecff48f75d391b03941e3405f08cd306aba6e99e6f878c5`;
+- content-binding SHA256
+  `505051b1c764a1f464dc31a6e44ea705d21693d4eb935cd99ffd289ff7b428b2`.
+
+The declared provenance class is `CONTENT_BOUND_UNSIGNED`: all byte and
+identity bindings pass, but no cryptographic signer identity is claimed.  A3's
+explicit development-input policy accepts this class without misreporting it
+as detached/GPG signed.  `audit_targeted_gap_intake.py` now returns `READY`.
+
+## D3 recovery cumulative preparation
+
+B1's additional `d3_turn_gap_60_strict_v1` release also passed full validation:
+200/200 RGB assets, 171 Train rows, 29 development Validation rows, exact
+pinned Teacher identity, strict-positive terminal success and zero split/group
+overlap.  Its provenance is likewise explicitly `CONTENT_BOUND_UNSIGNED`.
+
+A3 combines the previously verified Wave2 base, targeted-gap and turn-gap only
+through the new immutable view identity:
+
+```text
+b1_d2_v1_1_plus_d3_wave1_plus_d3_wave2_plus_targeted_gap_plus_turn_gap_a3_strict_positive_v1
+```
+
+The complete `tiaozhansai` checkout at `challenge@fdf53348` built and then
+read-only reconstructed this view with image checks enabled.  Results:
+
+- Train: 5,129 (targeted-gap +561, turn-gap +171);
+- development Validation: 981 (targeted-gap +99, turn-gap +29);
+- audit-only excluded: 539;
+- view manifest SHA256:
+  `63f26554a52e270447e7cca977e2df9b31e05753fee96859e8d0a701874f166b`;
+- source evidence SHA256:
+  `0867e9acfba5271b4af566a7ee9db34fa52248d052ebb093c5a38b5bfee5221d`;
+- Train JSONL SHA256:
+  `039a78c96ed13f6fa0af754e67a66c74dfff65631ad58556e707eeeeae82bcf7`;
+- development Validation JSONL SHA256:
+  `2c943825b2a10f65f9e30d88a5aab1a994c266fcab16e6c08ec6797778877868`;
+- full audit: `PASS`; relevant regression suite: 7 passed.
+
+After adding the dedicated fail-closed integration policy, the combined suite
+passed 8/8 and the clean server checkout completed a CUDA integration smoke
+using 50 Train + 50 Validation records and exactly two optimizer updates.  It
+exercised preflight, four-modal input, loss/backward, evaluation, checkpoint and
+candidate export.  The exported status is correctly `MOCK_ONLY`; its bounded
+metrics are not Student accuracy evidence.
+
+This proves input integrity and reproducibility, not Student accuracy.  It does
+not alter or promote v3.  Any training decision must create a new config,
+checkpoint, candidate identity and B2 comparison.  Exact commands and evidence
+are in `D3_RECOVERY_CUMULATIVE_PREP.md`.
+
+## B3 TURN finding and Gap300 intake
+
+B3's diagnostic replay confirms why a new candidate is necessary: over 87
+turn-gap replay instances the old v3 candidate never emitted `TURN_LEFT` or
+`YIELD`; all 27 `TURN_LEFT` and 6 `YIELD` targets were predicted as
+`SET_SPEED`.  This is a training-distribution vocabulary gap, not evidence that
+the newly collected labels failed.
+
+B1's new `d3_gap300_strict_v1` release adds 697 Train and 123 development
+Validation rows.  Across both partitions it contributes 230 `TURN_LEFT`, 75
+`YIELD` and 50 `PULL_OVER` steps.  Full byte/RGB/split validation passes and
+the release has zero overlap with prior A3 partitions.  Formal intake is still
+blocked because the rows bind only `Qwen/Qwen3.5-2B`, not the exact model
+revision and artifact fingerprint.  They also contain two acquisition SHAs:
+770 rows use `95668ba3a466ae0dfcd73982f5a4a0d210b524c1`, while the 50 D01/PULL_OVER
+rows use `e150ae598d95cb024faebc1699b872d0de899e91`; the release-level provenance
+declares only the former.  The required immutable two-cohort addendum is
+specified in `B1_GAP300_PROVENANCE_REQUEST.md`.
+
+The next formal view will contain 5,826 strict-positive Train and 1,104
+development-Validation rows.  B1's 6,007 raw Train count includes 181 D2 hard
+negatives, which remain audit-only rather than being mislabeled as successful
+Teacher supervision.  No new FP32 training starts until the provenance gate
+is closed.
 
 ## Current external handoffs and blockers
 
 - B1 data required for the prepared Wave2 view has arrived and its detached
   signature, release hashes, Teacher provenance and 374-image set validate.
-  The later targeted-gap release passes byte integrity but still requires the
-  signed Teacher-provenance addendum described above.
+  The targeted-gap provenance addendum and the turn-gap release have also
+  arrived; both content-bound development cohorts now pass A3 intake and are
+  available through a separately versioned cumulative view.
 - B2's evaluator, comparison, decision and evidence-publication tooling is in
   Git.  A fresh server readiness run still reports six blockers: benchmark and
   case manifest are not frozen; formal policy and policy version are not
   frozen; slice minimum denominators and multi-run merge rule are missing.
   Actual paired evaluation JSON and Gate PASS/FAIL evidence for the exact v3
   weights are still absent, while `student_candidate.ready=true`.
+- B3 has independently verified and exercised the exact v3 weights.  This
+  removes transfer-integrity uncertainty but none of B2's six formal blockers.
 - A1/A4 may consume the verified v3 package for true FP32 ONNX export work,
   but an ONNX artifact is not an A3 accuracy approval.
+- A2's required real-weight export interface and nested-manifest compatibility
+  are specified in `A2_REAL_WEIGHT_EXPORT_HANDOFF.md`.  B3's scratch ONNX is
+  diagnostic, not the formal A2 artifact.
 - A2 PTQ and any A3 QAT decision remain downstream of a valid B2 FP32 Gate,
   true ONNX export and the B1/B2 calibration release.
 

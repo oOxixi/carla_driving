@@ -8,7 +8,7 @@ cd "${ROOT_DIR}"
 
 source .venv/bin/activate
 
-python challenge/runtime/student_x86.py \
+python -m challenge.runtime.student_x86 \
     --model challenge/student_v0_fp32.onnx \
     --warmup 5 \
     --runs 20 \

@@ -17,10 +17,10 @@ def _audit_function():
     return module.audit_targeted_gap_intake
 
 
-def test_targeted_gap_intake_passes_bytes_but_blocks_unsigned_teacher() -> None:
+def test_targeted_gap_intake_accepts_content_bound_teacher_addendum() -> None:
     report = _audit_function()(RELEASE, repo=ROOT, check_rgb=False)
-    assert report["status"] == "BLOCKED"
-    assert report["eligible_for_a3_derived_view"] is False
+    assert report["status"] == "READY"
+    assert report["eligible_for_a3_derived_view"] is True
     assert report["release_integrity"]["status"] == "PASS"
     assert report["release_integrity"]["counts"] == {
         "train": 561,
@@ -35,5 +35,16 @@ def test_targeted_gap_intake_passes_bytes_but_blocks_unsigned_teacher() -> None:
     assert report["teacher_provenance"]["model_ids"] == ["Qwen/Qwen3.5-2B"]
     assert report["teacher_provenance"]["model_revisions"] == []
     assert report["teacher_provenance"]["artifact_fingerprints"] == []
-    assert report["teacher_provenance"]["matching_repository_manifests"] == []
-    assert len(report["blockers"]) == 4
+    assert report["teacher_provenance"]["matching_repository_manifests"] == [
+        "challenge/teacher_targeted_gap_manifest.json"
+    ]
+    attestation = report["teacher_provenance"]["immutable_attestation"]
+    assert attestation["valid"] is True
+    assert attestation["signature_status"] == "CONTENT_BOUND_UNSIGNED"
+    assert attestation["cryptographic_signature_present"] is False
+    assert attestation["coverage"]["canonical_samples"] == 660
+    assert attestation["teacher"]["model_revision"] == (
+        "15852e8c16360a2fea060d615a32b45270f8a8fc"
+    )
+    assert report["blockers"] == []
+    assert report["required_b1_followup"] == []

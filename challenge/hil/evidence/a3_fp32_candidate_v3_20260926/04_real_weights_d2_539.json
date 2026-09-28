@@ -1,0 +1,68 @@
+{
+  "run_id": "b3-20260926T074811Z-cfbc31de",
+  "dataset": "frozen/d2_v1_1_val (539 cases x 3 rounds)",
+  "case_runs": 1617,
+  "ready_rate": 1.0,
+  "structural_pass_rate": 1.0,
+  "teacher_comparison": "DIAGNOSTIC_ONLY",
+  "gate_verified": false,
+  "gate_failed_checks": [
+    "gate_status_passed"
+  ],
+  "mean_behavior_match_ratio": 0.951763,
+  "mean_target_match_ratio": 0.971243,
+  "dominant_student_output": "SET_SPEED||NONE",
+  "dominant_student_output_share": 0.313544,
+  "distinct_student_outputs": 16,
+  "distinct_teacher_outputs": 14,
+  "latency_ms": {
+    "preprocess_ms": {
+      "p50": 10.0481,
+      "p95": 17.17613999999999
+    },
+    "packing_ms": {
+      "p50": 1.0871,
+      "p95": 1.79324
+    },
+    "inference_setup_ms": {
+      "p50": 0.0042,
+      "p95": 0.0088
+    },
+    "model_inference_ms": {
+      "p50": 9.687,
+      "p95": 12.57772
+    },
+    "postprocess_ms": {
+      "p50": 0.082,
+      "p95": 0.12663999999999995
+    },
+    "adapter_ms": {
+      "p50": 0.4558,
+      "p95": 0.6817
+    },
+    "plan_validation_ms": {
+      "p50": 0.794,
+      "p95": 1.3081399999999987
+    },
+    "pre_model_ms": {
+      "p50": 11.0542,
+      "p95": 18.60293999999999
+    },
+    "post_model_ms": {
+      "p50": 1.3533,
+      "p95": 2.049439999999994
+    },
+    "planner_e2e_ms": {
+      "p50": 22.6529,
+      "p95": 30.59777999999999
+    },
+    "model_only_ms": {
+      "p50": 9.687,
+      "p95": 12.57772
+    },
+    "planner_overhead_ms": {
+      "p50": 12.3896,
+      "p95": 20.137879999999996
+    }
+  }
+}

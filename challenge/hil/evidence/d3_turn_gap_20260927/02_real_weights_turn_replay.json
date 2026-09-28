@@ -1,0 +1,71 @@
+{
+  "run_id": "b3-20260927T094735Z-70e55182",
+  "weights": "A3 handoff v3 student_v0_fp32_candidate.pt (PENDING_A3_FP32_GATE)",
+  "snapshot": "challenge/hil/frozen/d3_turn_gap_60_strict_v1_val (29 cases x 3 rounds = 87 case-runs)",
+  "ready_rate": 1.0,
+  "structural_pass_rate": 1.0,
+  "teacher_comparison": "DIAGNOSTIC_ONLY",
+  "gate_verified": false,
+  "gate_failed_checks": [
+    "gate_status_passed"
+  ],
+  "mean_behavior_match_ratio": 0.551724,
+  "mean_target_match_ratio": 0.862069,
+  "dominant_student_output": "SET_SPEED||NONE",
+  "dominant_student_output_share": 0.689655,
+  "distinct_student_outputs": 4,
+  "distinct_teacher_outputs": 7,
+  "per_scenario": {
+    "TC_C01_true_3step_left": {
+      "case_runs": 45,
+      "behavior_match": 0.666667,
+      "teacher_behaviors": {
+        "KEEP_LANE": 15,
+        "TURN_LEFT": 15,
+        "SET_SPEED": 15
+      },
+      "student_behaviors": {
+        "KEEP_LANE": 15,
+        "SET_SPEED": 30
+      }
+    },
+    "TC_C02_yield_left_3step": {
+      "case_runs": 18,
+      "behavior_match": 0.333333,
+      "teacher_behaviors": {
+        "YIELD": 6,
+        "TURN_LEFT": 6,
+        "SET_SPEED": 6
+      },
+      "student_behaviors": {
+        "SET_SPEED": 18
+      }
+    },
+    "TC_C03_true_4step_follow_left": {
+      "case_runs": 24,
+      "behavior_match": 0.5,
+      "teacher_behaviors": {
+        "FOLLOW": 6,
+        "SLOW_DOWN": 6,
+        "TURN_LEFT": 6,
+        "KEEP_LANE": 6
+      },
+      "student_behaviors": {
+        "FOLLOW": 6,
+        "SLOW_DOWN": 6,
+        "SET_SPEED": 12
+      }
+    }
+  },
+  "teacher_to_student_confusion": {
+    "TURN_LEFT -> SET_SPEED": 27,
+    "SET_SPEED -> SET_SPEED": 21,
+    "KEEP_LANE -> KEEP_LANE": 15,
+    "FOLLOW -> FOLLOW": 6,
+    "SLOW_DOWN -> SLOW_DOWN": 6,
+    "KEEP_LANE -> SET_SPEED": 6,
+    "YIELD -> SET_SPEED": 6
+  },
+  "finding": "The candidate never emits TURN_LEFT or YIELD: all 27 TURN_LEFT case-runs and all 6 YIELD case-runs are answered with SET_SPEED. Every other behaviour (SET_SPEED, KEEP_LANE, FOLLOW, SLOW_DOWN) is reproduced exactly. Per scenario behaviour match is 0.667 (C01), 0.333 (C02), 0.500 (C03). This is a vocabulary gap, not noise, and it lines up with the training-data gaps the team already logged (YIELD = 0, TURN_LEFT severely under-represented, 3-step/4-step = 0).",
+  "scope_note": "Development val replay with a PENDING candidate: DIAGNOSTIC_ONLY, no accuracy claim, X86 only, no board numbers."
+}

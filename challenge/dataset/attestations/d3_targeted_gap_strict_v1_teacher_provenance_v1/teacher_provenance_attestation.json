@@ -1,0 +1,57 @@
+{
+  "attestation_timing": "retrospective_provenance_supplement",
+  "attestation_type": "teacher_provenance_supplement",
+  "binding": {
+    "algorithm": "SHA256",
+    "canonicalization": "UTF-8 JSON sort_keys=True separators=(',',':')",
+    "payload": {
+      "acquisition_git_sha": "a6743feb52015031f70e2c21a94aef0abae0a65a",
+      "all_660_samples_share_teacher_identity": true,
+      "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "canonical_samples": 660,
+      "dataset_version": "b1_d3_targeted_gap_strict_v1",
+      "dtype": "bfloat16",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "quantization": null,
+      "repository_teacher_manifest": "challenge/teacher_targeted_gap_manifest.json",
+      "repository_teacher_manifest_sha256": "58c65c46e8e836a1ba9a55a828c6cf736d493e7eed3115f97f9d0244710594e2",
+      "source_b1_release_lock_sha256": "6845d4c16f5510dd83719f1be27e48eab47ff081d4e83a27afed234317babacc",
+      "source_release_manifest_sha256": "6fb35bdfd06556dfce01ca09e868c1289b7c440e803fc9fdc4176f31299ff59d",
+      "strict_positive_runs": 280,
+      "teacher_git_sha": "a6743feb52015031f70e2c21a94aef0abae0a65a",
+      "teacher_profile": "b1-targeted-gap-teacher-provenance-v1"
+    },
+    "sha256": "505051b1c764a1f464dc31a6e44ea705d21693d4eb935cd99ffd289ff7b428b2"
+  },
+  "coverage": {
+    "all_samples_share_teacher_identity": true,
+    "canonical_samples": 660,
+    "strict_positive_runs": 280
+  },
+  "release_is_immutable": true,
+  "repository_teacher_manifest": {
+    "path": "challenge/teacher_targeted_gap_manifest.json",
+    "sha256": "58c65c46e8e836a1ba9a55a828c6cf736d493e7eed3115f97f9d0244710594e2"
+  },
+  "schema_version": "1.1",
+  "signature_note": "Content-bound with SHA256. No configured local GPG secret key was available.",
+  "signature_status": "CONTENT_BOUND_UNSIGNED",
+  "source_release": {
+    "b1_release_lock_sha256": "6845d4c16f5510dd83719f1be27e48eab47ff081d4e83a27afed234317babacc",
+    "release_manifest_sha256": "6fb35bdfd06556dfce01ca09e868c1289b7c440e803fc9fdc4176f31299ff59d"
+  },
+  "status": "PASS",
+  "supplements_without_mutating_release": true,
+  "teacher": {
+    "acquisition_git_sha": "a6743feb52015031f70e2c21a94aef0abae0a65a",
+    "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "dtype": "bfloat16",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "quantization": null,
+    "qwen_mode": "planner_v2",
+    "teacher_git_sha": "a6743feb52015031f70e2c21a94aef0abae0a65a",
+    "teacher_profile": "b1-targeted-gap-teacher-provenance-v1"
+  }
+}

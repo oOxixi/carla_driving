@@ -82,16 +82,36 @@ def check_lock(release: Path, *, allow_lf_normalise: bool) -> dict:
 
 
 def check_signed_pass(release: Path, *, allow_lf_normalise: bool) -> dict:
-    """Verify the digests the signed pass actually claims.
+    """Verify the digests the pass actually claims, for every pass schema B1 ships.
 
-    B1 has shipped two shapes so far: the D3 Wave2 pass claims
-    release_lock_sha256 / release_manifest_sha256 / integrity_report_sha256
-    (plus a teacher block), while the targeted-gap pass only claims
-    release_manifest_sha256. A key that is not claimed is reported as
-    not_claimed rather than treated as a failure -- but every claimed digest
-    must match, and any claimed digest we cannot recompute is surfaced.
+    Three shapes exist so far:
+
+    1. ``B1_SIGNED_PASS.json`` (D3 Wave2) -- claims release_lock_sha256,
+       release_manifest_sha256 and integrity_report_sha256, plus a teacher block.
+    2. ``B1_SIGNED_PASS.json`` (targeted gap) -- claims release_manifest_sha256 only.
+    3. ``B1_CONTENT_BOUND_PASS.json`` (turn gap) -- no cryptographic signature at
+       all: ``signature_status = CONTENT_BOUND_UNSIGNED`` with a single
+       ``binding.sha256`` over a canonical JSON payload. The digest is
+       recomputable, so B3 verifies it and reports the lower assurance level
+       instead of treating it as equivalent to a signed pass.
     """
-    signed = read_json(release / "B1_SIGNED_PASS.json")
+    signed_path = release / "B1_SIGNED_PASS.json"
+    content_path = release / "B1_CONTENT_BOUND_PASS.json"
+    if signed_path.is_file():
+        signed = read_json(signed_path)
+        pass_schema = "B1_SIGNED_PASS"
+        assurance = "signed"
+    elif content_path.is_file():
+        signed = read_json(content_path)
+        pass_schema = "B1_CONTENT_BOUND_PASS"
+        assurance = "content_bound_unsigned"
+    else:
+        return {"pass_schema": None, "assurance": None, "gate": None, "status": None,
+                "dataset_version": None, "signed_at_utc": None, "teacher": None, "counts": {},
+                "claimed_digests": [], "not_claimed_digests": [], "not_recomputable_digests": [],
+                "content_binding": None, "results": {},
+                "failures": [{"reason": "no_pass_file",
+                              "expected": ["B1_SIGNED_PASS.json", "B1_CONTENT_BOUND_PASS.json"]}]}
     pairs = {
         "release_lock_sha256": "b1_release_lock.sha256",
         "release_manifest_sha256": "release_manifest.json",
@@ -126,7 +146,34 @@ def check_signed_pass(release: Path, *, allow_lf_normalise: bool) -> dict:
         if (key.endswith("_sha256") and key not in pairs
                 and key not in not_recomputable_keys):
             not_recomputable.append(key)
-    return {"gate": signed.get("gate"), "status": signed.get("status"),
+
+    content_binding = None
+    if pass_schema == "B1_CONTENT_BOUND_PASS":
+        binding = signed.get("binding") if isinstance(signed.get("binding"), dict) else {}
+        payload = binding.get("payload")
+        declared = binding.get("sha256")
+        if isinstance(payload, dict) and isinstance(declared, str):
+            canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            actual = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+            match = actual == declared
+            content_binding = {
+                "algorithm": binding.get("algorithm"),
+                "canonicalisation": "json.dumps(payload, sort_keys=True, separators=(',', ':'))",
+                "declared": declared,
+                "actual": actual,
+                "match": match,
+                "payload": payload,
+            }
+            if not match:
+                failures.append({"digest": "binding.sha256", "reason": "sha256_mismatch",
+                                 "expected": declared, "actual": actual})
+        else:
+            content_binding = {"match": False, "reason": "binding_payload_or_digest_missing"}
+            failures.append({"reason": "content_binding_unreadable"})
+
+    return {"pass_schema": pass_schema, "assurance": assurance,
+            "signature_status": signed.get("signature_status"),
+            "gate": signed.get("gate"), "status": signed.get("status"),
             "dataset_version": signed.get("dataset_version"),
             "signed_at_utc": signed.get("signed_at_utc"),
             "teacher": signed.get("teacher"),
@@ -135,6 +182,7 @@ def check_signed_pass(release: Path, *, allow_lf_normalise: bool) -> dict:
             "claimed_digests": sorted(results),
             "not_claimed_digests": not_claimed,
             "not_recomputable_digests": sorted(set(not_recomputable)),
+            "content_binding": content_binding,
             "results": results, "failures": failures}
 
 
@@ -242,6 +290,10 @@ def main() -> int:
 
     pass_info = report["signed_pass"]
     print(f"release      : {release.name}")
+    print(f"pass schema  : {pass_info.get('pass_schema')} "
+          f"(assurance: {pass_info.get('assurance')}"
+          + (f", signature_status: {pass_info['signature_status']}"
+             if pass_info.get("signature_status") else "") + ")")
     gate = pass_info.get("gate") or "(not claimed)"
     print(f"signed gate  : {gate} / status {pass_info.get('status')} "
           f"at {pass_info.get('signed_at_utc') or '(not stamped)'}")
@@ -254,6 +306,10 @@ def main() -> int:
     print(f"digests      : claimed={pass_info['claimed_digests']} "
           f"not_claimed={pass_info['not_claimed_digests']} "
           f"not_recomputable={pass_info['not_recomputable_digests']}")
+    binding = pass_info.get("content_binding")
+    if isinstance(binding, dict):
+        print(f"content bind : match={binding.get('match')} "
+              f"declared={binding.get('declared')} canonical={binding.get('canonicalisation')}")
     print(f"locked files : {report['lock']['files_checked']} checked; "
           f"{report['lock']['matched_after_lf_normalisation']} matched only after "
           f"CRLF->LF normalisation (eol mode: {report['eol_mode']})")

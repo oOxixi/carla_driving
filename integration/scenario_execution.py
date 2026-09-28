@@ -371,7 +371,14 @@ def scenario_trigger_satisfied(
         )
     if trigger_type == "previous_command_terminal":
         terminals = values.get("terminal_phase_ids", ())
-        return str(trigger.get("phase_id", "")) in set(terminals if isinstance(terminals, Sequence) else ())
+        return str(trigger.get("phase_id", "")) in set(
+            terminals if isinstance(terminals, Sequence) else ()
+        )
+    if trigger_type == "previous_command_succeeded":
+        completed = values.get("completed_phase_ids", ())
+        return str(trigger.get("phase_id", "")) in set(
+            completed if isinstance(completed, Sequence) else ()
+        )
     if trigger_type == "elapsed_since_previous_event_greater_than_s":
         return float(values.get("elapsed_since_previous_event_s", -1.0)) >= float(trigger.get("value", 0.0))
     raise ValueError(f"unsupported scenario trigger type: {trigger_type or '<missing>'}")

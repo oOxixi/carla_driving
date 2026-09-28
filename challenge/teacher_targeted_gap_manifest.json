@@ -1,0 +1,30 @@
+{
+  "acquisition_git_sha": "a6743feb52015031f70e2c21a94aef0abae0a65a",
+  "coverage": {
+    "all_samples_share_teacher_identity": true,
+    "canonical_samples": 660,
+    "dataset_version": "b1_d3_targeted_gap_strict_v1",
+    "strict_positive_runs": 280
+  },
+  "dtype": "bfloat16",
+  "evidence": {
+    "artifact_file_count": 13,
+    "artifact_fingerprint_method": "challenge/dataset/teacher_model_fingerprint.py",
+    "canonical_rows_teacher_git_sha_count": 660,
+    "canonical_rows_teacher_model_id_count": 660,
+    "model_revision_source": "local Hugging Face config.json.metadata"
+  },
+  "model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+  "model_id": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "note": "Retrospective immutable provenance addendum. The historical 660-row release is not modified.",
+  "quantization": null,
+  "qwen_mode": "planner_v2",
+  "schema_version": "1.0",
+  "source_release": {
+    "b1_release_lock_sha256": "6845d4c16f5510dd83719f1be27e48eab47ff081d4e83a27afed234317babacc",
+    "release_manifest_sha256": "6fb35bdfd06556dfce01ca09e868c1289b7c440e803fc9fdc4176f31299ff59d"
+  },
+  "teacher_git_sha": "a6743feb52015031f70e2c21a94aef0abae0a65a",
+  "teacher_profile": "b1-targeted-gap-teacher-provenance-v1"
+}
