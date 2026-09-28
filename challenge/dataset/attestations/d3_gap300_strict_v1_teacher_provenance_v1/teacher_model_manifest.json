@@ -1,0 +1,16 @@
+{
+  "dtype": "bfloat16",
+  "historical_model_manifest": {
+    "file_count": 13,
+    "fingerprint_method": "SHA256(canonical JSON list of model artifact files; excludes .cache and local .model_revision metadata; sorted by path; each entry contains path,size_bytes,sha256)",
+    "local_dir": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/models/Qwen3.5-2B_15852e8",
+    "source_path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/artifacts/b1_teacher_pinned/teacher_model_manifest_latest.json",
+    "source_sha256": "12990e560e3a8637c1a86fe2bfd0afbc893885a8251318d6f751de3964b67322"
+  },
+  "model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+  "model_id": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "quantization": null,
+  "qwen_mode": "planner_v2",
+  "schema_version": "1.0"
+}

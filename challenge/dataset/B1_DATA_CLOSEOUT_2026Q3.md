@@ -310,3 +310,182 @@ NO_CURRENT_B1_ACTION_REQUIRED = TRUE
 ```
 
 B1 may be reopened only if downstream B2/A3 evidence identifies a concrete data or Teacher-supervision gap that is not adequately covered by the currently governed assets.
+
+---
+
+## Post-Closeout Resolution — Gap300 Exact Teacher Provenance
+
+After the initial B1 closeout, downstream A3 introduced a fail-closed intake gate requiring exact Teacher artifact provenance for the immutable `d3_gap300_strict_v1` release.
+
+B1 resolved this requirement without modifying the published Gap300 rows, release manifest, or release lock.
+
+### Exact Historical Teacher Identity
+
+The Gap300 cohort contains 820 strict-positive samples with the following acquisition-code distribution:
+
+```text
+95668ba3a466ae0dfcd73982f5a4a0d210b524c1 = 770 samples
+e150ae598d95cb024faebc1699b872d0de899e91 = 50 samples
+```
+
+All 820 rows record:
+
+```text
+model_id  = Qwen/Qwen3.5-2B
+qwen_mode = planner_v2
+```
+
+Historical runtime evidence establishes that both acquisition cohorts were served by the same exact Teacher model artifact:
+
+```text
+Model:
+Qwen/Qwen3.5-2B
+
+Model revision:
+15852e8c16360a2fea060d615a32b45270f8a8fc
+
+Artifact fingerprint:
+4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa
+
+dtype:
+bfloat16
+
+quantization:
+null
+```
+
+The historical model manifest binds the exact revision and artifact fingerprint to:
+
+```text
+/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/
+models/Qwen3.5-2B_15852e8
+```
+
+The surviving vLLM process on port `8001` was observed with the same long-lived PID that originally loaded this directory and served:
+
+```text
+served_model_name = Qwen/Qwen3.5-2B
+dtype             = bfloat16
+quantization      = none
+```
+
+Both Gap300 Qwen proxy services bind to that same vLLM endpoint:
+
+```text
+18004 -> http://127.0.0.1:8001/v1 -> 770 samples
+18009 -> http://127.0.0.1:8001/v1 ->  50 samples
+```
+
+Therefore:
+
+```text
+ALL_820_SAME_ARTIFACT = VERIFIED
+```
+
+This conclusion is based on historical runtime lineage and detached content-bound evidence. The original sample rows remain unchanged.
+
+### Detached Exact-Teacher Attestation
+
+The exact provenance supplement is published outside the immutable release at:
+
+```text
+challenge/teacher_gap300_manifest.json
+
+challenge/dataset/attestations/
+  d3_gap300_strict_v1_teacher_provenance_v1/
+    teacher_model_manifest.json
+    teacher_provenance_attestation.json
+    attestation_lock.sha256
+```
+
+Content hashes:
+
+```text
+teacher_model_manifest.json
+ccf1c2fed7a9bb02f4ae28f0a6326d2fba506277f20e0876519cd2705ccc404d
+
+teacher_provenance_attestation.json
+de7a2f1acc33be2f26f4d9480a17ad72e8f9a34b591c580f04e826b5ee194c25
+
+attestation_lock.sha256
+63507969dd62c7f7170afb44214dd0da1a623f9941f54368c2d48f4f22530d14
+
+challenge/teacher_gap300_manifest.json
+710859ecc436d9f0e709661ba99fbe4fa9daad89e49861a154501f1f53a8e005
+```
+
+Immutable source-release bindings remain:
+
+```text
+release_manifest.json
+a2fbe23674dfa984bba9e5623b931583f0ed53479ac5846b1fe3535a2a465427
+
+b1_release_lock.sha256
+695905864b9133c27c1e9ee7a6b7e57ddfd2219ba8a64bc48a7bf9b81c20c3f7
+```
+
+Attestation policy:
+
+```text
+signature_status                    = CONTENT_BOUND_UNSIGNED
+cryptographic_signature_present     = false
+supplements_without_mutating_release = true
+```
+
+No cryptographic identity signature is claimed.
+
+### A3 Intake Resolution
+
+The formal A3 Gap300 intake verifier now reports:
+
+```text
+status                     = READY
+eligible_for_a3_final_view = true
+blockers                   = []
+required_b1_followup       = []
+A3_GAP300_INTAKE_RC        = 0
+```
+
+The corresponding regression tests now cover both valid and fail-closed behavior:
+
+```text
+complete exact Teacher attestation -> READY
+missing Teacher attestation        -> BLOCKED
+```
+
+Final targeted validation:
+
+```text
+3 passed
+GAP300_TARGETED_TEST_RC = 0
+```
+
+Additional final gates:
+
+```text
+B1_ADDENDUM_RC  = 0
+CALIBRATION_RC   = 0
+DIFF_CHECK_RC    = 0
+HISTORICAL_RELEASE_DIFF = empty
+```
+
+The original Gap300 rows still do not contain exact revision/fingerprint fields. They were not retroactively rewritten. Exact identity is established by historical runtime evidence plus the detached immutable attestation.
+
+### Final B1 State After Resolution
+
+```text
+B1_DATA_CLOSEOUT = PASS_WITH_DOCUMENTED_DEFERRED_GAPS
+B1_CURRENT_TASKS = COMPLETE
+B1_DATA_COLLECTION = PAUSED
+CALIBRATION_V1 = FROZEN
+HISTORICAL_RELEASES = IMMUTABLE
+TEACHER_V4_GOVERNANCE = PASS
+GAP300_PROVENANCE_ADDENDUM = PASS
+GAP300_EXACT_TEACHER_PROVENANCE = VERIFIED
+GAP300_ALL_820_SAME_ARTIFACT = VERIFIED
+A3_GAP300_INTAKE = READY
+FROZEN_TEST = B2_PENDING
+NO_CURRENT_B1_ACTION_REQUIRED = TRUE
+```
+
+B1 is now `COMPLETE / MAINTENANCE_ONLY`. It should reopen only if downstream B2 or A3 provides concrete evidence of a new B1-owned data or Teacher-supervision gap.

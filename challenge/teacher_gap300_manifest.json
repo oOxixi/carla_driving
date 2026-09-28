@@ -1,0 +1,34 @@
+{
+  "acquisition_git_sha_counts": {
+    "95668ba3a466ae0dfcd73982f5a4a0d210b524c1": 770,
+    "e150ae598d95cb024faebc1699b872d0de899e91": 50
+  },
+  "coverage": {
+    "all_samples_share_teacher_identity": true,
+    "canonical_samples": 820
+  },
+  "dataset_version": "b1_d3_gap300_strict_v1",
+  "identity_basis": {
+    "method": "historical artifact manifest + continuously surviving vLLM process lineage + proxy-to-vLLM binding + Gap300 cohort source manifest",
+    "proxy_pids_observed": [
+      1895088,
+      2785676
+    ],
+    "proxy_ports": [
+      18004,
+      18009
+    ],
+    "vllm_pid_observed": 1870062,
+    "vllm_port": 8001
+  },
+  "schema_version": "1.0",
+  "status": "PASS",
+  "teacher": {
+    "dtype": "bfloat16",
+    "model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "quantization": null,
+    "qwen_mode": "planner_v2"
+  }
+}
