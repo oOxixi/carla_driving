@@ -80,3 +80,26 @@ The old v3 package stays immutable as the baseline.  The new output directory,
 candidate ID, config ID and weight SHA must remain distinct, and the exact
 pending candidate must be handed to B2 without Frozen Test labels returning to
 A3.
+
+## Formal run and development-slice result
+
+The governed formal run completed on CUDA for three epochs / 2,187 updates.
+The exact pending candidate is published under
+`releases/a3_final_fp32_candidate_v1/` with weight SHA256
+`eaee4402197fb3fed53ed82bc2fbaceef62e5ed2d4cde86e8aa1a55dc6d46515`.
+Its development Validation metrics include behavior accuracy 1.0000, plan
+sequence accuracy 1.0000, target-pointer accuracy 1.0000 and target-speed MAE
+0.4433 m/s.
+
+The identity-bound slice evaluator additionally reports TURN_LEFT 67/67,
+YIELD 22/22, PULL_OVER 6/6, multi-step lane-change 71/71, target grounding
+257/257 and target-with-distractors 134/134.  `SLOW_DOWN` remains the weakest
+speed slice at 1.1095 m/s MAE and must be judged against a B2-frozen threshold.
+
+The promised 3-step and 4-step slices cannot be reported: both the final Train
+and development Validation partitions contain zero such plans.  The evidence
+explicitly marks `MISSING_REQUIRED_COVERAGE`; absence is not treated as a pass.
+This requires a new pinned-Teacher B1 cohort rather than synthetic row
+duplication or manual Teacher-plan extension.  Full machine-readable evidence
+and reproduction instructions are in
+`evidence/a3_final_fp32_candidate_v1/`.
