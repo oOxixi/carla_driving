@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "challenge/quantization/config/quant_config.schema.json",
+  "title": "A2 PTQ quantization configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "config_id", "backend", "activations", "weights",
+    "calibration", "options", "sensitivity", "deployment_boundary"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "config_id": {"type": "string", "minLength": 1},
+    "backend": {
+      "type": "object",
+      "required": ["framework", "quant_format", "opset", "purpose"],
+      "properties": {
+        "framework": {"const": "onnxruntime"},
+        "quant_format": {"const": "QDQ"},
+        "opset": {"const": 17},
+        "purpose": {"type": "string"}
+      }
+    },
+    "activations": {"$ref": "#/$defs/tensorQuantization"},
+    "weights": {"$ref": "#/$defs/tensorQuantization"},
+    "calibration": {
+      "type": "object",
+      "required": ["method", "release", "batch", "use_complete_release"],
+      "properties": {
+        "method": {"enum": ["MinMax", "Entropy", "Percentile"]},
+        "release": {"const": "b1_calibration_v1"},
+        "batch": {"const": 1},
+        "use_complete_release": {"const": true}
+      }
+    },
+    "options": {
+      "type": "object",
+      "required": ["reduce_range", "dedicated_qdq_pair", "excluded_nodes"],
+      "properties": {
+        "reduce_range": {"type": "boolean"},
+        "dedicated_qdq_pair": {"type": "boolean"},
+        "excluded_nodes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "sensitivity": {
+      "type": "object",
+      "required": ["candidate_op_types", "focus_heads"],
+      "properties": {
+        "candidate_op_types": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "focus_heads": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "deployment_boundary": {"type": "object"}
+  },
+  "$defs": {
+    "tensorQuantization": {
+      "type": "object",
+      "required": ["bits", "dtype", "symmetric", "granularity"],
+      "properties": {
+        "bits": {"const": 8},
+        "dtype": {"const": "QInt8"},
+        "symmetric": {"type": "boolean"},
+        "granularity": {"enum": ["per_tensor", "per_channel"]}
+      }
+    }
+  }
+}

@@ -14,3 +14,7 @@
 # Pin their checkout representation so Linux and Windows validate the same bytes.
 CARLA-Language-Benchmark/datasets/final_benchmark/CARLA_language_benchmark_v1_normalized.json text eol=crlf
 metrics/reference_5070/** text eol=crlf
+
+# Calibration v1 publishes LF-based SHA256 values.  Keep the frozen text
+# release byte-stable even when a Windows checkout enables core.autocrlf.
+challenge/dataset/releases/calibration_v1/** text eol=lf

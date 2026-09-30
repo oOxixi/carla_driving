@@ -49,6 +49,18 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def sha256_published_text(path: Path) -> str:
+    """Hash the canonical LF representation used by the release ledger.
+
+    Older Windows checkouts may have materialized the committed text as CRLF
+    before ``calibration_v1`` was pinned in ``.gitattributes``.  Accepting only
+    the LF-normalized representation keeps the published digest portable while
+    still detecting every content change other than checkout line endings.
+    """
+    data = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(data).hexdigest()
+
+
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     with path.open(encoding="utf-8") as f:
@@ -368,7 +380,8 @@ def validate(
         )
 
     for name, expected in listed.items():
-        if sha256(cal / name) != expected:
+        path = cal / name
+        if sha256(path) != expected and sha256_published_text(path) != expected:
             errors.append(
                 f"content hash mismatch: {name}"
             )

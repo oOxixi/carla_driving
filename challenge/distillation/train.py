@@ -30,12 +30,14 @@ from challenge.dataset.validate_d2_release import canonical_text_sha256, validat
 from challenge.dataset.build_a3_d2_view import VIEW_VERSION
 from challenge.dataset.build_a3_cumulative_view import CUMULATIVE_VIEW_VERSION
 from challenge.dataset.build_a3_recovery_cumulative_view import RECOVERY_VIEW_VERSION
+from challenge.dataset.build_a3_final_cumulative_view import FINAL_VIEW_VERSION
 
 from .class_balance import compute_class_weights
 from .artifacts import export_candidate_weights
 from .audit_d2_view import audit_view
 from .audit_cumulative_view import audit_cumulative_view
 from .audit_recovery_cumulative_view import audit_recovery_cumulative_view
+from .audit_final_cumulative_view import audit_final_cumulative_view
 from .checkpoint import load_checkpoint, save_checkpoint, sha256_file
 from .dataset import (
     DistillationDataset,
@@ -110,6 +112,8 @@ def run_training(
                     "signed_d2_release_smoke", "signed_d2_release_formal",
                     "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
                     "content_bound_recovery_cumulative_smoke",
+                    "content_bound_final_cumulative_smoke",
+                    "content_bound_final_cumulative_formal",
                 }
                 else None
             ),
@@ -233,6 +237,8 @@ def run_training(
         "signed_d2_release_smoke", "signed_d2_release_formal",
         "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
         "content_bound_recovery_cumulative_smoke",
+        "content_bound_final_cumulative_smoke",
+        "content_bound_final_cumulative_formal",
     }:
         repo = Path(__file__).resolve().parents[2]
         metadata["a3_view_manifest_sha256"] = canonical_text_sha256(
@@ -244,6 +250,24 @@ def run_training(
             )
             metadata["source_evidence_sha256"] = view["source_evidence_sha256"]
             metadata["provenance_class"] = "CONTENT_BOUND_UNSIGNED_DEVELOPMENT_ONLY"
+        elif cfg["teacher"].get("identity_policy") in {
+            "content_bound_final_cumulative_smoke",
+            "content_bound_final_cumulative_formal",
+        }:
+            view = json.loads(
+                (repo / str(cfg["dataset"]["view_manifest_path"])).read_text(encoding="utf-8")
+            )
+            metadata["release_manifest_sha256"] = view["source_evidence"]["gap300"][
+                "release_manifest_sha256"
+            ]
+            metadata["d2_release_manifest_sha256"] = canonical_text_sha256(
+                repo / str(cfg["dataset"]["d2_release_dir_path"]) / "release_manifest.json"
+            )
+            metadata["gap300_teacher_attestation_sha256"] = view["source_evidence"][
+                "gap300"
+            ]["teacher_attestation_sha256"]
+            metadata["source_evidence_sha256"] = view["source_evidence_sha256"]
+            metadata["provenance_class"] = "CONTENT_BOUND_UNSIGNED_GOVERNED_RELEASE"
         elif cfg["teacher"].get("identity_policy") in {
             "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
         }:
@@ -630,6 +654,8 @@ def _validate_frozen_identities(
         "frozen_manifest", "legacy_unpinned_smoke", "signed_d2_release_smoke",
         "signed_d2_release_formal", "signed_cumulative_release_smoke",
         "signed_cumulative_release_formal", "content_bound_recovery_cumulative_smoke",
+        "content_bound_final_cumulative_smoke",
+        "content_bound_final_cumulative_formal",
     }:
         raise ValueError(f"unsupported teacher identity_policy: {policy}")
     manifest_path = Path(__file__).resolve().parents[1] / "teacher_baseline_manifest.json"
@@ -648,6 +674,8 @@ def _validate_frozen_identities(
         "signed_d2_release_smoke", "signed_d2_release_formal",
         "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
         "content_bound_recovery_cumulative_smoke",
+        "content_bound_final_cumulative_smoke",
+        "content_bound_final_cumulative_formal",
     }:
         if policy == "signed_d2_release_smoke" and not integration_smoke:
             raise ValueError("signed D2 release policy is limited to integration smoke")
@@ -655,10 +683,21 @@ def _validate_frozen_identities(
             raise ValueError("signed cumulative release smoke policy is limited to integration smoke")
         if policy == "content_bound_recovery_cumulative_smoke" and not integration_smoke:
             raise ValueError("content-bound recovery policy is limited to integration smoke")
-        if policy in {"signed_d2_release_formal", "signed_cumulative_release_formal"} and integration_smoke:
+        if policy == "content_bound_final_cumulative_smoke" and not integration_smoke:
+            raise ValueError("content-bound final smoke policy is limited to integration smoke")
+        if policy in {
+            "signed_d2_release_formal",
+            "signed_cumulative_release_formal",
+            "content_bound_final_cumulative_formal",
+        } and integration_smoke:
             raise ValueError("formal signed release policy cannot be used for integration smoke")
         if policy == "content_bound_recovery_cumulative_smoke":
             expected_multi_teacher = "MULTI_PINNED_B1_D2_D3_RECOVERY_V1"
+        elif policy in {
+            "content_bound_final_cumulative_smoke",
+            "content_bound_final_cumulative_formal",
+        }:
+            expected_multi_teacher = "MULTI_PINNED_B1_D2_D3_FINAL_V1"
         elif policy in {"signed_cumulative_release_smoke", "signed_cumulative_release_formal"}:
             expected_multi_teacher = "MULTI_PINNED_B1_D2_V1_1_PLUS_D3_WAVE1"
         else:
@@ -677,6 +716,40 @@ def _validate_frozen_identities(
         repo = Path(__file__).resolve().parents[2]
         view_path = (repo / str(dataset_cfg["view_manifest_path"])).resolve()
         view = json.loads(view_path.read_text(encoding="utf-8"))
+        if policy in {
+            "content_bound_final_cumulative_smoke",
+            "content_bound_final_cumulative_formal",
+        }:
+            if (
+                view.get("view_version") != FINAL_VIEW_VERSION
+                or dataset_cfg.get("version") != FINAL_VIEW_VERSION
+            ):
+                raise ValueError("content-bound final view version mismatch")
+            for split, config_key in (("train", "train_path"), ("val", "val_path")):
+                path = (repo / str(dataset_cfg[config_key])).resolve()
+                if path != view_path.parent / f"{split}.jsonl":
+                    raise ValueError(f"A3 final {split} path does not match verified view")
+                if canonical_text_sha256(path) != view["files"][f"{split}.jsonl"]["sha256"]:
+                    raise ValueError(f"A3 final {split} hash does not match verified view")
+            for relative, expected_sha in view["cohort_manifest_shas"].items():
+                if canonical_text_sha256(repo / relative) != expected_sha:
+                    raise ValueError(f"Teacher cohort manifest changed: {relative}")
+            if (repo / str(dataset_cfg["asset_root"])).resolve() != repo:
+                raise ValueError("content-bound final RGB asset_root must be repository root")
+            audit_final_cumulative_view(
+                (repo / str(dataset_cfg["d2_release_dir_path"])).resolve(),
+                (repo / str(dataset_cfg["d3_wave1_release_dir_path"])).resolve(),
+                (repo / str(dataset_cfg["d3_wave2_release_dir_path"])).resolve(),
+                (repo / str(dataset_cfg["targeted_gap_release_dir_path"])).resolve(),
+                (repo / str(dataset_cfg["turn_gap_release_dir_path"])).resolve(),
+                (repo / str(dataset_cfg["gap300_release_dir_path"])).resolve(),
+                view_path.parent,
+                check_images=True,
+            )
+            if cfg["model"].get("model_id") == StudentPlannerV0.model_id:
+                if cfg["model"].get("config_id") != StudentModelConfig().config_id:
+                    raise ValueError("Student config_id does not match A1 V0 r3")
+            return
         if policy == "content_bound_recovery_cumulative_smoke":
             if (
                 view.get("view_version") != RECOVERY_VIEW_VERSION

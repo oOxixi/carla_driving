@@ -214,19 +214,24 @@ the newly collected labels failed.
 B1's new `d3_gap300_strict_v1` release adds 697 Train and 123 development
 Validation rows.  Across both partitions it contributes 230 `TURN_LEFT`, 75
 `YIELD` and 50 `PULL_OVER` steps.  Full byte/RGB/split validation passes and
-the release has zero overlap with prior A3 partitions.  Formal intake is still
-blocked because the rows bind only `Qwen/Qwen3.5-2B`, not the exact model
-revision and artifact fingerprint.  They also contain two acquisition SHAs:
+the release has zero overlap with prior A3 partitions.  B1 subsequently
+published an immutable exact-Teacher attestation proving that both acquisition
+paths used the same pinned Qwen3.5-2B revision and artifact fingerprint.  The
+two retained acquisition SHAs are:
 770 rows use `95668ba3a466ae0dfcd73982f5a4a0d210b524c1`, while the 50 D01/PULL_OVER
 rows use `e150ae598d95cb024faebc1699b872d0de899e91`; the release-level provenance
-declares only the former.  The required immutable two-cohort addendum is
-specified in `B1_GAP300_PROVENANCE_REQUEST.md`.
+attestation binds both distributions without rewriting the historical rows.
+The full-server Gap300 intake now returns `READY` with all 820 RGB assets
+checked and no cross-partition overlap.
 
-The next formal view will contain 5,826 strict-positive Train and 1,104
+The final A3 development view contains 5,826 strict-positive Train and 1,104
 development-Validation rows.  B1's 6,007 raw Train count includes 181 D2 hard
 negatives, which remain audit-only rather than being mislabeled as successful
-Teacher supervision.  No new FP32 training starts until the provenance gate
-is closed.
+Teacher supervision; the raw 1,154 Dev count likewise includes 50 audit-only
+rows.  The reproducible view audit passes with 539 total exclusions, and the
+two-update CUDA integration smoke completes the full train/export chain.  A
+new formal FP32 run may now start from the dedicated final config, while B2
+remains the sole owner of independent Gate approval.
 
 ## Current external handoffs and blockers
 
@@ -235,6 +240,9 @@ is closed.
   The targeted-gap provenance addendum and the turn-gap release have also
   arrived; both content-bound development cohorts now pass A3 intake and are
   available through a separately versioned cumulative view.
+- Gap300 exact Teacher provenance has arrived and the final 5,826/1,104 A3
+  view is reproducible with full RGB verification.  A3 data/provenance intake
+  is no longer blocked.
 - B2's evaluator, comparison, decision and evidence-publication tooling is in
   Git.  A fresh server readiness run still reports six blockers: benchmark and
   case manifest are not frozen; formal policy and policy version are not

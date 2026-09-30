@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "challenge/quantization/config/int8_manifest.schema.json",
+  "title": "A2 INT8 artifact manifest",
+  "type": "object",
+  "required": [
+    "quantization_id", "git_sha", "source_fp32_weights_sha256",
+    "source_fp32_onnx_sha256", "calibration_manifest_sha256",
+    "quant_config_sha256", "int8_artifact_sha256", "model_id",
+    "config_id", "dataset_version", "B2_result"
+  ],
+  "properties": {
+    "quantization_id": {"type": "string", "minLength": 1},
+    "git_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_fp32_weights_sha256": {"type": "string", "minLength": 1},
+    "source_fp32_onnx_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "calibration_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "quant_config_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "int8_artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "model_id": {"type": "string", "minLength": 1},
+    "config_id": {"type": "string", "minLength": 1},
+    "dataset_version": {"type": "string", "minLength": 1},
+    "B2_result": {"type": "object"}
+  }
+}

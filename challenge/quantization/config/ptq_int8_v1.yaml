@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "config_id": "a2-ort-qdq-int8-minmax-symmetric-pc-v1",
+  "backend": {
+    "framework": "onnxruntime",
+    "quant_format": "QDQ",
+    "opset": 17,
+    "purpose": "portable INT8 accuracy candidate; not an OpenExplorer compiled artifact"
+  },
+  "activations": {
+    "bits": 8,
+    "dtype": "QInt8",
+    "symmetric": true,
+    "granularity": "per_tensor"
+  },
+  "weights": {
+    "bits": 8,
+    "dtype": "QInt8",
+    "symmetric": true,
+    "granularity": "per_channel"
+  },
+  "calibration": {
+    "method": "MinMax",
+    "release": "b1_calibration_v1",
+    "batch": 1,
+    "use_complete_release": true
+  },
+  "options": {
+    "reduce_range": false,
+    "dedicated_qdq_pair": false,
+    "excluded_nodes": []
+  },
+  "sensitivity": {
+    "candidate_op_types": ["Conv", "Gemm", "MatMul"],
+    "focus_heads": [
+      "target_speed_mps",
+      "behavior_logits",
+      "target_pointer_logits",
+      "target_lane_logits"
+    ]
+  },
+  "deployment_boundary": {
+    "openexplorer_owner": "A4",
+    "openexplorer_version": "3.9.1",
+    "march": "nash-p",
+    "note": "A4 must compile from the same FP32 identity, Calibration v1 and this quantization policy; ORT QDQ bytes are not claimed to be BPU-ready."
+  }
+}

@@ -236,14 +236,21 @@ The later Gap300 release is checked separately:
 ```bash
 python -m challenge.dataset.validate_d3_gap300_release
 python -m challenge.distillation.audit_gap300_intake
+python -m challenge.dataset.build_a3_final_cumulative_view
+python -m challenge.distillation.audit_final_cumulative_view
 ```
 
 Its 820 rows and images pass the transport/data gate and materially add
-`TURN_LEFT`, `YIELD` and `PULL_OVER` supervision.  Formal A3 intake remains
-fail-closed until B1 supplies the cohort-specific exact Teacher provenance in
-[B1_GAP300_PROVENANCE_REQUEST.md](B1_GAP300_PROVENANCE_REQUEST.md).  The raw
-6,007-row B1 total includes 181 D2 hard negatives; A3's future ordinary
-positive-supervision view is 5,826 Train rows, not 6,007.
+`TURN_LEFT`, `YIELD` and `PULL_OVER` supervision.  B1's cohort-specific exact
+Teacher attestation now closes the formal intake gate.  The raw 6,007/1,154
+B1 totals include 181/50 D2 hard negatives; A3's optimizer-facing ordinary
+positive-supervision view is therefore 5,826 Train and 1,104 Dev rows.  The
+539 excluded rows remain in the audit manifest and never enter ordinary loss.
+The formal and integration-smoke configs are respectively
+`d3_final_cumulative_formal_config.yaml` and
+`d3_final_cumulative_smoke_config.yaml`; their policies cannot be interchanged.
+Exact hashes and full-server validation evidence are recorded in
+[D3_FINAL_CUMULATIVE_PREP.md](D3_FINAL_CUMULATIVE_PREP.md).
 
 After B1 and B2 deliver version-matched Validation evidence, promotion uses:
 
@@ -258,7 +265,8 @@ python -m challenge.distillation.promote \
 
 The default core-accuracy drop limit is 1.5 percentage points. Safety-critical
 recall may not drop, and Student schema validity must be exactly 100%.
-For `signed_d2_release_formal` and `signed_cumulative_release_formal`
+For `signed_d2_release_formal`, `signed_cumulative_release_formal` and
+`content_bound_final_cumulative_formal`
 candidates, both evaluations must additionally
 bind the candidate release/view hashes, the same B2 benchmark and policy
 manifest hashes, case-set digest, evaluator Git SHA and positive sample count. Each side
@@ -266,4 +274,6 @@ must bind its predictions SHA, the Student must bind its weights hash, and both 
 must identify the exact frozen Teacher v4 baseline.
 The cumulative policy also binds the D2 release, detached B1 D3 signature and
 canonical multi-release source-evidence digest.
+The final content-bound policy instead binds the D2 release, exact Gap300
+Teacher attestation and canonical six-cohort source-evidence digest.
 The smoke identity policy is never promotable.

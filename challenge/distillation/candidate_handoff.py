@@ -26,6 +26,7 @@ PACKAGE_FILES = tuple(
     relative for relative in REQUIRED_SOURCE_FILES if relative != "student_fp32_best.pt"
 )
 HANDOFF_PAYLOAD_FILES = frozenset((*PACKAGE_FILES, "README.md", "training_config.yaml"))
+TEXT_PAYLOAD_SUFFIXES = frozenset({".json", ".jsonl", ".md", ".txt", ".yaml", ".yml"})
 
 
 def build_candidate_handoff(
@@ -76,7 +77,7 @@ def build_candidate_handoff(
                     field: candidate[field]
                     for field in (
                         "d2_release_manifest_sha256", "b1_signature_sha256",
-                        "source_evidence_sha256",
+                        "gap300_teacher_attestation_sha256", "source_evidence_sha256",
                     )
                     if candidate.get(field) is not None
                 }),
@@ -99,7 +100,11 @@ def build_candidate_handoff(
         files: dict[str, dict[str, Any]] = {}
         for path in sorted(item for item in temporary.rglob("*") if item.is_file()):
             relative = path.relative_to(temporary).as_posix()
-            files[relative] = {"sha256": _sha256(path), "size_bytes": path.stat().st_size}
+            published = _published_text_bytes(path)
+            files[relative] = {
+                "sha256": _sha256_bytes(published),
+                "size_bytes": len(published),
+            }
         manifest["files"] = files
         _write_json(temporary / "handoff_manifest.json", manifest)
         temporary.replace(output)
@@ -147,6 +152,14 @@ def verify_candidate_handoff(package_directory: str | Path) -> dict[str, Any]:
         )
         for field in cumulative_identity_fields:
             _require_hex(str(identity.get(field, "")), 64, field)
+    elif identity.get("teacher_identity_policy") == "content_bound_final_cumulative_formal":
+        cumulative_identity_fields = (
+            "d2_release_manifest_sha256",
+            "gap300_teacher_attestation_sha256",
+            "source_evidence_sha256",
+        )
+        for field in cumulative_identity_fields:
+            _require_hex(str(identity.get(field, "")), 64, field)
 
     files = manifest.get("files")
     if not isinstance(files, Mapping):
@@ -174,10 +187,7 @@ def verify_candidate_handoff(package_directory: str | Path) -> dict[str, Any]:
         if not isinstance(record, Mapping):
             raise ValueError(f"handoff file record must be an object: {relative}")
         path = root / relative
-        if path.stat().st_size != record.get("size_bytes"):
-            raise ValueError(f"handoff file size mismatch: {relative}")
-        if _sha256(path) != record.get("sha256"):
-            raise ValueError(f"handoff file SHA256 mismatch: {relative}")
+        _verify_published_file(path, record, relative)
 
     candidate = _read_object(root / "student_v0_fp32_candidate.json")
     identity_pairs = (
@@ -199,7 +209,7 @@ def verify_candidate_handoff(package_directory: str | Path) -> dict[str, Any]:
         "package_status": manifest["package_status"],
         "gate_status": manifest["gate_status"],
         "files_checked": len(HANDOFF_PAYLOAD_FILES),
-        "manifest_sha256": _sha256(manifest_path),
+        "manifest_sha256": _published_text_sha256(manifest_path),
         "weights_sha256": weights_sha,
         "candidate_identity": dict(identity),
     }
@@ -217,7 +227,9 @@ def _validate_candidate(
     if candidate.get("source_worktree_dirty") is not False:
         raise ValueError("candidate must originate from a clean worktree")
     if candidate.get("teacher_identity_policy") not in {
-        "signed_d2_release_formal", "signed_cumulative_release_formal",
+        "signed_d2_release_formal",
+        "signed_cumulative_release_formal",
+        "content_bound_final_cumulative_formal",
     }:
         raise ValueError("handoff requires the formal signed-release identity policy")
     for field, length in (
@@ -231,6 +243,13 @@ def _validate_candidate(
     if candidate.get("teacher_identity_policy") == "signed_cumulative_release_formal":
         for field in (
             "d2_release_manifest_sha256", "b1_signature_sha256",
+            "source_evidence_sha256",
+        ):
+            _require_hex(str(candidate.get(field, "")), 64, field)
+    elif candidate.get("teacher_identity_policy") == "content_bound_final_cumulative_formal":
+        for field in (
+            "d2_release_manifest_sha256",
+            "gap300_teacher_attestation_sha256",
             "source_evidence_sha256",
         ):
             _require_hex(str(candidate.get(field, "")), 64, field)
@@ -266,6 +285,14 @@ def _validate_candidate(
     if candidate.get("teacher_identity_policy") == "signed_cumulative_release_formal":
         for field in (
             "d2_release_manifest_sha256", "b1_signature_sha256",
+            "source_evidence_sha256",
+        ):
+            if candidate.get(field) != summary.get(field):
+                raise ValueError(f"candidate {field} does not match training summary {field}")
+    elif candidate.get("teacher_identity_policy") == "content_bound_final_cumulative_formal":
+        for field in (
+            "d2_release_manifest_sha256",
+            "gap300_teacher_attestation_sha256",
             "source_evidence_sha256",
         ):
             if candidate.get(field) != summary.get(field):
@@ -314,6 +341,38 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def _published_text_bytes(path: Path) -> bytes:
+    """Return Git-published text bytes independent of Windows checkout EOLs."""
+    value = path.read_bytes()
+    if path.suffix.lower() in TEXT_PAYLOAD_SUFFIXES:
+        return value.replace(b"\r\n", b"\n")
+    return value
+
+
+def _published_text_sha256(path: Path) -> str:
+    return _sha256_bytes(_published_text_bytes(path))
+
+
+def _verify_published_file(path: Path, record: Mapping[str, Any], relative: str) -> None:
+    """Verify exact bytes, with a narrow LF fallback for Git-managed text files."""
+    expected_size = record.get("size_bytes")
+    expected_sha = record.get("sha256")
+    raw_size = path.stat().st_size
+    raw_sha = _sha256(path)
+    if raw_size == expected_size and raw_sha == expected_sha:
+        return
+
+    published = _published_text_bytes(path)
+    if len(published) != expected_size:
+        raise ValueError(f"handoff file size mismatch: {relative}")
+    if _sha256_bytes(published) != expected_sha:
+        raise ValueError(f"handoff file SHA256 mismatch: {relative}")
 
 
 def _require_hex(value: str, length: int, field: str) -> None:

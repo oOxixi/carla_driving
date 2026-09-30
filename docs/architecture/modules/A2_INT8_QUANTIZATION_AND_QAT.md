@@ -26,12 +26,12 @@ Frozen Test 调参，也不负责 OpenExplorer Runtime、J6P 性能优化或最�
 |---|---|---|
 | 固定 Shape Student 结构 | 已完成 | batch=1、opset 17、四输入、十输出 |
 | FP32 ONNX 结构冒烟 | 已完成 | `challenge/student_v0_fp32.onnx` 为随机初始化 |
-| 真实训练权重 ONNX 导出 | 未实现 | `export_onnx.py` 没有 `--weights`，总是重新随机初始化 |
+| 真实训练权重 ONNX 导出 | 入口已实现，待真实权重 | `export_onnx.py` 支持 `--weights`/`--weights-manifest` 并严格校验 FP32 Gate 与 SHA |
 | A3 真实 FP32 Gate 权重 | 未交付 | 没有真实 `A3_FP32_GATE_PASSED` manifest |
 | Calibration 正式发布 | 未交付 | 只有 schema/规划，`calibration_frozen=false` |
-| PTQ 实现与配置 | 未交付 | 仓库没有 A2 quantization 入口、固定工具版本或 quant config |
-| INT8 ONNX/模型 | 未交付 | 仓库中没有 Student INT8 artifact |
-| 敏感层报告 | 未交付 | 没有逐层量化或逐 Head 误差证据 |
+| PTQ 实现与配置 | 开发入口已实现 | `challenge.quantization.cli` 可构建开发 Calibration 并执行 ORT QDQ PTQ；正式 OpenExplorer 配置仍待 A4 |
+| INT8 ONNX/模型 | 仅完成 Smoke | 随机 Student 的本地 `SMOKE_ONLY` 产物在 `artifacts/a2/`，未作为正式模型提交 |
+| 敏感层报告 | 开发诊断已实现 | 可生成逐 Head 漂移和敏感输出初筛；正式逐层实验仍待真实权重与 B2 policy |
 | QAT | 未实现 | 没有 fake-quant 配置、QAT checkpoint 或训练记录 |
 | INT8 通用检查工具 | 部分就绪 | B3 可检查 ONNX 结构并比较两个图的原始输出 |
 | OpenExplorer/J6P | 未完成 | 工具链版本、转换配置、板端 artifact 均未交付 |
@@ -85,9 +85,9 @@ A2 正式 PTQ 只接受：
 - opset 与 exporter/toolchain 版本；
 - `weights_status=A3_FP32_GATE_PASSED` 或等价的受控状态。
 
-当前 `challenge/export/export_onnx.py` 不支持加载训练权重，必须先增加受 manifest 约束的
-`--weights`/`--weights-manifest` 路径及回归测试。不能通过修改现有随机 ONNX metadata
-把它伪装成训练模型。
+`challenge/export/export_onnx.py` 已增加受 manifest 约束的 `--weights` 和
+`--weights-manifest` 路径及回归测试；只有 `A3_FP32_GATE_PASSED`、身份和 SHA 全部匹配
+才加载 state dict。当前仍缺上游真实权重，不能通过修改随机 ONNX metadata 伪装训练模型。
 
 ### 4.3 Calibration release
 
@@ -286,9 +286,9 @@ INT8 Gate policy。第一条也要求 A2 为该 INT8 文件生成匹配 SHA 和�
 | 阻塞 | 关闭条件 |
 |---|---|
 | 无真实 FP32 Gate 权重 | A3/B2 签发可核验的 FP32 PASS 权重与 manifest |
-| exporter 总是随机初始化 | 支持受 manifest 约束的训练权重导出并增加逐输出回归 |
+| exporter 正式路径待实物验证 | A3/B2 提供真实 PASS 权重后，用现有受 manifest 约束入口完成导出和逐输出回归 |
 | Calibration 未冻结 | B1/B2 发布 300～500 条专用 split、loader、manifest 和覆盖报告 |
-| 无 A2 工程 | 提交 PTQ、配置、敏感层、报告、manifest 和自动化测试入口 |
+| A2 正式工程待真实输入闭环 | 开发 PTQ、报告、manifest 和测试入口已提交；用正式权重、Calibration 和 OpenExplorer 配置重跑 |
 | 无固定量化工具链 | 锁定版本、容器/环境、命令和 OpenExplorer 对接边界 |
 | 无 INT8 policy | B2 固定逐 Head/切片/累计衰减/空分母和失败处理规则 |
 | 无真实 INT8 artifact | 从 Gate-passed FP32 生成、核验并签发候选 |
