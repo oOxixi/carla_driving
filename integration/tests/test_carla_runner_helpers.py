@@ -841,6 +841,103 @@ def test_single_sensor_fault_applies_degraded_speed_cap_only_while_partially_ava
     assert _single_sensor_fault_speed_cap_mps({"front_rgb", "lidar"}, 4.2) is None
 
 
+def test_pass_target_continuation_replans_forward_from_live_adjacent_lane(
+    monkeypatch,
+) -> None:
+    """PASS_TARGET must not keep an exhausted outbound lane-change reference."""
+    ego = Namespace(get_location=lambda: Namespace(x=40.0, y=3.5))
+    expected = RouteReference(
+        [(40.0, 3.5), (80.0, 3.5), (120.0, 3.5)],
+        target_speed_mps=4.0,
+    )
+    calls = []
+
+    def fake_build_route_reference(
+        world_map,
+        live_ego,
+        target_speed_mps,
+        *,
+        turn_direction="STRAIGHT",
+        distance_m=500.0,
+        step_m=2.0,
+    ):
+        calls.append({
+            "world_map": world_map,
+            "ego": live_ego,
+            "target_speed_mps": target_speed_mps,
+            "turn_direction": turn_direction,
+            "distance_m": distance_m,
+            "step_m": step_m,
+        })
+        return expected
+
+    monkeypatch.setattr(
+        carla_runner,
+        "build_route_reference",
+        fake_build_route_reference,
+    )
+
+    world_map = object()
+    route = carla_runner._build_pass_target_continuation(
+        world_map=world_map,
+        ego=ego,
+        target_speed_mps=4.0,
+        mission_distance_m=72.0,
+    )
+
+    assert route is expected
+    assert calls == [{
+        "world_map": world_map,
+        "ego": ego,
+        "target_speed_mps": 4.0,
+        "turn_direction": "STRAIGHT",
+        "distance_m": 72.0,
+        "step_m": 2.0,
+    }]
+
+
+def test_pass_target_continuation_has_minimum_forward_horizon(
+    monkeypatch,
+) -> None:
+    """Short missions still receive enough route for PASS_TARGET clearance."""
+    captured = {}
+
+    def fake_build_route_reference(
+        _world_map,
+        _ego,
+        target_speed_mps,
+        *,
+        turn_direction="STRAIGHT",
+        distance_m=500.0,
+        step_m=2.0,
+    ):
+        captured["speed"] = target_speed_mps
+        captured["direction"] = turn_direction
+        captured["distance"] = distance_m
+        return RouteReference(
+            [(0.0, 0.0), (60.0, 0.0)],
+            target_speed_mps=target_speed_mps,
+        )
+
+    monkeypatch.setattr(
+        carla_runner,
+        "build_route_reference",
+        fake_build_route_reference,
+    )
+
+    carla_runner._build_pass_target_continuation(
+        world_map=object(),
+        ego=object(),
+        target_speed_mps=3.5,
+        mission_distance_m=20.0,
+    )
+
+    assert captured["speed"] == pytest.approx(3.5)
+    assert captured["direction"] == "STRAIGHT"
+    assert captured["distance"] == pytest.approx(60.0)
+
+
+
 def test_compiled_maneuver_applies_only_the_first_step_before_fsm_advances() -> None:
     current = RouteReference([(0.0, 0.0), (10.0, 0.0)], target_speed_mps=2.0)
     validated = RouteReference([(0.0, 0.0), (10.0, 3.5)], target_speed_mps=2.0)

@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "TC_MS34_real_3step_avoid_resume",
+  "category": "qwen_fullchain",
+  "official_level": "advanced",
+  "description": "B1 MultiStep34 smoke: 单次固定 Qwen Teacher 请求生成真实三步 AVOID_OBSTACLE -> RETURN_TO_LANE -> KEEP_LANE 计划。",
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 253000,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 90.0
+  },
+  "ego_spawn": {
+    "x": 0,
+    "y": 0,
+    "z": 0.5,
+    "yaw_deg": 0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        140.0,
+        0.0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 4.0,
+    "distance_contract_m": 140.0
+  },
+  "commands": [
+    {
+      "time_s": 0.0,
+      "source_text": "从右侧安全绕过前方停着的车，完成后回到当前车道并继续以十五公里每小时行驶",
+      "intent": "AVOID_OBSTACLE",
+      "parameters": {
+        "direction": "RIGHT",
+        "target_actor_id": "obstacle-01",
+        "target_speed_kph": 15
+      },
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "MS34_3STEP_PLAN",
+      "trigger": {
+        "type": "scenario_started"
+      }
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "obstacle-01",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.tesla.model3",
+      "spawn": {
+        "x": 45.0,
+        "y": 0.0,
+        "z": 0.5,
+        "yaw_deg": 0.0
+      },
+      "behavior": {
+        "mode": "lead_vehicle",
+        "initial_speed_mps": 0,
+        "brake_at_s": 0,
+        "target_speed_mps": 0
+      }
+    }
+  ],
+  "qwen_expected": {
+    "route": "QWEN_PLAN",
+    "min_calls": 1,
+    "max_calls": 1,
+    "expected_terminal": "SUCCEEDED",
+    "allowed_replans": 0,
+    "forbidden_low_level_fields": true
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_no_route_deviation": true
+  },
+  "extensions": {
+    "clean_world_on_start": true,
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "maneuver_route_mode": "dynamic_out_and_back",
+    "lane_change_profile": {
+      "route_distance_m": 72.0,
+      "step_m": 1.0,
+      "transition_start_m": 5.0,
+      "transition_length_m": 20.0,
+      "target_lane_offset_m": 0.25
+    },
+    "fixed_random_seed": true,
+    "phase_plan": [
+      "MS34_3STEP_PLAN"
+    ],
+    "speed_policy": {
+      "scenario_limit_kph": 15.0,
+      "map_limit_handling": "replace"
+    }
+  }
+}

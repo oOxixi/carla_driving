@@ -926,6 +926,28 @@ def _apply_compiled_plan_route(
     return route, target_speed, route_behavior
 
 
+def _build_pass_target_continuation(
+    *,
+    world_map: Any,
+    ego: Any,
+    target_speed_mps: float,
+    mission_distance_m: float,
+) -> RouteReference:
+    """Continue PASS_TARGET forward in ego's current lane.
+
+    CHANGE_LANE_* references are finite.  After the outbound lane change has
+    completed, PASS_TARGET needs a fresh forward reference in the adjacent
+    lane until the target has been cleared and RETURN_TO_LANE explicitly
+    requests the return.
+    """
+    return build_route_reference(
+        world_map,
+        ego,
+        target_speed_mps,
+        distance_m=max(60.0, float(mission_distance_m)),
+    )
+
+
 def _route_starts_near_ego(
     route: RouteReference,
     ego: Any,
@@ -6400,6 +6422,30 @@ def run(args: argparse.Namespace) -> None:
                                         maneuver_lane_ids["CURRENT"] = str(
                                             destination_waypoint.lane_id
                                         )
+                                route_step_applied = True
+                            elif (
+                                dynamic_out_and_back
+                                and started_route_step.behavior == "PASS_TARGET"
+                            ):
+                                # CHANGE_LANE_* uses a finite maneuver reference.
+                                # Once the outbound lane change completes, PASS_TARGET
+                                # must continue forward in the ego's current adjacent
+                                # lane instead of exhausting that finite reference.
+                                #
+                                # Replanning STRAIGHT from the current map pose keeps
+                                # the vehicle in its present lane until the semantic
+                                # RETURN_TO_LANE step explicitly requests the return.
+                                route = _build_pass_target_continuation(
+                                    world_map=world_map,
+                                    ego=ego,
+                                    target_speed_mps=runtime.requested_speed_mps,
+                                    mission_distance_m=(
+                                        args.route_distance_m
+                                        if spec is None
+                                        else _scenario_route_distance_m(spec)
+                                    ),
+                                )
+                                runtime.lateral.reset(preserve_steer=True)
                                 route_step_applied = True
                             else:
                                 route = replace(
