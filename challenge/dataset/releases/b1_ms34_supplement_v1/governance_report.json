@@ -1,0 +1,30 @@
+{
+  "dataset_version": "b1_ms34_supplement_v1",
+  "family_counts": {
+    "TC_MS34_real_3step_avoid_resume": 17,
+    "TC_MS34_real_4step_yield_avoid_resume": 17
+  },
+  "gates": {
+    "canonical_sample_ids_unique": true,
+    "group_split_leakage_zero": true,
+    "hard_negative_excluded_from_positive_supervision": true,
+    "hard_negative_route_deviation_evidence": true,
+    "positive_closed_loop_strict_pass": true,
+    "positive_plan_sequences_exact": true,
+    "rgb_integrity": true,
+    "sample_overlap_zero": true
+  },
+  "hard_negative_samples": 1,
+  "immutability": {
+    "prior_releases_modified": false,
+    "raw_acquisition": true,
+    "release_immutable_after_publish": true
+  },
+  "schema_version": "1.0",
+  "source_runs": 35,
+  "status": "PASS",
+  "strict_positive_runs": 34,
+  "strict_positive_samples": 34,
+  "train_positive_samples": 30,
+  "val_positive_samples": 4
+}

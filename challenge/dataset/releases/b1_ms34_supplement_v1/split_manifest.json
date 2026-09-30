@@ -1,0 +1,100 @@
+{
+  "counts": {
+    "group_overlap": 0,
+    "groups": 6,
+    "hard_negative_groups": 1,
+    "hard_negative_samples": 1,
+    "total_positive": 34,
+    "train_addition": 30,
+    "train_groups": 2,
+    "val_addition": 4,
+    "val_groups": 4
+  },
+  "dataset_version": "b1_ms34_supplement_v1",
+  "groups": {
+    "hard_negative_addition": [
+      {
+        "group_id": "a8211f870cf3d54ec680",
+        "map": "Town03",
+        "route_hash": "59724b4dcf06e58c",
+        "sample_count": 1,
+        "scenario_family": "qwen_fullchain",
+        "scenario_id": "TC_MS34_real_3step_avoid_resume",
+        "seed": 253002
+      }
+    ],
+    "train_addition": [
+      {
+        "group_id": "0a49c8e462c2092fcf37",
+        "map": "Town03",
+        "route_hash": "59724b4dcf06e58c",
+        "sample_count": 15,
+        "scenario_family": "qwen_fullchain",
+        "scenario_id": "TC_MS34_real_3step_avoid_resume",
+        "seed": 253000
+      },
+      {
+        "group_id": "8cacc20c1f4ff000e559",
+        "map": "Town03_Opt",
+        "route_hash": "5cc4b975aa08bb23",
+        "sample_count": 15,
+        "scenario_family": "qwen_fullchain",
+        "scenario_id": "TC_MS34_real_4step_yield_avoid_resume",
+        "seed": 253001
+      }
+    ],
+    "val_addition": [
+      {
+        "group_id": "235838cab2246fbf434b",
+        "map": "Town03",
+        "route_hash": "59724b4dcf06e58c",
+        "sample_count": 1,
+        "scenario_family": "qwen_fullchain",
+        "scenario_id": "TC_MS34_real_3step_avoid_resume",
+        "seed": 253003
+      },
+      {
+        "group_id": "7a08290adb713126647c",
+        "map": "Town03_Opt",
+        "route_hash": "5cc4b975aa08bb23",
+        "sample_count": 1,
+        "scenario_family": "qwen_fullchain",
+        "scenario_id": "TC_MS34_real_4step_yield_avoid_resume",
+        "seed": 253004
+      },
+      {
+        "group_id": "81da17062c90123a7257",
+        "map": "Town03",
+        "route_hash": "59724b4dcf06e58c",
+        "sample_count": 1,
+        "scenario_family": "qwen_fullchain",
+        "scenario_id": "TC_MS34_real_3step_avoid_resume",
+        "seed": 253006
+      },
+      {
+        "group_id": "9fc77f4376f92c3c7128",
+        "map": "Town03_Opt",
+        "route_hash": "5cc4b975aa08bb23",
+        "sample_count": 1,
+        "scenario_family": "qwen_fullchain",
+        "scenario_id": "TC_MS34_real_4step_yield_avoid_resume",
+        "seed": 253005
+      }
+    ]
+  },
+  "schema_version": "1.0",
+  "split_policy": {
+    "group_fields": [
+      "metadata.scenario_family",
+      "metadata.map",
+      "metadata.route_hash",
+      "metadata.seed"
+    ],
+    "selection": {
+      "hard_negative": "3-step seed 253002; excluded from positive supervision due to closed-loop route deviation.",
+      "train": "The original 30-run targeted acquisition: 15 repeated 3-step runs at seed 253000 and 15 repeated 4-step runs at seed 253001.",
+      "validation": "Four separately acquired successful holdout groups: 3-step seeds 253003/253006 and 4-step seeds 253004/253005."
+    },
+    "type": "group_aware_fixed_holdout"
+  }
+}

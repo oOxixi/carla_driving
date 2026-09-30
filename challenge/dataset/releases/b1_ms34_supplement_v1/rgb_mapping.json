@@ -1,0 +1,212 @@
+{
+  "td_00c69a8a3d6efd14239f34ed": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_00c69a8a3d6efd14239f34ed.jpg",
+    "sha256": "3cae420d9b463120e3b54119b854b9a8a2d3d6037cd4bcb1b1ce6b2605007cb6",
+    "size_bytes": 7752,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_008_attempt_008/qwen_images/multiview_frame_474607263_ae63a18e0d27ab90.jpg"
+  },
+  "td_13d756e4adde46ae075bd024": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_13d756e4adde46ae075bd024.jpg",
+    "sha256": "46c1648d8d09d9898412c0293ea7b2a55dca2db9f2c904b3a168e682f5dfbed5",
+    "size_bytes": 7527,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1_extra_val/4step_seed253005/qwen_images/multiview_frame_475243075_ae63a18e0d27ab90.jpg"
+  },
+  "td_1bfc6677dadd5f3a2996d26b": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_1bfc6677dadd5f3a2996d26b.jpg",
+    "sha256": "3a5129f72487d398e167d61df6ce3920ec1209fd519e90ee518d842f77fb5861",
+    "size_bytes": 7742,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_013_attempt_013/qwen_images/multiview_frame_474618251_ae63a18e0d27ab90.jpg"
+  },
+  "td_229a34a0e043a6435b1d670d": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_229a34a0e043a6435b1d670d.jpg",
+    "sha256": "6ff27a2075f9cc7a857f354419b042882f0a416cb83a30b9c937e245d7ec133b",
+    "size_bytes": 7358,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1_extra_val/4step_seed253004/qwen_images/multiview_frame_475241630_ae63a18e0d27ab90.jpg"
+  },
+  "td_35e5ff56aceba26dcc28ad47": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_35e5ff56aceba26dcc28ad47.jpg",
+    "sha256": "4cbfa86a080d7a08358f5e7af662f039fc5629b898bbf605974c927e52632fc6",
+    "size_bytes": 7754,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_011_attempt_011/qwen_images/multiview_frame_474613890_ae63a18e0d27ab90.jpg"
+  },
+  "td_3a219c4baff2c9f9bd065070": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_3a219c4baff2c9f9bd065070.jpg",
+    "sha256": "9b4ce65b87939ef86ba44c21578ae23931e67ecfe9e00b2bb51a3ca23d5c1866",
+    "size_bytes": 7753,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_004_attempt_004/qwen_images/multiview_frame_474598546_ae63a18e0d27ab90.jpg"
+  },
+  "td_3ca45f3675163515dfb0322b": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_3ca45f3675163515dfb0322b.jpg",
+    "sha256": "3f3bef8e8afdca1f203ad648ecb790215999f5dea40fcc1ffb00fb9484b4b696",
+    "size_bytes": 7447,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_006_attempt_006/qwen_images/multiview_frame_474631932_ae63a18e0d27ab90.jpg"
+  },
+  "td_3d1d1afba3671f489ea5a94e": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_3d1d1afba3671f489ea5a94e.jpg",
+    "sha256": "5413027051517d6918d5028c7a8df3eade5a99e061e335bf5a3fb3b38b6b0f43",
+    "size_bytes": 7433,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_003_attempt_003/qwen_images/multiview_frame_474627606_ae63a18e0d27ab90.jpg"
+  },
+  "td_3f22f525d64b415d01705b76": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_3f22f525d64b415d01705b76.jpg",
+    "sha256": "a59d380bce104fb24ec11821829745a6f44248ceec45b12ed61899d49e700495",
+    "size_bytes": 7460,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_007_attempt_007/qwen_images/multiview_frame_474633369_ae63a18e0d27ab90.jpg"
+  },
+  "td_45ade01685e4a06a80cf1f96": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_45ade01685e4a06a80cf1f96.jpg",
+    "sha256": "6012cdd45843de270be064ab92e8bab584219f1317614ee6adfeed39a4ed997b",
+    "size_bytes": 7691,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1_extra_val/3step_seed253006/qwen_images/multiview_frame_475261029_ae63a18e0d27ab90.jpg"
+  },
+  "td_45d6680505abdf95b24aa849": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_45d6680505abdf95b24aa849.jpg",
+    "sha256": "ee8a846aff45bbef5ec95be86b2304adbd1827e3f245b538860118272f9782c5",
+    "size_bytes": 7440,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_004_attempt_004/qwen_images/multiview_frame_474629060_ae63a18e0d27ab90.jpg"
+  },
+  "td_46e339bdf6769cd8a2c9bbca": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_46e339bdf6769cd8a2c9bbca.jpg",
+    "sha256": "f36f0da469d5d436984dcc1d91d2a56cc21b6eeed99c5fb7e147a711e577025d",
+    "size_bytes": 7432,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_010_attempt_010/qwen_images/multiview_frame_474637640_ae63a18e0d27ab90.jpg"
+  },
+  "td_4705937eaa0fa7238c615500": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_4705937eaa0fa7238c615500.jpg",
+    "sha256": "d644f92b48ca8b35ecd4c294adb192188f8024579ab7d10a7c8e40de9163067e",
+    "size_bytes": 7432,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_015_attempt_015/qwen_images/multiview_frame_474644825_ae63a18e0d27ab90.jpg"
+  },
+  "td_4ddadcb91a51b524fe1693e6": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_4ddadcb91a51b524fe1693e6.jpg",
+    "sha256": "4180a490917be1c6e3b16c7a05d67ca421a93450faf65882df0f4878c96e924e",
+    "size_bytes": 7430,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_002_attempt_002/qwen_images/multiview_frame_474626139_ae63a18e0d27ab90.jpg"
+  },
+  "td_61d9d1e3ebb93b853457e783": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_61d9d1e3ebb93b853457e783.jpg",
+    "sha256": "c9f07f5c37d0a851ebf878a9315de1e472b9b388f24c76fd73a7956452b0337a",
+    "size_bytes": 7744,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_005_attempt_005/qwen_images/multiview_frame_474600729_ae63a18e0d27ab90.jpg"
+  },
+  "td_6c371c8164db6a5f1343a60f": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_6c371c8164db6a5f1343a60f.jpg",
+    "sha256": "6c31f658109de7ef4b130f588a742ac6825f5f83484928a959b854a7182ca4f8",
+    "size_bytes": 7768,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_010_attempt_010/qwen_images/multiview_frame_474611692_ae63a18e0d27ab90.jpg"
+  },
+  "td_71462c312aadca4186b58e0d": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_71462c312aadca4186b58e0d.jpg",
+    "sha256": "f21d682e8d93d59f9a7ccc4214a341cd68ed98e9d63d65fdac309b065e225eb2",
+    "size_bytes": 7734,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_001_attempt_001/qwen_images/multiview_frame_474592107_ae63a18e0d27ab90.jpg"
+  },
+  "td_7894ac00469dc678e6bd69b7": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_7894ac00469dc678e6bd69b7.jpg",
+    "sha256": "5167533b02b6ea69a30dd7ba3c60dd7a5780bfe7028ee05a57ff9a050821ab0c",
+    "size_bytes": 7985,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1_extra_val/3step_seed253002/qwen_images/multiview_frame_474899328_ae63a18e0d27ab90.jpg"
+  },
+  "td_86809d60797d176dc508f33c": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_86809d60797d176dc508f33c.jpg",
+    "sha256": "d0fe302aa23722c38db7b7d3959c3ca92e4661b428188f285ff0bcacc9124014",
+    "size_bytes": 7756,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_006_attempt_006/qwen_images/multiview_frame_474602904_ae63a18e0d27ab90.jpg"
+  },
+  "td_8804de3bffaebc9526721964": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_8804de3bffaebc9526721964.jpg",
+    "sha256": "6aa1bec210b0cafe54f5c3a87cfcfd8f5361833be6a16dabc7f2a14d53b39c15",
+    "size_bytes": 7456,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_009_attempt_009/qwen_images/multiview_frame_474636227_ae63a18e0d27ab90.jpg"
+  },
+  "td_8ac15fb2b04d054faa01e9d7": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_8ac15fb2b04d054faa01e9d7.jpg",
+    "sha256": "97129685df9f55cd32392918cdec6f3db9660f178770ec8e9ed778ba805c13e2",
+    "size_bytes": 7768,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_003_attempt_003/qwen_images/multiview_frame_474596401_ae63a18e0d27ab90.jpg"
+  },
+  "td_8c171b0d475d2d3d1c2b33fe": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_8c171b0d475d2d3d1c2b33fe.jpg",
+    "sha256": "0ded7e02329b022ad21a0e4bf7c39133005d56538f9924203dc29d461d3d6e1f",
+    "size_bytes": 8277,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1_extra_val/3step_seed253003/qwen_images/multiview_frame_474901493_ae63a18e0d27ab90.jpg"
+  },
+  "td_972af75340d77c81e0528e08": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_972af75340d77c81e0528e08.jpg",
+    "sha256": "cdbb81c3b55ff46485efdbe08ed728864a712461f0332e508799f75beaddc5ff",
+    "size_bytes": 7441,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_008_attempt_008/qwen_images/multiview_frame_474634796_ae63a18e0d27ab90.jpg"
+  },
+  "td_9e1912e6397947fb3883a554": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_9e1912e6397947fb3883a554.jpg",
+    "sha256": "0ec59a25ec0ccfddec8608735504f2ac77927050bd0811e6f185ead3c8f405f1",
+    "size_bytes": 7747,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_014_attempt_014/qwen_images/multiview_frame_474620374_ae63a18e0d27ab90.jpg"
+  },
+  "td_9ee9d785e93ec4bae1b8ee7e": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_9ee9d785e93ec4bae1b8ee7e.jpg",
+    "sha256": "d7a1a527ee43db5000721d8e77a0680acf8fba92c43e73fa471333f81358f612",
+    "size_bytes": 7742,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_009_attempt_009/qwen_images/multiview_frame_474609440_ae63a18e0d27ab90.jpg"
+  },
+  "td_b30f5072e8eb1c6ab8e8b858": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_b30f5072e8eb1c6ab8e8b858.jpg",
+    "sha256": "b809133b7795ae17a9c73b6a95cdda85f8849dd9f7100eba6ca6cb625c59ad01",
+    "size_bytes": 7757,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_012_attempt_012/qwen_images/multiview_frame_474616076_ae63a18e0d27ab90.jpg"
+  },
+  "td_b3fc48248de9f50336673b00": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_b3fc48248de9f50336673b00.jpg",
+    "sha256": "cae0a5aa364f62bcb86cec8794ab62015d8c1c26e2bf04ceab936e9977840d5c",
+    "size_bytes": 7746,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_002_attempt_002/qwen_images/multiview_frame_474594248_ae63a18e0d27ab90.jpg"
+  },
+  "td_bc4e02a9455fb900624dad11": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_bc4e02a9455fb900624dad11.jpg",
+    "sha256": "47c8f4572616422f30eb1df4849a4b18033729315975fa087c69bb0f58432b2d",
+    "size_bytes": 7455,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_001_attempt_001/qwen_images/multiview_frame_474624665_ae63a18e0d27ab90.jpg"
+  },
+  "td_ccbd881a180ac108aeeac8f0": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_ccbd881a180ac108aeeac8f0.jpg",
+    "sha256": "37f87c510653f6c3b8e5ab1d364790d45d9d4fb8d0641452e7f936812cfa5670",
+    "size_bytes": 7744,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_015_attempt_015/qwen_images/multiview_frame_474622560_ae63a18e0d27ab90.jpg"
+  },
+  "td_d32bc0499b4d0a7682077acd": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_d32bc0499b4d0a7682077acd.jpg",
+    "sha256": "acd6f123375050a3a2e9647d61980635b4958e94bc8ff24a9ca3f10e77f658c0",
+    "size_bytes": 7452,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_005_attempt_005/qwen_images/multiview_frame_474630497_ae63a18e0d27ab90.jpg"
+  },
+  "td_d7a16c41c883847460d3870a": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_d7a16c41c883847460d3870a.jpg",
+    "sha256": "bc7dddc03305ac114d5038370f9190688dc262d4f314fd8cc5c1014392a9727b",
+    "size_bytes": 7441,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_011_attempt_011/qwen_images/multiview_frame_474639083_ae63a18e0d27ab90.jpg"
+  },
+  "td_d817297c8d38f64ccd5b4900": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_d817297c8d38f64ccd5b4900.jpg",
+    "sha256": "8d4a933f915dbe4fb1dbc23670fadef430241e6a609137942a49d68caaaebdf3",
+    "size_bytes": 7448,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_013_attempt_013/qwen_images/multiview_frame_474641949_ae63a18e0d27ab90.jpg"
+  },
+  "td_ddbc3587534c52d07165b7e4": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_ddbc3587534c52d07165b7e4.jpg",
+    "sha256": "eb57e6e21664f384143718bc6a9bdb78033a57254c2ef398b7915f9bb4a044bc",
+    "size_bytes": 7442,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_014_attempt_014/qwen_images/multiview_frame_474643389_ae63a18e0d27ab90.jpg"
+  },
+  "td_e14be6e6cb8101683c613581": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_e14be6e6cb8101683c613581.jpg",
+    "sha256": "e7f1b7b0b267eee9090a695d0854dc707ea1a0b8af7d5d9eb4dd7fa6e740cb3a",
+    "size_bytes": 7450,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/4step/accepted_012_attempt_012/qwen_images/multiview_frame_474640502_ae63a18e0d27ab90.jpg"
+  },
+  "td_f0f540a716da43f4b32769e5": {
+    "release_rgb_ref": "challenge/dataset/releases/b1_ms34_supplement_v1/images/td_f0f540a716da43f4b32769e5.jpg",
+    "sha256": "a7c29b61cdeb6ffa53ce897584263feb6d46c8a18048f33bc5c682c5958e0201",
+    "size_bytes": 7737,
+    "source_rgb_ref": "artifacts/b1_ms34_supplement_v1/3step/accepted_007_attempt_007/qwen_images/multiview_frame_474605077_ae63a18e0d27ab90.jpg"
+  }
+}

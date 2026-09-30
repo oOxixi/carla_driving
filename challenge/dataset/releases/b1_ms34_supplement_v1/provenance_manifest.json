@@ -1,0 +1,34 @@
+{
+  "acquisition": {
+    "failed_holdout_runs_retained_as_hard_negative": 1,
+    "hard_negative_runs": 1,
+    "main_targeted_runs": 30,
+    "source_runs": 35,
+    "strict_positive_runs": 34,
+    "teacher_git_sha": "4a900a86c23f901f9ab4a49ba6f2ce3266c3f1a3",
+    "validation_holdout_runs": 4
+  },
+  "base_release": "d3_gap300_strict_v1",
+  "canonicalization": {
+    "canonical_samples": 35,
+    "collector_last_change_commit": "912989f5bab4a864136f3774515e7cbd28e8dc24",
+    "collector_sha256": "792528d5564130ed8982f552e1207e3fa97eaaea3b992cdaaeea0370de002485",
+    "hard_negative_samples": 1,
+    "source_dataset_sha256": "6bc8720515304cc7f872e37c62f7844ce24a3a1e4a0dae4725ec93d681a73c4e",
+    "strict_positive_samples": 34
+  },
+  "dataset_version": "b1_ms34_supplement_v1",
+  "families": {
+    "TC_MS34_real_3step_avoid_resume": 17,
+    "TC_MS34_real_4step_yield_avoid_resume": 17
+  },
+  "raw_source_immutable": true,
+  "release_type": "additive_targeted_supplement",
+  "schema_version": "1.0",
+  "selection_policy": "Publish 34 strict-positive single-call multi-step Teacher samples. The seed-253002 run is retained only as HARD_NEGATIVE evidence because closed-loop route deviation caused scenario acceptance failure.",
+  "teacher": {
+    "git_sha": "4a900a86c23f901f9ab4a49ba6f2ce3266c3f1a3",
+    "mode": "planner_v2",
+    "model_id": "Qwen/Qwen3.5-2B"
+  }
+}
