@@ -7,12 +7,24 @@ toolchain is unavailable. Its output is never labelled J6P-ready.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 import platform
-from typing import Any, Mapping
+import shutil
+from typing import Any, Mapping, Sequence
 
-from .calibration import CalibrationDataset, OrtCalibrationReader, sha256_file
+from challenge.hil.identity import git_head
+
+from .calibration import (
+    CalibrationDataset,
+    FORMAL_CALIBRATION_RELATIVE,
+    OrtCalibrationReader,
+    load_formal_calibration_v1,
+    sha256_file,
+)
+from .config import DEFAULT_QUANT_CONFIG, load_quant_config, quant_config_identity
+from .manifest import validate_int8_manifest
 
 
 def _metadata(path: Path) -> dict[str, str]:
@@ -34,6 +46,14 @@ def _write_json(path: Path, value: Mapping[str, Any]) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _path_label(path: Path, repo: Path) -> str:
+    """Prefer a repository-relative label, tolerating Windows junctions."""
+    try:
+        return str(path.relative_to(repo))
+    except ValueError:
+        return str(path)
+
+
 def quantize_qdq(
     repo_root: str | Path,
     *,
@@ -41,6 +61,8 @@ def quantize_qdq(
     calibration_jsonl: str | Path,
     calibration_manifest: str | Path,
     output_onnx: str | Path,
+    quant_config: str | Path = DEFAULT_QUANT_CONFIG,
+    excluded_nodes: Sequence[str] = (),
     allow_smoke: bool = False,
     allow_candidate: bool = False,
 ) -> dict[str, Any]:
@@ -52,18 +74,47 @@ def quantize_qdq(
     source = (repo / source_onnx).absolute() if not Path(source_onnx).is_absolute() else Path(source_onnx)
     output = (repo / output_onnx).absolute() if not Path(output_onnx).is_absolute() else Path(output_onnx)
     manifest_path = (repo / calibration_manifest).absolute() if not Path(calibration_manifest).is_absolute() else Path(calibration_manifest)
+    jsonl_path = (repo / calibration_jsonl).absolute() if not Path(calibration_jsonl).is_absolute() else Path(calibration_jsonl)
+    config_path = (repo / quant_config).absolute() if not Path(quant_config).is_absolute() else Path(quant_config)
     calibration = _load_json(manifest_path)
+    config = load_quant_config(config_path)
+    config_identity = quant_config_identity(config_path)
     metadata = _metadata(source)
     source_status = metadata.get("weights_status", "UNRESOLVED")
     formal_source = source_status == "A3_FP32_GATE_PASSED"
     pending_candidate = source_status == "PENDING_A3_FP32_GATE"
-    formal_calibration = calibration.get("formal_release") is True
+    formal_calibration = False
     if pending_candidate and not allow_candidate:
         raise ValueError("pending A3 candidate requires explicit --allow-candidate")
     if not formal_source and not pending_candidate and not allow_smoke:
         raise ValueError("unapproved source ONNX requires --allow-smoke for toolchain smoke")
-    if formal_source and not formal_calibration:
-        raise ValueError("formal FP32 input requires a B1/B2-signed formal Calibration release")
+    canonical_release = (repo / FORMAL_CALIBRATION_RELATIVE).resolve()
+    requested_formal_calibration = (
+        manifest_path.parent.resolve() == canonical_release
+        and jsonl_path.parent.resolve() == canonical_release
+    )
+    if formal_source or requested_formal_calibration:
+        release = load_formal_calibration_v1(repo, release_directory=manifest_path.parent)
+        if manifest_path.resolve() != release.manifest_path.resolve():
+            raise ValueError("formal PTQ calibration manifest must be Calibration v1")
+        if jsonl_path.resolve() != release.jsonl_path.resolve():
+            raise ValueError("formal PTQ calibration JSONL must be Calibration v1")
+        dataset = release.dataset
+        calibration_identity = release.identity
+        formal_calibration = True
+    else:
+        actual_jsonl_sha = sha256_file(jsonl_path)
+        if calibration.get("calibration_jsonl_sha256") != actual_jsonl_sha:
+            raise ValueError("calibration JSONL SHA256 does not match its manifest")
+        dataset = CalibrationDataset.open(repo, jsonl_path)
+        calibration_identity = {
+            "status": calibration.get("status", "UNRESOLVED"),
+            "dataset_version": calibration.get("calibration_id", "DEVELOPMENT"),
+            "sample_count": len(dataset.records),
+            "calibration_jsonl_sha256": actual_jsonl_sha,
+            "calibration_manifest_sha256": sha256_file(manifest_path),
+        }
+    calibration_manifest_digest = calibration_identity["calibration_manifest_sha256"]
 
     try:
         import onnx
@@ -74,8 +125,13 @@ def quantize_qdq(
     except ImportError as error:
         raise RuntimeError("onnx and onnxruntime with quantization support are required") from error
 
-    dataset = CalibrationDataset.open(repo, calibration_jsonl)
-    output.parent.mkdir(parents=True, exist_ok=True)
+    # Create directories through the physical target of an ASCII junction.
+    # pathlib/os.mkdir can report WinError 183 for a missing child directly
+    # below a directory junction, even with exist_ok=True.
+    output.parent.resolve().mkdir(parents=True, exist_ok=True)
+    options = config["options"]
+    all_excluded = sorted(set(options.get("excluded_nodes", [])) | set(excluded_nodes))
+    calibration_method = getattr(CalibrationMethod, config["calibration"]["method"])
     quantize_static(
         str(source),
         str(output),
@@ -83,13 +139,14 @@ def quantize_qdq(
         quant_format=QuantFormat.QDQ,
         activation_type=QuantType.QInt8,
         weight_type=QuantType.QInt8,
-        calibrate_method=CalibrationMethod.MinMax,
-        per_channel=True,
-        reduce_range=False,
+        calibrate_method=calibration_method,
+        per_channel=config["weights"]["granularity"] == "per_channel",
+        reduce_range=bool(options["reduce_range"]),
+        nodes_to_exclude=all_excluded,
         extra_options={
-            "ActivationSymmetric": True,
-            "WeightSymmetric": True,
-            "DedicatedQDQPair": False,
+            "ActivationSymmetric": bool(config["activations"]["symmetric"]),
+            "WeightSymmetric": bool(config["weights"]["symmetric"]),
+            "DedicatedQDQPair": bool(options["dedicated_qdq_pair"]),
         },
     )
     graph = onnx.load(str(output))
@@ -99,9 +156,11 @@ def quantize_qdq(
             "FORMAL_INT8_CANDIDATE" if formal_source else
             "A3_CANDIDATE_PRE_PTQ" if pending_candidate else "SMOKE_ONLY"
         ),
-        "quantization_method": "onnxruntime_static_qdq_int8_minmax_symmetric_per_channel",
+        "quantization_method": config["config_id"],
         "source_fp32_sha256": sha256_file(source),
-        "calibration_manifest_sha256": sha256_file(manifest_path),
+        "calibration_manifest_sha256": calibration_manifest_digest,
+        "quant_config_sha256": config_identity["sha256"],
+        "mixed_precision_excluded_nodes": json.dumps(all_excluded, separators=(",", ":")),
     })
     del graph.metadata_props[:]
     onnx.helper.set_model_props(graph, props)
@@ -132,41 +191,90 @@ def quantize_qdq(
         "quantization_method": props["quantization_method"],
     }
     _write_json(output.parent / "int8_structure.json", structure)
+    identity_material = "|".join((
+        sha256_file(source), calibration_manifest_digest, config_identity["sha256"],
+        ",".join(all_excluded),
+    ))
+    quantization_id = "a2-ptq-" + hashlib.sha256(identity_material.encode("utf-8")).hexdigest()[:16]
+    source_fp32_manifest = {
+        "schema_version": "1.0",
+        "status": source_status,
+        "model_id": metadata.get("model_id", "UNRESOLVED"),
+        "config_id": metadata.get("config_id", "UNRESOLVED"),
+        "dataset_version": metadata.get("dataset_version", "UNRESOLVED"),
+        "source_weights_git_sha": metadata.get("source_weights_git_sha", "UNRESOLVED"),
+        "source_fp32_weights_sha256": metadata.get("source_weights_sha256", "UNRESOLVED"),
+        "source_weights_manifest_sha256": metadata.get("weights_manifest_sha256", "UNRESOLVED"),
+        "source_fp32_onnx_sha256": sha256_file(source),
+        "source_fp32_onnx": _path_label(source, repo),
+        "onnx_metadata": metadata,
+    }
+    _write_json(output.parent / "source_fp32_manifest.json", source_fp32_manifest)
+    copied_manifest = output.parent / "calibration_manifest.json"
+    copied_config = output.parent / "quant_config.yaml"
+    if copied_manifest.resolve() != manifest_path.resolve():
+        shutil.copyfile(manifest_path, copied_manifest)
+    if copied_config.resolve() != config_path.resolve():
+        shutil.copyfile(config_path, copied_config)
+
     result = {
         "schema_version": "1.0",
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "quantization_id": quantization_id,
+        "git_sha": git_head(repo),
         "status": (
             "FORMAL_INT8_CANDIDATE_PENDING_B2_GATE" if formal_source else
             "A3_CANDIDATE_PRE_PTQ" if pending_candidate else "SMOKE_ONLY"
         ),
+        "gate_status": "PENDING_B2_INT8_GATE" if formal_source else "NOT_FORMAL",
         "j6p_ready": False,
+        "model_id": metadata.get("model_id", "UNRESOLVED"),
+        "config_id": metadata.get("config_id", "UNRESOLVED"),
+        "dataset_version": metadata.get("dataset_version", "UNRESOLVED"),
+        "source_fp32_weights_sha256": metadata.get("source_weights_sha256", "UNRESOLVED"),
+        "source_fp32_onnx_sha256": sha256_file(source),
+        "calibration_manifest_sha256": calibration_manifest_digest,
+        "quant_config_sha256": config_identity["sha256"],
+        "int8_artifact_sha256": artifact_sha,
+        "B2_result": {
+            "status": "PENDING_B2_INT8_GATE" if formal_source else "NOT_APPLICABLE_DEVELOPMENT",
+            "decision_manifest": None,
+            "decision_manifest_sha256": None,
+        },
         "source": {
-            "path": str(source.relative_to(repo)),
+            "path": _path_label(source, repo),
             "sha256": sha256_file(source),
             "weights_status": source_status,
             "metadata": metadata,
         },
         "calibration": {
-            "jsonl": str(Path(calibration_jsonl)),
-            "jsonl_sha256": sha256_file((repo / calibration_jsonl).resolve()),
-            "manifest": str(manifest_path.relative_to(repo)),
-            "manifest_sha256": sha256_file(manifest_path),
+            "jsonl": _path_label(jsonl_path, repo),
+            "jsonl_sha256": calibration_identity["calibration_jsonl_sha256"],
+            "jsonl_worktree_sha256": sha256_file(jsonl_path),
+            "manifest": _path_label(manifest_path, repo),
+            "manifest_sha256": calibration_manifest_digest,
+            "manifest_worktree_sha256": sha256_file(manifest_path),
             "formal_release": formal_calibration,
             "sample_count": len(dataset.records),
+            "identity": calibration_identity,
         },
         "quantization": {
             "format": "QDQ",
             "activation": "QInt8 symmetric",
             "weight": "QInt8 symmetric per-channel",
-            "calibration_method": "MinMax",
+            "calibration_method": config["calibration"]["method"],
+            "config_id": config["config_id"],
+            "config_path": "quant_config.yaml",
+            "config_sha256": config_identity["sha256"],
+            "excluded_nodes": all_excluded,
             "quantize_linear_nodes": nodes.count("QuantizeLinear"),
             "dequantize_linear_nodes": nodes.count("DequantizeLinear"),
         },
         "output": {
-            "path": str(output.relative_to(repo)),
+            "path": _path_label(output, repo),
             "sha256": artifact_sha,
             "size_bytes": output.stat().st_size,
-            "structure": str((output.parent / "int8_structure.json").relative_to(repo)),
+            "structure": _path_label(output.parent / "int8_structure.json", repo),
         },
         "environment": {
             "python": platform.python_version(),
@@ -185,6 +293,7 @@ def quantize_qdq(
             if pending_candidate else "Portable ONNX Runtime QDQ smoke only. "
         ) + "OpenExplorer operator support, fallbacks and J6P performance remain A4/B3-owned.",
     }
+    validate_int8_manifest(result)
     _write_json(output.parent / "int8_manifest.json", result)
     return result
 

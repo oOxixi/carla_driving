@@ -16,7 +16,12 @@ import numpy as np
 
 from challenge.student.contract import StudentShapeContract
 
-from .calibration import CalibrationDataset, sha256_file
+from .calibration import (
+    CalibrationDataset,
+    FORMAL_CALIBRATION_RELATIVE,
+    load_formal_calibration_v1,
+    sha256_file,
+)
 
 
 INPUT_NAMES = ("rgb", "text_tokens", "targets", "state")
@@ -100,14 +105,34 @@ def prepare_openexplorer_bundle(
     calibration_identity = json.loads(calibration_manifest_path.read_text(encoding="utf-8"))
     if not isinstance(calibration_identity, dict):
         raise ValueError("calibration manifest must be a JSON object")
-    actual_jsonl_sha = sha256_file(jsonl_path)
-    if calibration_identity.get("calibration_jsonl_sha256") != actual_jsonl_sha:
-        raise ValueError("calibration JSONL SHA256 does not match its manifest")
     onnx_identity = _onnx_identity(onnx_path)
-    formal = (
-        onnx_identity["weights_status"] == "A3_FP32_GATE_PASSED"
-        and calibration_identity.get("formal_release") is True
+    formal_source = onnx_identity["weights_status"] == "A3_FP32_GATE_PASSED"
+    formal = False
+    formal_calibration = False
+    canonical_release = (repo / FORMAL_CALIBRATION_RELATIVE).resolve()
+    requested_formal_calibration = (
+        calibration_manifest_path.parent.resolve() == canonical_release
+        and jsonl_path.parent.resolve() == canonical_release
     )
+    if formal_source or requested_formal_calibration:
+        release = load_formal_calibration_v1(
+            repo, release_directory=calibration_manifest_path.parent,
+        )
+        if calibration_manifest_path.resolve() != release.manifest_path.resolve():
+            raise ValueError("formal OpenExplorer manifest must be Calibration v1")
+        if jsonl_path.resolve() != release.jsonl_path.resolve():
+            raise ValueError("formal OpenExplorer JSONL must be Calibration v1")
+        dataset = release.dataset
+        actual_jsonl_sha = release.identity["calibration_jsonl_sha256"]
+        actual_manifest_sha = release.identity["calibration_manifest_sha256"]
+        formal_calibration = True
+        formal = formal_source
+    else:
+        actual_jsonl_sha = sha256_file(jsonl_path)
+        if calibration_identity.get("calibration_jsonl_sha256") != actual_jsonl_sha:
+            raise ValueError("calibration JSONL SHA256 does not match its manifest")
+        dataset = CalibrationDataset.open(repo, jsonl_path)
+        actual_manifest_sha = sha256_file(calibration_manifest_path)
     pending_candidate = onnx_identity["weights_status"] == "PENDING_A3_FP32_GATE"
     if pending_candidate and not allow_candidate:
         raise ValueError("pending A3 candidate requires explicit --allow-candidate")
@@ -117,15 +142,14 @@ def prepare_openexplorer_bundle(
             "and a formal Calibration release; pass --allow-smoke only for development"
         )
 
-    dataset = CalibrationDataset.open(repo, jsonl_path)
     declared_ids = calibration_identity.get("sample_ids")
     actual_ids = [str(item.get("sample_id", "")) for item in dataset.records]
-    if declared_ids != actual_ids:
+    if not formal_calibration and declared_ids != actual_ids:
         raise ValueError("calibration sample order/identity does not match its manifest")
     available = len(dataset.records)
-    if formal and not 300 <= available <= 500:
-        raise ValueError("formal Calibration release must contain 300..500 samples")
-    if formal and limit is not None and limit != available:
+    if formal_calibration and available != 300:
+        raise ValueError("formal Calibration v1 must contain exactly 300 samples")
+    if formal_calibration and limit is not None and limit != available:
         raise ValueError("formal OpenExplorer preparation must use the complete Calibration release")
     sample_count = available if limit is None else min(limit, available)
     if sample_count < 1:
@@ -209,7 +233,10 @@ compiler_parameters:
         "source_onnx": onnx_identity,
         "calibration": {
             "jsonl_sha256": actual_jsonl_sha,
-            "manifest_sha256": sha256_file(calibration_manifest_path),
+            "jsonl_worktree_sha256": sha256_file(jsonl_path),
+            "manifest_sha256": actual_manifest_sha,
+            "manifest_worktree_sha256": sha256_file(calibration_manifest_path),
+            "formal_release": formal_calibration,
             "manifest_status": calibration_identity.get("status", "UNRESOLVED"),
             "sample_count": len(samples),
         },

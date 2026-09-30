@@ -109,8 +109,41 @@ def analyze_drift(
     ranked = sorted(
         heads.items(), key=lambda item: item[1]["mean_abs_error"], reverse=True
     )
+    error_summary = {
+        "schema_version": "1.0",
+        "created_at_utc": report["created_at_utc"],
+        "status": "DIAGNOSTIC_PENDING_B2_INT8_GATE",
+        "scope": report["scope"],
+        "baseline": report["baseline"],
+        "candidate": report["candidate"],
+        "dataset": report["dataset"],
+        "head_ranking_by_mean_abs_error": [
+            {
+                "rank": index,
+                "head": name,
+                **item,
+            }
+            for index, (name, item) in enumerate(ranked, 1)
+        ],
+        "critical_heads": {
+            name: heads[name]
+            for name in (
+                "target_speed_mps", "behavior_logits",
+                "target_pointer_logits", "target_lane_logits",
+            )
+            if name in heads
+        },
+        "worst_samples": report["worst_samples"],
+        "decision": "REQUIRES_B2_FROZEN_BENCHMARK",
+    }
+    summary_path = output.parent / "quant_error_report.json"
+    if summary_path.resolve() != output.resolve():
+        summary_path.write_text(
+            json.dumps(error_summary, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
     markdown = [
-        "# A2 PTQ 敏感输出初筛（开发诊断）",
+        "# A2 PTQ 敏感输出 Head 初筛（开发诊断）",
         "",
         (
             "> 当前结果基于待 A3 Gate 的真实候选权重和开发 Calibration，只用于 Gate 前诊断，"
@@ -136,7 +169,9 @@ def analyze_drift(
         "正式权重到位后，需按层/算子组逐个恢复高精度并重新跑同一评价集；本表不能直接决定混合精度层。",
         "",
     ])
-    (output.parent / "sensitive_layers.md").write_text("\n".join(markdown), encoding="utf-8")
+    (output.parent / "head_sensitivity_preview.md").write_text(
+        "\n".join(markdown), encoding="utf-8",
+    )
     return report
 
 

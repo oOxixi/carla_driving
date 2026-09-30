@@ -22,6 +22,8 @@ from challenge.student.preprocess import StudentPreprocessor
 
 
 PROTECTED_SPLIT_MARKERS = ("test", "reserved", "benchmark", "official_like")
+FORMAL_CALIBRATION_RELATIVE = Path("challenge/dataset/releases/calibration_v1")
+FORMAL_CALIBRATION_VERSION = "b1_calibration_v1"
 
 
 def sha256_file(path: str | Path) -> str:
@@ -267,6 +269,130 @@ class CalibrationDataset:
             }
 
 
+@dataclass(frozen=True, slots=True)
+class FormalCalibrationRelease:
+    """Verified identity and loader for the unique frozen Calibration v1."""
+
+    release_dir: Path
+    jsonl_path: Path
+    manifest_path: Path
+    dataset: CalibrationDataset
+    identity: dict[str, Any]
+
+    def validate_tensor_contract(self) -> dict[str, Any]:
+        """Materialize every sample through the production preprocessor."""
+        expected = {
+            "rgb": (1, 3, 224, 224),
+            "text_tokens": (1, 32),
+            "targets": (1, 8, 14),
+            "state": (1, 64),
+        }
+        ranges: dict[str, dict[str, float]] = {}
+        checked = 0
+        for feed in self.dataset.feeds():
+            checked += 1
+            if set(feed) != set(expected):
+                raise ValueError("Calibration v1 tensor names do not match the Student contract")
+            for name, shape in expected.items():
+                value = np.asarray(feed[name])
+                if value.shape != shape or value.dtype != np.float32:
+                    raise ValueError(
+                        f"Calibration v1 tensor contract mismatch for {name}: "
+                        f"shape={value.shape} dtype={value.dtype}"
+                    )
+                if not np.isfinite(value).all():
+                    raise ValueError(f"Calibration v1 contains non-finite {name} values")
+                minimum = float(value.min()) if value.size else 0.0
+                maximum = float(value.max()) if value.size else 0.0
+                item = ranges.setdefault(name, {"min": minimum, "max": maximum})
+                item["min"] = min(item["min"], minimum)
+                item["max"] = max(item["max"], maximum)
+        if checked != 300:
+            raise ValueError(f"Calibration v1 tensor rows={checked} != 300")
+        return {
+            "status": "PASS",
+            "dataset_version": FORMAL_CALIBRATION_VERSION,
+            "sample_count": checked,
+            "input_shapes": {key: list(value) for key, value in expected.items()},
+            "input_ranges": ranges,
+        }
+
+
+def load_formal_calibration_v1(
+    repo_root: str | Path,
+    *,
+    release_directory: str | Path = FORMAL_CALIBRATION_RELATIVE,
+) -> FormalCalibrationRelease:
+    """Validate and load the sole B1/B2-approved Calibration release.
+
+    Formal A2 commands intentionally reject copies, renamed releases and
+    hand-authored manifests.  This binds PTQ to the immutable repository asset
+    and its complete hash ledger.
+    """
+    from challenge.dataset.validate_calibration_v1 import validate
+
+    repo = Path(repo_root).resolve()
+    canonical = (repo / FORMAL_CALIBRATION_RELATIVE).resolve()
+    requested = (
+        (repo / release_directory).resolve()
+        if not Path(release_directory).is_absolute()
+        else Path(release_directory).resolve()
+    )
+    if requested != canonical:
+        raise ValueError(
+            "formal A2 PTQ must use challenge/dataset/releases/calibration_v1"
+        )
+    report = validate(canonical)
+    if report.get("valid") is not True:
+        raise ValueError(f"Calibration v1 validation failed: {report.get('errors', [])}")
+    manifest_path = canonical / "calibration_manifest.json"
+    jsonl_path = canonical / "calibration.jsonl"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("dataset_version") != FORMAL_CALIBRATION_VERSION:
+        raise ValueError("Calibration v1 dataset_version mismatch")
+    if manifest.get("status") != "FROZEN_CALIBRATION":
+        raise ValueError("Calibration v1 is not frozen")
+    dataset = CalibrationDataset.open(repo, jsonl_path)
+    sample_ids = [str(row.get("sample_id") or "") for row in dataset.records]
+    group_keys = [str((row.get("metadata") or {}).get("group_key") or "") for row in dataset.records]
+    if len(sample_ids) != 300 or len(set(sample_ids)) != 300 or "" in sample_ids:
+        raise ValueError("Calibration v1 must contain 300 unique sample IDs")
+    if len(group_keys) != 300 or len(set(group_keys)) != 300 or "" in group_keys:
+        raise ValueError("Calibration v1 must contain 300 unique group keys")
+    published_hashes: dict[str, str] = {}
+    for raw in (canonical / "hashes.sha256").read_text(encoding="utf-8").splitlines():
+        if raw.strip():
+            digest, name = raw.split(None, 1)
+            published_hashes[name.strip()] = digest
+    identity = {
+        "schema_version": "1.0",
+        "status": "VERIFIED_FROZEN_CALIBRATION",
+        "dataset_version": FORMAL_CALIBRATION_VERSION,
+        "release_path": FORMAL_CALIBRATION_RELATIVE.as_posix(),
+        "sample_count": 300,
+        "group_count": 300,
+        "calibration_jsonl_sha256": published_hashes["calibration.jsonl"],
+        "calibration_manifest_sha256": published_hashes["calibration_manifest.json"],
+        "calibration_jsonl_worktree_sha256": sha256_file(jsonl_path),
+        "calibration_manifest_worktree_sha256": sha256_file(manifest_path),
+        "hash_ledger_sha256": sha256_file(canonical / "hashes.sha256"),
+        "sample_ids_sha256": hashlib.sha256(
+            "\n".join(sample_ids).encode("utf-8")
+        ).hexdigest(),
+        "group_keys_sha256": hashlib.sha256(
+            "\n".join(group_keys).encode("utf-8")
+        ).hexdigest(),
+        "governance_validation": report,
+    }
+    return FormalCalibrationRelease(
+        release_dir=canonical,
+        jsonl_path=jsonl_path,
+        manifest_path=manifest_path,
+        dataset=dataset,
+        identity=identity,
+    )
+
+
 class OrtCalibrationReader:
     """Minimal onnxruntime CalibrationDataReader implementation."""
 
@@ -282,5 +408,8 @@ class OrtCalibrationReader:
 
 
 __all__ = [
-    "CalibrationDataset", "OrtCalibrationReader", "build_development_calibration", "sha256_file",
+    "CalibrationDataset", "FORMAL_CALIBRATION_RELATIVE",
+    "FORMAL_CALIBRATION_VERSION", "FormalCalibrationRelease",
+    "OrtCalibrationReader", "build_development_calibration",
+    "load_formal_calibration_v1", "sha256_file",
 ]

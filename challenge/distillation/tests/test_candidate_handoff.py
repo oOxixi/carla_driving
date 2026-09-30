@@ -96,6 +96,31 @@ def test_build_candidate_handoff_is_hash_bound_and_pending(tmp_path: Path) -> No
     assert verification["weights_sha256"] == manifest["candidate_identity"]["weights_sha256"]
 
 
+def test_verify_candidate_handoff_accepts_only_line_ending_checkout_changes(
+    tmp_path: Path,
+) -> None:
+    source = _source(tmp_path)
+    output = tmp_path / "handoff"
+    build_candidate_handoff(
+        source,
+        output,
+        config_snapshot=b"config_id: formal\n",
+        config_source={"git_sha": "a" * 40, "path": "config.yaml"},
+    )
+    readme = output / "README.md"
+    original = readme.read_bytes()
+    converted = (
+        original.replace(b"\r\n", b"\n")
+        if b"\r\n" in original
+        else original.replace(b"\n", b"\r\n")
+    )
+    assert converted != original
+    readme.write_bytes(converted)
+
+    verification = verify_candidate_handoff(output)
+    assert verification["valid"] is True
+
+
 @pytest.mark.parametrize("mutation", ("payload", "extra", "identity", "status"))
 def test_verify_candidate_handoff_rejects_changed_or_unsigned_content(
     tmp_path: Path,
