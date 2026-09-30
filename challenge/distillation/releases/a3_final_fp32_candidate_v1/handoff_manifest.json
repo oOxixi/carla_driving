@@ -1,0 +1,72 @@
+{
+  "candidate_identity": {
+    "a3_view_manifest_sha256": "2840b7dc22bd0be56f1c26517b7b1e8a37ac4e7cf7111929def40dfc6daa8330",
+    "config_id": "student-v0-r3-structure-20260911",
+    "d2_release_manifest_sha256": "cf153d2f536f9180241f02a9d644aca6da2a508beb785591399dbb75b847462f",
+    "dataset_version": "b1_d2_v1_1_plus_d3_wave1_plus_d3_wave2_plus_targeted_gap_plus_turn_gap_plus_gap300_a3_strict_positive_v1",
+    "gap300_teacher_attestation_sha256": "de7a2f1acc33be2f26f4d9480a17ad72e8f9a34b591c580f04e826b5ee194c25",
+    "git_sha": "51e29181c72bc4be4a90fc4493fb5e8cf7102394",
+    "model_id": "student-v0-r3-fp32",
+    "release_manifest_sha256": "a2fbe23674dfa984bba9e5623b931583f0ed53479ac5846b1fe3535a2a465427",
+    "source_evidence_sha256": "c56eded3f646c4316d8635e771c6c7f555d52ddf248b15174ab75629256dc055",
+    "teacher_identity_policy": "content_bound_final_cumulative_formal",
+    "weights_sha256": "eaee4402197fb3fed53ed82bc2fbaceef62e5ed2d4cde86e8aa1a55dc6d46515"
+  },
+  "config_source": {
+    "git_sha": "51e29181c72bc4be4a90fc4493fb5e8cf7102394",
+    "path": "challenge/distillation/d3_final_cumulative_formal_config.yaml"
+  },
+  "files": {
+    "README.md": {
+      "sha256": "e2526a9a90ebc912ae7b529fc57fb84aa626dd9c51a4ef14ad5267e5bc230791",
+      "size_bytes": 662
+    },
+    "dataset_preflight.json": {
+      "sha256": "1447b6103624632af80d49ecbfab6839020da11dee4f146ed367616d5211aa1e",
+      "size_bytes": 2424
+    },
+    "hard_cases/summary.json": {
+      "sha256": "d1a720db3e32fdf6425e7f23c997d71a7c9360692b332de9d7a561432cfc5a71",
+      "size_bytes": 99
+    },
+    "student_v0_fp32_candidate.json": {
+      "sha256": "351920ac024851da4c0636289cb1bca1b4b69f151755ce2813a82b5942c945f0",
+      "size_bytes": 3703
+    },
+    "student_v0_fp32_candidate.pt": {
+      "sha256": "eaee4402197fb3fed53ed82bc2fbaceef62e5ed2d4cde86e8aa1a55dc6d46515",
+      "size_bytes": 92045422
+    },
+    "training.jsonl": {
+      "sha256": "4fde80bbd3dee7448de50d366f06bc6015a8f7071182f27ca426b7724cadaa15",
+      "size_bytes": 6234
+    },
+    "training_config.yaml": {
+      "sha256": "41016924d771e14a3848857224e657b7d64c2cba082143870682400febb1b650",
+      "size_bytes": 2388
+    },
+    "training_report.md": {
+      "sha256": "9dfd67eafd4eaf6b05e8a0e9daa07d65c82ddfe57d451c1ccead3f47c6a3f9b9",
+      "size_bytes": 5075
+    },
+    "training_summary.json": {
+      "sha256": "b13ec4d8699b6dfca208c3578ef0ef005c6db2c66506b7d892c51c853dda9e5b",
+      "size_bytes": 7894
+    }
+  },
+  "gate_status": "PENDING_A3_FP32_GATE",
+  "limitations": [
+    "This package is not A3_FP32_GATE_PASSED.",
+    "Development Validation is not independent generalization evidence.",
+    "B2 must evaluate the exact weights on its frozen independent Validation package."
+  ],
+  "package_status": "PENDING_B2_INDEPENDENT_VALIDATION",
+  "schema_version": "1.0",
+  "training_evidence": {
+    "development_validation_only": true,
+    "hard_case_count": 81,
+    "source_checkpoint_sha256": "5bbfc804b4d9221518c5ca195e42a4726bb6bfea6e78048b32ffd20fc009d584",
+    "train_samples": 5826,
+    "validation_samples": 1104
+  }
+}

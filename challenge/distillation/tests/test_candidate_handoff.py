@@ -165,6 +165,35 @@ def test_build_cumulative_candidate_handoff_preserves_signed_evidence(tmp_path: 
     assert verification["valid"] is True
 
 
+def test_build_final_candidate_handoff_preserves_gap300_attestation(tmp_path: Path) -> None:
+    source = _source(tmp_path)
+    candidate_path = source / "student_v0_fp32_candidate.json"
+    summary_path = source / "training_summary.json"
+    candidate = json.loads(candidate_path.read_text())
+    summary = json.loads(summary_path.read_text())
+    updates = {
+        "teacher_git_sha": "MULTI_PINNED_B1_D2_D3_FINAL_V1",
+        "teacher_identity_policy": "content_bound_final_cumulative_formal",
+        "d2_release_manifest_sha256": "1" * 64,
+        "gap300_teacher_attestation_sha256": "2" * 64,
+        "source_evidence_sha256": "3" * 64,
+    }
+    candidate.update(updates)
+    summary.update(updates)
+    _write_json(candidate_path, candidate)
+    _write_json(summary_path, summary)
+    manifest = build_candidate_handoff(
+        source,
+        tmp_path / "final-handoff",
+        config_snapshot=b"config_id: final\n",
+        config_source={"git_sha": "a" * 40, "path": "final.yaml"},
+    )
+    assert manifest["candidate_identity"]["gap300_teacher_attestation_sha256"] == "2" * 64
+    assert manifest["candidate_identity"]["source_evidence_sha256"] == "3" * 64
+    verification = verify_candidate_handoff(tmp_path / "final-handoff")
+    assert verification["valid"] is True
+
+
 @pytest.mark.parametrize(
     ("mutation", "message"),
     (

@@ -76,7 +76,7 @@ def build_candidate_handoff(
                     field: candidate[field]
                     for field in (
                         "d2_release_manifest_sha256", "b1_signature_sha256",
-                        "source_evidence_sha256",
+                        "gap300_teacher_attestation_sha256", "source_evidence_sha256",
                     )
                     if candidate.get(field) is not None
                 }),
@@ -143,6 +143,14 @@ def verify_candidate_handoff(package_directory: str | Path) -> dict[str, Any]:
         cumulative_identity_fields = (
             "d2_release_manifest_sha256",
             "b1_signature_sha256",
+            "source_evidence_sha256",
+        )
+        for field in cumulative_identity_fields:
+            _require_hex(str(identity.get(field, "")), 64, field)
+    elif identity.get("teacher_identity_policy") == "content_bound_final_cumulative_formal":
+        cumulative_identity_fields = (
+            "d2_release_manifest_sha256",
+            "gap300_teacher_attestation_sha256",
             "source_evidence_sha256",
         )
         for field in cumulative_identity_fields:
@@ -217,7 +225,9 @@ def _validate_candidate(
     if candidate.get("source_worktree_dirty") is not False:
         raise ValueError("candidate must originate from a clean worktree")
     if candidate.get("teacher_identity_policy") not in {
-        "signed_d2_release_formal", "signed_cumulative_release_formal",
+        "signed_d2_release_formal",
+        "signed_cumulative_release_formal",
+        "content_bound_final_cumulative_formal",
     }:
         raise ValueError("handoff requires the formal signed-release identity policy")
     for field, length in (
@@ -231,6 +241,13 @@ def _validate_candidate(
     if candidate.get("teacher_identity_policy") == "signed_cumulative_release_formal":
         for field in (
             "d2_release_manifest_sha256", "b1_signature_sha256",
+            "source_evidence_sha256",
+        ):
+            _require_hex(str(candidate.get(field, "")), 64, field)
+    elif candidate.get("teacher_identity_policy") == "content_bound_final_cumulative_formal":
+        for field in (
+            "d2_release_manifest_sha256",
+            "gap300_teacher_attestation_sha256",
             "source_evidence_sha256",
         ):
             _require_hex(str(candidate.get(field, "")), 64, field)
@@ -266,6 +283,14 @@ def _validate_candidate(
     if candidate.get("teacher_identity_policy") == "signed_cumulative_release_formal":
         for field in (
             "d2_release_manifest_sha256", "b1_signature_sha256",
+            "source_evidence_sha256",
+        ):
+            if candidate.get(field) != summary.get(field):
+                raise ValueError(f"candidate {field} does not match training summary {field}")
+    elif candidate.get("teacher_identity_policy") == "content_bound_final_cumulative_formal":
+        for field in (
+            "d2_release_manifest_sha256",
+            "gap300_teacher_attestation_sha256",
             "source_evidence_sha256",
         ):
             if candidate.get(field) != summary.get(field):

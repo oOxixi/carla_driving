@@ -1,0 +1,112 @@
+{
+  "binding": {
+    "payload": {
+      "acquisition_git_sha_counts": {
+        "95668ba3a466ae0dfcd73982f5a4a0d210b524c1": 770,
+        "e150ae598d95cb024faebc1699b872d0de899e91": 50
+      },
+      "all_820_samples_share_teacher_identity": true,
+      "b1_release_lock_sha256": "695905864b9133c27c1e9ee7a6b7e57ddfd2219ba8a64bc48a7bf9b81c20c3f7",
+      "canonical_samples": 820,
+      "dataset_version": "b1_d3_gap300_strict_v1",
+      "release_manifest_sha256": "a2fbe23674dfa984bba9e5623b931583f0ed53479ac5846b1fe3535a2a465427",
+      "repository_teacher_manifest_sha256": "710859ecc436d9f0e709661ba99fbe4fa9daad89e49861a154501f1f53a8e005",
+      "teacher": {
+        "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+        "dtype": "bfloat16",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+        "quantization": null,
+        "qwen_mode": "planner_v2"
+      }
+    },
+    "sha256": "ac0012cb542996a58d67937c446c71fc33b5c54202b2c3501e631e44e3cb4f0e"
+  },
+  "coverage": {
+    "acquisition_git_sha_counts": {
+      "95668ba3a466ae0dfcd73982f5a4a0d210b524c1": 770,
+      "e150ae598d95cb024faebc1699b872d0de899e91": 50
+    },
+    "all_samples_share_teacher_identity": true,
+    "canonical_samples": 820,
+    "service_url_counts": {
+      "http://127.0.0.1:18004": 770,
+      "http://127.0.0.1:18009": 50
+    }
+  },
+  "dataset_version": "b1_d3_gap300_strict_v1",
+  "historical_evidence": {
+    "gap300_run_script": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_d01_pull_over_v1/artifacts/b1_gap300_v1/run_gap300.sh",
+      "sha256": "d0167c09b499245a2b871acc9b53ccd313bca79bb91486eae689f4272a3818b3"
+    },
+    "gap300_source_manifest": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_d01_pull_over_v1/artifacts/b1_gap300_v1/canonical_strict_v1/release_source_manifest.json",
+      "sha256": "add470dbb91a9a445cb30bd49062f5308bf67666408250f2efa0f259737f6427"
+    },
+    "historical_model_manifest": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/artifacts/b1_teacher_pinned/teacher_model_manifest_latest.json",
+      "sha256": "12990e560e3a8637c1a86fe2bfd0afbc893885a8251318d6f751de3964b67322"
+    },
+    "proxy_18004_log": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/artifacts/b1_teacher_pinned/qwen_service_18004.log",
+      "sha256": "94207148a8adc2138bac6f047e7b4a996ae41695a067f4f2a6667f9156900030"
+    },
+    "proxy_18009_log": {
+      "path": "/home/dcase_task2/dongfeng_voice/carla_d01_pull_over_v1/artifacts/d01_qwen_service/18009.log",
+      "sha256": "8565d53457de982ece27d2eaf8e76594666fc35fd9b77c777d97a9f6092c0c8c"
+    },
+    "surviving_process_lineage": {
+      "proxy_18004": {
+        "cmdline": "python -m qwen_service.server --host 127.0.0.1 --port 18004 --vllm-base-url http://127.0.0.1:8001/v1 --vllm-model Qwen/Qwen3.5-2B --image-root /home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1 --qwen-mode planner_v2 --timeout-ms 5000 --max-concurrency 1 --image-max-side 224",
+        "pid": 1895088,
+        "started_local": "2026-09-11 23:23:58 +0800"
+      },
+      "proxy_18009": {
+        "cmdline": "/home/dcase_task2/miniconda3/envs/voice/bin/python -m qwen_service.server --host 127.0.0.1 --port 18009 --vllm-base-url http://127.0.0.1:8001/v1 --vllm-model Qwen/Qwen3.5-2B --image-root /home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1 --qwen-mode planner_v2 --timeout-ms 5000 --max-concurrency 1 --image-max-side 224",
+        "pid": 2785676,
+        "started_local": "2026-09-26 18:16:53 +0800"
+      },
+      "vllm": {
+        "cmdline": "/home/dcase_task2/dongfeng_voice/.venv-b1-qwen-vllm/bin/python -m vllm.entrypoints.openai.api_server --host 127.0.0.1 --port 8001 --model /home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/models/Qwen3.5-2B_15852e8 --served-model-name Qwen/Qwen3.5-2B --dtype bfloat16 --max-model-len 2048 --gpu-memory-utilization 0.70 --max-num-seqs 1 --enable-prefix-caching --limit-mm-per-prompt {\"image\":1,\"video\":0}",
+        "pid": 1870062,
+        "port": 8001,
+        "started_local": "2026-09-11 23:16:35 +0800"
+      }
+    },
+    "vllm_8001_log": {
+      "observed_dtype": "bfloat16",
+      "observed_model_path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/models/Qwen3.5-2B_15852e8",
+      "observed_quantization": null,
+      "observed_served_model_name": "Qwen/Qwen3.5-2B",
+      "path": "/home/dcase_task2/dongfeng_voice/carla_driving_challenge_b1/artifacts/b1_teacher_pinned/vllm_8001.log",
+      "sha256": "044a0d441622577dd27e756dcbb06e100dc3f2e52b08109116a72091c19b66ed"
+    }
+  },
+  "identity_conclusion": {
+    "all_820_samples_share_teacher_identity": true,
+    "historical_release_mutated": false,
+    "reason": "Both Gap300 Qwen proxies were bound to the same continuously running vLLM port 8001 process. That process loaded the exact local model directory whose pre-existing historical model manifest binds revision 15852e8c... to artifact fingerprint 4bbf183b....",
+    "sample_rows_rewritten": false
+  },
+  "repository_teacher_manifest": {
+    "path": "challenge/teacher_gap300_manifest.json",
+    "sha256": "710859ecc436d9f0e709661ba99fbe4fa9daad89e49861a154501f1f53a8e005"
+  },
+  "schema_version": "1.0",
+  "signature_status": "CONTENT_BOUND_UNSIGNED",
+  "source_release": {
+    "b1_release_lock_sha256": "695905864b9133c27c1e9ee7a6b7e57ddfd2219ba8a64bc48a7bf9b81c20c3f7",
+    "release_manifest_sha256": "a2fbe23674dfa984bba9e5623b931583f0ed53479ac5846b1fe3535a2a465427"
+  },
+  "status": "PASS",
+  "supplements_without_mutating_release": true,
+  "teacher": {
+    "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "dtype": "bfloat16",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "quantization": null,
+    "qwen_mode": "planner_v2"
+  }
+}
