@@ -1,0 +1,122 @@
+{
+  "attestation_type": "MS34_PROVENANCE_ADDENDUM_CONTENT_BOUND_UNSIGNED",
+  "current_pinned_teacher_policy": {
+    "manifest": {
+      "dtype": "bfloat16",
+      "legacy_smoke_note": "Previous B1 Smoke used a shared local Qwen/Qwen3.5-2B service whose exact Hugging Face revision was not recorded. This pinned revision must not be retroactively attributed to the legacy Smoke dataset.",
+      "max_model_len": 2048,
+      "model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "previous_teacher_git_sha": "1a363c15b9b1790534358c11acbd100a3011fa93",
+      "quantization": null,
+      "qwen_mode": "planner_v2",
+      "schema_version": "1.0",
+      "serving": {
+        "flashinfer_sampler": false,
+        "gpu_memory_utilization": 0.7,
+        "image_max_side": 224,
+        "max_num_seqs": 1,
+        "torch_version": "2.13.0+cu132",
+        "vllm_version": "0.29.0"
+      },
+      "teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+      "teacher_profile": "b1-pinned-teacher-v4",
+      "teacher_tag": "teacher-baseline-v4",
+      "verification": {
+        "challenge_main_test_suite_parity": "968/968 PASS",
+        "challenge_regression": "965 passed, 3 skipped",
+        "cold_start_observation": {
+          "note": "First request after service launch showed elevated latency; do not use as warm latency result."
+        },
+        "directional_closed_loop_gate": "8/8 SUCCEEDED",
+        "directional_semantic_gate": "8/8 PASS",
+        "main_regression": "965 passed, 3 skipped",
+        "service_gate": {
+          "cases": {
+            "B06_left_turn": "SUCCEEDED",
+            "B08_lane_change_left": "SUCCEEDED",
+            "QWF_01_turn_then_speed": "SUCCEEDED",
+            "QWR_05_turn_requires_qwen": "SUCCEEDED"
+          },
+          "infra_error_scan": "PASS",
+          "status": "PASS"
+        },
+        "service_health": "PASS (READY, production_ready=true, planner_v2)"
+      }
+    },
+    "manifest_path": "challenge/teacher_pinned_manifest_v4.json",
+    "manifest_sha256": "82aef8a13649cffdd17c9cd64003e3967448773548c2b5fcb15fd3b0d5b08220"
+  },
+  "dataset_version": "b1_ms34_supplement_v1",
+  "evidence_scope": {
+    "not_retroactively_asserted_from_ms34_rows": [
+      "pinned profile identity unless directly present",
+      "model revision unless directly present",
+      "artifact fingerprint unless directly present",
+      "dtype unless directly present",
+      "quantization unless directly present"
+    ],
+    "policy": "Do not rewrite the immutable MS34 release. Current pinned Teacher policy governs future formal Teacher work; historical/runtime evidence is preserved as recorded.",
+    "verified_from_ms34_rows": [
+      "teacher_model_id distribution",
+      "teacher_mode distribution",
+      "runtime/acquisition Git identity distribution",
+      "Teacher service endpoint distribution"
+    ]
+  },
+  "field_semantics": {
+    "metadata.teacher_git_sha": "Recorded acquisition/runtime repository checkout identity. It must not be silently reinterpreted as the canonical pinned Teacher-model identity."
+  },
+  "historical_release_mutated": false,
+  "release_binding": {
+    "content_bound_pass": {
+      "available": true,
+      "path": "challenge/dataset/releases/b1_ms34_supplement_v1/B1_CONTENT_BOUND_PASS.json",
+      "sha256": "1968e66ab358db189edecb6ca88307c3d70c931534eef4727479da2ed55ca0e4",
+      "size_bytes": 860
+    },
+    "governance_report": {
+      "available": true,
+      "path": "challenge/dataset/releases/b1_ms34_supplement_v1/governance_report.json",
+      "sha256": "59135a9a557fe86b48f371d9b9637dcd4dbf2ee1d7664490511de3ee9a9aebdf",
+      "size_bytes": 883
+    },
+    "provenance_manifest": {
+      "available": true,
+      "path": "challenge/dataset/releases/b1_ms34_supplement_v1/provenance_manifest.json",
+      "sha256": "84499fb01d94c716bbd7ce7ea805d0ab9491c3ab74110396ccd8ead85faecbde",
+      "size_bytes": 1364
+    },
+    "release_manifest": {
+      "available": true,
+      "path": "challenge/dataset/releases/b1_ms34_supplement_v1/release_manifest.json",
+      "sha256": "96cf7f42795d604ff93e023426dd51f1f4ebfcc96d0c8e94f0383123c26e8972",
+      "size_bytes": 5581
+    },
+    "split_manifest": {
+      "available": true,
+      "path": "challenge/dataset/releases/b1_ms34_supplement_v1/split_manifest.json",
+      "sha256": "2b47bd568efc069d0eb1cf6d8220b03cb6f18c869d4ac33f9146a9b67b63793f",
+      "size_bytes": 3050
+    }
+  },
+  "sample_level_observed_identity": {
+    "canonical_rows": 35,
+    "recorded_teacher_git_sha_counts": {
+      "4a900a86c23f901f9ab4a49ba6f2ce3266c3f1a3": 35
+    },
+    "teacher_mode_counts": {
+      "planner_v2": 35
+    },
+    "teacher_model_id_counts": {
+      "Qwen/Qwen3.5-2B": 35
+    },
+    "teacher_service_url_counts": {
+      "http://127.0.0.1:18009": 35
+    }
+  },
+  "sample_rows_rewritten": false,
+  "schema_version": "1.0",
+  "status": "PASS_WITH_RUNTIME_IDENTITY_LIMITATION"
+}

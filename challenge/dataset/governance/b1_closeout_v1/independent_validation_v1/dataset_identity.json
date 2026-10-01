@@ -1,0 +1,32 @@
+{
+  "case_manifest_sha256": "d9ec84588874a55c7b85ddb9f596d04943170cb3471d69e001394e3f76b5cbfe",
+  "case_set_digest_sha256": "da1d032f7d20147a26e4426c10a97def8b470a780b854ea852143697292f7dec",
+  "counts": {
+    "groups": 240,
+    "samples": 240
+  },
+  "dataset_version": "b1_independent_validation_v1",
+  "governance": {
+    "calibration": false,
+    "development": false,
+    "frozen_test": false,
+    "frozen_test_assignment": "NOT_ASSIGNED_BY_B1",
+    "independent_validation": true,
+    "labels_must_not_be_used_for_A3_training_or_tuning": true,
+    "training": false
+  },
+  "leakage_checks": {
+    "independent_group_count_240": true,
+    "independent_sample_count_240": true,
+    "independent_vs_calibration_group_overlap_zero": true,
+    "independent_vs_calibration_sample_overlap_zero": true,
+    "independent_vs_d2_dev_group_overlap_zero": true,
+    "independent_vs_d2_dev_sample_overlap_zero": true,
+    "independent_vs_d2_train_group_overlap_zero": true,
+    "independent_vs_d2_train_sample_overlap_zero": true
+  },
+  "role": "INDEPENDENT_VALIDATION",
+  "schema_version": "1.0",
+  "source_release_binding_sha256": "b50ff5bd28ebb04e78d3a4271a0309f79eca304bc341561e46623a3483209027",
+  "status": "FROZEN"
+}

@@ -1,0 +1,9 @@
+{
+  "algorithm": "SHA256",
+  "canonicalization": "UTF-8 canonical JSON; sorted keys; compact separators; cases ordered by sample_id",
+  "case_count": 240,
+  "dataset_version": "b1_independent_validation_v1",
+  "group_count": 240,
+  "schema_version": "1.0",
+  "sha256": "da1d032f7d20147a26e4426c10a97def8b470a780b854ea852143697292f7dec"
+}

@@ -1,0 +1,51 @@
+{
+  "bindings": {
+    "content_bound_pass": {
+      "available": true,
+      "path": "challenge/dataset/releases/d3_gap300_strict_v1/B1_CONTENT_BOUND_PASS.json",
+      "sha256": "e1aefc5a0c5df31f1738d400314d80d8bb2667e9a5468ee6819d705b3355b332",
+      "size_bytes": 307
+    },
+    "governance_report": {
+      "available": true,
+      "path": "challenge/dataset/releases/d3_gap300_strict_v1/governance_report.json",
+      "sha256": "1638dc4eb02557cf19b14b55194e8fa5449537009eb76f8f621a445532bb5d64",
+      "size_bytes": 992
+    },
+    "provenance_addendum": {
+      "available": true,
+      "path": "challenge/dataset/attestations/d3_gap300_strict_v1_provenance_addendum_v1/gap300_provenance_addendum.json",
+      "sha256": "4369cc767631dc13654d1e433bb933cd2f4a0c3b971d3490997e4f11f355106d",
+      "size_bytes": 4672
+    },
+    "provenance_manifest": {
+      "available": true,
+      "path": "challenge/dataset/releases/d3_gap300_strict_v1/provenance_manifest.json",
+      "sha256": "20ea6be56175808f6dfd923cbd3ad58840f37308a00df946224168bf9a859fc8",
+      "size_bytes": 1393
+    },
+    "release_manifest": {
+      "available": true,
+      "path": "challenge/dataset/releases/d3_gap300_strict_v1/release_manifest.json",
+      "sha256": "a2fbe23674dfa984bba9e5623b931583f0ed53479ac5846b1fe3535a2a465427",
+      "size_bytes": 1878
+    },
+    "split_manifest": {
+      "available": true,
+      "path": "challenge/dataset/releases/d3_gap300_strict_v1/split_manifest.json",
+      "sha256": "15796bb1d3a6c7824c2fdb5a22d3ab0a15fd0654f453fe20cf40aab79f8fa8f5",
+      "size_bytes": 55430
+    },
+    "teacher_provenance_attestation": {
+      "available": true,
+      "path": "challenge/dataset/attestations/d3_gap300_strict_v1_teacher_provenance_v1/teacher_provenance_attestation.json",
+      "sha256": "de7a2f1acc33be2f26f4d9480a17ad72e8f9a34b591c580f04e826b5ee194c25",
+      "size_bytes": 5969
+    }
+  },
+  "dataset_version": "b1_d3_gap300_strict_v1",
+  "historical_release_mutated": false,
+  "purpose": "Bind the immutable Gap300 release to its external provenance addendum and Teacher provenance attestation.",
+  "schema_version": "1.0",
+  "status": "PASS"
+}

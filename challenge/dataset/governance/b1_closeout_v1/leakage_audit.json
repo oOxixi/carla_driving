@@ -1,0 +1,39 @@
+{
+  "checks": {
+    "calibration_dev_sample_overlap_zero": true,
+    "calibration_train_sample_overlap_zero": true,
+    "dev_sample_ids_unique": true,
+    "independent_calibration_group_overlap_zero": true,
+    "independent_calibration_sample_overlap_zero": true,
+    "independent_dev_group_overlap_zero": true,
+    "independent_dev_sample_overlap_zero": true,
+    "independent_train_group_overlap_zero": true,
+    "independent_train_sample_overlap_zero": true,
+    "train_dev_sample_overlap_zero": true,
+    "train_sample_ids_unique": true
+  },
+  "counts": {
+    "calibration": 300,
+    "calibration_groups": 300,
+    "dev": 1158,
+    "dev_groups": 939,
+    "independent_validation": 240,
+    "independent_validation_groups": 240,
+    "train": 6037,
+    "train_groups": 4070
+  },
+  "dataset_version": "b1_governed_dataset_closeout_v1",
+  "overlap_counts": {
+    "calibration_dev_samples": 0,
+    "calibration_train_samples": 0,
+    "independent_calibration_groups": 0,
+    "independent_calibration_samples": 0,
+    "independent_dev_groups": 0,
+    "independent_dev_samples": 0,
+    "independent_train_groups": 0,
+    "independent_train_samples": 0,
+    "train_dev_samples": 0
+  },
+  "schema_version": "1.0",
+  "status": "PASS"
+}

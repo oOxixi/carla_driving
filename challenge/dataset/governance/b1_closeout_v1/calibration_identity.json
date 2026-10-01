@@ -1,0 +1,51 @@
+{
+  "bindings": {
+    "calibration_manifest": {
+      "available": true,
+      "path": "challenge/dataset/releases/calibration_v1/calibration_manifest.json",
+      "sha256": "659c5e8210ee95cf835be685da1deb55bc1990874ba3e120955d6bdf392d8059",
+      "size_bytes": 1426
+    },
+    "calibration_rows": {
+      "available": true,
+      "path": "challenge/dataset/releases/calibration_v1/calibration.jsonl",
+      "sha256": "e7520afc683b4545ca0981c549d0aebef50a90962a0d95378d89c1ca4bfbe8cc",
+      "size_bytes": 1472446
+    },
+    "coverage_report": {
+      "available": true,
+      "path": "challenge/dataset/releases/calibration_v1/calibration_coverage_report.json",
+      "sha256": "cb0cad978a677a4af7b5c2662d066fe73af5684d495d8aace3e2c9f974f7da36",
+      "size_bytes": 5391
+    },
+    "rgb_manifest": {
+      "available": true,
+      "path": "challenge/dataset/releases/calibration_v1/rgb_manifest.json",
+      "sha256": "2acafe6713a910a736a906761420fc7f9b00d408e854fdfbc210aa1aa55f90b4",
+      "size_bytes": 73203
+    },
+    "selection_assignments": {
+      "available": true,
+      "path": "challenge/dataset/releases/calibration_v1/selection_assignments.jsonl",
+      "sha256": "77ca5f5c8a575235322507bf113234b66b3f90116ab68015d6984cbf51837a30",
+      "size_bytes": 130549
+    }
+  },
+  "counts": {
+    "groups": 300,
+    "samples": 300
+  },
+  "dataset_version": "b1_calibration_v1",
+  "governance": {
+    "calibration": true,
+    "development": false,
+    "frozen_test": false,
+    "independent_validation": false,
+    "independent_validation_group_overlap": 0,
+    "independent_validation_sample_overlap": 0,
+    "training": false
+  },
+  "purpose": "PTQ_CALIBRATION_ONLY",
+  "schema_version": "1.0",
+  "status": "FROZEN_CALIBRATION"
+}

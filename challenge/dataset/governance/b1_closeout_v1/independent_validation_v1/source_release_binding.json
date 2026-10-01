@@ -1,0 +1,31 @@
+{
+  "calibration_assignments": {
+    "available": true,
+    "path": "challenge/dataset/releases/calibration_v1/selection_assignments.jsonl",
+    "sha256": "77ca5f5c8a575235322507bf113234b66b3f90116ab68015d6984cbf51837a30",
+    "size_bytes": 130549
+  },
+  "calibration_manifest": {
+    "available": true,
+    "path": "challenge/dataset/releases/calibration_v1/calibration_manifest.json",
+    "sha256": "659c5e8210ee95cf835be685da1deb55bc1990874ba3e120955d6bdf392d8059",
+    "size_bytes": 1426
+  },
+  "dataset_version": "b1_independent_validation_v1",
+  "reserved_pool": {
+    "available": true,
+    "path": "challenge/dataset/releases/d2_v1_1/reserved_test_candidates.jsonl",
+    "sha256": "f5221930b1c6386105830043c83a7084d1a5a3001e0601660ae482df6b1ce651",
+    "size_bytes": 2648804
+  },
+  "schema_version": "1.0",
+  "selection_rule": "Independent Validation v1 is exactly the set difference D2 v1.1 reserved_test_candidates minus Calibration v1 selected sample_ids. No additional ranking or relabeling.",
+  "source_release": "d2_v1_1",
+  "source_release_manifest": {
+    "available": true,
+    "path": "challenge/dataset/releases/d2_v1_1/release_manifest.json",
+    "sha256": "cf153d2f536f9180241f02a9d644aca6da2a508beb785591399dbb75b847462f",
+    "size_bytes": 3142
+  },
+  "source_release_mutated": false
+}

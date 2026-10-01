@@ -1,0 +1,39 @@
+{
+  "b1_state": {
+    "B1_DATA_CLOSEOUT": "PASS",
+    "CALIBRATION_V1": "FROZEN",
+    "DATA_COLLECTION": "PAUSED",
+    "FROZEN_TEST": "NOT_ASSIGNED_BY_B1",
+    "GOVERNED_DATASET": "FROZEN",
+    "HISTORICAL_RELEASES": "IMMUTABLE",
+    "INDEPENDENT_VALIDATION": "FROZEN"
+  },
+  "closeout_id": "b1_closeout_v1",
+  "governed_counts": {
+    "calibration": 300,
+    "dev": 1158,
+    "frozen_test": 0,
+    "hard_negative_published": 309,
+    "independent_validation": 240,
+    "train": 6037
+  },
+  "independent_validation": {
+    "case_set_digest": "da1d032f7d20147a26e4426c10a97def8b470a780b854ea852143697292f7dec",
+    "dataset_version": "b1_independent_validation_v1",
+    "groups": 240,
+    "samples": 240
+  },
+  "required_b1_artifacts": {
+    "calibration_identity": true,
+    "gap300_provenance_binding": true,
+    "governed_release_manifest": true,
+    "independent_validation_case_manifest": true,
+    "independent_validation_case_set_digest": true,
+    "leakage_audit": true,
+    "ms34_teacher_provenance_addendum": true,
+    "teacher_provenance_registry": true
+  },
+  "schema_version": "1.0",
+  "scope_note": "This closes B1 data/provenance/governance work only. No B2 evaluation or gate decision is asserted.",
+  "status": "PASS"
+}

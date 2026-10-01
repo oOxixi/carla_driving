@@ -1,0 +1,118 @@
+{
+  "current_pinned_teacher_policy": {
+    "manifest": {
+      "dtype": "bfloat16",
+      "legacy_smoke_note": "Previous B1 Smoke used a shared local Qwen/Qwen3.5-2B service whose exact Hugging Face revision was not recorded. This pinned revision must not be retroactively attributed to the legacy Smoke dataset.",
+      "max_model_len": 2048,
+      "model_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+      "model_id": "Qwen/Qwen3.5-2B",
+      "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "previous_teacher_git_sha": "1a363c15b9b1790534358c11acbd100a3011fa93",
+      "quantization": null,
+      "qwen_mode": "planner_v2",
+      "schema_version": "1.0",
+      "serving": {
+        "flashinfer_sampler": false,
+        "gpu_memory_utilization": 0.7,
+        "image_max_side": 224,
+        "max_num_seqs": 1,
+        "torch_version": "2.13.0+cu132",
+        "vllm_version": "0.29.0"
+      },
+      "teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+      "teacher_profile": "b1-pinned-teacher-v4",
+      "teacher_tag": "teacher-baseline-v4",
+      "verification": {
+        "challenge_main_test_suite_parity": "968/968 PASS",
+        "challenge_regression": "965 passed, 3 skipped",
+        "cold_start_observation": {
+          "note": "First request after service launch showed elevated latency; do not use as warm latency result."
+        },
+        "directional_closed_loop_gate": "8/8 SUCCEEDED",
+        "directional_semantic_gate": "8/8 PASS",
+        "main_regression": "965 passed, 3 skipped",
+        "service_gate": {
+          "cases": {
+            "B06_left_turn": "SUCCEEDED",
+            "B08_lane_change_left": "SUCCEEDED",
+            "QWF_01_turn_then_speed": "SUCCEEDED",
+            "QWR_05_turn_requires_qwen": "SUCCEEDED"
+          },
+          "infra_error_scan": "PASS",
+          "status": "PASS"
+        },
+        "service_health": "PASS (READY, production_ready=true, planner_v2)"
+      }
+    },
+    "manifest_path": "challenge/teacher_pinned_manifest_v4.json",
+    "manifest_sha256": "82aef8a13649cffdd17c9cd64003e3967448773548c2b5fcb15fd3b0d5b08220"
+  },
+  "policy": {
+    "future_formal_teacher_work": "USE_CURRENT_PINNED_TEACHER_POLICY",
+    "historical_release_provenance": "PRESERVE_AS_RECORDED"
+  },
+  "release_provenance_sources": {
+    "b1_ms34_supplement_v1": {
+      "available": true,
+      "path": "challenge/dataset/releases/b1_ms34_supplement_v1/provenance_manifest.json",
+      "sha256": "84499fb01d94c716bbd7ce7ea805d0ab9491c3ab74110396ccd8ead85faecbde",
+      "size_bytes": 1364
+    },
+    "d2_v1_1": {
+      "available": false,
+      "reason": "HISTORICAL_SCHEMA_VARIANT_OR_NOT_APPLICABLE"
+    },
+    "d3_gap300_strict_v1": {
+      "available": true,
+      "path": "challenge/dataset/releases/d3_gap300_strict_v1/provenance_manifest.json",
+      "sha256": "20ea6be56175808f6dfd923cbd3ad58840f37308a00df946224168bf9a859fc8",
+      "size_bytes": 1393
+    },
+    "d3_targeted_gap_strict_v1": {
+      "available": true,
+      "path": "challenge/dataset/releases/d3_targeted_gap_strict_v1/provenance_manifest.json",
+      "sha256": "e330dc5adb6a4f3bba481455dddc8675764a33daa49cfc2fbda40a4fab891390",
+      "size_bytes": 1373
+    },
+    "d3_turn_gap_60_strict_v1": {
+      "available": true,
+      "path": "challenge/dataset/releases/d3_turn_gap_60_strict_v1/provenance_manifest.json",
+      "sha256": "a88a92859b61b2051a37dc850f4a9612857d10b97d0af1ec9e4c7c35fc240a3e",
+      "size_bytes": 1570
+    },
+    "d3_wave1_addon_v1": {
+      "available": true,
+      "path": "challenge/dataset/releases/d3_wave1_addon_v1/provenance_manifest.json",
+      "sha256": "b0b6cb68f2a37f0fde7e9bbccd33ed55d8ae1e3ab74c81034c49f9efb9fa431a",
+      "size_bytes": 567
+    },
+    "d3_wave2_safe_short_v1": {
+      "available": true,
+      "path": "challenge/dataset/releases/d3_wave2_safe_short_v1/provenance_manifest.json",
+      "sha256": "792001682e880ad0b1177ff60246a73a0d4f5a5ef65bfa515d141ac1a6586009",
+      "size_bytes": 1850
+    }
+  },
+  "schema_version": "1.0",
+  "special_attestations": {
+    "gap300": {
+      "available": true,
+      "path": "challenge/dataset/attestations/d3_gap300_strict_v1_teacher_provenance_v1/teacher_provenance_attestation.json",
+      "sha256": "de7a2f1acc33be2f26f4d9480a17ad72e8f9a34b591c580f04e826b5ee194c25",
+      "size_bytes": 5969
+    },
+    "gap300_provenance_addendum": {
+      "available": true,
+      "path": "challenge/dataset/attestations/d3_gap300_strict_v1_provenance_addendum_v1/gap300_provenance_addendum.json",
+      "sha256": "4369cc767631dc13654d1e433bb933cd2f4a0c3b971d3490997e4f11f355106d",
+      "size_bytes": 4672
+    },
+    "ms34_provenance_addendum": {
+      "available": true,
+      "path": "challenge/dataset/governance/b1_closeout_v1/attestations/ms34_teacher_provenance_addendum.json",
+      "sha256": "0f51ef371f7500ca3cc7c6de3bc2f007d36d91b7af6b561de4d3f4388d5d255a",
+      "size_bytes": 5047
+    }
+  },
+  "status": "PASS"
+}
