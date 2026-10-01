@@ -38,6 +38,18 @@ def digest_matches(path: Path, expected: str) -> tuple[bool, str, str]:
     return False, raw, "raw"
 
 
+def lf_normalised_size(path: Path) -> int:
+    """Byte count after collapsing CRLF to LF (finding F12).
+
+    A manifest published from LF content declares LF sizes; a Windows checkout
+    with core.autocrlf rewrites every newline and adds one byte per line, so the
+    recorded size can only be compared after the same normalisation that the
+    digest already uses.
+    """
+    raw = path.read_bytes()
+    return len(raw) - raw.count(b"\r\n")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("package")
@@ -63,10 +75,21 @@ def main() -> int:
             failures.append({"file": name, "reason": "missing"})
             continue
         match, actual, how = digest_matches(path, str(expected))
-        size_ok = expected_size is None or int(expected_size) == path.stat().st_size
+        raw_size = path.stat().st_size
+        # Text files that only match after CRLF->LF normalisation must have their
+        # declared size compared the same way, otherwise every line looks like a
+        # size mismatch on a Windows checkout (finding F12).
+        if how == "lf_normalised":
+            measured_size = lf_normalised_size(path)
+            size_via = "lf_normalised"
+        else:
+            measured_size = raw_size
+            size_via = "raw"
+        size_ok = expected_size is None or int(expected_size) == measured_size
         results[name] = {"match": match, "matched_via": how, "actual": actual,
                          "expected": expected, "size_ok": size_ok,
-                         "size_bytes": path.stat().st_size}
+                         "size_bytes": raw_size, "size_measured": measured_size,
+                         "size_via": size_via, "size_expected": expected_size}
         if how == "lf_normalised":
             normalised.append(name)
         if not match:
@@ -74,7 +97,8 @@ def main() -> int:
                              "expected": expected, "actual": actual})
         elif not size_ok:
             failures.append({"file": name, "reason": "size_mismatch",
-                             "expected": expected_size, "actual": path.stat().st_size})
+                             "expected": expected_size, "actual": measured_size,
+                             "size_via": size_via})
 
     weights_name = None
     weights_digest = identity.get("weights_sha256")

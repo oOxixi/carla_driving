@@ -1,0 +1,66 @@
+{
+  "cohort": "d3_turn_gap_60_strict_v1_val (29 cases x 3 rounds)",
+  "previous_candidate_v3": {
+    "weights_sha256": "1afb8ebd...",
+    "behaviour_match": 0.551724,
+    "student_vocabulary": {
+      "SET_SPEED": 60,
+      "KEEP_LANE": 15,
+      "FOLLOW": 6,
+      "SLOW_DOWN": 6
+    },
+    "per_teacher_behaviour": {
+      "FOLLOW": {
+        "FOLLOW": 6
+      },
+      "KEEP_LANE": {
+        "KEEP_LANE": 15,
+        "SET_SPEED": 6
+      },
+      "SET_SPEED": {
+        "SET_SPEED": 21
+      },
+      "SLOW_DOWN": {
+        "SLOW_DOWN": 6
+      },
+      "TURN_LEFT": {
+        "SET_SPEED": 27
+      },
+      "YIELD": {
+        "SET_SPEED": 6
+      }
+    }
+  },
+  "final_candidate_v1": {
+    "weights_sha256": "eaee4402...",
+    "behaviour_match": 0.689655,
+    "student_vocabulary": {
+      "SLOW_DOWN": 33,
+      "KEEP_LANE": 21,
+      "SET_SPEED": 21,
+      "FOLLOW": 6,
+      "YIELD": 6
+    },
+    "per_teacher_behaviour": {
+      "FOLLOW": {
+        "FOLLOW": 6
+      },
+      "KEEP_LANE": {
+        "KEEP_LANE": 21
+      },
+      "SET_SPEED": {
+        "SET_SPEED": 21
+      },
+      "SLOW_DOWN": {
+        "SLOW_DOWN": 6
+      },
+      "TURN_LEFT": {
+        "SLOW_DOWN": 27
+      },
+      "YIELD": {
+        "YIELD": 6
+      }
+    }
+  },
+  "reading": "YIELD is fixed: it was never emitted before (0/6 YIELD case-runs) and is now emitted correctly for every YIELD case (6/6), and 36/36 in the gap300 cohort. TURN_LEFT is NOT fixed: the previous candidate answered all 27 TURN_LEFT case-runs with SET_SPEED, the final candidate answers all 27 with SLOW_DOWN -- still never TURN_LEFT. Overall turn-gap behaviour match rises 0.5517 -> 0.6897."
+}

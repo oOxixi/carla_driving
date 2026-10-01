@@ -264,3 +264,16 @@ Windows 上生成、在 Linux 上校验，同样会假失败。图片等二进�
 **归属**：仓库级或发布级（给发布目录在 `.gitattributes` 里固定行尾，仓库里已有先例——
 `CARLA-Language-Benchmark/...json text eol=crlf`、`metrics/reference_5070/** text eol=crlf`
 都是为字节级校验显式 pin 的）。B3 只记录事实与绕行，不改别人的发布流程。
+
+### F12 延伸：尺寸校验也要归一（2026-10-02 踩到第二次）
+
+校验 A3 的 `a3_final_fp32_candidate_v1` 时，B3 的包校验器报了 **8 个 `size_mismatch`**，
+而每个差值**恰好等于该文件的行数**（README +11、dataset_preflight +92、training_summary +209…）。
+同一个根因：清单按 **LF** 记录 `size_bytes`，Windows 检出是 **CRLF**，每行多 1 字节。
+
+我的校验器当时只对**摘要**做了 CRLF→LF 归一，**尺寸仍按原始字节比较**，所以摘要 PASS 而尺寸 FAIL。
+已修正：对"只有归一后才匹配摘要"的文本文件，**尺寸用同一归一方式比较**，并记录 `size_via`
+（`raw` / `lf_normalised`）。修正后新包 PASS，旧 v3 包回归仍 PASS。
+
+**教训（可复用到任何交付校验）**：行尾归一必须**同时覆盖摘要与尺寸**，否则 Windows 上的
+校验会出现"摘要对、尺寸错"的假失败；这类假失败尤其容易被误判成交付方少给了字节。

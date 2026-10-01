@@ -1,0 +1,53 @@
+{
+  "turn-gap val (29)": {
+    "case_runs": 87,
+    "behavior_match": 0.689655,
+    "confusion": {
+      "TURN_LEFT -> SLOW_DOWN": 27,
+      "KEEP_LANE -> KEEP_LANE": 21,
+      "SET_SPEED -> SET_SPEED": 21,
+      "FOLLOW -> FOLLOW": 6,
+      "SLOW_DOWN -> SLOW_DOWN": 6,
+      "YIELD -> YIELD": 6
+    },
+    "student_behaviours": {
+      "KEEP_LANE": 21,
+      "SLOW_DOWN": 33,
+      "SET_SPEED": 21,
+      "FOLLOW": 6,
+      "YIELD": 6
+    }
+  },
+  "gap300 val (123)": {
+    "case_runs": 369,
+    "behavior_match": 0.707317,
+    "confusion": {
+      "TURN_LEFT -> SLOW_DOWN": 108,
+      "SET_SPEED -> SET_SPEED": 81,
+      "KEEP_LANE -> KEEP_LANE": 72,
+      "YIELD -> YIELD": 36,
+      "FOLLOW -> FOLLOW": 27,
+      "SLOW_DOWN -> SLOW_DOWN": 27,
+      "PULL_OVER -> PULL_OVER": 18
+    },
+    "student_behaviours": {
+      "KEEP_LANE": 72,
+      "SLOW_DOWN": 135,
+      "SET_SPEED": 81,
+      "YIELD": 36,
+      "FOLLOW": 27,
+      "PULL_OVER": 18
+    }
+  },
+  "ms34 val (4)": {
+    "case_runs": 12,
+    "behavior_match": 0.333333,
+    "confusion": {
+      "AVOID_OBSTACLE -> AVOID_OBSTACLE|RETURN_TO_LANE": 6,
+      "YIELD -> AVOID_OBSTACLE|RETURN_TO_LANE": 6
+    },
+    "student_behaviours": {
+      "AVOID_OBSTACLE|RETURN_TO_LANE": 12
+    }
+  }
+}

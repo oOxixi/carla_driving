@@ -75,6 +75,8 @@ challenge/hil/
 │   ├── d2_v1_1_val/              输入基线（B1 D2 v1.1 的 val 划分，539 例）
 │   ├── d3_wave2_safe_short_v1_val/  B1 签名 D3 Wave2 的 val 划分（56 例，2026-09-25 冻结）
 │   └── d3_targeted_gap_strict_v1_val/  B1 定向补采（targeted gap）的 val 划分（99 例，2026-09-26 冻结）
+│   ├── d3_gap300_strict_v1_val/        Gap300 队列 val 划分（123 例，2026-10-02 冻结）
+│   └── b1_ms34_supplement_v1_val/      3 步/4 步多步补数 val 划分（4 例，2026-10-02 冻结）
 ├── harness/release_check/        交付包独立复核脚本（verify_b1_release.py：B1 发布；verify_a3_handoff.py：A3 候选交接包）
 ├── harness/x86_sim/              X86 仿真复现脚本（编译/一致性/dump 对照/校准集，见其 README）
 ├── evidence/
@@ -90,6 +92,7 @@ challenge/hil/
 │   ├── d3_targeted_gap_20260926/           定向补采数据：发布校验 + 查表探针 + 产物×数据集交叉矩阵
 │   ├── a3_fp32_candidate_v3_20260926/       A3 FP32 候选包独立校验 + 真实权重回放
 │   └── d3_turn_gap_20260927/                TURN-gap 队列：新通行证格式校验 + 转弯族行为缺口
+│   └── a3_final_fp32_v1_20261002/           Final FP32 候选 v1：包校验 + 转弯/多步族复测
 ├── schemas/                      导出的列定义
 └── tests/                        108 项自测（含 A3 诊断接收审计的交叉回归）
 ```
@@ -307,6 +310,8 @@ torch↔ONNX 最大绝对差 5.7e-06，后端一致性 `PASS`，回放结论按�
 **2026-09-26 再续（真实权重首次到位）**：A3 交付 `a3_d2_d3_fp32_candidate_handoff_v3`（真实 FP32 权重，92,045,422 B，sha256 `1afb8ebd…`）。B3 先做独立包校验（**9 个文件全部匹配、权重摘要与 `candidate_identity` 一致 → PASS**），再用它跑回放：D3 Wave2 开发 val（56×3）**行为/目标匹配 1.0000**、定向补采 val（99×3）**0.9192**；同一 D3 Wave2 切片上随机初始化结构只有 0.4643/0.4732，说明权重确实带来了行为。但两个 run 都仍是 **`DIAGNOSTIC_ONLY`**——`gate_verified=false`，唯一失败项是 `gate_status_passed`（身份校验通过、闸未开，fail-closed 按设计生效）。而且这两个划分本身可查表（100% / 88.9%），所以 **1.0000 与 0.9192 都不是泛化证据**。证据见 [`evidence/a3_fp32_candidate_v3_20260926/`](evidence/a3_fp32_candidate_v3_20260926/README.md)。
 
 **2026-09-27 续做（TURN-gap 队列，暴露行为词表缺口）**：B1 新发 `d3_turn_gap_60_strict_v1`（200 严格样本 / 60 run，家族 C01/C02/C03 的转弯与让行），并且**换了第三种通行证格式**——`B1_CONTENT_BOUND_PASS.json`，`signature_status = CONTENT_BOUND_UNSIGNED`。B3 把校验器扩展成识别三种通行证并显式输出 assurance level；本次绑定摘要**可独立复算**（canonical JSON sorted+compact → `1f264294…` 一致），但它是内容绑定而非签名，**保证等级低于前两版**，这条写进结论。复核结果 PASS（211 个锁定文件、200 张图、171+29 行配对）。真实权重在该队列上的回放给出**行为匹配 0.5517 / 目标匹配 0.8621**（远低于前三集的 1.0000 / 0.9518 / 0.9192）：拆到行为层面是**候选从不产出 `TURN_LEFT` 与 `YIELD`**——33 例次 TURN_LEFT 与 6 例次 YIELD 全部被答成 `SET_SPEED`，其余四种行为完全复现；这正是团队清单记录的 GAP-03（YIELD = 0）与 GAP-06（TURN_LEFT 严重不足）。同时 INT8 在本队列上很干净（两个产物十头 min ≥ 0.999886、0 例低于 0.99），对照 D3 Wave2 上速度头 0.989066/8-of-56，说明**速度头敏感是分布相关现象**。另外把 A3 新增的 `audit_b3_v3_diagnostic.py`（它读 B3 证据）纳入 B3 回归，作为证据格式的交叉守卫。证据见 [`evidence/d3_turn_gap_20260927/`](evidence/d3_turn_gap_20260927/README.md)。
+
+**2026-10-02 续做（新 final FP32 候选 + 缺口是否修好）**：A3 把 final FP32 候选直接放进仓库（`challenge/distillation/releases/a3_final_fp32_candidate_v1/`，权重 sha256 **`eaee4402…`**，训练视图已含 turn-gap 与 gap300，train 5826 / val 1104），门禁仍是 `PENDING_A3_FP32_GATE`。B3 独立包校验 **PASS**（过程中还修掉校验器自己的一个缺陷：F12 的**尺寸归一**——清单按 LF 记大小、Windows 检出是 CRLF，导致 8 个假 `size_mismatch`，差值恰好等于行数）。复测结果：**YIELD 已修好**（turn-gap 6/6、gap300 36/36，上一版是 0），**TURN_LEFT 仍然从不产出**（27/27 与 108/108 全部答成 SLOW_DOWN，上一版答成 SET_SPEED），turn-gap 行为匹配 **0.5517 → 0.6897**、gap300 **0.7073**；**多步计划仍是短板**——ms34 的 4 个用例里，3 步目标被截断为 2 步（丢尾部 KEEP_LANE，匹配 0.667）、4 步目标还丢开头的 YIELD（匹配 0.0）。证据见 [`evidence/a3_final_fp32_v1_20261002/`](evidence/a3_final_fp32_v1_20261002/README.md)。
 
 再补齐三件：① D2 v1.1 val **全量 539 例 × 3 轮**真实权重回放（行为 **0.9518** / 目标 **0.9712**，三数据集呈 1.0000 → 0.9518 → 0.9192 的下降趋势）；② 真实权重的 **FP32→ONNX** 导出与一致性（torch↔ONNX 最大绝对差 **7.6e-06**；过程中发现 A2 的导出器只读**扁平** manifest 字段、而 A3 用**嵌套 `candidate_identity`**，直接对接会报错——B3 已在 9/24 修过同一问题，建议 A2 复用 `challenge/hil/identity.py`）；③ 真实权重的 **INT8** 编译与 FP32↔INT8 逐例一致性（定向补采 val 99 例，**十头 min ≥ 0.999835、骨干最差 0.998213**，而随机权重下同一 val 只有 0.9933–0.9986）。**换到第二个数据集又暴露一条有用的信号**：同一个 INT8 产物在 D3 Wave2 val（56 例）上，**速度回归头 `target_speed_mps` min 掉到 0.9891、8/56 例低于 0.99**（定向补采 val 上同一头是 0.9998）——说明**校准集是否覆盖评估分布**直接影响速度头保真度，应作为给 A2/A3 的具体建议。真实权重 30 分钟长稳也已完成（77,653 次迭代、0 失败、漂移 −94 KiB）。
 

@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "name": "b1_ms34_supplement_v1_val",
+  "created_at_utc": "2026-10-01T16:29:14.269179+00:00",
+  "source": {
+    "delivery_root": "challenge/dataset/releases/b1_ms34_supplement_v1",
+    "requests_path": "D:\\nana\\carla_driving-new\\carla_driving-new\\challenge\\dataset\\releases\\b1_ms34_supplement_v1\\val_addition.jsonl",
+    "repo_root": ".",
+    "source_preference": [
+      "data/smoke_valid.jsonl",
+      "data/smoke_train_eligible.jsonl",
+      "val.jsonl",
+      "data/train.jsonl",
+      "data/val.jsonl",
+      "train.jsonl"
+    ]
+  },
+  "counts": {
+    "cases": 4,
+    "rgb_resolved": 4,
+    "rgb_copied": 4,
+    "teacher_plans": 4
+  },
+  "case_set_digest_sha256": "165ac712d0c3ed18a5dedd66f469d9a3379a74ec1349c46b4ed21da124773db1",
+  "files": {
+    "cases.jsonl": {
+      "size_bytes": 17195,
+      "sha256": "d1911891901d149652d04bde7c5f9a2c7eaa197f0e030d2f7de092f30079fc7e"
+    }
+  },
+  "notes": "Replay inputs are frozen here so later runs and B2 recomputation use byte-identical requests; the RGB copies are content-addressed by SHA256."
+}

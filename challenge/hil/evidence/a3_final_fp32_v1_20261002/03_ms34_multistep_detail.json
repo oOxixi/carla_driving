@@ -1,0 +1,48 @@
+{
+  "cohort": "b1_ms34_supplement_v1_val (4 cases x 3 rounds)",
+  "cases": [
+    {
+      "sample_id": "td_8c171b0d475d2d3d1c2b33fe",
+      "teacher_steps": [
+        "AVOID_OBSTACLE",
+        "RETURN_TO_LANE",
+        "KEEP_LANE"
+      ],
+      "student_sequence": "AVOID_OBSTACLE|RETURN_TO_LANE",
+      "behaviour_match": 0.6666666666666666
+    },
+    {
+      "sample_id": "td_45ade01685e4a06a80cf1f96",
+      "teacher_steps": [
+        "AVOID_OBSTACLE",
+        "RETURN_TO_LANE",
+        "KEEP_LANE"
+      ],
+      "student_sequence": "AVOID_OBSTACLE|RETURN_TO_LANE",
+      "behaviour_match": 0.6666666666666666
+    },
+    {
+      "sample_id": "td_229a34a0e043a6435b1d670d",
+      "teacher_steps": [
+        "YIELD",
+        "AVOID_OBSTACLE",
+        "RETURN_TO_LANE",
+        "KEEP_LANE"
+      ],
+      "student_sequence": "AVOID_OBSTACLE|RETURN_TO_LANE",
+      "behaviour_match": 0.0
+    },
+    {
+      "sample_id": "td_13d756e4adde46ae075bd024",
+      "teacher_steps": [
+        "YIELD",
+        "AVOID_OBSTACLE",
+        "RETURN_TO_LANE",
+        "KEEP_LANE"
+      ],
+      "student_sequence": "AVOID_OBSTACLE|RETURN_TO_LANE",
+      "behaviour_match": 0.0
+    }
+  ],
+  "reading": "The candidate can emit a two-step sequence but truncates at two: the 3-step targets lose the trailing KEEP_LANE (match 0.667) and the 4-step targets lose both the leading YIELD and the trailing KEEP_LANE (match 0.0). Note it CAN emit YIELD as a single step elsewhere, so this is a plan-length/ordering limitation, not a missing symbol."
+}
