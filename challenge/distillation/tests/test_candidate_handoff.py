@@ -219,6 +219,83 @@ def test_build_final_candidate_handoff_preserves_gap300_attestation(tmp_path: Pa
     assert verification["valid"] is True
 
 
+def test_build_closeout_candidate_handoff_preserves_governed_counts(
+    tmp_path: Path,
+) -> None:
+    source = _source(tmp_path)
+    candidate_path = source / "student_v0_fp32_candidate.json"
+    summary_path = source / "training_summary.json"
+    candidate = json.loads(candidate_path.read_text())
+    summary = json.loads(summary_path.read_text())
+    updates = {
+        "teacher_git_sha": "MULTI_GOVERNED_B1_CLOSEOUT_V1",
+        "teacher_identity_policy": "b1_closeout_cumulative_formal",
+        "d2_release_manifest_sha256": "1" * 64,
+        "gap300_teacher_attestation_sha256": "2" * 64,
+        "b1_governed_release_manifest_sha256": "3" * 64,
+        "b1_teacher_provenance_registry_sha256": "4" * 64,
+        "ms34_teacher_provenance_addendum_sha256": "5" * 64,
+        "source_evidence_sha256": "6" * 64,
+        "raw_governed_train": 6037,
+        "raw_governed_dev": 1158,
+    }
+    candidate.update(updates)
+    summary.update(updates)
+    _write_json(candidate_path, candidate)
+    _write_json(summary_path, summary)
+
+    output = tmp_path / "closeout-handoff"
+    manifest = build_candidate_handoff(
+        source,
+        output,
+        config_snapshot=b"config_id: closeout\n",
+        config_source={"git_sha": "a" * 40, "path": "closeout.yaml"},
+    )
+    assert manifest["governed_source_counts"] == {"train": 6037, "dev": 1158}
+    assert (
+        manifest["candidate_identity"]["ms34_teacher_provenance_addendum_sha256"]
+        == "5" * 64
+    )
+    assert verify_candidate_handoff(output)["valid"] is True
+
+
+@pytest.mark.parametrize("field", ("raw_governed_train", "raw_governed_dev"))
+def test_closeout_handoff_rejects_missing_governed_counts(
+    tmp_path: Path,
+    field: str,
+) -> None:
+    source = _source(tmp_path)
+    candidate_path = source / "student_v0_fp32_candidate.json"
+    summary_path = source / "training_summary.json"
+    candidate = json.loads(candidate_path.read_text())
+    summary = json.loads(summary_path.read_text())
+    updates = {
+        "teacher_git_sha": "MULTI_GOVERNED_B1_CLOSEOUT_V1",
+        "teacher_identity_policy": "b1_closeout_cumulative_formal",
+        "d2_release_manifest_sha256": "1" * 64,
+        "gap300_teacher_attestation_sha256": "2" * 64,
+        "b1_governed_release_manifest_sha256": "3" * 64,
+        "b1_teacher_provenance_registry_sha256": "4" * 64,
+        "ms34_teacher_provenance_addendum_sha256": "5" * 64,
+        "source_evidence_sha256": "6" * 64,
+        "raw_governed_train": 6037,
+        "raw_governed_dev": 1158,
+    }
+    candidate.update(updates)
+    summary.update(updates)
+    candidate.pop(field)
+    _write_json(candidate_path, candidate)
+    _write_json(summary_path, summary)
+
+    with pytest.raises(ValueError, match="raw governed"):
+        build_candidate_handoff(
+            source,
+            tmp_path / "rejected-closeout-handoff",
+            config_snapshot=b"config",
+            config_source={"git_sha": "a" * 40, "path": "closeout.yaml"},
+        )
+
+
 @pytest.mark.parametrize(
     ("mutation", "message"),
     (

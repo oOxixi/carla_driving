@@ -140,8 +140,11 @@ def evaluate_final_slices(
         raise ValueError("slice evaluation requires a candidate pending B2 Gate")
     if candidate.get("source_worktree_dirty") is not False:
         raise ValueError("slice evaluation requires a clean formal candidate")
-    if candidate.get("teacher_identity_policy") != "content_bound_final_cumulative_formal":
-        raise ValueError("candidate is not the governed final cumulative policy")
+    if candidate.get("teacher_identity_policy") not in {
+        "content_bound_final_cumulative_formal",
+        "b1_closeout_cumulative_formal",
+    }:
+        raise ValueError("candidate is not a governed final cumulative policy")
     if candidate.get("dataset_version") != dataset_cfg["version"]:
         raise ValueError("candidate dataset version does not match the config")
     if candidate.get("config_id") != cfg["model"]["config_id"]:

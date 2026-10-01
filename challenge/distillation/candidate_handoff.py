@@ -78,6 +78,9 @@ def build_candidate_handoff(
                     for field in (
                         "d2_release_manifest_sha256", "b1_signature_sha256",
                         "gap300_teacher_attestation_sha256", "source_evidence_sha256",
+                        "b1_governed_release_manifest_sha256",
+                        "b1_teacher_provenance_registry_sha256",
+                        "ms34_teacher_provenance_addendum_sha256",
                     )
                     if candidate.get(field) is not None
                 }),
@@ -89,6 +92,12 @@ def build_candidate_handoff(
                 "hard_case_count": summary["hard_case_count"],
                 "development_validation_only": True,
             },
+            **({
+                "governed_source_counts": {
+                    "train": candidate["raw_governed_train"],
+                    "dev": candidate["raw_governed_dev"],
+                }
+            } if candidate.get("teacher_identity_policy") == "b1_closeout_cumulative_formal" else {}),
             "config_source": dict(config_source),
             "limitations": [
                 "This package is not A3_FP32_GATE_PASSED.",
@@ -160,6 +169,20 @@ def verify_candidate_handoff(package_directory: str | Path) -> dict[str, Any]:
         )
         for field in cumulative_identity_fields:
             _require_hex(str(identity.get(field, "")), 64, field)
+    elif identity.get("teacher_identity_policy") == "b1_closeout_cumulative_formal":
+        cumulative_identity_fields = (
+            "d2_release_manifest_sha256",
+            "gap300_teacher_attestation_sha256",
+            "b1_governed_release_manifest_sha256",
+            "b1_teacher_provenance_registry_sha256",
+            "ms34_teacher_provenance_addendum_sha256",
+            "source_evidence_sha256",
+        )
+        for field in cumulative_identity_fields:
+            _require_hex(str(identity.get(field, "")), 64, field)
+        counts = manifest.get("governed_source_counts")
+        if counts != {"train": 6037, "dev": 1158}:
+            raise ValueError("B1 closeout handoff governed source counts mismatch")
 
     files = manifest.get("files")
     if not isinstance(files, Mapping):
@@ -230,6 +253,7 @@ def _validate_candidate(
         "signed_d2_release_formal",
         "signed_cumulative_release_formal",
         "content_bound_final_cumulative_formal",
+        "b1_closeout_cumulative_formal",
     }:
         raise ValueError("handoff requires the formal signed-release identity policy")
     for field, length in (
@@ -253,6 +277,20 @@ def _validate_candidate(
             "source_evidence_sha256",
         ):
             _require_hex(str(candidate.get(field, "")), 64, field)
+    elif candidate.get("teacher_identity_policy") == "b1_closeout_cumulative_formal":
+        for field in (
+            "d2_release_manifest_sha256",
+            "gap300_teacher_attestation_sha256",
+            "b1_governed_release_manifest_sha256",
+            "b1_teacher_provenance_registry_sha256",
+            "ms34_teacher_provenance_addendum_sha256",
+            "source_evidence_sha256",
+        ):
+            _require_hex(str(candidate.get(field, "")), 64, field)
+        if candidate.get("raw_governed_train") != 6037:
+            raise ValueError("candidate raw governed Train count mismatch")
+        if candidate.get("raw_governed_dev") != 1158:
+            raise ValueError("candidate raw governed Dev count mismatch")
     for field in ("model_id", "config_id", "dataset_version"):
         if not str(candidate.get(field, "")).strip():
             raise ValueError(f"candidate requires {field}")
@@ -294,6 +332,19 @@ def _validate_candidate(
             "d2_release_manifest_sha256",
             "gap300_teacher_attestation_sha256",
             "source_evidence_sha256",
+        ):
+            if candidate.get(field) != summary.get(field):
+                raise ValueError(f"candidate {field} does not match training summary {field}")
+    elif candidate.get("teacher_identity_policy") == "b1_closeout_cumulative_formal":
+        for field in (
+            "d2_release_manifest_sha256",
+            "gap300_teacher_attestation_sha256",
+            "b1_governed_release_manifest_sha256",
+            "b1_teacher_provenance_registry_sha256",
+            "ms34_teacher_provenance_addendum_sha256",
+            "source_evidence_sha256",
+            "raw_governed_train",
+            "raw_governed_dev",
         ):
             if candidate.get(field) != summary.get(field):
                 raise ValueError(f"candidate {field} does not match training summary {field}")

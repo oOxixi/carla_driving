@@ -37,6 +37,7 @@ def preflight_datasets(
     expected_teacher_model_id: str | None = None,
     expected_teacher_model_revision: str | None = None,
     expected_teacher_artifact_fingerprint_sha256: str | None = None,
+    allowed_missing_teacher_provenance_classes: Sequence[str] = (),
     asset_root: str | Path | None = None,
     require_rgb: bool = False,
     max_errors: int = 100,
@@ -51,12 +52,14 @@ def preflight_datasets(
         expected_teacher_git_sha, expected_teacher_model_id, resolved_assets, require_rgb,
         expected_teacher_model_revision,
         expected_teacher_artifact_fingerprint_sha256,
+        allowed_missing_teacher_provenance_classes,
     )
     validation = _scan_path(
         Path(val_path), "validation", encoder, expected_version, max_errors,
         expected_teacher_git_sha, expected_teacher_model_id, resolved_assets, require_rgb,
         expected_teacher_model_revision,
         expected_teacher_artifact_fingerprint_sha256,
+        allowed_missing_teacher_provenance_classes,
     )
     errors = [*train.pop("errors"), *validation.pop("errors")]
     warnings = [*train.pop("warnings"), *validation.pop("warnings")]
@@ -86,6 +89,9 @@ def preflight_datasets(
             "model_revision": expected_teacher_model_revision,
             "artifact_fingerprint_sha256": (
                 expected_teacher_artifact_fingerprint_sha256
+            ),
+            "allowed_missing_provenance_classes": sorted(
+                set(allowed_missing_teacher_provenance_classes)
             ),
         },
         "train": _public_stats(train),
@@ -122,6 +128,7 @@ def _scan_path(
     require_rgb: bool,
     expected_teacher_model_revision: str | None,
     expected_teacher_artifact_fingerprint_sha256: str | None,
+    allowed_missing_teacher_provenance_classes: Sequence[str],
 ) -> dict[str, Any]:
     result: dict[str, Any] = {
         "records": 0,
@@ -170,6 +177,7 @@ def _scan_path(
                     asset_root, require_rgb,
                     expected_teacher_model_revision,
                     expected_teacher_artifact_fingerprint_sha256,
+                    allowed_missing_teacher_provenance_classes,
                 )
             except (KeyError, TypeError, ValueError) as error:
                 result["errors"].append({
@@ -221,6 +229,7 @@ def _inspect_record(
     require_rgb: bool,
     expected_teacher_model_revision: str | None,
     expected_teacher_artifact_fingerprint_sha256: str | None,
+    allowed_missing_teacher_provenance_classes: Sequence[str],
 ) -> dict[str, Any]:
     sample_id = str(record.get("sample_id", "")).strip()
     if not sample_id:
@@ -281,21 +290,35 @@ def _inspect_record(
         or provenance.get("teacher_artifact_fingerprint_sha256")
         or ""
     )
+    provenance_class = str(metadata.get("teacher_provenance_class") or "")
+    missing_provenance_allowed = provenance_class in set(
+        allowed_missing_teacher_provenance_classes
+    )
     if expected_teacher_git_sha and teacher_sha != expected_teacher_git_sha:
         raise ValueError(f"teacher_git_sha={teacher_sha!r} does not match expected")
     if expected_teacher_model_id and teacher_model != expected_teacher_model_id:
         raise ValueError(f"teacher_model_id={teacher_model!r} does not match expected")
     if expected_teacher_model_revision and teacher_revision != expected_teacher_model_revision:
-        raise ValueError(
-            f"teacher_model_revision={teacher_revision!r} does not match expected"
-        )
+        if teacher_revision or not missing_provenance_allowed:
+            raise ValueError(
+                f"teacher_model_revision={teacher_revision!r} does not match expected"
+            )
+        warnings.append({
+            "code": "GOVERNED_MISSING_TEACHER_REVISION",
+            "message": f"Teacher revision is absent under {provenance_class}",
+        })
     if (
         expected_teacher_artifact_fingerprint_sha256
         and teacher_fingerprint != expected_teacher_artifact_fingerprint_sha256
     ):
-        raise ValueError(
-            "teacher_artifact_fingerprint_sha256 does not match expected"
-        )
+        if teacher_fingerprint or not missing_provenance_allowed:
+            raise ValueError(
+                "teacher_artifact_fingerprint_sha256 does not match expected"
+            )
+        warnings.append({
+            "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+            "message": f"Teacher fingerprint is absent under {provenance_class}",
+        })
     quality = record.get("quality", {})
     if isinstance(quality, Mapping) and quality.get("schema_valid") is False:
         raise ValueError("quality.schema_valid is false")

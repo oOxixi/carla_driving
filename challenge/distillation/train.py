@@ -31,6 +31,7 @@ from challenge.dataset.build_a3_d2_view import VIEW_VERSION
 from challenge.dataset.build_a3_cumulative_view import CUMULATIVE_VIEW_VERSION
 from challenge.dataset.build_a3_recovery_cumulative_view import RECOVERY_VIEW_VERSION
 from challenge.dataset.build_a3_final_cumulative_view import FINAL_VIEW_VERSION
+from challenge.dataset.build_a3_closeout_cumulative_view import CLOSEOUT_VIEW_VERSION
 
 from .class_balance import compute_class_weights
 from .artifacts import export_candidate_weights
@@ -38,6 +39,7 @@ from .audit_d2_view import audit_view
 from .audit_cumulative_view import audit_cumulative_view
 from .audit_recovery_cumulative_view import audit_recovery_cumulative_view
 from .audit_final_cumulative_view import audit_final_cumulative_view
+from .audit_closeout_cumulative_view import audit_closeout_cumulative_view
 from .checkpoint import load_checkpoint, save_checkpoint, sha256_file
 from .dataset import (
     DistillationDataset,
@@ -114,6 +116,8 @@ def run_training(
                     "content_bound_recovery_cumulative_smoke",
                     "content_bound_final_cumulative_smoke",
                     "content_bound_final_cumulative_formal",
+                    "b1_closeout_cumulative_smoke",
+                    "b1_closeout_cumulative_formal",
                 }
                 else None
             ),
@@ -128,6 +132,14 @@ def run_training(
             expected_teacher_artifact_fingerprint_sha256=(
                 str(cfg["teacher"]["artifact_fingerprint_sha256"])
                 if dataset_cfg.get("require_pinned_teacher_provenance") else None
+            ),
+            allowed_missing_teacher_provenance_classes=(
+                ("HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND",)
+                if cfg["teacher"].get("identity_policy") in {
+                    "b1_closeout_cumulative_smoke",
+                    "b1_closeout_cumulative_formal",
+                }
+                else ()
             ),
             asset_root=dataset_cfg.get("asset_root"),
             require_rgb=bool(dataset_cfg.get("require_rgb", False)),
@@ -239,6 +251,8 @@ def run_training(
         "content_bound_recovery_cumulative_smoke",
         "content_bound_final_cumulative_smoke",
         "content_bound_final_cumulative_formal",
+        "b1_closeout_cumulative_smoke",
+        "b1_closeout_cumulative_formal",
     }:
         repo = Path(__file__).resolve().parents[2]
         metadata["a3_view_manifest_sha256"] = canonical_text_sha256(
@@ -268,6 +282,40 @@ def run_training(
             ]["teacher_attestation_sha256"]
             metadata["source_evidence_sha256"] = view["source_evidence_sha256"]
             metadata["provenance_class"] = "CONTENT_BOUND_UNSIGNED_GOVERNED_RELEASE"
+        elif cfg["teacher"].get("identity_policy") in {
+            "b1_closeout_cumulative_smoke",
+            "b1_closeout_cumulative_formal",
+        }:
+            view = json.loads(
+                (repo / str(cfg["dataset"]["view_manifest_path"])).read_text(encoding="utf-8")
+            )
+            closeout = view["source_evidence"]["b1_closeout"]
+            ms34 = view["source_evidence"]["ms34"]
+            prior = view["source_evidence"]["prior_final_view"]
+            metadata["release_manifest_sha256"] = closeout[
+                "governed_release_manifest_sha256"
+            ]
+            metadata["b1_governed_release_manifest_sha256"] = closeout[
+                "governed_release_manifest_sha256"
+            ]
+            metadata["b1_teacher_provenance_registry_sha256"] = closeout[
+                "teacher_provenance_registry_sha256"
+            ]
+            metadata["ms34_teacher_provenance_addendum_sha256"] = ms34[
+                "teacher_provenance_addendum_sha256"
+            ]
+            metadata["d2_release_manifest_sha256"] = prior[
+                "d2_release_manifest_sha256"
+            ]
+            metadata["gap300_teacher_attestation_sha256"] = prior[
+                "gap300_teacher_attestation_sha256"
+            ]
+            metadata["source_evidence_sha256"] = view["source_evidence_sha256"]
+            metadata["raw_governed_train"] = view["counts"]["raw_governed_train"]
+            metadata["raw_governed_dev"] = view["counts"]["raw_governed_dev"]
+            metadata["provenance_class"] = (
+                "B1_CLOSEOUT_GOVERNED_WITH_MS34_RUNTIME_IDENTITY_LIMITATION"
+            )
         elif cfg["teacher"].get("identity_policy") in {
             "signed_cumulative_release_smoke", "signed_cumulative_release_formal",
         }:
@@ -656,6 +704,8 @@ def _validate_frozen_identities(
         "signed_cumulative_release_formal", "content_bound_recovery_cumulative_smoke",
         "content_bound_final_cumulative_smoke",
         "content_bound_final_cumulative_formal",
+        "b1_closeout_cumulative_smoke",
+        "b1_closeout_cumulative_formal",
     }:
         raise ValueError(f"unsupported teacher identity_policy: {policy}")
     manifest_path = Path(__file__).resolve().parents[1] / "teacher_baseline_manifest.json"
@@ -676,6 +726,8 @@ def _validate_frozen_identities(
         "content_bound_recovery_cumulative_smoke",
         "content_bound_final_cumulative_smoke",
         "content_bound_final_cumulative_formal",
+        "b1_closeout_cumulative_smoke",
+        "b1_closeout_cumulative_formal",
     }:
         if policy == "signed_d2_release_smoke" and not integration_smoke:
             raise ValueError("signed D2 release policy is limited to integration smoke")
@@ -689,10 +741,16 @@ def _validate_frozen_identities(
             "signed_d2_release_formal",
             "signed_cumulative_release_formal",
             "content_bound_final_cumulative_formal",
+            "b1_closeout_cumulative_formal",
         } and integration_smoke:
             raise ValueError("formal signed release policy cannot be used for integration smoke")
         if policy == "content_bound_recovery_cumulative_smoke":
             expected_multi_teacher = "MULTI_PINNED_B1_D2_D3_RECOVERY_V1"
+        elif policy in {
+            "b1_closeout_cumulative_smoke",
+            "b1_closeout_cumulative_formal",
+        }:
+            expected_multi_teacher = "MULTI_GOVERNED_B1_CLOSEOUT_V1"
         elif policy in {
             "content_bound_final_cumulative_smoke",
             "content_bound_final_cumulative_formal",
@@ -716,6 +774,44 @@ def _validate_frozen_identities(
         repo = Path(__file__).resolve().parents[2]
         view_path = (repo / str(dataset_cfg["view_manifest_path"])).resolve()
         view = json.loads(view_path.read_text(encoding="utf-8"))
+        if policy in {
+            "b1_closeout_cumulative_smoke",
+            "b1_closeout_cumulative_formal",
+        }:
+            if policy == "b1_closeout_cumulative_smoke" and not integration_smoke:
+                raise ValueError("B1 closeout smoke policy is limited to integration smoke")
+            if (
+                view.get("view_version") != CLOSEOUT_VIEW_VERSION
+                or dataset_cfg.get("version") != CLOSEOUT_VIEW_VERSION
+            ):
+                raise ValueError("B1 closeout view version mismatch")
+            for split, config_key in (("train", "train_path"), ("val", "val_path")):
+                path = (repo / str(dataset_cfg[config_key])).resolve()
+                if path != view_path.parent / f"{split}.jsonl":
+                    raise ValueError(f"A3 closeout {split} path does not match verified view")
+                if canonical_text_sha256(path) != view["files"][f"{split}.jsonl"]["sha256"]:
+                    raise ValueError(f"A3 closeout {split} hash does not match verified view")
+            for relative, expected_sha in view["cohort_manifest_shas"].items():
+                if canonical_text_sha256(repo / relative) != expected_sha:
+                    raise ValueError(f"B1 closeout cohort manifest changed: {relative}")
+            if (repo / str(dataset_cfg["asset_root"])).resolve() != repo:
+                raise ValueError("B1 closeout RGB asset_root must be repository root")
+            audit_closeout_cumulative_view(
+                (repo / str(dataset_cfg["d2_release_dir_path"])).resolve(),
+                (repo / str(dataset_cfg["d3_wave1_release_dir_path"])).resolve(),
+                (repo / str(dataset_cfg["d3_wave2_release_dir_path"])).resolve(),
+                (repo / str(dataset_cfg["targeted_gap_release_dir_path"])).resolve(),
+                (repo / str(dataset_cfg["turn_gap_release_dir_path"])).resolve(),
+                (repo / str(dataset_cfg["gap300_release_dir_path"])).resolve(),
+                (repo / str(dataset_cfg["ms34_release_dir_path"])).resolve(),
+                (repo / str(dataset_cfg["b1_closeout_dir_path"])).resolve(),
+                view_path.parent,
+                check_images=True,
+            )
+            if cfg["model"].get("model_id") == StudentPlannerV0.model_id:
+                if cfg["model"].get("config_id") != StudentModelConfig().config_id:
+                    raise ValueError("Student config_id does not match A1 V0 r3")
+            return
         if policy in {
             "content_bound_final_cumulative_smoke",
             "content_bound_final_cumulative_formal",

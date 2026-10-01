@@ -147,3 +147,43 @@ def test_preflight_accepts_sample_named_portable_rgb(tmp_path: Path) -> None:
     )
     assert rejected["valid"] is False
     assert any("escapes asset_root" in e["message"] for e in rejected["errors"])
+
+
+def test_preflight_allows_only_governed_missing_teacher_provenance(
+    tmp_path: Path,
+) -> None:
+    train_path = tmp_path / "train.jsonl"
+    val_path = tmp_path / "val.jsonl"
+    train, val = build_mock_records(2)
+    for record in (train, val):
+        record["metadata"].update({
+            "teacher_git_sha": TEACHER_SHA,
+            "teacher_model_id": TEACHER_MODEL,
+        })
+        record["metadata"].pop("teacher_model_revision", None)
+        record["metadata"].pop("teacher_artifact_fingerprint_sha256", None)
+        record["metadata"]["teacher_provenance_class"] = (
+            "HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+        )
+    _write(train_path, [train], "train", version="unit-v1")
+    _write(val_path, [val], "validation", version="unit-v1")
+    expected = {
+        "expected_version": "unit-v1",
+        "expected_teacher_git_sha": TEACHER_SHA,
+        "expected_teacher_model_id": TEACHER_MODEL,
+        "expected_teacher_model_revision": TEACHER_REVISION,
+        "expected_teacher_artifact_fingerprint_sha256": TEACHER_FINGERPRINT,
+        "allowed_missing_teacher_provenance_classes": (
+            "HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND",
+        ),
+    }
+
+    accepted = preflight_datasets(train_path, val_path, **expected)
+    assert accepted["valid"] is True
+    assert accepted["warning_count"] == 4
+
+    train["metadata"]["teacher_model_revision"] = "f" * 40
+    _write(train_path, [train], "train", version="unit-v1")
+    rejected = preflight_datasets(train_path, val_path, **expected)
+    assert rejected["valid"] is False
+    assert "does not match expected" in rejected["errors"][0]["message"]

@@ -24,6 +24,7 @@ SAFETY_METRICS = ("safety_critical_behavior_recall",)
 SIGNED_D2_FORMAL_POLICY = "signed_d2_release_formal"
 SIGNED_CUMULATIVE_FORMAL_POLICY = "signed_cumulative_release_formal"
 CONTENT_BOUND_FINAL_FORMAL_POLICY = "content_bound_final_cumulative_formal"
+B1_CLOSEOUT_FORMAL_POLICY = "b1_closeout_cumulative_formal"
 FORMAL_SIGNED_POLICIES = {
     SIGNED_D2_FORMAL_POLICY,
     SIGNED_CUMULATIVE_FORMAL_POLICY,
@@ -31,10 +32,12 @@ FORMAL_SIGNED_POLICIES = {
 FORMAL_GOVERNED_POLICIES = {
     *FORMAL_SIGNED_POLICIES,
     CONTENT_BOUND_FINAL_FORMAL_POLICY,
+    B1_CLOSEOUT_FORMAL_POLICY,
 }
 SIGNED_D2_MULTI_TEACHER_ID = "MULTI_PINNED_B1_D2_V1_1"
 SIGNED_CUMULATIVE_MULTI_TEACHER_ID = "MULTI_PINNED_B1_D2_V1_1_PLUS_D3_WAVE1"
 CONTENT_BOUND_FINAL_MULTI_TEACHER_ID = "MULTI_PINNED_B1_D2_D3_FINAL_V1"
+B1_CLOSEOUT_MULTI_TEACHER_ID = "MULTI_GOVERNED_B1_CLOSEOUT_V1"
 FORMAL_GATE_TEACHER_V4 = {
     "teacher_profile": "b1-pinned-teacher-v4",
     "teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
@@ -90,6 +93,17 @@ def export_candidate_weights(
         "gap300_teacher_attestation_sha256": identity.get(
             "gap300_teacher_attestation_sha256"
         ),
+        "b1_governed_release_manifest_sha256": identity.get(
+            "b1_governed_release_manifest_sha256"
+        ),
+        "b1_teacher_provenance_registry_sha256": identity.get(
+            "b1_teacher_provenance_registry_sha256"
+        ),
+        "ms34_teacher_provenance_addendum_sha256": identity.get(
+            "ms34_teacher_provenance_addendum_sha256"
+        ),
+        "raw_governed_train": identity.get("raw_governed_train"),
+        "raw_governed_dev": identity.get("raw_governed_dev"),
         "gate_status": "MOCK_ONLY" if smoke else "PENDING_A3_FP32_GATE",
         "validation_metrics": dict(validation),
     }
@@ -228,7 +242,9 @@ def _validate_pinned_teacher_candidate(candidate: Mapping[str, Any]) -> None:
             "frozen_manifest candidate requires a full Teacher Git SHA",
         )
         return
-    if policy == CONTENT_BOUND_FINAL_FORMAL_POLICY:
+    if policy == B1_CLOSEOUT_FORMAL_POLICY:
+        expected_multi_teacher = B1_CLOSEOUT_MULTI_TEACHER_ID
+    elif policy == CONTENT_BOUND_FINAL_FORMAL_POLICY:
         expected_multi_teacher = CONTENT_BOUND_FINAL_MULTI_TEACHER_ID
     elif policy == SIGNED_CUMULATIVE_FORMAL_POLICY:
         expected_multi_teacher = SIGNED_CUMULATIVE_MULTI_TEACHER_ID
@@ -263,6 +279,23 @@ def _validate_pinned_teacher_candidate(candidate: Mapping[str, Any]) -> None:
                 str(candidate.get(field, "")), 64,
                 f"content-bound final candidate requires a valid {field}",
             )
+    elif policy == B1_CLOSEOUT_FORMAL_POLICY:
+        for field in (
+            "d2_release_manifest_sha256",
+            "gap300_teacher_attestation_sha256",
+            "b1_governed_release_manifest_sha256",
+            "b1_teacher_provenance_registry_sha256",
+            "ms34_teacher_provenance_addendum_sha256",
+            "source_evidence_sha256",
+        ):
+            _require_hex(
+                str(candidate.get(field, "")), 64,
+                f"B1 closeout candidate requires a valid {field}",
+            )
+        if candidate.get("raw_governed_train") != 6037:
+            raise ValueError("B1 closeout candidate raw governed Train count mismatch")
+        if candidate.get("raw_governed_dev") != 1158:
+            raise ValueError("B1 closeout candidate raw governed Dev count mismatch")
 
 
 def _validate_formal_evaluation_pair(
@@ -283,6 +316,15 @@ def _validate_formal_evaluation_pair(
             evidence_fields.extend([
                 "d2_release_manifest_sha256",
                 "gap300_teacher_attestation_sha256",
+                "source_evidence_sha256",
+            ])
+        elif candidate.get("teacher_identity_policy") == B1_CLOSEOUT_FORMAL_POLICY:
+            evidence_fields.extend([
+                "d2_release_manifest_sha256",
+                "gap300_teacher_attestation_sha256",
+                "b1_governed_release_manifest_sha256",
+                "b1_teacher_provenance_registry_sha256",
+                "ms34_teacher_provenance_addendum_sha256",
                 "source_evidence_sha256",
             ])
         for field in evidence_fields:
