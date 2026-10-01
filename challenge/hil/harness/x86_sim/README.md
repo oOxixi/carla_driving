@@ -57,6 +57,7 @@ export HB_UCP_SIM_PLATFORM_TYPE=nash-p     # 否则加载 nash-p 产物会报 ma
 | `collect_gap_evidence.py` | 汇总定向补采轮的证据（编译日志、阈值对照、三个分布摘要） |
 | `../release_check/verify_b1_release.py` | B1 发布完整性独立复核（按签名声明逐项校验；`--eol auto` 处理 CRLF） |
 | `../release_check/verify_a3_handoff.py` | A3 候选交接包独立复核（逐文件 SHA256+尺寸、权重摘要对身份、门禁状态） |
+| `../release_check/verify_calibration_package.py` | 冻结校准独立复核（声明哈希、样本数、**与各 val 划分零重叠**） |
 
 ## 典型用法
 

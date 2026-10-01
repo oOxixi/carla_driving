@@ -8,6 +8,16 @@
 > 性能结论或精度结论引用**。替代条件与正式条件的逐项差异见第 4、5 节与
 > [`x86_simulation_scope.md`](x86_simulation_scope.md)；真实输入到位后需原样重跑。
 
+> **2026-10-02 口径更新**：按团队《挑战赛道后续统一执行方案》（轻量化主线版），B3 只对
+> **Final FP32 / Final INT8 / Final A4 Runtime** 做正式复测，并停止对旧 candidate 的重复诊断；
+> 交付物新增 `bpu_estimate_verification.json`、报告改名 `performance_report.md`、利用率文件别名
+> `cpu_utilization_raw.csv`，且所有数字必须按 `X86_MEASURED` / `BPU_ESTIMATED` / `J6P_MEASURED`
+> 三类分别标注。逐条对照见 [`plan_alignment.md`](plan_alignment.md)。
+>
+> 其中 `evidence/x86_simulation_20260924/`、`d3_targeted_gap_20260926/`、`d3_turn_gap_20260927/`、
+> `a3_fp32_candidate_v3_20260926/` 关于旧 candidate 的结论**只作历史诊断，不再扩展**；
+> `a3_fp32_candidate_v3_20260926/` 因被 A3 的 `audit_b3_v3_diagnostic.py` 读取而**按只读保留**。
+
 > B3 的前置输入、证据等级、正式测试矩阵、门禁和完成定义见
 > [`docs/architecture/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md`](../../docs/architecture/modules/B3_HIL_J6P_INDEPENDENT_VALIDATION.md)。
 
@@ -67,8 +77,9 @@ challenge/hil/
 ├── carla_measurement_entry.py    该入口调用的单场景驱动脚本
 ├── pc_deployment_plan.md         PC 端（WSL2+Docker+OE）部署作业单与差距核对
 ├── x86_simulation_scope.md       X86 仿真能测/不能测什么 + 本轮实测数字与口径（2026-09-24）
+├── plan_alignment.md             与团队统一执行方案（轻量化主线版）的逐条对接与冻结声明
 ├── report.py                     报告生成与可信范围守卫
-├── cli.py                        命令行入口（12 个子命令）
+├── cli.py                        命令行入口（13 个子命令，含 bpu-verify）
 ├── group_map.example.json        `--group-map` 的格式示例（不是 B2 分组）
 ├── frozen/
 │   ├── smoke_v0_snapshot/        早期冻结输入基线（B1 smoke，30 例）
@@ -92,7 +103,8 @@ challenge/hil/
 │   ├── d3_targeted_gap_20260926/           定向补采数据：发布校验 + 查表探针 + 产物×数据集交叉矩阵
 │   ├── a3_fp32_candidate_v3_20260926/       A3 FP32 候选包独立校验 + 真实权重回放
 │   └── d3_turn_gap_20260927/                TURN-gap 队列：新通行证格式校验 + 转弯族行为缺口
-│   └── a3_final_fp32_v1_20261002/           Final FP32 候选 v1：包校验 + 转弯/多步族复测
+│   ├── a3_final_fp32_v1_20261002/           Final FP32 候选 v1：包校验 + 转弯/多步族复测
+│   └── b1_closeout_releases_20261002/       5 个 release 复核 + 冻结校准零重叠核验
 ├── schemas/                      导出的列定义
 └── tests/                        108 项自测（含 A3 诊断接收审计的交叉回归）
 ```

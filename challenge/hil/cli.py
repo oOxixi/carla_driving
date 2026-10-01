@@ -15,6 +15,7 @@ from typing import Any, Mapping, Sequence
 
 from .columns import FILE_SCHEMAS
 from .artifact import verify_onnx_artifact
+from .bpu_estimate import verify_bpu_estimate
 from .consistency import (
     DEFAULT_ATOL,
     DEFAULT_RTOL,
@@ -725,6 +726,18 @@ def build_parser() -> argparse.ArgumentParser:
     probe.add_argument("--out", help="optional output path or directory")
     probe.set_defaults(func=command_leakage_probe)
 
+    bpu = sub.add_parser(
+        "bpu-verify",
+        help="verify A4's BPU estimate package (mapping, fallback, estimation basis, identity)",
+    )
+    bpu.add_argument(
+        "--a4-dir",
+        required=True,
+        help="A4 runtime package directory, e.g. artifacts/a4/<runtime_id>/",
+    )
+    bpu.add_argument("--out", help="optional output path or directory for bpu_estimate_verification.json")
+    bpu.set_defaults(func=command_bpu_verify)
+
     tensors = sub.add_parser(
         "dump-tensors",
         help="write fixed input tensors for A4's --model-only mode",
@@ -1006,6 +1019,25 @@ def command_leakage_probe(args: argparse.Namespace) -> int:
         report["report_path"] = str(target)
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
+
+
+def command_bpu_verify(args: argparse.Namespace) -> int:
+    """Verify A4's BPU estimate package and publish bpu_estimate_verification.json.
+
+    The unified plan asks B3 to check the toolchain estimate rather than quote it,
+    so the verdict covers operator mapping, CPU fallback, the estimation basis
+    (tool, version, method, assumptions) and the model identity the estimate was
+    computed from -- and it never lets an estimate pass as a board measurement.
+    """
+    report = verify_bpu_estimate(args.a4_dir)
+    target = Path(args.out) if args.out else None
+    if target is not None:
+        if target.is_dir():
+            target = target / "bpu_estimate_verification.json"
+        write_json(target, report)
+        report["report_path"] = str(target)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0 if report["status"] == "PASS" else 3
 
 
 def command_groups(args: argparse.Namespace) -> int:

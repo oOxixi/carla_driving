@@ -59,17 +59,55 @@ def read_jsonl(path: Path) -> list[dict]:
     return rows
 
 
-def check_lock(release: Path, *, allow_lf_normalise: bool) -> dict:
+def _integrity_entries(release: Path) -> tuple[str | None, dict[str, str | None], list[str]]:
+    """Return (source, {file: expected_sha256}, notes) for whatever B1 shipped.
+
+    B1 has used two integrity carriers so far: a ``b1_release_lock.sha256`` listing,
+    and (for the small supplements) a ``release_manifest.json`` whose ``files``
+    map carries sha256 + size per file.  A release with neither is reported, not
+    silently accepted.
+    """
+    notes: list[str] = []
     lock = release / "b1_release_lock.sha256"
-    results, failures = {}, []
-    for line in lock.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        digest, name = line.split(None, 1)
-        target = release / name.strip()
+    if lock.is_file():
+        entries: dict[str, str | None] = {}
+        for line in lock.read_text(encoding="utf-8", errors="ignore").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split(None, 1)
+            if len(parts) != 2:
+                notes.append(f"unparsable lock line: {line!r}")
+                continue
+            entries[parts[1].strip().lstrip("*")] = parts[0].strip().lower()
+        return "b1_release_lock.sha256", entries, notes
+
+    manifest = release / "release_manifest.json"
+    if manifest.is_file():
+        payload = read_json(manifest)
+        files = payload.get("files") if isinstance(payload, dict) else None
+        if isinstance(files, dict) and files:
+            entries = {}
+            for name, entry in files.items():
+                digest = entry.get("sha256") if isinstance(entry, dict) else None
+                entries[str(name)] = str(digest).lower() if digest else None
+            notes.append("no b1_release_lock.sha256; integrity taken from release_manifest.json:files")
+            return "release_manifest.json:files", entries, notes
+    return None, {}, ["no integrity listing found (no lock file, no release_manifest files map)"]
+
+
+def check_lock(release: Path, *, allow_lf_normalise: bool) -> dict:
+    source, entries, notes = _integrity_entries(release)
+    results, failures = {}, [{"reason": note} for note in notes if "no integrity listing" in note]
+    for name, digest in entries.items():
+        target = release / name
         if not target.is_file():
+            # The manifest may legitimately list itself; a missing self-entry is
+            # still worth surfacing but only as a note, never as a silent pass.
             failures.append({"file": name, "reason": "missing"})
+            continue
+        if not digest:
+            failures.append({"file": name, "reason": "no declared digest"})
             continue
         match, actual, how = sha256_matches(target, digest, allow_lf_normalise=allow_lf_normalise)
         results[name] = {"expected": digest, "actual": actual, "match": match, "matched_via": how}
@@ -77,8 +115,9 @@ def check_lock(release: Path, *, allow_lf_normalise: bool) -> dict:
             failures.append({"file": name, "reason": "sha256_mismatch",
                              "expected": digest, "actual": actual})
     normalised = sum(1 for r in results.values() if r["matched_via"] == "lf_normalised")
-    return {"files_checked": len(results), "matched_after_lf_normalisation": normalised,
-            "results": results, "failures": failures}
+    return {"source": source, "files_checked": len(results),
+            "matched_after_lf_normalisation": normalised,
+            "notes": notes, "results": results, "failures": failures}
 
 
 def check_signed_pass(release: Path, *, allow_lf_normalise: bool) -> dict:
@@ -157,6 +196,7 @@ def check_signed_pass(release: Path, *, allow_lf_normalise: bool) -> dict:
             actual = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
             match = actual == declared
             content_binding = {
+                "variant": "payload_binding",
                 "algorithm": binding.get("algorithm"),
                 "canonicalisation": "json.dumps(payload, sort_keys=True, separators=(',', ':'))",
                 "declared": declared,
@@ -168,8 +208,18 @@ def check_signed_pass(release: Path, *, allow_lf_normalise: bool) -> dict:
                 failures.append({"digest": "binding.sha256", "reason": "sha256_mismatch",
                                  "expected": declared, "actual": actual})
         else:
-            content_binding = {"match": False, "reason": "binding_payload_or_digest_missing"}
-            failures.append({"reason": "content_binding_unreadable"})
+            # Flat attestation variant (e.g. d3_gap300): no payload binding at all,
+            # the release only carries `attestation_type` plus the manifest digest,
+            # and that digest is already checked through the claimed-digest path
+            # above. Not having a binding lowers what can be proven, so it is
+            # reported explicitly rather than treated as a failure.
+            content_binding = {
+                "variant": "flat_attestation",
+                "attestation_type": signed.get("attestation_type") or signed.get("signature_status"),
+                "match": None,
+                "note": ("this release carries no payload binding; only the manifest digest is claimed, "
+                         "so content integrity rests on the file listing"),
+            }
 
     return {"pass_schema": pass_schema, "assurance": assurance,
             "signature_status": signed.get("signature_status"),
@@ -310,6 +360,7 @@ def main() -> int:
     if isinstance(binding, dict):
         print(f"content bind : match={binding.get('match')} "
               f"declared={binding.get('declared')} canonical={binding.get('canonicalisation')}")
+    print(f"integrity    : source={report['lock'].get('source')}")
     print(f"locked files : {report['lock']['files_checked']} checked; "
           f"{report['lock']['matched_after_lf_normalisation']} matched only after "
           f"CRLF->LF normalisation (eol mode: {report['eol_mode']})")

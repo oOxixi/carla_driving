@@ -132,6 +132,10 @@ FILE_SCHEMAS: dict[str, tuple[str, ...]] = {
     "memory_raw": MEMORY_COLUMNS,
     "power_raw": POWER_COLUMNS,
     "utilization_raw": UTILIZATION_COLUMNS,
+    # The unified plan (2026-09-30) names B3's CPU utilisation evidence
+    # `cpu_utilization_raw.csv`; the earlier name stays as an alias so old runs
+    # and new ones resolve to the same column definition.
+    "cpu_utilization_raw": UTILIZATION_COLUMNS,
     "soak": SOAK_COLUMNS,
     "hil_replay": REPLAY_COLUMNS,
 }

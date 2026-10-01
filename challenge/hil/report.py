@@ -56,7 +56,10 @@ SEGMENT_LABELS: dict[str, str] = {
 REPORT_FILENAME_J6P = "j6p_test_report.md"
 REPORT_FILENAME_J6P_BRINGUP = "j6p_bringup_report.md"
 REPORT_FILENAME_J6P_UNVERIFIED = "j6p_unverified_report.md"
-REPORT_FILENAME_X86 = "x86_test_report.md"
+#: Canonical X86-scope report name from the unified plan (2026-09-30).
+REPORT_FILENAME_X86 = "performance_report.md"
+#: Name used by runs produced before the rename; still accepted on the way in.
+REPORT_FILENAME_X86_LEGACY = "x86_test_report.md"
 
 SCOPE_FILENAMES: dict[str, str] = {
     SCOPE_J6P_ON_DEVICE: REPORT_FILENAME_J6P,
@@ -320,6 +323,16 @@ def build_report(
     lines.append(f"- 可信范围：`{scope['scope']}`")
     lines.append(f"- 证据层级：`{scope.get('evidence_level')}`")
     lines.append(f"- J6P 状态：`{scope['j6p_status']}`")
+    lines.append("")
+    lines.append("## 三类结论口径（不可混写）")
+    lines.append("")
+    lines.append("| 口径 | 含义 | 本报告是否包含 |")
+    lines.append("|---|---|---|")
+    lines.append("| `X86_MEASURED` | 在工作站上实测（本报告的延迟/内存/CPU/长稳） | 是 |")
+    lines.append("| `BPU_ESTIMATED` | 地平线工具链给出的**预估**，不是板端实测 | 需另附 "
+                 "`bpu_estimate_verification.json`；未核验前不得引用 |")
+    lines.append("| `J6P_MEASURED` | J6P 板卡实测 | 本报告不含（无板端证据时恒为否） |")
+    lines.append("")
     lines.append("")
     lines.append("> 本报告的全部数字来源于同一次运行目录内的原始文件，")
     lines.append("> 每个文件的 SHA256 记录在 `measurement_manifest.json` 中。")

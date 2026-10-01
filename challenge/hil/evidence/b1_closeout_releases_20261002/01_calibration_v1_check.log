@@ -1,0 +1,12 @@
+package      : calibration_v1
+samples      : 300 (manifest declares None)
+hashes       : 7/7 match (0 only after CRLF->LF)
+overlap      : d2_v1_1/val.jsonl: 0 shared of 539 val samples
+overlap      : d3_wave2_safe_short_v1/val_addition.jsonl: 0 shared of 56 val samples
+overlap      : d3_targeted_gap_strict_v1/val_addition.jsonl: 0 shared of 99 val samples
+overlap      : d3_turn_gap_60_strict_v1/val_addition.jsonl: 0 shared of 29 val samples
+overlap      : d3_gap300_strict_v1/val_addition.jsonl: 0 shared of 123 val samples
+overlap      : b1_ms34_supplement_v1/val_addition.jsonl: 0 shared of 4 val samples
+failures     : 0
+status       : PASS
+wrote challenge/hil/evidence/b1_closeout_releases_20261002/02_calibration_v1_check.json

@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "package": "challenge\\dataset\\releases\\calibration_v1",
+  "calibration_samples": 300,
+  "declared_samples": null,
+  "hashes": [
+    {
+      "file": "README.md",
+      "match": true,
+      "matched_via": "raw"
+    },
+    {
+      "file": "calibration.jsonl",
+      "match": true,
+      "matched_via": "raw"
+    },
+    {
+      "file": "calibration_coverage_report.json",
+      "match": true,
+      "matched_via": "raw"
+    },
+    {
+      "file": "calibration_manifest.json",
+      "match": true,
+      "matched_via": "raw"
+    },
+    {
+      "file": "rgb_manifest.json",
+      "match": true,
+      "matched_via": "raw"
+    },
+    {
+      "file": "selection_assignments.jsonl",
+      "match": true,
+      "matched_via": "raw"
+    },
+    {
+      "file": "unallocated_reserved_sample_ids.txt",
+      "match": true,
+      "matched_via": "raw"
+    }
+  ],
+  "overlap_with_validation": {
+    "d2_v1_1/val.jsonl": {
+      "validation_samples": 539,
+      "shared": 0,
+      "shared_sample_ids": []
+    },
+    "d3_wave2_safe_short_v1/val_addition.jsonl": {
+      "validation_samples": 56,
+      "shared": 0,
+      "shared_sample_ids": []
+    },
+    "d3_targeted_gap_strict_v1/val_addition.jsonl": {
+      "validation_samples": 99,
+      "shared": 0,
+      "shared_sample_ids": []
+    },
+    "d3_turn_gap_60_strict_v1/val_addition.jsonl": {
+      "validation_samples": 29,
+      "shared": 0,
+      "shared_sample_ids": []
+    },
+    "d3_gap300_strict_v1/val_addition.jsonl": {
+      "validation_samples": 123,
+      "shared": 0,
+      "shared_sample_ids": []
+    },
+    "b1_ms34_supplement_v1/val_addition.jsonl": {
+      "validation_samples": 4,
+      "shared": 0,
+      "shared_sample_ids": []
+    }
+  },
+  "errors": [],
+  "status": "PASS"
+}
