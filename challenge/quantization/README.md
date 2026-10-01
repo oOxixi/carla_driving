@@ -5,12 +5,36 @@ Calibration、按外置 `quant_config.yaml` 执行 ONNX Runtime QDQ PTQ、生成
 身份清单、比较十个 Head 的 FP32/INT8 原始输出、逐节点恢复 FP32 的敏感层受控实验，
 以及生成可交给 OpenExplorer 3.9.1 的四输入 NPY、Student J6P YAML 和身份清单。
 
-当前正式签发仍是 **BLOCKED**：B1 Calibration v1 已冻结并通过 A2 intake，A3 已发布
-最新最终累计视图的真实 FP32 Candidate v1，但状态仍为 `PENDING_A3_FP32_GATE`，B2 尚未
-返回独立 Validation 和 INT8 Gate decision。A2 已完成该候选的真实 ONNX、Full INT8、
+当前正式签发仍是 **BLOCKED**：B1 已发布 `b1_closeout_v1`，最新 governed 规模是
+Train=6037 / Dev=1158，Calibration v1 为300样本，Independent Validation v1 为240样本。
+现有 A3 FP32 Candidate v1 仍绑定旧的5826/1104训练视图，状态为
+`PENDING_A3_FP32_GATE`，也没有绑定最新 B1 governed release，因此只能继续作为诊断候选。
+B2 尚未返回新 exact weights 的独立 Validation 和 INT8 Gate decision。A2 已完成旧候选的真实 ONNX、Full INT8、
 300样本漂移、25节点敏感性、Top-3 Mixed Precision和OpenExplorer输入包预演。OpenExplorer
 已锁定为3.9.1、J6P march已锁定为`nash-p`，但官方镜像验证和板端实测仍待A4/B3。候选产物强制标为
 `SMOKE_ONLY`、`A3_CANDIDATE_PRE_PTQ` 或 `A2_DEVELOPMENT_CALIBRATION_CANDIDATE`，不能用于申报成绩。
+
+## 0. 校验 B1 closeout 与 A3 上游候选
+
+任何正式导出、PTQ或OpenExplorer交接前，先执行：
+
+```powershell
+python -m challenge.quantization.cli validate-upstream `
+  --repo . `
+  --weights challenge/distillation/releases/a3_final_fp32_candidate_v1/student_v0_fp32_candidate.pt `
+  --weights-manifest challenge/distillation/releases/a3_final_fp32_candidate_v1/handoff_manifest.json `
+  --output artifacts/a2/a3_upstream_intake.json
+```
+
+该命令逐项校验B1 `SHA256SUMS`、closeout状态、governed counts、正式Calibration绑定、
+Independent Validation隔离策略、A3训练规模、governed release绑定、权重SHA256与FP32 Gate。
+状态为`BLOCKED`时退出码为2，报告仍会落盘供协作。Independent Validation的标签严格归B2，
+A2不得用它做校准、调参、敏感层选择或误差驱动迭代。
+
+当前候选预期返回四个阻塞项：没有声明最新governed源计数6037/1158、缺少最新B1
+governed release SHA256绑定、`PENDING_A3_FP32_GATE`。现有5826/1104是旧A3视图实际送入
+optimizer的strict-positive计数，不与B1原始governed计数混为一谈。这不是工具失败，而是
+正确的fail-closed结果。
 
 ## A3 候选权重预演
 
@@ -18,14 +42,17 @@ Calibration、按外置 `quant_config.yaml` 执行 ONNX Runtime QDQ PTQ、生成
 
 ```powershell
 python -m challenge.export.export_onnx `
+  --repo . `
   --output artifacts/a2/a3_final_fp32_candidate_v1/student_v0_fp32_candidate.onnx `
   --weights challenge/distillation/releases/a3_final_fp32_candidate_v1/student_v0_fp32_candidate.pt `
-  --weights-manifest challenge/distillation/releases/a3_final_fp32_candidate_v1/student_v0_fp32_candidate.json `
+  --weights-manifest challenge/distillation/releases/a3_final_fp32_candidate_v1/handoff_manifest.json `
   --allow-pending-candidate
 ```
 
 该开关仍校验 model/config/权重 SHA256，并在 ONNX 中保留
-`weights_status=PENDING_A3_FP32_GATE`，不会生成正式 Gate 标记。导出后可用
+`weights_status=PENDING_A3_FP32_GATE`和`a2_upstream_readiness=BLOCKED`，不会生成正式 Gate
+标记。若权重manifest宣称`A3_FP32_GATE_PASSED`但上游治理审计仍有任何阻塞项，导出会直接
+拒绝。导出后可用
 `export-consistency` 在真实样本上比较 PyTorch 与 ONNX 的十个原始 Head。
 候选 ONNX 执行 PTQ 和 OpenExplorer 输入准备时使用 `--allow-candidate`；
 `--allow-smoke` 只用于随机初始化等普通工具链冒烟，二者不会混淆标记。
@@ -42,7 +69,8 @@ python -m challenge.quantization.cli validate-calibration-v1 `
   --check-tensors
 ```
 
-该命令复用B1发布校验器，检查300样本/300组、与Train/Dev零重叠、RGB与发布哈希，并把
+该命令复用B1发布校验器，检查300样本/300组、与Train/Dev零重叠、RGB与发布哈希，同时
+验证`b1_closeout_v1`的SHA256台账、正式Calibration身份和独立验证隔离策略，并把
 全部样本经过正式 `StudentPreprocessor`，核验四输入Shape、float32和有限值。正式PTQ只
 接受 `challenge/dataset/releases/calibration_v1`；复制、改名或手写状态都会被拒绝。
 

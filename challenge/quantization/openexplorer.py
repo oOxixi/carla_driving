@@ -68,6 +68,19 @@ def _onnx_identity(path: Path) -> dict[str, Any]:
         "model_id": metadata.get("model_id", "UNRESOLVED"),
         "config_id": metadata.get("config_id", "UNRESOLVED"),
         "dataset_version": metadata.get("dataset_version", "UNRESOLVED"),
+        "a2_upstream_readiness": metadata.get("a2_upstream_readiness", "UNRESOLVED"),
+        "b1_closeout_report_sha256": metadata.get(
+            "b1_closeout_report_sha256", "UNRESOLVED"
+        ),
+        "b1_governed_release_manifest_sha256": metadata.get(
+            "b1_governed_release_manifest_sha256", "UNRESOLVED"
+        ),
+        "b1_calibration_identity_sha256": metadata.get(
+            "b1_calibration_identity_sha256", "UNRESOLVED"
+        ),
+        "b1_independent_validation_identity_sha256": metadata.get(
+            "b1_independent_validation_identity_sha256", "UNRESOLVED"
+        ),
     }
 
 
@@ -109,6 +122,7 @@ def prepare_openexplorer_bundle(
     formal_source = onnx_identity["weights_status"] == "A3_FP32_GATE_PASSED"
     formal = False
     formal_calibration = False
+    closeout_identity: dict[str, Any] | None = None
     canonical_release = (repo / FORMAL_CALIBRATION_RELATIVE).resolve()
     requested_formal_calibration = (
         calibration_manifest_path.parent.resolve() == canonical_release
@@ -125,6 +139,7 @@ def prepare_openexplorer_bundle(
         dataset = release.dataset
         actual_jsonl_sha = release.identity["calibration_jsonl_sha256"]
         actual_manifest_sha = release.identity["calibration_manifest_sha256"]
+        closeout_identity = release.identity["b1_closeout"]
         formal_calibration = True
         formal = formal_source
     else:
@@ -133,6 +148,25 @@ def prepare_openexplorer_bundle(
             raise ValueError("calibration JSONL SHA256 does not match its manifest")
         dataset = CalibrationDataset.open(repo, jsonl_path)
         actual_manifest_sha = sha256_file(calibration_manifest_path)
+    if formal_source:
+        if onnx_identity["a2_upstream_readiness"] != "READY_FOR_A2_FORMAL":
+            raise ValueError(
+                "formal OpenExplorer input requires A2 upstream readiness"
+            )
+        if closeout_identity is None:
+            raise ValueError("formal OpenExplorer input has no verified B1 closeout")
+        for onnx_key, closeout_key in {
+            "b1_closeout_report_sha256": "closeout_report_sha256",
+            "b1_governed_release_manifest_sha256": "governed_release_manifest_sha256",
+            "b1_calibration_identity_sha256": "calibration_identity_sha256",
+            "b1_independent_validation_identity_sha256": (
+                "independent_validation_identity_sha256"
+            ),
+        }.items():
+            if onnx_identity[onnx_key] != closeout_identity[closeout_key]:
+                raise ValueError(
+                    f"formal OpenExplorer ONNX/B1 closeout mismatch for {onnx_key}"
+                )
     pending_candidate = onnx_identity["weights_status"] == "PENDING_A3_FP32_GATE"
     if pending_candidate and not allow_candidate:
         raise ValueError("pending A3 candidate requires explicit --allow-candidate")
@@ -239,6 +273,7 @@ compiler_parameters:
             "formal_release": formal_calibration,
             "manifest_status": calibration_identity.get("status", "UNRESOLVED"),
             "sample_count": len(samples),
+            "b1_closeout": closeout_identity,
         },
         "config": {"path": config_path.name, "sha256": sha256_file(config_path)},
         "samples": samples,

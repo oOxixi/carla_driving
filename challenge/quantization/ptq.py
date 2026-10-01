@@ -114,6 +114,24 @@ def quantize_qdq(
             "calibration_jsonl_sha256": actual_jsonl_sha,
             "calibration_manifest_sha256": sha256_file(manifest_path),
         }
+    closeout_identity = calibration_identity.get("b1_closeout")
+    if formal_source:
+        if metadata.get("a2_upstream_readiness") != "READY_FOR_A2_FORMAL":
+            raise ValueError(
+                "formal PTQ requires an ONNX with a2_upstream_readiness=READY_FOR_A2_FORMAL"
+            )
+        if not isinstance(closeout_identity, Mapping):
+            raise ValueError("formal PTQ has no verified B1 closeout identity")
+        for metadata_key, identity_key in {
+            "b1_closeout_report_sha256": "closeout_report_sha256",
+            "b1_governed_release_manifest_sha256": "governed_release_manifest_sha256",
+            "b1_calibration_identity_sha256": "calibration_identity_sha256",
+            "b1_independent_validation_identity_sha256": (
+                "independent_validation_identity_sha256"
+            ),
+        }.items():
+            if metadata.get(metadata_key) != closeout_identity.get(identity_key):
+                raise ValueError(f"formal PTQ ONNX/B1 closeout mismatch for {metadata_key}")
     calibration_manifest_digest = calibration_identity["calibration_manifest_sha256"]
 
     try:
@@ -240,6 +258,10 @@ def quantize_qdq(
             "status": "PENDING_B2_INT8_GATE" if formal_source else "NOT_APPLICABLE_DEVELOPMENT",
             "decision_manifest": None,
             "decision_manifest_sha256": None,
+        },
+        "upstream_governance": {
+            "a2_upstream_readiness": metadata.get("a2_upstream_readiness", "UNRESOLVED"),
+            "b1_closeout": closeout_identity,
         },
         "source": {
             "path": _path_label(source, repo),

@@ -330,6 +330,7 @@ def load_formal_calibration_v1(
     and its complete hash ledger.
     """
     from challenge.dataset.validate_calibration_v1 import validate
+    from .governance import load_b1_closeout
 
     repo = Path(repo_root).resolve()
     canonical = (repo / FORMAL_CALIBRATION_RELATIVE).resolve()
@@ -364,6 +365,15 @@ def load_formal_calibration_v1(
         if raw.strip():
             digest, name = raw.split(None, 1)
             published_hashes[name.strip()] = digest
+    closeout = load_b1_closeout(repo)
+    closeout_calibration = closeout.identity["calibration"]
+    if closeout_calibration["jsonl_sha256"] != published_hashes["calibration.jsonl"]:
+        raise ValueError("B1 closeout Calibration JSONL binding does not match the release")
+    if (
+        closeout_calibration["manifest_sha256"]
+        != published_hashes["calibration_manifest.json"]
+    ):
+        raise ValueError("B1 closeout Calibration manifest binding does not match the release")
     identity = {
         "schema_version": "1.0",
         "status": "VERIFIED_FROZEN_CALIBRATION",
@@ -383,6 +393,7 @@ def load_formal_calibration_v1(
             "\n".join(group_keys).encode("utf-8")
         ).hexdigest(),
         "governance_validation": report,
+        "b1_closeout": closeout.identity,
     }
     return FormalCalibrationRelease(
         release_dir=canonical,

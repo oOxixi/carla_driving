@@ -15,6 +15,10 @@ from challenge.student.model import StudentModelConfig, StudentPlannerV0
 from challenge.planner.frozen_contracts import FROZEN_CONTRACT_SHA256
 from challenge.export.compute_flops import analyze_model
 from challenge.hil.identity import identity_from_weight_manifest
+from challenge.quantization.governance import (
+    B1_CLOSEOUT_RELATIVE,
+    audit_a3_candidate,
+)
 
 
 def _source_git_sha() -> str:
@@ -38,25 +42,56 @@ class StudentOnnxExportWrapper(torch.nn.Module):
 def export_student_v0(
     output: str | Path,
     *,
+    repo_root: str | Path = ".",
     seed: int = 20260911,
     source_git_sha: str | None = None,
     weights: str | Path | None = None,
     weights_manifest: str | Path | None = None,
     allow_pending_candidate: bool = False,
+    b1_closeout_directory: str | Path = B1_CLOSEOUT_RELATIVE,
 ) -> Path:
     torch.manual_seed(seed)
+    repo = Path(repo_root).resolve()
+    weights_path = None
+    if weights is not None:
+        weights_path = Path(weights)
+        if not weights_path.is_absolute():
+            weights_path = (repo / weights_path).resolve()
+    manifest_path = None
+    if weights_manifest is not None:
+        manifest_path = Path(weights_manifest)
+        if not manifest_path.is_absolute():
+            manifest_path = (repo / manifest_path).resolve()
     contract = StudentShapeContract()
     config = StudentModelConfig()
     model = StudentPlannerV0(contract, config).eval()
     weight_metadata = _load_verified_weights(
         model,
-        weights=weights,
-        weights_manifest=weights_manifest,
+        weights=weights_path,
+        weights_manifest=manifest_path,
         allow_pending_candidate=allow_pending_candidate,
     )
+    intake: dict[str, object] | None = None
+    if weights_path is not None and manifest_path is not None:
+        intake = audit_a3_candidate(
+            repo,
+            weights=weights_path,
+            weights_manifest=manifest_path,
+            closeout_directory=b1_closeout_directory,
+        )
+        if (
+            weight_metadata["weights_status"] == "A3_FP32_GATE_PASSED"
+            and intake["formal_eligible"] is not True
+        ):
+            raise ValueError(
+                "formal ONNX export rejected by A2 upstream governance audit: "
+                + "; ".join(str(item) for item in intake["blockers"])
+            )
     export_model = StudentOnnxExportWrapper(model).eval()
     inputs = tuple(torch.zeros(shape, dtype=torch.float32) for shape in contract.input_shapes.values())
     path = Path(output)
+    if not path.is_absolute():
+        path = repo / path
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.onnx.export(
         export_model,
@@ -73,6 +108,7 @@ def export_student_v0(
     except ImportError as error:
         raise RuntimeError("onnx is required to verify the exported model") from error
     graph = onnx.load(path)
+    closeout_identity = intake["b1_closeout"] if intake is not None else {}
     onnx.helper.set_model_props(graph, {
         "model_id": model.model_id,
         "weights_status": weight_metadata["weights_status"],
@@ -86,6 +122,21 @@ def export_student_v0(
         "weights_manifest_sha256": weight_metadata["weights_manifest_sha256"],
         "source_weights_git_sha": weight_metadata["source_weights_git_sha"],
         "weights_identity_layout": weight_metadata["weights_identity_layout"],
+        "a2_upstream_readiness": (
+            str(intake["status"]) if intake is not None else "NOT_APPLICABLE_RANDOM_INIT"
+        ),
+        "b1_closeout_report_sha256": str(
+            closeout_identity.get("closeout_report_sha256", "UNRESOLVED")
+        ),
+        "b1_governed_release_manifest_sha256": str(
+            closeout_identity.get("governed_release_manifest_sha256", "UNRESOLVED")
+        ),
+        "b1_calibration_identity_sha256": str(
+            closeout_identity.get("calibration_identity_sha256", "UNRESOLVED")
+        ),
+        "b1_independent_validation_identity_sha256": str(
+            closeout_identity.get("independent_validation_identity_sha256", "UNRESOLVED")
+        ),
         "model_request_sha256": FROZEN_CONTRACT_SHA256["model_request"],
         "maneuver_plan_sha256": FROZEN_CONTRACT_SHA256["maneuver_plan"],
     })
@@ -121,6 +172,17 @@ def export_student_v0(
         "output_dtype": "float32",
         "forbidden_outputs": ["steer", "throttle", "brake", "waypoints"],
         "training_state": metadata["weights_status"],
+        "upstream_governance": {
+            "a2_upstream_readiness": metadata["a2_upstream_readiness"],
+            "b1_closeout_report_sha256": metadata["b1_closeout_report_sha256"],
+            "b1_governed_release_manifest_sha256": metadata[
+                "b1_governed_release_manifest_sha256"
+            ],
+            "b1_calibration_identity_sha256": metadata["b1_calibration_identity_sha256"],
+            "b1_independent_validation_identity_sha256": metadata[
+                "b1_independent_validation_identity_sha256"
+            ],
+        },
     })
     for filename, payload in (
         ("model_structure.json", structure), ("flops_report.json", report),
@@ -183,18 +245,25 @@ def _load_verified_weights(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--repo", default=".")
     parser.add_argument("--output", default="challenge/student_v0_fp32.onnx")
     parser.add_argument("--source-git-sha")
     parser.add_argument("--weights")
     parser.add_argument("--weights-manifest")
+    parser.add_argument(
+        "--b1-closeout-dir",
+        default=B1_CLOSEOUT_RELATIVE.as_posix(),
+    )
     parser.add_argument("--allow-pending-candidate", action="store_true")
     args = parser.parse_args()
     path = export_student_v0(
         args.output,
+        repo_root=args.repo,
         source_git_sha=args.source_git_sha,
         weights=args.weights,
         weights_manifest=args.weights_manifest,
         allow_pending_candidate=args.allow_pending_candidate,
+        b1_closeout_directory=args.b1_closeout_dir,
     )
     print(path)
     return 0

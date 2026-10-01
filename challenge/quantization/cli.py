@@ -16,6 +16,7 @@ from .openexplorer import prepare_openexplorer_bundle
 from .ptq import quantize_qdq
 from .sensitivity import analyze_sensitive_nodes
 from .manifest import bind_b2_gate_result
+from .governance import B1_CLOSEOUT_RELATIVE, audit_a3_candidate
 
 
 def main() -> int:
@@ -35,6 +36,15 @@ def main() -> int:
         "--release-dir", default="challenge/dataset/releases/calibration_v1",
     )
     validate_calibration.add_argument("--check-tensors", action="store_true")
+
+    validate_upstream = subparsers.add_parser("validate-upstream")
+    validate_upstream.add_argument("--repo", default=".")
+    validate_upstream.add_argument("--weights", required=True)
+    validate_upstream.add_argument("--weights-manifest", required=True)
+    validate_upstream.add_argument(
+        "--b1-closeout-dir", default=B1_CLOSEOUT_RELATIVE.as_posix(),
+    )
+    validate_upstream.add_argument("--output")
 
     ptq = subparsers.add_parser("ptq")
     ptq.add_argument("--repo", default=".")
@@ -100,6 +110,7 @@ def main() -> int:
 
     args = parser.parse_args()
     repo_path = Path(args.repo).resolve()
+    exit_code = 0
 
     def output_path(value: str) -> Path:
         path = Path(value)
@@ -117,6 +128,22 @@ def main() -> int:
         result = dict(release.identity)
         if args.check_tensors:
             result["tensor_contract"] = release.validate_tensor_contract()
+    elif args.command == "validate-upstream":
+        result = audit_a3_candidate(
+            args.repo,
+            weights=args.weights,
+            weights_manifest=args.weights_manifest,
+            closeout_directory=args.b1_closeout_dir,
+        )
+        if args.output:
+            output = output_path(args.output)
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(
+                json.dumps(result, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+        if result["formal_eligible"] is not True:
+            exit_code = 2
     elif args.command == "ptq":
         result = quantize_qdq(
             args.repo, source_onnx=args.source_onnx,
@@ -183,7 +210,7 @@ def main() -> int:
             "report": str(Path(args.output) / "sensitive_layer_report.json"),
         }
     print(json.dumps(display, ensure_ascii=False, indent=2))
-    return 0
+    return exit_code
 
 
 if __name__ == "__main__":

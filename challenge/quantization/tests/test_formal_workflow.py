@@ -41,6 +41,9 @@ def test_frozen_calibration_v1_is_the_only_formal_release() -> None:
     assert release.identity["status"] == "VERIFIED_FROZEN_CALIBRATION"
     assert release.identity["sample_count"] == 300
     assert release.identity["group_count"] == 300
+    assert release.identity["b1_closeout"]["status"] == "VERIFIED_B1_DATA_CLOSEOUT"
+    assert release.identity["b1_closeout"]["governed_counts"]["train"] == 6037
+    assert release.identity["b1_closeout"]["governed_counts"]["dev"] == 1158
     governance = release.identity["governance_validation"]
     assert governance["valid"] is True
     assert governance["train_sample_overlap"] == 0

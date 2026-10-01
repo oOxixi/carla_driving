@@ -56,6 +56,13 @@ def verify_export_consistency(
     metadata = dict(session.get_modelmeta().custom_metadata_map)
     if metadata.get("source_weights_sha256") != identity["source_weights_sha256"]:
         raise ValueError("ONNX source weight SHA256 does not match the supplied weights")
+    if (
+        identity["weights_status"] == "A3_FP32_GATE_PASSED"
+        and metadata.get("a2_upstream_readiness") != "READY_FOR_A2_FORMAL"
+    ):
+        raise ValueError(
+            "formal export consistency requires an ONNX with verified A2 upstream readiness"
+        )
 
     dataset = CalibrationDataset.open(repo, jsonl_path)
     absolute: dict[str, list[np.ndarray]] = defaultdict(list)
@@ -94,6 +101,15 @@ def verify_export_consistency(
         "weights_status": identity["weights_status"],
         "weights_sha256": identity["source_weights_sha256"],
         "onnx_sha256": sha256_file(onnx_path),
+        "upstream_governance": {
+            "a2_upstream_readiness": metadata.get("a2_upstream_readiness", "UNRESOLVED"),
+            "b1_governed_release_manifest_sha256": metadata.get(
+                "b1_governed_release_manifest_sha256", "UNRESOLVED"
+            ),
+            "b1_calibration_identity_sha256": metadata.get(
+                "b1_calibration_identity_sha256", "UNRESOLVED"
+            ),
+        },
         "dataset": {"path": str(jsonl_path), "request_count": request_count},
         "tolerance": {"atol": atol, "rtol": rtol},
         "per_head": per_head,
