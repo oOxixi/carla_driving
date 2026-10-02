@@ -1,0 +1,97 @@
+{
+  "package_dir": "D:\\nana\\carla_driving-new\\carla_driving-new\\challenge\\distillation\\releases\\a3_final_fp32_candidate_v2",
+  "schema_version": "1.0",
+  "gate_status": "PENDING_A3_FP32_GATE",
+  "package_status": "PENDING_B2_INDEPENDENT_VALIDATION",
+  "limitations": [
+    "This package is not A3_FP32_GATE_PASSED.",
+    "Development Validation is not independent generalization evidence.",
+    "B2 must evaluate the exact weights on its frozen independent Validation package."
+  ],
+  "identity": {
+    "a3_view_manifest_sha256": "d07178a15a2cc3e66e190100060d426043a18bc1478387fcc4a3f3210d542258",
+    "b1_governed_release_manifest_sha256": "07d3a82502005646d8f29d0c493fa8a5b0270a5194fd5c802a04b4870ba7d37d",
+    "b1_teacher_provenance_registry_sha256": "7a67f7af9af3e57ca9c3bdde9bb97dee493d5d11272c8921ad11050cd09645f7",
+    "config_id": "student-v0-r3-structure-20260911",
+    "d2_release_manifest_sha256": "cf153d2f536f9180241f02a9d644aca6da2a508beb785591399dbb75b847462f",
+    "dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+    "gap300_teacher_attestation_sha256": "de7a2f1acc33be2f26f4d9480a17ad72e8f9a34b591c580f04e826b5ee194c25",
+    "git_sha": "ec3b57c369f0dbcc728019076cd2c2cf670d9e61",
+    "model_id": "student-v0-r3-fp32",
+    "ms34_teacher_provenance_addendum_sha256": "0f51ef371f7500ca3cc7c6de3bc2f007d36d91b7af6b561de4d3f4388d5d255a",
+    "release_manifest_sha256": "07d3a82502005646d8f29d0c493fa8a5b0270a5194fd5c802a04b4870ba7d37d",
+    "source_evidence_sha256": "18c480f8c6c05ed9387bd47fc0b6245cf7cbe96a50aedeb24842dec99bf71fe8",
+    "teacher_identity_policy": "b1_closeout_cumulative_formal",
+    "weights_sha256": "6b6ec1d8e815866aaccb3981d7a7a74efaa971e2a0d0bf8a9b42cbf7af0b8546"
+  },
+  "weights_file": "student_v0_fp32_candidate.pt",
+  "training_evidence": {
+    "development_validation_only": true,
+    "hard_case_count": 152,
+    "source_checkpoint_sha256": "de95541a9ce04da359f77aa4a9eb9aeca01e8528bbcfdfd58a5768a05e73b434",
+    "train_samples": 5856,
+    "validation_samples": 1108
+  },
+  "files_checked": 9,
+  "normalised_text_files": [
+    "README.md",
+    "dataset_preflight.json",
+    "hard_cases/summary.json",
+    "student_v0_fp32_candidate.json",
+    "training.jsonl",
+    "training_config.yaml",
+    "training_report.md",
+    "training_summary.json"
+  ],
+  "failures": [],
+  "failure_count": 0,
+  "status": "PASS",
+  "gate_is_passed": false,
+  "file_matches": {
+    "README.md": {
+      "match": true,
+      "matched_via": "lf_normalised",
+      "size_ok": true
+    },
+    "dataset_preflight.json": {
+      "match": true,
+      "matched_via": "lf_normalised",
+      "size_ok": true
+    },
+    "hard_cases/summary.json": {
+      "match": true,
+      "matched_via": "lf_normalised",
+      "size_ok": true
+    },
+    "student_v0_fp32_candidate.json": {
+      "match": true,
+      "matched_via": "lf_normalised",
+      "size_ok": true
+    },
+    "student_v0_fp32_candidate.pt": {
+      "match": true,
+      "matched_via": "raw",
+      "size_ok": true
+    },
+    "training.jsonl": {
+      "match": true,
+      "matched_via": "lf_normalised",
+      "size_ok": true
+    },
+    "training_config.yaml": {
+      "match": true,
+      "matched_via": "lf_normalised",
+      "size_ok": true
+    },
+    "training_report.md": {
+      "match": true,
+      "matched_via": "lf_normalised",
+      "size_ok": true
+    },
+    "training_summary.json": {
+      "match": true,
+      "matched_via": "lf_normalised",
+      "size_ok": true
+    }
+  }
+}

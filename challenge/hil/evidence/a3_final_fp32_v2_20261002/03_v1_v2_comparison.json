@@ -1,0 +1,77 @@
+{
+  "candidate": {
+    "v2_weights_sha256": "6b6ec1d8e815866aaccb3981d7a7a74efaa971e2a0d0bf8a9b42cbf7af0b8546",
+    "v1_weights_sha256": "eaee4402197fb3fed53ed82bc2fbaceef62e5ed2d4cde86e8aa1a55dc6d46515",
+    "dataset_view": "b1_governed_closeout_v1_a3_strict_positive_v1",
+    "train_dev": "5856 / 1108",
+    "gate": "PENDING_A3_FP32_GATE / PENDING_B2_INDEPENDENT_VALIDATION"
+  },
+  "a3_dev_slice_claims": {
+    "behaviour_slices": "every behaviour including TURN_LEFT (67 steps) and YIELD (24) reports accuracy 1.0",
+    "plan_length_slices": "1-step 1009 @1.0, 2-step 95 @1.0, 3-step 2 @1.0, 4-step 2 @1.0",
+    "caveat": "development split, not independent validation; the 3-step and 4-step slices hold only 2 samples each"
+  },
+  "b3_independent_recheck": {
+    "turn-gap val (29)": {
+      "case_runs": 87,
+      "behaviour_match": 0.689655,
+      "student_vocabulary": {
+        "SET_SPEED": 48,
+        "KEEP_LANE": 21,
+        "FOLLOW": 6,
+        "SLOW_DOWN": 6,
+        "YIELD": 6
+      },
+      "confusion": {
+        "TURN_LEFT -> SET_SPEED": 27,
+        "KEEP_LANE -> KEEP_LANE": 21,
+        "SET_SPEED -> SET_SPEED": 21,
+        "FOLLOW -> FOLLOW": 6,
+        "SLOW_DOWN -> SLOW_DOWN": 6,
+        "YIELD -> YIELD": 6
+      },
+      "v1_behaviour_match": 0.689655
+    },
+    "gap300 val (123)": {
+      "case_runs": 369,
+      "behaviour_match": 0.707317,
+      "student_vocabulary": {
+        "SET_SPEED": 189,
+        "KEEP_LANE": 72,
+        "YIELD": 36,
+        "FOLLOW": 27,
+        "SLOW_DOWN": 27,
+        "PULL_OVER": 18
+      },
+      "confusion": {
+        "TURN_LEFT -> SET_SPEED": 108,
+        "SET_SPEED -> SET_SPEED": 81,
+        "KEEP_LANE -> KEEP_LANE": 72,
+        "YIELD -> YIELD": 36,
+        "FOLLOW -> FOLLOW": 27,
+        "SLOW_DOWN -> SLOW_DOWN": 27,
+        "PULL_OVER -> PULL_OVER": 18
+      }
+    },
+    "ms34 val (4)": {
+      "case_runs": 12,
+      "behaviour_match": 0.708333,
+      "student_vocabulary": {
+        "AVOID_OBSTACLE|RETURN_TO_LANE|RETURN_TO_LANE": 6,
+        "YIELD|AVOID_OBSTACLE|RETURN_TO_LANE|STOP": 6
+      },
+      "confusion": {
+        "AVOID_OBSTACLE -> AVOID_OBSTACLE|RETURN_TO_LANE|RETURN_TO_LANE": 6,
+        "YIELD -> YIELD|AVOID_OBSTACLE|RETURN_TO_LANE|STOP": 6
+      }
+    }
+  },
+  "what_changed_v1_to_v2": {
+    "multi_step": "fixed in direction: v1 truncated every plan at two steps (0.3333 on ms34), v2 emits full-length 3-step and 4-step sequences (0.7083). The remaining error is the LAST step: teacher KEEP_LANE is answered RETURN_TO_LANE (3-step) or STOP (4-step).",
+    "turn_left": "NOT fixed: v2 still never emits TURN_LEFT. All 27 turn-gap and all 108 gap300 TURN_LEFT case-runs are answered SET_SPEED (v1 answered SLOW_DOWN), so the symbol is still outside the vocabulary despite the development slice claiming TURN_LEFT accuracy 1.0.",
+    "yield": "still correct (6/6 turn-gap, 36/36 gap300).",
+    "overall": "turn-gap 0.6897 both versions; gap300 0.7073 both versions; ms34 0.3333 -> 0.7083."
+  },
+  "why_the_gap_survives": "the governed closeout view carries only 17 three-step and 17 four-step plans and the turn families were collected late; a development slice that repeats the same templates reports 1.0 while the held-out cohorts still show the missing behaviour.",
+  "scope": "X86_MEASURED replay of a PENDING candidate: DIAGNOSTIC_ONLY, no accuracy claim, no board numbers."
+}
