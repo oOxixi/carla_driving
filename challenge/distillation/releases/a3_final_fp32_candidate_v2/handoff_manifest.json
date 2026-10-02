@@ -1,0 +1,79 @@
+{
+  "candidate_identity": {
+    "a3_view_manifest_sha256": "d07178a15a2cc3e66e190100060d426043a18bc1478387fcc4a3f3210d542258",
+    "b1_governed_release_manifest_sha256": "07d3a82502005646d8f29d0c493fa8a5b0270a5194fd5c802a04b4870ba7d37d",
+    "b1_teacher_provenance_registry_sha256": "7a67f7af9af3e57ca9c3bdde9bb97dee493d5d11272c8921ad11050cd09645f7",
+    "config_id": "student-v0-r3-structure-20260911",
+    "d2_release_manifest_sha256": "cf153d2f536f9180241f02a9d644aca6da2a508beb785591399dbb75b847462f",
+    "dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+    "gap300_teacher_attestation_sha256": "de7a2f1acc33be2f26f4d9480a17ad72e8f9a34b591c580f04e826b5ee194c25",
+    "git_sha": "ec3b57c369f0dbcc728019076cd2c2cf670d9e61",
+    "model_id": "student-v0-r3-fp32",
+    "ms34_teacher_provenance_addendum_sha256": "0f51ef371f7500ca3cc7c6de3bc2f007d36d91b7af6b561de4d3f4388d5d255a",
+    "release_manifest_sha256": "07d3a82502005646d8f29d0c493fa8a5b0270a5194fd5c802a04b4870ba7d37d",
+    "source_evidence_sha256": "18c480f8c6c05ed9387bd47fc0b6245cf7cbe96a50aedeb24842dec99bf71fe8",
+    "teacher_identity_policy": "b1_closeout_cumulative_formal",
+    "weights_sha256": "6b6ec1d8e815866aaccb3981d7a7a74efaa971e2a0d0bf8a9b42cbf7af0b8546"
+  },
+  "config_source": {
+    "git_sha": "ec3b57c369f0dbcc728019076cd2c2cf670d9e61",
+    "path": "challenge/distillation/b1_closeout_final_formal_config.yaml"
+  },
+  "files": {
+    "README.md": {
+      "sha256": "9f5a2fb2f9d1c8eda97cf2b727ecb30a77dabf41a57c61ce4b460ad0c0e5e109",
+      "size_bytes": 603
+    },
+    "dataset_preflight.json": {
+      "sha256": "28ed21ae4be36c3f41becd8ef659b611a35c4e53c35fad5f85b4fa76b98ea03e",
+      "size_bytes": 19507
+    },
+    "hard_cases/summary.json": {
+      "sha256": "ead47772f05fa22e9276ad2bae260e949249e3b56455cafd55f47b84653aae36",
+      "size_bytes": 157
+    },
+    "student_v0_fp32_candidate.json": {
+      "sha256": "4bcd61edde9aeb2be6d9f49164f56e1010d09dde430cc2fadf6005ab4fe6cfa8",
+      "size_bytes": 4026
+    },
+    "student_v0_fp32_candidate.pt": {
+      "sha256": "6b6ec1d8e815866aaccb3981d7a7a74efaa971e2a0d0bf8a9b42cbf7af0b8546",
+      "size_bytes": 92045422
+    },
+    "training.jsonl": {
+      "sha256": "38ec7f3a49907bf9ab476148aff9191dabe3cc9adee1c4811d9bf861922b70a3",
+      "size_bytes": 6172
+    },
+    "training_config.yaml": {
+      "sha256": "68bb63d64185c55db66279a50d4a7284a174b3c0519939b48f3196f4f1d7460d",
+      "size_bytes": 2447
+    },
+    "training_report.md": {
+      "sha256": "b0a5f554b415c68f7644af18c8b4722a48b5402321bb43a25ca4e02c8e109a48",
+      "size_bytes": 5017
+    },
+    "training_summary.json": {
+      "sha256": "3612febee4a2c94178b5b4713933e6fd51ec22eb5dba94f88fb80f7b998ee97c",
+      "size_bytes": 8454
+    }
+  },
+  "gate_status": "PENDING_A3_FP32_GATE",
+  "governed_source_counts": {
+    "dev": 1158,
+    "train": 6037
+  },
+  "limitations": [
+    "This package is not A3_FP32_GATE_PASSED.",
+    "Development Validation is not independent generalization evidence.",
+    "B2 must evaluate the exact weights on its frozen independent Validation package."
+  ],
+  "package_status": "PENDING_B2_INDEPENDENT_VALIDATION",
+  "schema_version": "1.0",
+  "training_evidence": {
+    "development_validation_only": true,
+    "hard_case_count": 152,
+    "source_checkpoint_sha256": "de95541a9ce04da359f77aa4a9eb9aeca01e8528bbcfdfd58a5768a05e73b434",
+    "train_samples": 5856,
+    "validation_samples": 1108
+  }
+}

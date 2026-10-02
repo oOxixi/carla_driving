@@ -1,0 +1,10 @@
+{
+  "hard_case_count": 152,
+  "category_counts": {
+    "target_speed": 152
+  },
+  "tag_counts": {
+    "multi_step_plan": 15,
+    "safety_critical": 14
+  }
+}

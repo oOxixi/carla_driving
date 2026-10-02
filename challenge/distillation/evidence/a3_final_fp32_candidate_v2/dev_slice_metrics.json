@@ -1,0 +1,213 @@
+{
+  "schema_version": "1.0",
+  "status": "A3_DEVELOPMENT_DIAGNOSTIC_ONLY",
+  "gate_status": "PENDING_A3_FP32_GATE",
+  "split": "development_validation",
+  "candidate": {
+    "git_sha": "ec3b57c369f0dbcc728019076cd2c2cf670d9e61",
+    "model_id": "student-v0-r3-fp32",
+    "config_id": "student-v0-r3-structure-20260911",
+    "weights_sha256": "6b6ec1d8e815866aaccb3981d7a7a74efaa971e2a0d0bf8a9b42cbf7af0b8546",
+    "dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+    "a3_view_manifest_sha256": "d07178a15a2cc3e66e190100060d426043a18bc1478387fcc4a3f3210d542258"
+  },
+  "sample_count": 1108,
+  "device": "cuda",
+  "dataset_coverage": {
+    "status": "COMPLETE",
+    "splits": {
+      "train": {
+        "sample_count": 5856,
+        "plan_length_sample_counts": {
+          "1": 5430,
+          "2": 396,
+          "3": 15,
+          "4": 15
+        },
+        "required_behavior_step_counts": {
+          "TURN_LEFT": 302,
+          "YIELD": 128,
+          "PULL_OVER": 44
+        }
+      },
+      "development_validation": {
+        "sample_count": 1108,
+        "plan_length_sample_counts": {
+          "1": 1009,
+          "2": 95,
+          "3": 2,
+          "4": 2
+        },
+        "required_behavior_step_counts": {
+          "TURN_LEFT": 67,
+          "YIELD": 24,
+          "PULL_OVER": 6
+        }
+      }
+    },
+    "combined": {
+      "plan_length_sample_counts": {
+        "1": 6439,
+        "2": 491,
+        "3": 17,
+        "4": 17
+      },
+      "required_behavior_step_counts": {
+        "TURN_LEFT": 369,
+        "YIELD": 152,
+        "PULL_OVER": 50
+      }
+    },
+    "missing_required_plan_lengths": [],
+    "missing_required_behaviors": []
+  },
+  "behavior_slices": {
+    "AVOID_OBSTACLE": {
+      "step_count": 69,
+      "accuracy": 1.0,
+      "target_speed_count": 69,
+      "target_speed_mae_mps": 0.6588689693506213
+    },
+    "CHANGE_LANE_LEFT": {
+      "step_count": 44,
+      "accuracy": 1.0,
+      "target_speed_count": 44,
+      "target_speed_mae_mps": 0.42482453042810614
+    },
+    "CHANGE_LANE_RIGHT": {
+      "step_count": 54,
+      "accuracy": 1.0,
+      "target_speed_count": 54,
+      "target_speed_mae_mps": 0.42391705071484603
+    },
+    "FOLLOW": {
+      "step_count": 134,
+      "accuracy": 1.0,
+      "target_speed_count": 134,
+      "target_speed_mae_mps": 0.8967072714620562
+    },
+    "KEEP_LANE": {
+      "step_count": 125,
+      "accuracy": 1.0,
+      "target_speed_count": 125,
+      "target_speed_mae_mps": 0.9144000487327576
+    },
+    "PULL_OVER": {
+      "step_count": 6,
+      "accuracy": 1.0,
+      "target_speed_count": 6,
+      "target_speed_mae_mps": 0.1503215084473292
+    },
+    "RETURN_TO_LANE": {
+      "step_count": 69,
+      "accuracy": 1.0,
+      "target_speed_count": 69,
+      "target_speed_mae_mps": 0.4766085029080294
+    },
+    "SET_SPEED": {
+      "step_count": 345,
+      "accuracy": 1.0,
+      "target_speed_count": 345,
+      "target_speed_mae_mps": 0.5736782087795976
+    },
+    "SLOW_DOWN": {
+      "step_count": 36,
+      "accuracy": 1.0,
+      "target_speed_count": 36,
+      "target_speed_mae_mps": 0.38828304078843856
+    },
+    "STOP": {
+      "step_count": 174,
+      "accuracy": 1.0,
+      "target_speed_count": 174,
+      "target_speed_mae_mps": 0.021244617604219685
+    },
+    "TURN_LEFT": {
+      "step_count": 67,
+      "accuracy": 1.0,
+      "target_speed_count": 67,
+      "target_speed_mae_mps": 0.8500626834470835
+    },
+    "TURN_RIGHT": {
+      "step_count": 66,
+      "accuracy": 1.0,
+      "target_speed_count": 66,
+      "target_speed_mae_mps": 0.16316835085550943
+    },
+    "YIELD": {
+      "step_count": 24,
+      "accuracy": 1.0,
+      "target_speed_count": 24,
+      "target_speed_mae_mps": 0.10471758681039016
+    }
+  },
+  "required_recovery_slices": {
+    "TURN_LEFT": {
+      "step_count": 67,
+      "accuracy": 1.0,
+      "target_speed_count": 67,
+      "target_speed_mae_mps": 0.8500626834470835
+    },
+    "YIELD": {
+      "step_count": 24,
+      "accuracy": 1.0,
+      "target_speed_count": 24,
+      "target_speed_mae_mps": 0.10471758681039016
+    },
+    "PULL_OVER": {
+      "step_count": 6,
+      "accuracy": 1.0,
+      "target_speed_count": 6,
+      "target_speed_mae_mps": 0.1503215084473292
+    }
+  },
+  "plan_length_slices": {
+    "1": {
+      "sample_count": 1009,
+      "plan_length_accuracy": 1.0,
+      "plan_sequence_accuracy": 1.0
+    },
+    "2": {
+      "sample_count": 95,
+      "plan_length_accuracy": 1.0,
+      "plan_sequence_accuracy": 1.0
+    },
+    "3": {
+      "sample_count": 2,
+      "plan_length_accuracy": 1.0,
+      "plan_sequence_accuracy": 1.0
+    },
+    "4": {
+      "sample_count": 2,
+      "plan_length_accuracy": 1.0,
+      "plan_sequence_accuracy": 1.0
+    }
+  },
+  "multi_step_lane_change": {
+    "definition": "plan_length>1 and expected behavior includes CHANGE_LANE_LEFT/RIGHT or RETURN_TO_LANE",
+    "sample_count": 75,
+    "all_behavior_steps_accuracy": 1.0,
+    "plan_sequence_accuracy": 1.0
+  },
+  "target_grounding": {
+    "targeted_step_count": 263,
+    "accuracy": 1.0
+  },
+  "target_distractor": {
+    "definition": "targeted steps from requests containing more than one candidate target",
+    "targeted_step_count": 136,
+    "accuracy": 1.0
+  },
+  "target_speed": {
+    "step_count": 1213,
+    "mae_mps": 0.5285430529042261,
+    "p95_absolute_error_mps": 1.5809760093688965,
+    "samples_over_1mps": 152
+  },
+  "limitations": [
+    "This report uses A3 development Validation, never B2 Independent/Frozen Test.",
+    "It cannot issue A3_FP32_GATE_PASSED.",
+    "B2 must evaluate the exact weights SHA independently.",
+    "Missing 3/4-step coverage is a dataset gap, not a passing metric."
+  ]
+}
