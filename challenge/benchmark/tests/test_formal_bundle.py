@@ -647,12 +647,14 @@ def test_formal_student_bundle_binds_verified_candidate(
         actual_weights_sha256
     )
 
+    handoff_manifest_bytes = (
+        handoff / "handoff_manifest.json"
+    ).read_bytes().replace(b"\r\n", b"\n")
+
     assert result[
         "candidate_handoff_manifest_sha256"
     ] == hashlib.sha256(
-        (
-            handoff / "handoff_manifest.json"
-        ).read_bytes()
+        handoff_manifest_bytes
     ).hexdigest()
 
     benchmark_sha256 = hashlib.sha256(
