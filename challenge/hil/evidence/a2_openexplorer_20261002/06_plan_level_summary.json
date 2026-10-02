@@ -1,0 +1,38 @@
+{
+  "full_int8": {
+    "cases": 29,
+    "structural_mismatches": 0,
+    "structural_equality_rate": 1.0,
+    "cases_with_numeric_drift": 29,
+    "violated_fields": {
+      "plan.confidence": 29,
+      "plan.steps[0].target.target_speed_mps": 20,
+      "plan.steps[0].completion.value": 18
+    },
+    "worst_numeric_drift": {
+      "plan.steps[0].completion.value": 0.3392,
+      "plan.steps[0].target.target_speed_mps": 0.3392,
+      "plan.confidence": 0.005106
+    },
+    "logit_max_abs_diff": 0.9444675445556641,
+    "candidate_sha256": "560a616619d92243..."
+  },
+  "mixed_top3": {
+    "cases": 29,
+    "structural_mismatches": 0,
+    "structural_equality_rate": 1.0,
+    "cases_with_numeric_drift": 29,
+    "violated_fields": {
+      "plan.confidence": 29,
+      "plan.steps[0].target.target_speed_mps": 20,
+      "plan.steps[0].completion.value": 18
+    },
+    "worst_numeric_drift": {
+      "plan.steps[0].completion.value": 0.3392,
+      "plan.steps[0].target.target_speed_mps": 0.3392,
+      "plan.confidence": 0.005106
+    },
+    "logit_max_abs_diff": 0.9444675445556641,
+    "candidate_sha256": "02c600d41fc041cd..."
+  }
+}

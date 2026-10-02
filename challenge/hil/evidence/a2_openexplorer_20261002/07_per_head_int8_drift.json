@@ -1,0 +1,87 @@
+{
+  "cohort": "d3_turn_gap_60_strict_v1_val (29 cases)",
+  "full_int8_vs_fp32": {
+    "plan_length_logits": {
+      "max_abs": 0.187981,
+      "min_cosine": 0.999915
+    },
+    "behavior_logits": {
+      "max_abs": 0.169734,
+      "min_cosine": 0.999729
+    },
+    "target_pointer_logits": {
+      "max_abs": 0.215425,
+      "min_cosine": 0.999831
+    },
+    "target_lane_logits": {
+      "max_abs": 0.157649,
+      "min_cosine": 0.9998
+    },
+    "target_speed_mps": {
+      "max_abs": 0.944468,
+      "min_cosine": 0.999781
+    },
+    "completion_type_logits": {
+      "max_abs": 0.167599,
+      "min_cosine": 0.999738
+    },
+    "on_failure_logits": {
+      "max_abs": 0.192005,
+      "min_cosine": 0.999804
+    },
+    "confidence": {
+      "max_abs": 0.005106,
+      "min_cosine": 1.0
+    },
+    "requires_confirmation_logits": {
+      "max_abs": 0.173853,
+      "min_cosine": 1.0
+    },
+    "replan_condition_logits": {
+      "max_abs": 0.211765,
+      "min_cosine": 0.99996
+    }
+  },
+  "mixed_top3_vs_fp32": {
+    "plan_length_logits": {
+      "max_abs": 0.187981,
+      "min_cosine": 0.999915
+    },
+    "behavior_logits": {
+      "max_abs": 0.106379,
+      "min_cosine": 0.999935
+    },
+    "target_pointer_logits": {
+      "max_abs": 0.136051,
+      "min_cosine": 0.999971
+    },
+    "target_lane_logits": {
+      "max_abs": 0.11694,
+      "min_cosine": 0.999945
+    },
+    "target_speed_mps": {
+      "max_abs": 0.944468,
+      "min_cosine": 0.999781
+    },
+    "completion_type_logits": {
+      "max_abs": 0.167599,
+      "min_cosine": 0.999738
+    },
+    "on_failure_logits": {
+      "max_abs": 0.192005,
+      "min_cosine": 0.999804
+    },
+    "confidence": {
+      "max_abs": 0.005106,
+      "min_cosine": 1.0
+    },
+    "requires_confirmation_logits": {
+      "max_abs": 0.173853,
+      "min_cosine": 1.0
+    },
+    "replan_condition_logits": {
+      "max_abs": 0.211765,
+      "min_cosine": 0.99996
+    }
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0",
+  "package": "D:\\nana\\oe\\work\\a2_oe_pkg",
+  "package_id": "a2-to-a4-openexplorer-20260930-229d071e",
+  "package_status": "PENDING_A3_FP32_GATE",
+  "toolchain": {
+    "version": "3.9.1",
+    "container": "openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1",
+    "march": "nash-p"
+  },
+  "checks": [
+    {
+      "check": "sha256sums",
+      "passed": true,
+      "detail": "1217/1217 listed files match (0 only after CRLF->LF)",
+      "listed": 1217,
+      "mismatched": [],
+      "missing": []
+    },
+    {
+      "check": "declared_digests",
+      "passed": true,
+      "detail": {
+        "fp32_onnx_sha256": {
+          "match": true,
+          "matched_via": "raw",
+          "expected": "25bb87a05c885de5ea77bd8c00e34b73d195f1245ac6d1f5ae5327ac705ccdd9",
+          "actual": "25bb87a05c885de5ea77bd8c00e34b73d195f1245ac6d1f5ae5327ac705ccdd9"
+        },
+        "openexplorer_input_manifest_sha256": {
+          "match": true,
+          "matched_via": "raw",
+          "expected": "cc942b59fe93c8ea6749175c98024e47555d11046e1b68e7930bec14eb158da6",
+          "actual": "cc942b59fe93c8ea6749175c98024e47555d11046e1b68e7930bec14eb158da6"
+        },
+        "calibration_jsonl_sha256": {
+          "match": true,
+          "matched_via": "raw",
+          "expected": "e7520afc683b4545ca0981c549d0aebef50a90962a0d95378d89c1ca4bfbe8cc",
+          "actual": "e7520afc683b4545ca0981c549d0aebef50a90962a0d95378d89c1ca4bfbe8cc"
+        },
+        "calibration_manifest_sha256": {
+          "match": true,
+          "matched_via": "raw",
+          "expected": "659c5e8210ee95cf835be685da1deb55bc1990874ba3e120955d6bdf392d8059",
+          "actual": "659c5e8210ee95cf835be685da1deb55bc1990874ba3e120955d6bdf392d8059"
+        }
+      }
+    },
+    {
+      "check": "calibration_tensors",
+      "passed": true,
+      "detail": "{'rgb': 300, 'state': 300, 'targets': 300, 'text_tokens': 300}, total 1200"
+    },
+    {
+      "check": "int8_manifests",
+      "passed": true,
+      "detail": {
+        "full_int8": {
+          "quantization_id": "a2-ptq-a17da9f4f284f252",
+          "status": "A3_CANDIDATE_PRE_PTQ",
+          "gate_status": "NOT_FORMAL",
+          "source_fp32_weights_sha256": "eaee4402197fb3fed53ed82bc2fbaceef62e5ed2d4cde86e8aa1a55dc6d46515",
+          "source_fp32_onnx_sha256": "25bb87a05c885de5ea77bd8c00e34b73d195f1245ac6d1f5ae5327ac705ccdd9",
+          "calibration_manifest_sha256": "659c5e8210ee95cf835be685da1deb55bc1990874ba3e120955d6bdf392d8059",
+          "int8_artifact_sha256": "560a616619d922431e9e603f68406e131b5eafe264b9e96d7ef80d7fa2586bb1",
+          "artifact_file": "student_int8.onnx",
+          "artifact_match": true,
+          "binds_to_candidate_release": "a3_final_fp32_candidate_v1"
+        },
+        "mixed_precision_top3": {
+          "quantization_id": "a2-ptq-1a449fab1ef58309",
+          "status": "A3_CANDIDATE_PRE_PTQ",
+          "gate_status": "NOT_FORMAL",
+          "source_fp32_weights_sha256": "eaee4402197fb3fed53ed82bc2fbaceef62e5ed2d4cde86e8aa1a55dc6d46515",
+          "source_fp32_onnx_sha256": "25bb87a05c885de5ea77bd8c00e34b73d195f1245ac6d1f5ae5327ac705ccdd9",
+          "calibration_manifest_sha256": "659c5e8210ee95cf835be685da1deb55bc1990874ba3e120955d6bdf392d8059",
+          "int8_artifact_sha256": "02c600d41fc041cd512ca652320661bf8764c45514a40b5a374942f97af9d790",
+          "artifact_file": "student_int8_mixed_top3.onnx",
+          "artifact_match": true,
+          "binds_to_candidate_release": "a3_final_fp32_candidate_v1"
+        }
+      }
+    }
+  ],
+  "int8_manifests": {
+    "full_int8": {
+      "quantization_id": "a2-ptq-a17da9f4f284f252",
+      "status": "A3_CANDIDATE_PRE_PTQ",
+      "gate_status": "NOT_FORMAL",
+      "source_fp32_weights_sha256": "eaee4402197fb3fed53ed82bc2fbaceef62e5ed2d4cde86e8aa1a55dc6d46515",
+      "source_fp32_onnx_sha256": "25bb87a05c885de5ea77bd8c00e34b73d195f1245ac6d1f5ae5327ac705ccdd9",
+      "calibration_manifest_sha256": "659c5e8210ee95cf835be685da1deb55bc1990874ba3e120955d6bdf392d8059",
+      "int8_artifact_sha256": "560a616619d922431e9e603f68406e131b5eafe264b9e96d7ef80d7fa2586bb1",
+      "artifact_file": "student_int8.onnx",
+      "artifact_match": true,
+      "binds_to_candidate_release": "a3_final_fp32_candidate_v1"
+    },
+    "mixed_precision_top3": {
+      "quantization_id": "a2-ptq-1a449fab1ef58309",
+      "status": "A3_CANDIDATE_PRE_PTQ",
+      "gate_status": "NOT_FORMAL",
+      "source_fp32_weights_sha256": "eaee4402197fb3fed53ed82bc2fbaceef62e5ed2d4cde86e8aa1a55dc6d46515",
+      "source_fp32_onnx_sha256": "25bb87a05c885de5ea77bd8c00e34b73d195f1245ac6d1f5ae5327ac705ccdd9",
+      "calibration_manifest_sha256": "659c5e8210ee95cf835be685da1deb55bc1990874ba3e120955d6bdf392d8059",
+      "int8_artifact_sha256": "02c600d41fc041cd512ca652320661bf8764c45514a40b5a374942f97af9d790",
+      "artifact_file": "student_int8_mixed_top3.onnx",
+      "artifact_match": true,
+      "binds_to_candidate_release": "a3_final_fp32_candidate_v1"
+    }
+  },
+  "newest_a3_candidate_in_checkout": "a3_final_fp32_candidate_v2",
+  "errors": [],
+  "warnings": [
+    "package binds to a3_final_fp32_candidate_v1 while the newest A3 candidate release in this checkout is a3_final_fp32_candidate_v2"
+  ],
+  "status": "PASS",
+  "policy_note": "PASS means the package is self-consistent and bound to the frozen calibration and to an identifiable A3 candidate. A warning about staleness means the INT8 artefacts were produced from a candidate other than the newest one, which is a decision for A2/A4, not something B3 may resolve."
+}

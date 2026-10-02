@@ -1,0 +1,12 @@
+package      : a2_oe_pkg (a2-to-a4-openexplorer-20260930-229d071e, status PENDING_A3_FP32_GATE)
+files        : 1217 listed, 0 mismatched, 0 missing (0 only after CRLF->LF)
+fp32 onnx    : match=True
+calibration  : {'rgb': 300, 'state': 300, 'targets': 300, 'text_tokens': 300} (total 1200)
+  full_int8              artefact_match=True binds=a3_final_fp32_candidate_v1 gate=NOT_FORMAL
+  mixed_precision_top3   artefact_match=True binds=a3_final_fp32_candidate_v1 gate=NOT_FORMAL
+newest cand. : a3_final_fp32_candidate_v2
+errors       : 0
+warnings     : 1
+  ! package binds to a3_final_fp32_candidate_v1 while the newest A3 candidate release in this checkout is a3_final_fp32_candidate_v2
+status       : PASS
+wrote challenge/hil/evidence/a2_openexplorer_20261002/01_package_check.json
