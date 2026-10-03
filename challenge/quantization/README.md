@@ -7,9 +7,9 @@ Calibration、按外置 `quant_config.yaml` 执行 ONNX Runtime QDQ PTQ、生成
 
 当前正式签发仍是 **BLOCKED**：B1 已发布 `b1_closeout_v1`，最新 governed 规模是
 Train=6037 / Dev=1158，Calibration v1 为300样本，Independent Validation v1 为240样本。
-现有 A3 FP32 Candidate v1 仍绑定旧的5826/1104训练视图，状态为
-`PENDING_A3_FP32_GATE`，也没有绑定最新 B1 governed release，因此只能继续作为诊断候选。
-B2 尚未返回新 exact weights 的独立 Validation 和 INT8 Gate decision。A2 已完成旧候选的真实 ONNX、Full INT8、
+A3 FP32 Candidate v2 已正确绑定该 closeout，实际 optimizer 视图为5856/1108，但状态仍为
+`PENDING_A3_FP32_GATE` / `PENDING_B2_INDEPENDENT_VALIDATION`。B2 尚未返回 exact weights
+`6b6ec1d8...b8546` 的独立 Validation 和 Gate decision。A2 已完成 v2 的真实 ONNX、Full INT8、
 300样本漂移、25节点敏感性、Top-3 Mixed Precision和OpenExplorer输入包预演。OpenExplorer
 已锁定为3.9.1、J6P march已锁定为`nash-p`，但官方镜像验证和板端实测仍待A4/B3。候选产物强制标为
 `SMOKE_ONLY`、`A3_CANDIDATE_PRE_PTQ` 或 `A2_DEVELOPMENT_CALIBRATION_CANDIDATE`，不能用于申报成绩。
@@ -21,8 +21,8 @@ B2 尚未返回新 exact weights 的独立 Validation 和 INT8 Gate decision。A
 ```powershell
 python -m challenge.quantization.cli validate-upstream `
   --repo . `
-  --weights challenge/distillation/releases/a3_final_fp32_candidate_v1/student_v0_fp32_candidate.pt `
-  --weights-manifest challenge/distillation/releases/a3_final_fp32_candidate_v1/handoff_manifest.json `
+  --weights challenge/distillation/releases/a3_final_fp32_candidate_v2/student_v0_fp32_candidate.pt `
+  --weights-manifest challenge/distillation/releases/a3_final_fp32_candidate_v2/handoff_manifest.json `
   --output artifacts/a2/a3_upstream_intake.json
 ```
 
@@ -31,10 +31,9 @@ Independent Validation隔离策略、A3训练规模、governed release绑定、�
 状态为`BLOCKED`时退出码为2，报告仍会落盘供协作。Independent Validation的标签严格归B2，
 A2不得用它做校准、调参、敏感层选择或误差驱动迭代。
 
-当前候选预期返回四个阻塞项：没有声明最新governed源计数6037/1158、缺少最新B1
-governed release SHA256绑定、`PENDING_A3_FP32_GATE`。现有5826/1104是旧A3视图实际送入
-optimizer的strict-positive计数，不与B1原始governed计数混为一谈。这不是工具失败，而是
-正确的fail-closed结果。
+当前 v2 候选预期只返回一个阻塞项：`PENDING_A3_FP32_GATE`。6037/1158 是B1原始
+governed计数，5856/1108是过滤后实际送入optimizer的strict-positive计数，两者不能混为
+一谈。退出码2不是工具失败，而是正确的fail-closed结果。
 
 ## A3 候选权重预演
 
@@ -43,9 +42,9 @@ optimizer的strict-positive计数，不与B1原始governed计数混为一谈。�
 ```powershell
 python -m challenge.export.export_onnx `
   --repo . `
-  --output artifacts/a2/a3_final_fp32_candidate_v1/student_v0_fp32_candidate.onnx `
-  --weights challenge/distillation/releases/a3_final_fp32_candidate_v1/student_v0_fp32_candidate.pt `
-  --weights-manifest challenge/distillation/releases/a3_final_fp32_candidate_v1/handoff_manifest.json `
+  --output artifacts/a2/a3_final_fp32_candidate_v2_20c80d7c/student_v0_fp32_candidate.onnx `
+  --weights challenge/distillation/releases/a3_final_fp32_candidate_v2/student_v0_fp32_candidate.pt `
+  --weights-manifest challenge/distillation/releases/a3_final_fp32_candidate_v2/handoff_manifest.json `
   --allow-pending-candidate
 ```
 
@@ -138,8 +137,8 @@ A4确认部署代价可接受的节点，才可进入Mixed Precision白名单。
 
 可用可重复的 `--exclude-node <ONNX节点名>` 生成受控 Mixed Precision 候选。该参数会进入
 `quantization_id`、INT8 manifest和ONNX元数据，避免不同白名单的产物身份混淆。真实
-Final FP32 Candidate v1 的完整预演结果见
-`A2_FINAL_CANDIDATE_V1_RESULT_20260930.md`。
+Final FP32 Candidate v2 的完整预演结果见
+`A2_CLOSEOUT_CANDIDATE_V2_RESULT_20261003.md`。
 
 ## 6. 准备 OpenExplorer 3.9.1 输入包
 
@@ -176,3 +175,19 @@ hb_compile -c student_j6p_oe391.yaml
 B2 PASS到位后，用 `bind-b2-result` 将包含 `quantization_id`、INT8 SHA、benchmark SHA和
 policy SHA的decision绑定进 `int8_manifest.json`。缺少任一身份字段都会失败，A2不能用
 手工改状态代替B2签发。
+
+## 7. 按成员生成哈希锁定交接包
+
+完成候选诊断链路后执行：
+
+```powershell
+python tools/package_a2_handoff.py `
+  --workflow-git-sha 20c80d7cde2ca8ca651f383ca06b8bc06e0acaa3
+```
+
+工具在生成包前会重新核对唯一上游阻塞项、300样本导出一致性、FP32/INT8权重绑定、
+Top-3敏感层排序和OpenExplorer候选状态，然后分别生成A3 gate反馈、B2独立评测、A4
+OpenExplorer交接包及逐文件`SHA256SUMS.txt`。ZIP 时间戳固定，同一组输入可生成相同
+压缩包字节；汇总报告不放入包内，避免报告记录ZIP SHA时形成循环依赖。默认输出与最新结果见
+`A2_CLOSEOUT_CANDIDATE_V2_RESULT_20261003.md`；大模型、NPY和ZIP只留在`artifacts/`，
+不提交Git。
