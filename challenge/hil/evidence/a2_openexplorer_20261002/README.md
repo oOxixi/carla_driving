@@ -14,6 +14,7 @@
 | **绑定告警** | 该包绑定的是 **A3 候选 v1**（`eaee4402…`），而仓库里最新候选是 **v2**（`6b6ec1d8…`）——需 A2/A4 决定是否在 v2 上重做 |
 | FP32↔INT8（留出队列 29 例） | **计划结构完全一致 29/29**；数值有偏差（见 §2） |
 | A2 的 OE YAML pre-check | 在 OE 3.9.1（`nash-p`）里**编译成功**：**59/59 节点全在 BPU、零 CPU fallback**，2m09s |
+| **编译后的 BPU 产物 ↔ A2 的 INT8 ONNX** | **十头余弦 min ≥ 0.9997**（骨干最差 0.9968），29/29 例次、无一例低于 0.999 → 编译没有引入额外失真 |
 
 ## 1. 包完整性（`00`/`01`）
 
@@ -68,6 +69,28 @@
 A4 仍负责正式的 `artifacts/a4/<runtime_id>/`（含 `bpu_performance_estimate.json` 与 `estimation_method.md`），
 届时由 B3 的 `bpu-verify` 逐项核验。
 
+### 3.1 编译后的 BPU 产物是否仍等价于 A2 的 INT8 模型？（`11`–`13`）
+
+这是此前**没人验过**的一环：A2 只报了 ORT QDQ 的漂移，A4 还没回传编译结果，所以
+"编译成 nash-p 产物之后，模型还是不是那个 INT8 模型"没有数据。B3 用刚编出的
+`student_v0_j6p_quantized_model.bc` 对 A2 的 `models/student_int8.onnx` 逐例 `hb_verifier`：
+
+| 输出头 | min | p50 | 低于 0.999 |
+|---|---:|---:|---:|
+| `plan_length_logits` | 0.9999 | 1.0000 | 0 |
+| `behavior_logits` | 0.9997 | 0.9998 | 0 |
+| `target_pointer_logits` | 0.9998 | 0.9999 | 0 |
+| `target_lane_logits` | 0.9998 | 0.9999 | 0 |
+| `target_speed_mps` | 0.9997 | 0.9999 | 0 |
+| `completion_type_logits` | 0.9997 | 0.9998 | 0 |
+| `on_failure_logits` | 0.9998 | 0.9999 | 0 |
+| `confidence` / `requires_confirmation_logits` / `replan_condition_logits` | 1.0000 | 1.0000 | 0 |
+
+骨干 6 个中间张量最差 min 0.9968。**29/29 例次全部通过，十头 min ≥ 0.9997**——
+说明"编译到 nash-p"这一步**没有引入超出 INT8 量化本身的额外失真**：
+目前模型侧的误差主要来自 FP32→INT8（§2），而不是 BPU 编译。
+口径仍是 `BPU_ESTIMATED`（X86 仿真的数值等价性），**不是板端时延或精度结论**。
+
 ## 文件
 
 | 文件 | 内容 |
@@ -80,3 +103,6 @@ A4 仍负责正式的 `artifacts/a4/<runtime_id>/`（含 `bpu_performance_estima
 | `08_oe_precheck.log` | A2 YAML 在 OE 3.9.1 的编译预检日志（节选） |
 | `09_node_placement.csv` | 59 个节点的落点（全部 BPU） |
 | `10_oe_precheck_summary.json` | 预检机读摘要（落点、产物、内存、口径） |
+| `11_bpuc_vs_int8onnx_summary.json` | 编译后 `.bc` 对 A2 INT8 ONNX 的逐头余弦分布（29 例） |
+| `12_bpuc_vs_int8onnx_single_case.log` | 单例的 16 行逐层/逐头余弦明细 |
+| `13_bpuc_vs_int8onnx_reading.json` | 该检查的问题、设置、结果与口径 |

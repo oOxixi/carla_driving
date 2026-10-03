@@ -1,0 +1,27 @@
+2026-10-03 14:44:07,505 [92mINFO[0m The log will be stored in /work/x86_sim/hb_verifier.log
+2026-10-03 14:44:07,511 [92mINFO[0m hb_verifier starts...
+2026-10-03 14:44:07,514 [92mINFO[0m verifier tool version: 3.5.16
+2026-10-03 14:44:07,517 [92mINFO[0m Start to check params ...
+2026-10-03 14:44:10,373 [92mINFO[0m End to check params.
+2026-10-03 14:44:10,377 [92mINFO[0m Start to inference onnx model student_int8
+2026-10-03 14:44:10,469 [92mINFO[0m Start to inference bc model student_v0_j6p_quantized_model
+2026-10-03 14:44:10,848 [92mINFO[0m +------------------------------------------------+---------------------------------------------------------+------------------+
+2026-10-03 14:44:10,852 [92mINFO[0m | NodeName                                       | TensorName                                              | CosineSimilarity |
+2026-10-03 14:44:10,854 [92mINFO[0m +------------------------------------------------+---------------------------------------------------------+------------------+
+2026-10-03 14:44:10,857 [92mINFO[0m | /model/vision_encoder/features/features.1/Relu | /model/vision_encoder/features/features.1/Relu_output_0 | 0.999942         |
+2026-10-03 14:44:10,859 [92mINFO[0m | /model/vision_encoder/features/features.3/Relu | /model/vision_encoder/features/features.3/Relu_output_0 | 0.999825         |
+2026-10-03 14:44:10,860 [92mINFO[0m | /model/vision_encoder/features/features.5/Relu | /model/vision_encoder/features/features.5/Relu_output_0 | 0.999384         |
+2026-10-03 14:44:10,861 [92mINFO[0m | /model/vision_encoder/features/features.7/Relu | /model/vision_encoder/features/features.7/Relu_output_0 | 0.998377         |
+2026-10-03 14:44:10,863 [92mINFO[0m | /model/vision_encoder/features/features.9/Relu | /model/vision_encoder/features/features.9/Relu_output_0 | 0.996878         |
+2026-10-03 14:44:10,865 [92mINFO[0m | /model/vision_encoder/pool/AveragePool         | /model/vision_encoder/pool/AveragePool_output_0         | 0.998233         |
+2026-10-03 14:44:10,866 [92mINFO[0m | plan_length_logits_DequantizeLinear            | plan_length_logits                                      | 0.999981         |
+2026-10-03 14:44:10,868 [92mINFO[0m | requires_confirmation_logits_DequantizeLinear  | requires_confirmation_logits                            | 1.000000         |
+2026-10-03 14:44:10,871 [92mINFO[0m | replan_condition_logits_DequantizeLinear       | replan_condition_logits                                 | 0.999969         |
+2026-10-03 14:44:10,872 [92mINFO[0m | behavior_logits_DequantizeLinear               | behavior_logits                                         | 0.999672         |
+2026-10-03 14:44:10,874 [92mINFO[0m | target_pointer_logits_DequantizeLinear         | target_pointer_logits                                   | 0.999786         |
+2026-10-03 14:44:10,876 [92mINFO[0m | target_lane_logits_DequantizeLinear            | target_lane_logits                                      | 0.999790         |
+2026-10-03 14:44:10,877 [92mINFO[0m | completion_type_logits_DequantizeLinear        | completion_type_logits                                  | 0.999789         |
+2026-10-03 14:44:10,879 [92mINFO[0m | on_failure_logits_DequantizeLinear             | on_failure_logits                                       | 0.999861         |
+2026-10-03 14:44:10,881 [92mINFO[0m | confidence_DequantizeLinear                    | confidence                                              | 1.000000         |
+2026-10-03 14:44:10,883 [92mINFO[0m | target_speed_mps_DequantizeLinear              | target_speed_mps                                        | 0.999874         |
+2026-10-03 14:44:10,887 [92mINFO[0m +------------------------------------------------+---------------------------------------------------------+------------------+
