@@ -1,0 +1,48 @@
+{
+  "axis": "FP32 vs A2 INT8: discrete-head decision agreement per cohort",
+  "reading": "target_speed_mps carries the largest absolute deviation in every cohort (0.52-1.41 m/s), and the only cohorts where a discrete head changes its argmax are the two largest ones (d2 539 and gap300 123); the newer, smaller cohorts agree 100 percent.",
+  "cohorts": {
+    "d2_v1_1_val": {
+      "cases": 539,
+      "speed_max_abs": 1.312822,
+      "worst_discrete_head": "replan_condition_logits",
+      "worst_discrete_argmax_agreement": 0.9555,
+      "min_discrete_argmax_agreement": 0.9555
+    },
+    "d3_wave2_val": {
+      "cases": 56,
+      "speed_max_abs": 0.925461,
+      "worst_discrete_head": "target_pointer_logits",
+      "worst_discrete_argmax_agreement": 0.6429,
+      "min_discrete_argmax_agreement": 0.6429
+    },
+    "targeted_gap_val": {
+      "cases": 99,
+      "speed_max_abs": 1.407122,
+      "worst_discrete_head": "plan_length_logits",
+      "worst_discrete_argmax_agreement": 1.0,
+      "min_discrete_argmax_agreement": 1.0
+    },
+    "turn_gap_val": {
+      "cases": 29,
+      "speed_max_abs": 0.944468,
+      "worst_discrete_head": "plan_length_logits",
+      "worst_discrete_argmax_agreement": 1.0,
+      "min_discrete_argmax_agreement": 1.0
+    },
+    "gap300_val": {
+      "cases": 123,
+      "speed_max_abs": 1.379902,
+      "worst_discrete_head": "replan_condition_logits",
+      "worst_discrete_argmax_agreement": 0.9756,
+      "min_discrete_argmax_agreement": 0.9756
+    },
+    "ms34_val": {
+      "cases": 4,
+      "speed_max_abs": 0.515034,
+      "worst_discrete_head": "behavior_logits",
+      "worst_discrete_argmax_agreement": 0.75,
+      "min_discrete_argmax_agreement": 0.75
+    }
+  }
+}

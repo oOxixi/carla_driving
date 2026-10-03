@@ -1,0 +1,34 @@
+{
+  "axis": "FP32 ONNX vs A2 INT8 ONNX, decoded-plan level (adapter onnx)",
+  "reading": "Across 747 cases in four cohorts the INT8 model produces exactly the same decoded plan as FP32: behaviour order, target ids and completion types never differ. Numbers do drift (up to 1.41 m/s on the speed head), which is why raw-tensor tolerances fail while the plan comparison passes -- a flattened-argmax metric suggested flips on some heads, but the decoder is unaffected.",
+  "cohorts": {
+    "d2_v1_1_val": {
+      "cases": 539,
+      "structural_mismatches": 0,
+      "cases_with_numeric_drift": 536,
+      "worst_numeric_drift": 0.462218
+    },
+    "gap300_val": {
+      "cases": 123,
+      "structural_mismatches": 0,
+      "cases_with_numeric_drift": 123,
+      "worst_numeric_drift": 0.265509
+    },
+    "d3_wave2_val": {
+      "cases": 56,
+      "structural_mismatches": 0,
+      "cases_with_numeric_drift": 56,
+      "worst_numeric_drift": 0.28073
+    },
+    "turn_gap_val": {
+      "cases": 29,
+      "structural_mismatches": 0,
+      "cases_with_numeric_drift": 29,
+      "worst_numeric_drift": 0.339219
+    }
+  },
+  "totals": {
+    "cases": 747,
+    "structural_mismatches": 0
+  }
+}

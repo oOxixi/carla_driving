@@ -1,0 +1,456 @@
+{
+  "axis": "FP32 ONNX vs A2 INT8 ONNX (ORT QDQ), per cohort",
+  "note": "Quantisation loss on the ONNX side; the compiled-artefact axis is 14_x86_matrix_summary.json.",
+  "matrix": {
+    "d2_v1_1_val": {
+      "cases": 539,
+      "heads": {
+        "plan_length_logits": {
+          "max_abs": 0.195781,
+          "min_cos": 0.99979,
+          "argmax_same": 539,
+          "n": 539,
+          "argmax_agreement": 1.0
+        },
+        "behavior_logits": {
+          "max_abs": 0.213512,
+          "min_cos": 0.999177,
+          "argmax_same": 535,
+          "n": 539,
+          "argmax_agreement": 0.9926
+        },
+        "target_pointer_logits": {
+          "max_abs": 0.200367,
+          "min_cos": 0.999558,
+          "argmax_same": 529,
+          "n": 539,
+          "argmax_agreement": 0.9814
+        },
+        "target_lane_logits": {
+          "max_abs": 0.199456,
+          "min_cos": 0.999662,
+          "argmax_same": 534,
+          "n": 539,
+          "argmax_agreement": 0.9907
+        },
+        "target_speed_mps": {
+          "max_abs": 1.312822,
+          "min_cos": 0.999408,
+          "argmax_same": 527,
+          "n": 539,
+          "argmax_agreement": 0.9777
+        },
+        "completion_type_logits": {
+          "max_abs": 0.177804,
+          "min_cos": 0.999497,
+          "argmax_same": 528,
+          "n": 539,
+          "argmax_agreement": 0.9796
+        },
+        "on_failure_logits": {
+          "max_abs": 0.254293,
+          "min_cos": 0.999663,
+          "argmax_same": 539,
+          "n": 539,
+          "argmax_agreement": 1.0
+        },
+        "confidence": {
+          "max_abs": 0.012158,
+          "min_cos": 1.0,
+          "argmax_same": 539,
+          "n": 539,
+          "argmax_agreement": 1.0
+        },
+        "requires_confirmation_logits": {
+          "max_abs": 0.199386,
+          "min_cos": 1.0,
+          "argmax_same": 539,
+          "n": 539,
+          "argmax_agreement": 1.0
+        },
+        "replan_condition_logits": {
+          "max_abs": 0.24725,
+          "min_cos": 0.999823,
+          "argmax_same": 515,
+          "n": 539,
+          "argmax_agreement": 0.9555
+        }
+      }
+    },
+    "d3_wave2_val": {
+      "cases": 56,
+      "heads": {
+        "plan_length_logits": {
+          "max_abs": 0.161274,
+          "min_cos": 0.999821,
+          "argmax_same": 56,
+          "n": 56,
+          "argmax_agreement": 1.0
+        },
+        "behavior_logits": {
+          "max_abs": 0.17709,
+          "min_cos": 0.999731,
+          "argmax_same": 56,
+          "n": 56,
+          "argmax_agreement": 1.0
+        },
+        "target_pointer_logits": {
+          "max_abs": 0.169562,
+          "min_cos": 0.999792,
+          "argmax_same": 36,
+          "n": 56,
+          "argmax_agreement": 0.6429
+        },
+        "target_lane_logits": {
+          "max_abs": 0.194458,
+          "min_cos": 0.999818,
+          "argmax_same": 56,
+          "n": 56,
+          "argmax_agreement": 1.0
+        },
+        "target_speed_mps": {
+          "max_abs": 0.925461,
+          "min_cos": 0.999754,
+          "argmax_same": 56,
+          "n": 56,
+          "argmax_agreement": 1.0
+        },
+        "completion_type_logits": {
+          "max_abs": 0.168166,
+          "min_cos": 0.999679,
+          "argmax_same": 56,
+          "n": 56,
+          "argmax_agreement": 1.0
+        },
+        "on_failure_logits": {
+          "max_abs": 0.179684,
+          "min_cos": 0.999759,
+          "argmax_same": 56,
+          "n": 56,
+          "argmax_agreement": 1.0
+        },
+        "confidence": {
+          "max_abs": 0.005801,
+          "min_cos": 1.0,
+          "argmax_same": 56,
+          "n": 56,
+          "argmax_agreement": 1.0
+        },
+        "requires_confirmation_logits": {
+          "max_abs": 0.211184,
+          "min_cos": 1.0,
+          "argmax_same": 56,
+          "n": 56,
+          "argmax_agreement": 1.0
+        },
+        "replan_condition_logits": {
+          "max_abs": 0.225365,
+          "min_cos": 0.99994,
+          "argmax_same": 56,
+          "n": 56,
+          "argmax_agreement": 1.0
+        }
+      }
+    },
+    "targeted_gap_val": {
+      "cases": 99,
+      "heads": {
+        "plan_length_logits": {
+          "max_abs": 0.234489,
+          "min_cos": 0.999864,
+          "argmax_same": 99,
+          "n": 99,
+          "argmax_agreement": 1.0
+        },
+        "behavior_logits": {
+          "max_abs": 0.268612,
+          "min_cos": 0.999523,
+          "argmax_same": 99,
+          "n": 99,
+          "argmax_agreement": 1.0
+        },
+        "target_pointer_logits": {
+          "max_abs": 0.22122,
+          "min_cos": 0.999771,
+          "argmax_same": 99,
+          "n": 99,
+          "argmax_agreement": 1.0
+        },
+        "target_lane_logits": {
+          "max_abs": 0.227451,
+          "min_cos": 0.999777,
+          "argmax_same": 99,
+          "n": 99,
+          "argmax_agreement": 1.0
+        },
+        "target_speed_mps": {
+          "max_abs": 1.407122,
+          "min_cos": 0.99957,
+          "argmax_same": 99,
+          "n": 99,
+          "argmax_agreement": 1.0
+        },
+        "completion_type_logits": {
+          "max_abs": 0.195037,
+          "min_cos": 0.999704,
+          "argmax_same": 99,
+          "n": 99,
+          "argmax_agreement": 1.0
+        },
+        "on_failure_logits": {
+          "max_abs": 0.247429,
+          "min_cos": 0.999748,
+          "argmax_same": 99,
+          "n": 99,
+          "argmax_agreement": 1.0
+        },
+        "confidence": {
+          "max_abs": 0.008483,
+          "min_cos": 1.0,
+          "argmax_same": 99,
+          "n": 99,
+          "argmax_agreement": 1.0
+        },
+        "requires_confirmation_logits": {
+          "max_abs": 0.373816,
+          "min_cos": 1.0,
+          "argmax_same": 99,
+          "n": 99,
+          "argmax_agreement": 1.0
+        },
+        "replan_condition_logits": {
+          "max_abs": 0.369823,
+          "min_cos": 0.99994,
+          "argmax_same": 99,
+          "n": 99,
+          "argmax_agreement": 1.0
+        }
+      }
+    },
+    "turn_gap_val": {
+      "cases": 29,
+      "heads": {
+        "plan_length_logits": {
+          "max_abs": 0.187981,
+          "min_cos": 0.999915,
+          "argmax_same": 29,
+          "n": 29,
+          "argmax_agreement": 1.0
+        },
+        "behavior_logits": {
+          "max_abs": 0.169734,
+          "min_cos": 0.999729,
+          "argmax_same": 29,
+          "n": 29,
+          "argmax_agreement": 1.0
+        },
+        "target_pointer_logits": {
+          "max_abs": 0.215425,
+          "min_cos": 0.999831,
+          "argmax_same": 29,
+          "n": 29,
+          "argmax_agreement": 1.0
+        },
+        "target_lane_logits": {
+          "max_abs": 0.157649,
+          "min_cos": 0.9998,
+          "argmax_same": 29,
+          "n": 29,
+          "argmax_agreement": 1.0
+        },
+        "target_speed_mps": {
+          "max_abs": 0.944468,
+          "min_cos": 0.999781,
+          "argmax_same": 29,
+          "n": 29,
+          "argmax_agreement": 1.0
+        },
+        "completion_type_logits": {
+          "max_abs": 0.167599,
+          "min_cos": 0.999738,
+          "argmax_same": 29,
+          "n": 29,
+          "argmax_agreement": 1.0
+        },
+        "on_failure_logits": {
+          "max_abs": 0.192005,
+          "min_cos": 0.999804,
+          "argmax_same": 29,
+          "n": 29,
+          "argmax_agreement": 1.0
+        },
+        "confidence": {
+          "max_abs": 0.005106,
+          "min_cos": 1.0,
+          "argmax_same": 29,
+          "n": 29,
+          "argmax_agreement": 1.0
+        },
+        "requires_confirmation_logits": {
+          "max_abs": 0.173853,
+          "min_cos": 1.0,
+          "argmax_same": 29,
+          "n": 29,
+          "argmax_agreement": 1.0
+        },
+        "replan_condition_logits": {
+          "max_abs": 0.211765,
+          "min_cos": 0.99996,
+          "argmax_same": 29,
+          "n": 29,
+          "argmax_agreement": 1.0
+        }
+      }
+    },
+    "gap300_val": {
+      "cases": 123,
+      "heads": {
+        "plan_length_logits": {
+          "max_abs": 0.17477,
+          "min_cos": 0.999893,
+          "argmax_same": 123,
+          "n": 123,
+          "argmax_agreement": 1.0
+        },
+        "behavior_logits": {
+          "max_abs": 0.198584,
+          "min_cos": 0.999685,
+          "argmax_same": 123,
+          "n": 123,
+          "argmax_agreement": 1.0
+        },
+        "target_pointer_logits": {
+          "max_abs": 0.19082,
+          "min_cos": 0.99979,
+          "argmax_same": 123,
+          "n": 123,
+          "argmax_agreement": 1.0
+        },
+        "target_lane_logits": {
+          "max_abs": 0.160296,
+          "min_cos": 0.999771,
+          "argmax_same": 122,
+          "n": 123,
+          "argmax_agreement": 0.9919
+        },
+        "target_speed_mps": {
+          "max_abs": 1.379902,
+          "min_cos": 0.999584,
+          "argmax_same": 121,
+          "n": 123,
+          "argmax_agreement": 0.9837
+        },
+        "completion_type_logits": {
+          "max_abs": 0.163594,
+          "min_cos": 0.999725,
+          "argmax_same": 123,
+          "n": 123,
+          "argmax_agreement": 1.0
+        },
+        "on_failure_logits": {
+          "max_abs": 0.194747,
+          "min_cos": 0.999813,
+          "argmax_same": 123,
+          "n": 123,
+          "argmax_agreement": 1.0
+        },
+        "confidence": {
+          "max_abs": 0.007003,
+          "min_cos": 1.0,
+          "argmax_same": 123,
+          "n": 123,
+          "argmax_agreement": 1.0
+        },
+        "requires_confirmation_logits": {
+          "max_abs": 0.209273,
+          "min_cos": 1.0,
+          "argmax_same": 123,
+          "n": 123,
+          "argmax_agreement": 1.0
+        },
+        "replan_condition_logits": {
+          "max_abs": 0.220752,
+          "min_cos": 0.999948,
+          "argmax_same": 120,
+          "n": 123,
+          "argmax_agreement": 0.9756
+        }
+      }
+    },
+    "ms34_val": {
+      "cases": 4,
+      "heads": {
+        "plan_length_logits": {
+          "max_abs": 0.146139,
+          "min_cos": 0.999749,
+          "argmax_same": 4,
+          "n": 4,
+          "argmax_agreement": 1.0
+        },
+        "behavior_logits": {
+          "max_abs": 0.131812,
+          "min_cos": 0.999726,
+          "argmax_same": 3,
+          "n": 4,
+          "argmax_agreement": 0.75
+        },
+        "target_pointer_logits": {
+          "max_abs": 0.128868,
+          "min_cos": 0.999826,
+          "argmax_same": 4,
+          "n": 4,
+          "argmax_agreement": 1.0
+        },
+        "target_lane_logits": {
+          "max_abs": 0.144641,
+          "min_cos": 0.99984,
+          "argmax_same": 4,
+          "n": 4,
+          "argmax_agreement": 1.0
+        },
+        "target_speed_mps": {
+          "max_abs": 0.515034,
+          "min_cos": 0.999895,
+          "argmax_same": 4,
+          "n": 4,
+          "argmax_agreement": 1.0
+        },
+        "completion_type_logits": {
+          "max_abs": 0.138434,
+          "min_cos": 0.999719,
+          "argmax_same": 4,
+          "n": 4,
+          "argmax_agreement": 1.0
+        },
+        "on_failure_logits": {
+          "max_abs": 0.148308,
+          "min_cos": 0.999809,
+          "argmax_same": 4,
+          "n": 4,
+          "argmax_agreement": 1.0
+        },
+        "confidence": {
+          "max_abs": 0.003162,
+          "min_cos": 1.0,
+          "argmax_same": 4,
+          "n": 4,
+          "argmax_agreement": 1.0
+        },
+        "requires_confirmation_logits": {
+          "max_abs": 0.099024,
+          "min_cos": 1.0,
+          "argmax_same": 4,
+          "n": 4,
+          "argmax_agreement": 1.0
+        },
+        "replan_condition_logits": {
+          "max_abs": 0.162787,
+          "min_cos": 0.999952,
+          "argmax_same": 4,
+          "n": 4,
+          "argmax_agreement": 1.0
+        }
+      }
+    }
+  }
+}

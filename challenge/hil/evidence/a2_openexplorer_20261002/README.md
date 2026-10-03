@@ -91,6 +91,45 @@ A4 仍负责正式的 `artifacts/a4/<runtime_id>/`（含 `bpu_performance_estima
 目前模型侧的误差主要来自 FP32→INT8（§2），而不是 BPU 编译。
 口径仍是 `BPU_ESTIMATED`（X86 仿真的数值等价性），**不是板端时延或精度结论**。
 
+### 3.2 全队列 X86 仿真矩阵（`14`）
+
+把上面的检查扩到**所有留出队列**（6 个队列、**850 例次**），产物仍是 A2 YAML 编出的
+`student_v0_j6p_quantized_model.bc`，参考仍是 A2 的 `models/student_int8.onnx`：
+
+| 队列 | 例次 | 最差头（min） | 骨干最差 | 低于 0.99 |
+|---|---:|---|---:|---:|
+| `d2_v1_1_val` | 539 | behavior_logits 0.9991 | 0.9945 | 0 |
+| `gap300_val` | 123 | target_speed_mps 0.9996 | 0.9961 | 0 |
+| `targeted_gap_val` | 99 | behavior_logits 0.9995 | 0.9955 | 0 |
+| `d3_wave2_val` | 56 | completion_type 0.9996 | 0.9923 | 0 |
+| `turn_gap_val` | 29 | behavior_logits 0.9997 | 0.9968 | 0 |
+| `ms34_val` | 4 | behavior_logits 0.9996 | 0.9922 | 0 |
+| **合计** | **850** | **全局最低 0.999125** | 0.9922 | **0** |
+
+**850/850 通过、零失败**：编译到 nash-p 的产物在所有队列上都与 INT8 模型保持一致。
+
+### 3.3 量化损失（FP32 → INT8）也做了全队列覆盖（`15`/`16`/`20`）
+
+另一个轴是"量化本身损失多少"。逐头统计（FP32 ONNX ↔ INT8 ONNX）：
+
+| 队列 | 例次 | 速度头 max\|Δ\| | 该队列最差头 max\|Δ\| | 头余弦 min |
+|---|---:|---:|---|---:|
+| `d2_v1_1_val` | 539 | **1.3128 m/s** | target_speed_mps | 0.9994 |
+| `targeted_gap_val` | 99 | **1.4071 m/s** | target_speed_mps | 0.9996 |
+| `gap300_val` | 123 | 1.3799 m/s | target_speed_mps | 0.9996 |
+| `turn_gap_val` | 29 | 0.9445 m/s | target_speed_mps | 0.9998 |
+| `d3_wave2_val` | 56 | 0.9255 m/s | target_speed_mps | 0.9998 |
+| `ms34_val` | 4 | 0.5150 m/s | target_speed_mps | 0.9999 |
+
+**`target_speed_mps` 在全部 6 个队列里都是最大绝对偏差的头**（0.52–1.41 m/s）——
+这独立复现并强化了 §2 的建议（敏感层排序应纳入物理量纲）。
+
+但**原始张量的容差失败不代表计划会变**：解码级对比（`consistency --adapter onnx`）在四个队列上
+**合计 747 例、结构失配 0 例**（d2 0/539、gap300 0/123、d3_wave2 0/56、turn-gap 0/29）——
+行为序列、目标 id、完成类型**从未因 INT8 而改变**；差异只体现在数值字段。
+（注：对"整张量取 argmax"的粗略指标会显示部分离散头有翻转，但解码器并不受影响，
+所以那种指标不能单独用来判断行为是否变化。）
+
 ## 文件
 
 | 文件 | 内容 |
@@ -106,3 +145,7 @@ A4 仍负责正式的 `artifacts/a4/<runtime_id>/`（含 `bpu_performance_estima
 | `11_bpuc_vs_int8onnx_summary.json` | 编译后 `.bc` 对 A2 INT8 ONNX 的逐头余弦分布（29 例） |
 | `12_bpuc_vs_int8onnx_single_case.log` | 单例的 16 行逐层/逐头余弦明细 |
 | `13_bpuc_vs_int8onnx_reading.json` | 该检查的问题、设置、结果与口径 |
+| `14_x86_matrix_summary.json` | **全队列 X86 仿真矩阵**（6 队列 × 850 例次，逐头 min/p50、全局最低） |
+| `15_quantisation_loss_matrix.json` / `16_quantisation_loss_discrete.json` | FP32↔INT8 逐头最大偏差与离散头 argmax 一致率（全队列） |
+| `17`–`19_planlevel_int8_*.json` | 解码级计划对比（d3w2 / gap300 / d2） |
+| `20_planlevel_summary.json` | 解码级汇总：**747 例、结构失配 0** |
