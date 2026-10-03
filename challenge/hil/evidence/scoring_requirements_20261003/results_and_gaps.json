@@ -1,0 +1,271 @@
+{
+  "official_env": {
+    "environment": {
+      "image": "openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1",
+      "image_id": "sha256:cf06f721448e30f8f569cfeb6fc3356c1ad6e77ba180042d0c3babe891b6b5c4",
+      "os": "Ubuntu 22.04.3 LTS",
+      "python": "3.10.12",
+      "torch": "2.8.0+cpu",
+      "dataset_location": "container-local (/tmp), NOT a Windows-drive mount"
+    },
+    "full_percentiles": {
+      "preprocess_ms": {
+        "p50": 7.359,
+        "p95": 8.091,
+        "p99": 8.521,
+        "max": 10.108
+      },
+      "packing_ms": {
+        "p50": 0.287,
+        "p95": 0.407,
+        "p99": 0.517,
+        "max": 1.535
+      },
+      "inference_setup_ms": {
+        "p50": 0.002,
+        "p95": 0.002,
+        "p99": 0.003,
+        "max": 0.02
+      },
+      "model_inference_ms": {
+        "p50": 4.027,
+        "p95": 5.445,
+        "p99": 6.068,
+        "max": 7.233
+      },
+      "postprocess_ms": {
+        "p50": 0.027,
+        "p95": 0.041,
+        "p99": 0.078,
+        "max": 0.109
+      },
+      "adapter_ms": {
+        "p50": 0.163,
+        "p95": 0.236,
+        "p99": 0.459,
+        "max": 1.602
+      },
+      "plan_validation_ms": {
+        "p50": 0.436,
+        "p95": 0.625,
+        "p99": 1.087,
+        "max": 55.269
+      },
+      "pre_model_ms": {
+        "p50": 7.689,
+        "p95": 8.471,
+        "p99": 9.0,
+        "max": 10.487
+      },
+      "post_model_ms": {
+        "p50": 0.629,
+        "p95": 0.885,
+        "p99": 1.594,
+        "max": 55.445
+      },
+      "planner_e2e_ms": {
+        "p50": 11.917,
+        "p95": 14.244,
+        "p99": 15.46,
+        "max": 68.983
+      },
+      "model_only_ms": {
+        "p50": 4.027,
+        "p95": 5.445,
+        "p99": 6.068,
+        "max": 7.233
+      },
+      "planner_overhead_ms": {
+        "p50": 8.329,
+        "p95": 9.261,
+        "p99": 9.819,
+        "max": 63.814
+      }
+    },
+    "soak": {
+      "run_id": "b3-soak-20261003T081748Z-d5d30d8b",
+      "observed_duration_s": 1800.0,
+      "iterations": 141118,
+      "error_count": 0,
+      "success_rate": 1.0,
+      "memory_drift_kib": 6334.7,
+      "peak_rss_mib": 370.0,
+      "cpu_percent_max": 1007.0,
+      "recovery_probe": {
+        "requests": 10,
+        "outcomes": {
+          "READY": 10
+        },
+        "errors": 0,
+        "p95_ms": 14.2173374
+      },
+      "latency_p95_ms": 14.958,
+      "power": "NOT_APPLICABLE"
+    },
+    "claim_scope": {
+      "class": "X86_MEASURED",
+      "note": "measured inside the official image on the workstation; no board numbers involved"
+    }
+  },
+  "host_539x3": {
+    "run": "b3-20260926T074811Z-cfbc31de",
+    "planner_e2e_p50": 22.653,
+    "planner_e2e_p95": 30.598,
+    "model_only_p50": 9.687
+  },
+  "host_soak": {
+    "iterations": 77653,
+    "drift_kib": -94.2,
+    "peak_rss_mib": 388.5
+  },
+  "int8_compile_fidelity": {
+    "total_cases": 850,
+    "global_head_min": 0.999125,
+    "below_0_99": 0,
+    "per_cohort": {
+      "d2_v1_1_val": {
+        "cases": 539,
+        "head_worst_min": 0.999125,
+        "backbone_worst": 0.994544
+      },
+      "d3_wave2_val": {
+        "cases": 56,
+        "head_worst_min": 0.999598,
+        "backbone_worst": 0.992333
+      },
+      "gap300_val": {
+        "cases": 123,
+        "head_worst_min": 0.999607,
+        "backbone_worst": 0.996076
+      },
+      "ms34_val": {
+        "cases": 4,
+        "head_worst_min": 0.999649,
+        "backbone_worst": 0.992188
+      },
+      "targeted_gap_val": {
+        "cases": 99,
+        "head_worst_min": 0.999469,
+        "backbone_worst": 0.995452
+      },
+      "turn_gap_val": {
+        "cases": 29,
+        "head_worst_min": 0.999672,
+        "backbone_worst": 0.99682
+      }
+    }
+  },
+  "int8_plan_equivalence": {
+    "cases": 747,
+    "structural_mismatches": 0,
+    "per_cohort": {
+      "d2_v1_1_val": {
+        "cases": 539,
+        "mismatches": 0
+      },
+      "gap300_val": {
+        "cases": 123,
+        "mismatches": 0
+      },
+      "d3_wave2_val": {
+        "cases": 56,
+        "mismatches": 0
+      },
+      "turn_gap_val": {
+        "cases": 29,
+        "mismatches": 0
+      }
+    }
+  },
+  "int8_loss": {
+    "d2_v1_1_val": {
+      "cases": 539,
+      "speed_max_abs_mps": 1.312822,
+      "head_min_cos": 0.999177,
+      "worst_head": "target_speed_mps"
+    },
+    "d3_wave2_val": {
+      "cases": 56,
+      "speed_max_abs_mps": 0.925461,
+      "head_min_cos": 0.999679,
+      "worst_head": "target_speed_mps"
+    },
+    "targeted_gap_val": {
+      "cases": 99,
+      "speed_max_abs_mps": 1.407122,
+      "head_min_cos": 0.999523,
+      "worst_head": "target_speed_mps"
+    },
+    "turn_gap_val": {
+      "cases": 29,
+      "speed_max_abs_mps": 0.944468,
+      "head_min_cos": 0.999729,
+      "worst_head": "target_speed_mps"
+    },
+    "gap300_val": {
+      "cases": 123,
+      "speed_max_abs_mps": 1.379902,
+      "head_min_cos": 0.999584,
+      "worst_head": "target_speed_mps"
+    },
+    "ms34_val": {
+      "cases": 4,
+      "speed_max_abs_mps": 0.515034,
+      "head_min_cos": 0.999719,
+      "worst_head": "target_speed_mps"
+    }
+  },
+  "oe_precheck": {
+    "placement": {
+      "BPU": 59
+    },
+    "hbm_bytes": 23579816,
+    "bc_bytes": 23179259,
+    "min_memory_bytes": 24185512,
+    "wall_clock_s": 128.5
+  },
+  "behaviour_replay": {
+    "gap300 val (123)": {
+      "case_runs": 369,
+      "v1": 0.707317,
+      "v2": 0.707317
+    },
+    "ms34 val (4)": {
+      "case_runs": 12,
+      "v1": 0.333333,
+      "v2": 0.708333
+    },
+    "turn-gap val (29)": {
+      "case_runs": 87,
+      "v1": 0.689655,
+      "v2": 0.689655
+    }
+  },
+  "a2_package": {
+    "package_id": "a2-to-a4-openexplorer-20260930-229d071e",
+    "status": "PASS",
+    "files_listed": 1217,
+    "files_matched": 1217,
+    "warnings": [
+      "package binds to a3_final_fp32_candidate_v1 while the newest A3 candidate release in this checkout is a3_final_fp32_candidate_v2"
+    ],
+    "int8_binding": {
+      "full_int8": "a3_final_fp32_candidate_v1",
+      "mixed_precision_top3": "a3_final_fp32_candidate_v1"
+    }
+  },
+  "calibration_v1": {
+    "samples": 300,
+    "status": "PASS",
+    "hashes_ok": 7,
+    "hashes_total": 7,
+    "overlap_with_validation": {
+      "d2_v1_1/val.jsonl": 0,
+      "d3_wave2_safe_short_v1/val_addition.jsonl": 0,
+      "d3_targeted_gap_strict_v1/val_addition.jsonl": 0,
+      "d3_turn_gap_60_strict_v1/val_addition.jsonl": 0,
+      "d3_gap300_strict_v1/val_addition.jsonl": 0,
+      "b1_ms34_supplement_v1/val_addition.jsonl": 0
+    }
+  }
+}

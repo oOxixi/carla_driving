@@ -78,6 +78,7 @@ challenge/hil/
 ├── pc_deployment_plan.md         PC 端（WSL2+Docker+OE）部署作业单与差距核对
 ├── x86_simulation_scope.md       X86 仿真能测/不能测什么 + 本轮实测数字与口径（2026-09-24）
 ├── plan_alignment.md             与团队统一执行方案（轻量化主线版）的逐条对接与冻结声明
+├── results_and_gaps.md          测试结果与缺口汇总（材料 #10 初稿：官方环境实测 + 缺口责任人）
 ├── report.py                     报告生成与可信范围守卫
 ├── cli.py                        命令行入口（13 个子命令，含 bpu-verify）
 ├── group_map.example.json        `--group-map` 的格式示例（不是 B2 分组）
