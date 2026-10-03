@@ -1,0 +1,136 @@
+{
+  "environment": {
+    "image": "openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1",
+    "image_id": "sha256:cf06f721448e30f8f569cfeb6fc3356c1ad6e77ba180042d0c3babe891b6b5c4",
+    "os": "Ubuntu 22.04.3 LTS",
+    "python": "3.10.12",
+    "torch": "2.8.0+cpu",
+    "dataset_location": "container-local (/tmp), NOT a Windows-drive mount"
+  },
+  "candidate": {
+    "model_id": "student-v0-r3-fp32",
+    "weights_sha256": "eaee4402197fb3fed53ed82bc2fbaceef62e5ed2d4cde86e8aa1a55dc6d46515",
+    "gate_status": "PENDING_A3_FP32_GATE",
+    "note": "A3 closeout candidate v1; still PENDING_A3_FP32_GATE"
+  },
+  "full_run": {
+    "run_id": "b3-20261003T081720Z-431611a0",
+    "snapshot": "frozen/d2_v1_1_val",
+    "cases": 539,
+    "rounds": 3,
+    "case_runs": 1622,
+    "measured_ready": 1617,
+    "outcomes": {
+      "READY": 1622
+    },
+    "percentiles_ms": {
+      "preprocess_ms": {
+        "p50": 7.359,
+        "p95": 8.091,
+        "p99": 8.521,
+        "max": 10.108
+      },
+      "packing_ms": {
+        "p50": 0.287,
+        "p95": 0.407,
+        "p99": 0.517,
+        "max": 1.535
+      },
+      "inference_setup_ms": {
+        "p50": 0.002,
+        "p95": 0.002,
+        "p99": 0.003,
+        "max": 0.02
+      },
+      "model_inference_ms": {
+        "p50": 4.027,
+        "p95": 5.445,
+        "p99": 6.068,
+        "max": 7.233
+      },
+      "postprocess_ms": {
+        "p50": 0.027,
+        "p95": 0.041,
+        "p99": 0.078,
+        "max": 0.109
+      },
+      "adapter_ms": {
+        "p50": 0.163,
+        "p95": 0.236,
+        "p99": 0.459,
+        "max": 1.602
+      },
+      "plan_validation_ms": {
+        "p50": 0.436,
+        "p95": 0.625,
+        "p99": 1.087,
+        "max": 55.269
+      },
+      "pre_model_ms": {
+        "p50": 7.689,
+        "p95": 8.471,
+        "p99": 9.0,
+        "max": 10.487
+      },
+      "post_model_ms": {
+        "p50": 0.629,
+        "p95": 0.885,
+        "p99": 1.594,
+        "max": 55.445
+      },
+      "planner_e2e_ms": {
+        "p50": 11.917,
+        "p95": 14.244,
+        "p99": 15.46,
+        "max": 68.983
+      },
+      "model_only_ms": {
+        "p50": 4.027,
+        "p95": 5.445,
+        "p99": 6.068,
+        "max": 7.233
+      },
+      "planner_overhead_ms": {
+        "p50": 8.329,
+        "p95": 9.261,
+        "p99": 9.819,
+        "max": 63.814
+      }
+    }
+  },
+  "soak_30min": {
+    "run_id": "b3-soak-20261003T081748Z-d5d30d8b",
+    "observed_duration_s": 1800.0,
+    "iterations": 141118,
+    "error_count": 0,
+    "success_rate": 1.0,
+    "memory_drift_kib": 6334.7,
+    "peak_rss_mib": 370.0,
+    "cpu_percent_max": 1007.0,
+    "recovery_probe": {
+      "requests": 10,
+      "outcomes": {
+        "READY": 10
+      },
+      "errors": 0,
+      "p95_ms": 14.2173374
+    },
+    "latency_p95_ms": 14.958,
+    "power": "NOT_APPLICABLE"
+  },
+  "scoring_relevance": {
+    "end_to_end_latency_threshold_ms": 150,
+    "planner_e2e_p95_ms": 14.244,
+    "within_threshold": true,
+    "caveat": "our figure covers the planner chain (input_arrival -> plan_ready) as exercised by B3's in-process instrumentation, not the voice front end; the material must state the measured scope",
+    "stability": "30 minutes, zero failures, recovery probe 10/10"
+  },
+  "claim_scope": {
+    "class": "X86_MEASURED",
+    "note": "measured inside the official image on the workstation; no board numbers involved"
+  },
+  "observations": [
+    "memory drift in the container is 6.2 MiB over 30 minutes, noticeably higher than the host run (-94 KiB); no drift threshold is frozen, so it is reported, not judged",
+    "peak CPU reached 1007%: the chain is CPU-only in this environment"
+  ]
+}
