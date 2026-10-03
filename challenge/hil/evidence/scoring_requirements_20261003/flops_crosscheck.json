@@ -1,0 +1,19 @@
+{
+  "check": "A1 in-repo flops_report vs A2 package copy",
+  "keys_compared": [
+    "parameters",
+    "macs_per_fixed_batch",
+    "flops_per_fixed_batch",
+    "teacher_non_embedding_active_parameters_lower_bound",
+    "teacher_flops_lower_bound_one_text_token",
+    "flops_ratio_student_over_teacher_lower_bound",
+    "ratio_target",
+    "ratio_pass",
+    "counting_convention",
+    "teacher_bound_scope",
+    "macs_by_module"
+  ],
+  "differences": {},
+  "identical": true,
+  "note": "Both carry the same numbers and the same honest caveat: the teacher figure is a 2B-class conservative one-token lower bound, not an exact-model FLOPs calculation."
+}

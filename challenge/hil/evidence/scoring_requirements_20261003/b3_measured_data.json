@@ -1,0 +1,63 @@
+{
+  "flops": {
+    "student_flops_fixed_batch": 498640896,
+    "student_params": 23006581,
+    "teacher_lower_bound_flops_one_token": 2818572288,
+    "ratio_vs_teacher_lower_bound": 0.17691258021763392,
+    "ratio_target": 0.5,
+    "counting_convention": "Conv2D/Linear only; 1 MAC = 2 FLOPs",
+    "teacher_bound_scope": "2B-class conservative one-token bound; Teacher identity is pinned but this is not an exact-model FLOPs calculation; excludes vision and sequence work; not latency or board evidence"
+  },
+  "x86_measured_planner_chain": {
+    "run": "b3-20260926T074811Z-cfbc31de",
+    "weights": "A3 candidate v1 (eaee4402)",
+    "planner_e2e_p50_ms": 22.6529,
+    "planner_e2e_p95_ms": 30.59777999999999,
+    "model_only_p50_ms": 9.687,
+    "model_only_p95_ms": 12.57772,
+    "preprocess_p50_ms": 10.0481,
+    "adapter_p50_ms": 0.4558,
+    "plan_validation_p50_ms": 0.794,
+    "device": "X86 workstation (WSL2 + Windows 11)"
+  },
+  "stability_30min": {
+    "run": "b3-soak-20260926T075419Z-7e867ba3",
+    "weights": "A3 candidate v1 (eaee4402)",
+    "observed_duration_s": 1800.0,
+    "iterations": 77653,
+    "error_count": 0,
+    "success_rate": 1.0,
+    "memory_drift_kib": -94.2,
+    "peak_rss_mib": 388.5,
+    "cpu_percent_max": 332.2,
+    "power": "NOT_APPLICABLE",
+    "recovery_probe": {
+      "requests": 10,
+      "outcomes": {
+        "READY": 10
+      },
+      "errors": 0,
+      "p95_ms": 33.13127
+    },
+    "device": "X86 workstation"
+  },
+  "int8_compile_fidelity": {
+    "cases": 850,
+    "head_min_cosine": 0.999125,
+    "below_0_99": 0,
+    "source": "evidence/a2_openexplorer_20261002/14_x86_matrix_summary.json"
+  },
+  "int8_plan_equivalence": {
+    "cases": 747,
+    "structural_mismatches": 0,
+    "source": "evidence/a2_openexplorer_20261002/20_planlevel_summary.json"
+  },
+  "int8_quantisation_loss": {
+    "worst_head_every_cohort": "target_speed_mps",
+    "max_abs_range_mps": [
+      0.515,
+      1.4071
+    ],
+    "source": "evidence/a2_openexplorer_20261002/15_quantisation_loss_matrix.json"
+  }
+}
