@@ -1,0 +1,43 @@
+{
+  "question": "Where should the latency for the scoring report actually be measured?",
+  "setup": "same 100 cases of frozen/d2_v1_1_val, same weights (A3 candidate v1), same B3 code; only the environment differs",
+  "environments": {
+    "windows_host_py312": {
+      "run": "b3-20261003T081141Z-a888d8c8",
+      "trace_count": 305,
+      "preprocess_p50": 6.996,
+      "model_inference_p50": 6.49,
+      "planner_e2e_p50": 14.63,
+      "planner_e2e_p95": 17.388
+    },
+    "official_image_dataset_on_D_mount": {
+      "run": "b3-20261003T081043Z-9a5873e7",
+      "trace_count": 305,
+      "preprocess_p50": 75.716,
+      "model_inference_p50": 10.618,
+      "planner_e2e_p50": 89.197,
+      "planner_e2e_p95": 99.507
+    },
+    "official_image_dataset_inside_container": {
+      "run": "b3-20261003T081254Z-21d79324",
+      "trace_count": 305,
+      "preprocess_p50": 7.664,
+      "model_inference_p50": 4.622,
+      "planner_e2e_p50": 12.897,
+      "planner_e2e_p95": 15.152
+    }
+  },
+  "io_probe": {
+    "method": "read + PIL decode/thumbnail of the same 20 JPEGs from the Windows-drive mount vs a copy inside the container",
+    "mounted_win_drive_read_ms": 4.324,
+    "container_local_read_ms": 0.022,
+    "mounted_win_drive_decode_resize_ms": 5.844,
+    "container_local_decode_resize_ms": 0.428,
+    "note": "raw read is about 200x slower and decode+resize about 14x slower through the mount"
+  },
+  "conclusion": "The first in-container run looked 6x slower end to end (89.2 ms vs 14.6 ms) purely because the dataset was read through a Windows-drive bind mount. With the same data inside the container the official image is the fastest of the three (E2E P50 12.9 ms, P95 15.2 ms). Two consequences: (1) the scoring material can quote an official-image measurement now, and it sits comfortably inside the 150 ms end-to-end threshold; (2) anyone measuring inside Docker on Windows must copy the dataset into the container first, otherwise the latency is inflated by roughly 6x.",
+  "claim_scope": {
+    "class": "X86_MEASURED",
+    "note": "X86 workstation measurement inside the official OpenExplorer image; not a board number."
+  }
+}
