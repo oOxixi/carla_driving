@@ -1,0 +1,69 @@
+{
+  "bindings": {
+    "b1_closeout_report": {
+      "path": "challenge/dataset/governance/b1_closeout_v1/B1_CLOSEOUT_REPORT.json",
+      "sha256": "8660e6981b2922f5415466ab1c979dc80df9a1a1291662dd1a254537e8502f6a"
+    },
+    "b2_case_manifest_contract": {
+      "path": "challenge/benchmark/case_manifest.py",
+      "sha256": "73c3cd246cc093c1a30fa6500d3bf167ce65c638038dd04487eff53c815b5165"
+    },
+    "governed_release_manifest": {
+      "path": "challenge/dataset/governance/b1_closeout_v1/governed_release_manifest.json",
+      "sha256": "07d3a82502005646d8f29d0c493fa8a5b0270a5194fd5c802a04b4870ba7d37d"
+    },
+    "independent_validation_cases": {
+      "path": "challenge/dataset/governance/b1_closeout_v1/independent_validation_v1/cases.jsonl",
+      "sha256": "4cee4c055e806a0737e63ec08b99771eefcb27ffd3679aa7fcff3ce6b2c8f251"
+    },
+    "independent_validation_dataset_identity": {
+      "path": "challenge/dataset/governance/b1_closeout_v1/independent_validation_v1/dataset_identity.json",
+      "sha256": "c73ecea388eeb93c8895fd25a1b1f1b2edbfdd6779ae65bf0cb613d5b59c4125"
+    }
+  },
+  "historical_observed_sets": {
+    "d2_v1_1_val": {
+      "case_count": 539,
+      "case_set_digest_sha256": "003f0ed8e279fef8ac10b77844a73e8e1a5ad5a70e85d80af82435468641eb4d",
+      "cases_path": "challenge/hil/frozen/d2_v1_1_val/cases.jsonl",
+      "cases_sha256": "ef923846344e03c20e25a2a9d3a4f2075e80556f77820e0ac85ecdd5d8adbfc6",
+      "manifest_path": "challenge/hil/frozen/d2_v1_1_val/manifest.json",
+      "manifest_sha256": "ba7007d3d83de546aa374a7f443cd8b68dc71eec86416a683f501e2eb6ac13b8",
+      "unique_sample_ids": 539
+    },
+    "d3_targeted_gap_strict_v1_val": {
+      "case_count": 99,
+      "case_set_digest_sha256": "5e2cd6cbd62244a20d7d884eb9d6a90c5c01c28f3b04ff3800cdc4adadaeb5bb",
+      "cases_path": "challenge/hil/frozen/d3_targeted_gap_strict_v1_val/cases.jsonl",
+      "cases_sha256": "d4b35faf28d8c08464fbf5297d9e73035801d7af107ec9fc4bdcf85a832d2ef1",
+      "manifest_path": "challenge/hil/frozen/d3_targeted_gap_strict_v1_val/manifest.json",
+      "manifest_sha256": "50f7c6c07365e28d5d9541de5394aabae6958e44e942255fbd2abbc4c5d7b9b1",
+      "unique_sample_ids": 99
+    },
+    "d3_turn_gap_60_strict_v1_val": {
+      "case_count": 29,
+      "case_set_digest_sha256": "77a66a9aebf4d7fcdf145b094f4e29ae27445768278ba9829ea59f191b875047",
+      "cases_path": "challenge/hil/frozen/d3_turn_gap_60_strict_v1_val/cases.jsonl",
+      "cases_sha256": "e261f195922ecc4d6e924d7d57b0d7ef1373e66a60ef25b1e900ea6e29399c23",
+      "manifest_path": "challenge/hil/frozen/d3_turn_gap_60_strict_v1_val/manifest.json",
+      "manifest_sha256": "8af3bbbcc3988d710babe7627769f558959997c6a7b6991be378534f1de6168f",
+      "unique_sample_ids": 29
+    },
+    "d3_wave2_safe_short_v1_val": {
+      "case_count": 56,
+      "case_set_digest_sha256": "79513aa82ff2f717249a218aaee9b8288222f52e308f09ab2d77ee90aed6ae3f",
+      "cases_path": "challenge/hil/frozen/d3_wave2_safe_short_v1_val/cases.jsonl",
+      "cases_sha256": "339cad8f8aff53114f85c4c2dd507089a9b51f2dd597a5b73e6e18c661f4ed3b",
+      "manifest_path": "challenge/hil/frozen/d3_wave2_safe_short_v1_val/manifest.json",
+      "manifest_sha256": "50ed01d8caf28f905526c0c9e5cabe7ac8e0da4ee3a2626f39c00cea72d85eab",
+      "unique_sample_ids": 56
+    }
+  },
+  "immutability": {
+    "b1_closeout_v1_modified": false,
+    "historical_releases_modified": false,
+    "independent_validation_cases_modified": false
+  },
+  "schema_version": "b1-template-gap-recovery-provenance-v1",
+  "status": "PASS"
+}

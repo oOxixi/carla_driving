@@ -1,0 +1,38 @@
+{
+  "b2_contract": {
+    "behavior": "FAIL_CLOSED_IF_TEMPLATE_IDENTITY_MISSING",
+    "path": "challenge/benchmark/case_manifest.py",
+    "sha256": "73c3cd246cc093c1a30fa6500d3bf167ce65c638038dd04487eff53c815b5165"
+  },
+  "conclusion": {
+    "formal_sample_to_template_sidecar_issuable": false,
+    "historical_releases_mutated": false,
+    "independent_validation_cases_mutated": false,
+    "inference_from_scenario_id_permitted": false,
+    "inference_from_source_text_permitted": false,
+    "reason": "No explicit historical template identity or deterministic template-registry lineage is present in the governed sample metadata, scenario-command records, or 5293 unique historical source logs.",
+    "synthetic_per_sample_template_ids_permitted": false
+  },
+  "findings": {
+    "explicit_metadata_template_id": 0,
+    "scenario_linkage_audit": {
+      "command_id_not_found": 7385,
+      "scenario_file_found": 7385,
+      "scenario_file_missing": 50
+    },
+    "source_log_audit": {
+      "log_found": 5293,
+      "logs_without_candidate_lineage": 5293
+    },
+    "source_log_candidate_lineage_fields": {},
+    "unique_source_logs": 5293
+  },
+  "schema_version": "b1-legacy-template-identity-recovery-v1",
+  "scope": {
+    "governed_dev_samples": 1158,
+    "governed_train_samples": 6037,
+    "independent_validation_samples": 240,
+    "total_samples": 7435
+  },
+  "status": "HISTORICAL_TEMPLATE_LINEAGE_UNRECOVERABLE"
+}

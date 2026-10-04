@@ -1,0 +1,67 @@
+{
+  "counts": {
+    "group_keys": 645,
+    "missing_canonical_rows": 0,
+    "normalized_source_text_sha256": 83,
+    "sample_ids": 723,
+    "scenario_ids": 95
+  },
+  "files": {
+    "observed_group_keys": "observed_group_keys.txt",
+    "observed_identity_rows": "observed_identity_rows.jsonl",
+    "observed_sample_ids": "observed_sample_ids.txt",
+    "observed_scenario_ids": "observed_scenario_ids.txt",
+    "observed_source_text_sha256": "observed_source_text_sha256.txt"
+  },
+  "governance": {
+    "group_key_is_identity": true,
+    "legacy_template_overlap_computable": false,
+    "legacy_template_overlap_reason": "Historical B1/B2/B3 assets do not carry authoritative template identity.",
+    "sample_id_is_identity": true,
+    "scenario_id_is_exclusion_identity": true,
+    "source_text_sha256_is_literal_duplicate_detection_only": true,
+    "source_text_sha256_is_template_identity": false
+  },
+  "method": "Historical HIL observed sample IDs are deterministically joined to governed B1 canonical rows by sample_id.",
+  "purpose": "Pre-acquisition exclusion inventory for future B1 targeted collection.",
+  "schema_version": "b1-observed-exclusion-v1",
+  "sets": {
+    "d2_v1_1_val": {
+      "case_count": 539,
+      "case_set_digest_sha256": "003f0ed8e279fef8ac10b77844a73e8e1a5ad5a70e85d80af82435468641eb4d",
+      "cases_path": "challenge/hil/frozen/d2_v1_1_val/cases.jsonl",
+      "cases_sha256": "ef923846344e03c20e25a2a9d3a4f2075e80556f77820e0ac85ecdd5d8adbfc6",
+      "manifest_path": "challenge/hil/frozen/d2_v1_1_val/manifest.json",
+      "manifest_sha256": "ba7007d3d83de546aa374a7f443cd8b68dc71eec86416a683f501e2eb6ac13b8",
+      "unique_sample_ids": 539
+    },
+    "d3_targeted_gap_strict_v1_val": {
+      "case_count": 99,
+      "case_set_digest_sha256": "5e2cd6cbd62244a20d7d884eb9d6a90c5c01c28f3b04ff3800cdc4adadaeb5bb",
+      "cases_path": "challenge/hil/frozen/d3_targeted_gap_strict_v1_val/cases.jsonl",
+      "cases_sha256": "d4b35faf28d8c08464fbf5297d9e73035801d7af107ec9fc4bdcf85a832d2ef1",
+      "manifest_path": "challenge/hil/frozen/d3_targeted_gap_strict_v1_val/manifest.json",
+      "manifest_sha256": "50f7c6c07365e28d5d9541de5394aabae6958e44e942255fbd2abbc4c5d7b9b1",
+      "unique_sample_ids": 99
+    },
+    "d3_turn_gap_60_strict_v1_val": {
+      "case_count": 29,
+      "case_set_digest_sha256": "77a66a9aebf4d7fcdf145b094f4e29ae27445768278ba9829ea59f191b875047",
+      "cases_path": "challenge/hil/frozen/d3_turn_gap_60_strict_v1_val/cases.jsonl",
+      "cases_sha256": "e261f195922ecc4d6e924d7d57b0d7ef1373e66a60ef25b1e900ea6e29399c23",
+      "manifest_path": "challenge/hil/frozen/d3_turn_gap_60_strict_v1_val/manifest.json",
+      "manifest_sha256": "8af3bbbcc3988d710babe7627769f558959997c6a7b6991be378534f1de6168f",
+      "unique_sample_ids": 29
+    },
+    "d3_wave2_safe_short_v1_val": {
+      "case_count": 56,
+      "case_set_digest_sha256": "79513aa82ff2f717249a218aaee9b8288222f52e308f09ab2d77ee90aed6ae3f",
+      "cases_path": "challenge/hil/frozen/d3_wave2_safe_short_v1_val/cases.jsonl",
+      "cases_sha256": "339cad8f8aff53114f85c4c2dd507089a9b51f2dd597a5b73e6e18c661f4ed3b",
+      "manifest_path": "challenge/hil/frozen/d3_wave2_safe_short_v1_val/manifest.json",
+      "manifest_sha256": "50ed01d8caf28f905526c0c9e5cabe7ac8e0da4ee3a2626f39c00cea72d85eab",
+      "unique_sample_ids": 56
+    }
+  },
+  "status": "PASS"
+}
