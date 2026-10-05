@@ -252,6 +252,15 @@ The formal and integration-smoke configs are respectively
 Exact hashes and full-server validation evidence are recorded in
 [D3_FINAL_CUMULATIVE_PREP.md](D3_FINAL_CUMULATIVE_PREP.md).
 
+The robust closeout v3 retraining result and exact candidate identities are in
+[A3_B1_CLOSEOUT_ROBUST_FP32_V3_REPORT.md](A3_B1_CLOSEOUT_ROBUST_FP32_V3_REPORT.md).
+Its immutable handoff is
+`releases/a3_b1_closeout_robust_fp32_candidate_v3/`.  The package is verified
+and the previously observed TURN-gap, Gap300, and MS34 failures no longer
+reproduce, but it deliberately remains `PENDING_B2_INDEPENDENT_VALIDATION`.
+Only B2's independent decision on the exact weight SHA may authorize the
+formal FP32 Gate.
+
 After B1 and B2 deliver version-matched Validation evidence, promotion uses:
 
 ```bash

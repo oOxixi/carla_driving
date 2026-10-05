@@ -1,0 +1,151 @@
+{
+  "schema_version": "1.0",
+  "status": "A3_DEVELOPMENT_DIAGNOSTIC_ONLY",
+  "gate_status": "PENDING_A3_FP32_GATE",
+  "split": "development_validation",
+  "candidate": {
+    "git_sha": "18a95de9702fe7baa5e89aa74a93dcd86d88d537",
+    "model_id": "student-v0-r3-fp32",
+    "config_id": "student-v0-r3-structure-20260911",
+    "weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+    "dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+    "a3_view_manifest_sha256": "d07178a15a2cc3e66e190100060d426043a18bc1478387fcc4a3f3210d542258"
+  },
+  "sample_count": 29,
+  "device": "cuda",
+  "dataset_coverage": {
+    "status": "COMPLETE",
+    "splits": {
+      "train": {
+        "sample_count": 5856,
+        "plan_length_sample_counts": {
+          "1": 5430,
+          "2": 396,
+          "3": 15,
+          "4": 15
+        },
+        "required_behavior_step_counts": {
+          "TURN_LEFT": 302,
+          "YIELD": 128,
+          "PULL_OVER": 44
+        }
+      },
+      "development_validation": {
+        "sample_count": 29,
+        "plan_length_sample_counts": {
+          "1": 29,
+          "2": 0,
+          "3": 0,
+          "4": 0
+        },
+        "required_behavior_step_counts": {
+          "TURN_LEFT": 9,
+          "YIELD": 2,
+          "PULL_OVER": 0
+        }
+      }
+    },
+    "combined": {
+      "plan_length_sample_counts": {
+        "1": 5459,
+        "2": 396,
+        "3": 15,
+        "4": 15
+      },
+      "required_behavior_step_counts": {
+        "TURN_LEFT": 311,
+        "YIELD": 130,
+        "PULL_OVER": 44
+      }
+    },
+    "missing_required_plan_lengths": [],
+    "missing_required_behaviors": []
+  },
+  "behavior_slices": {
+    "FOLLOW": {
+      "step_count": 2,
+      "accuracy": 1.0,
+      "target_speed_count": 2,
+      "target_speed_mae_mps": 0.391887903213501
+    },
+    "KEEP_LANE": {
+      "step_count": 7,
+      "accuracy": 1.0,
+      "target_speed_count": 7,
+      "target_speed_mae_mps": 0.4278277669634138
+    },
+    "SET_SPEED": {
+      "step_count": 7,
+      "accuracy": 1.0,
+      "target_speed_count": 7,
+      "target_speed_mae_mps": 0.3549078532627651
+    },
+    "SLOW_DOWN": {
+      "step_count": 2,
+      "accuracy": 1.0,
+      "target_speed_count": 2,
+      "target_speed_mae_mps": 1.033848762512207
+    },
+    "TURN_LEFT": {
+      "step_count": 9,
+      "accuracy": 1.0,
+      "target_speed_count": 9,
+      "target_speed_mae_mps": 0.18356413311428493
+    },
+    "YIELD": {
+      "step_count": 2,
+      "accuracy": 1.0,
+      "target_speed_count": 2,
+      "target_speed_mae_mps": 0.036221351474523544
+    }
+  },
+  "required_recovery_slices": {
+    "TURN_LEFT": {
+      "step_count": 9,
+      "accuracy": 1.0,
+      "target_speed_count": 9,
+      "target_speed_mae_mps": 0.18356413311428493
+    },
+    "YIELD": {
+      "step_count": 2,
+      "accuracy": 1.0,
+      "target_speed_count": 2,
+      "target_speed_mae_mps": 0.036221351474523544
+    },
+    "PULL_OVER": null
+  },
+  "plan_length_slices": {
+    "1": {
+      "sample_count": 29,
+      "plan_length_accuracy": 1.0,
+      "plan_sequence_accuracy": 1.0
+    }
+  },
+  "multi_step_lane_change": {
+    "definition": "plan_length>1 and expected behavior includes CHANGE_LANE_LEFT/RIGHT or RETURN_TO_LANE",
+    "sample_count": 0,
+    "all_behavior_steps_accuracy": null,
+    "plan_sequence_accuracy": null
+  },
+  "target_grounding": {
+    "targeted_step_count": 6,
+    "accuracy": 1.0
+  },
+  "target_distractor": {
+    "definition": "targeted steps from requests containing more than one candidate target",
+    "targeted_step_count": 3,
+    "accuracy": 1.0
+  },
+  "target_speed": {
+    "step_count": 29,
+    "mae_mps": 0.3467290542762855,
+    "p95_absolute_error_mps": 0.98128342628479,
+    "samples_over_1mps": 1
+  },
+  "limitations": [
+    "This report uses A3 development Validation, never B2 Independent/Frozen Test.",
+    "It cannot issue A3_FP32_GATE_PASSED.",
+    "B2 must evaluate the exact weights SHA independently.",
+    "Missing 3/4-step coverage is a dataset gap, not a passing metric."
+  ]
+}

@@ -1,0 +1,127 @@
+# A3 Training Run
+
+- Git SHA: `18a95de9702fe7baa5e89aa74a93dcd86d88d537`
+- Teacher SHA/model: `MULTI_GOVERNED_B1_CLOSEOUT_V1` / `Qwen/Qwen3.5-2B`
+- Student: `student-v0-r3-fp32`
+- Dataset: `b1_governed_closeout_v1_a3_strict_positive_v1`
+- Config: `a3-b1-closeout-robust-fp32-v3`; seed `20261006`
+- Smoke only: `False`; integration gate only: `False`
+- Train/Validation records: `5856` / `1108`
+- Epochs/updates: `5` / `3660`
+- Best checkpoint SHA-256: `97951b3a7d0e346f53f7d332fca94c226a7a56c09b3cb54366f8cd0a720415f0`
+- Candidate weights SHA-256: `7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805`
+- Candidate gate status: `PENDING_A3_FP32_GATE`
+- Validation hard cases: `113`
+
+## Selected best-checkpoint validation
+
+- behavior_accuracy: `1.000000`
+- completion_accuracy: `1.000000`
+- complex_behavior_accuracy: `1.000000`
+- complex_completion_accuracy: `1.000000`
+- complex_confirmation_accuracy: `1.000000`
+- complex_failure_accuracy: `1.000000`
+- complex_plan_length_accuracy: `1.000000`
+- complex_plan_sequence_accuracy: `1.000000`
+- complex_replan_recall: `1.000000`
+- complex_target_lane_accuracy: `1.000000`
+- complex_target_pointer_accuracy: `1.000000`
+- complex_target_speed_mae: `0.525880`
+- confirmation_accuracy: `1.000000`
+- failure_accuracy: `1.000000`
+- loss: `0.075400`
+- loss_behavior: `0.000620`
+- loss_completion: `0.001792`
+- loss_confidence: `0.000080`
+- loss_on_failure: `0.000008`
+- loss_plan_length: `0.000421`
+- loss_replan: `0.000030`
+- loss_requires_confirmation: `0.000015`
+- loss_target_lane: `0.001514`
+- loss_target_pointer: `0.000866`
+- loss_target_speed: `0.139437`
+- normal_behavior_accuracy: `1.000000`
+- normal_completion_accuracy: `1.000000`
+- normal_confirmation_accuracy: `1.000000`
+- normal_failure_accuracy: `1.000000`
+- normal_plan_length_accuracy: `1.000000`
+- normal_plan_sequence_accuracy: `1.000000`
+- normal_replan_recall: `1.000000`
+- normal_target_lane_accuracy: `1.000000`
+- normal_target_pointer_accuracy: `1.000000`
+- normal_target_speed_mae: `0.288650`
+- plan_length_accuracy: `1.000000`
+- plan_sequence_accuracy: `1.000000`
+- replan_recall: `1.000000`
+- safety_critical_behavior_accuracy: `1.000000`
+- safety_critical_behavior_recall: `1.000000`
+- safety_critical_completion_accuracy: `1.000000`
+- safety_critical_confirmation_accuracy: `1.000000`
+- safety_critical_failure_accuracy: `1.000000`
+- safety_critical_plan_length_accuracy: `1.000000`
+- safety_critical_plan_sequence_accuracy: `1.000000`
+- safety_critical_replan_recall: `1.000000`
+- safety_critical_target_lane_accuracy: `1.000000`
+- safety_critical_target_pointer_accuracy: `1.000000`
+- safety_critical_target_speed_mae: `0.531459`
+- target_lane_accuracy: `1.000000`
+- target_pointer_accuracy: `1.000000`
+- target_speed_mae: `0.378199`
+
+## Last epoch validation (may differ from selected checkpoint)
+
+- behavior_accuracy: `1.000000`
+- completion_accuracy: `1.000000`
+- complex_behavior_accuracy: `1.000000`
+- complex_completion_accuracy: `1.000000`
+- complex_confirmation_accuracy: `1.000000`
+- complex_failure_accuracy: `1.000000`
+- complex_plan_length_accuracy: `1.000000`
+- complex_plan_sequence_accuracy: `1.000000`
+- complex_replan_recall: `1.000000`
+- complex_target_lane_accuracy: `1.000000`
+- complex_target_pointer_accuracy: `1.000000`
+- complex_target_speed_mae: `0.525880`
+- confirmation_accuracy: `1.000000`
+- failure_accuracy: `1.000000`
+- loss: `0.075400`
+- loss_behavior: `0.000620`
+- loss_completion: `0.001792`
+- loss_confidence: `0.000080`
+- loss_on_failure: `0.000008`
+- loss_plan_length: `0.000421`
+- loss_replan: `0.000030`
+- loss_requires_confirmation: `0.000015`
+- loss_target_lane: `0.001514`
+- loss_target_pointer: `0.000866`
+- loss_target_speed: `0.139437`
+- normal_behavior_accuracy: `1.000000`
+- normal_completion_accuracy: `1.000000`
+- normal_confirmation_accuracy: `1.000000`
+- normal_failure_accuracy: `1.000000`
+- normal_plan_length_accuracy: `1.000000`
+- normal_plan_sequence_accuracy: `1.000000`
+- normal_replan_recall: `1.000000`
+- normal_target_lane_accuracy: `1.000000`
+- normal_target_pointer_accuracy: `1.000000`
+- normal_target_speed_mae: `0.288650`
+- plan_length_accuracy: `1.000000`
+- plan_sequence_accuracy: `1.000000`
+- replan_recall: `1.000000`
+- safety_critical_behavior_accuracy: `1.000000`
+- safety_critical_behavior_recall: `1.000000`
+- safety_critical_completion_accuracy: `1.000000`
+- safety_critical_confirmation_accuracy: `1.000000`
+- safety_critical_failure_accuracy: `1.000000`
+- safety_critical_plan_length_accuracy: `1.000000`
+- safety_critical_plan_sequence_accuracy: `1.000000`
+- safety_critical_replan_recall: `1.000000`
+- safety_critical_target_lane_accuracy: `1.000000`
+- safety_critical_target_pointer_accuracy: `1.000000`
+- safety_critical_target_speed_mae: `0.531459`
+- target_lane_accuracy: `1.000000`
+- target_pointer_accuracy: `1.000000`
+- target_speed_mae: `0.378199`
+
+This is development Validation, not an independent unseen-scenario or competition score.
+Frozen Test data must never be used for A3 tuning.
