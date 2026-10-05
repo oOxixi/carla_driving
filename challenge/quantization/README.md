@@ -182,12 +182,14 @@ policy SHA的decision绑定进 `int8_manifest.json`。缺少任一身份字段�
 
 ```powershell
 python tools/package_a2_handoff.py `
-  --workflow-git-sha 20c80d7cde2ca8ca651f383ca06b8bc06e0acaa3
+  --workflow-git-sha 20c80d7cde2ca8ca651f383ca06b8bc06e0acaa3 `
+  --evidence-git-sha 3c10b121d7d1dda169a873df76dc80bc8a226e26
 ```
 
 工具在生成包前会重新核对唯一上游阻塞项、300样本导出一致性、FP32/INT8权重绑定、
 Top-3敏感层排序和OpenExplorer候选状态，然后分别生成A3 gate反馈、B2独立评测、A4
 OpenExplorer交接包及逐文件`SHA256SUMS.txt`。ZIP 时间戳固定，同一组输入可生成相同
-压缩包字节；汇总报告不放入包内，避免报告记录ZIP SHA时形成循环依赖。默认输出与最新结果见
+压缩包字节；汇总报告不放入包内，避免报告记录ZIP SHA时形成循环依赖。最新交接状态见
+`A2_HANDOFF_UPDATE_20261006.md`，完整量化结果见
 `A2_CLOSEOUT_CANDIDATE_V2_RESULT_20261003.md`；大模型、NPY和ZIP只留在`artifacts/`，
 不提交Git。
