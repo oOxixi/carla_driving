@@ -101,7 +101,8 @@ def package_manifest(
     recipient: str,
     purpose: str,
     branch: str,
-    commit: str,
+    workflow_commit: str,
+    evidence_commit: str,
     artifacts: dict[str, Any],
     toolchain: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -113,8 +114,9 @@ def package_manifest(
         "status": "PENDING_A3_FP32_GATE",
         "formal_release": False,
         "source_branch": branch,
-        "source_commit": commit[:8],
-        "workflow_git_sha": commit,
+        "source_commit": evidence_commit[:8],
+        "workflow_git_sha": workflow_commit,
+        "evidence_git_sha": evidence_commit,
         "artifacts": artifacts,
         "limitations": [
             "DIAGNOSTIC_ONLY; not A3_FP32_GATE_PASSED or A2_INT8_GATE_PASSED.",
@@ -136,12 +138,25 @@ def copy_identity(release: Path, destination: Path, quant_config: Path) -> None:
     copy_file(quant_config, destination / quant_config.name)
 
 
+def copy_b1_identity(repo: Path, destination: Path) -> None:
+    closeout = repo / "challenge" / "dataset" / "governance" / "b1_closeout_v1"
+    calibration = repo / "challenge" / "dataset" / "releases" / "calibration_v1"
+    for source in (
+        closeout / "calibration_identity.json",
+        closeout / "governed_release_manifest.json",
+        closeout / "B1_CLOSEOUT_REPORT.json",
+        calibration / "calibration_manifest.json",
+    ):
+        copy_file(source, destination / "b1_closeout_v1" / source.name)
+
+
 def build_packages(
     repo: Path,
     source: Path,
     release: Path,
     output: Path,
     workflow_git_sha: str,
+    evidence_git_sha: str,
     source_branch: str,
 ) -> dict[str, Any]:
     upstream = read_json(require_file(source / "upstream_audit.json"))
@@ -154,8 +169,22 @@ def build_packages(
     openexplorer = read_json(
         require_file(source / "openexplorer_oe391" / "openexplorer_input_manifest.json")
     )
+    calibration = openexplorer.get("calibration") or {}
     handoff = read_json(require_file(release / "handoff_manifest.json"))
     candidate = handoff.get("candidate_identity") or {}
+    closeout = repo / "challenge" / "dataset" / "governance" / "b1_closeout_v1"
+    calibration_identity_path = closeout / "calibration_identity.json"
+    calibration_identity = read_json(require_file(calibration_identity_path))
+    recovery = (
+        repo
+        / "challenge"
+        / "dataset"
+        / "attestations"
+        / "b1_legacy_template_identity_recovery_v1"
+    )
+    recovery_attestation_path = recovery / "recovery_attestation.json"
+    recovery_attestation = read_json(require_file(recovery_attestation_path))
+    recovery_provenance = read_json(require_file(recovery / "provenance_manifest.json"))
 
     expected_weight_sha = str(candidate.get("weights_sha256") or "")
     weights = require_file(release / "student_v0_fp32_candidate.pt")
@@ -179,6 +208,29 @@ def build_packages(
         raise ValueError(f"unexpected Top-3 sensitivity ranking: {selected}")
     if openexplorer.get("status") != "A3_CANDIDATE_OPENEXPLORER_INPUT_READY":
         raise ValueError("OpenExplorer package is not a diagnostic-ready candidate")
+    if calibration_identity.get("status") != "FROZEN_CALIBRATION":
+        raise ValueError("B1 calibration identity is not frozen")
+    if calibration_identity.get("counts") != {"groups": 300, "samples": 300}:
+        raise ValueError("B1 calibration identity does not bind 300 groups/samples")
+    calibration_binding = (
+        calibration_identity.get("bindings", {}).get("calibration_manifest", {})
+    )
+    if calibration_binding.get("sha256") != calibration.get("manifest_sha256"):
+        raise ValueError("B1 calibration identity and A2 calibration binding differ")
+    if (
+        recovery_attestation.get("status")
+        != "HISTORICAL_TEMPLATE_LINEAGE_UNRECOVERABLE"
+    ):
+        raise ValueError("unexpected B1 legacy-template recovery status")
+    if recovery_provenance.get("status") != "PASS":
+        raise ValueError("B1 legacy-template recovery provenance did not pass")
+    recovery_release_sha = (
+        recovery_provenance.get("bindings", {})
+        .get("governed_release_manifest", {})
+        .get("sha256")
+    )
+    if recovery_release_sha != candidate.get("b1_governed_release_manifest_sha256"):
+        raise ValueError("B1 recovery evidence binds a different governed release")
 
     fp32 = require_file(source / "student_v0_fp32_candidate.onnx")
     full_model = require_file(source / "ptq_int8" / "student_int8.onnx")
@@ -186,7 +238,6 @@ def build_packages(
         source / "mixed_precision_top3" / "student_int8_mixed_top3.onnx"
     )
     oe_manifest = source / "openexplorer_oe391" / "openexplorer_input_manifest.json"
-    calibration = openexplorer.get("calibration") or {}
     common_artifacts = {
         "source_weights_sha256": expected_weight_sha,
         "fp32_onnx_sha256": sha256_file(fp32),
@@ -195,10 +246,16 @@ def build_packages(
         "openexplorer_input_manifest_sha256": sha256_file(oe_manifest),
         "calibration_jsonl_sha256": calibration.get("jsonl_sha256"),
         "calibration_manifest_sha256": calibration.get("manifest_sha256"),
+        "calibration_identity_sha256": sha256_file(calibration_identity_path),
+        "legacy_template_recovery_status": recovery_attestation.get("status"),
+        "legacy_template_recovery_attestation_sha256": sha256_file(
+            recovery_attestation_path
+        ),
         "npy_count_per_input": 300,
         "npy_total": 1200,
     }
-    commit = git_value(repo, "rev-parse", f"{workflow_git_sha}^{{commit}}")
+    workflow_commit = git_value(repo, "rev-parse", f"{workflow_git_sha}^{{commit}}")
+    evidence_commit = git_value(repo, "rev-parse", f"{evidence_git_sha}^{{commit}}")
     quant_config = repo / "challenge" / "quantization" / "config" / "ptq_int8_v1.yaml"
     package_specs = {
         "A3_gate_feedback": (
@@ -211,10 +268,10 @@ def build_packages(
             "independent_fp32_and_int8_gate_evaluation",
             "A2_to_B2_evaluation",
         ),
-        "A4_openexplorer": (
+        "A4_openexplorer_PRE_GATE_ONLY": (
             "A4",
             "openexplorer_3_9_1_compile_and_deployment_handoff",
-            "A2_to_A4_openexplorer",
+            "PRE_GATE_ONLY_A2_to_A4_openexplorer",
         ),
     }
     output.mkdir(parents=True, exist_ok=False)
@@ -224,11 +281,12 @@ def build_packages(
         package = output / directory
         package.mkdir()
         manifest = package_manifest(
-            package_id=f"a2-to-{recipient.lower()}-closeout-v2-{commit[:8]}",
+            package_id=f"a2-to-{recipient.lower()}-closeout-v2-{evidence_commit[:8]}",
             recipient=recipient,
             purpose=purpose,
             branch=source_branch,
-            commit=commit,
+            workflow_commit=workflow_commit,
+            evidence_commit=evidence_commit,
             artifacts=common_artifacts,
             toolchain={
                 "version": "3.9.1",
@@ -257,6 +315,7 @@ def build_packages(
 
         if recipient == "A3":
             copy_identity(release, package / "identity", quant_config)
+            copy_b1_identity(repo, package / "identity")
             for source_file, name in (
                 (source / "upstream_audit.json", "upstream_audit.json"),
                 (source / "export_consistency.json", "export_consistency.json"),
@@ -271,8 +330,17 @@ def build_packages(
                 ),
             ):
                 copy_file(source_file, package / "reports" / name)
+            copy_file(
+                recovery_attestation_path,
+                package / "reports" / "b1_legacy_template_recovery_attestation.json",
+            )
+            copy_file(
+                recovery / "provenance_manifest.json",
+                package / "reports" / "b1_legacy_template_recovery_provenance.json",
+            )
         elif recipient == "B2":
             copy_identity(release, package / "identity", quant_config)
+            copy_b1_identity(repo, package / "identity")
             copy_file(fp32, package / "models" / fp32.name)
             copy_file(weights, package / "models" / weights.name)
             copy_tree(source / "ptq_int8", package / "models" / "full_int8")
@@ -286,6 +354,10 @@ def build_packages(
                 source / "sensitivity_full" / "sensitive_layers.md",
             ):
                 copy_file(source_file, package / "reports" / source_file.name)
+            copy_tree(
+                recovery,
+                package / "governance" / "b1_legacy_template_identity_recovery_v1",
+            )
         else:
             copy_file(fp32, package / fp32.name)
             for source_file in (
@@ -297,6 +369,7 @@ def build_packages(
             ):
                 copy_file(source_file, package / "analysis" / source_file.name)
             copy_identity(release, package / "identity", quant_config)
+            copy_b1_identity(repo, package / "identity")
             copy_file(
                 source / "ptq_int8" / "int8_manifest.json",
                 package / "identity" / "full_int8_manifest.json",
@@ -310,7 +383,7 @@ def build_packages(
             copy_tree(source / "openexplorer_oe391", package / "openexplorer_oe391")
 
         file_count, sums_sha = write_sums(package)
-        zip_path = output / f"{zip_stem}_{commit[:8]}.zip"
+        zip_path = output / f"{zip_stem}_{evidence_commit[:8]}.zip"
         zip_package(package, zip_path)
         built[recipient] = {
             "directory": str(package.relative_to(repo)),
@@ -333,7 +406,8 @@ def build_packages(
     summary = {
         "schema_version": "1.0",
         "status": "DIAGNOSTIC_ONLY",
-        "source_commit": commit,
+        "workflow_git_sha": workflow_commit,
+        "evidence_git_sha": evidence_commit,
         "candidate_weights_sha256": expected_weight_sha,
         "packages": built,
         "delivery_sha256sums": str(delivery.relative_to(repo)),
@@ -353,7 +427,7 @@ def main() -> int:
         default="challenge/distillation/releases/a3_final_fp32_candidate_v2",
     )
     parser.add_argument(
-        "--output", default="artifacts/a2/handoff_20261003_20c80d7c"
+        "--output", default="artifacts/a2/handoff_20261006_3c10b121"
     )
     parser.add_argument(
         "--workflow-git-sha",
@@ -365,6 +439,11 @@ def main() -> int:
         default="challenge",
         help="Shared integration branch from which workflow-git-sha was resolved.",
     )
+    parser.add_argument(
+        "--evidence-git-sha",
+        default="3c10b121d7d1dda169a873df76dc80bc8a226e26",
+        help="Git evidence snapshot embedded into every package.",
+    )
     args = parser.parse_args()
     repo = Path(args.repo).resolve()
     result = build_packages(
@@ -373,6 +452,7 @@ def main() -> int:
         (repo / args.candidate_release).resolve(),
         (repo / args.output).resolve(),
         args.workflow_git_sha,
+        args.evidence_git_sha,
         args.source_branch,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
