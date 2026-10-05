@@ -244,6 +244,9 @@ def run_training(
             "counts": class_counts,
             "weights": class_weights,
         },
+        "training_input_augmentation": dict(
+            cfg.get("training_input_augmentation", {})
+        ),
     }
     if cfg["teacher"].get("identity_policy") in {
         "signed_d2_release_smoke", "signed_d2_release_formal",
@@ -374,6 +377,10 @@ def run_training(
         train_losses = []
         for batch in train_loader:
             moved = move_batch_to_device(batch, device)
+            moved["model_inputs"] = _apply_training_input_augmentation(
+                moved["model_inputs"],
+                cfg.get("training_input_augmentation"),
+            )
             optimizer.zero_grad(set_to_none=True)
             outputs = forward_student(model, moved["model_inputs"])
             validate_student_outputs(outputs, moved["labels"], max_targets=max_targets)
@@ -519,6 +526,52 @@ def _validated_forward(
     return outputs
 
 
+def _apply_training_input_augmentation(
+    model_inputs: Mapping[str, torch.Tensor],
+    config: Mapping[str, Any] | None,
+) -> dict[str, torch.Tensor]:
+    """Apply deterministic, train-only modality dropout.
+
+    The closeout Train/Development view contains very few distinct instruction
+    templates.  Per-sample text and RGB dropout prevents the Student from
+    treating those templates or backgrounds as identifiers and makes it use
+    the structured command/constraint features carried in ``state``.  The
+    function is never called by validation or candidate evaluation.
+    """
+
+    values = dict(model_inputs)
+    if not config or not bool(config.get("enabled", False)):
+        return values
+
+    text = values.get("text_tokens")
+    if text is not None:
+        text = text.clone()
+        full_probability = float(config.get("text_full_dropout_probability", 0.0))
+        if full_probability:
+            full_mask = torch.rand(
+                (text.shape[0], 1), device=text.device,
+            ) < full_probability
+            text = text.masked_fill(full_mask, 0.0)
+        token_probability = float(config.get("text_token_dropout_probability", 0.0))
+        if token_probability:
+            token_mask = torch.rand(
+                text.shape, device=text.device,
+            ) < token_probability
+            text = text.masked_fill(token_mask, 0.0)
+        values["text_tokens"] = text
+
+    rgb = values.get("rgb")
+    rgb_probability = float(config.get("rgb_dropout_probability", 0.0))
+    if rgb is not None and rgb_probability:
+        rgb = rgb.clone()
+        rgb_mask = torch.rand(
+            (rgb.shape[0], 1, 1, 1), device=rgb.device,
+        ) < rgb_probability
+        values["rgb"] = rgb.masked_fill(rgb_mask, 0.0)
+
+    return values
+
+
 def _records(
     cfg: Mapping[str, Any], *, smoke: bool, record_limit: int | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], str]:
@@ -637,6 +690,25 @@ def _validate_config(value: Mapping[str, Any]) -> dict[str, Any]:
         raise ValueError("max_targets must be positive")
     if int(cfg["training"]["batch_size"]) < 1 or int(cfg["training"]["epochs"]) < 1:
         raise ValueError("batch_size and epochs must be positive")
+    augmentation = cfg.get("training_input_augmentation", {})
+    if not isinstance(augmentation, Mapping):
+        raise ValueError("training_input_augmentation must be a mapping")
+    allowed_augmentation = {
+        "enabled",
+        "text_full_dropout_probability",
+        "text_token_dropout_probability",
+        "rgb_dropout_probability",
+    }
+    unknown_augmentation = set(augmentation).difference(allowed_augmentation)
+    if unknown_augmentation:
+        raise ValueError(
+            "unknown training_input_augmentation key(s): "
+            + ", ".join(sorted(unknown_augmentation))
+        )
+    for key in allowed_augmentation.difference({"enabled"}):
+        probability = float(augmentation.get(key, 0.0))
+        if not 0.0 <= probability < 1.0:
+            raise ValueError(f"{key} must be in [0, 1)")
     return cfg
 
 
