@@ -326,13 +326,75 @@ def _aggregate(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _suite_groups(report: dict[str, Any], matrix_path: Path) -> dict[str, Any]:
+    """Score the runs against the suite matrix's own scoring groups."""
+    matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
+    group_of = {
+        item["scenario_id"]: item.get("suite_group") for item in matrix.get("scenarios", [])
+    }
+    level_of = {
+        item["scenario_id"]: item.get("official_level") for item in matrix.get("scenarios", [])
+    }
+    buckets: dict[str, list[dict]] = {}
+    for row in report["scenarios"]:
+        group = group_of.get(row.get("scenario"))
+        if group is None:
+            continue
+        buckets.setdefault(group, []).append(row)
+    per_group = {
+        group: {
+            "runs": len(rows),
+            "passed": sum(1 for row in rows if row.get("status") == "SUCCEEDED"),
+            "completion_rate": (
+                sum(1 for row in rows if row.get("status") == "SUCCEEDED") / len(rows)
+            ) if rows else None,
+            "failed_scenarios": [
+                row["scenario"] for row in rows if row.get("status") != "SUCCEEDED"
+            ],
+        }
+        for group, rows in sorted(buckets.items())
+    }
+    weights = {"basic_scoring": 0.30, "advanced_scoring": 0.40, "challenge_scoring": 0.30}
+    weighted = sum(
+        weights[group] * per_group.get(group, {}).get("completion_rate", 0.0)
+        for group in weights
+        if group in per_group
+    )
+    scored = {
+        group: {"runs": len(rows),
+                "passed": sum(1 for row in rows if row.get("status") == "SUCCEEDED")}
+        for group, rows in buckets.items() if group in weights
+    }
+    return {
+        "matrix": str(matrix_path),
+        "suite_version": matrix.get("suite_version"),
+        "declared_counts": matrix.get("counts"),
+        "per_group": per_group,
+        "scoring_groups": scored,
+        "weighted_completion_rate": weighted,
+        "task_completion_score_out_of_15": round(weighted * 15.0, 4),
+        "level_of_scenario": level_of,
+        "caveat": (
+            "weights (30/40/30 over the three scoring groups) come from the judging rules; "
+            "complex_regression and system_stability are reported separately and do not enter "
+            "the weighted score. Self-built suite, not the official 1000-frame benchmark."
+        ),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runs", required=True, help="run root holding <scenario>/logs/")
     parser.add_argument("--out", required=True)
+    parser.add_argument(
+        "--matrix", default="",
+        help="scenarios/acceptance_suite/matrix.json; adds per-suite-group scoring",
+    )
     args = parser.parse_args()
     report = summarise(Path(args.runs))
     report["aggregate"] = _aggregate(report)
+    if args.matrix:
+        report["suite_groups"] = _suite_groups(report, Path(args.matrix))
     report.pop("_samples", None)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")

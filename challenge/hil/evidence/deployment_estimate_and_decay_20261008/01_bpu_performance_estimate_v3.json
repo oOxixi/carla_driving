@@ -1,0 +1,75 @@
+{
+  "experiment": "Horizon toolchain BPU performance estimate for the v3 candidate",
+  "claim_scope": {
+    "class": "BPU_ESTIMATED",
+    "note": "produced by the OpenExplorer toolchain on the workstation; NOT a board measurement, no power, no real DDR/BPU counters"
+  },
+  "model_identity": {
+    "candidate": "challenge/distillation/releases/a3_b1_closeout_robust_fp32_candidate_v3",
+    "weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+    "source_onnx": "student_v0_fp32_v3.onnx",
+    "source_onnx_sha256": "b76b5a32dfde16d52b34ad553bce9e899eaf4220142a8ddd6e9b4aea4fc808e5",
+    "ptq_onnx_sha256": "db8b0bae591f0803456ef30a26c8c4a064f63a5ddd68dff14227955b43b608d7",
+    "quantized_bc_sha256": "b3a62af432bc782781bdc9e1794672e8b75c996974c477fa9c07b863cf635f83",
+    "hbm_sha256": "c55de94e6269f24a93b3bb5063c2b2616a4d8918cb1f442ad7aea3f748a71c3f"
+  },
+  "toolchain": {
+    "image": "openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1",
+    "horizon_tc_ui": "3.5.16",
+    "hbdk": "4.11.11",
+    "march": "nash-p",
+    "compile_options": "opt=2, jobs=16, balance=100, debug=true (single BPU core)",
+    "calibration": "A2 frozen calibration_v1 (300 samples / 1200 tensors)"
+  },
+  "placement": {
+    "nodes": 59,
+    "on_bpu": 59,
+    "cpu_fallback": 0,
+    "output_types": {"si8": 37, "f32": 15, "si16": 4, "fused": 3},
+    "worst_calibrated_cosine": 0.971495,
+    "worst_quantized_cosine": 0.971386
+  },
+  "estimate": {
+    "latency_us": 615.1,
+    "latency_ms": 0.615,
+    "fps": 1625.78,
+    "run_per_second": 1625.78,
+    "multicore_sync_us": 0,
+    "ddr_megabytes_per_run": 22.887,
+    "ddr_megabytes_per_second": 37209.1,
+    "min_memory_requirement_bytes": 24185240,
+    "static_memory_bytes": 23579544,
+    "input_memory_bytes": 603136,
+    "output_memory_bytes": 2560,
+    "dynamic_memory_bytes": 605696
+  },
+  "basis": {
+    "int8_macs": 249320448,
+    "origin_conv_ops": 498640896,
+    "identity_cross_check": (
+      "the toolchain's int8 MACs (249,320,448) and Conv ops (498,640,896) are exactly the "
+      "values challenge/flops_report.json reports and B3 independently recomputed, so the "
+      "estimate is bound to the measured model, not to a stale artifact"
+    ),
+    "bottleneck": (
+      "summed layer load time 616 us vs summed compute time 121 us over 47 layers -> the "
+      "estimate is DDR/load bound, not MAC bound"
+    ),
+    "interval_compute_utilization": {
+      "samples": [0.243, 0.154, 0.126, 0.084, 0.084, 0.182, 0.091],
+      "interval_ms": 0.1,
+      "mean": 0.138,
+      "max": 0.243,
+      "reading": "average computing-unit utilization inside one inference is ~14%; the model is memory bound"
+    },
+    "per_layer_source": "student_v0_v3.html / student_v0_v3.json (coreSummaryGroup[0].layer details, 47 layers)"
+  },
+  "caveats": [
+    "toolchain estimate, not J6P board latency; no BPU/DDR counters were read",
+    "single BPU core configuration; a multi-core deployment would change latency and utilization",
+    "the DDR bandwidth figure is the tool's memory model, not a measured bus trace",
+    "CONV/LINEAR op counts exclude attention, normalization, activation and data movement",
+    "the utilization number above is the compute-unit utilization inside one inference; the official heterogeneous-utilization formula (end-to-end CPU/GPU/NPU/DSP) is still B2/A4's"
+  ],
+  "how_to_reproduce": "in the official image: hb_compile with the A2 calibration yaml, then read student_v0_v3.json (or the html report) for performance/DDR/interval sections"
+}

@@ -140,6 +140,43 @@ powershell -File challenge/hil/carla_measurement.ps1 `
 | `04_student_loop_metrics.json` | 18 次运行的逐场记录 + 汇总：闭环时延池化分位、oracle 对齐、安全计数、舒适性代理、30/40/30 加权演算 |
 | `05_modality_ablation_closed_loop.json` | 闭环模态消融：rgb 置零后 18 场景逐场对比（判定/行为变化均为 0） |
 | `06_closed_loop_soak_and_resources.json` | 闭环长稳 30 次运行的通过序列、时延稳定性、安全计数、舒适性与宿主 CPU/RSS 采样 |
+| `07_suite_full83_summary.json` | **83 场景全量结果**：分组判定、失败键、闭环时延、安全计数、舒适性、30/40/30 加权演算 |
+
+## 11. 83 场景全量结果（2026-10-08 完成）
+
+同一套命令、同一判定口径（仓库自己的 `scenario_acceptance.status == SUCCEEDED`），把验收矩阵
+**83 个场景**全部跑完（单 seed、每场 35 s 实时仿真）：
+
+| 分组（matrix 口径） | 通过 / 总数 | 完成率 |
+|---|---:|---:|
+| 基础评分 basic_scoring | 12 / 18 | 66.7% |
+| 进阶评分 advanced_scoring | 22 / 30 | 73.3% |
+| 挑战评分 challenge_scoring | 17 / 24 | 70.8% |
+| 综合回归 complex_regression | 4 / 6 | 66.7% |
+| 系统稳定 system_stability | **5 / 5** | **100%** |
+| **合计** | **60 / 83** | **72.3%** |
+| **加权（30/40/30）** | **0.7058** | **基础分 10.59 / 15** |
+
+* 按官方难度：基础 **12/18**、进阶 **22/30**、挑战 **26/35**；
+* **安全**：0 碰撞 / 0 闯红灯 / 0 路线偏离 / 0 严重偏离（59,966 帧）；安全层覆盖 4,719 帧（7.9%）；
+* **语义-动作对齐（oracle）**：76/80 通过（95.0%）；扩展验收 68/83；
+* **闭环时延（逐帧池化）**：sensor→control **P50 31 / P95 47 / P99 63 / max 563 ms**，
+  与 sensor→decision 几乎相同 → 瓶颈在感知/仿真节拍；模型决策（服务侧）P50 3.81 ms；
+* **舒适性代理**：p95 纵向加速度均值 0.771 m/s²、横向加速度 max 2.60 m/s²、跨道误差 max 0.876 m。
+
+**23 场未通过的原因分成七类**（逐场判据实际值见 `07_suite_full83_summary.json`）：
+
+1. **速度标定/限速遵从**（B02、B03、SUP_A14）——真该改模型：学生 `SET_SPEED` 偏低约 20%（15.79 vs 20±2），
+   另有弯道超速（4.95 vs ≤3.5）；
+2. **未跑完路线/未恢复**（B06、SUP_B06、VAR_B06、C01）——与速度偏低同源的可能性大；
+3. **停住后不再起步**（SUP_B01 位移 0 m、SUP_A06 红灯前速度≈0）——契约/执行语义；
+4. **目标绑定与计划字段**（A04、SUP_A10、VAR_A01、VAR_A02、SUP_A15）——适配器只在 FOLLOW/AVOID_OBSTACLE 填 target_id；
+5. **故障响应记账**（C05、SUP_C12、VAR_C04、VAR_C06、CX05）——`actual=null` 被判 FAIL，属"没测到"；
+6. **期望行为集合不一致**（SUP_C03、VAR_C02 更保守；**VAR_A02 反向：低 TTC 静止前车却输出 KEEP_LANE**）；
+7. **综合任务调度**（CX_MAIN_01：7 条命令只有 1 条到达决策服务，`qwen_missing_request_count=6`）。
+
+**与原始模型的场景级对照（不同口径，仅作代理）**：团队报告中原始模型（Qwen2.5-VL-7B AWQ）为 **83/83**，
+轻量化学生模型为 **60/83**。
 
 工具（本轮新增，均在 `challenge/hil/carla/`）：
 `student_action_service.py`（决策服务，`/infer` 返回计划、`/v1/chat/completions` 返回 A–E）、

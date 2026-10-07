@@ -1,0 +1,122 @@
+{
+  "protocol": {
+    "benchmark": "6 frozen held-out cohorts (850 cases) shipped with the releases",
+    "teacher_side": "teacher_plan recorded in each frozen case (pinned Qwen teacher)",
+    "student_side": "Student ONNX decoded with the same StudentPlanAdapter",
+    "comparison": "step-aligned field-by-field comparison; Teacher is the reference",
+    "speed_tolerance_mps": 0.5
+  },
+  "model": {
+    "onnx": "D:\\nana\\oe\\work\\v3\\student_v0_fp32_v3.onnx"
+  },
+  "summary": {
+    "cases": 850,
+    "teacher_steps": 931,
+    "student_steps": 932,
+    "steps_compared": 931,
+    "step_count_agreement": 0.9988235294117647,
+    "behaviour_agreement": 0.916219119226638,
+    "lane_agreement": 0.1933404940923738,
+    "lane_agreement_when_both_present": 1.0,
+    "lane_both_null": 0,
+    "lane_teacher_only": 751,
+    "completion_agreement": 0.8904403866809882,
+    "completion_agreement_when_both_present": 0.8904403866809882,
+    "target_id_agreement": 0.7652582159624414,
+    "target_id_agreement_when_both_present": 1.0,
+    "target_id_teacher_only": 50,
+    "speed_mae_mps": 0.23555948461406714,
+    "speed_max_abs_error_mps": 6.131767100758022,
+    "speed_within_0p5_mps_rate": 0.3039742212674543,
+    "speed_missing": 487,
+    "extra_student_steps": 1,
+    "missing_student_steps": 0
+  },
+  "decay": {
+    "step_count_agreement": 0.0011764705882353343,
+    "behaviour_agreement": 0.08378088077336199,
+    "lane_agreement": 0.8066595059076263,
+    "completion_agreement": 0.10955961331901176,
+    "target_id_agreement": 0.23474178403755863
+  },
+  "reading": "Teacher agreement is 100% by construction (its own plan is the reference), so the decay column is the Student-side gap on the same cases: 1 - agreement. This is a plan-agreement proxy, not an independent accuracy measurement, and it does not replace B2's frozen benchmark.",
+  "field_convention": {
+    "lane": "the Teacher fills target_lane='CURRENT' on plain KEEP_LANE steps while the Student adapter deliberately leaves it null; quote lane_agreement_when_both_present",
+    "speed": "the Student adapter only emits target_speed_mps for SET_SPEED/SLOW_DOWN/FOLLOW, so the speed comparison only covers the overlapping steps",
+    "target_id": "the Student adapter only emits target_id for FOLLOW/AVOID_OBSTACLE; 'teacher_only' counts steps where the Teacher grounded a target and the Student did not"
+  },
+  "per_cohort": {
+    "d2_v1_1_val": {
+      "cases": 539,
+      "teacher_steps": 593,
+      "behaviour_agreement": 0.9510961214165261,
+      "lane_agreement": 0.18381112984822934,
+      "lane_agreement_when_both_present": 1.0,
+      "lane_teacher_only": 484,
+      "completion_agreement": 0.9258010118043845,
+      "target_id_agreement": 0.8739495798319328,
+      "speed_mae_mps": 0.2871485374964242,
+      "speed_within_0p5_mps_rate": 0.24283305227655985
+    },
+    "d3_wave2_safe_short_v1_val": {
+      "cases": 56,
+      "teacher_steps": 73,
+      "behaviour_agreement": 1.0,
+      "lane_agreement": 0.2328767123287671,
+      "lane_agreement_when_both_present": 1.0,
+      "lane_teacher_only": 56,
+      "completion_agreement": 1.0,
+      "target_id_agreement": 1.0,
+      "speed_mae_mps": 0.11185072763869758,
+      "speed_within_0p5_mps_rate": 0.2191780821917808
+    },
+    "d3_targeted_gap_strict_v1_val": {
+      "cases": 99,
+      "teacher_steps": 99,
+      "behaviour_agreement": 1.0,
+      "lane_agreement": 0.42424242424242425,
+      "lane_agreement_when_both_present": 1.0,
+      "lane_teacher_only": 57,
+      "completion_agreement": 1.0,
+      "target_id_agreement": 0.2727272727272727,
+      "speed_mae_mps": 0.08692904540852937,
+      "speed_within_0p5_mps_rate": 0.3838383838383838
+    },
+    "d3_turn_gap_60_strict_v1_val": {
+      "cases": 29,
+      "teacher_steps": 29,
+      "behaviour_agreement": 0.6896551724137931,
+      "lane_agreement": 0.0,
+      "lane_agreement_when_both_present": null,
+      "lane_teacher_only": 29,
+      "completion_agreement": 0.6206896551724138,
+      "target_id_agreement": 0.3333333333333333,
+      "speed_mae_mps": 0.24098033877624855,
+      "speed_within_0p5_mps_rate": 0.5862068965517241
+    },
+    "d3_gap300_strict_v1_val": {
+      "cases": 123,
+      "teacher_steps": 123,
+      "behaviour_agreement": 0.7073170731707317,
+      "lane_agreement": 0.04878048780487805,
+      "lane_agreement_when_both_present": 1.0,
+      "lane_teacher_only": 117,
+      "completion_agreement": 0.6341463414634146,
+      "target_id_agreement": 0.3,
+      "speed_mae_mps": 0.20542511384338527,
+      "speed_within_0p5_mps_rate": 0.5528455284552846
+    },
+    "b1_ms34_supplement_v1_val": {
+      "cases": 4,
+      "teacher_steps": 14,
+      "behaviour_agreement": 0.7142857142857143,
+      "lane_agreement": 0.42857142857142855,
+      "lane_agreement_when_both_present": 1.0,
+      "lane_teacher_only": 8,
+      "completion_agreement": 0.8571428571428571,
+      "target_id_agreement": 0.6666666666666666,
+      "speed_mae_mps": 0.0,
+      "speed_within_0p5_mps_rate": 0.0
+    }
+  }
+}
