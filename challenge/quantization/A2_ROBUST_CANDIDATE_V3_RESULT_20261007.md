@@ -165,5 +165,20 @@ robust v3 的 readiness 仍为 `BLOCKED`，共有 7 项：Independent Validation
 - 敏感层报告 SHA256：
   `c8e62223fdb14d78ffb128e08bbff589d4862e7b38678ef55ebba3288ea8c11c`。
 
+### 分成员交接包
+
+打包 evidence Git SHA 为 `3ebd0682fa70b46f1a679ecaeca808bb23f4ee7c`，本机目录为
+`artifacts/a2/handoff_20261007_3ebd0682/`：
+
+| 接收方 | 压缩包 | 大小 | SHA256 |
+|---|---|---:|---|
+| A3 | `A2_to_A3_gate_feedback_3ebd0682.zip` | `36,120` bytes | `03cac9f945bf5dc4169f768467d09b7024ed5ee4ce3f4904df18082e954e346a` |
+| B2 | `A2_to_B2_evaluation_3ebd0682.zip` | `215,249,423` bytes | `95e0533092eccdfaa0ece830a92b33691a5fd010f5982d71e0d043e1ecf0a59f` |
+| A4 | `PRE_GATE_ONLY_A2_to_A4_openexplorer_3ebd0682.zip` | `153,934,913` bytes | `543a2ee2ed93d1252230af5d99e2d7524514da0785ece4531a715196ce633918` |
+
+三份 delivery SHA 和 ZIP CRC 全部通过。A4 包经 B3 独立校验器复核：1221/1221 文件
+匹配、四输入各 300 个 NPY、两份 INT8 均与 manifest 匹配并绑定 robust v3，0 error、
+0 warning，状态 `PASS`。这里的 `PASS` 只表示包自洽，不表示模型 Gate 或板端通过。
+
 Windows 本机的 ONNX Runtime/pytest 需经 ASCII 映射路径运行；这是路径编码兼容问题，不是
 模型测试失败。大模型、NPY 和交接 ZIP 继续保存在 `artifacts/`，不进入 Git。

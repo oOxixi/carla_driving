@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -61,6 +62,48 @@ def candidate_bindings(repo: Path) -> dict[str, str]:
             if digest:
                 bindings[str(digest).lower()] = release.name
     return bindings
+
+
+def newest_candidate_release(repo: Path) -> str | None:
+    """Return the most recently published A3 release in repository history.
+
+    Directory-name sorting is not a release ordering: for example, the robust
+    v3 directory sorts before ``a3_final_fp32_candidate_v2``.  Git history is
+    the authoritative ordering available to an independent checkout.  If the
+    checkout has no usable Git metadata, skip the advisory freshness check
+    instead of emitting a potentially false stale warning.
+    """
+
+    release_root = repo / "challenge" / "distillation" / "releases"
+    if not release_root.is_dir():
+        return None
+    try:
+        output = subprocess.check_output(
+            [
+                "git",
+                "-C",
+                str(repo),
+                "log",
+                "--format=",
+                "--name-only",
+                "--",
+                "challenge/distillation/releases",
+            ],
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    prefix = "challenge/distillation/releases/"
+    suffix = "/handoff_manifest.json"
+    for raw_line in output.splitlines():
+        line = raw_line.strip().replace("\\", "/")
+        if line.startswith(prefix) and line.endswith(suffix):
+            release = line[len(prefix) : -len(suffix)]
+            if release and "/" not in release:
+                return release
+    return None
 
 
 def main() -> int:
@@ -207,8 +250,7 @@ def main() -> int:
             warnings.append(f"{label}: weights digest matches no candidate release in this checkout")
         int8_report[label] = entry
 
-    latest_candidate = sorted((repo / "challenge" / "distillation" / "releases").glob("a3_*"))[-1].name \
-        if (repo / "challenge" / "distillation" / "releases").is_dir() else None
+    latest_candidate = newest_candidate_release(repo)
     stale = [k for k, v in int8_report.items()
              if v.get("binds_to_candidate_release") and latest_candidate
              and v["binds_to_candidate_release"] != latest_candidate]

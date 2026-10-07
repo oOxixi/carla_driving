@@ -1,7 +1,8 @@
 {
   "schema_version": "1.0",
   "audit_date": "2026-10-07",
-  "audit_git_sha": "254e84abe76ae78470b0574fa8cfef94d834ef51",
+  "audit_git_sha": "3ebd0682fa70b46f1a679ecaeca808bb23f4ee7c",
+  "latest_remote_git_sha_at_audit": "197bc045315d823ea6aeb69af61d92347279e440",
   "branch": "challenge",
   "overall_status": "BLOCKED_PRE_FREEZE",
   "scope": "challenge_track_only",
@@ -44,9 +45,11 @@
     "A3": {
       "status": "PENDING_A3_FP32_GATE",
       "package_status": "PENDING_B2_INDEPENDENT_VALIDATION",
-      "release": "challenge/distillation/releases/a3_final_fp32_candidate_v2",
-      "weights_sha256": "6b6ec1d8e815866aaccb3981d7a7a74efaa971e2a0d0bf8a9b42cbf7af0b8546",
-      "dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1"
+      "release": "challenge/distillation/releases/a3_b1_closeout_robust_fp32_candidate_v3",
+      "weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+      "dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+      "training_git_sha": "18a95de9702fe7baa5e89aa74a93dcd86d88d537",
+      "development_target_speed_mae_mps": 0.37819888084660064
     },
     "B2": {
       "status": "BLOCKED",
@@ -66,21 +69,37 @@
     },
     "A2": {
       "status": "DIAGNOSTIC_ONLY",
-      "report": "challenge/quantization/A2_HANDOFF_UPDATE_20261006.md",
-      "full_int8_sha256": "1e2572a5ef0d0d799db3730670e6dc2cb306c48756ac1b151db5fa97b9c64a01",
-      "mixed_top3_sha256": "8935fb6a611762ac3d851e753062b4dbe2fb8a74a3a4d37bddbb6e6ef28870b9",
+      "report": "challenge/quantization/A2_ROBUST_CANDIDATE_V3_RESULT_20261007.md",
+      "workflow_git_sha": "11823750b530f0bfebe22427113f2034d306d3b2",
+      "fp32_onnx_sha256": "681a5d4bf16ba61741ef0e559649c43c041de649eef3e8e6f0b6285beaab4286",
+      "full_int8_sha256": "275dce5c426fff85a0375eb286fc67febac8d835c1e36fe15b0fbd707cf836c3",
+      "mixed_top3_sha256": "9a08a03c42a9ea59ead664d168254cd3685d73d176d5ab53507bd4a4467132d3",
+      "sensitivity_experiments": 25,
+      "calibration_samples": 300,
+      "openexplorer_npy_total": 1200,
+      "tests": "16 passed",
       "gate_status": "NOT_FORMAL",
       "next_condition": "Exact A3 weights must receive A3_FP32_GATE_PASSED before formal export and INT8 Gate."
     },
     "A4": {
-      "status": "BLOCKED_FORMAL_INPUT_AND_J6P",
+      "status": "PRE_GATE_COMPILE_DIAGNOSTIC_AVAILABLE_FORMAL_BLOCKED",
       "files": [
         "challenge/horizon/README.md",
         "challenge/horizon/operator_mapping.md",
-        "challenge/runtime/runtime_manifest.json"
+        "challenge/runtime/runtime_manifest.json",
+        "challenge/hil/evidence/a3_v3_simulation_20261007/04_oe_compile_v3.log",
+        "challenge/hil/evidence/a3_v3_simulation_20261007/05_node_placement_v3.csv"
       ],
-      "current_runtime_scope": "X86 random-init structural diagnostic",
+      "current_runtime_scope": "B3-run OpenExplorer v3 precompile; BPU_ESTIMATED, not A4 final Runtime or J6P measurement",
+      "diagnostic_facts": {
+        "bpu_nodes": 59,
+        "total_nodes": 59,
+        "cpu_fallback_nodes": 0,
+        "hbm_bytes": 23579544,
+        "minimum_memory_bytes": 24185240
+      },
       "missing": [
+        "single exact-RC ONNX identity shared by A2/A4/B3",
         "final compiled J6P artifact",
         "final operator mapping and fallback report",
         "final J6P runtime manifest",
@@ -88,18 +107,31 @@
       ]
     },
     "B3": {
-      "status": "X86_MEASURED_FINAL_RC_NOT_RUN",
+      "status": "V3_DIAGNOSTICS_AVAILABLE_FINAL_RC_J6P_NOT_RUN",
       "files": [
         "challenge/hil/evidence/scoring_requirements_20261003/official_full_and_soak.json",
-        "challenge/hil/evidence/scoring_requirements_20261003/b3_measured_data.json"
+        "challenge/hil/evidence/scoring_requirements_20261003/b3_measured_data.json",
+        "challenge/hil/evidence/a3_v3_simulation_20261007/README.md",
+        "challenge/hil/evidence/a3_v3_simulation_20261007/03_matrix_summary_v3.json",
+        "challenge/hil/evidence/a3_v3_simulation_20261007/06_flops_crosscheck_and_modality_ablation.json"
       ],
       "facts": {
         "official_x86_planner_p50_ms": 11.917,
         "official_x86_planner_p95_ms": 14.244,
         "official_x86_soak_seconds": 1800.0,
-        "official_x86_soak_errors": 0
+        "official_x86_soak_errors": 0,
+        "v3_numeric_cases": 850,
+        "v3_global_min_head_cosine": 0.999134,
+        "v3_openexplorer_bpu_nodes": 59,
+        "v3_openexplorer_cpu_fallback_nodes": 0,
+        "v3_targeted_gap_accuracy": 1.0,
+        "v3_turn_left_failures": 135,
+        "flops_recompute_identical": true,
+        "ablation_state_behavior_argmax_flips": "122/150",
+        "ablation_rgb_text_targets_behavior_argmax_flips": "0/150 each",
+        "anomalous_input_expectation_match": "9/10"
       },
-      "limitation": "Evidence is X86_MEASURED and not a final same-RC J6P hardware result."
+      "limitation": "Evidence is self-built held-out/X86/BPU_ESTIMATED diagnostic, not B2 Frozen Benchmark or a final same-RC J6P hardware result."
     },
     "B4": {
       "status": "BLOCKED_PRE_FREEZE",
@@ -117,34 +149,47 @@
     {
       "owner": "A2",
       "recipient": "A3",
-      "path": "artifacts/a2/handoff_20261006_3c10b121/A2_to_A3_gate_feedback_3c10b121.zip",
-      "bytes": 36487,
-      "sha256": "cc1bc1c4c258f466490dfafa77749942fb88822fe3ba38f607d8386e1e53f9f2",
-      "availability": "LOCAL_EXTERNAL"
+      "path": "artifacts/a2/handoff_20261007_3ebd0682/A2_to_A3_gate_feedback_3ebd0682.zip",
+      "bytes": 36120,
+      "sha256": "03cac9f945bf5dc4169f768467d09b7024ed5ee4ce3f4904df18082e954e346a",
+      "availability": "LOCAL_EXTERNAL",
+      "supersedes": "artifacts/a2/handoff_20261006_3c10b121/A2_to_A3_gate_feedback_3c10b121.zip"
     },
     {
       "owner": "A2",
       "recipient": "B2",
-      "path": "artifacts/a2/handoff_20261006_3c10b121/A2_to_B2_evaluation_3c10b121.zip",
-      "bytes": 215358886,
-      "sha256": "e3d8be14358a6307104aa9d003b0b8011e45263362e9d915f41c16cab4468622",
-      "availability": "LOCAL_EXTERNAL"
+      "path": "artifacts/a2/handoff_20261007_3ebd0682/A2_to_B2_evaluation_3ebd0682.zip",
+      "bytes": 215249423,
+      "sha256": "95e0533092eccdfaa0ece830a92b33691a5fd010f5982d71e0d043e1ecf0a59f",
+      "availability": "LOCAL_EXTERNAL",
+      "supersedes": "artifacts/a2/handoff_20261006_3c10b121/A2_to_B2_evaluation_3c10b121.zip"
     },
     {
       "owner": "A2",
       "recipient": "A4",
-      "path": "artifacts/a2/handoff_20261006_3c10b121/PRE_GATE_ONLY_A2_to_A4_openexplorer_3c10b121.zip",
-      "bytes": 154097294,
-      "sha256": "fb085f4aaa99f7b8de02becb6bedae3e99ebdbfdcc61c13f079c93b2f224b0e1",
+      "path": "artifacts/a2/handoff_20261007_3ebd0682/PRE_GATE_ONLY_A2_to_A4_openexplorer_3ebd0682.zip",
+      "bytes": 153934913,
+      "sha256": "543a2ee2ed93d1252230af5d99e2d7524514da0785ece4531a715196ce633918",
       "availability": "LOCAL_EXTERNAL",
-      "formal_release": false
+      "formal_release": false,
+      "supersedes": "artifacts/a2/handoff_20261006_3c10b121/PRE_GATE_ONLY_A2_to_A4_openexplorer_3c10b121.zip"
+    }
+  ],
+  "artifact_identity_conflicts": [
+    {
+      "type": "FP32_ONNX_SHA_MISMATCH",
+      "source_weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+      "a2_onnx_sha256": "681a5d4bf16ba61741ef0e559649c43c041de649eef3e8e6f0b6285beaab4286",
+      "b3_onnx_sha256": "b76b5a32dfde16d52b34ad553bce9e899eaf4220142a8ddd6e9b4aea4fc808e5",
+      "required_resolution": "Freeze one exact ONNX byte identity and rerun or attest A4/B3 evidence against that SHA before Final."
     }
   ],
   "next_actions": [
     "B2 updates benchmark_config to the governed closeout identity, freezes policy, and publishes an exact-weights decision.",
     "A3 signs or rejects the exact FP32 weights based on B2 evidence.",
+    "A1 and the team freeze the Teacher FLOPs denominator definition; B3 has confirmed reproducibility only.",
     "A2 produces formal FP32/INT8 artifacts only after the FP32 Gate.",
-    "A4 compiles the formal INT8 artifact and publishes Runtime/operator/fallback evidence.",
+    "A4 freezes one exact-RC ONNX, compiles the formal artifact, and publishes Runtime/operator/fallback evidence.",
     "B3 reruns final same-RC X86/J6P validation.",
     "B4 freezes identities, performs clean reproduction, and builds final_submission."
   ]

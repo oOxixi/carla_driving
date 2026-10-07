@@ -4,7 +4,9 @@
 模型或 Gate 已经通过。当前机器可读快照见：
 
 - `PRE_SUBMISSION_INVENTORY_20261007.json`：角色、Gate、证据和外置大文件台账；
-- `PRE_SUBMISSION_LEDGER_20261007.md`：面向成员的缺口、收件顺序和整理规则。
+- `PRE_SUBMISSION_LEDGER_20261007.md`：面向成员的缺口、收件顺序和整理规则；
+- `SUBMISSION_COLLECTION_CHECKLIST_20261007.md`：A1–B4 逐项收件、身份核验和 Final
+  staging 白名单。
 
 只有 B2、A2、A4、B3 的正式 Gate 全部绑定同一 RC，且完成干净环境复现后，才能依据
 `docs/architecture/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md` 建立
