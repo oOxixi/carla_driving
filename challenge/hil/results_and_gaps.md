@@ -215,6 +215,28 @@ v3 相对 v1 全链慢约 **+1.3 ms（P50）**，仍远离 150 ms 阈值。
 
 结论：**挑战赛道四项里只有 FLOPs 一项的数据齐**（且 B3 已独立复算），异构利用率与核心衰减仍未测；基础赛道 11 个数据相关项里，B3 能覆盖的 3 项已测/已补测，其余 8 项依赖语音前端、闭环场景或 B2 的基准。
 
+### 2.11 ONNX 字节身份项（submission ledger 的阻塞项之一，2026-10-07）
+
+`submission/challenge/PRE_SUBMISSION_LEDGER_20261007.md` 要求 A4/B3 先解决 A2 的
+`681a5d4b…` 与 B3 的 `b76b5a32…` 两份 FP32 ONNX 的**字节差异**。B3 的结论：
+
+* **同一个 `state_dict` 用仓库导出器导出本来就不保证字节可复现**——导出器把
+  `source_git_sha`（默认 = 导出检出的 HEAD）等溯源字段写进 `metadata_props`，
+  `producer_version` 记录 torch 版本；换掉这些字段，文件大小可以完全不变而 SHA 不同；
+* 在官方镜像内把 `--source-git-sha` 依次换成 6 个候选提交重导出，**没有一个**等于 A2 的
+  `681a5d4b…`（明细见 `11_onnx_source_sha_probe.json`）→ 靠猜参数对齐字节不可行；
+* 新增 `harness/x86_sim/onnx_export_equivalence.py`：对两份 ONNX 比对
+  文件 SHA / 元数据差异 / 图拓扑摘要 / 50 个 initializer 的逐张量 SHA / 冻结输入上的十头数值。
+  实测（torch 2.6.0 导出 × torch 2.8.0 导出）：**元数据差异只有 `source_git_sha`，
+  拓扑一致、initializer 逐张量一致、100 例数值 max abs diff = 0.0、argmax 100/100**，
+  判定 `METADATA_ONLY_DIFFERENCE_NUMERICALLY_IDENTICAL`。
+
+**给 RC 的判据**：不要求两边字节相同，要求「**唯一交付字节 + 等价证明**」这一对证据——
+要么 A2 交出 `681a5d4b…` 的文件（或其 `initializer_digest`/`topology_digest`），B3 跑一遍
+该工具；要么 RC 直接采用官方镜像内固定 `--source-git-sha` 重导的那一份（`b552b860…`），
+A2 量化 / A4 编译 / B3 核验全部指向它。
+证据：`evidence/a3_v3_simulation_20261007/10_onnx_export_identity.json`。
+
 ### 2.8 数据与交付物复核
 
 | 对象 | 结果 |
@@ -236,6 +258,7 @@ v3 相对 v1 全链慢约 **+1.3 ms（P50）**，仍远离 150 ms 阈值。
 | 6 | 语音前端相关评分项（ASR、意图解析、多模态融合、语义-动作对齐…） | 基础赛道多项 | A3/语音组/B2 | 非 B3；B3 只提供测量框架与证据格式 |
 | 7 | 官方 1000 帧统一评测基准未提供 | 影响所有"数据同源"项 | 组委会/发榜单位 | 我们已备自建队列与冻结脚本，材料中说明来源与口径 |
 | 8 | **契约/掩码与教师标签冲突**：`intersection_ahead=false` 却标注 `TURN_LEFT/RIGHT`；ms34 的 `allowed_behaviors` 不含教师用到的 `KEEP_LANE` | 直接决定 6 队列上 78/931 步的行为匹配（d2 4.9%、turn-gap 31.0%、gap300 29.3%、ms34 28.6% 的差额全在这里） | **B1（数据/场景能力字段）+ B2（契约口径）+ A1/A3（确认）** | B3 已用 `turn_left_attribution.py` 给出逐步归因证据（`evidence/a3_v3_simulation_20261007/08_*`）；**先对齐字段再谈补数据**，否则训练无解 |
+| 9 | **FP32 ONNX 唯一字节**（submission ledger 明列） | Final RC 的前置：A2 量化、A4 编译、B3 核验必须指向同一份 ONNX | **A2（交出文件）+ A4/B3（等价证明）** | B3 已给出可执行判据与工具：`onnx_export_equivalence.py`（实测两份字节不同的导出**数值逐位相同**，差异只在溯源元数据）；见 §2.11 |
 
 ## 4. 如何复现（材料 #12）
 
@@ -258,7 +281,7 @@ py -3.12 -m challenge.hil.cli consistency --repo . --onnx <int8.onnx> --baseline
         --adapter onnx --frozen challenge/hil/frozen/d2_v1_1_val --limit 539 --out <out.json>
 
 # 5) 本地自测
-py -3.12 -m pytest -q challenge/hil/tests   # 125 passed
+py -3.12 -m pytest -q challenge/hil/tests   # 127 passed
 
 # 6) 行为缺口归因 + 多模态消融（宿主；6 队列 850 例一次跑完）
 py -3.12 challenge/hil/harness/x86_sim/cohort_diagnostics.py \

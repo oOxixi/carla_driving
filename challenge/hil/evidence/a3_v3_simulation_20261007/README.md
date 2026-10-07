@@ -87,6 +87,8 @@ teacher 的 `KEEP_LANE` 被答成 `RETURN_TO_LANE` 或 `YIELD`。）
 | `07_official_env_v3_full_and_soak.json` | v3 在官方镜像内的 539×3 分位与 30 分钟长稳摘要（§5） |
 | `08_cohort_diagnostics_v3.json` | 6 队列 850 例的多模态消融 + 行为缺口归因（§6） |
 | `09_cpu_sampler_defect.json` | 进程 CPU 峰值异常的定位与修复记录（§7） |
+| `10_onnx_export_identity.json` | 两份字节不同的 FP32 ONNX 的权重/拓扑/数值等价性实测（§8） |
+| `11_onnx_source_sha_probe.json` | 用 `--source-git-sha` 反推 A2 字节的穷举结果（全部不匹配，§8.3） |
 
 ## 4. 追加：评分口径相关的两项可测数据（2026-10-07）
 
@@ -236,3 +238,51 @@ v3 全链比 v1 慢约 **+1.3 ms（P50）/+2.1 ms（P95）**；两者都远离 1
 
 影响范围：**只影响 utilization 遥测的最大值**；延迟分位（独立的 `perf_counter_ns` 打点）、
 内存漂移、成功率均不受影响。逐项记录见 `09_cpu_sampler_defect.json`。
+
+## 8. 解决 submission ledger 的 ONNX 身份项（2026-10-07）
+
+`submission/challenge/PRE_SUBMISSION_LEDGER_20261007.md` 第 121 行要求 **A4/B3 先解决
+`681a5d4b…`（A2 导出的 FP32 ONNX）与 `b76b5a32…`（B3 导出的同一权重 ONNX）的字节差异**
+才能做 Final RC。B3 把这件"要求"变成了可执行的判据。
+
+### 8.1 结论先写
+
+**同一个 `state_dict` 用仓库导出器导出，本来就不保证字节可复现**——导出器会把
+`source_git_sha` 等溯源字段写进 ONNX 的 `metadata_props`，而 `source_git_sha` 默认取
+**导出时那个检出点的 HEAD**；`producer_version` 则记录导出环境的 torch 版本。
+把这两个字段换掉，文件大小可以完全不变而 SHA 不同（本次两份文件都是 92,041,414 B）。
+
+因此 RC 的正确判据不是"字节相同"，而是：**挑一份 ONNX 作为唯一交付字节，另一份用
+权重/拓扑/数值三项等价性证明**。证明工具已落地：
+`harness/x86_sim/onnx_export_equivalence.py`。
+
+### 8.2 实测：torch 2.6（宿主）× torch 2.8（官方镜像）两次导出
+
+| 项 | 结果 |
+|---|---|
+| 文件 SHA | `b76b5a32…`（torch 2.6.0）vs `b552b860…`（torch 2.8.0）——**不同** |
+| 文件大小 | 92,041,414 B —— **相同** |
+| `metadata_props` 差异 | 只有 `source_git_sha`（`6b6a2102…` vs `11823750…`） |
+| `producer_version` | `2.6.0` vs `2.8.0` |
+| 图拓扑（节点/输入/输出/属性摘要） | **完全一致** |
+| 50 个 initializer 的逐张量 SHA | **逐张量一致**（`initializer_digest` 相同） |
+| 100 例冻结输入的十头数值 | **max abs diff = 0.0**，argmax 一致 100/100 |
+| 判定 | `METADATA_ONLY_DIFFERENCE_NUMERICALLY_IDENTICAL` |
+
+### 8.3 把 A2 的字节反推出来的尝试：失败，但很有信息量
+
+把 `--source-git-sha` 依次替换成 5 个可能的提交（`c2576e59`、`3ebd0682`、`242e79ee`、
+`197bc045`、`6b6a2102`）在官方镜像内重导出，得到的 SHA 分别是
+`42893c22…`、`798848e9…`、`af6acfea…`、`5a9e902d…`、`5245b5e8…`——**没有一个等于 A2 的
+`681a5d4b…`**。也就是说，A2 的字节差异**不只是 git sha**（可能还含导出脚本路径、torch 小版本
+或保存方式）。这正说明：**靠"猜参数"不可能对齐字节，必须由一方交出文件、另一方跑等价证明**。
+
+### 8.4 给 RC 的两条可执行路径（任选其一）
+
+1. **单一字节路线**：A2 把 `681a5d4b…` 的 ONNX 文件（或其 `initializer_digest` +
+   `topology_digest`，本工具会打印）交给 B3/A4；B3 用同一工具跑一遍，若判定
+   `…_NUMERICALLY_IDENTICAL`，则 RC 固定用该字节，A4 的编译与 B3 的核验都指向它；
+2. **统一导出路线**：RC 直接采用**在官方镜像内、固定 `--source-git-sha` 重导出的那一份**
+   （本次是 `b552b860…`），A2 的量化、A4 的编译、B3 的核验全部指向这唯一字节。
+
+无论走哪条，都**不需要**两边字节相同；需要的是"**唯一字节 + 等价证明**"这一对证据。

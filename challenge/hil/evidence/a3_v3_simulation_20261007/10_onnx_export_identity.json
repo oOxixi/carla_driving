@@ -1,0 +1,223 @@
+{
+  "left": {
+    "path": "D:\\nana\\oe\\work\\v3\\student_v0_fp32_v3.onnx",
+    "sha256": "b76b5a32dfde16d52b34ad553bce9e899eaf4220142a8ddd6e9b4aea4fc808e5",
+    "size_bytes": 92041414,
+    "ir_version": 8,
+    "producer_name": "pytorch",
+    "producer_version": "2.6.0",
+    "opset_imports": [
+      "ai.onnx:17"
+    ],
+    "metadata_props": {
+      "model_id": "student-v0-r3-fp32",
+      "weights_status": "PENDING_A3_FP32_GATE",
+      "export_seed": "20260911",
+      "python_version": "3.12",
+      "onnx_opset": "17",
+      "source_git_sha": "6b6a2102817bd9dc1a5e5d77f270788e546da2a5",
+      "dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+      "config_id": "student-v0-r3-structure-20260911",
+      "source_weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+      "weights_manifest_sha256": "4c42406320a99150946b1ff0fde506ad6f6a4ac4fe3b484d20dbf944262f1f63",
+      "source_weights_git_sha": "18a95de9702fe7baa5e89aa74a93dcd86d88d537",
+      "weights_identity_layout": "nested_candidate_identity",
+      "a2_upstream_readiness": "BLOCKED",
+      "b1_closeout_report_sha256": "8660e6981b2922f5415466ab1c979dc80df9a1a1291662dd1a254537e8502f6a",
+      "b1_governed_release_manifest_sha256": "07d3a82502005646d8f29d0c493fa8a5b0270a5194fd5c802a04b4870ba7d37d",
+      "b1_calibration_identity_sha256": "51f07485afcaa7ca54db24006bd6c08b6baceefea041ac2a5836e864d12fdeae",
+      "b1_independent_validation_identity_sha256": "c73ecea388eeb93c8895fd25a1b1f1b2edbfdd6779ae65bf0cb613d5b59c4125",
+      "model_request_sha256": "7e68bc0d43ea2a37643c0dbf846766202b7f206190475d6b917471ffcd1a4ccf",
+      "maneuver_plan_sha256": "6fb4c94c73b493be107cda3abef64033efdec88918887a4ae0e66120aa72b0d7"
+    },
+    "graph": {
+      "node_count": 60,
+      "topology_digest": "e39ce8b5ecf019fabbe32e0ee6cf916cad1e24e70fcfe775e873535e981460cd"
+    },
+    "initializer_count": 50,
+    "initializer_digest": "43de0895cfbb7c1996922146810f3dacf8eb066219ad85861201d411d601ea0c",
+    "inputs": [
+      {
+        "name": "rgb",
+        "shape": [
+          1,
+          3,
+          224,
+          224
+        ]
+      },
+      {
+        "name": "text_tokens",
+        "shape": [
+          1,
+          32
+        ]
+      },
+      {
+        "name": "targets",
+        "shape": [
+          1,
+          8,
+          14
+        ]
+      },
+      {
+        "name": "state",
+        "shape": [
+          1,
+          64
+        ]
+      }
+    ],
+    "outputs": [
+      "plan_length_logits",
+      "behavior_logits",
+      "target_pointer_logits",
+      "target_lane_logits",
+      "target_speed_mps",
+      "completion_type_logits",
+      "on_failure_logits",
+      "confidence",
+      "requires_confirmation_logits",
+      "replan_condition_logits"
+    ]
+  },
+  "right": {
+    "path": "D:\\nana\\oe\\work\\eq\\export_torch28_a2sha.onnx",
+    "sha256": "b552b860b85b09085464ca5215602ac5c07aabcbcdeda69f308486f856c4bb13",
+    "size_bytes": 92041414,
+    "ir_version": 8,
+    "producer_name": "pytorch",
+    "producer_version": "2.8.0",
+    "opset_imports": [
+      "ai.onnx:17"
+    ],
+    "metadata_props": {
+      "model_id": "student-v0-r3-fp32",
+      "weights_status": "PENDING_A3_FP32_GATE",
+      "export_seed": "20260911",
+      "python_version": "3.12",
+      "onnx_opset": "17",
+      "source_git_sha": "11823750b530f0bfebe22427113f2034d306d3b2",
+      "dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+      "config_id": "student-v0-r3-structure-20260911",
+      "source_weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+      "weights_manifest_sha256": "4c42406320a99150946b1ff0fde506ad6f6a4ac4fe3b484d20dbf944262f1f63",
+      "source_weights_git_sha": "18a95de9702fe7baa5e89aa74a93dcd86d88d537",
+      "weights_identity_layout": "nested_candidate_identity",
+      "a2_upstream_readiness": "BLOCKED",
+      "b1_closeout_report_sha256": "8660e6981b2922f5415466ab1c979dc80df9a1a1291662dd1a254537e8502f6a",
+      "b1_governed_release_manifest_sha256": "07d3a82502005646d8f29d0c493fa8a5b0270a5194fd5c802a04b4870ba7d37d",
+      "b1_calibration_identity_sha256": "51f07485afcaa7ca54db24006bd6c08b6baceefea041ac2a5836e864d12fdeae",
+      "b1_independent_validation_identity_sha256": "c73ecea388eeb93c8895fd25a1b1f1b2edbfdd6779ae65bf0cb613d5b59c4125",
+      "model_request_sha256": "7e68bc0d43ea2a37643c0dbf846766202b7f206190475d6b917471ffcd1a4ccf",
+      "maneuver_plan_sha256": "6fb4c94c73b493be107cda3abef64033efdec88918887a4ae0e66120aa72b0d7"
+    },
+    "graph": {
+      "node_count": 60,
+      "topology_digest": "e39ce8b5ecf019fabbe32e0ee6cf916cad1e24e70fcfe775e873535e981460cd"
+    },
+    "initializer_count": 50,
+    "initializer_digest": "43de0895cfbb7c1996922146810f3dacf8eb066219ad85861201d411d601ea0c",
+    "inputs": [
+      {
+        "name": "rgb",
+        "shape": [
+          1,
+          3,
+          224,
+          224
+        ]
+      },
+      {
+        "name": "text_tokens",
+        "shape": [
+          1,
+          32
+        ]
+      },
+      {
+        "name": "targets",
+        "shape": [
+          1,
+          8,
+          14
+        ]
+      },
+      {
+        "name": "state",
+        "shape": [
+          1,
+          64
+        ]
+      }
+    ],
+    "outputs": [
+      "plan_length_logits",
+      "behavior_logits",
+      "target_pointer_logits",
+      "target_lane_logits",
+      "target_speed_mps",
+      "completion_type_logits",
+      "on_failure_logits",
+      "confidence",
+      "requires_confirmation_logits",
+      "replan_condition_logits"
+    ]
+  },
+  "byte_identical": false,
+  "metadata_props_changed": [
+    "source_git_sha"
+  ],
+  "graph_topology_identical": true,
+  "initializer_digest_identical": true,
+  "initializers_changed": [],
+  "numeric_equivalence": {
+    "cases": 100,
+    "per_output": {
+      "plan_length_logits": {
+        "max_abs_diff": 0.0,
+        "argmax_agreement": "100/100"
+      },
+      "behavior_logits": {
+        "max_abs_diff": 0.0,
+        "argmax_agreement": "100/100"
+      },
+      "target_pointer_logits": {
+        "max_abs_diff": 0.0,
+        "argmax_agreement": "100/100"
+      },
+      "target_lane_logits": {
+        "max_abs_diff": 0.0,
+        "argmax_agreement": "100/100"
+      },
+      "target_speed_mps": {
+        "max_abs_diff": 0.0,
+        "argmax_agreement": "100/100"
+      },
+      "completion_type_logits": {
+        "max_abs_diff": 0.0,
+        "argmax_agreement": "100/100"
+      },
+      "on_failure_logits": {
+        "max_abs_diff": 0.0,
+        "argmax_agreement": "100/100"
+      },
+      "confidence": {
+        "max_abs_diff": 0.0,
+        "argmax_agreement": "100/100"
+      },
+      "requires_confirmation_logits": {
+        "max_abs_diff": 0.0,
+        "argmax_agreement": "100/100"
+      },
+      "replan_condition_logits": {
+        "max_abs_diff": 0.0,
+        "argmax_agreement": "100/100"
+      }
+    },
+    "worst_max_abs_diff": 0.0
+  },
+  "verdict": "METADATA_ONLY_DIFFERENCE_NUMERICALLY_IDENTICAL",
+  "reading": "the repository exporter stamps provenance (source_git_sha, producer_version, ...) into metadata_props, so two exports of the same state_dict are not byte-reproducible; the release candidate therefore has to pin one artifact and prove the other equivalent on weights, topology and numerics"
+}

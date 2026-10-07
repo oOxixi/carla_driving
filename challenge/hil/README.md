@@ -704,3 +704,20 @@ v3 在官方镜像内第一次跑 30 分钟长稳时，`soak_summary.json` 报�
 回到 **1,008.1%**（约 10 核 / 20 核），成功率、漂移（4.8 MiB）、峰值 RSS（368.5 MiB）
 与第一轮一致。该缺陷只影响 CPU 最大值，不影响延迟分位、内存与成功率；见
 `evidence/a3_v3_simulation_20261007/07_official_env_v3_full_and_soak.json`。
+
+### 11.12 ONNX 字节身份：把"要求"变成可执行判据（2026-10-07）
+
+submission ledger 列了一条阻塞项：A2 的 FP32 ONNX（`681a5d4b…`）与 B3 的
+（`b76b5a32…`）字节不同，要求 A4/B3 先解决。B3 的处理：
+
+* 查清原因——仓库导出器把 `source_git_sha`（默认取导出检出的 HEAD）等**溯源字段**写进
+  ONNX `metadata_props`，`producer_version` 记录 torch 版本；换掉这些字段，**文件大小不变而
+  SHA 不同**（两份都是 92,041,414 B）。所以"同一权重 → 同一字节"这个前提本身不成立；
+* 在官方镜像内把 `--source-git-sha` 换成 6 个候选提交重导出，**没有一个**复现 A2 的字节
+  → 靠猜参数对齐不可行；
+* 交付判据与工具：`harness/x86_sim/onnx_export_equivalence.py` 比对
+  文件 SHA / 元数据 / 图拓扑摘要 / 逐张量 initializer SHA / 冻结输入上的十头数值。
+  torch 2.6 × torch 2.8 两次实测判定
+  `METADATA_ONLY_DIFFERENCE_NUMERICALLY_IDENTICAL`（100 例 max abs diff = 0.0，argmax 100/100）。
+
+结论：RC 不需要"两边字节相同"，需要「**唯一交付字节 + 等价证明**」。

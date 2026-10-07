@@ -1,0 +1,25 @@
+{
+  "question": "能否用仓库导出器复现 A2 的 FP32 ONNX 字节 681a5d4bf16ba61741ef0e559649c43c041de649eef3e8e6f0b6285beaab4286？",
+  "method": "在官方镜像 openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1（torch 2.8.0+cpu）内，用同一权重与 manifest、同一导出器 challenge/export/export_onnx.py、同一 opset 17，只替换 --source-git-sha 后重导出",
+  "fixed_inputs": {
+    "weights": "challenge/distillation/releases/a3_b1_closeout_robust_fp32_candidate_v3/student_v0_fp32_candidate.pt",
+    "weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+    "handoff_manifest_sha256": "4c42406320a99150946b1ff0fde506ad6f6a4ac4fe3b484d20dbf944262f1f63",
+    "opset": 17,
+    "producer_version": "2.8.0",
+    "file_size_bytes": 92041414
+  },
+  "probe": [
+    {"source_git_sha": "c2576e591c31253b7a20a93218fc0f2ab5b61074", "output_sha256": "42893c22735f490f112113bbc56e7c9882ee1589d87ab6093bf9885e8a8951d8"},
+    {"source_git_sha": "3ebd0682fa70b46f1a679ecaeca808bb23f4ee7c", "output_sha256": "798848e90bd3a39091e516bbe1ee572f3340b5573d3d18bc22ae87196246194a"},
+    {"source_git_sha": "242e79eef1188ede69655c042caab9d886cbb4c2", "output_sha256": "af6acfeab63e1b909825ff466f70c52ee5dc709bc5280b1986e6c982a35fb967"},
+    {"source_git_sha": "197bc045315d823ea6aeb69af61d92347279e440", "output_sha256": "5a9e902d563d5e49706425f1558ca93fc48dc84cb40194dfe5bd799b14dee72e"},
+    {"source_git_sha": "6b6a2102817bd9dc1a5e5d77f270788e546da2a5", "output_sha256": "5245b5e82b3621a2e7ff2bb26a433477d1e354a31be163338cf0b6111e06bd2e"},
+    {"source_git_sha": "11823750b530f0bfebe22427113f2034d306d3b2", "output_sha256": "b552b860b85b09085464ca5215602ac5c07aabcbcdeda69f308486f856c4bb13"}
+  ],
+  "target_sha256": "681a5d4bf16ba61741ef0e559649c43c041de649eef3e8e6f0b6285beaab4286",
+  "matched": false,
+  "conclusion": "在官方镜像内改 --source-git-sha 无法复现 A2 的字节，说明两份 ONNX 的差异不止这一个字段（或导出环境/保存方式不同）。因此 RC 不应要求两边字节相同，而应采用'唯一字节 + 权重/拓扑/数值等价证明'（工具：harness/x86_sim/onnx_export_equivalence.py，实测判定 METADATA_ONLY_DIFFERENCE_NUMERICALLY_IDENTICAL）。",
+  "all_probe_files_same_size_bytes": 92041414,
+  "claim_scope": "X86_MEASURED（官方镜像内导出）/ 无板卡 / 权重门禁仍 PENDING_A3_FP32_GATE"
+}
