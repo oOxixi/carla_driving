@@ -1,0 +1,11 @@
+package      : a3_b1_closeout_robust_fp32_candidate_v3
+gate_status  : PENDING_A3_FP32_GATE  (passed=False)
+package_status: PENDING_B2_INDEPENDENT_VALIDATION
+model/config : student-v0-r3-fp32 / student-v0-r3-structure-20260911
+dataset      : b1_governed_closeout_v1_a3_strict_positive_v1
+weights      : student_v0_fp32_candidate.pt sha256=7f379c78c1702287��
+files        : 9 checked, 8 matched only after CRLF->LF normalisation
+failures     : 0
+status       : PASS
+note         : gate not passed -> any B3 replay stays DIAGNOSTIC_ONLY by design
+wrote challenge\hil\evidence\a3_v3_simulation_20261007\01_handoff_integrity_compact.json

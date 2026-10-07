@@ -1,0 +1,127 @@
+{
+  "turn_gap_val": {
+    "cases": 29,
+    "case_runs": 87,
+    "v3_behaviour_match": 0.689655,
+    "v1": 0.6897,
+    "v2": 0.6897,
+    "student_vocabulary": {
+      "SLOW_DOWN": 33,
+      "KEEP_LANE": 21,
+      "SET_SPEED": 21,
+      "FOLLOW": 6,
+      "YIELD": 6
+    },
+    "confusion_top": {
+      "TURN_LEFT -> SLOW_DOWN": 27,
+      "KEEP_LANE -> KEEP_LANE": 21,
+      "SET_SPEED -> SET_SPEED": 21,
+      "FOLLOW -> FOLLOW": 6,
+      "SLOW_DOWN -> SLOW_DOWN": 6,
+      "YIELD -> YIELD": 6
+    }
+  },
+  "gap300_val": {
+    "cases": 123,
+    "case_runs": 369,
+    "v3_behaviour_match": 0.707317,
+    "v1": null,
+    "v2": 0.7073,
+    "student_vocabulary": {
+      "SLOW_DOWN": 135,
+      "SET_SPEED": 81,
+      "KEEP_LANE": 72,
+      "YIELD": 36,
+      "FOLLOW": 27,
+      "PULL_OVER": 18
+    },
+    "confusion_top": {
+      "TURN_LEFT -> SLOW_DOWN": 108,
+      "SET_SPEED -> SET_SPEED": 81,
+      "KEEP_LANE -> KEEP_LANE": 72,
+      "YIELD -> YIELD": 36,
+      "FOLLOW -> FOLLOW": 27,
+      "SLOW_DOWN -> SLOW_DOWN": 27
+    }
+  },
+  "ms34_val": {
+    "cases": 4,
+    "case_runs": 12,
+    "v3_behaviour_match": 0.708333,
+    "v1": 0.3333,
+    "v2": 0.7083,
+    "student_vocabulary": {
+      "AVOID_OBSTACLE|RETURN_TO_LANE|RETURN_TO_LANE": 6,
+      "YIELD|AVOID_OBSTACLE|RETURN_TO_LANE|YIELD": 6
+    },
+    "confusion_top": {
+      "AVOID_OBSTACLE|RETURN_TO_LANE|KEEP_LANE -> AVOID_OBSTACLE|RETURN_TO_LANE|RETURN_TO_LANE": 6,
+      "YIELD|AVOID_OBSTACLE|RETURN_TO_LANE|KEEP_LANE -> YIELD|AVOID_OBSTACLE|RETURN_TO_LANE|YIELD": 6
+    }
+  },
+  "d2_v1_1_val": {
+    "cases": 539,
+    "case_runs": 1617,
+    "v3_behaviour_match": 0.951763,
+    "v1": 0.9518,
+    "v2": null,
+    "student_vocabulary": {
+      "SET_SPEED": 486,
+      "STOP": 315,
+      "FOLLOW": 207,
+      "KEEP_LANE": 195,
+      "AVOID_OBSTACLE|RETURN_TO_LANE": 105,
+      "SLOW_DOWN": 66,
+      "CHANGE_LANE_RIGHT": 60,
+      "TURN_RIGHT": 60
+    },
+    "confusion_top": {
+      "SET_SPEED -> SET_SPEED": 441,
+      "STOP -> STOP": 315,
+      "FOLLOW -> FOLLOW": 207,
+      "KEEP_LANE -> KEEP_LANE": 195,
+      "AVOID_OBSTACLE|RETURN_TO_LANE -> AVOID_OBSTACLE|RETURN_TO_LANE": 105,
+      "CHANGE_LANE_RIGHT -> CHANGE_LANE_RIGHT": 60
+    }
+  },
+  "d3_wave2_val": {
+    "cases": 56,
+    "case_runs": 168,
+    "v3_behaviour_match": 1.0,
+    "v1": 1.0,
+    "v2": null,
+    "student_vocabulary": {
+      "FOLLOW": 72,
+      "AVOID_OBSTACLE|RETURN_TO_LANE": 51,
+      "STOP": 45
+    },
+    "confusion_top": {
+      "FOLLOW -> FOLLOW": 72,
+      "AVOID_OBSTACLE|RETURN_TO_LANE -> AVOID_OBSTACLE|RETURN_TO_LANE": 51,
+      "STOP -> STOP": 45
+    }
+  },
+  "targeted_gap_val": {
+    "cases": 99,
+    "case_runs": 297,
+    "v3_behaviour_match": 1.0,
+    "v1": 0.9192,
+    "v2": null,
+    "student_vocabulary": {
+      "SET_SPEED": 111,
+      "CHANGE_LANE_LEFT": 63,
+      "CHANGE_LANE_RIGHT": 63,
+      "STOP": 27,
+      "YIELD": 24,
+      "FOLLOW": 9
+    },
+    "confusion_top": {
+      "SET_SPEED -> SET_SPEED": 111,
+      "CHANGE_LANE_LEFT -> CHANGE_LANE_LEFT": 63,
+      "CHANGE_LANE_RIGHT -> CHANGE_LANE_RIGHT": 63,
+      "STOP -> STOP": 27,
+      "YIELD -> YIELD": 24,
+      "FOLLOW -> FOLLOW": 9
+    }
+  }
+}

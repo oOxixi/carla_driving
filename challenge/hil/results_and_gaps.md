@@ -130,6 +130,29 @@
 - `YIELD` 在 v1 起已修好（6/6、36/36）；
 - 多步计划 v1 截断在 2 步 → **v2 能出全长 3/4 步**，但**最后一步错**（teacher 的 `KEEP_LANE` 被答成 `RETURN_TO_LANE`/`STOP`）。
 
+### 2.9 新候选 v3（robust closeout）复测（2026-10-07）
+
+`challenge` 新增 6 个提交，A3 发布 `a3_b1_closeout_robust_fp32_candidate_v3`（权重 `7f379c78…`，包校验 PASS，门禁仍 PENDING）。B3 用新权重做了同口径复测：
+
+| 队列 | 例次 | v1 | v2 | **v3** |
+|---|---:|---:|---:|---:|
+| D3 Wave2 val | 168 | 1.0000 | — | **1.0000** |
+| D2 v1.1 val | 1617 | 0.9518 | — | **0.9518** |
+| **targeted-gap val** | 297 | 0.9192 | — | **1.0000** ⬆ |
+| gap300 val | 369 | — | 0.7073 | **0.7073** |
+| turn-gap val | 87 | 0.6897 | 0.6897 | **0.6897** |
+| ms34 val | 12 | 0.3333 | 0.7083 | **0.7083** |
+
+**v3 的 robust 训练把 targeted-gap 从 0.9192 提升到 1.0000**；其余队列与 v2 持平。
+**`TURN_LEFT` 依旧从不产出**（turn-gap 27/27、gap300 108/108 都答成 `SLOW_DOWN`），已是**连续三个候选**的同一缺口。
+
+数值侧：用仓库导出器导出 v3 FP32 ONNX（`b76b5a32…`）→ 官方镜像里用 A2 的 1200 个校准张量编译 → 对 6 队列 **850 例**逐例比对：**离散头 min ≥0.9999、速度头 ≥0.9991、低于 0.99 的观测为 0**（本轮参考是 FP32 ONNX，即把量化与编译损失合并测量，仍达到该水平）。
+编译预检：**59/59 节点全在 BPU、零 fallback**，`.hbm` 23,579,544 B，最小内存 24,185,240 B。
+
+另记 A2 的 10-06 交接说明：三份包仍是 **PRE_GATE_ONLY**；B1 的`HISTORICAL_TEMPLATE_LINEAGE_UNRECOVERABLE` 证明使 B2 contract 走`FAIL_CLOSED_IF_TEMPLATE_IDENTITY_MISSING` —— **核心指标衰减的阻塞原因已变成可校验证据，但 Gate 仍未通过**。
+
+证据见 [`evidence/a3_v3_simulation_20261007/`](evidence/a3_v3_simulation_20261007/README.md)。
+
 ### 2.8 数据与交付物复核
 
 | 对象 | 结果 |

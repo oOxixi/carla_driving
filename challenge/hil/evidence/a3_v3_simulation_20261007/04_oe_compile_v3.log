@@ -1,0 +1,11 @@
+2026-10-07 19:34:00,131 INFO Using the onnx model file: /work/v3/student_v0_fp32_v3.onnx
+2026-10-07 19:36:23,192 INFO BPU march           : nash-p
+2026-10-07 19:36:23,443 INFO ############# memory info #############
+2026-10-07 19:36:23,452 INFO input memory        : 603136
+2026-10-07 19:36:23,456 INFO output memory       : 2560
+2026-10-07 19:36:23,459 INFO static memory       : 23579544
+2026-10-07 19:36:23,462 INFO dynamic memory      : 605696
+2026-10-07 19:36:23,465 INFO intermediate memory : 0
+2026-10-07 19:36:23,467 INFO temporary memory    : 0
+2026-10-07 19:36:23,471 INFO min memory requirement: 24185240
+2026-10-07 19:36:23,752 INFO The hb_compile completes running.
