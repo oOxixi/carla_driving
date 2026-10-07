@@ -1,0 +1,1227 @@
+{
+  "model": "D:\\nana\\oe\\work\\v3\\student_v0_fp32_v3.onnx",
+  "limit": "all",
+  "ablation": {
+    "d2_v1_1_val": {
+      "rgb": {
+        "behaviour_changed": "0/539",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.997075,
+        "behaviour_rel_change_mean": 0.038571,
+        "behaviour_argmax_flip": "0/539"
+      },
+      "text_tokens": {
+        "behaviour_changed": "0/539",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.999092,
+        "behaviour_rel_change_mean": 0.032462,
+        "behaviour_argmax_flip": "0/539"
+      },
+      "targets": {
+        "behaviour_changed": "0/539",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.994014,
+        "behaviour_rel_change_mean": 0.095946,
+        "behaviour_argmax_flip": "0/539"
+      },
+      "state": {
+        "behaviour_changed": "124/539",
+        "step_count_changed": 15,
+        "worst_head_cosine_mean": 0.864006,
+        "behaviour_rel_change_mean": 0.72133,
+        "behaviour_argmax_flip": "458/539"
+      }
+    },
+    "d3_wave2_safe_short_v1_val": {
+      "rgb": {
+        "behaviour_changed": "0/56",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.99916,
+        "behaviour_rel_change_mean": 0.02805,
+        "behaviour_argmax_flip": "0/56"
+      },
+      "text_tokens": {
+        "behaviour_changed": "0/56",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.99986,
+        "behaviour_rel_change_mean": 0.019887,
+        "behaviour_argmax_flip": "0/56"
+      },
+      "targets": {
+        "behaviour_changed": "0/56",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.981711,
+        "behaviour_rel_change_mean": 0.099571,
+        "behaviour_argmax_flip": "0/56"
+      },
+      "state": {
+        "behaviour_changed": "0/56",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.882551,
+        "behaviour_rel_change_mean": 0.755202,
+        "behaviour_argmax_flip": "20/56"
+      }
+    },
+    "d3_targeted_gap_strict_v1_val": {
+      "rgb": {
+        "behaviour_changed": "0/99",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.997625,
+        "behaviour_rel_change_mean": 0.032274,
+        "behaviour_argmax_flip": "0/99"
+      },
+      "text_tokens": {
+        "behaviour_changed": "0/99",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.999425,
+        "behaviour_rel_change_mean": 0.023396,
+        "behaviour_argmax_flip": "0/99"
+      },
+      "targets": {
+        "behaviour_changed": "0/99",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.996522,
+        "behaviour_rel_change_mean": 0.135291,
+        "behaviour_argmax_flip": "0/99"
+      },
+      "state": {
+        "behaviour_changed": "16/99",
+        "step_count_changed": 1,
+        "worst_head_cosine_mean": 0.883359,
+        "behaviour_rel_change_mean": 0.698176,
+        "behaviour_argmax_flip": "82/99"
+      }
+    },
+    "d3_turn_gap_60_strict_v1_val": {
+      "rgb": {
+        "behaviour_changed": "0/29",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.999028,
+        "behaviour_rel_change_mean": 0.033029,
+        "behaviour_argmax_flip": "0/29"
+      },
+      "text_tokens": {
+        "behaviour_changed": "0/29",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.999522,
+        "behaviour_rel_change_mean": 0.028308,
+        "behaviour_argmax_flip": "0/29"
+      },
+      "targets": {
+        "behaviour_changed": "0/29",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.996538,
+        "behaviour_rel_change_mean": 0.084751,
+        "behaviour_argmax_flip": "0/29"
+      },
+      "state": {
+        "behaviour_changed": "16/29",
+        "step_count_changed": 7,
+        "worst_head_cosine_mean": 0.774122,
+        "behaviour_rel_change_mean": 0.728724,
+        "behaviour_argmax_flip": "29/29"
+      }
+    },
+    "d3_gap300_strict_v1_val": {
+      "rgb": {
+        "behaviour_changed": "0/123",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.998846,
+        "behaviour_rel_change_mean": 0.03612,
+        "behaviour_argmax_flip": "0/123"
+      },
+      "text_tokens": {
+        "behaviour_changed": "0/123",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.999574,
+        "behaviour_rel_change_mean": 0.026734,
+        "behaviour_argmax_flip": "0/123"
+      },
+      "targets": {
+        "behaviour_changed": "0/123",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.996189,
+        "behaviour_rel_change_mean": 0.083006,
+        "behaviour_argmax_flip": "0/123"
+      },
+      "state": {
+        "behaviour_changed": "55/123",
+        "step_count_changed": 27,
+        "worst_head_cosine_mean": 0.769456,
+        "behaviour_rel_change_mean": 0.739495,
+        "behaviour_argmax_flip": "111/123"
+      }
+    },
+    "b1_ms34_supplement_v1_val": {
+      "rgb": {
+        "behaviour_changed": "0/4",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.993575,
+        "behaviour_rel_change_mean": 0.027536,
+        "behaviour_argmax_flip": "0/4"
+      },
+      "text_tokens": {
+        "behaviour_changed": "0/4",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.995774,
+        "behaviour_rel_change_mean": 0.065899,
+        "behaviour_argmax_flip": "0/4"
+      },
+      "targets": {
+        "behaviour_changed": "2/4",
+        "step_count_changed": 2,
+        "worst_head_cosine_mean": 0.876047,
+        "behaviour_rel_change_mean": 0.088907,
+        "behaviour_argmax_flip": "0/4"
+      },
+      "state": {
+        "behaviour_changed": "2/4",
+        "step_count_changed": 0,
+        "worst_head_cosine_mean": 0.626134,
+        "behaviour_rel_change_mean": 0.704739,
+        "behaviour_argmax_flip": "2/4"
+      }
+    }
+  },
+  "turn_left_attribution": {
+    "d2_v1_1_val": {
+      "totals": {
+        "cases": 539,
+        "steps_compared": 2156,
+        "decoded_steps": 594,
+        "teacher_steps": 593,
+        "decoded_match_steps": 564,
+        "unrestricted_match_steps": 593,
+        "mask_removed_unrestricted_top": 1244,
+        "mask_removed_teacher_behaviour": 29,
+        "teacher_turn_left_steps": 16,
+        "teacher_turn_left_unrestricted_top": 16,
+        "teacher_turn_left_masked_out": 7,
+        "teacher_turn_left_decoded": 9
+      },
+      "teacher_behaviour_breakdown": {
+        "STOP": {
+          "steps": 105,
+          "decoded_match": 105,
+          "unrestricted_match": 105
+        },
+        "SLOW_DOWN": {
+          "steps": 15,
+          "decoded_match": 15,
+          "unrestricted_match": 15
+        },
+        "SET_SPEED": {
+          "steps": 166,
+          "decoded_match": 166,
+          "unrestricted_match": 166
+        },
+        "AVOID_OBSTACLE": {
+          "steps": 35,
+          "decoded_match": 35,
+          "unrestricted_match": 35
+        },
+        "RETURN_TO_LANE": {
+          "steps": 35,
+          "decoded_match": 35,
+          "unrestricted_match": 35
+        },
+        "FOLLOW": {
+          "steps": 69,
+          "decoded_match": 69,
+          "unrestricted_match": 69
+        },
+        "KEEP_LANE": {
+          "steps": 65,
+          "decoded_match": 65,
+          "unrestricted_match": 65
+        },
+        "CHANGE_LANE_LEFT": {
+          "steps": 16,
+          "decoded_match": 16,
+          "unrestricted_match": 16
+        },
+        "TURN_LEFT": {
+          "steps": 16,
+          "decoded_match": 9,
+          "unrestricted_match": 16
+        },
+        "CHANGE_LANE_RIGHT": {
+          "steps": 20,
+          "decoded_match": 20,
+          "unrestricted_match": 20
+        },
+        "TURN_RIGHT": {
+          "steps": 51,
+          "decoded_match": 29,
+          "unrestricted_match": 51
+        }
+      },
+      "teacher_turn_left_steps": [
+        {
+          "case_id": "B06_left_turn#0010",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.292278,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "B06_left_turn#0099",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "TURN_LEFT",
+          "decoded_choice": "TURN_LEFT",
+          "turn_left_allowed": true,
+          "turn_left_logit_margin_vs_best_other": 6.871634,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": true,
+          "route_available": true
+        },
+        {
+          "case_id": "B06_left_turn#0142",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.526654,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "REG_004_advanced_rain_left_turn#0146",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.63193,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "B06_left_turn#0163",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "TURN_LEFT",
+          "decoded_choice": "TURN_LEFT",
+          "turn_left_allowed": true,
+          "turn_left_logit_margin_vs_best_other": 6.411178,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": true,
+          "route_available": true
+        },
+        {
+          "case_id": "B06_left_turn#0189",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "TURN_LEFT",
+          "decoded_choice": "TURN_LEFT",
+          "turn_left_allowed": true,
+          "turn_left_logit_margin_vs_best_other": 6.395809,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": true,
+          "route_available": true
+        },
+        {
+          "case_id": "B06_left_turn#0241",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.527105,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "REG_004_advanced_rain_left_turn#0252",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "TURN_LEFT",
+          "decoded_choice": "TURN_LEFT",
+          "turn_left_allowed": true,
+          "turn_left_logit_margin_vs_best_other": 6.712118,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": true,
+          "route_available": true
+        },
+        {
+          "case_id": "B06_left_turn#0253",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.257247,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "REG_004_advanced_rain_left_turn#0258",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.36024,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "REG_004_advanced_rain_left_turn#0326",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.317498,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "REG_004_advanced_rain_left_turn#0339",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "TURN_LEFT",
+          "decoded_choice": "TURN_LEFT",
+          "turn_left_allowed": true,
+          "turn_left_logit_margin_vs_best_other": 6.543437,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": true,
+          "route_available": true
+        },
+        {
+          "case_id": "REG_004_advanced_rain_left_turn#0411",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "TURN_LEFT",
+          "decoded_choice": "TURN_LEFT",
+          "turn_left_allowed": true,
+          "turn_left_logit_margin_vs_best_other": 6.967391,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": true,
+          "route_available": true
+        },
+        {
+          "case_id": "B06_left_turn#0495",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "TURN_LEFT",
+          "decoded_choice": "TURN_LEFT",
+          "turn_left_allowed": true,
+          "turn_left_logit_margin_vs_best_other": 6.629993,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": true,
+          "route_available": true
+        },
+        {
+          "case_id": "REG_004_advanced_rain_left_turn#0497",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "TURN_LEFT",
+          "decoded_choice": "TURN_LEFT",
+          "turn_left_allowed": true,
+          "turn_left_logit_margin_vs_best_other": 6.987019,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": true,
+          "route_available": true
+        },
+        {
+          "case_id": "B06_left_turn#0499",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "TURN_LEFT",
+          "decoded_choice": "TURN_LEFT",
+          "turn_left_allowed": true,
+          "turn_left_logit_margin_vs_best_other": 6.901651,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": true,
+          "route_available": true
+        }
+      ]
+    },
+    "d3_wave2_safe_short_v1_val": {
+      "totals": {
+        "cases": 56,
+        "steps_compared": 224,
+        "decoded_steps": 73,
+        "teacher_steps": 73,
+        "decoded_match_steps": 73,
+        "unrestricted_match_steps": 73,
+        "mask_removed_unrestricted_top": 136,
+        "mask_removed_teacher_behaviour": 0,
+        "teacher_turn_left_steps": 0,
+        "teacher_turn_left_unrestricted_top": 0,
+        "teacher_turn_left_masked_out": 0,
+        "teacher_turn_left_decoded": 0
+      },
+      "teacher_behaviour_breakdown": {
+        "FOLLOW": {
+          "steps": 24,
+          "decoded_match": 24,
+          "unrestricted_match": 24
+        },
+        "STOP": {
+          "steps": 15,
+          "decoded_match": 15,
+          "unrestricted_match": 15
+        },
+        "AVOID_OBSTACLE": {
+          "steps": 17,
+          "decoded_match": 17,
+          "unrestricted_match": 17
+        },
+        "RETURN_TO_LANE": {
+          "steps": 17,
+          "decoded_match": 17,
+          "unrestricted_match": 17
+        }
+      },
+      "teacher_turn_left_steps": []
+    },
+    "d3_targeted_gap_strict_v1_val": {
+      "totals": {
+        "cases": 99,
+        "steps_compared": 396,
+        "decoded_steps": 99,
+        "teacher_steps": 99,
+        "decoded_match_steps": 99,
+        "unrestricted_match_steps": 99,
+        "mask_removed_unrestricted_top": 236,
+        "mask_removed_teacher_behaviour": 0,
+        "teacher_turn_left_steps": 0,
+        "teacher_turn_left_unrestricted_top": 0,
+        "teacher_turn_left_masked_out": 0,
+        "teacher_turn_left_decoded": 0
+      },
+      "teacher_behaviour_breakdown": {
+        "STOP": {
+          "steps": 9,
+          "decoded_match": 9,
+          "unrestricted_match": 9
+        },
+        "SET_SPEED": {
+          "steps": 37,
+          "decoded_match": 37,
+          "unrestricted_match": 37
+        },
+        "CHANGE_LANE_LEFT": {
+          "steps": 21,
+          "decoded_match": 21,
+          "unrestricted_match": 21
+        },
+        "CHANGE_LANE_RIGHT": {
+          "steps": 21,
+          "decoded_match": 21,
+          "unrestricted_match": 21
+        },
+        "YIELD": {
+          "steps": 8,
+          "decoded_match": 8,
+          "unrestricted_match": 8
+        },
+        "FOLLOW": {
+          "steps": 3,
+          "decoded_match": 3,
+          "unrestricted_match": 3
+        }
+      },
+      "teacher_turn_left_steps": []
+    },
+    "d3_turn_gap_60_strict_v1_val": {
+      "totals": {
+        "cases": 29,
+        "steps_compared": 116,
+        "decoded_steps": 29,
+        "teacher_steps": 29,
+        "decoded_match_steps": 20,
+        "unrestricted_match_steps": 29,
+        "mask_removed_unrestricted_top": 49,
+        "mask_removed_teacher_behaviour": 9,
+        "teacher_turn_left_steps": 9,
+        "teacher_turn_left_unrestricted_top": 9,
+        "teacher_turn_left_masked_out": 9,
+        "teacher_turn_left_decoded": 0
+      },
+      "teacher_behaviour_breakdown": {
+        "KEEP_LANE": {
+          "steps": 7,
+          "decoded_match": 7,
+          "unrestricted_match": 7
+        },
+        "TURN_LEFT": {
+          "steps": 9,
+          "decoded_match": 0,
+          "unrestricted_match": 9
+        },
+        "SET_SPEED": {
+          "steps": 7,
+          "decoded_match": 7,
+          "unrestricted_match": 7
+        },
+        "FOLLOW": {
+          "steps": 2,
+          "decoded_match": 2,
+          "unrestricted_match": 2
+        },
+        "SLOW_DOWN": {
+          "steps": 2,
+          "decoded_match": 2,
+          "unrestricted_match": 2
+        },
+        "YIELD": {
+          "steps": 2,
+          "decoded_match": 2,
+          "unrestricted_match": 2
+        }
+      },
+      "teacher_turn_left_steps": [
+        {
+          "case_id": "TC_C01_true_3step_left#0001",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.394083,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0005",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 6.690042,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0008",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.342619,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0011",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.359992,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0014",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.241072,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0017",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.057956,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0020",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.305454,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0023",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.232902,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0027",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 6.732659,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        }
+      ]
+    },
+    "d3_gap300_strict_v1_val": {
+      "totals": {
+        "cases": 123,
+        "steps_compared": 492,
+        "decoded_steps": 123,
+        "teacher_steps": 123,
+        "decoded_match_steps": 87,
+        "unrestricted_match_steps": 123,
+        "mask_removed_unrestricted_top": 210,
+        "mask_removed_teacher_behaviour": 36,
+        "teacher_turn_left_steps": 36,
+        "teacher_turn_left_unrestricted_top": 36,
+        "teacher_turn_left_masked_out": 36,
+        "teacher_turn_left_decoded": 0
+      },
+      "teacher_behaviour_breakdown": {
+        "KEEP_LANE": {
+          "steps": 24,
+          "decoded_match": 24,
+          "unrestricted_match": 24
+        },
+        "TURN_LEFT": {
+          "steps": 36,
+          "decoded_match": 0,
+          "unrestricted_match": 36
+        },
+        "SET_SPEED": {
+          "steps": 27,
+          "decoded_match": 27,
+          "unrestricted_match": 27
+        },
+        "YIELD": {
+          "steps": 12,
+          "decoded_match": 12,
+          "unrestricted_match": 12
+        },
+        "FOLLOW": {
+          "steps": 9,
+          "decoded_match": 9,
+          "unrestricted_match": 9
+        },
+        "SLOW_DOWN": {
+          "steps": 9,
+          "decoded_match": 9,
+          "unrestricted_match": 9
+        },
+        "PULL_OVER": {
+          "steps": 6,
+          "decoded_match": 6,
+          "unrestricted_match": 6
+        }
+      },
+      "teacher_turn_left_steps": [
+        {
+          "case_id": "TC_C01_true_3step_left#0001",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.562506,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0004",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.535935,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0007",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.194825,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0011",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 6.888476,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0014",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.407567,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0017",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.40863,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0021",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 6.836084,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0024",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.11474,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0027",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.619158,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0031",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 6.840323,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0034",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.769048,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0037",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.756223,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0041",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 6.837806,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0045",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.194502,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0048",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.607377,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0052",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 6.86704,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0055",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.561714,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0058",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.613507,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0063",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.760317,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0066",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.097699,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0069",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.103113,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0072",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.620388,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0075",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.181429,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0078",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.103415,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0082",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 6.820235,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0085",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.405443,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0088",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.615102,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0092",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 6.884593,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0096",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 6.881341,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0099",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.725201,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0102",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.627075,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0105",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.740108,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0110",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.102594,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0113",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.586876,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0117",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 6.800499,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0121",
+          "step": 0,
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "turn_left_allowed": false,
+          "turn_left_logit_margin_vs_best_other": 7.184491,
+          "turn_left_logit_rank": 1,
+          "intersection_ahead": false,
+          "route_available": true
+        }
+      ]
+    },
+    "b1_ms34_supplement_v1_val": {
+      "totals": {
+        "cases": 4,
+        "steps_compared": 16,
+        "decoded_steps": 14,
+        "teacher_steps": 14,
+        "decoded_match_steps": 10,
+        "unrestricted_match_steps": 14,
+        "mask_removed_unrestricted_top": 6,
+        "mask_removed_teacher_behaviour": 4,
+        "teacher_turn_left_steps": 0,
+        "teacher_turn_left_unrestricted_top": 0,
+        "teacher_turn_left_masked_out": 0,
+        "teacher_turn_left_decoded": 0
+      },
+      "teacher_behaviour_breakdown": {
+        "AVOID_OBSTACLE": {
+          "steps": 4,
+          "decoded_match": 4,
+          "unrestricted_match": 4
+        },
+        "RETURN_TO_LANE": {
+          "steps": 4,
+          "decoded_match": 4,
+          "unrestricted_match": 4
+        },
+        "KEEP_LANE": {
+          "steps": 4,
+          "decoded_match": 0,
+          "unrestricted_match": 4
+        },
+        "YIELD": {
+          "steps": 2,
+          "decoded_match": 2,
+          "unrestricted_match": 2
+        }
+      },
+      "teacher_turn_left_steps": []
+    }
+  }
+}

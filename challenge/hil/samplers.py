@@ -278,17 +278,64 @@ class BackgroundMonitor:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._index = 0
-        self._cpu_sampler: Callable[[], float | None] = self._cpu_percent_sampler()
+        self._cpu_sampler: Callable[[], float | None] = self._cpu_percent_sampler(
+            self.spec.interval_s
+        )
 
     @staticmethod
-    def _cpu_percent_sampler() -> Callable[[], float | None]:
+    def _cpu_percent_sampler(interval_s: float = 1.0) -> Callable[[], float | None]:
+        """Process CPU percent measured over our own monotonic window.
+
+        ``psutil.Process.cpu_percent(None)`` divides the CPU time since the
+        *previous call on that object* by the wall time of that same window.
+        ``sample_once`` is called from the monitor thread, from ``start`` and
+        again from ``stop``, so two calls can land microseconds apart: the
+        window collapses to ~0 while the accumulated CPU time still covers the
+        whole second, and the quotient explodes (observed: 27009% on a 20-core
+        container, which is physically impossible).  A lock plus a minimum
+        measurement window removes the artefact; below the window the previous
+        valid reading is repeated and the window is *not* consumed, so the next
+        real sample still covers the full interval.  The floor scales with the
+        configured interval so a fast telemetry spec is not pinned to a stale
+        reading.
+        """
         try:
             import psutil
         except ImportError:
             return lambda: None
         process = psutil.Process()
-        process.cpu_percent(None)
-        return lambda: process.cpu_percent(None)
+        lock = threading.Lock()
+        minimum_window_s = max(1e-3, min(0.05, float(interval_s) / 2.0))
+        state: dict[str, float | None] = {"cpu_s": None, "wall_s": None, "last": 0.0}
+
+        def sample() -> float | None:
+            with lock:
+                now = time.monotonic()
+                try:
+                    cpu_s = sum(process.cpu_times()[:2])
+                except Exception:  # pragma: no cover - platform guard
+                    return None
+                previous_cpu = state["cpu_s"]
+                previous_wall = state["wall_s"]
+                if previous_cpu is None or previous_wall is None:
+                    state["cpu_s"] = cpu_s
+                    state["wall_s"] = now
+                    return state["last"]
+                elapsed = now - previous_wall
+                if elapsed <= 0:
+                    return state["last"]
+                value = 100.0 * (cpu_s - previous_cpu) / elapsed
+                if elapsed < minimum_window_s:
+                    # Too short to measure meaningfully: keep the previous
+                    # reading and leave the window open for the next sample.
+                    return state["last"]
+                state["cpu_s"] = cpu_s
+                state["wall_s"] = now
+                state["last"] = value
+                return value
+
+        sample()
+        return sample
 
     def start(self) -> None:
         self.sample_once()

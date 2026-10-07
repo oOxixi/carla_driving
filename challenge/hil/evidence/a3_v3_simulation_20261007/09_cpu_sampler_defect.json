@@ -1,0 +1,41 @@
+{
+  "defect_id": "B3-TEL-001",
+  "title": "进程 CPU 峰值被采样竞态放大成不可物理的数值",
+  "found_at_utc": "2026-10-07T12:49Z",
+  "found_while": "v3 候选在官方镜像内的第一次 30 分钟长稳（run b3-soak-20261007T121914Z-9a226211）",
+  "symptom": {
+    "reported_cpu_percent_max": 27009.8,
+    "container_cpu_count": 20,
+    "physical_upper_bound_percent": 2000.0,
+    "conclusion": "报出的值高于物理上限 13 倍，说明是采样缺陷而不是真实负载"
+  },
+  "mechanism": "BackgroundMonitor.sample_once 会被监控线程、start() 和 stop() 三处调用；psutil.Process.cpu_percent(None) 用'该对象上一次调用'作为测量窗口。stop() 紧接着监控线程采样时，窗口塌缩到微秒级，而 CPU 时间差仍覆盖整个采样间隔，商被放大成上万的百分比。memory_during_soak.csv 的时间戳印证了这一点：1795 个采样间隔里只有最后一个异常缩短（0.4976 s，其余 ~1.0019 s）。",
+  "fix": {
+    "file": "challenge/hil/samplers.py",
+    "change": "采样器改为自持 time.monotonic 窗口并加锁；窗口小于下限时沿用上一次有效读数，且不消耗该窗口，使下一次真实采样仍覆盖完整间隔。下限 = min(50 ms, 采样间隔/2)，本轮的采样间隔是 1 s，因此下限为 50 ms；间隔很短的遥测规格不会被钉在过期读数上",
+    "tests_added": "challenge/hil/tests/test_samplers_cpu.py（3 条：基线不是测量、量程受核数约束、背靠背采样不爆表）",
+    "tests_result": "3 passed"
+  },
+  "before_after": {
+    "before": {
+      "run_id": "b3-soak-20261007T121914Z-9a226211",
+      "cpu_percent_max": 27009.8,
+      "iterations": 134210,
+      "error_count": 0,
+      "memory_drift_kib": 6867.75,
+      "peak_rss_mib": 371.52
+    },
+    "after": {
+      "run_id": "b3-soak-20261007T125425Z-b7925714",
+      "cpu_percent_max": 1008.08,
+      "iterations": 128545,
+      "error_count": 0,
+      "memory_drift_kib": 4883.33,
+      "peak_rss_mib": 368.47,
+      "recovery_probe": "10/10 READY, p95 15.10 ms"
+    }
+  },
+  "reading": "修复前的 27009.8% 与修复后的 1008.08% 都指向同一负载量级（约 10 核），差别只在是否把竞态样本计入最大值。修复后的值低于 100 x 20 核的理论上限，可以对外引用；修复前的值只能作为缺陷证据。",
+  "scope": "该缺陷只影响 utilization 遥测的最大值，不影响延迟分位（latency 由独立的 perf_counter_ns 打点产生）、不影响内存漂移与成功率。",
+  "claim_scope": "X86_MEASURED（官方镜像）/ 无板卡 / 权重门禁仍 PENDING_A3_FP32_GATE"
+}

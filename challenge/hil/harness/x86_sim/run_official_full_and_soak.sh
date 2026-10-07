@@ -7,15 +7,15 @@
 # roughly 6x (see evidence/scoring_requirements_20261003/env_comparison.json).
 #
 # Usage (inside the image):
-#   bash challenge/hil/harness/x86_sim/run_official_full_and_soak.sh [<soak_minutes>] [<limit>]
+#   bash challenge/hil/harness/x86_sim/run_official_full_and_soak.sh [<soak_minutes>] [<limit>] [<candidate_dir>]
 set -eu
 
 cd /repo
 MINUTES=${1:-30}
 LIMIT=${2:-539}
-CAND=challenge/distillation/releases/a3_final_fp32_candidate_v1
+CAND=${3:-challenge/distillation/releases/a3_final_fp32_candidate_v1}
 DATA=/tmp/frozen_d2
-OUT=/tmp/b3_official_full
+OUT=/tmp/b3_official_full_$(basename "$CAND")
 
 if [ ! -d "$DATA" ]; then
   cp -r challenge/hil/frozen/d2_v1_1_val "$DATA"

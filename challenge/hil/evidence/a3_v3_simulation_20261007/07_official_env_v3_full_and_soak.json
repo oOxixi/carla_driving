@@ -1,0 +1,276 @@
+{
+  "candidate": {
+    "model_id": "student-v0-r3-fp32",
+    "weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+    "gate_status": "PENDING_A3_FP32_GATE",
+    "verified": true
+  },
+  "full_run": {
+    "run_id": "b3-20261007T121843Z-2824a906",
+    "snapshot": "frozen/d2_v1_1_val",
+    "cases": 539,
+    "rounds": 3,
+    "case_runs": 1622,
+    "measured_ready": 1617,
+    "outcomes": {
+      "READY": 1622
+    },
+    "percentiles_ms": {
+      "preprocess_ms": {
+        "p50": 7.731137,
+        "p95": 9.6161668,
+        "p99": 11.07695716,
+        "max": 15.979589
+      },
+      "packing_ms": {
+        "p50": 0.346053,
+        "p95": 0.49062479999999997,
+        "p99": 0.853850679999998,
+        "max": 1.622097
+      },
+      "inference_setup_ms": {
+        "p50": 0.002002,
+        "p95": 0.0030791999999999972,
+        "p99": 0.00496579999999999,
+        "max": 0.047241
+      },
+      "model_inference_ms": {
+        "p50": 4.513456,
+        "p95": 5.814469,
+        "p99": 6.569406719999999,
+        "max": 9.665766
+      },
+      "postprocess_ms": {
+        "p50": 0.033373,
+        "p95": 0.0469512,
+        "p99": 0.07989907999999998,
+        "max": 0.11194
+      },
+      "adapter_ms": {
+        "p50": 0.197124,
+        "p95": 0.27660619999999997,
+        "p99": 0.40931192000000005,
+        "max": 0.845462
+      },
+      "plan_validation_ms": {
+        "p50": 0.510739,
+        "p95": 0.7396692,
+        "p99": 1.0993403599999996,
+        "max": 60.831608
+      },
+      "pre_model_ms": {
+        "p50": 8.077068,
+        "p95": 10.055644199999998,
+        "p99": 11.52269603999999,
+        "max": 16.37834
+      },
+      "post_model_ms": {
+        "p50": 0.745621,
+        "p95": 1.0401477999999977,
+        "p99": 1.5655160799999999,
+        "max": 61.000935
+      },
+      "planner_e2e_ms": {
+        "p50": 13.223467,
+        "p95": 16.339073399999997,
+        "p99": 18.275208279999987,
+        "max": 70.130778
+      },
+      "model_only_ms": {
+        "p50": 4.513456,
+        "p95": 5.814469,
+        "p99": 6.569406719999999,
+        "max": 9.665766
+      },
+      "planner_overhead_ms": {
+        "p50": 8.823381999999999,
+        "p95": 10.984603799999999,
+        "p99": 12.430372199999994,
+        "max": 66.70029400000001
+      }
+    }
+  },
+  "soak_30min": {
+    "run_id": "b3-soak-20261007T125425Z-b7925714",
+    "observed_duration_s": 1800.0043798030001,
+    "iterations": 128545,
+    "error_count": 0,
+    "success_rate": 1.0,
+    "memory_drift_kib": 4883.32960893854,
+    "peak_rss_mib": 368.47265625,
+    "cpu_percent_max": 1008.083304487642,
+    "bpu_percent_max": null,
+    "recovery_probe": {
+      "requests": 10,
+      "outcomes": {
+        "READY": 10
+      },
+      "errors": 0,
+      "p95_ms": 15.102962699999999
+    },
+    "latency_p95_ms": 16.18912885,
+    "latency_max_ms": 40.015975,
+    "power": "NOT_APPLICABLE",
+    "capacity": {
+      "cpu_count": 20,
+      "note": "cpu_percent is a process figure; compare it with 100 x cpu_count"
+    }
+  },
+  "environment": {
+    "device_class": "X86_WORKSTATION",
+    "run_started_at_utc": "2026-10-07T12:18:49.080909+00:00",
+    "host": {
+      "hostname": "ed510e38d2fb",
+      "os": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+      "kernel": "#1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026",
+      "cpu_model": "x86_64",
+      "cpu_cores": 20,
+      "cpu_max_mhz": null
+    },
+    "memory_total_mib": null,
+    "background_load_cpu_percent": 0.0,
+    "power_source": "UNKNOWN",
+    "cpu_frequency": {
+      "current_mhz": 2803.199,
+      "max_mhz": null
+    },
+    "cpu_calibration_ms": 7.498964,
+    "python": {
+      "version": "3.10.12",
+      "executable": "/usr/bin/python3"
+    },
+    "runtime_libraries": {
+      "torch": "2.8.0+cpu",
+      "onnxruntime": "1.19.0",
+      "onnx": "1.15.0",
+      "numpy": "1.23.0",
+      "Pillow": "9.3.0",
+      "jsonschema": "4.25.1",
+      "psutil": "7.2.1"
+    },
+    "clock": {
+      "source": "perf_counter_ns",
+      "resolution_ns": 1.0,
+      "platform_monotonic_resolution_ns": 1.0
+    },
+    "accelerator": {
+      "kind": "cpu",
+      "name": "x86_64",
+      "driver": null,
+      "runtime_version": "1.19.0"
+    },
+    "bpu": null,
+    "openexplorer": null,
+    "model_artifact": {
+      "path": "/repo/challenge/distillation/releases/a3_b1_closeout_robust_fp32_candidate_v3/student_v0_fp32_candidate.pt",
+      "sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+      "size_bytes": 92045422,
+      "format": "pt"
+    },
+    "model_seed": 20260911,
+    "teacher_baselines": {
+      "v1": {
+        "label": "v1",
+        "manifest_path": "challenge/teacher_baseline_manifest.json",
+        "status": "PINNED",
+        "manifest_sha256": "0c506c080f950a968ee531787ab9362ed6dc3c3aaf779cd338fe0fa4da2ab6ad",
+        "baseline_id": "teacher-baseline-v1",
+        "git_sha": "a05c8b76efcd4c176965223c661f40b153cb1836",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+        "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+        "verification_status": "PINNED_ARTIFACT_VERIFIED_B2_BENCHMARK_PENDING",
+        "source_branch": "main",
+        "input_contract": {
+          "name": "ModelRequest V1",
+          "schema_version": "1.0",
+          "canonical_json_sha256": "7e68bc0d43ea2a37643c0dbf846766202b7f206190475d6b917471ffcd1a4ccf"
+        },
+        "output_contract": {
+          "name": "ManeuverPlan V2",
+          "schema_version": "2.0",
+          "canonical_json_sha256": "6fb4c94c73b493be107cda3abef64033efdec88918887a4ae0e66120aa72b0d7"
+        },
+        "serving": null,
+        "dtype": null,
+        "git_tag": {
+          "tag": "teacher-baseline-v1",
+          "sha": "a05c8b76efcd4c176965223c661f40b153cb1836",
+          "reason": null
+        }
+      },
+      "v4": {
+        "label": "v4",
+        "manifest_path": "challenge/teacher_pinned_manifest_v4.json",
+        "status": "PINNED",
+        "manifest_sha256": "852e4f4a7118d7638a2646e04dd1a6f5c25276973f897de2380a90fbd7521654",
+        "baseline_id": "b1-pinned-teacher-v4",
+        "git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+        "model_id": "Qwen/Qwen3.5-2B",
+        "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+        "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+        "verification_status": null,
+        "source_branch": null,
+        "input_contract": null,
+        "output_contract": null,
+        "serving": {
+          "vllm_version": "0.29.0",
+          "torch_version": "2.13.0+cu132",
+          "flashinfer_sampler": false,
+          "max_num_seqs": 1,
+          "gpu_memory_utilization": 0.7,
+          "image_max_side": 224
+        },
+        "dtype": "bfloat16",
+        "git_tag": {
+          "tag": "teacher-baseline-v4",
+          "sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+          "reason": null
+        }
+      },
+      "active": "v4",
+      "model_identity_consistent": true,
+      "model_identity_fields": [
+        "model_id",
+        "model_revision",
+        "artifact_fingerprint_sha256"
+      ]
+    },
+    "identity": {
+      "git_sha": "18a95de9702fe7baa5e89aa74a93dcd86d88d537",
+      "model_id": "student-v0-r3-fp32",
+      "model_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+      "dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+      "config_id": "student-v0-r3-structure-20260911",
+      "gate_status": "PENDING_A3_FP32_GATE",
+      "weights_manifest": "challenge/distillation/releases/a3_b1_closeout_robust_fp32_candidate_v3/handoff_manifest.json",
+      "verification": {
+        "method": "weights_manifest_vs_artifact_sha256",
+        "verified": true,
+        "layout": "nested_candidate_identity",
+        "identity_source": "candidate_identity",
+        "manifest_path": "challenge/distillation/releases/a3_b1_closeout_robust_fp32_candidate_v3/handoff_manifest.json",
+        "manifest_sha256": "4c42406320a99150946b1ff0fde506ad6f6a4ac4fe3b484d20dbf944262f1f63",
+        "reported_weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+        "artifact_path": "challenge/distillation/releases/a3_b1_closeout_robust_fp32_candidate_v3/student_v0_fp32_candidate.pt",
+        "artifact_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+        "gate_status": "PENDING_A3_FP32_GATE"
+      },
+      "complete": true,
+      "missing": []
+    },
+    "power_measurement": {
+      "method": "NOT_MEASURED",
+      "probe_point": "NOT_MEASURED",
+      "sampling_hz": 1.0,
+      "notes": ""
+    },
+    "thermal": null,
+    "cpu_governor": null
+  },
+  "claim_scope": {
+    "class": "X86_MEASURED",
+    "note": "official openexplorer X86 image, candidate weights with PENDING gate; no J6P board, no A4 runtime, not an accuracy result"
+  },
+  "label": "a3_v3"
+}

@@ -182,6 +182,14 @@ py -3.12 -m challenge.hil.cli run `
 - B3 已能直接供材料 #10/#12 的数字：X86 Planner E2E P50 22.65 / P95 30.60 ms、模型纯推理 9.69/12.58 ms、峰值 RSS 388.5 MiB、30 分钟长稳（77,653 次 / 0 失败 / 漂移 −94 KiB / 恢复 10/10）、INT8 编译保真度 850 例（min 余弦 0.999125）与计划等价性 747 例（结构失配 0）；但这些要在**官方 X86 Docker + 最终 Runtime** 上重跑才满足细则的「实测优先」；
 - 数据同源：我们用的是**自建**留出队列（6 个、850 例），脚本已冻结在 `challenge/hil/harness/`，材料里必须写明来源、规模与口径。
 
+> **2026-10-07 更新**：官方镜像内的同口径数字已经跑出来，材料应改用
+> [`evidence/scoring_requirements_20261003/`](evidence/scoring_requirements_20261003/README.md)（v1 候选）
+> 与 [`evidence/a3_v3_simulation_20261007/`](evidence/a3_v3_simulation_20261007/README.md)（v3 候选）：
+> v3 的 planner E2E **P50 13.223 / P95 16.339 / P99 18.275 ms**、模型纯推理 4.513/5.814 ms、
+> 峰值 RSS 371.5 MiB、30 分钟 **134,210 次迭代 / 0 失败 / 恢复 10/10**。
+> 上面那条 22.65/30.60 ms 是**宿主机**（非官方镜像）的数，只作为第 2.3 节"环境敏感性"的对照保留，
+> 不要写进对外材料的性能一栏。
+
 完整逐项表见 [`evidence/scoring_requirements_20261003/`](evidence/scoring_requirements_20261003/README.md)。
 
 ## 5. 对照 B3 要求的完成情况
@@ -234,7 +242,7 @@ py -3.12 -m challenge.hil.cli run `
 | `memory_raw.csv` | **已完成** | RSS 与峰值 RSS（进程级） |
 | `power_raw.csv` | **NOT_MEASURED** | 列定义与写入已实现；行内容为 `NOT_APPLICABLE`（无探针）；本轮口径不测功耗 |
 | `utilization_raw.csv` | **部分完成** | CPU 已实测；**BPU 字段 `NOT_MEASURED`** |
-| `stability_logs/` | **部分完成** | `soak.jsonl`（流式写入）、`soak_summary.json`、`memory_during_soak.csv` 均已产出；已有一次 30 分钟 X86 运行（123,611 次迭代）；**板端 30 分钟 `NOT_MEASURED`** |
+| `stability_logs/` | **部分完成** | `soak.jsonl`（流式写入）、`soak_summary.json`、`memory_during_soak.csv` 均已产出；**官方镜像内已完成两次 30 分钟长稳**（v1 候选 141,118 次 / v3 候选 134,210 次，均 0 失败、恢复 10/10）；**板端 30 分钟 `NOT_MEASURED`** |
 | `j6p_test_report.md` | **NOT_MEASURED** | 报告名由证据核验结果决定：只有完整板端证据链才生成该名，当前尚无板端运行。`--device-class J6P_BOARD` 单独出现时生成 `j6p_unverified_report.md`，不含任何板端结论 |
 | `failure_cases/` | **已完成** | 10 个用例逐个落盘 + `failure_summary.json` |
 
@@ -411,6 +419,11 @@ torch 已从 2.13.0 换到声明要求的 2.6.0。切换前先在独立 venv 中
 | `shortcut_probe_20260921/` | 独立复核模板泄漏：Val 指令文本 100% 出现在 Train，查表可复现 Teacher 505/539 |
 | `carla_measurement_20260921/` | 用固定入口脚本重跑 CARLA 闭环：`S01_set_speed_20` SUCCEEDED、25/25、600 帧 |
 | `soak_30min_20260921/` | X86 30 分钟长稳：1800 s、123,611 次迭代、0 失败、漂移 3.49 MiB（曲线走平） |
+| `scoring_requirements_20261003/` | 初审评分细则的数据台账：官方环境指纹、官方镜像内的 539×3 与 30 分钟长稳、环境敏感性对照、逐项自评 |
+| `d3_wave2_calibration_20260925/`、`d3_targeted_gap_20260926/`、`d3_turn_gap_20260927/` | 三批新数据的发布校验、真实权重回放与 INT8/编译复核 |
+| `a3_final_fp32_v1_20261002/`、`a3_final_fp32_v2_20261002/`、`a3_robust_fp32_v3_20261006/` | A3 三版候选包的独立校验、行为复测与编译预检 |
+| `b1_closeout_releases_20261002/`、`a2_openexplorer_20261002/` | B1 五个 release 与 A2 OpenExplorer/校准包的独立复核 |
+| `a3_v3_simulation_20261007/` | **本轮**：v3 官方镜像同口径复测、6 队列消融、**行为缺口归因**（掩码 vs 模型）、采样器修复 |
 
 完整运行历史（含被取代与作废的运行）保留在仓库外的 B3 工作区，未入库。
 逐帧原始日志体积大，留在 `artifacts/logs/`（被 gitignore 覆盖）。
@@ -653,3 +666,41 @@ py -3.12 -m challenge.hil.cli run --repo . --adapter inprocess `
 `candidate_identity`，见提交 `3b09f1f`），会**重算权重 SHA256 并与 manifest 比对**；
 由于 `gate_status` 仍是 `PENDING_A3_FP32_GATE`，回放结论保持 **`DIAGNOSTIC_ONLY`**——
 只有 B2 签发 `A3_FP32_GATE_PASSED` 后才可能晋级为 `GATE_ELIGIBLE`。
+
+### 11.10 行为缺口的归因能力：模型 vs 解码器掩码（2026-10-07）
+
+此前"学生从不产出 `TURN_LEFT`"的结论来自**解码后**的计划，而仓库适配器
+（`challenge/planner/student_adapter.py`，非 B3 文件）在取 argmax 之前会按请求的
+`scene_capabilities` 剔除它认为不可行的行为。B3 新增
+`harness/x86_sim/turn_left_attribution.py`：对每一步同时计算**未受限 argmax**与
+**掩码后的选择**，再与教师行为、解码结果三方对照，把"模型没预测"与"掩码裁掉"分开。
+
+实测（v3 候选，6 队列 850 例、931 个教师行为步）：
+
+| 口径 | 结果 |
+|---|---|
+| 未受限 argmax == 教师行为 | **931/931 = 100%** |
+| 解码后 == 教师行为 | 853/931 = 91.6% |
+| 差异 | **78 步，全部由掩码造成**（73 步 `intersection_ahead=false` 剔掉转弯族；4 步 ms34 的 `allowed_behaviors` 不含 `KEEP_LANE`） |
+
+也就是说：**这不是模型能力缺口，而是数据/契约字段与掩码策略的冲突**——再补训练数据
+解不了这批用例，必须先对齐 `scene_capabilities` / `allowed_behaviors` 与教师标签。
+批量入口 `harness/x86_sim/cohort_diagnostics.py`（6 队列的两个诊断一次跑完），
+证据见 `evidence/a3_v3_simulation_20261007/08_cohort_diagnostics_v3.json`。
+
+### 11.11 采样器缺陷与修复：进程 CPU 峰值（2026-10-07）
+
+v3 在官方镜像内第一次跑 30 分钟长稳时，`soak_summary.json` 报出
+`cpu_percent_max = 27009.8`——容器只有 20 核，物理上不可能（上限 2000%）。
+
+定位：`BackgroundMonitor.stop()` 会在监控线程刚采完样之后**再采一次**，而
+`psutil.Process.cpu_percent(None)` 用自己的"上一次调用"作为窗口；两次调用相隔
+微秒时窗口塌缩，但 CPU 时间差仍覆盖整秒，商被放大成上万的百分比。
+
+修复（B3 自己的文件 `challenge/hil/samplers.py`）：采样器改为自持 `monotonic` 窗口
+并加锁；窗口小于下限（`min(50 ms, 采样间隔/2)`）时**沿用上一次有效读数且不消耗窗口**，因此既不产生不可物理的
+百分比，也不丢数据。新增 `tests/test_samplers_cpu.py` 3 条（基线不是测量、量程受核数
+约束、背靠背采样不爆表），全绿。修复后重跑同一命令：`cpu_percent_max` 从 27,009.8
+回到 **1,008.1%**（约 10 核 / 20 核），成功率、漂移（4.8 MiB）、峰值 RSS（368.5 MiB）
+与第一轮一致。该缺陷只影响 CPU 最大值，不影响延迟分位、内存与成功率；见
+`evidence/a3_v3_simulation_20261007/07_official_env_v3_full_and_soak.json`。
