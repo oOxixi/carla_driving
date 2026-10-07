@@ -4,6 +4,13 @@
 > `PENDING_B2_INDEPENDENT_VALIDATION`，跑在 X86 上，无板卡、无 B2 冻结 Benchmark。
 > 所有回放结论都是 `DIAGNOSTIC_ONLY`，**不是精度或泛化结论**。
 
+> 🔁 **2026-10-07 更正**：本文"TURN_LEFT 没有修好 / 必须进入下一轮补数与训练目标"（第 45–54 行）
+> 是**解码后计划**的结论。归因脚本证明：模型在这些步上的**未受限 argmax 就是 `TURN_LEFT`**，
+> 被解码器可行性掩码（`scene_capabilities.intersection_ahead=false`）剔掉；6 队列 931 步上未受限
+> argmax **931/931** 等于教师，解码后 78 处差额全部来自掩码。补数建议作废，改为先由 B1/B2/A1
+> 决策字段口径——见 [`../a3_v3_simulation_20261007/README.md`](../a3_v3_simulation_20261007/README.md) §6。
+> 本文其余内容（包校验、逐步复测记录）作为当时事实存档，不改写。
+
 ## 1. 新候选与包校验
 
 | 项 | v1（10-02 上午） | **v2（本次）** |

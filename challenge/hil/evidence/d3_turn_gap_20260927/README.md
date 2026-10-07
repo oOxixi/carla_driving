@@ -4,6 +4,15 @@
 > 跑在 X86 上，没有板卡、没有 B2 冻结 Benchmark。所有回放结论都是 `DIAGNOSTIC_ONLY`，
 > **不是精度或泛化结论**。
 
+> 🔁 **2026-10-07 更正**：本文第 2 节的"该候选从不产出 `TURN_LEFT`"是**解码后计划**的现象。
+> 后续归因（`harness/x86_sim/turn_left_attribution.py`）证明：在这些步上模型的**未受限 argmax 就是
+> `TURN_LEFT`**，是解码器的可行性掩码（`scene_capabilities.intersection_ahead=false`）把它剔掉的；
+> 6 队列 931 个教师行为步上未受限 argmax **931/931** 等于教师，解码后的 78 处差额全部来自掩码。
+> 因此"补转弯族数据"的建议作废，改为先由 B1/B2/A1 决策字段口径——见
+> [`../a3_v3_simulation_20261007/README.md`](../a3_v3_simulation_20261007/README.md) §6 与
+> [`../../mask_contract_conflict_handoff.md`](../../mask_contract_conflict_handoff.md)。
+> 本文其余内容（校验、INT8 复核）作为当时事实存档，不改写。
+
 ## 这轮做的三件事
 
 1. B1 新发的 `d3_turn_gap_60_strict_v1` 用了**第三种通行证格式**，B3 的发布校验器先扩展再复核；

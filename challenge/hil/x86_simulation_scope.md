@@ -6,6 +6,12 @@
 > 结论只能用于回答"这条测量链能不能跑、跑出来说不说得通、缺陷是否可复现"，
 > **不能当作 J6P 性能/精度达标证据**；等正式输入与硬件到位后必须在同一口径下原样重跑。
 
+> 🔁 **2026-10-07 更正**：本文中"候选从不产出 `TURN_LEFT`"属于**解码后计划**的现象。
+> 归因脚本（`harness/x86_sim/turn_left_attribution.py`）证明：模型在这些步上的**未受限 argmax 就是
+> `TURN_LEFT`**，是解码器的可行性掩码（`scene_capabilities.intersection_ahead=false`）把它剔掉的。
+> 6 队列 931 个教师行为步上，未受限 argmax **931/931** 等于教师；解码后 78 处差额**全部**来自掩码。
+> 面向 B1/B2/A1 的决策请求见 [`mask_contract_conflict_handoff.md`](mask_contract_conflict_handoff.md)。
+
 > 本文回答一个问题：**在"不做 J6P 板端开发、只做 X86 仿真"这个口径下，B3 能测什么、
 > 已经测出什么、哪些数字不能当成结论。**
 >
