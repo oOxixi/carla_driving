@@ -133,7 +133,7 @@ def summarise(runs_root: Path) -> dict[str, Any]:
         "runs_root": str(runs_root),
         "scenarios": [],
     }
-    for summary_path in sorted(runs_root.glob("*/logs/*.summary.json")):
+    for summary_path in sorted(runs_root.glob("**/logs/*.summary.json")):
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         frame_paths = sorted(summary_path.parent.glob("*.jsonl"))
         frames = _frame_metrics(frame_paths[0]) if frame_paths else {"available": False}

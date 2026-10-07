@@ -1,0 +1,319 @@
+{
+  "created_at_utc": "2026-10-07",
+  "experiment": "closed-loop modality ablation: zero the rgb input of the deployed Student",
+  "contract": "--qwen-service-url + --qwen-mode planner_v2; service flag --zero-input rgb",
+  "baseline": {
+    "suite": "suite_core.json (all inputs present)",
+    "runs": 18,
+    "passed": 12,
+    "completion_rate": 0.6666666666666666
+  },
+  "rgb_zeroed": {
+    "suite": "suite_norgb.json (rgb tensor replaced by zeros)",
+    "runs": 18,
+    "passed": 12,
+    "completion_rate": 0.6666666666666666
+  },
+  "status_changed": 0,
+  "behaviors_changed": 0,
+  "rows": [
+    {
+      "scenario": "ACC_B01_start_keep_lane",
+      "group": "basic",
+      "baseline_status": "SUCCEEDED",
+      "rgb_zeroed_status": "SUCCEEDED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "KEEP_LANE"
+      ],
+      "rgb_zeroed_behaviors": [
+        "KEEP_LANE"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 5.078304517826302e-10,
+      "rgb_zeroed_final_speed_mps": 5.078304517826302e-10
+    },
+    {
+      "scenario": "ACC_B02_set_speed_20",
+      "group": "basic",
+      "baseline_status": "FAILED",
+      "rgb_zeroed_status": "FAILED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "SET_SPEED"
+      ],
+      "rgb_zeroed_behaviors": [
+        "SET_SPEED"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 4.331788400619684,
+      "rgb_zeroed_final_speed_mps": 4.917257708849636
+    },
+    {
+      "scenario": "ACC_B03_slow_to_10",
+      "group": "basic",
+      "baseline_status": "FAILED",
+      "rgb_zeroed_status": "FAILED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "SET_SPEED",
+        "SET_SPEED"
+      ],
+      "rgb_zeroed_behaviors": [
+        "SET_SPEED",
+        "SET_SPEED"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 3.7969788014680135,
+      "rgb_zeroed_final_speed_mps": 3.7980239650101075
+    },
+    {
+      "scenario": "ACC_B04_normal_stop",
+      "group": "basic",
+      "baseline_status": "SUCCEEDED",
+      "rgb_zeroed_status": "SUCCEEDED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "SET_SPEED",
+        "STOP"
+      ],
+      "rgb_zeroed_behaviors": [
+        "SET_SPEED",
+        "STOP"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 1.6782954696856514e-08,
+      "rgb_zeroed_final_speed_mps": 1.2163979751388318e-10
+    },
+    {
+      "scenario": "ACC_B05_emergency_stop",
+      "group": "basic",
+      "baseline_status": "SUCCEEDED",
+      "rgb_zeroed_status": "SUCCEEDED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "SET_SPEED",
+        "STOP"
+      ],
+      "rgb_zeroed_behaviors": [
+        "SET_SPEED",
+        "STOP"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 1.4184421866356866e-08,
+      "rgb_zeroed_final_speed_mps": 6.552657772418208e-10
+    },
+    {
+      "scenario": "ACC_B06_offset_recovery",
+      "group": "basic",
+      "baseline_status": "FAILED",
+      "rgb_zeroed_status": "FAILED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "KEEP_LANE"
+      ],
+      "rgb_zeroed_behaviors": [
+        "KEEP_LANE"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 4.1585206653738854e-10,
+      "rgb_zeroed_final_speed_mps": 0.0
+    },
+    {
+      "scenario": "ACC_A01_lead_brake",
+      "group": "advanced",
+      "baseline_status": "SUCCEEDED",
+      "rgb_zeroed_status": "SUCCEEDED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "FOLLOW"
+      ],
+      "rgb_zeroed_behaviors": [
+        "FOLLOW"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 4.843805400389113,
+      "rgb_zeroed_final_speed_mps": 4.8255571987361
+    },
+    {
+      "scenario": "ACC_A02_red_light_conflict",
+      "group": "advanced",
+      "baseline_status": "SUCCEEDED",
+      "rgb_zeroed_status": "SUCCEEDED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "STOP"
+      ],
+      "rgb_zeroed_behaviors": [
+        "STOP"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 1.3887118997036214e-08,
+      "rgb_zeroed_final_speed_mps": 1.3887118997036214e-08
+    },
+    {
+      "scenario": "ACC_A03_pedestrian_crossing",
+      "group": "advanced",
+      "baseline_status": "FAILED",
+      "rgb_zeroed_status": "FAILED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "KEEP_LANE"
+      ],
+      "rgb_zeroed_behaviors": [
+        "KEEP_LANE"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 3.4950699771532905e-10,
+      "rgb_zeroed_final_speed_mps": 3.4950699771532905e-10
+    },
+    {
+      "scenario": "ACC_A04_static_obstacle_stop",
+      "group": "advanced",
+      "baseline_status": "FAILED",
+      "rgb_zeroed_status": "FAILED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "STOP"
+      ],
+      "rgb_zeroed_behaviors": [
+        "STOP"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 3.4950699771532905e-10,
+      "rgb_zeroed_final_speed_mps": 3.4950699771532905e-10
+    },
+    {
+      "scenario": "ACC_A05_lane_change_left",
+      "group": "advanced",
+      "baseline_status": "SUCCEEDED",
+      "rgb_zeroed_status": "SUCCEEDED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "CHANGE_LANE_LEFT"
+      ],
+      "rgb_zeroed_behaviors": [
+        "CHANGE_LANE_LEFT"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 0.0005040839152360906,
+      "rgb_zeroed_final_speed_mps": 0.000504184451613533
+    },
+    {
+      "scenario": "ACC_A06_obstacle_detour_return",
+      "group": "advanced",
+      "baseline_status": "SUCCEEDED",
+      "rgb_zeroed_status": "SUCCEEDED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "AVOID_OBSTACLE",
+        "RETURN_TO_LANE"
+      ],
+      "rgb_zeroed_behaviors": [
+        "AVOID_OBSTACLE",
+        "RETURN_TO_LANE"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 0.1033417671380687,
+      "rgb_zeroed_final_speed_mps": 0.1033417671380687
+    },
+    {
+      "scenario": "ACC_C01_heavy_rain_fog",
+      "group": "challenge",
+      "baseline_status": "SUCCEEDED",
+      "rgb_zeroed_status": "SUCCEEDED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "KEEP_LANE"
+      ],
+      "rgb_zeroed_behaviors": [
+        "KEEP_LANE"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 5.149880376189176e-10,
+      "rgb_zeroed_final_speed_mps": 5.149880376189176e-10
+    },
+    {
+      "scenario": "ACC_C02_ambiguous_instruction",
+      "group": "challenge",
+      "baseline_status": "SUCCEEDED",
+      "rgb_zeroed_status": "SUCCEEDED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "STOP"
+      ],
+      "rgb_zeroed_behaviors": [
+        "STOP"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 3.4950699771532905e-10,
+      "rgb_zeroed_final_speed_mps": 3.4950699771532905e-10
+    },
+    {
+      "scenario": "ACC_C03_illegal_instruction",
+      "group": "challenge",
+      "baseline_status": "SUCCEEDED",
+      "rgb_zeroed_status": "SUCCEEDED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "STOP"
+      ],
+      "rgb_zeroed_behaviors": [
+        "STOP"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 7.191976949687704e-09,
+      "rgb_zeroed_final_speed_mps": 7.191976949687704e-09
+    },
+    {
+      "scenario": "ACC_C04_multi_target_binding",
+      "group": "challenge",
+      "baseline_status": "SUCCEEDED",
+      "rgb_zeroed_status": "SUCCEEDED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "FOLLOW"
+      ],
+      "rgb_zeroed_behaviors": [
+        "FOLLOW"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 0.0,
+      "rgb_zeroed_final_speed_mps": 2.477708778263514
+    },
+    {
+      "scenario": "ACC_C05_perception_failure",
+      "group": "challenge",
+      "baseline_status": "FAILED",
+      "rgb_zeroed_status": "FAILED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "KEEP_LANE"
+      ],
+      "rgb_zeroed_behaviors": [
+        "KEEP_LANE"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 5.078304517826302e-10,
+      "rgb_zeroed_final_speed_mps": 5.078304517826302e-10
+    },
+    {
+      "scenario": "ACC_C06_dynamic_route_deviation",
+      "group": "challenge",
+      "baseline_status": "SUCCEEDED",
+      "rgb_zeroed_status": "SUCCEEDED",
+      "status_changed": false,
+      "baseline_behaviors": [
+        "KEEP_LANE"
+      ],
+      "rgb_zeroed_behaviors": [
+        "KEEP_LANE"
+      ],
+      "behaviors_changed": false,
+      "baseline_final_speed_mps": 5.078304517826302e-10,
+      "rgb_zeroed_final_speed_mps": 5.078304517826302e-10
+    }
+  ],
+  "reading": "Zeroing the visual modality in the closed loop changes nothing on this candidate: the same 12/18 scenarios pass and every scenario executes the same behaviour sequence. This is the closed-loop counterpart of the offline ablation, where rgb never flipped a behaviour in 6 cohorts / 850 cases.",
+  "caveat": "only rgb was zeroed in the loop; text_tokens/targets/state ablations are offline diagnostics (see evidence/a3_v3_simulation_20261007/08_*); self-built 18 scenarios, 1 seed"
+}

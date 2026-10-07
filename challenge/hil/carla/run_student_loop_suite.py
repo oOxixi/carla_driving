@@ -48,6 +48,7 @@ def run_scenario(
     image_root: Path,
     run_dir: Path,
     timeout_s: float,
+    extra_args: list[str] | None = None,
 ) -> dict:
     log_dir = run_dir / scenario.stem / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -64,7 +65,7 @@ def run_scenario(
         "--timeout-s", str(timeout_s),
         "--log-dir", str(log_dir),
         "--print-every", "1000000",
-    ]
+    ] + list(extra_args or [])
     completed = subprocess.run(command, cwd=repo, text=True, capture_output=True)
     records = _records(completed.stdout or "")
     acceptance = next(
@@ -105,6 +106,17 @@ def main() -> int:
     parser.add_argument("--out", required=True)
     parser.add_argument("--run-root", default="")
     parser.add_argument("--timeout-s", type=float, default=180.0)
+    parser.add_argument("--repeats-per-scenario", type=int, default=1)
+    parser.add_argument(
+        "--extra-args", default="",
+        help="verbatim extra args for integration.carla_runner (e.g. --perception-mode world)",
+    )
+    parser.add_argument("--resume", action="store_true", help="skip rows already recorded")
+    parser.add_argument("--tag", default="", help="label stored with every row")
+    parser.add_argument(
+        "--only", default="",
+        help="comma-separated scenario stems to run (default: every scenario in --groups)",
+    )
     args = parser.parse_args()
 
     repo = Path(args.repo).resolve()
@@ -114,6 +126,9 @@ def main() -> int:
     scenarios: list[Path] = []
     for group in groups:
         scenarios.extend(sorted((repo / "scenarios" / "acceptance_suite" / group).glob("*.json")))
+    if args.only:
+        wanted = {item.strip() for item in args.only.split(",") if item.strip()}
+        scenarios = [item for item in scenarios if item.stem in wanted]
     if not scenarios:
         raise SystemExit("no scenarios found")
 
@@ -121,23 +136,40 @@ def main() -> int:
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "service_url": args.service_url,
         "qwen_mode": "planner_v2",
+        "tag": args.tag,
+        "extra_args": args.extra_args,
+        "repeats_per_scenario": args.repeats_per_scenario,
         "scenarios": [],
     }
+    if args.resume and Path(args.out).is_file():
+        existing = json.loads(Path(args.out).read_text(encoding="utf-8"))
+        report["scenarios"] = existing.get("scenarios", [])
+    done = {
+        (row.get("scenario"), row.get("run_index", 1))
+        for row in report["scenarios"]
+    }
+    extra = [item for item in args.extra_args.split() if item]
     for scenario in scenarios:
-        print(f"RUN {scenario.parent.name}/{scenario.stem}", flush=True)
-        record = run_scenario(
-            scenario,
-            repo=repo,
-            service_url=args.service_url,
-            image_root=Path(args.image_root) if args.image_root else run_root / "images",
-            run_dir=run_root,
-            timeout_s=args.timeout_s,
-        )
-        report["scenarios"].append(record)
-        print(json.dumps(record, ensure_ascii=False), flush=True)
-        Path(args.out).write_text(
-            json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8",
-        )
+        for index in range(1, args.repeats_per_scenario + 1):
+            if args.resume and (scenario.stem, index) in done:
+                print(f"SKIP {scenario.parent.name}/{scenario.stem} run {index}", flush=True)
+                continue
+            print(f"RUN {scenario.parent.name}/{scenario.stem} run {index}", flush=True)
+            record = run_scenario(
+                scenario,
+                repo=repo,
+                service_url=args.service_url,
+                image_root=Path(args.image_root) if args.image_root else run_root / "images",
+                run_dir=run_root / f"run_{index}",
+                timeout_s=args.timeout_s,
+                extra_args=extra,
+            )
+            record["run_index"] = index
+            report["scenarios"].append(record)
+            print(json.dumps(record, ensure_ascii=False), flush=True)
+            Path(args.out).write_text(
+                json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8",
+            )
 
     summary: dict[str, dict] = {}
     for group in groups:
@@ -154,10 +186,6 @@ def main() -> int:
         }
     total_rows = report["scenarios"]
     passed_rows = [row for row in total_rows if row["status"] == "SUCCEEDED"]
-    report["summary"]["criterion"] = (
-        "scenario_acceptance.status == SUCCEEDED (the repository runner's own verdict; "
-        "scenario_extension_acceptance is recorded separately)"
-    )
     report["summary"] = {
         "per_group": summary,
         "overall": {
@@ -165,6 +193,10 @@ def main() -> int:
             "passed": len(passed_rows),
             "completion_rate": (len(passed_rows) / len(total_rows)) if total_rows else None,
         },
+        "criterion": (
+            "scenario_acceptance.status == SUCCEEDED (the repository runner's own verdict; "
+            "scenario_extension_acceptance is recorded separately)"
+        ),
     }
     Path(args.out).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     print(json.dumps(report["summary"], indent=2, ensure_ascii=False))

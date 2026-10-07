@@ -1,0 +1,199 @@
+{
+  "created_at_utc": "2026-10-07",
+  "experiment": "closed-loop soak: 30 consecutive Student-in-the-loop runs (2 scenarios x 15), with host resource sampling",
+  "contract": "--qwen-service-url + --qwen-mode planner_v2, --realtime, 35 s per run",
+  "runs": 30,
+  "frames": 19292,
+  "per_scenario": {
+    "ACC_B02_set_speed_20": {
+      "runs": 15,
+      "passed": 0,
+      "sequence": "FFFFFFFFFFFFFFF",
+      "failed_key": "target_speed_kph",
+      "note": "student SET_SPEED target is consistently ~4.33-4.41 m/s against an 18-22 km/h window"
+    },
+    "ACC_A05_lane_change_left": {
+      "runs": 15,
+      "passed": 14,
+      "sequence": "FPPPPPPPPPPPPPP",
+      "failed_keys": [
+        "must_finish_route",
+        "final_lateral_shift_m"
+      ],
+      "note": "first run failed, the next 14 passed: one early transient, then stable"
+    }
+  },
+  "latency_ms": {
+    "per_frame_sensor_to_control": {
+      "n": 19292,
+      "mean": 41.20340037321169,
+      "p50": 46.0,
+      "p95": 63.0,
+      "p99": 78.0,
+      "max": 734.0,
+      "source": "pooled over every frame of the 18 runs"
+    },
+    "per_frame_decision": {
+      "n": 19292,
+      "mean": 0.5941322828115281,
+      "p50": 0.0,
+      "p95": 0.0,
+      "p99": 16.0,
+      "max": 16.0
+    },
+    "per_run_p95_range": "47 ms in almost every run; 78 ms in the first A05 run and 79 ms in one B02 run",
+    "drift": "no upward trend over the 28 minutes"
+  },
+  "safety": {
+    "collisions": 0,
+    "red_light_violations": 0,
+    "route_deviations": 0,
+    "serious_route_deviations": 0,
+    "safety_override_frames": 2097
+  },
+  "oracle_alignment": {
+    "checked": 30,
+    "passed": 30,
+    "failed_scenarios": []
+  },
+  "comfort": {
+    "max_abs_long_accel_mps2": {
+      "n": 30,
+      "max": 19.652592744223746,
+      "p95_across_runs": 19.537678415083608,
+      "mean": 15.748849557191354
+    },
+    "max_abs_jerk_mps3": {
+      "n": 30,
+      "max": 355.6662097380603,
+      "p95_across_runs": 355.5294055744925,
+      "mean": 251.89470656913807
+    },
+    "p95_abs_long_accel_mps2": {
+      "n": 30,
+      "max": 2.089784870908849,
+      "p95_across_runs": 2.070749589892899,
+      "mean": 1.319672230473342
+    },
+    "p95_abs_jerk_mps3": {
+      "n": 30,
+      "max": 9.591029484926539,
+      "p95_across_runs": 8.93578030078587,
+      "mean": 5.916668639015959
+    },
+    "max_abs_lateral_accel_mps2": {
+      "n": 30,
+      "max": 0.4764288990511998,
+      "p95_across_runs": 0.47642158985406113,
+      "mean": 0.2432472065252734
+    },
+    "max_abs_steer_rate_per_s": {
+      "n": 30,
+      "max": 0.7599999886751175,
+      "p95_across_runs": 0.7599999886751175,
+      "mean": 0.376163278712012
+    },
+    "max_abs_cross_track_error_m": {
+      "n": 30,
+      "max": 0.12084221096994428,
+      "p95_across_runs": 0.12084190090643021,
+      "mean": 0.057914657968997064
+    }
+  },
+  "host_resources": {
+    "note": "sampler version used for these two rounds summed matched processes without deduplication; the cleaned numbers below drop nothing (no collapsed windows) but the service CPU max is a genuine multi-threaded ONNX burst and the RSS mean is affected by duplicate matching",
+    "round_A_vision_zeroed_18_runs": {
+      "created_at_utc": "2026-10-07T15:06:41.981804+00:00",
+      "source": "D:\\nana\\oe\\work\\student_loop\\resources_roundA\\resource_samples.jsonl",
+      "samples_total": 1503,
+      "samples_used": 1503,
+      "samples_dropped_collapsed_window": 0,
+      "observed_duration_s": 1502.937,
+      "cpu_percent": {
+        "system_cpu_percent": {
+          "n": 1503,
+          "mean": 37.4455755156354,
+          "p95": 44.1,
+          "max": 69.6
+        },
+        "carla_runner_cpu_percent": {
+          "n": 1503,
+          "mean": 30.54930139720559,
+          "p95": 48.4,
+          "max": 64.5
+        },
+        "student_service_cpu_percent": {
+          "n": 1503,
+          "mean": 8.872654690618763,
+          "p95": 1.6,
+          "max": 613.2
+        }
+      },
+      "rss_mib": {
+        "carla_runner_rss_mib": {
+          "n": 1503,
+          "mean": 89.14799733865603,
+          "p95": 99.62,
+          "max": 183.26
+        },
+        "student_service_rss_mib": {
+          "n": 1503,
+          "mean": 403.8674650698603,
+          "p95": 407.87,
+          "max": 407.92
+        },
+        "combined_drift_mib": 118.78
+      },
+      "bpu_utilization": "NOT_MEASURED",
+      "note": "per-process CPU percentages (100 = one core); collapsed sampling windows dropped. The official heterogeneous-utilization formula and the BPU half belong to B2/A4."
+    },
+    "round_B_soak_30_runs": {
+      "created_at_utc": "2026-10-07T15:42:58.057994+00:00",
+      "source": "D:\\nana\\oe\\work\\student_loop\\resources_roundB\\resource_samples.jsonl",
+      "samples_total": 2257,
+      "samples_used": 2257,
+      "samples_dropped_collapsed_window": 0,
+      "observed_duration_s": 2257.578,
+      "cpu_percent": {
+        "system_cpu_percent": {
+          "n": 2257,
+          "mean": 34.80575985821888,
+          "p95": 42.6,
+          "max": 66.7
+        },
+        "carla_runner_cpu_percent": {
+          "n": 2257,
+          "mean": 35.246034559149315,
+          "p95": 55.4,
+          "max": 84.4
+        },
+        "student_service_cpu_percent": {
+          "n": 2257,
+          "mean": 7.680062029242357,
+          "p95": 0.0,
+          "max": 596.0
+        }
+      },
+      "rss_mib": {
+        "carla_runner_rss_mib": {
+          "n": 2257,
+          "mean": 90.77942844483829,
+          "p95": 98.19,
+          "max": 182.67
+        },
+        "student_service_rss_mib": {
+          "n": 2257,
+          "mean": 293.319131590607,
+          "p95": 411.19,
+          "max": 411.62
+        },
+        "combined_drift_mib": -185.29
+      },
+      "bpu_utilization": "NOT_MEASURED",
+      "note": "per-process CPU percentages (100 = one core); collapsed sampling windows dropped. The official heterogeneous-utilization formula and the BPU half belong to B2/A4."
+    },
+    "bpu_utilization": "NOT_MEASURED",
+    "reading": "planner process (carla_runner) ~30-35% of one core on average, peak 84%; student service ~8% average with rare bursts; system ~35%. The official heterogeneous-utilization formula and the BPU half still belong to B2/A4."
+  },
+  "caveat": "self-built scenarios, single seed, 35 s per run; the voice front end is not part of this loop"
+}

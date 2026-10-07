@@ -402,6 +402,7 @@ class StudentDecisionEngine:
         image_root: Path | None = None,
         confidence_mode: str = "plan",
         fixed_confidence: float = 0.9,
+        zero_inputs: tuple[str, ...] = (),
     ) -> None:
         self.onnx_path = Path(onnx_path)
         self.session = ort.InferenceSession(
@@ -419,6 +420,10 @@ class StudentDecisionEngine:
         self.image_root = Path(image_root) if image_root is not None else None
         self.confidence_mode = confidence_mode
         self.fixed_confidence = float(fixed_confidence)
+        unknown = [name for name in zero_inputs if name not in self.input_names]
+        if unknown:
+            raise ValueError(f"--zero-input names not in the model inputs: {unknown}")
+        self.zero_inputs = tuple(zero_inputs)
         self._lock = threading.Lock()
 
     def _materialize_image(self, image: bytes | None, request_id: str) -> Path | None:
@@ -462,6 +467,10 @@ class StudentDecisionEngine:
             name: np.asarray(getattr(tensors, name), dtype=np.float32)
             for name in self.input_names
         }
+        for name in self.zero_inputs:
+            # Closed-loop modality ablation: keep the tensor's shape and dtype
+            # but replace the content with its zero value.
+            feed[name] = np.zeros_like(feed[name])
         started = time.perf_counter()
         with self._lock:
             raw = dict(zip(self.output_names, self.session.run(self.output_names, feed)))
@@ -482,6 +491,7 @@ class StudentDecisionEngine:
             "action": action,
             "action_speed_mps": action_speed,
             "rgb_ref": str(rgb_path) if rgb_path is not None else None,
+            "zero_inputs": list(self.zero_inputs),
             "plan_confidence": plan_confidence,
             "confidence": confidence,
             "inference_ms": inference_ms,
@@ -715,6 +725,7 @@ def build_server(
     confidence_mode: str = "plan",
     fixed_confidence: float = 0.9,
     infer_response: str = "plan",
+    zero_inputs: tuple[str, ...] = (),
 ) -> ThreadingHTTPServer:
     engine = StudentDecisionEngine(
         onnx_path,
@@ -722,6 +733,7 @@ def build_server(
         image_root=image_root,
         confidence_mode=confidence_mode,
         fixed_confidence=fixed_confidence,
+        zero_inputs=zero_inputs,
     )
     log_dir.mkdir(parents=True, exist_ok=True)
     handler = type("_BoundHandler", (_Handler,), {
@@ -751,6 +763,11 @@ def main() -> int:
              "envelope = {status, request_id, decision} for the scenario_runner agent",
     )
     parser.add_argument("--fixed-confidence", type=float, default=0.9)
+    parser.add_argument(
+        "--zero-input", action="append", default=[],
+        choices=["rgb", "text_tokens", "targets", "state"],
+        help="replace one model input with zeros (closed-loop modality ablation); repeatable",
+    )
     args = parser.parse_args()
     server = build_server(
         onnx_path=args.onnx,
@@ -762,6 +779,7 @@ def main() -> int:
         confidence_mode=args.confidence_mode,
         fixed_confidence=args.fixed_confidence,
         infer_response=args.infer_response,
+        zero_inputs=tuple(args.zero_input),
     )
     print(f"student action service on http://{args.host}:{args.port} (onnx={args.onnx})", flush=True)
     try:

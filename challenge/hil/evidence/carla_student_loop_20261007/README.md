@@ -138,6 +138,8 @@ powershell -File challenge/hil/carla_measurement.ps1 `
 | `02_student_decisions.jsonl` | 服务侧逐请求记录：送入的 canonical 请求、构造的学生请求、计划、行为、延迟 |
 | `03_service_metrics.json` | 模型身份（ONNX SHA256）、请求数、动作分布、决策延迟分位 |
 | `04_student_loop_metrics.json` | 18 次运行的逐场记录 + 汇总：闭环时延池化分位、oracle 对齐、安全计数、舒适性代理、30/40/30 加权演算 |
+| `05_modality_ablation_closed_loop.json` | 闭环模态消融：rgb 置零后 18 场景逐场对比（判定/行为变化均为 0） |
+| `06_closed_loop_soak_and_resources.json` | 闭环长稳 30 次运行的通过序列、时延稳定性、安全计数、舒适性与宿主 CPU/RSS 采样 |
 
 工具（本轮新增，均在 `challenge/hil/carla/`）：
 `student_action_service.py`（决策服务，`/infer` 返回计划、`/v1/chat/completions` 返回 A–E）、
@@ -201,3 +203,47 @@ powershell -File challenge/hil/carla_measurement.ps1 `
 `0.30×0.500 + 0.40×0.667 + 0.30×0.833 = 0.667` → **基础分 10.0 / 15**（未计违规扣分项，本批为 0）。
 
 **这不是得分结论**：分母是自建 18 场景、单 seed；官方 1000 帧基准到位后必须重算。
+
+## 10. 追加两轮（2026-10-07 晚）：闭环模态消融 + 闭环长稳
+
+### 10.1 闭环模态消融：把视觉输入置零
+
+服务侧加 `--zero-input rgb`（保持张量形状，内容清零），**同一批 18 场景**重跑一遍：
+
+| 项 | 基线（有 RGB） | 视觉置零 | 差异 |
+|---|---:|---:|---:|
+| 通过数 | 12 / 18 | **12 / 18** | **0** |
+| 判定变化的场景 | — | — | **0** |
+| 行为序列变化的场景 | — | — | **0** |
+
+也就是说：**在闭环里去掉视觉模态，18 个场景的判定与执行行为一个都没变**。这与离线消融
+（6 队列 850 例置零 rgb 从不翻转行为）互相印证，构成"多模态融合有效性"这一项的**闭环证据**。
+（本轮只置零了 rgb；text/targets/state 仍是离线诊断数据。）
+
+### 10.2 闭环长稳：30 次连续在环运行（≈28 分钟）
+
+两个代表场景各重复 15 次（`--realtime`，每次 35 s 仿真）：
+
+| 场景 | 通过 / 次数 | 通过序列 | 失败键 |
+|---|---:|---|---|
+| ACC_B02_set_speed_20 | **0 / 15** | `FFFFFFFFFFFFFFF` | `target_speed_kph`（学生 `SET_SPEED` 目标稳定落在 4.33–4.41 m/s，低于 18–22 km/h 窗口） |
+| ACC_A05_lane_change_left | **14 / 15** | `FPPPPPPPPPPPPPP` | 首轮 `must_finish_route` + `final_lateral_shift_m`，其后 14 轮全通过 |
+
+* 19,292 帧里 **sensor→control P95 47 ms（大多数运行）**，首轮 A05 与其中一轮 B02 为 78/79 ms，
+  **28 分钟内没有时延上漂**；
+* 安全计数仍为 **0 碰撞 / 0 闯红灯 / 0 路线偏离**；安全层覆盖 2,097 帧（2.7%，集中在停车与恢复阶段）；
+* oracle 行为检查 **30/30 PASS**；舒适性代理 p95 |a_long| 1.32 m/s²、横向加速度 max 0.48 m/s²、横向误差 max 0.12 m。
+
+### 10.3 宿主资源（异构利用率的 CPU 侧证据）
+
+用 `carla/loop_resource_sampler.py` 在两轮运行时 1 Hz 采样（共约 63 分钟）：
+
+| 进程 | 平均 CPU（单核=100%） | P95 | max |
+|---|---:|---:|---:|
+| 规划进程（`carla_runner` + CARLA 客户端） | 30–35% | 48–55% | 84% |
+| 学生决策服务 | 7.7–8.9% | 1.6% | 596–613%（多线程 ONNX 突发） |
+| 全系统 | 35–37% | 43–44% | 70% |
+
+**口径限制**：① 官方"异构算力利用率"公式未到，本表只提供 **CPU 侧**证据；② 服务进程的峰值是
+ONNX 多线程推理突发（不是窗口塌缩——清洗后丢弃样本为 0），引用时用**均值/P95**；③ BPU 侧
+`NOT_MEASURED`，需 A4 Runtime 或板卡。逐项记录见 `06_closed_loop_soak_and_resources.json`。
