@@ -124,6 +124,7 @@ challenge/hil/
 | `a4_runtime_contract.md` | A4 Runtime 接口需求书：CLI、打点、身份查询、模型级模式 | A4 实现板端 Runtime 前 |
 | `a4_runtime_gap_report.md` | A4 当前交付与该契约的差距，含 13.8 ms 不可复现的复现证据 | 与 A4 对账时 |
 | `hard_cases_handoff.md` | B3 → A3 失败样本交接格式与使用规则 | A3 接入补训数据前 |
+| `mask_contract_conflict_handoff.md` | **B3 → B1/B2/A1/A3**：行为差额中"模型"与"解码器掩码"各占多少（78/931 步全归掩码），需要谁决策 | 讨论转弯族补数据 / 修订 `scene_capabilities`、`allowed_behaviors` 前 |
 | `repo_environment_findings.md` | 验证中发现的仓库环境问题 F1–F10 与绕行方式 | 在新机器上复现环境时 |
 | `MERGE_INTO_REPO.md` | 入库过程记录（历史文件，不代表当前状态） | 追溯产物来源时 |
 | `x86_simulation_scope.md` | X86 仿真能测/不能测什么、本轮实测数字与口径、复现要点 | 要在无板卡条件下推进 B3 时 |

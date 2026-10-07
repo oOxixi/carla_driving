@@ -449,6 +449,298 @@
           "intersection_ahead": true,
           "route_available": true
         }
+      ],
+      "mask_blocked_teacher_steps": [
+        {
+          "case_id": "B06_left_turn#0010",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0062",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0091",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0115",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWF_01_turn_then_speed#0133",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "B06_left_turn#0142",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "REG_004_advanced_rain_left_turn#0146",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWF_01_turn_then_speed#0177",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0223",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "B06_left_turn#0241",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "B06_left_turn#0253",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "REG_004_advanced_rain_left_turn#0258",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWF_01_turn_then_speed#0265",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0270",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0279",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0292",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "REG_004_advanced_rain_left_turn#0326",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0337",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0355",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWF_01_turn_then_speed#0357",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0378",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWF_01_turn_then_speed#0379",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0400",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0434",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWF_01_turn_then_speed#0448",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0450",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0488",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWR_05_turn_requires_qwen#0509",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "QWF_01_turn_then_speed#0522",
+          "step": 0,
+          "teacher": "TURN_RIGHT",
+          "unrestricted_argmax": "TURN_RIGHT",
+          "masked_choice": "SET_SPEED",
+          "decoded_choice": "SET_SPEED",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        }
       ]
     },
     "d3_wave2_safe_short_v1_val": {
@@ -488,7 +780,8 @@
           "unrestricted_match": 17
         }
       },
-      "teacher_turn_left_steps": []
+      "teacher_turn_left_steps": [],
+      "mask_blocked_teacher_steps": []
     },
     "d3_targeted_gap_strict_v1_val": {
       "totals": {
@@ -537,7 +830,8 @@
           "unrestricted_match": 3
         }
       },
-      "teacher_turn_left_steps": []
+      "teacher_turn_left_steps": [],
+      "mask_blocked_teacher_steps": []
     },
     "d3_turn_gap_60_strict_v1_val": {
       "totals": {
@@ -694,6 +988,98 @@
           "turn_left_logit_rank": 1,
           "intersection_ahead": false,
           "route_available": true
+        }
+      ],
+      "mask_blocked_teacher_steps": [
+        {
+          "case_id": "TC_C01_true_3step_left#0001",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0005",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0008",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0011",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0014",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0017",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0020",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0023",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0027",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
         }
       ]
     },
@@ -1182,6 +1568,368 @@
           "intersection_ahead": false,
           "route_available": true
         }
+      ],
+      "mask_blocked_teacher_steps": [
+        {
+          "case_id": "TC_C01_true_3step_left#0001",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0004",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0007",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0011",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0014",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0017",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0021",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0024",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0027",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0031",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0034",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0037",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0041",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0045",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0048",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0052",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0055",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0058",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0063",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0066",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0069",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0072",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0075",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0078",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0082",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0085",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0088",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0092",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0096",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0099",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0102",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0105",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0110",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C01_true_3step_left#0113",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C03_true_4step_follow_left#0117",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        },
+        {
+          "case_id": "TC_C02_yield_left_3step#0121",
+          "step": 0,
+          "teacher": "TURN_LEFT",
+          "unrestricted_argmax": "TURN_LEFT",
+          "masked_choice": "SLOW_DOWN",
+          "decoded_choice": "SLOW_DOWN",
+          "model_agrees_with_teacher": true,
+          "reason": "intersection_ahead=false"
+        }
       ]
     },
     "b1_ms34_supplement_v1_val": {
@@ -1221,7 +1969,49 @@
           "unrestricted_match": 2
         }
       },
-      "teacher_turn_left_steps": []
+      "teacher_turn_left_steps": [],
+      "mask_blocked_teacher_steps": [
+        {
+          "case_id": "TC_MS34_real_3step_avoid_resume#0000",
+          "step": 2,
+          "teacher": "KEEP_LANE",
+          "unrestricted_argmax": "KEEP_LANE",
+          "masked_choice": "RETURN_TO_LANE",
+          "decoded_choice": "RETURN_TO_LANE",
+          "model_agrees_with_teacher": true,
+          "reason": "not in the request's allowed_behaviors ['SLOW_DOWN', 'STOP', 'CHANGE_LANE', 'AVOID_OBSTACLE', 'RETURN_TO_LANE']"
+        },
+        {
+          "case_id": "TC_MS34_real_3step_avoid_resume#0001",
+          "step": 2,
+          "teacher": "KEEP_LANE",
+          "unrestricted_argmax": "KEEP_LANE",
+          "masked_choice": "RETURN_TO_LANE",
+          "decoded_choice": "RETURN_TO_LANE",
+          "model_agrees_with_teacher": true,
+          "reason": "not in the request's allowed_behaviors ['SLOW_DOWN', 'STOP', 'CHANGE_LANE', 'AVOID_OBSTACLE', 'RETURN_TO_LANE']"
+        },
+        {
+          "case_id": "TC_MS34_real_4step_yield_avoid_resume#0002",
+          "step": 3,
+          "teacher": "KEEP_LANE",
+          "unrestricted_argmax": "KEEP_LANE",
+          "masked_choice": "YIELD",
+          "decoded_choice": "YIELD",
+          "model_agrees_with_teacher": true,
+          "reason": "not in the request's allowed_behaviors ['SLOW_DOWN', 'STOP', 'YIELD', 'CHANGE_LANE', 'AVOID_OBSTACLE', 'RETURN_TO_LANE']"
+        },
+        {
+          "case_id": "TC_MS34_real_4step_yield_avoid_resume#0003",
+          "step": 3,
+          "teacher": "KEEP_LANE",
+          "unrestricted_argmax": "KEEP_LANE",
+          "masked_choice": "YIELD",
+          "decoded_choice": "YIELD",
+          "model_agrees_with_teacher": true,
+          "reason": "not in the request's allowed_behaviors ['SLOW_DOWN', 'STOP', 'YIELD', 'CHANGE_LANE', 'AVOID_OBSTACLE', 'RETURN_TO_LANE']"
+        }
+      ]
     }
   }
 }

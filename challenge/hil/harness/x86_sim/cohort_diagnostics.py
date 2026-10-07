@@ -73,6 +73,7 @@ def main() -> int:
                 "totals": attribution["totals"],
                 "teacher_behaviour_breakdown": attribution["teacher_behaviour_breakdown"],
                 "teacher_turn_left_steps": attribution["teacher_turn_left_steps"],
+                "mask_blocked_teacher_steps": attribution["mask_blocked_teacher_steps"],
             }
             print(f"done {cohort}: cases={ablation['cases']}", flush=True)
 

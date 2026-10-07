@@ -257,7 +257,7 @@ A2 量化 / A4 编译 / B3 核验全部指向它。
 | 5 | 无板卡 / 无探针 | 功耗、真实 BPU 利用率、J6P 延迟 → `NOT_MEASURED` | 硬件/团队 | 材料里明确写"依赖实板，按官方口径处理"，不用估算冒充 |
 | 6 | 语音前端相关评分项（ASR、意图解析、多模态融合、语义-动作对齐…） | 基础赛道多项 | A3/语音组/B2 | 非 B3；B3 只提供测量框架与证据格式 |
 | 7 | 官方 1000 帧统一评测基准未提供 | 影响所有"数据同源"项 | 组委会/发榜单位 | 我们已备自建队列与冻结脚本，材料中说明来源与口径 |
-| 8 | **契约/掩码与教师标签冲突**：`intersection_ahead=false` 却标注 `TURN_LEFT/RIGHT`；ms34 的 `allowed_behaviors` 不含教师用到的 `KEEP_LANE` | 直接决定 6 队列上 78/931 步的行为匹配（d2 4.9%、turn-gap 31.0%、gap300 29.3%、ms34 28.6% 的差额全在这里） | **B1（数据/场景能力字段）+ B2（契约口径）+ A1/A3（确认）** | B3 已用 `turn_left_attribution.py` 给出逐步归因证据（`evidence/a3_v3_simulation_20261007/08_*`）；**先对齐字段再谈补数据**，否则训练无解 |
+| 8 | **契约/掩码与教师标签冲突**：`intersection_ahead=false` 却标注 `TURN_LEFT/RIGHT`；ms34 的 `allowed_behaviors` 不含教师用到的 `KEEP_LANE` | 直接决定 6 队列上 78/931 步的行为匹配（d2 4.9%、turn-gap 31.0%、gap300 29.3%、ms34 28.6% 的差额全在这里） | **B1（数据/场景能力字段）+ B2（契约口径）+ A1/A3（确认）** | B3 已给出逐步归因证据（`evidence/a3_v3_simulation_20261007/08_*`）与交接文档 [`mask_contract_conflict_handoff.md`](mask_contract_conflict_handoff.md)（含 78 步逐案清单与三条可选决策）；**先对齐字段再谈补数据**，否则训练无解 |
 | 9 | **FP32 ONNX 唯一字节**（submission ledger 明列） | Final RC 的前置：A2 量化、A4 编译、B3 核验必须指向同一份 ONNX | **A2（交出文件）+ A4/B3（等价证明）** | B3 已给出可执行判据与工具：`onnx_export_equivalence.py`（实测两份字节不同的导出**数值逐位相同**，差异只在溯源元数据）；见 §2.11 |
 
 ## 4. 如何复现（材料 #12）

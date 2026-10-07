@@ -56,6 +56,33 @@ def _margin_and_rank(logits: np.ndarray, name: str) -> tuple[float, int]:
     return value - runner_up, rank
 
 
+def _mask_reason(request, teacher_step: str, allowed) -> str:
+    """Say which feasibility rule removed the teacher's behaviour."""
+    capabilities = request.get("scene_capabilities") or {}
+    constraints = request.get("constraints") or {}
+    if teacher_step in {"TURN_LEFT", "TURN_RIGHT", "RETURN_TO_LANE"} and not capabilities.get(
+        "route_available", False
+    ):
+        return "route_available=false"
+    if teacher_step in {"TURN_LEFT", "TURN_RIGHT"} and not capabilities.get(
+        "intersection_ahead", False
+    ):
+        return "intersection_ahead=false"
+    if teacher_step == "CHANGE_LANE_LEFT" and not (
+        capabilities.get("left_lane_exists", False) and capabilities.get("left_gap_safe", False)
+    ):
+        return "left_lane_exists/left_gap_safe not both true"
+    if teacher_step == "CHANGE_LANE_RIGHT" and not (
+        capabilities.get("right_lane_exists", False) and capabilities.get("right_gap_safe", False)
+    ):
+        return "right_lane_exists/right_gap_safe not both true"
+    if teacher_step == "PULL_OVER":
+        return "SHOULDER not in available_lanes"
+    if teacher_step in {"FOLLOW", "AVOID_OBSTACLE"} and not request.get("targets"):
+        return "no targets in the request"
+    return "not in the request's allowed_behaviors %s" % (constraints.get("allowed_behaviors"),)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--onnx", required=True)
@@ -97,6 +124,7 @@ def main() -> int:
     }
     per_behaviour: dict[str, dict[str, int]] = {}
     turn_left_detail: list[dict] = []
+    blocked_detail: list[dict] = []
 
     for entry in entries:
         case = frozen.get(entry["case_id"])
@@ -147,6 +175,17 @@ def main() -> int:
                 row["steps"] += 1
                 row["decoded_match"] += int(decoded_step == teacher_step)
                 row["unrestricted_match"] += int(unrestricted == teacher_step)
+                if teacher_step not in allowed:
+                    blocked_detail.append({
+                        "case_id": entry["case_id"],
+                        "step": index_step,
+                        "teacher": teacher_step,
+                        "unrestricted_argmax": unrestricted,
+                        "masked_choice": masked,
+                        "decoded_choice": decoded_step,
+                        "model_agrees_with_teacher": unrestricted == teacher_step,
+                        "reason": _mask_reason(request, teacher_step, allowed),
+                    })
 
             if teacher_step == "TURN_LEFT":
                 margin, rank = _margin_and_rank(logits, "TURN_LEFT")
@@ -177,6 +216,7 @@ def main() -> int:
         "totals": totals,
         "teacher_behaviour_breakdown": per_behaviour,
         "teacher_turn_left_steps": turn_left_detail,
+        "mask_blocked_teacher_steps": blocked_detail,
         "reading": (
             "decoded_match vs unrestricted_match separates model misses from mask-induced "
             "misses; mask_removed_unrestricted_top counts steps where the feasibility mask "

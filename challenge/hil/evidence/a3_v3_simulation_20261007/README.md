@@ -209,6 +209,10 @@ v3 全链比 v1 慢约 **+1.3 ms（P50）/+2.1 ms（P95）**；两者都远离 1
 * 保留口径：这里比的是**行为 token（逐步）**，不含目标/车道/速度/完成条件等字段；
   整份计划的逐字段等价性仍由 `02_behaviour_replay_v3.json` 与 `consistency` 覆盖。
 
+逐案清单（78 步，含 `case_id`/`step`/教师行为/模型 argmax/掩码后选择/被挡原因）在
+`08_cohort_diagnostics_v3.json` 的 `turn_left_attribution.<队列>.mask_blocked_teacher_steps`；
+面向 B1/B2/A1/A3 的决策请求见 [`../../mask_contract_conflict_handoff.md`](../../mask_contract_conflict_handoff.md)。
+
 ### 6.1 多模态消融扩到 6 队列（850 例）
 
 把第 4.2 节的消融从"d2 150 例"扩到**全部 6 个队列 850 例**（同一 ONNX、同一解码器）：
