@@ -182,14 +182,17 @@ policy SHA的decision绑定进 `int8_manifest.json`。缺少任一身份字段�
 
 ```powershell
 python tools/package_a2_handoff.py `
-  --workflow-git-sha 20c80d7cde2ca8ca651f383ca06b8bc06e0acaa3 `
-  --evidence-git-sha 3c10b121d7d1dda169a873df76dc80bc8a226e26
+  --source artifacts/a2/a3_robust_fp32_candidate_v3_11823750 `
+  --candidate-release challenge/distillation/releases/a3_b1_closeout_robust_fp32_candidate_v3 `
+  --output artifacts/a2/handoff_20261007_<evidence-sha8> `
+  --workflow-git-sha 11823750b530f0bfebe22427113f2034d306d3b2 `
+  --evidence-git-sha <evidence-git-sha>
 ```
 
 工具在生成包前会重新核对唯一上游阻塞项、300样本导出一致性、FP32/INT8权重绑定、
-Top-3敏感层排序和OpenExplorer候选状态，然后分别生成A3 gate反馈、B2独立评测、A4
+本次敏感性排序与Mixed模型实际排除的Top-3完全一致，以及OpenExplorer候选状态，然后
+分别生成A3 gate反馈、B2独立评测、A4
 OpenExplorer交接包及逐文件`SHA256SUMS.txt`。ZIP 时间戳固定，同一组输入可生成相同
-压缩包字节；汇总报告不放入包内，避免报告记录ZIP SHA时形成循环依赖。最新交接状态见
-`A2_HANDOFF_UPDATE_20261006.md`，完整量化结果见
-`A2_CLOSEOUT_CANDIDATE_V2_RESULT_20261003.md`；大模型、NPY和ZIP只留在`artifacts/`，
-不提交Git。
+压缩包字节；汇总报告不放入包内，避免报告记录ZIP SHA时形成循环依赖。robust v3 完整
+结果见 `A2_ROBUST_CANDIDATE_V3_RESULT_20261007.md`；v2 报告仅保留历史追溯用途。
+大模型、NPY和ZIP只留在`artifacts/`，不提交Git。

@@ -12,13 +12,6 @@ from pathlib import Path
 from typing import Any
 
 
-TOP3_NODES = (
-    "/model/target_pointer_head/Gemm",
-    "/model/behavior_head/Gemm",
-    "/model/target_lane_head/Gemm",
-)
-
-
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -204,8 +197,16 @@ def build_packages(
             raise ValueError(f"{label} candidate binds the wrong FP32 weights")
     ranking = sensitivity.get("ranking") or []
     selected = tuple(item.get("node", {}).get("name") for item in ranking[:3])
-    if selected != TOP3_NODES:
-        raise ValueError(f"unexpected Top-3 sensitivity ranking: {selected}")
+    if len(selected) != 3 or any(not node for node in selected):
+        raise ValueError(f"invalid Top-3 sensitivity ranking: {selected}")
+    mixed_excluded = tuple(
+        (mixed.get("quantization") or {}).get("excluded_nodes") or []
+    )
+    if len(mixed_excluded) != 3 or set(mixed_excluded) != set(selected):
+        raise ValueError(
+            "mixed-precision exclusions do not match this candidate's Top-3 "
+            f"sensitivity ranking: ranking={selected}, excluded={mixed_excluded}"
+        )
     if openexplorer.get("status") != "A3_CANDIDATE_OPENEXPLORER_INPUT_READY":
         raise ValueError("OpenExplorer package is not a diagnostic-ready candidate")
     if calibration_identity.get("status") != "FROZEN_CALIBRATION":
@@ -281,7 +282,9 @@ def build_packages(
         package = output / directory
         package.mkdir()
         manifest = package_manifest(
-            package_id=f"a2-to-{recipient.lower()}-closeout-v2-{evidence_commit[:8]}",
+            package_id=(
+                f"a2-to-{recipient.lower()}-{release.name}-{evidence_commit[:8]}"
+            ),
             recipient=recipient,
             purpose=purpose,
             branch=source_branch,
@@ -300,7 +303,7 @@ def build_packages(
         package.joinpath("README.md").write_text(
             "\n".join(
                 (
-                    f"# A2 → {recipient} B1 closeout candidate v2 交接包",
+                    f"# A2 → {recipient} {release.name} 交接包",
                     "",
                     f"用途：`{purpose}`。",
                     "",
@@ -420,18 +423,21 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", default=".")
     parser.add_argument(
-        "--source", default="artifacts/a2/a3_final_fp32_candidate_v2_20c80d7c"
+        "--source", default="artifacts/a2/a3_robust_fp32_candidate_v3_11823750"
     )
     parser.add_argument(
         "--candidate-release",
-        default="challenge/distillation/releases/a3_final_fp32_candidate_v2",
+        default=(
+            "challenge/distillation/releases/"
+            "a3_b1_closeout_robust_fp32_candidate_v3"
+        ),
     )
     parser.add_argument(
-        "--output", default="artifacts/a2/handoff_20261006_3c10b121"
+        "--output", default="artifacts/a2/handoff_20261007"
     )
     parser.add_argument(
         "--workflow-git-sha",
-        default="20c80d7cde2ca8ca651f383ca06b8bc06e0acaa3",
+        default="HEAD",
         help="Commit whose A3/B1 inputs were executed; embedded into every package.",
     )
     parser.add_argument(
@@ -441,7 +447,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--evidence-git-sha",
-        default="3c10b121d7d1dda169a873df76dc80bc8a226e26",
+        default="HEAD",
         help="Git evidence snapshot embedded into every package.",
     )
     args = parser.parse_args()
