@@ -1,0 +1,2380 @@
+{
+  "created_at_utc": "2026-10-07T14:37:21.746074+00:00",
+  "runs_root": "D:\\nana\\oe\\work\\student_loop\\runs",
+  "scenarios": [
+    {
+      "scenario": "ACC_A01_lead_brake",
+      "difficulty": "advanced",
+      "status": "SUCCEEDED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "advanced",
+        "final_score": 25.0,
+        "scenario_id": "ACC_A01_lead_brake",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      },
+      "completion": true,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.47,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 35.927142857142854,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 62.0,
+        "sensor_to_control_max_ms": 125.0,
+        "sensor_to_trajectory_avg_ms": 109.0,
+        "sensor_to_trajectory_p95_ms": 109.0,
+        "sensor_to_trajectory_max_ms": 109.0,
+        "qwen_model_avg_ms": 109.0,
+        "qwen_model_p95_ms": 109.0,
+        "perception_acquire_avg_ms": 49.432857142857145,
+        "pipeline_active_avg_ms": 92.5,
+        "simulator_tick_avg_ms": 12.812857142857142
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "FOLLOW"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "FOLLOW",
+            "SLOW_DOWN",
+            "STOP"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "expected_target_actor_id": "PASS",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "FOLLOW"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": 4.044629924130577,
+        "min_gap_m": 12.301026344299316
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 5.841402352631742,
+        "max_speed_kph": 21.029048469474272,
+        "mean_speed_mps": 5.1039957798562945,
+        "max_abs_long_accel_mps2": 15.307839699010874,
+        "p95_abs_long_accel_mps2": 1.484321128010272,
+        "max_abs_jerk_mps3": 198.69973422610815,
+        "p95_abs_jerk_mps3": 25.323993949786473,
+        "max_abs_lateral_accel_mps2": 0.04565105672020837,
+        "p95_abs_lateral_accel_mps2": 0.007213715876563252,
+        "max_abs_steer_rate_per_s": 0.05483684211843286,
+        "max_abs_cross_track_error_m": 0.004973780751266567,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 35.927142857142854,
+            "p95": 47.0,
+            "max": 125.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 35.457142857142856,
+            "p95": 47.0,
+            "max": 109.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.47,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 49.432857142857145,
+            "p95": 63.0,
+            "max": 78.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 92.5,
+            "p95": 110.0,
+            "max": 188.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 12.812857142857142,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_A02_red_light_conflict",
+      "difficulty": "advanced",
+      "status": "SUCCEEDED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "advanced",
+        "final_score": 25.0,
+        "scenario_id": "ACC_A02_red_light_conflict",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      },
+      "completion": true,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.575,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 34.846666666666664,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 62.0,
+        "sensor_to_control_max_ms": 110.0,
+        "sensor_to_trajectory_avg_ms": 110.0,
+        "sensor_to_trajectory_p95_ms": 110.0,
+        "sensor_to_trajectory_max_ms": 110.0,
+        "qwen_model_avg_ms": 110.0,
+        "qwen_model_p95_ms": 110.0,
+        "perception_acquire_avg_ms": 26.9,
+        "pipeline_active_avg_ms": 68.67,
+        "simulator_tick_avg_ms": 10.058333333333334
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "STOP"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "STOP"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "STOP"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": null,
+        "min_gap_m": null
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 600,
+        "max_speed_mps": 2.8199570728751125e-07,
+        "max_speed_kph": 1.0151845462350405e-06,
+        "mean_speed_mps": 1.98264447722756e-08,
+        "max_abs_long_accel_mps2": 4.896016917476309e-06,
+        "p95_abs_long_accel_mps2": 1.6290830133299404e-06,
+        "max_abs_jerk_mps3": 0.00017919886337856663,
+        "p95_abs_jerk_mps3": 5.193938668209821e-05,
+        "max_abs_lateral_accel_mps2": 0.0,
+        "p95_abs_lateral_accel_mps2": 0.0,
+        "max_abs_steer_rate_per_s": 7.44251990076459e-21,
+        "max_abs_cross_track_error_m": 0.0,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 600,
+            "mean": 34.846666666666664,
+            "p95": 47.0,
+            "max": 110.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 600,
+            "mean": 34.27166666666667,
+            "p95": 47.0,
+            "max": 110.0
+          },
+          "decision_ms": {
+            "n": 600,
+            "mean": 0.575,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 600,
+            "mean": 26.9,
+            "p95": 32.0,
+            "max": 47.0
+          },
+          "pipeline_active_ms": {
+            "n": 600,
+            "mean": 68.67,
+            "p95": 94.0,
+            "max": 141.0
+          },
+          "simulator_tick_ms": {
+            "n": 600,
+            "mean": 10.058333333333334,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_A03_pedestrian_crossing",
+      "difficulty": "advanced",
+      "status": "FAILED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 5.0,
+        "difficulty": "advanced",
+        "final_score": 20.0,
+        "scenario_id": "ACC_A03_pedestrian_crossing",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 1
+      },
+      "completion": false,
+      "failed_keys": [
+        "expected_safety_override",
+        "expected_reason_contains",
+        "must_generate_event"
+      ],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.6028571428571429,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 41.86,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 63.0,
+        "sensor_to_control_max_ms": 141.0,
+        "sensor_to_trajectory_avg_ms": 125.0,
+        "sensor_to_trajectory_p95_ms": 125.0,
+        "sensor_to_trajectory_max_ms": 125.0,
+        "qwen_model_avg_ms": 125.0,
+        "qwen_model_p95_ms": 125.0,
+        "perception_acquire_avg_ms": 59.815714285714286,
+        "pipeline_active_avg_ms": 109.89857142857143,
+        "simulator_tick_avg_ms": 11.281428571428572
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "KEEP_LANE"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "KEEP_LANE",
+            "SLOW_DOWN",
+            "STOP"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "KEEP_LANE"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": 4957108902.069207,
+        "min_gap_m": 23.65211296064638
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 4.3521640200432175e-07,
+        "max_speed_kph": 1.5667790472155583e-06,
+        "mean_speed_mps": 8.062991014674476e-09,
+        "max_abs_long_accel_mps2": 7.252477073870739e-06,
+        "p95_abs_long_accel_mps2": 8.959966956861877e-07,
+        "max_abs_jerk_mps3": 0.00024585454766821736,
+        "p95_abs_jerk_mps3": 2.740804088989099e-05,
+        "max_abs_lateral_accel_mps2": 0.0,
+        "p95_abs_lateral_accel_mps2": 0.0,
+        "max_abs_steer_rate_per_s": 3.4578635321737343e-12,
+        "max_abs_cross_track_error_m": 3.575879770989945e-07,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 41.86,
+            "p95": 47.0,
+            "max": 141.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 41.21142857142857,
+            "p95": 47.0,
+            "max": 125.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.6028571428571429,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 59.815714285714286,
+            "p95": 78.0,
+            "max": 93.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 109.89857142857143,
+            "p95": 125.0,
+            "max": 188.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 11.281428571428572,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_A04_static_obstacle_stop",
+      "difficulty": "advanced",
+      "status": "FAILED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 5.0,
+        "difficulty": "advanced",
+        "final_score": 20.0,
+        "scenario_id": "ACC_A04_static_obstacle_stop",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 1
+      },
+      "completion": false,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.29285714285714287,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 39.792857142857144,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 63.0,
+        "sensor_to_control_max_ms": 109.0,
+        "sensor_to_trajectory_avg_ms": 109.0,
+        "sensor_to_trajectory_p95_ms": 109.0,
+        "sensor_to_trajectory_max_ms": 109.0,
+        "qwen_model_avg_ms": 109.0,
+        "qwen_model_p95_ms": 109.0,
+        "perception_acquire_avg_ms": 57.17142857142857,
+        "pipeline_active_avg_ms": 107.52142857142857,
+        "simulator_tick_avg_ms": 11.49
+      },
+      "extension": {
+        "passed": false,
+        "failed_keys": [
+          "expected_target_actor_id"
+        ],
+        "oracle": {
+          "actual": [
+            "STOP"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "SLOW_DOWN",
+            "STOP"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "expected_target_actor_id": "FAIL",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "STOP"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": 60778393.21889881,
+        "min_gap_m": 26.333927154541016
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 4.3521640200432175e-07,
+        "max_speed_kph": 1.5667790472155583e-06,
+        "mean_speed_mps": 8.062991014674476e-09,
+        "max_abs_long_accel_mps2": 7.252477073870739e-06,
+        "p95_abs_long_accel_mps2": 8.959966956861877e-07,
+        "max_abs_jerk_mps3": 0.00024585454766821736,
+        "p95_abs_jerk_mps3": 2.740804088989099e-05,
+        "max_abs_lateral_accel_mps2": 0.0,
+        "p95_abs_lateral_accel_mps2": 0.0,
+        "max_abs_steer_rate_per_s": 3.4578635321737343e-12,
+        "max_abs_cross_track_error_m": 3.575879770989945e-07,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 39.792857142857144,
+            "p95": 47.0,
+            "max": 109.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 39.47857142857143,
+            "p95": 47.0,
+            "max": 109.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.29285714285714287,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 57.17142857142857,
+            "p95": 63.0,
+            "max": 79.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 107.52142857142857,
+            "p95": 125.0,
+            "max": 187.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 11.49,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_A05_lane_change_left",
+      "difficulty": "advanced",
+      "status": "SUCCEEDED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "advanced",
+        "final_score": 25.0,
+        "scenario_id": "ACC_A05_lane_change_left",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      },
+      "completion": true,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.5397923875432526,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 38.34948096885813,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 62.0,
+        "sensor_to_control_max_ms": 156.0,
+        "sensor_to_trajectory_avg_ms": 156.0,
+        "sensor_to_trajectory_p95_ms": 156.0,
+        "sensor_to_trajectory_max_ms": 156.0,
+        "qwen_model_avg_ms": 140.0,
+        "qwen_model_p95_ms": 140.0,
+        "perception_acquire_avg_ms": 29.62629757785467,
+        "pipeline_active_avg_ms": 71.18685121107266,
+        "simulator_tick_avg_ms": 10.963667820069205
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "CHANGE_LANE_LEFT"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "CHANGE_LANE_LEFT"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "CHANGE_LANE_LEFT"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": 6.978502522277537,
+        "min_gap_m": 33.15685272216797
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 578,
+        "max_speed_mps": 4.902310650447945,
+        "max_speed_kph": 17.648318341612605,
+        "mean_speed_mps": 2.403907804305414,
+        "max_abs_long_accel_mps2": 19.53749668742641,
+        "p95_abs_long_accel_mps2": 2.0706827834182717,
+        "max_abs_jerk_mps3": 355.5294055744925,
+        "p95_abs_jerk_mps3": 4.677407081044703,
+        "max_abs_lateral_accel_mps2": 0.4763959084453988,
+        "p95_abs_lateral_accel_mps2": 0.3240864890267623,
+        "max_abs_steer_rate_per_s": 0.7599999886751176,
+        "max_abs_cross_track_error_m": 0.12084221096994428,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 578,
+            "mean": 38.34948096885813,
+            "p95": 47.0,
+            "max": 156.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 578,
+            "mean": 37.75432525951557,
+            "p95": 47.0,
+            "max": 156.0
+          },
+          "decision_ms": {
+            "n": 578,
+            "mean": 0.5397923875432526,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 578,
+            "mean": 29.62629757785467,
+            "p95": 47.0,
+            "max": 62.0
+          },
+          "pipeline_active_ms": {
+            "n": 578,
+            "mean": 71.18685121107266,
+            "p95": 94.0,
+            "max": 172.0
+          },
+          "simulator_tick_ms": {
+            "n": 578,
+            "mean": 10.963667820069205,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_A06_obstacle_detour_return",
+      "difficulty": "advanced",
+      "status": "SUCCEEDED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "advanced",
+        "final_score": 25.0,
+        "scenario_id": "ACC_A06_obstacle_detour_return",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      },
+      "completion": true,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.9303904923599321,
+        "decision_p95_ms": 15.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 37.502546689303905,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 47.0,
+        "sensor_to_control_max_ms": 94.0,
+        "sensor_to_trajectory_avg_ms": 94.0,
+        "sensor_to_trajectory_p95_ms": 94.0,
+        "sensor_to_trajectory_max_ms": 94.0,
+        "qwen_model_avg_ms": 94.0,
+        "qwen_model_p95_ms": 94.0,
+        "perception_acquire_avg_ms": 23.71646859083192,
+        "pipeline_active_avg_ms": 70.96434634974533,
+        "simulator_tick_avg_ms": 10.898132427843803
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "AVOID_OBSTACLE",
+            "RETURN_TO_LANE"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "AVOID_OBSTACLE",
+            "CHANGE_LANE_LEFT",
+            "RETURN_TO_LANE"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "must_return_to_original_lane": "PASS",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "AVOID_OBSTACLE",
+        "RETURN_TO_LANE"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": 9.545427884937832,
+        "min_gap_m": 25.332936007265502
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 589,
+        "max_speed_mps": 3.98083771524394,
+        "max_speed_kph": 14.331015774878184,
+        "mean_speed_mps": 2.797984073569316,
+        "max_abs_long_accel_mps2": 25.17374673200459,
+        "p95_abs_long_accel_mps2": 1.5681033559060886,
+        "max_abs_jerk_mps3": 429.84906067584024,
+        "p95_abs_jerk_mps3": 6.623366233097364,
+        "max_abs_lateral_accel_mps2": 0.9082986865673851,
+        "p95_abs_lateral_accel_mps2": 0.38006988972465605,
+        "max_abs_steer_rate_per_s": 0.7599999886751178,
+        "max_abs_cross_track_error_m": 0.3815607495641235,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 589,
+            "mean": 37.502546689303905,
+            "p95": 47.0,
+            "max": 94.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 589,
+            "mean": 36.5195246179966,
+            "p95": 47.0,
+            "max": 94.0
+          },
+          "decision_ms": {
+            "n": 589,
+            "mean": 0.9303904923599321,
+            "p95": 15.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 589,
+            "mean": 23.71646859083192,
+            "p95": 32.0,
+            "max": 93.0
+          },
+          "pipeline_active_ms": {
+            "n": 589,
+            "mean": 70.96434634974533,
+            "p95": 94.0,
+            "max": 157.0
+          },
+          "simulator_tick_ms": {
+            "n": 589,
+            "mean": 10.898132427843803,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_B01_start_keep_lane",
+      "difficulty": "basic",
+      "status": "SUCCEEDED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "basic",
+        "final_score": 25.0,
+        "scenario_id": "ACC_B01_start_keep_lane",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      },
+      "completion": true,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.3142857142857143,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 37.932857142857145,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 47.149999999999864,
+        "sensor_to_control_max_ms": 140.0,
+        "sensor_to_trajectory_avg_ms": 140.0,
+        "sensor_to_trajectory_p95_ms": 140.0,
+        "sensor_to_trajectory_max_ms": 140.0,
+        "qwen_model_avg_ms": 125.0,
+        "qwen_model_p95_ms": 125.0,
+        "perception_acquire_avg_ms": 66.81,
+        "pipeline_active_avg_ms": 107.47857142857143,
+        "simulator_tick_avg_ms": 10.514285714285714
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "KEEP_LANE"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "KEEP_LANE",
+            "START"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "must_call_qwen": "PASS",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "KEEP_LANE"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": null,
+        "min_gap_m": null
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 4.3521640200432175e-07,
+        "max_speed_kph": 1.5667790472155583e-06,
+        "mean_speed_mps": 8.383182708425471e-09,
+        "max_abs_long_accel_mps2": 7.252477073870739e-06,
+        "p95_abs_long_accel_mps2": 8.990661704618917e-07,
+        "max_abs_jerk_mps3": 0.00024585454766821736,
+        "p95_abs_jerk_mps3": 2.9272951114180805e-05,
+        "max_abs_lateral_accel_mps2": 0.0,
+        "p95_abs_lateral_accel_mps2": 0.0,
+        "max_abs_steer_rate_per_s": 3.4578635321737343e-12,
+        "max_abs_cross_track_error_m": 3.575879770989945e-07,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 37.932857142857145,
+            "p95": 47.0,
+            "max": 140.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 37.59571428571429,
+            "p95": 47.0,
+            "max": 140.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.3142857142857143,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 66.81,
+            "p95": 79.0,
+            "max": 94.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 107.47857142857143,
+            "p95": 125.0,
+            "max": 187.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 10.514285714285714,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_B02_set_speed_20",
+      "difficulty": "basic",
+      "status": "FAILED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 5.0,
+        "difficulty": "basic",
+        "final_score": 20.0,
+        "scenario_id": "ACC_B02_set_speed_20",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 1
+      },
+      "completion": false,
+      "failed_keys": [
+        "target_speed_kph"
+      ],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.49,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 37.06142857142857,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 47.0,
+        "sensor_to_control_max_ms": 125.0,
+        "sensor_to_trajectory_avg_ms": 110.0,
+        "sensor_to_trajectory_p95_ms": 110.0,
+        "sensor_to_trajectory_max_ms": 110.0,
+        "qwen_model_avg_ms": 110.0,
+        "qwen_model_p95_ms": 110.0,
+        "perception_acquire_avg_ms": 58.09,
+        "pipeline_active_avg_ms": 97.48142857142857,
+        "simulator_tick_avg_ms": 11.552857142857142
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "SET_SPEED"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "SET_SPEED"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "max_speed_overshoot_kph": "PASS",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "SET_SPEED"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": null,
+        "min_gap_m": null
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 4.363205713153511,
+        "max_speed_kph": 15.707540567352641,
+        "mean_speed_mps": 4.075753690192698,
+        "max_abs_long_accel_mps2": 15.29313162817939,
+        "p95_abs_long_accel_mps2": 0.7902942821950117,
+        "max_abs_jerk_mps3": 198.40144955900547,
+        "p95_abs_jerk_mps3": 7.98417166426089,
+        "max_abs_lateral_accel_mps2": 0.05197729437601731,
+        "p95_abs_lateral_accel_mps2": 0.006214045992370502,
+        "max_abs_steer_rate_per_s": 0.05024813799493686,
+        "max_abs_cross_track_error_m": 0.0018960896437839325,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 37.06142857142857,
+            "p95": 47.0,
+            "max": 125.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 36.52857142857143,
+            "p95": 47.0,
+            "max": 110.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.49,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 58.09,
+            "p95": 78.0,
+            "max": 79.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 97.48142857142857,
+            "p95": 110.0,
+            "max": 172.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 11.552857142857142,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_B03_slow_to_10",
+      "difficulty": "basic",
+      "status": "FAILED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 5.0,
+        "difficulty": "basic",
+        "final_score": 20.0,
+        "scenario_id": "ACC_B03_slow_to_10",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 1
+      },
+      "completion": false,
+      "failed_keys": [
+        "target_speed_kph"
+      ],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.31,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 15.009999999999991,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 37.155,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 47.0,
+        "sensor_to_control_max_ms": 110.0,
+        "sensor_to_trajectory_avg_ms": 86.0,
+        "sensor_to_trajectory_p95_ms": 93.2,
+        "sensor_to_trajectory_max_ms": 94.0,
+        "qwen_model_avg_ms": 78.5,
+        "qwen_model_p95_ms": 92.45,
+        "perception_acquire_avg_ms": 58.99,
+        "pipeline_active_avg_ms": 99.24333333333334,
+        "simulator_tick_avg_ms": 11.065
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "SET_SPEED"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "SET_SPEED"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "qwen_command_count": "PASS",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "SET_SPEED",
+        "SET_SPEED"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": null,
+        "min_gap_m": null
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 600,
+        "max_speed_mps": 4.290893949621715,
+        "max_speed_kph": 15.447218218638175,
+        "mean_speed_mps": 3.6817093092935065,
+        "max_abs_long_accel_mps2": 15.29313162817939,
+        "p95_abs_long_accel_mps2": 1.2073381130036223,
+        "max_abs_jerk_mps3": 198.40144955900547,
+        "p95_abs_jerk_mps3": 11.257995187544058,
+        "max_abs_lateral_accel_mps2": 0.01294399928768872,
+        "p95_abs_lateral_accel_mps2": 0.007222462319145269,
+        "max_abs_steer_rate_per_s": 0.012909081789755016,
+        "max_abs_cross_track_error_m": 0.0018960896437839325,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 600,
+            "mean": 37.155,
+            "p95": 47.0,
+            "max": 110.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 600,
+            "mean": 36.818333333333335,
+            "p95": 47.0,
+            "max": 94.0
+          },
+          "decision_ms": {
+            "n": 600,
+            "mean": 0.31,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 600,
+            "mean": 58.99,
+            "p95": 78.0,
+            "max": 79.0
+          },
+          "pipeline_active_ms": {
+            "n": 600,
+            "mean": 99.24333333333334,
+            "p95": 110.0,
+            "max": 157.0
+          },
+          "simulator_tick_ms": {
+            "n": 600,
+            "mean": 11.065,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_B04_normal_stop",
+      "difficulty": "basic",
+      "status": "SUCCEEDED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "basic",
+        "final_score": 25.0,
+        "scenario_id": "ACC_B04_normal_stop",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      },
+      "completion": true,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.35714285714285715,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 36.94714285714286,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 47.0,
+        "sensor_to_control_max_ms": 109.0,
+        "sensor_to_trajectory_avg_ms": 101.5,
+        "sensor_to_trajectory_p95_ms": 108.25,
+        "sensor_to_trajectory_max_ms": 109.0,
+        "qwen_model_avg_ms": 94.0,
+        "qwen_model_p95_ms": 94.0,
+        "perception_acquire_avg_ms": 62.63142857142857,
+        "pipeline_active_avg_ms": 102.16714285714286,
+        "simulator_tick_avg_ms": 11.558571428571428
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "SET_SPEED",
+            "STOP"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "SET_SPEED",
+            "STOP"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "qwen_command_count": "PASS",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "SET_SPEED",
+        "STOP"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": null,
+        "min_gap_m": null
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 4.064367336890359,
+        "max_speed_kph": 14.631722412805292,
+        "mean_speed_mps": 0.8355748168343553,
+        "max_abs_long_accel_mps2": 21.41121557508466,
+        "p95_abs_long_accel_mps2": 1.63485245475379,
+        "max_abs_jerk_mps3": 425.58723611576403,
+        "p95_abs_jerk_mps3": 9.593690541536903,
+        "max_abs_lateral_accel_mps2": 0.02219339895910697,
+        "p95_abs_lateral_accel_mps2": 0.007495771008621905,
+        "max_abs_steer_rate_per_s": 0.05160678940325217,
+        "max_abs_cross_track_error_m": 0.0018960896437839325,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 36.94714285714286,
+            "p95": 47.0,
+            "max": 109.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 36.567142857142855,
+            "p95": 47.0,
+            "max": 109.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.35714285714285715,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 62.63142857142857,
+            "p95": 78.0,
+            "max": 94.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 102.16714285714286,
+            "p95": 125.0,
+            "max": 172.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 11.558571428571428,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_B05_emergency_stop",
+      "difficulty": "basic",
+      "status": "SUCCEEDED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "basic",
+        "final_score": 25.0,
+        "scenario_id": "ACC_B05_emergency_stop",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      },
+      "completion": true,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.42428571428571427,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 37.94571428571429,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 47.149999999999864,
+        "sensor_to_control_max_ms": 110.0,
+        "sensor_to_trajectory_avg_ms": 125.0,
+        "sensor_to_trajectory_p95_ms": 138.5,
+        "sensor_to_trajectory_max_ms": 140.0,
+        "qwen_model_avg_ms": 101.5,
+        "qwen_model_p95_ms": 109.15,
+        "perception_acquire_avg_ms": 64.55,
+        "pipeline_active_avg_ms": 105.36857142857143,
+        "simulator_tick_avg_ms": 10.528571428571428
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "SET_SPEED",
+            "STOP"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "SET_SPEED",
+            "STOP"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "qwen_command_count": "PASS",
+          "qwen_missing_request_count": "PASS",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "SET_SPEED",
+        "STOP"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 1,
+        "safety_override_frames": 1,
+        "min_ttc_s": null,
+        "min_gap_m": null
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 4.226112155789434,
+        "max_speed_kph": 15.214003760841964,
+        "mean_speed_mps": 0.6284424628206993,
+        "max_abs_long_accel_mps2": 22.90978618261131,
+        "p95_abs_long_accel_mps2": 1.681801154756516,
+        "max_abs_jerk_mps3": 395.20038189796304,
+        "p95_abs_jerk_mps3": 11.768165984302811,
+        "max_abs_lateral_accel_mps2": 0.017267949533250893,
+        "p95_abs_lateral_accel_mps2": 0.007365488028099007,
+        "max_abs_steer_rate_per_s": 0.032253024891348,
+        "max_abs_cross_track_error_m": 0.0018960896437839325,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 37.94571428571429,
+            "p95": 47.0,
+            "max": 110.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 37.49857142857143,
+            "p95": 47.0,
+            "max": 110.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.42428571428571427,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 64.55,
+            "p95": 78.0,
+            "max": 391.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 105.36857142857143,
+            "p95": 125.0,
+            "max": 422.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 10.528571428571428,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_B06_offset_recovery",
+      "difficulty": "basic",
+      "status": "FAILED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 5.0,
+        "difficulty": "basic",
+        "final_score": 20.0,
+        "scenario_id": "ACC_B06_offset_recovery",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 1
+      },
+      "completion": false,
+      "failed_keys": [
+        "must_finish_route",
+        "cross_track_error_should_decrease",
+        "final_cross_track_error_m"
+      ],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.2257142857142857,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 38.25857142857143,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 63.0,
+        "sensor_to_control_max_ms": 141.0,
+        "sensor_to_trajectory_avg_ms": 141.0,
+        "sensor_to_trajectory_p95_ms": 141.0,
+        "sensor_to_trajectory_max_ms": 141.0,
+        "qwen_model_avg_ms": 141.0,
+        "qwen_model_p95_ms": 141.0,
+        "perception_acquire_avg_ms": 57.71714285714286,
+        "pipeline_active_avg_ms": 99.57571428571428,
+        "simulator_tick_avg_ms": 11.457142857142857
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "KEEP_LANE"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "KEEP_LANE"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "KEEP_LANE"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": null,
+        "min_gap_m": null
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 2.3960626841297465e-07,
+        "max_speed_kph": 8.625825662867088e-07,
+        "mean_speed_mps": 4.308276852295036e-09,
+        "max_abs_long_accel_mps2": 4.0756610200161e-06,
+        "p95_abs_long_accel_mps2": 5.373162537829108e-07,
+        "max_abs_jerk_mps3": 0.00013356645082709492,
+        "p95_abs_jerk_mps3": 1.5674573222769662e-05,
+        "max_abs_lateral_accel_mps2": 0.0,
+        "p95_abs_lateral_accel_mps2": 0.0,
+        "max_abs_steer_rate_per_s": 0.7599999886751183,
+        "max_abs_cross_track_error_m": 0.5656569089792629,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 38.25857142857143,
+            "p95": 47.0,
+            "max": 141.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 37.964285714285715,
+            "p95": 47.0,
+            "max": 141.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.2257142857142857,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 57.71714285714286,
+            "p95": 78.0,
+            "max": 94.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 99.57571428571428,
+            "p95": 125.0,
+            "max": 188.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 11.457142857142857,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_C01_heavy_rain_fog",
+      "difficulty": "challenge",
+      "status": "SUCCEEDED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "challenge",
+        "final_score": 25.0,
+        "scenario_id": "ACC_C01_heavy_rain_fog",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      },
+      "completion": true,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.6614285714285715,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 38.98571428571429,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 47.149999999999864,
+        "sensor_to_control_max_ms": 141.0,
+        "sensor_to_trajectory_avg_ms": 141.0,
+        "sensor_to_trajectory_p95_ms": 141.0,
+        "sensor_to_trajectory_max_ms": 141.0,
+        "qwen_model_avg_ms": 141.0,
+        "qwen_model_p95_ms": 141.0,
+        "perception_acquire_avg_ms": 70.10857142857142,
+        "pipeline_active_avg_ms": 111.58571428571429,
+        "simulator_tick_avg_ms": 10.93
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "KEEP_LANE"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "KEEP_LANE",
+            "SLOW_DOWN"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "KEEP_LANE"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": null,
+        "min_gap_m": null
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 4.271257067417619e-07,
+        "max_speed_kph": 1.537652544270343e-06,
+        "mean_speed_mps": 1.0322138174112311e-08,
+        "max_abs_long_accel_mps2": 6.381511698476967e-06,
+        "p95_abs_long_accel_mps2": 9.05527778437305e-07,
+        "max_abs_jerk_mps3": 0.00022025591377476084,
+        "p95_abs_jerk_mps3": 3.228146120132553e-05,
+        "max_abs_lateral_accel_mps2": 0.0,
+        "p95_abs_lateral_accel_mps2": 0.0,
+        "max_abs_steer_rate_per_s": 0.35943410316158636,
+        "max_abs_cross_track_error_m": 3.574676423540332e-07,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 38.98571428571429,
+            "p95": 47.0,
+            "max": 141.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 38.26,
+            "p95": 47.0,
+            "max": 141.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.6614285714285715,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 70.10857142857142,
+            "p95": 79.0,
+            "max": 94.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 111.58571428571429,
+            "p95": 125.0,
+            "max": 203.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 10.93,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_C02_ambiguous_instruction",
+      "difficulty": "challenge",
+      "status": "SUCCEEDED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "challenge",
+        "final_score": 25.0,
+        "scenario_id": "ACC_C02_ambiguous_instruction",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      },
+      "completion": true,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.5142857142857142,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 38.02142857142857,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 47.0,
+        "sensor_to_control_max_ms": 110.0,
+        "sensor_to_trajectory_avg_ms": 110.0,
+        "sensor_to_trajectory_p95_ms": 110.0,
+        "sensor_to_trajectory_max_ms": 110.0,
+        "qwen_model_avg_ms": 110.0,
+        "qwen_model_p95_ms": 110.0,
+        "perception_acquire_avg_ms": 58.89714285714286,
+        "pipeline_active_avg_ms": 108.01428571428572,
+        "simulator_tick_avg_ms": 11.024285714285714
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "STOP"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "HOLD",
+            "SLOW_DOWN",
+            "STOP"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "must_call_qwen": "PASS",
+          "requires_confirmation_allowed": "PASS",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "STOP"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": 430181020.3550779,
+        "min_gap_m": 24.140897750854492
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 4.3521640200432175e-07,
+        "max_speed_kph": 1.5667790472155583e-06,
+        "mean_speed_mps": 8.062991014674476e-09,
+        "max_abs_long_accel_mps2": 7.252477073870739e-06,
+        "p95_abs_long_accel_mps2": 8.959966956861877e-07,
+        "max_abs_jerk_mps3": 0.00024585454766821736,
+        "p95_abs_jerk_mps3": 2.740804088989099e-05,
+        "max_abs_lateral_accel_mps2": 0.0,
+        "p95_abs_lateral_accel_mps2": 0.0,
+        "max_abs_steer_rate_per_s": 3.4578635321737343e-12,
+        "max_abs_cross_track_error_m": 3.575879770989945e-07,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 38.02142857142857,
+            "p95": 47.0,
+            "max": 110.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 37.48428571428571,
+            "p95": 47.0,
+            "max": 110.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.5142857142857142,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 58.89714285714286,
+            "p95": 78.0,
+            "max": 94.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 108.01428571428572,
+            "p95": 125.0,
+            "max": 172.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 11.024285714285714,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_C03_illegal_instruction",
+      "difficulty": "challenge",
+      "status": "SUCCEEDED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "challenge",
+        "final_score": 25.0,
+        "scenario_id": "ACC_C03_illegal_instruction",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      },
+      "completion": true,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.4042857142857143,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 36.02142857142857,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 47.0,
+        "sensor_to_control_max_ms": 109.0,
+        "sensor_to_trajectory_avg_ms": 94.0,
+        "sensor_to_trajectory_p95_ms": 94.0,
+        "sensor_to_trajectory_max_ms": 94.0,
+        "qwen_model_avg_ms": 94.0,
+        "qwen_model_p95_ms": 94.0,
+        "perception_acquire_avg_ms": 24.15142857142857,
+        "pipeline_active_avg_ms": 67.41857142857143,
+        "simulator_tick_avg_ms": 10.667142857142856
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "STOP"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "STOP"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "must_call_qwen": "PASS",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "STOP"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": null,
+        "min_gap_m": null
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 2.8199570728751125e-07,
+        "max_speed_kph": 1.0151845462350405e-06,
+        "mean_speed_mps": 1.9584589629824025e-08,
+        "max_abs_long_accel_mps2": 4.896016917476309e-06,
+        "p95_abs_long_accel_mps2": 1.554333736280703e-06,
+        "max_abs_jerk_mps3": 0.00017919886337856663,
+        "p95_abs_jerk_mps3": 5.0592168668355656e-05,
+        "max_abs_lateral_accel_mps2": 0.0,
+        "p95_abs_lateral_accel_mps2": 0.0,
+        "max_abs_steer_rate_per_s": 7.44251990076459e-21,
+        "max_abs_cross_track_error_m": 0.0,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 36.02142857142857,
+            "p95": 47.0,
+            "max": 109.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 35.572857142857146,
+            "p95": 47.0,
+            "max": 94.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.4042857142857143,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 24.15142857142857,
+            "p95": 32.0,
+            "max": 47.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 67.41857142857143,
+            "p95": 94.0,
+            "max": 140.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 10.667142857142856,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_C04_multi_target_binding",
+      "difficulty": "challenge",
+      "status": "SUCCEEDED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "challenge",
+        "final_score": 25.0,
+        "scenario_id": "ACC_C04_multi_target_binding",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      },
+      "completion": true,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.4542857142857143,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 35.41,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 47.0,
+        "sensor_to_control_max_ms": 78.0,
+        "sensor_to_trajectory_avg_ms": 78.0,
+        "sensor_to_trajectory_p95_ms": 78.0,
+        "sensor_to_trajectory_max_ms": 78.0,
+        "qwen_model_avg_ms": 78.0,
+        "qwen_model_p95_ms": 78.0,
+        "perception_acquire_avg_ms": 20.424285714285713,
+        "pipeline_active_avg_ms": 67.66428571428571,
+        "simulator_tick_avg_ms": 13.224285714285715
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "FOLLOW"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "FOLLOW"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "expected_target_actor_id": "PASS",
+          "target_binding_correct": "PASS",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "FOLLOW"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 1,
+        "safety_override_frames": 36,
+        "min_ttc_s": 4.059262046728172,
+        "min_gap_m": 6.249208927154541
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 5.4141994261938144,
+        "max_speed_kph": 19.491117934297733,
+        "mean_speed_mps": 3.0698035266884474,
+        "max_abs_long_accel_mps2": 24.410069046508735,
+        "p95_abs_long_accel_mps2": 2.382446136764559,
+        "max_abs_jerk_mps3": 435.21712560875454,
+        "p95_abs_jerk_mps3": 93.54089105367588,
+        "max_abs_lateral_accel_mps2": 2.292835474047829,
+        "p95_abs_lateral_accel_mps2": 1.4198579795535435,
+        "max_abs_steer_rate_per_s": 0.7599999886751183,
+        "max_abs_cross_track_error_m": 0.8518774979200092,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 35.41,
+            "p95": 47.0,
+            "max": 78.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 34.932857142857145,
+            "p95": 47.0,
+            "max": 78.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.4542857142857143,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 20.424285714285713,
+            "p95": 32.0,
+            "max": 47.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 67.66428571428571,
+            "p95": 79.0,
+            "max": 109.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 13.224285714285715,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_C05_perception_failure",
+      "difficulty": "challenge",
+      "status": "FAILED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 5.0,
+        "difficulty": "challenge",
+        "final_score": 20.0,
+        "scenario_id": "ACC_C05_perception_failure",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 1
+      },
+      "completion": false,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.4,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 40.01857142857143,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 47.0,
+        "sensor_to_control_max_ms": 109.0,
+        "sensor_to_trajectory_avg_ms": 109.0,
+        "sensor_to_trajectory_p95_ms": 109.0,
+        "sensor_to_trajectory_max_ms": 109.0,
+        "qwen_model_avg_ms": 109.0,
+        "qwen_model_p95_ms": 109.0,
+        "perception_acquire_avg_ms": 64.66571428571429,
+        "pipeline_active_avg_ms": 108.49857142857142,
+        "simulator_tick_avg_ms": 9.288571428571428
+      },
+      "extension": {
+        "passed": false,
+        "failed_keys": [
+          "max_fault_response_s"
+        ],
+        "oracle": {
+          "actual": [
+            "KEEP_LANE"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "KEEP_LANE",
+            "SLOW_DOWN",
+            "STOP"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "max_fault_response_s": "FAIL",
+          "must_recover_after_fault": "PASS",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "KEEP_LANE"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": null,
+        "min_gap_m": null
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 4.3521640200432175e-07,
+        "max_speed_kph": 1.5667790472155583e-06,
+        "mean_speed_mps": 8.383182708425471e-09,
+        "max_abs_long_accel_mps2": 7.252477073870739e-06,
+        "p95_abs_long_accel_mps2": 8.990661704618917e-07,
+        "max_abs_jerk_mps3": 0.00024585454766821736,
+        "p95_abs_jerk_mps3": 2.9272951114180805e-05,
+        "max_abs_lateral_accel_mps2": 0.0,
+        "p95_abs_lateral_accel_mps2": 0.0,
+        "max_abs_steer_rate_per_s": 3.4578635321737343e-12,
+        "max_abs_cross_track_error_m": 3.575879770989945e-07,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 40.01857142857143,
+            "p95": 47.0,
+            "max": 109.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 39.572857142857146,
+            "p95": 47.0,
+            "max": 109.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.4,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 64.66571428571429,
+            "p95": 78.0,
+            "max": 94.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 108.49857142857142,
+            "p95": 125.0,
+            "max": 187.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 9.288571428571428,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "ACC_C06_dynamic_route_deviation",
+      "difficulty": "challenge",
+      "status": "SUCCEEDED",
+      "score": {
+        "base_score": 25.0,
+        "deduction": 0.0,
+        "difficulty": "challenge",
+        "final_score": 25.0,
+        "scenario_id": "ACC_C06_dynamic_route_deviation",
+        "serious_route_deviation": 0,
+        "serious_safety_events": 0,
+        "unfinished_tasks": 0
+      },
+      "completion": true,
+      "failed_keys": [],
+      "oracle_expected_behaviors": null,
+      "latency": {
+        "decision_avg_ms": 0.44857142857142857,
+        "decision_p95_ms": 0.0,
+        "decision_p99_ms": 16.0,
+        "decision_max_ms": 16.0,
+        "sensor_to_control_avg_ms": 40.472857142857144,
+        "sensor_to_control_p95_ms": 47.0,
+        "sensor_to_control_p99_ms": 47.149999999999864,
+        "sensor_to_control_max_ms": 109.0,
+        "sensor_to_trajectory_avg_ms": 109.0,
+        "sensor_to_trajectory_p95_ms": 109.0,
+        "sensor_to_trajectory_max_ms": 109.0,
+        "qwen_model_avg_ms": 109.0,
+        "qwen_model_p95_ms": 109.0,
+        "perception_acquire_avg_ms": 65.46,
+        "pipeline_active_avg_ms": 109.3,
+        "simulator_tick_avg_ms": 9.648571428571428
+      },
+      "extension": {
+        "passed": true,
+        "failed_keys": [],
+        "oracle": {
+          "actual": [
+            "KEEP_LANE"
+          ],
+          "key": "oracle_expected_behaviors",
+          "required": [
+            "KEEP_LANE",
+            "SLOW_DOWN",
+            "STOP"
+          ],
+          "status": "PASS"
+        },
+        "checks": {
+          "must_recover_after_fault": "PASS",
+          "recovery_deadline_s": "PASS",
+          "oracle_expected_behaviors": "PASS"
+        }
+      },
+      "behaviors": [
+        "KEEP_LANE"
+      ],
+      "safety": {
+        "collision_count": 0,
+        "red_light_violation_count": 0,
+        "route_deviation_count": 0,
+        "serious_route_deviation": 0,
+        "safety_override_episodes": 0,
+        "safety_override_frames": 0,
+        "min_ttc_s": null,
+        "min_gap_m": null
+      },
+      "frame_metrics": {
+        "available": true,
+        "frames": 700,
+        "max_speed_mps": 4.3521640200432175e-07,
+        "max_speed_kph": 1.5667790472155583e-06,
+        "mean_speed_mps": 8.385184352842793e-09,
+        "max_abs_long_accel_mps2": 7.252477073870739e-06,
+        "p95_abs_long_accel_mps2": 8.990661693628432e-07,
+        "max_abs_jerk_mps3": 0.00024585454766821736,
+        "p95_abs_jerk_mps3": 2.9272951114180805e-05,
+        "max_abs_lateral_accel_mps2": 0.0,
+        "p95_abs_lateral_accel_mps2": 0.0,
+        "max_abs_steer_rate_per_s": 5.000018361140742,
+        "max_abs_cross_track_error_m": 3.575879770989945e-07,
+        "latency_ms": {
+          "sensor_to_control_ms": {
+            "n": 700,
+            "mean": 40.472857142857144,
+            "p95": 47.0,
+            "max": 109.0
+          },
+          "sensor_to_decision_ms": {
+            "n": 700,
+            "mean": 40.02428571428572,
+            "p95": 47.0,
+            "max": 109.0
+          },
+          "decision_ms": {
+            "n": 700,
+            "mean": 0.44857142857142857,
+            "p95": 0.0,
+            "max": 16.0
+          },
+          "perception_acquire_ms": {
+            "n": 700,
+            "mean": 65.46,
+            "p95": 78.0,
+            "max": 94.0
+          },
+          "pipeline_active_ms": {
+            "n": 700,
+            "mean": 109.3,
+            "p95": 125.0,
+            "max": 172.0
+          },
+          "simulator_tick_ms": {
+            "n": 700,
+            "mean": 9.648571428571428,
+            "p95": 16.0,
+            "max": 32.0
+          }
+        }
+      }
+    }
+  ],
+  "aggregate": {
+    "scenarios": 18,
+    "per_group": {
+      "advanced": {
+        "runs": 6,
+        "passed": 4,
+        "completion_rate": 0.6666666666666666
+      },
+      "basic": {
+        "runs": 6,
+        "passed": 3,
+        "completion_rate": 0.5
+      },
+      "challenge": {
+        "runs": 6,
+        "passed": 5,
+        "completion_rate": 0.8333333333333334
+      }
+    },
+    "scoring_proxy": {
+      "weighted_completion_rate": 0.6666666666666666,
+      "weights": {
+        "basic": 0.3,
+        "advanced": 0.4,
+        "challenge": 0.3
+      },
+      "task_completion_score_out_of_15": 10.0,
+      "formula": "基础分 = (基础完成率×30% + 进阶×40% + 挑战×30%) × 15（细则第四部分（一））",
+      "caveat": "自建 18 场景、单 seed，不是官方 1000 帧基准；仅作口径演算"
+    },
+    "latency_ms": {
+      "decision_avg_ms": {
+        "n": 18,
+        "mean": 0.46751015999462137,
+        "p95_of_run_p95": 0.6614285714285715,
+        "max_of_run_max": 0.9303904923599321
+      },
+      "decision_p95_ms": {
+        "n": 18,
+        "mean": 0.8333333333333334,
+        "p95_of_run_p95": 0.0,
+        "max_of_run_max": 15.0
+      },
+      "sensor_to_control_avg_ms": {
+        "n": 18,
+        "mean": 37.91718936725239,
+        "p95_of_run_p95": 40.472857142857144,
+        "max_of_run_max": 41.86
+      },
+      "sensor_to_control_p95_ms": {
+        "n": 18,
+        "mean": 47.0,
+        "p95_of_run_p95": 47.0,
+        "max_of_run_max": 47.0
+      },
+      "sensor_to_trajectory_avg_ms": {
+        "n": 18,
+        "mean": 113.75,
+        "p95_of_run_p95": 141.0,
+        "max_of_run_max": 156.0
+      },
+      "sensor_to_trajectory_p95_ms": {
+        "n": 18,
+        "mean": 115.27499999999999,
+        "p95_of_run_p95": 141.0,
+        "max_of_run_max": 156.0
+      },
+      "per_frame_sensor_to_control_ms": {
+        "n": 12167,
+        "mean": 37.94813840716693,
+        "p50": 32.0,
+        "p95": 47.0,
+        "p99": 62.0,
+        "max": 156.0,
+        "source": "pooled over every frame of the 18 runs"
+      },
+      "per_frame_sensor_to_decision_ms": {
+        "n": 12167,
+        "mean": 37.45294649461658,
+        "p50": 32.0,
+        "p95": 47.0,
+        "p99": 62.0,
+        "max": 156.0
+      },
+      "per_frame_decision_ms": {
+        "n": 12167,
+        "mean": 0.4629736171611737,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 16.0,
+        "max": 16.0
+      },
+      "per_frame_perception_acquire_ms": {
+        "n": 12167,
+        "mean": 51.66228322511712,
+        "p50": 62.0,
+        "p95": 78.0,
+        "p99": 79.0,
+        "max": 391.0
+      },
+      "per_frame_simulator_tick_ms": {
+        "n": 12167,
+        "mean": 11.063943453604011,
+        "p50": 15.0,
+        "p95": 16.0,
+        "p99": 31.0,
+        "max": 32.0
+      }
+    },
+    "oracle_alignment": {
+      "checked": 18,
+      "passed": 18,
+      "failed_scenarios": []
+    },
+    "extension_acceptance": {
+      "passed": 16,
+      "runs": 18,
+      "failed_keys": [
+        "expected_target_actor_id",
+        "max_fault_response_s"
+      ]
+    },
+    "safety": {
+      "collisions": 0,
+      "red_light_violations": 0,
+      "route_deviations": 0,
+      "serious_route_deviations": 0,
+      "safety_override_frames": 37
+    },
+    "comfort": {
+      "max_abs_long_accel_mps2": {
+        "n": 18,
+        "max": 25.17374673200459,
+        "p95_across_runs": 24.410069046508735,
+        "mean": 8.852026719059687
+      },
+      "max_abs_jerk_mps3": {
+        "n": 18,
+        "max": 435.21712560875454,
+        "p95_across_runs": 429.84906067584024,
+        "mean": 146.49377947579504
+      },
+      "p95_abs_long_accel_mps2": {
+        "n": 18,
+        "max": 2.382446136764559,
+        "p95_across_runs": 2.0706827834182717,
+        "mean": 0.7122138566809728
+      },
+      "p95_abs_jerk_mps3": {
+        "n": 18,
+        "max": 93.54089105367588,
+        "p95_across_runs": 25.323993949786473,
+        "mean": 9.487222345878603
+      },
+      "max_abs_lateral_accel_mps2": {
+        "n": 18,
+        "max": 2.292835474047829,
+        "p95_across_runs": 0.9082986865673851,
+        "mean": 0.21264243155204918
+      },
+      "max_abs_steer_rate_per_s": {
+        "n": 18,
+        "max": 5.000018361140742,
+        "p95_across_runs": 0.7599999886751183,
+        "mean": 0.477850349734323
+      },
+      "max_abs_cross_track_error_m": {
+        "n": 18,
+        "max": 0.8518774979200092,
+        "p95_across_runs": 0.5656569089792629,
+        "mean": 0.10736100054195817
+      }
+    }
+  }
+}
