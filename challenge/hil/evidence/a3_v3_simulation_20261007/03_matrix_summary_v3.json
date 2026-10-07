@@ -1,0 +1,402 @@
+{
+  "prefixes": [
+    "v3"
+  ],
+  "matrix": {
+    "v3": {
+      "d2_v1_1_val": {
+        "cases": 539,
+        "heads": {
+          "plan_length_logits": {
+            "min": 0.999948,
+            "p50": 0.999996,
+            "below_0_99": 0
+          },
+          "behavior_logits": {
+            "min": 0.999945,
+            "p50": 0.999991,
+            "below_0_99": 0
+          },
+          "target_pointer_logits": {
+            "min": 0.999984,
+            "p50": 0.999995,
+            "below_0_99": 0
+          },
+          "target_lane_logits": {
+            "min": 0.999976,
+            "p50": 0.999994,
+            "below_0_99": 0
+          },
+          "target_speed_mps": {
+            "min": 0.999134,
+            "p50": 0.999962,
+            "below_0_99": 0
+          },
+          "completion_type_logits": {
+            "min": 0.999924,
+            "p50": 0.999991,
+            "below_0_99": 0
+          },
+          "on_failure_logits": {
+            "min": 0.999975,
+            "p50": 0.999996,
+            "below_0_99": 0
+          },
+          "confidence": {
+            "min": 1.0,
+            "p50": 1.0,
+            "below_0_99": 0
+          },
+          "requires_confirmation_logits": {
+            "min": 1.0,
+            "p50": 1.0,
+            "below_0_99": 0
+          },
+          "replan_condition_logits": {
+            "min": 0.999996,
+            "p50": 0.999999,
+            "below_0_99": 0
+          }
+        },
+        "head_min_below_0_99": 0,
+        "backbone_worst_min": null,
+        "backbone_worst": {
+          "min": 0.995823,
+          "tensor": "/model/vision_encoder/features/features.9/Relu_output_0"
+        },
+        "head_worst": {
+          "min": 0.999134,
+          "head": "target_speed_mps"
+        }
+      },
+      "d3_wave2_val": {
+        "cases": 56,
+        "heads": {
+          "plan_length_logits": {
+            "min": 0.999977,
+            "p50": 0.999996,
+            "below_0_99": 0
+          },
+          "behavior_logits": {
+            "min": 0.999985,
+            "p50": 0.999993,
+            "below_0_99": 0
+          },
+          "target_pointer_logits": {
+            "min": 0.999989,
+            "p50": 0.999995,
+            "below_0_99": 0
+          },
+          "target_lane_logits": {
+            "min": 0.999988,
+            "p50": 0.999994,
+            "below_0_99": 0
+          },
+          "target_speed_mps": {
+            "min": 0.999594,
+            "p50": 0.999973,
+            "below_0_99": 0
+          },
+          "completion_type_logits": {
+            "min": 0.999982,
+            "p50": 0.999994,
+            "below_0_99": 0
+          },
+          "on_failure_logits": {
+            "min": 0.999986,
+            "p50": 0.999996,
+            "below_0_99": 0
+          },
+          "confidence": {
+            "min": 1.0,
+            "p50": 1.0,
+            "below_0_99": 0
+          },
+          "requires_confirmation_logits": {
+            "min": 1.0,
+            "p50": 1.0,
+            "below_0_99": 0
+          },
+          "replan_condition_logits": {
+            "min": 0.999997,
+            "p50": 0.999999,
+            "below_0_99": 0
+          }
+        },
+        "head_min_below_0_99": 0,
+        "backbone_worst_min": null,
+        "backbone_worst": {
+          "min": 0.994668,
+          "tensor": "/model/vision_encoder/features/features.9/Relu_output_0"
+        },
+        "head_worst": {
+          "min": 0.999594,
+          "head": "target_speed_mps"
+        }
+      },
+      "gap300_val": {
+        "cases": 123,
+        "heads": {
+          "plan_length_logits": {
+            "min": 0.99994,
+            "p50": 0.999994,
+            "below_0_99": 0
+          },
+          "behavior_logits": {
+            "min": 0.999984,
+            "p50": 0.999993,
+            "below_0_99": 0
+          },
+          "target_pointer_logits": {
+            "min": 0.999988,
+            "p50": 0.999994,
+            "below_0_99": 0
+          },
+          "target_lane_logits": {
+            "min": 0.999986,
+            "p50": 0.999993,
+            "below_0_99": 0
+          },
+          "target_speed_mps": {
+            "min": 0.999563,
+            "p50": 0.999937,
+            "below_0_99": 0
+          },
+          "completion_type_logits": {
+            "min": 0.999981,
+            "p50": 0.999992,
+            "below_0_99": 0
+          },
+          "on_failure_logits": {
+            "min": 0.999987,
+            "p50": 0.999996,
+            "below_0_99": 0
+          },
+          "confidence": {
+            "min": 1.0,
+            "p50": 1.0,
+            "below_0_99": 0
+          },
+          "requires_confirmation_logits": {
+            "min": 1.0,
+            "p50": 1.0,
+            "below_0_99": 0
+          },
+          "replan_condition_logits": {
+            "min": 0.999997,
+            "p50": 0.999999,
+            "below_0_99": 0
+          }
+        },
+        "head_min_below_0_99": 0,
+        "backbone_worst_min": null,
+        "backbone_worst": {
+          "min": 0.996547,
+          "tensor": "/model/vision_encoder/features/features.9/Relu_output_0"
+        },
+        "head_worst": {
+          "min": 0.999563,
+          "head": "target_speed_mps"
+        }
+      },
+      "ms34_val": {
+        "cases": 4,
+        "heads": {
+          "plan_length_logits": {
+            "min": 0.999962,
+            "p50": 0.999989,
+            "below_0_99": 0
+          },
+          "behavior_logits": {
+            "min": 0.999993,
+            "p50": 0.999996,
+            "below_0_99": 0
+          },
+          "target_pointer_logits": {
+            "min": 0.999992,
+            "p50": 0.999997,
+            "below_0_99": 0
+          },
+          "target_lane_logits": {
+            "min": 0.999992,
+            "p50": 0.999992,
+            "below_0_99": 0
+          },
+          "target_speed_mps": {
+            "min": 0.999731,
+            "p50": 0.99991,
+            "below_0_99": 0
+          },
+          "completion_type_logits": {
+            "min": 0.999993,
+            "p50": 0.999996,
+            "below_0_99": 0
+          },
+          "on_failure_logits": {
+            "min": 0.999995,
+            "p50": 0.999996,
+            "below_0_99": 0
+          },
+          "confidence": {
+            "min": 1.0,
+            "p50": 1.0,
+            "below_0_99": 0
+          },
+          "requires_confirmation_logits": {
+            "min": 1.0,
+            "p50": 1.0,
+            "below_0_99": 0
+          },
+          "replan_condition_logits": {
+            "min": 0.999998,
+            "p50": 0.999999,
+            "below_0_99": 0
+          }
+        },
+        "head_min_below_0_99": 0,
+        "backbone_worst_min": null,
+        "backbone_worst": {
+          "min": 0.996047,
+          "tensor": "/model/vision_encoder/features/features.9/Relu_output_0"
+        },
+        "head_worst": {
+          "min": 0.999731,
+          "head": "target_speed_mps"
+        }
+      },
+      "targeted_gap_val": {
+        "cases": 99,
+        "heads": {
+          "plan_length_logits": {
+            "min": 0.999941,
+            "p50": 0.999993,
+            "below_0_99": 0
+          },
+          "behavior_logits": {
+            "min": 0.999981,
+            "p50": 0.999991,
+            "below_0_99": 0
+          },
+          "target_pointer_logits": {
+            "min": 0.999987,
+            "p50": 0.999993,
+            "below_0_99": 0
+          },
+          "target_lane_logits": {
+            "min": 0.999979,
+            "p50": 0.999992,
+            "below_0_99": 0
+          },
+          "target_speed_mps": {
+            "min": 0.999505,
+            "p50": 0.999944,
+            "below_0_99": 0
+          },
+          "completion_type_logits": {
+            "min": 0.99998,
+            "p50": 0.99999,
+            "below_0_99": 0
+          },
+          "on_failure_logits": {
+            "min": 0.999987,
+            "p50": 0.999995,
+            "below_0_99": 0
+          },
+          "confidence": {
+            "min": 1.0,
+            "p50": 1.0,
+            "below_0_99": 0
+          },
+          "requires_confirmation_logits": {
+            "min": 1.0,
+            "p50": 1.0,
+            "below_0_99": 0
+          },
+          "replan_condition_logits": {
+            "min": 0.999997,
+            "p50": 0.999999,
+            "below_0_99": 0
+          }
+        },
+        "head_min_below_0_99": 0,
+        "backbone_worst_min": null,
+        "backbone_worst": {
+          "min": 0.995829,
+          "tensor": "/model/vision_encoder/features/features.9/Relu_output_0"
+        },
+        "head_worst": {
+          "min": 0.999505,
+          "head": "target_speed_mps"
+        }
+      },
+      "turn_gap_val": {
+        "cases": 29,
+        "heads": {
+          "plan_length_logits": {
+            "min": 0.999991,
+            "p50": 0.999995,
+            "below_0_99": 0
+          },
+          "behavior_logits": {
+            "min": 0.999987,
+            "p50": 0.999992,
+            "below_0_99": 0
+          },
+          "target_pointer_logits": {
+            "min": 0.99999,
+            "p50": 0.999994,
+            "below_0_99": 0
+          },
+          "target_lane_logits": {
+            "min": 0.999989,
+            "p50": 0.999993,
+            "below_0_99": 0
+          },
+          "target_speed_mps": {
+            "min": 0.999781,
+            "p50": 0.999939,
+            "below_0_99": 0
+          },
+          "completion_type_logits": {
+            "min": 0.999979,
+            "p50": 0.999988,
+            "below_0_99": 0
+          },
+          "on_failure_logits": {
+            "min": 0.999991,
+            "p50": 0.999996,
+            "below_0_99": 0
+          },
+          "confidence": {
+            "min": 1.0,
+            "p50": 1.0,
+            "below_0_99": 0
+          },
+          "requires_confirmation_logits": {
+            "min": 1.0,
+            "p50": 1.0,
+            "below_0_99": 0
+          },
+          "replan_condition_logits": {
+            "min": 0.999998,
+            "p50": 1.0,
+            "below_0_99": 0
+          }
+        },
+        "head_min_below_0_99": 0,
+        "backbone_worst_min": null,
+        "backbone_worst": {
+          "min": 0.996737,
+          "tensor": "/model/vision_encoder/features/features.9/Relu_output_0"
+        },
+        "head_worst": {
+          "min": 0.999781,
+          "head": "target_speed_mps"
+        }
+      }
+    }
+  },
+  "total_cases": 850,
+  "head_case_observations_below_0_99": 0,
+  "global_head_min": 0.999134
+}

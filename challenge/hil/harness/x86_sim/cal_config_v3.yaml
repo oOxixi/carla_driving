@@ -1,0 +1,19 @@
+model_parameters:
+  onnx_model: '/work/v3/student_v0_fp32_v3.onnx'
+  march: 'nash-p'
+  output_model_file_prefix: 'student_v0_v3'
+  working_dir: '/work/v3/.hb_compile'
+input_parameters:
+  input_name: 'rgb;text_tokens;targets;state'
+  input_shape: '1x3x224x224;1x32;1x8x14;1x64'
+  input_type_rt: 'featuremap;featuremap;featuremap;featuremap'
+  input_type_train: 'featuremap;featuremap;featuremap;featuremap'
+  norm_type: 'no_preprocess;no_preprocess;no_preprocess;no_preprocess'
+calibration_parameters:
+  # A2's frozen calibration tensors, exactly as shipped in their OpenExplorer package
+  cal_data_dir: '/work/a2_oe_pkg/openexplorer_oe391/calibration_data/rgb;/work/a2_oe_pkg/openexplorer_oe391/calibration_data/text_tokens;/work/a2_oe_pkg/openexplorer_oe391/calibration_data/targets;/work/a2_oe_pkg/openexplorer_oe391/calibration_data/state'
+  calibration_type: 'default'
+compiler_parameters:
+  compile_mode: 'latency'
+  optimize_level: 'O2'
+  core_num: 1

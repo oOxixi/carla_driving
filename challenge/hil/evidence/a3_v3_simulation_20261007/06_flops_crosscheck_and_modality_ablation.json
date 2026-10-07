@@ -1,0 +1,101 @@
+{
+  "flops_independent_recompute": {
+    "tool": "challenge/export/compute_flops.py run by B3 on a clean checkout",
+    "fields": {
+      "parameters": {
+        "repo_report": 23006581,
+        "recomputed": 23006581,
+        "identical": true
+      },
+      "macs_per_fixed_batch": {
+        "repo_report": 249320448,
+        "recomputed": 249320448,
+        "identical": true
+      },
+      "flops_per_fixed_batch": {
+        "repo_report": 498640896,
+        "recomputed": 498640896,
+        "identical": true
+      },
+      "teacher_non_embedding_active_parameters_lower_bound": {
+        "repo_report": 1409286144,
+        "recomputed": 1409286144,
+        "identical": true
+      },
+      "teacher_flops_lower_bound_one_text_token": {
+        "repo_report": 2818572288,
+        "recomputed": 2818572288,
+        "identical": true
+      },
+      "flops_ratio_student_over_teacher_lower_bound": {
+        "repo_report": 0.17691258021763392,
+        "recomputed": 0.17691258021763392,
+        "identical": true
+      },
+      "ratio_pass": {
+        "repo_report": true,
+        "recomputed": true,
+        "identical": true
+      }
+    },
+    "identical": true,
+    "caveat": "same tool, so this proves reproducibility, not method independence; the denominator definition is still a team decision"
+  },
+  "multimodal_ablation": {
+    "model": "A3 v3 FP32 ONNX",
+    "cohort": "d2_v1_1_val",
+    "cases": 150,
+    "behaviour_level": {
+      "cohort": "d2_v1_1_val",
+      "cases": 150,
+      "model": "A3 v3 FP32 ONNX",
+      "method": "zero one input modality at a time, decode through StudentPlanAdapter, compare behaviour sequence with the full-input baseline",
+      "behaviour_changed": {
+        "rgb": 0,
+        "text_tokens": 0,
+        "targets": 0,
+        "state": 32
+      },
+      "step_count_changed": {
+        "rgb": 0,
+        "text_tokens": 0,
+        "targets": 0,
+        "state": 5
+      },
+      "reading": "a higher change share means the model relies on that modality for its plan; near-zero means removing it does not change the plan"
+    },
+    "numeric_level": {
+      "rgb": {
+        "worst_head_cosine_min": 0.963662,
+        "behaviour_max_abs_mean": 0.5026,
+        "behaviour_rel_change_mean": 0.0409,
+        "behaviour_argmax_flip": "0/150"
+      },
+      "text_tokens": {
+        "worst_head_cosine_min": 0.993009,
+        "behaviour_max_abs_mean": 0.3467,
+        "behaviour_rel_change_mean": 0.0329,
+        "behaviour_argmax_flip": "0/150"
+      },
+      "targets": {
+        "worst_head_cosine_min": 0.954436,
+        "behaviour_max_abs_mean": 0.8701,
+        "behaviour_rel_change_mean": 0.098,
+        "behaviour_argmax_flip": "0/150"
+      },
+      "state": {
+        "worst_head_cosine_min": 0.46537,
+        "behaviour_max_abs_mean": 8.0242,
+        "behaviour_rel_change_mean": 0.7157,
+        "behaviour_argmax_flip": "122/150"
+      }
+    },
+    "reading": "Zeroing state changes the model massively (worst-head cosine 0.4654, behaviour relative change 71.6 percent, argmax flips in 122 of 150 cases). Zeroing rgb, text_tokens or targets barely moves the logits (cosines 0.9544-0.9930, relative change 3-10 percent) and never flips the decoded behaviour. So on this candidate the plan is dominated by the state encoder and the three other modalities contribute only marginally at decision level.",
+    "caveat": "Zeroing is not the same as removing evidence: a black image is still an image and zero tokens are still a token sequence. The number measures sensitivity to replacing a modality with its zero value."
+  },
+  "anomalous_input_suite": {
+    "cases": 10,
+    "expectation_match": 9,
+    "mismatch": "empty_source_text expected MUST_FAIL_CLOSED but a plan was produced"
+  }
+}
