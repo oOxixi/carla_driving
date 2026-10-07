@@ -111,8 +111,9 @@ challenge/hil/
 │   └── scoring_requirements_20261003/       初审评分细则的数据台账：逐项状态、分数风险与责任人
 │   └── a3_robust_fp32_v3_20261006/         A3 robust v3 候选的交接说明（A3 作者，B3 只读）
 │   └── a3_v3_simulation_20261007/          新候选 v3（robust）：官方镜像复跑 + 850 例数值仿真 + **行为缺口归因（掩码 vs 模型）** + 多模态全队列消融 + ONNX 身份等价
+│   └── carla_student_loop_20261007/       **学生模型在环的 CARLA 闭环**：18 场景 12/18 通过 + 决策延迟
 ├── schemas/                      导出的列定义
-└── tests/                        127 项自测（含 A3 诊断接收审计的交叉回归、遥测采样器、ONNX 身份）
+└── tests/                        132 项自测（含 A3 诊断接收审计的交叉回归、遥测采样器、ONNX 身份、在环决策服务）
 ```
 
 ### 2.1 文档地图
@@ -217,7 +218,7 @@ py -3.12 -m challenge.hil.cli run `
 | 5 | 测运行内存 | **已完成** | RSS / 峰值 RSS；psutil 与 Win32 两条路径均实现并有测试 |
 | 6 | 测平均/峰值功耗 | **NOT_MEASURED** | 列定义、采样器与取电点字段已就绪，但本机无探针，行内容为 `NOT_APPLICABLE`（未用估算值填充）；本轮口径为只做 X86 仿真，功耗不测 |
 | 7 | 测 CPU/BPU 利用率与异构调度 | **部分完成** | CPU 已实测；**BPU 利用率 `NOT_MEASURED`**；"异构算力利用率"公式待 A4/B2 确认 |
-| 8 | 运行 Seen/Variant/Unseen | **未完成** | 依赖 B2 冻结的 case 清单与 A3 权重。链路侧已跑 13 个场景（smoke + `safety_D`），但**不是 B2 冻结的三类分组，也没有 Student 在环** |
+| 8 | 运行 Seen/Variant/Unseen | **部分完成** | 依赖 B2 冻结的 case 清单与 A3 权重。链路侧已跑 13 个场景（smoke + `safety_D`）；**2026-10-07 起 Student 已在环**：自建 `acceptance_suite` 的 basic/advanced/challenge 共 18 场景跑通，**12/18 通过**（见 §11.13），但**不是 B2 冻结的三类分组** |
 | 9 | 做异常和长时间稳定性测试 | **部分完成** | 异常：软件用例 10 例 + **CARLA 8 个安全场景全部通过**（红灯、行人、前车急刹、偏离、NaN 控制、油门刹车冲突、低 TTC、红灯冲突）。长稳：**30 分钟已完成四次**——2026-09-21 用 D2 快照（123,611 次迭代、0 失败、漂移 3.49 MiB，见 `evidence/soak_30min_20260921/`），2026-09-25 用**签名 D3 Wave2 快照**（22,462 次迭代、0 失败、恢复探针 10/10、漂移 1.77 MiB，见 `evidence/d3_wave2_calibration_20260925/`），2026-10-03 与 10-07 在**官方镜像内**各一次（v1 候选 141,118 次、v3 候选 128,545 次，均 0 失败、恢复 10/10，见 `evidence/scoring_requirements_20261003/` 与 `evidence/a3_v3_simulation_20261007/07_*`）；早期两次吞吐差 5.5×，已用同刻 1 分钟 A/B 对照证明来自主机状态而非数据（**X86 长稳绝对吞吐不可跨会话比较**）+ CARLA 连续 7.1 分钟 15 轮无失败；**板端 30 分钟长稳 `NOT_MEASURED`** |
 | 10 | 同配置至少重复 3 轮 | **部分完成** | X86：3 轮 × 100 例。CARLA：**5 个 smoke 场景各 3 轮 + 3 个代表场景各 3 轮，结果一致**；**交付配置（J6P）上的 ≥3 轮 `NOT_MEASURED`** |
 
@@ -728,3 +729,20 @@ submission ledger 列了一条阻塞项：A2 的 FP32 ONNX（`681a5d4b…`）与
   `METADATA_ONLY_DIFFERENCE_NUMERICALLY_IDENTICAL`（100 例 max abs diff = 0.0，argmax 100/100）。
 
 结论：RC 不需要"两边字节相同"，需要「**唯一交付字节 + 等价证明**」。
+
+### 11.13 学生模型在环的 CARLA 闭环（2026-10-07）
+
+评分细则的"场景任务完成率"此前记为未测，根因是闭环里没有把 Student 放到决策位。本轮补上：
+
+* `challenge/hil/carla/student_action_service.py`：用蒸馏 Student 实现仓库的 **`/infer` 计划契约**
+  （`planner_v2` 模式下直接把训练同构的 canonical 请求交给 `StudentPreprocessor` → ONNX →
+  `StudentPlanAdapter`，把 `ManeuverPlan V2` 原样返回），另附 `/v1/chat/completions` 的 A–E
+  五路接口；请求、计划、延迟逐条落 JSONL；
+* `challenge/hil/carla/run_student_loop_suite.py`：按 `--qwen-service-url … --qwen-mode planner_v2`
+  批量跑 18 个 `acceptance_suite` 场景并按三级难度汇总；
+* **结果**：基础 3/6、进阶 4/6、挑战 5/6，**合计 12/18（66.7%）**，0 碰撞；
+  学生决策 **P50 3.81 ms / P95 5.65 ms**（23 次请求 0 拒绝）；
+  失败集中在速度跟踪精度、恢复动作、目标绑定与故障响应时延，**无一为安全违规**。
+
+口径：自建 18 场景（非官方 1000 帧）、单 seed、安全链在环。证据见
+[`evidence/carla_student_loop_20261007/`](evidence/carla_student_loop_20261007/README.md)。

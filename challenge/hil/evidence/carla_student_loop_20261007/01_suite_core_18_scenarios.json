@@ -1,0 +1,446 @@
+{
+  "created_at_utc": "2026-10-07T14:07:52.606991+00:00",
+  "service_url": "http://127.0.0.1:8100",
+  "qwen_mode": "planner_v2",
+  "scenarios": [
+    {
+      "scenario": "ACC_B01_start_keep_lane",
+      "group": "basic",
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "failed_keys": [],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "KEEP_LANE"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 3.5758797709899463e-07,
+      "final_speed_mps": 5.078304517826302e-10,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_B02_set_speed_20",
+      "group": "basic",
+      "returncode": 0,
+      "status": "FAILED",
+      "score": 20.0,
+      "failed_keys": [
+        "target_speed_kph"
+      ],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "SET_SPEED"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 0.0018960896437839325,
+      "final_speed_mps": 4.331788400619684,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_B03_slow_to_10",
+      "group": "basic",
+      "returncode": 0,
+      "status": "FAILED",
+      "score": 20.0,
+      "failed_keys": [
+        "target_speed_kph"
+      ],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "SET_SPEED",
+        "SET_SPEED"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY",
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 0.0018960896437839325,
+      "final_speed_mps": 3.7969788014680135,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_B04_normal_stop",
+      "group": "basic",
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "failed_keys": [],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "SET_SPEED",
+        "STOP"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY",
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 0.0018960896437839325,
+      "final_speed_mps": 1.6782954696856514e-08,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_B05_emergency_stop",
+      "group": "basic",
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "failed_keys": [],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "SET_SPEED",
+        "STOP"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY",
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 0.0018960896437839325,
+      "final_speed_mps": 1.4184421866356866e-08,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_B06_offset_recovery",
+      "group": "basic",
+      "returncode": 0,
+      "status": "FAILED",
+      "score": 20.0,
+      "failed_keys": [
+        "must_finish_route",
+        "cross_track_error_should_decrease",
+        "final_cross_track_error_m"
+      ],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "KEEP_LANE"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 0.5656569089792629,
+      "final_speed_mps": 4.1585206653738854e-10,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_A01_lead_brake",
+      "group": "advanced",
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "failed_keys": [],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "FOLLOW"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 0.004973780751266568,
+      "final_speed_mps": 4.843805400389113,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_A02_red_light_conflict",
+      "group": "advanced",
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "failed_keys": [],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "STOP"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 0.0,
+      "final_speed_mps": 1.3887118997036214e-08,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_A03_pedestrian_crossing",
+      "group": "advanced",
+      "returncode": 0,
+      "status": "FAILED",
+      "score": 20.0,
+      "failed_keys": [
+        "expected_safety_override",
+        "expected_reason_contains",
+        "must_generate_event"
+      ],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "KEEP_LANE"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 3.5758797709899463e-07,
+      "final_speed_mps": 3.4950699771532905e-10,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_A04_static_obstacle_stop",
+      "group": "advanced",
+      "returncode": 0,
+      "status": "FAILED",
+      "score": 20.0,
+      "failed_keys": [],
+      "extension_passed": false,
+      "extension_failed_keys": [
+        "expected_target_actor_id"
+      ],
+      "qwen_behaviors": [
+        "STOP"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 3.5758797709899463e-07,
+      "final_speed_mps": 3.4950699771532905e-10,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_A05_lane_change_left",
+      "group": "advanced",
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "failed_keys": [],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "CHANGE_LANE_LEFT"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 0.12084221096994427,
+      "final_speed_mps": 0.0005040839152360906,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_A06_obstacle_detour_return",
+      "group": "advanced",
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "failed_keys": [],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "AVOID_OBSTACLE",
+        "RETURN_TO_LANE"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 0.3815607495641235,
+      "final_speed_mps": 0.1033417671380687,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_C01_heavy_rain_fog",
+      "group": "challenge",
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "failed_keys": [],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "KEEP_LANE"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 3.574676423540332e-07,
+      "final_speed_mps": 5.149880376189176e-10,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_C02_ambiguous_instruction",
+      "group": "challenge",
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "failed_keys": [],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "STOP"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 3.5758797709899463e-07,
+      "final_speed_mps": 3.4950699771532905e-10,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_C03_illegal_instruction",
+      "group": "challenge",
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "failed_keys": [],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "STOP"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 0.0,
+      "final_speed_mps": 7.191976949687704e-09,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_C04_multi_target_binding",
+      "group": "challenge",
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "failed_keys": [],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "FOLLOW"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 0.8518774979200092,
+      "final_speed_mps": 0.0,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_C05_perception_failure",
+      "group": "challenge",
+      "returncode": 0,
+      "status": "FAILED",
+      "score": 20.0,
+      "failed_keys": [],
+      "extension_passed": false,
+      "extension_failed_keys": [
+        "max_fault_response_s"
+      ],
+      "qwen_behaviors": [
+        "KEEP_LANE"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 3.5758797709899463e-07,
+      "final_speed_mps": 5.078304517826302e-10,
+      "stderr_tail": ""
+    },
+    {
+      "scenario": "ACC_C06_dynamic_route_deviation",
+      "group": "challenge",
+      "returncode": 0,
+      "status": "SUCCEEDED",
+      "score": 25.0,
+      "failed_keys": [],
+      "extension_passed": true,
+      "extension_failed_keys": [],
+      "qwen_behaviors": [
+        "KEEP_LANE"
+      ],
+      "qwen_outcomes": [
+        "SLOW_READY"
+      ],
+      "collision_seen": false,
+      "max_route_deviation_m": 3.5758797709899463e-07,
+      "final_speed_mps": 5.078304517826302e-10,
+      "stderr_tail": ""
+    }
+  ],
+  "summary": {
+    "per_group": {
+      "basic": {
+        "runs": 6,
+        "passed": 3,
+        "completion_rate": 0.5,
+        "failed_keys": [
+          "cross_track_error_should_decrease",
+          "final_cross_track_error_m",
+          "must_finish_route",
+          "target_speed_kph"
+        ],
+        "failed_scenarios": [
+          "ACC_B02_set_speed_20",
+          "ACC_B03_slow_to_10",
+          "ACC_B06_offset_recovery"
+        ],
+        "extension_failed": []
+      },
+      "advanced": {
+        "runs": 6,
+        "passed": 4,
+        "completion_rate": 0.6666666666666666,
+        "failed_keys": [
+          "expected_reason_contains",
+          "expected_safety_override",
+          "must_generate_event"
+        ],
+        "failed_scenarios": [
+          "ACC_A03_pedestrian_crossing",
+          "ACC_A04_static_obstacle_stop"
+        ],
+        "extension_failed": [
+          "ACC_A04_static_obstacle_stop"
+        ]
+      },
+      "challenge": {
+        "runs": 6,
+        "passed": 5,
+        "completion_rate": 0.8333333333333334,
+        "failed_keys": [],
+        "failed_scenarios": [
+          "ACC_C05_perception_failure"
+        ],
+        "extension_failed": [
+          "ACC_C05_perception_failure"
+        ]
+      }
+    },
+    "overall": {
+      "runs": 18,
+      "passed": 12,
+      "completion_rate": 0.6666666666666666
+    },
+    "criterion": "scenario_acceptance.status == SUCCEEDED"
+  }
+}

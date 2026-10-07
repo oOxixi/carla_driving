@@ -1,0 +1,24 @@
+{
+  "service": "challenge/hil/carla/student_action_service.py",
+  "contract": "POST /infer -> ManeuverPlan V2 (the repository's canonical plan contract)",
+  "model": {
+    "onnx": "student_v0_fp32_v3.onnx",
+    "sha256": "b76b5a32dfde16d52b34ad553bce9e899eaf4220142a8ddd6e9b4aea4fc808e5",
+    "weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+    "gate_status": "PENDING_A3_FP32_GATE",
+    "confidence_mode": "plan"
+  },
+  "requests": 22,
+  "errors": 0,
+  "actions": {"START": 7, "SET_SPEED": 6, "STOP": 6, "SLOW_DOWN": 3},
+  "behaviours": {
+    "KEEP_LANE": 6, "SET_SPEED": 6, "STOP": 6, "FOLLOW": 2,
+    "CHANGE_LANE_LEFT": 1, "AVOID_OBSTACLE": 1
+  },
+  "model_inference_ms": {
+    "n": 23, "min": 2.88, "p50": 3.81, "p95": 5.65, "max": 15.94,
+    "source": "service-side perf_counter around onnxruntime.run over the 23 live requests"
+  },
+  "endpoint_latency_ms": {"p50": 3.76, "p95": 13.77, "max": 15.94, "source": "GET /metrics"},
+  "note": "latency is the Student decision only; the CARLA control loop, request staging and HTTP overhead are excluded"
+}
