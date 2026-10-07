@@ -1,0 +1,527 @@
+{
+  "schema_version": "1.0",
+  "student": {
+    "conv_linear_flops": 498640896,
+    "bias_pool_activation_extra_ops": 796237,
+    "arithmetic_total": 499437133,
+    "relu_comparisons": 782208,
+    "arithmetic_plus_comparisons_total": 500219341,
+    "convention": "MAC=2; float add/mul/div/neg=1; abstract exp=1; sigmoid=4; ReLU comparisons separately counted; reshape/cat/data movement=0; initialization and preprocessing excluded",
+    "status": "shape-derived abstract operation count, NOT measured kernel instructions",
+    "functional_ops": {
+      "sigmoid_neg_exp_add_div": 20,
+      "target_speed_scale_multiply": 4
+    },
+    "modules": [
+      {
+        "module": "vision_encoder.features.0",
+        "type": "Conv2d",
+        "output_shape": [
+          1,
+          32,
+          112,
+          112
+        ],
+        "bias_or_pool_arithmetic_ops": 401408,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "vision_encoder.features.1",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          32,
+          112,
+          112
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 401408
+      },
+      {
+        "module": "vision_encoder.features.2",
+        "type": "Conv2d",
+        "output_shape": [
+          1,
+          64,
+          56,
+          56
+        ],
+        "bias_or_pool_arithmetic_ops": 200704,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "vision_encoder.features.3",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          64,
+          56,
+          56
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 200704
+      },
+      {
+        "module": "vision_encoder.features.4",
+        "type": "Conv2d",
+        "output_shape": [
+          1,
+          128,
+          28,
+          28
+        ],
+        "bias_or_pool_arithmetic_ops": 100352,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "vision_encoder.features.5",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          128,
+          28,
+          28
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 100352
+      },
+      {
+        "module": "vision_encoder.features.6",
+        "type": "Conv2d",
+        "output_shape": [
+          1,
+          256,
+          14,
+          14
+        ],
+        "bias_or_pool_arithmetic_ops": 50176,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "vision_encoder.features.7",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          256,
+          14,
+          14
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 50176
+      },
+      {
+        "module": "vision_encoder.features.8",
+        "type": "Conv2d",
+        "output_shape": [
+          1,
+          384,
+          7,
+          7
+        ],
+        "bias_or_pool_arithmetic_ops": 18816,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "vision_encoder.features.9",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          384,
+          7,
+          7
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 18816
+      },
+      {
+        "module": "vision_encoder.pool",
+        "type": "AvgPool2d",
+        "output_shape": [
+          1,
+          384,
+          3,
+          3
+        ],
+        "bias_or_pool_arithmetic_ops": 13824,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "vision_encoder.projection",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 512,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "vision_encoder.activation",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 512
+      },
+      {
+        "module": "text_encoder.layers.0",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 512,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "text_encoder.layers.1",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 512
+      },
+      {
+        "module": "text_encoder.layers.2",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 512,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "text_encoder.layers.3",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 512
+      },
+      {
+        "module": "target_encoder.layers.0",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 512,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "target_encoder.layers.1",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 512
+      },
+      {
+        "module": "target_encoder.layers.2",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 512,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "target_encoder.layers.3",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 512
+      },
+      {
+        "module": "state_encoder.layers.0",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 512,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "state_encoder.layers.1",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 512
+      },
+      {
+        "module": "state_encoder.layers.2",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 512,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "state_encoder.layers.3",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          512
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 512
+      },
+      {
+        "module": "fusion.0",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          3072
+        ],
+        "bias_or_pool_arithmetic_ops": 3072,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "fusion.1",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          3072
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 3072
+      },
+      {
+        "module": "fusion.2",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          3072
+        ],
+        "bias_or_pool_arithmetic_ops": 3072,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "fusion.3",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          3072
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 3072
+      },
+      {
+        "module": "fusion.4",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          1024
+        ],
+        "bias_or_pool_arithmetic_ops": 1024,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "fusion.5",
+        "type": "ReLU",
+        "output_shape": [
+          1,
+          1024
+        ],
+        "bias_or_pool_arithmetic_ops": 0,
+        "relu_comparison_ops": 1024
+      },
+      {
+        "module": "plan_length_head",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          4
+        ],
+        "bias_or_pool_arithmetic_ops": 4,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "behavior_head",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          56
+        ],
+        "bias_or_pool_arithmetic_ops": 56,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "target_pointer_head",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          36
+        ],
+        "bias_or_pool_arithmetic_ops": 36,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "target_lane_head",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          24
+        ],
+        "bias_or_pool_arithmetic_ops": 24,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "target_speed_head",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          4
+        ],
+        "bias_or_pool_arithmetic_ops": 4,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "completion_head",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          32
+        ],
+        "bias_or_pool_arithmetic_ops": 32,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "failure_head",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          16
+        ],
+        "bias_or_pool_arithmetic_ops": 16,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "confidence_head",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          1
+        ],
+        "bias_or_pool_arithmetic_ops": 1,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "confirmation_head",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          1
+        ],
+        "bias_or_pool_arithmetic_ops": 1,
+        "relu_comparison_ops": 0
+      },
+      {
+        "module": "replan_head",
+        "type": "Linear",
+        "output_shape": [
+          1,
+          7
+        ],
+        "bias_or_pool_arithmetic_ops": 7,
+        "relu_comparison_ops": 0
+      }
+    ]
+  },
+  "teacher_identity": {
+    "teacher_model_id": "Qwen/Qwen3.5-2B",
+    "teacher_model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "config_file_sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4"
+  },
+  "teacher_counts": {
+    "conv_linear_flops": 892929605632,
+    "vision_attention_qk_av": 6442450944,
+    "text_attention_qk_av": 3503996928,
+    "serial_delta_core_updates": 8819048448,
+    "expanded_dominant_flops": 911695101952,
+    "exact_whole_network_flops": null
+  },
+  "teacher_expanded_scope_note": "Reference dense attention and serial delta algorithm; production vLLM prefill may use chunk/fused kernels with different counts. Expanded sum still excludes norm/gates/softmax/rotary/nonlinear/residual/bias and does NOT claim total FLOPs.",
+  "initial_prepared_package_evidence": {
+    "status": "STAGED_NOT_READY",
+    "model": "Qwen/Qwen3.5-2B",
+    "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "same_as_fixed_teacher": true,
+    "same_student_model_and_contract": true,
+    "actual_competition_submission_identity": "NOT_PROVEN_BY_STAGED_PREPARATION_DIRECTORY"
+  },
+  "candidates": [
+    {
+      "id": "fixed_teacher_conv_linear",
+      "baseline": "Pinned Teacher Qwen3.5-2B",
+      "scope": "Conv/Linear only, declared 267-token/64-visual-token fixture",
+      "numerator": 498640896,
+      "denominator": 892929605632,
+      "ratio": 0.0005584324820847111,
+      "ratio_kind": "exact within dense-layer analytical scope",
+      "numeric_le_0p5_under_declared_scope": true,
+      "conditional_tier_points_if_baseline_and_scope_accepted": 15,
+      "formal_ratio_pass": null,
+      "baseline_selection": "REPORT_TEAM_CHOICE_NOT_SELECTED"
+    },
+    {
+      "id": "fixed_teacher_expanded_dominant_ops",
+      "baseline": "Pinned Teacher Qwen3.5-2B",
+      "scope": "Conv/Linear + dense attention QK/AV + serial gated-delta core updates",
+      "numerator": 498640896,
+      "denominator": 911695101952,
+      "ratio": 0.0005469382197319878,
+      "ratio_kind": "analytical partial-operator comparison; NOT whole network",
+      "numeric_le_0p5_under_declared_scope": true,
+      "conditional_tier_points_if_baseline_and_scope_accepted": 15,
+      "formal_ratio_pass": null,
+      "baseline_selection": "REPORT_TEAM_CHOICE_NOT_SELECTED"
+    },
+    {
+      "id": "initial_student_fp32_conv_linear",
+      "baseline": "Initial prepared package's same-structure FP32 Student (conditional choice)",
+      "scope": "Conv/Linear, identical model.py + contract.py, identical fixed shapes",
+      "numerator": 498640896,
+      "denominator": 498640896,
+      "ratio": 1.0,
+      "ratio_kind": "same architecture; FP32->INT8 alone does not reduce MAC count",
+      "numeric_le_0p5_under_declared_scope": false,
+      "conditional_tier_points_if_baseline_and_scope_accepted": 0,
+      "formal_ratio_pass": null,
+      "baseline_selection": "REPORT_TEAM_CHOICE_NOT_SELECTED"
+    },
+    {
+      "id": "initial_student_fp32_whole_forward",
+      "baseline": "Initial prepared package's same-structure FP32 Student (conditional choice)",
+      "scope": "Abstract whole-forward floating arithmetic, ReLU comparisons separately reported, identical architecture",
+      "numerator": 499437133,
+      "denominator": 499437133,
+      "ratio": 1.0,
+      "ratio_kind": "same-structure arithmetic-count equality; not measured FP32 vs INT8 kernel instructions",
+      "numeric_le_0p5_under_declared_scope": false,
+      "conditional_tier_points_if_baseline_and_scope_accepted": 0,
+      "formal_ratio_pass": null,
+      "baseline_selection": "REPORT_TEAM_CHOICE_NOT_SELECTED"
+    }
+  ],
+  "caveat": "Direct model counts only; no bound-based ratios. Baseline and scope choices are supplied, not approved or selected. Exact Teacher whole-network FLOPs are not measured. No scoring claim. A2/A4 graph changes require a fresh numerator. ASR/NLU/planning adapters/controllers are outside both model scopes."
+}

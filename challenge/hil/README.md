@@ -113,6 +113,7 @@ challenge/hil/
 │   └── a3_v3_simulation_20261007/          新候选 v3（robust）：官方镜像复跑 + 850 例数值仿真 + **行为缺口归因（掩码 vs 模型）** + 多模态全队列消融 + ONNX 身份等价
 │   └── carla_student_loop_20261007/       **学生模型在环的 CARLA 闭环**：18 场景 12/18 通过 + 决策延迟
 │   └── deployment_estimate_and_decay_20261008/ **BPU 性能预估（0.615 ms/1625 FPS，内存受限）** + 同口径 Teacher/Student 衰减
+│   └── a1_handoff_review_20261008/        **独立复核 A1 交接包**：完整性 PASS（201 文件）、FLOPs 选项表逐字节一致
 ├── schemas/                      导出的列定义
 └── tests/                        132 项自测（含 A3 诊断接收审计的交叉回归、遥测采样器、ONNX 身份、在环决策服务）
 ```

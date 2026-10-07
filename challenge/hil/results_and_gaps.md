@@ -301,6 +301,23 @@ Adapter** 解码同一份 ONNX，逐步逐字段比对；Teacher 以自身为参
 与 CARLA 闭环里 B02/B03 的 `target_speed_kph` 失败、SUP_A14 弯道超速互相印证。
 场景级代理：原始模型 83/83 vs 学生 60/83（口径不同，仅作差距参考）。
 
+### 2.15 A1 交接包的独立复核（2026-10-08）
+
+上游新增提交 `ca5cb179`（A1 的模型/FLOPs 交接包），B3 按验证职责做了独立复核
+（`evidence/a1_handoff_review_20261008/`）：
+
+| 检查 | 结果 |
+|---|---|
+| 包完整性（`verify_manifest.py`） | **PASS：201 个文件全部匹配** |
+| FLOPs 选项表复算 | **与发布文件逐字节一致**（sha256 `27e7e2da…`） |
+| Student 算量复算 | 参数 23,006,581 / FLOPs 498,640,896 —— 一致（唯一差异是溯源字段 `source_git_sha`） |
+| Teacher 侧 | conv/linear 892,929,605,632；扩展主算子 911,695,101,952；**整网精确总量明确记为 null**（不编造） |
+
+→ **FLOPs 这项的数据侧就此齐了**：分子（498,640,896）与我们此前的独立复算一致，分母从"28 层通用下界"
+升级为"固定 Teacher 实配复算"。仍未决的只是**团队选定四个候选口径中的哪一个**（包内 `formal_ratio_pass` 为 `null`）。
+提示：初审整理包记录的候选模型是 Qwen3.5-2B（与固定 Teacher 同 revision），所以"相对初赛模型"应落在
+0.000558 / 0.000547 两行，而不是 1.0 那两行。
+
 ### 2.11 ONNX 字节身份项（submission ledger 的阻塞项之一，2026-10-07）
 
 `submission/challenge/PRE_SUBMISSION_LEDGER_20261007.md` 要求 A4/B3 先解决 A2 的

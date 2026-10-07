@@ -1,0 +1,60 @@
+{
+  "experiment": "B3 independent review of the A1 model/FLOPs handoff package (2026-10-08)",
+  "package": "A1_正式模型与FLOPs交接_20261008",
+  "upstream_commit": "ca5cb179 A1: add standalone model interface and FLOPs handoff with candidate denominator data",
+  "checks": [
+    {
+      "check": "package integrity",
+      "command": "py -3.12 verify_manifest.py",
+      "result": "PASS: 201 files verified"
+    },
+    {
+      "check": "FLOPs option table recomputation",
+      "command": "py -3.12 -m challenge.export.flops_options --output reproduced_flops_options.json",
+      "published_sha256": "27e7e2da28b095bf38916cecee94cf23a1a3e9df8008f3522a573ca2a57488d8",
+      "reproduced_sha256": "27e7e2da28b095bf38916cecee94cf23a1a3e9df8008f3522a573ca2a57488d8",
+      "byte_identical": true
+    },
+    {
+      "check": "Student FLOPs recomputation",
+      "command": "py -3.12 -m challenge.export.compute_flops --output reproduced_student_flops.json",
+      "parameters": 23006581,
+      "flops_per_fixed_batch": 498640896,
+      "diff_vs_published": ["source_git_sha (provenance only: the recompute ran at B3's HEAD, the published file pins A1's baseline)"],
+      "reading": "every quantity matches; only the recorded source revision differs, by design"
+    },
+    {
+      "check": "Teacher side values present and honest",
+      "values": {
+        "conv_linear_flops": 892929605632,
+        "vision_attention_qk_av": 6442450944,
+        "text_attention_qk_av": 3503996928,
+        "serial_delta_core_updates": 8819048448,
+        "expanded_dominant_flops": 911695101952,
+        "exact_whole_network_flops": null
+      },
+      "reading": "the package does not invent a whole-network total; the unmeasurable total is left null"
+    }
+  ],
+  "options": [
+    {"id": "fixed_teacher_conv_linear", "denominator": 892929605632, "ratio": 0.0005584324820847111, "conditional_tier_points": 15},
+    {"id": "fixed_teacher_expanded_dominant_ops", "denominator": 911695101952, "ratio": 0.0005469382197319878, "conditional_tier_points": 15},
+    {"id": "initial_student_fp32_conv_linear", "denominator": 498640896, "ratio": 1.0, "conditional_tier_points": 0},
+    {"id": "initial_student_fp32_whole_forward", "denominator": 499437133, "ratio": 1.0, "conditional_tier_points": 0}
+  ],
+  "b3_reading": {
+    "covered": (
+      "the structural/FLOPs side is now complete and reproducible: student 498,640,896 FLOPs matches the "
+      "independent recompute B3 did earlier, and the teacher denominator is recomputed from the pinned "
+      "Qwen3.5-2B configuration rather than the old generic 28-layer bound"
+    ),
+    "still_open": (
+      "which of the four options the team submits as the official denominator; the package itself records "
+      "formal_ratio_pass = null and warns that the tier is conditional"
+    ),
+    "note": (
+      "the round-1 prepared package records Qwen3.5-2B (same revision as the pinned teacher), so reading "
+      "'relative to the initial model' still points at the teacher rows, not at ratio 1.0"
+    )
+  }
+}
