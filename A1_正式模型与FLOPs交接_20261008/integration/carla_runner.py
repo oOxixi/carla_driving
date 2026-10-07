@@ -1,0 +1,7079 @@
+"""CARLA 0.9.16 acceptance runner with one synchronous tick/control apply.
+
+The default path consumes frame-aligned RGB/LiDAR and event sensors. Explicit
+``world`` and ``virtual`` perception modes remain test-only diagnostic paths.
+"""
+from __future__ import annotations
+
+import argparse
+import importlib
+import json
+import math
+import os
+import subprocess
+import sys
+import time
+import zipfile
+from dataclasses import asdict, dataclass, replace
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Mapping, Sequence
+
+from car_control_A import CarlaSession, ControlOutput, RuntimeVehicleState
+from car_control_A.maneuver_fsm import ManeuverFSM, ManeuverUpdate, TERMINAL_STATES
+from car_control_A.high_level_command import HighLevelCommandAdapter, is_high_level_command
+from car_control_A.routing import RouteReference
+from car_control_A.watchdog import RuntimeWatchdog
+from car_control_B.pure_pursuit import PurePursuitController, PurePursuitParams
+from car_control_C import ConservativeSensorFusion, SafetyStateParameters
+from car_control_D import SafetyConfig, SafetySupervisor
+from config.strategy import DEFAULT_STRATEGY
+from qwen_service.client import QwenServiceClient
+from runtime.interface_registry import InterfaceRegistry
+from runtime import (
+    CompiledManeuverPlan,
+    CompiledPlanStep,
+    OrchestratorConfig,
+    PipelineOrchestrator,
+)
+
+from .carla_perception import (
+    CarlaPerceptionBridge,
+    EventLedger,
+    PerceptionAcquisitionError,
+    actor_speed_limit_mps,
+    attach_default_sensors,
+    attach_event_sensors,
+    lane_metrics,
+    route_deviation_m,
+    sensor_specs_for_profile,
+    traffic_light_and_stop_distance,
+)
+from .contracts import DetectedObject, PerceptionFrame
+from .qwen_async import AsyncQwenDecisionBridge
+from .qwen_boundary import QwenInputContext
+from .qwen_remote_backend import OpenAICompatibleQwenVLBackend
+from .qwen_vl_adapter import StrictQwenVLAdapter
+from .live_voice import LiveVoiceConfig, LiveVoiceSource
+from .route_planner import (
+    build_destination_route_reference,
+    build_lane_change_route_reference,
+    build_route_reference,
+    build_scenario_route_reference,
+    command_turn_direction,
+    select_topology_route_anchor,
+    warm_heading_waypoint_cache,
+)
+from .route_geometry import project_route_progress_m, route_pose_at_s
+from .route_manager import (
+    GlobalRoute,
+    RouteManager,
+    RoutePlanningError,
+    RouteRecoveryPolicy,
+    RouteRecoveryTracker,
+)
+from .scenario_builder import (
+    ActorPlacementError,
+    actor_resample_offsets,
+    offset_actor_route_position,
+    rebase_actor_route_position,
+    route_relative_carla_transform,
+    route_relative_target_location,
+    validate_actor_transform,
+)
+from .planning_stage import prepare_scenario_route
+from .execution_stage import DistanceCoverageTracker, RouteProgressTracker
+from .scoring_stage import build_acceptance_context
+from .runtime_diagnostics import diagnose_runtime_failure
+from .qwen_image_stager import QwenImageStager
+from .perception_stage import audit_control_sources
+from .driving_policy import load_driving_policy
+from .qwen_fault_injection import ScenarioQwenFaultInjector
+from .qwen_scenario_monitor import QwenScenarioMonitor
+from .runtime_loop import ControlRuntime
+from .rgb_detector import OnnxYoloDetector, carla_rgb_array
+from .scenario_execution import (
+    CommandTimeline,
+    ScenarioSpec,
+    resolve_scenario_command,
+    scenario_trigger_satisfied,
+)
+from .scenario_evidence import FrameTiming, ScenarioEvidenceRecorder
+from .scenario_extensions import ScenarioExtensionRuntime
+from .second_group_runtime import CanonicalRuntimeBridge
+
+
+DEFAULT_QWEN_MODEL = "Qwen/Qwen3.5-2B"
+
+
+@dataclass(frozen=True, slots=True)
+class _DeferredCommand:
+    envelope: dict[str, object]
+    received_ns: int
+    origin: str
+    audio_duration_s: float | None = None
+
+
+def _select_deferred_commands(
+    commands: Sequence[_DeferredCommand],
+    *,
+    scenario_plan_active: bool,
+    perception_target_available: bool = True,
+) -> tuple[tuple[_DeferredCommand, ...], list[_DeferredCommand]]:
+    """Submit at most one grounded scenario command without dropping triggers."""
+    selected: list[_DeferredCommand] = []
+    retained: list[_DeferredCommand] = []
+    scenario_selected = False
+    for command in commands:
+        intent = str(command.envelope.get("intent", "")).strip().upper()
+        needs_visible_target = intent in {"AVOID_OBSTACLE", "FOLLOW"}
+        if command.origin == "SCENARIO" and (
+            scenario_plan_active
+            or scenario_selected
+            or (needs_visible_target and not perception_target_available)
+        ):
+            retained.append(command)
+            continue
+        selected.append(command)
+        if command.origin == "SCENARIO":
+            scenario_selected = True
+    return tuple(selected), retained
+
+
+def _canonical_poll_wait_timeout_ms(
+    *,
+    slow_submitted_now: bool,
+    emergency_submitted_now: bool,
+    configured_timeout_ms: float,
+) -> float:
+    """Never synchronously wait through an emergency command's brake frame."""
+    if emergency_submitted_now or not slow_submitted_now:
+        return 0.0
+    return float(configured_timeout_ms)
+
+
+def _compiled_plan_from_payload(payload: Mapping[str, Any]) -> CompiledManeuverPlan:
+    """Rebuild the typed A/FSM contract from an orchestrator audit payload."""
+    if not isinstance(payload, Mapping):
+        raise TypeError("compiled plan payload must be a mapping")
+    raw_steps = payload.get("steps")
+    if not isinstance(raw_steps, list) or not raw_steps:
+        raise ValueError("compiled plan payload must contain steps")
+    steps = tuple(
+        CompiledPlanStep(
+            step_id=str(step["step_id"]),
+            source_step_id=str(step["source_step_id"]),
+            behavior=str(step["behavior"]),
+            target=dict(step["target"]),
+            preconditions=tuple(str(item) for item in step["preconditions"]),
+            completion=dict(step["completion"]),
+            timeout_s=float(step["timeout_s"]),
+            on_failure=str(step["on_failure"]),
+        )
+        for step in raw_steps
+        if isinstance(step, Mapping)
+    )
+    if len(steps) != len(raw_steps):
+        raise TypeError("every compiled plan step must be a mapping")
+    return CompiledManeuverPlan(
+        command_id=str(payload["command_id"]),
+        plan_id=str(payload["plan_id"]),
+        steps=steps,
+        replan_conditions=tuple(str(item) for item in payload.get("replan_conditions", ())),
+        valid_until_ns=int(payload["valid_until_ns"]),
+    )
+
+
+def _maneuver_target_visible(
+    step: CompiledPlanStep | None,
+    scene: PerceptionFrame,
+) -> bool:
+    """Match a legacy planner target by semantic class, not any detection."""
+    if step is None:
+        return False
+    target_id = str(step.target.get("target_id") or "")
+    if not target_id.startswith("legacy-"):
+        return any(item.track_id == target_id for item in scene.detected_objects)
+    accepted = _legacy_target_classes(target_id)
+    return any(item.class_name.lower() in accepted for item in scene.detected_objects)
+
+
+def _legacy_target_classes(target_id: str) -> set[str]:
+    target_class = target_id.removeprefix("legacy-").rsplit("-", 1)[0]
+    aliases = {
+        "vehicle": {"car", "truck", "bus", "vehicle"},
+        "pedestrian": {"person", "pedestrian"},
+        "cyclist": {"bicycle", "motorcycle", "cyclist"},
+        "obstacle": {"obstacle"},
+    }
+    return aliases.get(target_class, {target_class})
+
+
+def _maneuver_target_gap_s(
+    step: CompiledPlanStep | None,
+    scene: PerceptionFrame,
+    ego_speed_mps: float,
+    actor_distances_m: Mapping[str, float] | None = None,
+) -> float | None:
+    """Return time gap to the exact actor bound into the current plan."""
+    distance_m = _maneuver_target_distance_m(step, scene, actor_distances_m)
+    if distance_m is None:
+        return None
+    return distance_m / max(0.1, float(ego_speed_mps))
+
+
+def _maneuver_target_distance_m(
+    step: CompiledPlanStep | None,
+    scene: PerceptionFrame,
+    actor_distances_m: Mapping[str, float] | None = None,
+) -> float | None:
+    """Return only the range of the actor explicitly bound to this step."""
+    if step is None:
+        return None
+    target_id = str(step.target.get("target_id") or "")
+    accepted_legacy_classes = (
+        _legacy_target_classes(target_id)
+        if target_id.startswith("legacy-") else None
+    )
+    detected_distance = next(
+        (
+            float(item.distance_m)
+            for item in scene.detected_objects
+            if item.distance_m is not None
+            and (
+                item.track_id == target_id
+                or (
+                    accepted_legacy_classes is not None
+                    and item.class_name.lower() in accepted_legacy_classes
+                )
+            )
+        ),
+        None,
+    )
+    if detected_distance is not None:
+        return detected_distance
+    if actor_distances_m is not None and target_id in actor_distances_m:
+        return float(actor_distances_m[target_id])
+    return None
+
+
+def _physical_actor_id_for_target(
+    target_id: str,
+    target_aliases: Mapping[str, str] | None,
+) -> str:
+    """Resolve a sensor track to its audited physical actor for progress only.
+
+    Qwen must continue to receive and bind sensor track IDs.  Once its plan is
+    accepted, the already-audited association lets the executor evaluate
+    whether that exact actor has passed behind ego; scenario actor IDs are not
+    injected into model perception or planning input.
+    """
+    normalized = str(target_id)
+    if target_aliases is None:
+        return normalized
+    return str(target_aliases.get(normalized, normalized))
+
+
+def _maneuver_target_passed(
+    *,
+    target_seen: bool,
+    target_visible: bool,
+    distance_from_plan_start_m: float,
+    pass_after_m: float | None,
+) -> bool:
+    """Require the measured pass distance when the target range is known."""
+    if not target_seen:
+        return False
+    if pass_after_m is not None:
+        return distance_from_plan_start_m >= pass_after_m
+    return not target_visible and distance_from_plan_start_m >= 20.0
+
+
+def _maneuver_step_reanchors_target(
+    step: CompiledPlanStep,
+    current_target_id: str,
+) -> bool:
+    """Re-anchor PASS_TARGET distance even when adjacent steps share a target."""
+    started_target_id = str(step.target.get("target_id") or "")
+    return (
+        started_target_id != str(current_target_id)
+        or step.behavior == "PASS_TARGET"
+    )
+
+
+def _record_maneuver_update(
+    update: ManeuverUpdate,
+    *,
+    monitor: QwenScenarioMonitor | None,
+    recorder: ScenarioEvidenceRecorder | None,
+    extension_runtime: ScenarioExtensionRuntime | None = None,
+) -> None:
+    """Persist step/terminal events and feed only plan-owned terminals to acceptance."""
+    for event in update.events:
+        payload = asdict(event)
+        print(json.dumps({"record_type": event.event_type, **payload}, ensure_ascii=False), flush=True)
+        if recorder is not None:
+            recorder.record_canonical_routing(
+                phase="MANEUVER_EVENT",
+                command_id=event.command_id,
+                payload=payload,
+            )
+        if event.event_type == "qwen_replan_triggered" and monitor is not None:
+            monitor.record_replan()
+        if event.event_type == "qwen_terminal":
+            if extension_runtime is not None:
+                extension_runtime.note_terminal(event.command_id, event.state)
+                extension_runtime.note_maneuver_terminal_reason(event.reason_code)
+            if monitor is not None:
+                monitor.record_terminal(
+                    event.state,
+                    command_id=event.command_id,
+                    reason_code=event.reason_code,
+                )
+            if recorder is not None and event.state in {
+                "SUCCEEDED", "FAILED", "SAFETY_OVERRIDE",
+            }:
+                recorder.record_feedback({
+                    "command_id": event.command_id,
+                    "status": event.state,
+                    "completed_at_s": event.now_s,
+                    "detail": event.reason_code,
+                })
+
+
+def _note_extension_terminal(
+    runtime: ScenarioExtensionRuntime | None,
+    feedback: Mapping[str, object] | object,
+) -> None:
+    if runtime is None:
+        return
+    status = (
+        feedback.get("status") if isinstance(feedback, Mapping)
+        else getattr(feedback, "status", None)
+    )
+    normalized = str(getattr(status, "value", status)).upper()
+    if normalized not in {
+        "SUCCEEDED", "FAILED", "REJECTED", "EXPIRED", "TIMED_OUT",
+        "SAFETY_OVERRIDE",
+    }:
+        return
+    command_id = (
+        feedback.get("command_id") if isinstance(feedback, Mapping)
+        else getattr(feedback, "command_id", "")
+    )
+    runtime.note_terminal(str(command_id), status)
+
+
+def _note_safety_feedback(
+    safety_reasons: set[str],
+    feedback: Mapping[str, object] | object,
+) -> None:
+    """Promote canonical safety events into scenario completion evidence."""
+    safety_event = (
+        feedback.get("safety_event") if isinstance(feedback, Mapping)
+        else getattr(feedback, "safety_event", None)
+    )
+    if isinstance(safety_event, Mapping):
+        reason = safety_event.get("reason_code")
+        if isinstance(reason, str) and reason:
+            safety_reasons.add(reason)
+
+
+def _qwen_resolution_reason(orchestration: object | None) -> str | None:
+    if orchestration is None:
+        return None
+    reason = getattr(orchestration, "reason_code", None)
+    feedback = getattr(orchestration, "feedback", None)
+    if isinstance(feedback, Mapping):
+        detail = feedback.get("detail") or feedback.get("action_summary")
+    else:
+        detail = (
+            getattr(feedback, "detail", None)
+            or getattr(feedback, "action_summary", None)
+        )
+    if isinstance(detail, str) and detail:
+        return f"{reason or ''} {detail}".strip()
+    return None if reason is None else str(reason)
+
+
+def _speed_mps(vector: Any) -> float:
+    # Longitudinal control consumes ground speed. Including vertical spawn
+    # settling makes a stationary vehicle appear to accelerate under gravity.
+    return math.hypot(vector.x, vector.y)
+
+
+def _actor_bbox_clearance_m(ego: Any, actor: Any) -> float:
+    """Return conservative horizontal body-to-body clearance for two actors."""
+    center_distance_m = float(ego.get_location().distance(actor.get_location()))
+    return max(
+        0.0,
+        center_distance_m - _actor_horizontal_radius_m(ego) - _actor_horizontal_radius_m(actor),
+    )
+
+
+def _actor_horizontal_radius_m(actor: Any) -> float:
+    extent = getattr(getattr(actor, "bounding_box", None), "extent", None)
+    if extent is None:
+        return 0.0
+    x, y = float(getattr(extent, "x", 0.0)), float(getattr(extent, "y", 0.0))
+    if not math.isfinite(x) or not math.isfinite(y) or x < 0.0 or y < 0.0:
+        return 0.0
+    return math.hypot(x, y)
+
+
+def _actor_signed_route_clearance_m(
+    ego_progress_m: float,
+    actor_progress_m: float,
+    ego: Any,
+    actor: Any,
+) -> float:
+    """Return signed body clearance along the monotonic mission route."""
+    center_delta_m = float(actor_progress_m) - float(ego_progress_m)
+    combined_radius_m = _actor_horizontal_radius_m(ego) + _actor_horizontal_radius_m(actor)
+    return (
+        center_delta_m - combined_radius_m
+        if center_delta_m >= 0.0
+        else center_delta_m + combined_radius_m
+    )
+
+
+def _actor_signed_longitudinal_clearance_m(ego: Any, actor: Any) -> float:
+    """Return signed body clearance along ego's forward axis.
+
+    Positive values mean the other actor is ahead; negative values mean it is
+    fully behind.  This is used only to verify completion of a named scenario
+    interaction, not to synthesize perception detections or steering control.
+    """
+    ego_transform = ego.get_transform()
+    ego_location = ego_transform.location
+    actor_location = actor.get_location()
+    forward = ego_transform.get_forward_vector()
+    center_longitudinal_m = (
+        (float(actor_location.x) - float(ego_location.x)) * float(forward.x)
+        + (float(actor_location.y) - float(ego_location.y)) * float(forward.y)
+    )
+
+    combined_radius_m = _actor_horizontal_radius_m(ego) + _actor_horizontal_radius_m(actor)
+    return (
+        center_longitudinal_m - combined_radius_m
+        if center_longitudinal_m >= 0.0
+        else center_longitudinal_m + combined_radius_m
+    )
+
+
+def _acceptance_lateral_controller() -> PurePursuitController:
+    """Build the shared speed/curvature/error-adaptive lateral controller."""
+    cfg = DEFAULT_STRATEGY.lateral
+    return PurePursuitController(PurePursuitParams(
+        base_lookahead_m=cfg.base_lookahead_m,
+        min_lookahead_m=cfg.min_lookahead_m,
+        max_lookahead_m=cfg.max_lookahead_m,
+        speed_gain_s=cfg.speed_gain_s,
+        max_steer=cfg.max_steer,
+        max_steer_delta_per_step=cfg.base_steer_delta_per_step,
+        # Long competition routes revisit the same Town coordinates.  Track
+        # only a physically reachable neighbourhood after the initial route
+        # acquisition instead of choosing a later overlapping lap globally.
+        nearest_search_window=2,
+        route_reacquire_search_window=50,
+        # Calibrated against a CARLA 0.9.16 Model 3 closed-loop route run.
+        steer_sign=cfg.steer_sign,
+    ))
+
+
+def _follow_ego_spectator(world: Any, ego: Any, carla: Any) -> None:
+    """Keep the graphical spectator behind the ego during live demonstrations."""
+    transform = ego.get_transform()
+    location = transform.location
+    forward = transform.get_forward_vector()
+    world.get_spectator().set_transform(carla.Transform(
+        carla.Location(
+            x=location.x - 8.0 * forward.x,
+            y=location.y - 8.0 * forward.y,
+            z=location.z + 4.0,
+        ),
+        carla.Rotation(pitch=-15.0, yaw=transform.rotation.yaw),
+    ))
+
+
+def _scenario_maneuver(spec: ScenarioSpec) -> str:
+    for item in spec.commands:
+        intent = str(item.envelope.get("intent", "")).upper()
+        if intent in {"TURN_LEFT", "TURN_RIGHT", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}:
+            return intent
+        if intent in {"TURN", "CHANGE_LANE"}:
+            parameters = item.envelope.get("parameters", {})
+            direction = (
+                str(parameters.get("direction", "")).upper()
+                if isinstance(parameters, Mapping) else ""
+            )
+            if direction in {"LEFT", "RIGHT"}:
+                return f"{intent}_{direction}"
+        if intent == "AVOID_OBSTACLE":
+            # Pick a straight multi-lane topology. The active route remains in
+            # the current lane until a validated plan selects the avoid side.
+            parameters = item.envelope.get("parameters", {})
+            direction = (
+                str(parameters.get("direction", "")).upper()
+                if isinstance(parameters, Mapping) else ""
+            )
+            if direction in {"LEFT", "RIGHT"}:
+                return f"CHANGE_LANE_{direction}"
+            return "CHANGE_LANE_LEFT"
+    start_x, start_y = spec.local_route_xy_m[0]
+    end_x, end_y = spec.local_route_xy_m[-1]
+    forward_m = abs(end_x - start_x)
+    lateral_m = end_y - start_y
+    if forward_m > 1.0 and abs(lateral_m) >= 0.12 * forward_m:
+        # Scenario files use the conventional positive-left lateral axis;
+        # CARLA yaw is negative for a physical left curve.
+        return "FOLLOW_LEFT" if lateral_m > 0.0 else "FOLLOW_RIGHT"
+    return "FOLLOW"
+
+
+def _scenario_route_distance_m(spec: ScenarioSpec) -> float:
+    return spec.route_distance_contract_m
+
+
+def _scenario_requires_adjacent_lane_anchor(spec: ScenarioSpec) -> bool:
+    runtime_support = spec.extensions.get("runtime_support", {})
+    declared = (
+        runtime_support.get("declared_requirements", ())
+        if isinstance(runtime_support, Mapping) else ()
+    )
+    if (
+        isinstance(declared, Sequence)
+        and not isinstance(declared, (str, bytes))
+        and "adjacent_lane_occupancy_acceptance" in declared
+    ):
+        return True
+
+    # Older acceptance JSON represents adjacent vehicle lanes with a legacy
+    # +/- one-lane-width spawn.y offset instead of route_position.lane_relation.
+    # Treat that geometry as a topology requirement as well; otherwise a valid
+    # scenario can deterministically select a single-lane anchor and fail before
+    # frame zero on every retry.
+    for actor in spec.actors:
+        if str(actor.get("type", "")).strip().lower() != "vehicle":
+            continue
+        position = actor.get("route_position")
+        if isinstance(position, Mapping) and str(
+            position.get("lane_relation", "CURRENT")
+        ).strip().upper() in {"LEFT_ADJACENT", "RIGHT_ADJACENT"}:
+            return True
+        spawn = actor.get("spawn")
+        if (
+            position is None
+            and isinstance(spawn, Mapping)
+            and abs(float(spawn.get("y", 0.0))) >= 2.0
+        ):
+            return True
+    return False
+
+
+def _scenario_actor_lanes_fit_route(
+    carla_api: Any,
+    world_map: Any,
+    route: RouteReference,
+    spec: ScenarioSpec,
+) -> bool:
+    """Check declared vehicle lane relations without mutating CARLA state."""
+    try:
+        for actor in _scenario_actors(spec, "vehicle"):
+            route_relative_carla_transform(
+                carla_api, world_map, route.points_xy_m, actor,
+            )
+    except (ActorPlacementError, RuntimeError, ValueError):
+        # This function is a candidate predicate used while scanning spawn
+        # anchors.  A heading/topology mismatch invalidates only the current
+        # candidate; it is not a fatal route-planning error until every
+        # candidate has been exhausted.
+        return False
+    return True
+
+
+def _scenario_requires_target_lane_occupancy(spec: ScenarioSpec) -> bool:
+    """Return whether startup must produce adjacent-lane occupancy evidence."""
+    proposed = spec.extensions.get("proposed_acceptance", {})
+    return bool(
+        isinstance(proposed, Mapping)
+        and any(
+            key in proposed
+            for key in (
+                "target_lane_occupied_count",
+                "target_lane_occupied_min_count",
+            )
+        )
+    )
+
+
+def _actor_activation_due(
+    actor_spec: Mapping[str, object],
+    *,
+    elapsed_s: float,
+    route_progress_m: float,
+) -> bool:
+    """Return whether a deferred scenario actor may be created this frame.
+
+    Long Town routes revisit the same physical roads.  Spawning every actor at
+    episode start lets a kilometre-7 actor obstruct an earlier lap and makes
+    Euclidean proximity triggers fire out of order.  ``activation_trigger`` is
+    therefore evaluated against monotonic route progress before the actor is
+    introduced into the CARLA world.
+    """
+    trigger = actor_spec.get("activation_trigger")
+    if trigger is None:
+        return True
+    if not isinstance(trigger, Mapping):
+        raise TypeError("scenario actor activation_trigger must be an object")
+    return scenario_trigger_satisfied(
+        trigger,
+        elapsed_s=elapsed_s,
+        context={"route_progress_m": route_progress_m},
+    )
+
+
+def _actor_deactivation_due(
+    actor_spec: Mapping[str, object],
+    *,
+    elapsed_s: float,
+    route_progress_m: float,
+) -> bool:
+    """Return whether a temporary scenario actor has completed its lifetime."""
+    trigger = actor_spec.get("deactivation_trigger")
+    if trigger is None:
+        return False
+    if not isinstance(trigger, Mapping):
+        raise TypeError("scenario actor deactivation_trigger must be an object")
+    return scenario_trigger_satisfied(
+        trigger,
+        elapsed_s=elapsed_s,
+        context={"route_progress_m": route_progress_m},
+    )
+
+
+def _release_scenario_actor_if_due(
+    session: CarlaSession,
+    actor: Any,
+    actor_spec: Mapping[str, object],
+    *,
+    elapsed_s: float,
+    route_progress_m: float,
+) -> bool:
+    """Release an event-scoped actor once its declarative lifetime ends."""
+    if not _actor_deactivation_due(
+        actor_spec,
+        elapsed_s=elapsed_s,
+        route_progress_m=route_progress_m,
+    ):
+        return False
+    actor_id = str(actor_spec.get("actor_id", "scenario_actor"))
+    if not session.actors.release(actor):
+        raise RuntimeError(f"scenario actor {actor_id!r} is not owned by this session")
+    print(json.dumps({
+        "record_type": "scenario_actor_deactivated",
+        "actor_id": actor_id,
+        "elapsed_s": elapsed_s,
+        "route_progress_m": route_progress_m,
+    }, ensure_ascii=False), flush=True)
+    return True
+
+
+def _scenario_uses_dynamic_out_and_back(spec: ScenarioSpec | None) -> bool:
+    if spec is None:
+        return False
+    return str(spec.extensions.get("maneuver_route_mode", "")).strip().lower() == (
+        "dynamic_out_and_back"
+    )
+
+
+def _scenario_startup_maneuver(spec: ScenarioSpec) -> str:
+    """Keep the mission lane until a dynamic manoeuvre is actually commanded."""
+    if _scenario_uses_dynamic_out_and_back(spec):
+        return "FOLLOW"
+    if len(spec.commands) > 1:
+        # Route-anchor selection is startup work.  A future command in a
+        # multi-stage mission must not turn the initial KEEP_LANE segment into
+        # an uncommanded lane change or make setup require that manoeuvre at
+        # frame zero.  Adjacent-lane actor validation remains a separate
+        # topology constraint, so the later command still gets a legal lane.
+        first = spec.commands[0].envelope
+        intent = str(first.get("intent", "")).strip().upper()
+        if intent in {
+            "TURN_LEFT", "TURN_RIGHT",
+            "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
+        }:
+            return intent
+        if intent in {"TURN", "CHANGE_LANE", "AVOID_OBSTACLE"}:
+            parameters = first.get("parameters", {})
+            direction = (
+                str(parameters.get("direction", "")).strip().upper()
+                if isinstance(parameters, Mapping) else ""
+            )
+            if direction in {"LEFT", "RIGHT"}:
+                prefix = "TURN" if intent == "TURN" else "CHANGE_LANE"
+                return f"{prefix}_{direction}"
+        return "FOLLOW"
+    return _scenario_maneuver(spec)
+
+
+
+def _scenario_anchor_maneuver(spec: ScenarioSpec) -> str:
+    """Select topology required by the full mission without executing it early."""
+    startup = _scenario_startup_maneuver(spec)
+
+    # Dynamic out-and-back lane changes deliberately start on the mission
+    # lane and construct their manoeuvre route only when the command arrives.
+    if _scenario_uses_dynamic_out_and_back(spec):
+        return startup
+
+    # A later TURN must be physically reachable from the selected startup
+    # anchor even when the vehicle initially follows the current lane.
+    for command in spec.commands:
+        envelope = command.envelope
+        intent = str(envelope.get("intent", "")).strip().upper()
+
+        if intent in {"TURN_LEFT", "TURN_RIGHT"}:
+            return intent
+
+        if intent == "TURN":
+            parameters = envelope.get("parameters", {})
+            direction = (
+                str(parameters.get("direction", "")).strip().upper()
+                if isinstance(parameters, Mapping)
+                else ""
+            )
+            if direction in {"LEFT", "RIGHT"}:
+                return f"TURN_{direction}"
+
+    return startup
+
+def _scenario_lane_change_profile(
+    spec: ScenarioSpec | None,
+) -> Mapping[str, object] | None:
+    if spec is None:
+        return None
+    profile = spec.extensions.get("lane_change_profile")
+    if profile is None:
+        return None
+    if not isinstance(profile, Mapping):
+        raise TypeError("extensions.lane_change_profile must be an object")
+    return profile
+
+
+def _traffic_light_stop_points(world: Any) -> tuple[tuple[float, float], ...]:
+    """Collect signal stop locations so deterministic routes can avoid them."""
+    actors = world.get_actors()
+    lights = actors.filter("traffic.traffic_light*") if callable(getattr(actors, "filter", None)) else ()
+    points: list[tuple[float, float]] = []
+    for light in lights:
+        getter = getattr(light, "get_stop_waypoints", None)
+        if not callable(getter):
+            continue
+        for waypoint in getter() or ():
+            location = waypoint.transform.location
+            points.append((float(location.x), float(location.y)))
+    return tuple(points)
+
+
+def _vehicle_state(ego: Any, frame: int, sim_time_s: float, world_map: Any) -> RuntimeVehicleState:
+    transform, velocity = ego.get_transform(), ego.get_velocity()
+    location = transform.location
+    waypoint = world_map.get_waypoint(location, project_to_road=True)
+    return RuntimeVehicleState(frame, sim_time_s, _speed_mps(velocity), location.x, location.y, location.z,
+                               transform.rotation.yaw, str(waypoint.lane_id if waypoint else "0"))
+
+
+def _planner_runtime_state(
+    world_map: Any,
+    ego: Any,
+    scene: PerceptionFrame,
+    route: RouteReference,
+) -> dict[str, object]:
+    """Expose only deterministic lane/route facts needed by Planner V2."""
+    waypoint = world_map.get_waypoint(ego.get_location(), project_to_road=True)
+    left = waypoint.get_left_lane() if waypoint is not None else None
+    right = waypoint.get_right_lane() if waypoint is not None else None
+
+    def driving(candidate: Any | None) -> bool:
+        if candidate is None:
+            return False
+        return str(getattr(candidate, "lane_type", "Driving")).split(".")[-1].upper() == "DRIVING"
+
+    left_exists, right_exists = driving(left), driving(right)
+    available = ["CURRENT"]
+    if left_exists:
+        available.append("LEFT_ADJACENT")
+    if right_exists:
+        available.append("RIGHT_ADJACENT")
+    left_gap_blocked = any(
+        item.distance_m is not None
+        and item.distance_m < 25.0
+        and (item.bbox_xyxy_norm[0] + item.bbox_xyxy_norm[2]) / 2.0 < 0.4
+        for item in scene.detected_objects
+    )
+    right_gap_blocked = any(
+        item.distance_m is not None
+        and item.distance_m < 25.0
+        and (item.bbox_xyxy_norm[0] + item.bbox_xyxy_norm[2]) / 2.0 > 0.6
+        for item in scene.detected_objects
+    )
+    intersection_ahead = bool(getattr(waypoint, "is_junction", False))
+    if waypoint is not None and not intersection_ahead:
+        frontier = (waypoint,)
+        for _ in range(10):
+            frontier = tuple(
+                next_waypoint
+                for current in frontier
+                for next_waypoint in (current.next(2.0) or ())
+            )
+            if any(bool(getattr(item, "is_junction", False)) for item in frontier):
+                intersection_ahead = True
+                break
+            if not frontier:
+                break
+    return {
+        "available_lanes": available,
+        "left_lane_exists": left_exists,
+        "right_lane_exists": right_exists,
+        "left_gap_safe": left_exists and not left_gap_blocked,
+        "right_gap_safe": right_exists and not right_gap_blocked,
+        "route_available": len(route.points_xy_m) >= 2,
+        "intersection_ahead": intersection_ahead,
+        "stop_line_clear": (
+            scene.traffic_light not in {"RED", "YELLOW"}
+            or scene.distance_to_stop_line_m is None
+        ),
+        "current_lane": str(getattr(waypoint, "lane_id", "unknown")),
+    }
+
+
+def _apply_compiled_plan_route(
+    compiled_plan: Mapping[str, Any],
+    *,
+    world_map: Any,
+    ego: Any,
+    current_route: RouteReference,
+    requested_speed_mps: float,
+    distance_m: float,
+    prevalidated_maneuver_route: RouteReference | None = None,
+    lane_change_profile: Mapping[str, object] | None = None,
+) -> tuple[RouteReference, float, str | None]:
+    """Apply validated route semantics; B still generates the actual reference."""
+    steps = compiled_plan.get("steps")
+    if not isinstance(steps, list) or not steps:
+        raise ValueError("compiled plan steps must be a non-empty list")
+    target_speed = float(requested_speed_mps)
+    route_behavior: str | None = None
+    step = steps[0]
+    if not isinstance(step, Mapping):
+        raise ValueError("compiled plan step must be an object")
+    behavior = str(step.get("behavior", "")).upper()
+    target = step.get("target", {})
+    if isinstance(target, Mapping) and target.get("target_speed_mps") is not None:
+        target_speed = float(target["target_speed_mps"])
+    if behavior in {
+        "TURN_LEFT", "TURN_RIGHT", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
+    }:
+        route_behavior = behavior
+    if route_behavior is None:
+        return replace(current_route, target_speed_mps=target_speed), target_speed, None
+    if (
+        route_behavior in {"CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}
+        and prevalidated_maneuver_route is not None
+        and (
+            current_route.points_xy_m == prevalidated_maneuver_route.points_xy_m
+            or _route_starts_near_ego(prevalidated_maneuver_route, ego)
+        )
+    ):
+        # A scenario out-and-back reference is already the active route before
+        # its semantic lane-change step starts.  Its origin naturally moves
+        # behind ego while Qwen is pending; that does not make the currently
+        # tracked route stale.  Rebuilding here delays the lateral transition
+        # until the obstacle is too close and also discards the return leg.
+        return (
+            replace(
+                (
+                    current_route
+                    if current_route.points_xy_m
+                    == prevalidated_maneuver_route.points_xy_m
+                    else prevalidated_maneuver_route
+                ),
+                target_speed_mps=target_speed,
+            ),
+            target_speed,
+            route_behavior,
+        )
+    if route_behavior.startswith("TURN_"):
+        route = build_route_reference(
+            world_map,
+            ego,
+            target_speed,
+            turn_direction=route_behavior.rsplit("_", 1)[-1],
+            distance_m=distance_m,
+        )
+    else:
+        route_parameters = _lane_change_route_parameters(
+            lane_change_profile, mission_distance_m=distance_m,
+        )
+        route = build_lane_change_route_reference(
+            world_map,
+            ego,
+            target_speed,
+            direction=route_behavior.rsplit("_", 1)[-1],
+            **route_parameters,
+        )
+    return route, target_speed, route_behavior
+
+
+def _build_pass_target_continuation(
+    *,
+    world_map: Any,
+    ego: Any,
+    target_speed_mps: float,
+    mission_distance_m: float,
+) -> RouteReference:
+    """Continue PASS_TARGET forward in ego's current lane.
+
+    CHANGE_LANE_* references are finite.  After the outbound lane change has
+    completed, PASS_TARGET needs a fresh forward reference in the adjacent
+    lane until the target has been cleared and RETURN_TO_LANE explicitly
+    requests the return.
+    """
+    return build_route_reference(
+        world_map,
+        ego,
+        target_speed_mps,
+        distance_m=max(60.0, float(mission_distance_m)),
+    )
+
+
+def _route_starts_near_ego(
+    route: RouteReference,
+    ego: Any,
+    *,
+    maximum_distance_m: float = 15.0,
+) -> bool:
+    """Reject a scenario route whose origin is stale for a live manoeuvre."""
+    if ego is None:
+        return True
+    location = ego.get_location()
+    first_x, first_y = route.points_xy_m[0]
+    return math.hypot(
+        float(location.x) - float(first_x),
+        float(location.y) - float(first_y),
+    ) <= maximum_distance_m
+
+
+def _lane_change_route_parameters(
+    profile: Mapping[str, object] | None,
+    *,
+    mission_distance_m: float,
+) -> dict[str, float]:
+    """Validate the S2 comfort profile before it reaches CARLA topology code."""
+    raw = {} if profile is None else dict(profile)
+    allowed = {
+        "route_distance_m", "step_m", "transition_start_m", "transition_length_m",
+        "target_lane_offset_m",
+    }
+    unknown = set(raw) - allowed
+    if unknown:
+        raise ValueError(f"unsupported lane-change profile fields: {sorted(unknown)}")
+    defaults = {
+        "route_distance_m": min(float(mission_distance_m), 80.0),
+        "step_m": 1.0,
+        "transition_start_m": 10.0,
+        "transition_length_m": 30.0,
+        "target_lane_offset_m": 0.0,
+    }
+    values = {
+        key: float(raw.get(key, default))
+        for key, default in defaults.items()
+    }
+    positive_values = {
+        key: value for key, value in values.items()
+        if key != "target_lane_offset_m"
+    }
+    if any(not math.isfinite(value) or value <= 0.0 for value in positive_values.values()):
+        raise ValueError("lane-change profile values must be finite and positive")
+    if (
+        not math.isfinite(values["target_lane_offset_m"])
+        or not 0.0 <= values["target_lane_offset_m"] <= 0.30
+    ):
+        raise ValueError("lane-change target-lane offset must be between 0.0 and 0.30 m")
+    if values["transition_start_m"] + values["transition_length_m"] >= values["route_distance_m"]:
+        raise ValueError("lane-change route must retain a post-transition stabilization segment")
+    return {
+        "distance_m": values["route_distance_m"],
+        "step_m": values["step_m"],
+        "transition_start_m": values["transition_start_m"],
+        "transition_length_m": values["transition_length_m"],
+        "target_lane_offset_m": values["target_lane_offset_m"],
+    }
+
+
+def _is_deferred_dynamic_lane_change(
+    step: CompiledPlanStep,
+    *,
+    dynamic_out_and_back: bool,
+    mission_route: RouteReference | None,
+) -> bool:
+    """Allow either leg of a dynamic detour to wait for a legal corridor."""
+    return bool(
+        dynamic_out_and_back
+        and mission_route is not None
+        and step.behavior.startswith("CHANGE_LANE_")
+    )
+
+
+def _dynamic_return_destination_xy(
+    mission_route: RouteReference,
+    x_m: float,
+    y_m: float,
+    *,
+    previous_progress_m: float | None = None,
+    lookahead_m: float = 25.0,
+) -> tuple[float, float]:
+    """Choose an ahead point on the retained route for a topology-safe merge.
+
+    A temporary lane-change route has its own arc-length origin.  Its progress
+    must not be used to index the retained mission route, otherwise a return
+    near a bend can select a point behind ego and make the vehicle turn around.
+    Project the live pose onto the retained route instead.
+    """
+    mission_progress_m = project_route_progress_m(
+        mission_route.points_xy_m,
+        x_m,
+        y_m,
+        previous_s_m=previous_progress_m,
+    )
+    pose = route_pose_at_s(
+        mission_route.points_xy_m,
+        mission_progress_m + max(1.0, float(lookahead_m)),
+    )
+    return pose.x_m, pose.y_m
+
+
+def _maneuver_lane_label(
+    lane_id: str,
+    lane_ids: Mapping[str, str],
+    step: CompiledPlanStep | None,
+    mission_route: RouteReference | None,
+    *,
+    x_m: float,
+    y_m: float,
+    return_destination_xy: tuple[float, float] | None = None,
+    return_tolerance_m: float = 0.5,
+) -> str:
+    """Resolve semantic lanes across junctions where CARLA renumbers lane IDs."""
+    label = next(
+        (name for name, mapped_lane_id in lane_ids.items() if mapped_lane_id == lane_id),
+        lane_id,
+    )
+    returning_to_current = bool(
+        step is not None
+        and mission_route is not None
+        and str(step.target.get("target_lane") or "").strip().upper() == "CURRENT"
+    )
+    if returning_to_current and (
+        route_deviation_m(x_m, y_m, mission_route) <= return_tolerance_m
+        or (
+            return_destination_xy is not None
+            and math.dist((x_m, y_m), return_destination_xy) <= 2.5
+        )
+    ):
+        return "CURRENT"
+    return label
+
+
+def _mission_speed_after_maneuver(
+    original_mission_speed_mps: float,
+    persistent_speed_mps: float | None,
+) -> float:
+    """Restore route geometry without discarding an explicit SET_SPEED."""
+    if persistent_speed_mps is not None:
+        return float(persistent_speed_mps)
+    return float(original_mission_speed_mps)
+
+
+def _retain_route_for_maneuver(
+    *,
+    topology_coverage_planning: bool,
+    dynamic_out_and_back: bool,
+    must_finish_route: bool = False,
+    lane_change_step_count: int,
+    route_behavior: str | None,
+) -> bool:
+    """Return whether a finite manoeuvre needs a mission-route continuation.
+
+    Topology-coverage missions measure distance independently from their current
+    local reference. A turn or lane change can replace that reference with a
+    finite manoeuvre route, so retain a marker that causes a fresh continuation
+    to be planned from the vehicle's terminal pose. Dynamic out-and-back plans
+    retain their original route until their explicit return leg completes.
+    """
+    finite_route_maneuver = (
+        route_behavior is not None
+        or lane_change_step_count > 0
+    )
+    return bool(
+        (dynamic_out_and_back and lane_change_step_count >= 2)
+        or (topology_coverage_planning and route_behavior is not None)
+        or (must_finish_route and finite_route_maneuver)
+    )
+
+
+def _scene_from_world(
+    world_map: Any,
+    ego: Any,
+    frame: int,
+    sim_time_s: float,
+    *,
+    route: RouteReference | None = None,
+    scenario_lead: Any | None = None,
+    scenario_vehicles: Sequence[Any] = (),
+    events: EventLedger | None = None,
+) -> tuple[PerceptionFrame, dict[str, str]]:
+    """Build scene truth; synthetic scenarios may nominate their only lead actor.
+
+    Acceptance scenarios must not accidentally follow an unrelated vehicle
+    left by another CARLA client, so they never select the globally nearest
+    actor when a scenario-owned lead is supplied (or explicitly absent).
+    """
+    ego_location = ego.get_location()
+    sources: dict[str, str] = {}
+    if scenario_lead is not None and getattr(scenario_lead, "is_alive", False):
+        distance, lead_speed = (scenario_lead.get_location().distance(ego_location),
+                                _speed_mps(scenario_lead.get_velocity()))
+        sources["lead_distance_m"] = "CARLA_SCENARIO_ACTOR_DISTANCE"
+        sources["lead_speed_mps"] = "CARLA_SCENARIO_ACTOR_VELOCITY"
+    else:
+        distance = lead_speed = None
+    traffic_light, stop_distance, traffic_source = traffic_light_and_stop_distance(ego)
+    sources["traffic_light"] = traffic_source
+    if stop_distance is not None:
+        sources["distance_to_stop_line_m"] = traffic_source
+    speed_limit = actor_speed_limit_mps(ego)
+    if speed_limit is not None:
+        sources["speed_limit_mps"] = "CARLA_MAP_SPEED_LIMIT"
+    lane_offset, route_deviation = lane_metrics(world_map, ego, route)
+    if lane_offset is not None:
+        sources["lane_offset_m"] = "CARLA_MAP_WAYPOINT"
+    if route_deviation is not None:
+        sources["route_deviation_m"] = (
+            "ROUTE_REFERENCE_NEAREST_SEGMENT" if route is not None else "CARLA_MAP_WAYPOINT"
+        )
+    if events is None:
+        collision = lane_invasion = False
+        sources["collision"] = "UNOBSERVED_NO_EVENT_SENSOR"
+        sources["lane_invasion"] = "UNOBSERVED_NO_EVENT_SENSOR"
+    else:
+        collision, lane_invasion = events.flags_for_frame(frame)
+        sources["collision"] = "CARLA_COLLISION_EVENT"
+        sources["lane_invasion"] = "CARLA_LANE_INVASION_EVENT"
+    red_light_violation = (
+        traffic_light == "RED" and stop_distance is not None and stop_distance <= 0.5
+        and _speed_mps(ego.get_velocity()) > 0.5
+    )
+    sources["red_light_violation"] = (
+        "CARLA_RED_LIGHT_STOP_LINE_CROSSING"
+        if stop_distance is not None
+        else "UNOBSERVED_NO_STOP_LINE_DISTANCE"
+    )
+    detections = (
+        _world_vehicle_detections(ego, scenario_vehicles)
+        if scenario_vehicles else ()
+    )
+    if detections:
+        sources["detected_objects"] = "CARLA_SCENARIO_ACTOR_DEBUG_TRUTH"
+    scene = PerceptionFrame(
+        frame,
+        sim_time_s,
+        distance,
+        lead_speed,
+        traffic_light=traffic_light,
+        distance_to_stop_line_m=stop_distance,
+        speed_limit_mps=speed_limit,
+        lane_offset_m=lane_offset,
+        route_deviation_m=route_deviation,
+        collision=collision,
+        red_light_violation=red_light_violation,
+        lane_invasion=lane_invasion,
+        detected_objects=detections,
+    )
+    return scene, sources
+
+
+def _world_vehicle_detections(
+    ego: Any,
+    vehicles: Sequence[Any],
+) -> tuple[DetectedObject, ...]:
+    """Expose scenario-owned actors only in the explicit world debug mode."""
+    if isinstance(vehicles, (str, bytes)):
+        raise TypeError("vehicles must be an actor sequence")
+    transform = ego.get_transform()
+    origin = transform.location
+    forward = transform.get_forward_vector()
+    right = transform.get_right_vector()
+    detections: list[tuple[float, DetectedObject]] = []
+    for actor in vehicles:
+        if actor is ego or not getattr(actor, "is_alive", False):
+            continue
+        location = actor.get_location()
+        dx = float(location.x) - float(origin.x)
+        dy = float(location.y) - float(origin.y)
+        longitudinal = dx * float(forward.x) + dy * float(forward.y)
+        lateral = dx * float(right.x) + dy * float(right.y)
+        distance = math.hypot(dx, dy)
+        if longitudinal < -2.0 or distance > 80.0:
+            continue
+        center_x = max(0.1, min(0.9, 0.5 + lateral / max(10.0, 2.0 * distance)))
+        half_width = max(0.025, min(0.12, 1.2 / max(distance, 5.0)))
+        detections.append((distance, DetectedObject(
+            2,
+            "car",
+            1.0,
+            (
+                max(0.0, center_x - half_width), 0.35,
+                min(1.0, center_x + half_width), 0.75,
+            ),
+            distance,
+        )))
+    detections.sort(key=lambda item: item[0])
+    return tuple(item for _distance, item in detections)
+
+
+def _bind_scenario_actor_ids(
+    scene: PerceptionFrame,
+    ego: Any,
+    actors: Sequence[tuple[Any, Mapping[str, object]]],
+) -> PerceptionFrame:
+    """Attach stable scenario IDs to sensor detections by nearest range.
+
+    CARLA RGB/LiDAR fusion currently has no persistent tracker.  The
+    acceptance actors do have stable IDs, so a deterministic nearest-range
+    association supplies the provenance needed to audit target binding while
+    leaving unmatched road users on legacy tracker IDs.
+    """
+    if not scene.detected_objects or not actors:
+        return scene
+    ego_transform = ego.get_transform()
+    origin = ego_transform.location
+    forward = ego_transform.get_forward_vector()
+    candidates: list[tuple[float, float, str, str]] = []
+    for actor, actor_spec in actors:
+        if not getattr(actor, "is_alive", False):
+            continue
+        actor_id = str(actor_spec.get("actor_id", ""))
+        if not actor_id:
+            continue
+        actor_type = str(actor_spec.get("type", "")).lower()
+        if actor_type == "vehicle":
+            family = "vehicle"
+        elif "walker" in actor_type or "pedestrian" in actor_type:
+            family = "pedestrian"
+        else:
+            family = "obstacle"
+        actor_location = actor.get_location()
+        dx = float(actor_location.x) - float(origin.x)
+        dy = float(actor_location.y) - float(origin.y)
+        longitudinal = dx * float(forward.x) + dy * float(forward.y)
+        if longitudinal <= 0.0:
+            continue
+        lateral = -dx * float(forward.y) + dy * float(forward.x)
+        image_center_x = 0.5 + math.atan2(lateral, longitudinal) / math.radians(90.0)
+        if not 0.0 <= image_center_x <= 1.0:
+            continue
+        candidates.append((
+            float(origin.distance(actor_location)), image_center_x, actor_id, family,
+        ))
+    if not candidates:
+        return scene
+    used: set[str] = set()
+    bound: list[DetectedObject] = []
+    for detection in scene.detected_objects:
+        detected_class = str(detection.class_name).lower()
+        family = (
+            "vehicle" if detected_class in {"car", "truck", "bus", "vehicle"}
+            else "pedestrian" if detected_class in {"person", "pedestrian"}
+            else "obstacle" if detected_class == "obstacle"
+            else "unknown"
+        )
+        choices = [
+            item for item in candidates
+            if item[2] not in used and (
+                item[3] == family or family in {"unknown", "obstacle"}
+            )
+        ]
+        if not choices:
+            bound.append(detection)
+            continue
+        x1, _y1, x2, _y2 = detection.bbox_xyxy_norm
+        detection_center_x = (x1 + x2) / 2.0
+        distance_scale = max(4.0, float(detection.distance_m or 20.0))
+        distance, projected_x, actor_id, actor_family = min(
+            choices,
+            key=lambda item: (
+                abs(item[1] - detection_center_x)
+                + (
+                    0.5 * abs(item[0] - float(detection.distance_m)) / distance_scale
+                    if detection.distance_m is not None else 0.0
+                )
+            ),
+        )
+        tolerance_m = max(3.0, min(8.0, distance * 0.20))
+        distance_mismatch = (
+            detection.distance_m is not None
+            and abs(distance - float(detection.distance_m)) > tolerance_m
+        )
+        if distance_mismatch or abs(projected_x - detection_center_x) > 0.25:
+            bound.append(detection)
+            continue
+        used.add(actor_id)
+        semantic_updates: dict[str, object] = {"track_id": actor_id}
+        if actor_family == "vehicle":
+            semantic_updates.update(class_id=2, class_name="car")
+        elif actor_family == "pedestrian":
+            semantic_updates.update(class_id=0, class_name="person")
+        bound.append(replace(detection, **semantic_updates))
+    return replace(scene, detected_objects=tuple(bound))
+
+
+def _sensor_evidence_actor_ids(
+    scene: PerceptionFrame,
+    ego: Any,
+    actors: Sequence[tuple[Any, Mapping[str, object]]],
+) -> tuple[str, ...]:
+    """Associate sensor detections for audit without changing control input.
+
+    The returned labels are used only by the evidence recorder.  The original
+    sensor-derived ``scene`` remains untouched and is still the sole input to
+    C, D, and Qwen in strict perception mode.
+    """
+    return tuple(dict.fromkeys(
+        _sensor_evidence_target_aliases(scene, ego, actors).values()
+    ))
+
+
+def _sensor_evidence_target_aliases(
+    scene: PerceptionFrame,
+    ego: Any,
+    actors: Sequence[tuple[Any, Mapping[str, object]]],
+) -> dict[str, str]:
+    """Map sensor tracker IDs to scenario IDs for evidence only.
+
+    The map is captured with the exact perception frame submitted to Qwen.
+    Neither the perception state nor the model request is rewritten, so the
+    model still has to choose the correct sensor-grounded target itself.
+    """
+    declared_ids = {
+        str(actor_spec.get("actor_id", ""))
+        for _actor, actor_spec in actors
+        if str(actor_spec.get("actor_id", ""))
+    }
+    associated = _bind_scenario_actor_ids(scene, ego, actors)
+    aliases: dict[str, str] = {}
+    for sensor_item, associated_item in zip(
+        scene.detected_objects, associated.detected_objects,
+    ):
+        sensor_id = sensor_item.track_id
+        actor_id = associated_item.track_id
+        if (
+            sensor_id is not None
+            and actor_id is not None
+            and str(actor_id) in declared_ids
+        ):
+            aliases[str(sensor_id)] = str(actor_id)
+    return aliases
+
+
+def _spawn_static_lead(session: CarlaSession, world: Any, world_map: Any, ego: Any, blueprint: Any,
+                       distance_m: float) -> Any:
+    """Spawn a deterministic stationary lead vehicle in ego's current lane."""
+    ego_transform = ego.get_transform()
+    forward = ego_transform.get_forward_vector()
+    # Place directly along ego's current forward axis. Projecting the candidate
+    # through a Town05 waypoint can jump to a parallel road hundreds of metres
+    # away near junctions, invalidating a following scenario.
+    for offset_m in range(0, 31, 2):
+        candidate_distance = distance_m + offset_m
+        transform = ego.get_transform()
+        origin = ego_transform.location
+        transform.location = type(origin)(
+            x=origin.x + forward.x * candidate_distance,
+            y=origin.y + forward.y * candidate_distance,
+            z=origin.z + 0.5,
+        )
+        lead = world.try_spawn_actor(blueprint, transform)
+        if lead is None:
+            continue
+        lead = session.track_actor(lead)
+        lead.set_simulate_physics(False)
+        actual_distance = lead.get_location().distance(ego.get_location())
+        print(f"lead vehicle placed at {actual_distance:.1f} m")
+        return lead
+    raise RuntimeError("cannot place lead vehicle: all forward candidate positions are occupied")
+
+
+def _scenario_actor(spec: ScenarioSpec | None, actor_type: str) -> dict[str, object] | None:
+    """Return the unique configured actor of ``actor_type``.
+
+    Submission scenarios deliberately support one owned lead vehicle and one
+    owned traffic light.  Failing on duplicates is safer than silently binding
+    perception evidence to an arbitrary actor.
+    """
+    matches = _scenario_actors(spec, actor_type)
+    if len(matches) > 1:
+        raise ValueError(
+            f"scenario {spec.scenario_id!r} declares multiple {actor_type!r} actors"
+        )
+    return matches[0] if matches else None
+
+
+def _scenario_actors(
+    spec: ScenarioSpec | None,
+    actor_type: str,
+) -> tuple[dict[str, object], ...]:
+    """Return all declared actors of one exact type.
+
+    ``_scenario_actor`` remains deliberately strict for singleton resources
+    such as the traffic light selected for a stop-line contract.  Dynamic
+    traffic, however, is naturally plural; callers that own it must use this
+    collection rather than silently binding to an arbitrary vehicle.
+    """
+    if spec is None:
+        return ()
+    expected = actor_type.strip().lower()
+    return tuple(
+        actor for actor in spec.actors
+        if str(actor.get("type", "")).strip().lower() == expected
+    )
+
+
+def _scenario_walkers(spec: ScenarioSpec | None) -> tuple[dict[str, object], ...]:
+    """Return all walker/pedestrian declarations, preserving scenario order."""
+    if spec is None:
+        return ()
+    return tuple(
+        actor for actor in spec.actors
+        if str(actor.get("type", "")).strip().lower().startswith("walker")
+    )
+
+
+def _scenario_static_props(spec: ScenarioSpec | None) -> tuple[dict[str, object], ...]:
+    """Return declarative static obstacles used for construction/occlusion tests."""
+    if spec is None:
+        return ()
+    return tuple(
+        actor for actor in spec.actors
+        if str(actor.get("type", "")).strip().lower() in {
+            "static.prop", "obstacle", "construction",
+        }
+    )
+
+
+def _cleanup_stale_scenario_actors(world: Any, spec: ScenarioSpec | None) -> int:
+    """Remove only acceptance-runner actors left by an interrupted prior run."""
+    current_actor_ids = {
+        str(actor.get("actor_id", "")).strip()
+        for actor in (() if spec is None else spec.actors)
+        if str(actor.get("actor_id", "")).strip()
+    }
+    removed = 0
+    for actor in tuple(world.get_actors()):
+        attributes = getattr(actor, "attributes", {})
+        role_name = str(attributes.get("role_name", "")) if isinstance(attributes, Mapping) else ""
+        if not (
+            role_name.startswith("acceptance84:")
+            or role_name in current_actor_ids
+        ):
+            continue
+        destroy = getattr(actor, "destroy", None)
+        if callable(destroy):
+            destroy()
+            removed += 1
+    return removed
+
+
+def _scenario_local_transform(
+    carla_api: Any,
+    anchor_transform: Any,
+    spawn: Mapping[str, object],
+    *,
+    forward_offset_m: float = 0.0,
+) -> Any:
+    """Convert a scenario-local actor pose to a CARLA world transform."""
+    local_x = float(spawn.get("x", 0.0)) + float(forward_offset_m)
+    local_y = float(spawn.get("y", 0.0))
+    local_z = float(spawn.get("z", 0.5))
+    local_yaw = float(spawn.get("yaw_deg", 0.0))
+    yaw_rad = math.radians(float(anchor_transform.rotation.yaw))
+    cos_yaw, sin_yaw = math.cos(yaw_rad), math.sin(yaw_rad)
+    origin = anchor_transform.location
+    return carla_api.Transform(
+        carla_api.Location(
+            x=float(origin.x) + local_x * cos_yaw - local_y * sin_yaw,
+            y=float(origin.y) + local_x * sin_yaw + local_y * cos_yaw,
+            z=float(origin.z) + max(0.0, local_z - 0.5),
+        ),
+        carla_api.Rotation(
+            pitch=float(getattr(anchor_transform.rotation, "pitch", 0.0)),
+            yaw=float(anchor_transform.rotation.yaw) + local_yaw,
+            roll=float(getattr(anchor_transform.rotation, "roll", 0.0)),
+        ),
+    )
+
+
+def _active_actor_route_context(
+    actor_spec: Mapping[str, object],
+    scenario_route: RouteReference | None,
+    global_route: GlobalRoute | None,
+    mission_progress_offset_m: float,
+) -> tuple[RouteReference | None, Mapping[str, object]]:
+    """Bind a mission-absolute actor position to the current active route."""
+    if global_route is None:
+        return scenario_route, actor_spec
+    return (
+        global_route.reference,
+        rebase_actor_route_position(actor_spec, mission_progress_offset_m),
+    )
+
+
+def _scenario_vehicle_speed_mps(
+    actor_spec: Mapping[str, object],
+    elapsed_s: float,
+) -> float:
+    behavior = actor_spec.get("behavior", {})
+    if not isinstance(behavior, Mapping):
+        raise TypeError("scenario vehicle behavior must be an object")
+    initial = max(0.0, float(behavior.get("initial_speed_mps", 0.0)))
+    brake_at = float(behavior.get("brake_at_s", math.inf))
+    target = max(0.0, float(behavior.get("target_speed_mps", initial)))
+    return initial if float(elapsed_s) < brake_at else target
+
+
+def _signed_forward_speed_mps(actor: Any) -> float:
+    """Return actor velocity projected onto its current forward direction."""
+    velocity = actor.get_velocity()
+    forward = actor.get_transform().get_forward_vector()
+    return (
+        float(velocity.x) * float(forward.x)
+        + float(velocity.y) * float(forward.y)
+        + float(velocity.z) * float(forward.z)
+    )
+
+
+def _occupied_actor_locations(world: Any) -> tuple[Any, ...]:
+    """Snapshot physical actor locations for deterministic spawn preflight."""
+    get_actors = getattr(world, "get_actors", None)
+    if not callable(get_actors):
+        return ()
+    locations: list[Any] = []
+    for actor in get_actors():
+        get_location = getattr(actor, "get_location", None)
+        if not callable(get_location):
+            continue
+        if not str(getattr(actor, "type_id", "")).startswith(
+            ("vehicle.", "walker.", "static.prop.")
+        ):
+            continue
+        try:
+            locations.append(get_location())
+        except RuntimeError:
+            continue
+    return tuple(locations)
+
+
+def _spawn_scenario_vehicle(
+    session: CarlaSession,
+    world: Any,
+    carla_api: Any,
+    ego: Any,
+    fallback_blueprint: Any,
+    actor_spec: Mapping[str, object],
+    *,
+    route: RouteReference | None = None,
+    seed: int = 0,
+) -> Any:
+    """Spawn a real CARLA lead vehicle from a scenario actor declaration."""
+    spawn = actor_spec.get("spawn", {})
+    if not isinstance(spawn, Mapping):
+        raise TypeError("scenario vehicle spawn must be an object")
+    library = world.get_blueprint_library()
+    blueprint_id = actor_spec.get("blueprint_id")
+    if isinstance(blueprint_id, str) and blueprint_id:
+        blueprint = library.find(blueprint_id)
+    else:
+        fallback_id = getattr(fallback_blueprint, "id", None)
+        blueprint = library.find(fallback_id) if fallback_id and callable(getattr(library, "find", None)) else fallback_blueprint
+    if blueprint is None:
+        raise LookupError(f"scenario vehicle blueprint not found: {blueprint_id!r}")
+    if callable(getattr(blueprint, "has_attribute", None)) and blueprint.has_attribute("role_name"):
+        blueprint.set_attribute(
+            "role_name",
+            f"acceptance84:{actor_spec.get('actor_id', 'scenario_lead')}",
+        )
+
+    ego_transform = ego.get_transform()
+    world_map = world.get_map()
+    lead = None
+    placement_failures: list[str] = []
+    for forward_offset_m, lateral_offset_m in actor_resample_offsets(
+        actor_spec, seed=seed,
+    ):
+        candidate_spec = offset_actor_route_position(
+            actor_spec,
+            longitudinal_m=forward_offset_m,
+            lateral_m=lateral_offset_m,
+        )
+        try:
+            transform = (
+                route_relative_carla_transform(
+                    carla_api, world_map, route.points_xy_m, candidate_spec,
+                )
+                if route is not None else
+                _scenario_local_transform(
+                    carla_api,
+                    ego_transform,
+                    candidate_spec.get("spawn", spawn),
+                )
+            )
+            # The ego has already settled onto the road before scenario actors
+            # are created, so its transform Z is near zero.  Preserve the
+            # declarative 0.5 m spawn clearance relative to the road surface;
+            # otherwise CARLA rejects the vehicle because its collision box
+            # intersects the road.
+            road_waypoint = world_map.get_waypoint(
+                transform.location, project_to_road=True,
+            )
+            if road_waypoint is not None:
+                road_location = road_waypoint.transform.location
+                transform.location.z = max(
+                    float(transform.location.z), float(road_location.z) + 0.5,
+                )
+            validate_actor_transform(
+                world_map,
+                transform,
+                candidate_spec,
+                occupied_locations=_occupied_actor_locations(world),
+            )
+        except ActorPlacementError as error:
+            placement_failures.append(str(error))
+            continue
+        lead = world.try_spawn_actor(blueprint, transform)
+        if lead is not None:
+            break
+        placement_failures.append("CARLA rejected candidate")
+    if lead is None:
+        detail = placement_failures[-1] if placement_failures else "no candidate"
+        raise RuntimeError(
+            "cannot spawn configured scenario lead vehicle after deterministic "
+            f"resampling: {detail}"
+        )
+
+    lead = session.track_actor(lead)
+    set_physics = getattr(lead, "set_simulate_physics", None)
+    if callable(set_physics):
+        set_physics(True)
+    # New CARLA actors already start with autopilot disabled.  Calling
+    # set_autopilot(False) still creates/connects the default Traffic Manager
+    # RPC server (port 8000), which conflicts with the standard 2B vLLM port.
+    # These actors remain runner-owned through explicit target velocities.
+    desired_speed = _scenario_vehicle_speed_mps(actor_spec, 0.0)
+    set_velocity = getattr(lead, "set_target_velocity", None)
+    if callable(set_velocity):
+        # A newly spawned CARLA actor can report its default transform until
+        # the next world tick.  The transform used for spawning is already
+        # authoritative and prevents an initial velocity in the wrong world
+        # direction during sensor warm-up.
+        forward = transform.get_forward_vector()
+        set_velocity(carla_api.Vector3D(
+            x=float(forward.x) * desired_speed,
+            y=float(forward.y) * desired_speed,
+            z=0.0,
+        ))
+    intended_distance = transform.location.distance(ego.get_location())
+    print(
+        "scenario actor: spawned real lead "
+        f"id={actor_spec.get('actor_id', 'scenario_lead')} "
+        f"distance_m={intended_distance:.2f}",
+        flush=True,
+    )
+    return lead
+
+
+def _update_scenario_vehicle(
+    lead: Any,
+    actor_spec: Mapping[str, object],
+    elapsed_s: float,
+    carla_api: Any,
+    *,
+    desired_speed_mps: float | None = None,
+    behavior_elapsed_s: float | None = None,
+    world_map: Any | None = None,
+    route_points_xy_m: Sequence[tuple[float, float]] | None = None,
+) -> None:
+    """Apply deterministic speed and lane-following control to a scenario vehicle."""
+    if lead is None or not getattr(lead, "is_alive", True):
+        raise RuntimeError("configured scenario lead vehicle is not alive")
+    desired = (
+        _scenario_vehicle_speed_mps(actor_spec, elapsed_s)
+        if desired_speed_mps is None else max(0.0, float(desired_speed_mps))
+    )
+    behavior = actor_spec.get("behavior", {})
+    mode = str(behavior.get("mode", "")).strip().lower() if isinstance(behavior, Mapping) else ""
+    cut_in_elapsed_s: float | None = None
+    cut_in_duration_s: float | None = None
+    if mode == "cut_in":
+        event_driven = bool(behavior.get("cut_in_on_first_event", False))
+        if event_driven and behavior_elapsed_s is None:
+            cut_in_elapsed_s = -1.0
+        elif event_driven:
+            cut_in_elapsed_s = float(behavior_elapsed_s)
+        else:
+            cut_in_elapsed_s = float(elapsed_s) - float(
+                behavior.get("cut_in_start_s", 2.0)
+            )
+        cut_in_duration_s = max(
+            0.5, float(behavior.get("cut_in_duration_s", 3.0))
+        )
+        post_cut_in_speed = behavior.get("post_cut_in_speed_mps")
+        if (
+            cut_in_elapsed_s >= cut_in_duration_s
+            and type(post_cut_in_speed) in (int, float)
+            and not isinstance(post_cut_in_speed, bool)
+        ):
+            post_target = max(0.0, float(post_cut_in_speed))
+            post_acceleration = max(
+                0.1, float(behavior.get("post_cut_in_acceleration_mps2", 3.0))
+            )
+            desired = min(
+                post_target,
+                desired + post_acceleration * (cut_in_elapsed_s - cut_in_duration_s),
+            )
+    current = _signed_forward_speed_mps(lead)
+    error = desired - current
+    if error < -0.15:
+        throttle, brake = 0.0, min(1.0, 0.25 + (-error / 3.0))
+    elif error > 0.15:
+        throttle, brake = min(0.45, 0.12 + error / 6.0), 0.0
+    else:
+        throttle, brake = (0.08 if desired > 0.1 else 0.0), (0.55 if desired <= 0.1 else 0.0)
+
+    steer = 0.0
+    velocity_direction: tuple[float, float] | None = None
+    follow_map_waypoint = False
+    if route_points_xy_m and desired > 0.1:
+        transform = lead.get_transform()
+        location = transform.location
+        actor_yaw_rad = math.radians(float(transform.rotation.yaw))
+        actor_forward = (math.cos(actor_yaw_rad), math.sin(actor_yaw_rad))
+        nearest_index = min(
+            range(len(route_points_xy_m)),
+            key=lambda index: (
+                (float(route_points_xy_m[index][0]) - float(location.x)) ** 2
+                + (float(route_points_xy_m[index][1]) - float(location.y)) ** 2
+            ),
+        )
+        lookahead_points = max(3, int(round(max(3.0, min(8.0, current * 0.7 + 3.0)))))
+        if nearest_index < len(route_points_xy_m) - 1:
+            target_index = min(len(route_points_xy_m) - 1, nearest_index + lookahead_points)
+            target_x, target_y = route_points_xy_m[target_index]
+            dx = float(target_x) - float(location.x)
+            dy = float(target_y) - float(location.y)
+            norm = math.hypot(dx, dy)
+            if norm > 0.1:
+                velocity_direction = (dx / norm, dy / norm)
+                desired_yaw_deg = math.degrees(math.atan2(dy, dx))
+                yaw_error_deg = (
+                    desired_yaw_deg - float(transform.rotation.yaw) + 180.0
+                ) % 360.0 - 180.0
+                steer = max(-0.30, min(0.30, yaw_error_deg * 0.03))
+            else:
+                velocity_direction = actor_forward
+        else:
+            # A moving scenario actor must not turn back toward the final
+            # polyline sample and become a permanent roadblock. Continue on
+            # the CARLA lane topology once its finite scenario route ends.
+            follow_map_waypoint = True
+    if (
+        desired > 0.1
+        and world_map is not None
+        and (not route_points_xy_m or follow_map_waypoint)
+    ):
+        transform = lead.get_transform()
+        waypoint = world_map.get_waypoint(
+            lead.get_location(), project_to_road=True,
+        )
+        forward_waypoints = (
+            () if waypoint is None
+            else waypoint.next(max(3.0, min(8.0, current * 0.7 + 3.0))) or ()
+        )
+        if forward_waypoints:
+            target_location = forward_waypoints[0].transform.location
+            location = transform.location
+            dx = float(target_location.x) - float(location.x)
+            dy = float(target_location.y) - float(location.y)
+            norm = math.hypot(dx, dy)
+            if norm > 0.1:
+                velocity_direction = (dx / norm, dy / norm)
+            desired_yaw_deg = math.degrees(math.atan2(dy, dx))
+            yaw_error_deg = (
+                desired_yaw_deg - float(transform.rotation.yaw) + 180.0
+            ) % 360.0 - 180.0
+            steer = max(-0.30, min(0.30, yaw_error_deg * 0.03))
+    if mode == "cut_in":
+        assert cut_in_elapsed_s is not None
+        assert cut_in_duration_s is not None
+        peak = min(0.35, max(0.05, abs(float(behavior.get("cut_in_steer", 0.18)))))
+        direction = str(behavior.get("direction", "RIGHT")).strip().upper()
+        sign = 1.0 if direction == "RIGHT" else -1.0
+        phase = cut_in_elapsed_s / cut_in_duration_s
+        if 0.0 <= phase < 0.45:
+            steer = sign * peak
+        elif 0.45 <= phase < 0.90:
+            steer = -sign * peak * 0.70
+        elif 0.90 <= phase < 1.0:
+            steer = -sign * peak * 0.25
+    lead.apply_control(carla_api.VehicleControl(
+        throttle=throttle,
+        brake=brake,
+        steer=steer,
+        hand_brake=False,
+        reverse=False,
+        manual_gear_shift=False,
+    ))
+    completed_cut_in = (
+        mode == "cut_in"
+        and cut_in_elapsed_s is not None
+        and cut_in_duration_s is not None
+        and cut_in_elapsed_s >= cut_in_duration_s
+        and behavior.get("post_cut_in_speed_mps") is not None
+    )
+    if (mode == "lead_vehicle" or completed_cut_in) and desired > 0.1:
+        # CARLA bicycles and scripted cut-in cars do not consistently follow
+        # VehicleControl throttle at the declared speed. Once a cut-in has
+        # completed, enforce only its ramped longitudinal speed so the hazard
+        # clears instead of becoming a permanent artificial roadblock.
+        # Steering remains physics-driven and follows the route above.
+        set_velocity = getattr(lead, "set_target_velocity", None)
+        if callable(set_velocity):
+            forward = lead.get_transform().get_forward_vector()
+            direction_x, direction_y = (
+                velocity_direction
+                if velocity_direction is not None
+                else (float(forward.x), float(forward.y))
+            )
+            set_velocity(carla_api.Vector3D(
+                x=direction_x * desired,
+                y=direction_y * desired,
+                z=0.0,
+            ))
+
+
+def _scenario_target_lane_occupied_count(
+    world_map: Any,
+    ego: Any,
+    scenario_vehicles: Sequence[tuple[Any, Mapping[str, object]]],
+    maneuver: str,
+) -> int:
+    """Count owned scenario vehicles in the commanded adjacent lane."""
+    ego_waypoint = world_map.get_waypoint(ego.get_location(), project_to_road=True)
+    if ego_waypoint is None:
+        raise RuntimeError("cannot measure target-lane occupancy without ego waypoint")
+    normalized = str(maneuver).upper()
+    target = (
+        ego_waypoint.get_left_lane()
+        if normalized.endswith("LEFT")
+        else ego_waypoint.get_right_lane()
+        if normalized.endswith("RIGHT")
+        else None
+    )
+    if target is None:
+        if normalized.endswith("LEFT") or normalized.endswith("RIGHT"):
+            raise RuntimeError("scenario target lane is unavailable for occupancy acceptance")
+        return 0
+    target_segments: set[tuple[object, object]] = set()
+    frontier = (target,)
+    for _ in range(30):
+        next_frontier = []
+        for waypoint in frontier:
+            key = (
+                getattr(waypoint, "road_id", None),
+                getattr(waypoint, "lane_id", None),
+            )
+            if key in target_segments:
+                continue
+            target_segments.add(key)
+            next_waypoints = getattr(waypoint, "next", None)
+            if callable(next_waypoints):
+                next_frontier.extend(next_waypoints(2.0) or ())
+        if not next_frontier:
+            break
+        frontier = tuple(next_frontier)
+    occupied = 0
+    for vehicle, _spec in scenario_vehicles:
+        waypoint = world_map.get_waypoint(
+            vehicle.get_location(), project_to_road=True,
+        )
+        if waypoint is None:
+            continue
+        if (
+            getattr(waypoint, "road_id", None),
+            getattr(waypoint, "lane_id", None),
+        ) in target_segments:
+            occupied += 1
+    return occupied
+
+
+def _spawn_scenario_walker(
+    session: CarlaSession,
+    world: Any,
+    carla_api: Any,
+    ego: Any,
+    actor_spec: Mapping[str, object],
+    *,
+    route: RouteReference | None = None,
+    seed: int = 0,
+) -> tuple[Any, Any]:
+    """Spawn a real pedestrian and return it with its world-space target.
+
+    The target is anchored to the ego's actual map pose, just as vehicles are.
+    This avoids a Town-specific world coordinate and makes crossing scenarios
+    portable across the maps used by the evaluation harness.
+    """
+    spawn = actor_spec.get("spawn", {})
+    behavior = actor_spec.get("behavior", {})
+    if not isinstance(spawn, Mapping) or not isinstance(behavior, Mapping):
+        raise TypeError("scenario walker requires spawn and behavior objects")
+    library = world.get_blueprint_library()
+    blueprint_id = actor_spec.get("blueprint_id")
+    if isinstance(blueprint_id, str) and blueprint_id:
+        blueprint = library.find(blueprint_id)
+    else:
+        candidates = list(library.filter("walker.pedestrian.*"))
+        blueprint = candidates[0] if candidates else None
+    if blueprint is None:
+        raise LookupError(f"scenario walker blueprint not found: {blueprint_id!r}")
+    has_attribute = getattr(blueprint, "has_attribute", None)
+    if callable(has_attribute):
+        if has_attribute("is_invincible"):
+            blueprint.set_attribute("is_invincible", "false")
+
+    anchor = ego.get_transform()
+    lateral_sign = 1.0 if float(spawn.get("y", 0.0)) >= 0.0 else -1.0
+    # A vehicle settles with its transform origin almost on the road surface.
+    # Reusing that Z verbatim can put a pedestrian capsule inside the ground.
+    # Also allow small deterministic offsets away from the carriageway: bus
+    # passengers may otherwise overlap the bus bounding box on a narrow curb.
+    offsets = (
+        (0.0, 0.0),
+        (0.0, 0.75 * lateral_sign),
+        (0.0, -0.75 * lateral_sign),
+        *tuple(
+            item for item in actor_resample_offsets(actor_spec, seed=seed)
+            if item != (0.0, 0.0)
+        ),
+    )
+    walker = None
+    used_offset = (0.0, 0.0)
+    world_map = world.get_map()
+    placement_failures: list[str] = []
+    for forward_offset_m, lateral_offset_m in offsets:
+        candidate_spec = offset_actor_route_position(
+            actor_spec,
+            longitudinal_m=forward_offset_m,
+            lateral_m=lateral_offset_m,
+        )
+        candidate_spawn = candidate_spec.get("spawn", spawn)
+        try:
+            transform = (
+                route_relative_carla_transform(
+                    carla_api, world_map, route.points_xy_m, candidate_spec,
+                )
+                if route is not None else
+                _scenario_local_transform(carla_api, anchor, candidate_spawn)
+            )
+            road_waypoint = world_map.get_waypoint(
+                transform.location, project_to_road=True,
+            )
+            if road_waypoint is not None:
+                transform.location.z = max(
+                    float(transform.location.z),
+                    float(road_waypoint.transform.location.z) + 0.5,
+                )
+            validate_actor_transform(
+                world_map,
+                transform,
+                candidate_spec,
+                occupied_locations=_occupied_actor_locations(world),
+            )
+        except ActorPlacementError as error:
+            placement_failures.append(str(error))
+            continue
+        walker = world.try_spawn_actor(blueprint, transform)
+        if walker is not None:
+            used_offset = (forward_offset_m, lateral_offset_m)
+            break
+        placement_failures.append("CARLA rejected candidate")
+    if walker is None:
+        detail = placement_failures[-1] if placement_failures else "no candidate"
+        raise RuntimeError(
+            f"cannot spawn configured scenario walker {actor_spec.get('actor_id', 'walker')!r} "
+            f"after deterministic resampling: {detail}"
+        )
+    walker = session.track_actor(walker)
+    set_physics = getattr(walker, "set_simulate_physics", None)
+    if callable(set_physics):
+        set_physics(True)
+    if route is not None:
+        target = route_relative_target_location(
+            carla_api, world_map, route.points_xy_m, candidate_spec,
+        )
+    else:
+        candidate_behavior = candidate_spec.get("behavior", behavior)
+        target_xy = candidate_behavior.get(
+            "target_xy_m", [spawn.get("x", 0.0), spawn.get("y", 0.0)],
+        )
+        if not isinstance(target_xy, (list, tuple)) or len(target_xy) != 2:
+            raise TypeError("scenario walker target_xy_m must be [x, y]")
+        target = _scenario_local_transform(
+            carla_api,
+            anchor,
+            {"x": target_xy[0], "y": target_xy[1], "z": spawn.get("z", 0.5)},
+        ).location
+    print(
+        "scenario actor: spawned real walker "
+        f"id={actor_spec.get('actor_id', 'scenario_walker')} "
+        f"spawn_offset_xy_m={used_offset}",
+        flush=True,
+    )
+    return walker, target
+
+
+def _update_scenario_walker(
+    walker: Any,
+    actor_spec: Mapping[str, object],
+    elapsed_s: float,
+    target_location: Any,
+    carla_api: Any,
+    *,
+    trigger_ready: bool = True,
+) -> None:
+    """Move a scenario pedestrian with CARLA's public WalkerControl API."""
+    behavior = actor_spec.get("behavior", {})
+    if not isinstance(behavior, Mapping):
+        raise TypeError("scenario walker behavior must be an object")
+    start_time_s = float(behavior.get("start_time_s", 0.0))
+    speed_mps = max(0.0, float(behavior.get("speed_mps", 0.0)))
+    if walker is None or not getattr(walker, "is_alive", True):
+        spawn = actor_spec.get("spawn", {})
+        target_xy = behavior.get("target_xy_m")
+        if (
+            isinstance(spawn, Mapping)
+            and isinstance(target_xy, (list, tuple))
+            and len(target_xy) == 2
+            and speed_mps > 0.0
+        ):
+            scheduled_distance = math.hypot(
+                float(target_xy[0]) - float(spawn.get("x", 0.0)),
+                float(target_xy[1]) - float(spawn.get("y", 0.0)),
+            )
+            if float(elapsed_s) >= start_time_s + scheduled_distance / speed_mps:
+                return
+        raise RuntimeError("configured scenario walker is not alive")
+    location = walker.get_location()
+    dx = float(target_location.x) - float(location.x)
+    dy = float(target_location.y) - float(location.y)
+    distance = math.hypot(dx, dy)
+    speed = speed_mps if trigger_ready and elapsed_s >= start_time_s and distance > 0.2 else 0.0
+    direction = carla_api.Vector3D(
+        x=0.0 if distance <= 1e-6 else dx / distance,
+        y=0.0 if distance <= 1e-6 else dy / distance,
+        z=0.0,
+    )
+    walker.apply_control(carla_api.WalkerControl(
+        direction=direction,
+        speed=speed,
+        jump=False,
+    ))
+
+
+def _spawn_scenario_static_prop(
+    session: CarlaSession,
+    world: Any,
+    carla_api: Any,
+    ego: Any,
+    actor_spec: Mapping[str, object],
+    *,
+    route: RouteReference | None = None,
+    seed: int = 0,
+) -> Any:
+    """Spawn a declared static obstacle for construction/occlusion coverage."""
+    spawn = actor_spec.get("spawn", {})
+    if not isinstance(spawn, Mapping):
+        raise TypeError("scenario static prop spawn must be an object")
+    blueprint_id = actor_spec.get("blueprint_id")
+    if not isinstance(blueprint_id, str) or not blueprint_id:
+        raise ValueError("scenario static prop requires blueprint_id")
+    try:
+        blueprint = world.get_blueprint_library().find(blueprint_id)
+    except (IndexError, KeyError) as error:
+        raise LookupError(f"scenario static prop blueprint not found: {blueprint_id!r}") from error
+    if blueprint is None:
+        raise LookupError(f"scenario static prop blueprint not found: {blueprint_id!r}")
+    world_map = world.get_map()
+    prop = None
+    placement_failures: list[str] = []
+    for forward_offset_m, lateral_offset_m in actor_resample_offsets(
+        actor_spec, seed=seed,
+    ):
+        candidate_spec = offset_actor_route_position(
+            actor_spec,
+            longitudinal_m=forward_offset_m,
+            lateral_m=lateral_offset_m,
+        )
+        try:
+            transform = (
+                route_relative_carla_transform(
+                    carla_api, world_map, route.points_xy_m, candidate_spec,
+                )
+                if route is not None else
+                _scenario_local_transform(
+                    carla_api,
+                    ego.get_transform(),
+                    candidate_spec.get("spawn", spawn),
+                )
+            )
+            validate_actor_transform(
+                world_map,
+                transform,
+                candidate_spec,
+                occupied_locations=_occupied_actor_locations(world),
+            )
+        except ActorPlacementError as error:
+            placement_failures.append(str(error))
+            continue
+        prop = world.try_spawn_actor(blueprint, transform)
+        if prop is not None:
+            break
+        placement_failures.append("CARLA rejected candidate")
+    if prop is None:
+        detail = placement_failures[-1] if placement_failures else "no candidate"
+        raise RuntimeError(
+            "cannot spawn configured scenario static prop after deterministic "
+            f"resampling: {detail}"
+        )
+    prop = session.track_actor(prop)
+    set_physics = getattr(prop, "set_simulate_physics", None)
+    if callable(set_physics):
+        set_physics(False)
+    print(
+        "scenario actor: spawned static prop "
+        f"id={actor_spec.get('actor_id', blueprint_id)}",
+        flush=True,
+    )
+    return prop
+
+
+def _select_scenario_lead(ego: Any, vehicles: Sequence[Any]) -> Any | None:
+    """Choose the closest owned vehicle ahead of ego, never map background traffic."""
+    ego_location = ego.get_location()
+    forward = ego.get_transform().get_forward_vector()
+    candidates: list[tuple[float, float, Any]] = []
+    for vehicle in vehicles:
+        if vehicle is None or not getattr(vehicle, "is_alive", True):
+            continue
+        location = vehicle.get_location()
+        dx = float(location.x) - float(ego_location.x)
+        dy = float(location.y) - float(ego_location.y)
+        longitudinal = dx * float(forward.x) + dy * float(forward.y)
+        lateral = abs(dx * float(forward.y) - dy * float(forward.x))
+        if longitudinal >= -0.5 and lateral <= 4.5:
+            candidates.append((longitudinal, math.hypot(dx, dy), vehicle))
+    return min(candidates, default=(0.0, 0.0, None), key=lambda item: item[:2])[2]
+
+
+def _scenario_traffic_light_distance(spec: ScenarioSpec | None) -> float | None:
+    actor = _scenario_actor(spec, "traffic_light")
+    if actor is None:
+        return None
+    distance = float(actor.get("distance_to_stop_line_m", 0.0))
+    if not math.isfinite(distance) or distance <= 0.0:
+        raise ValueError("scenario traffic-light distance_to_stop_line_m must be positive")
+    return distance
+
+
+def _traffic_light_scenario_anchor(
+    world: Any,
+    world_map: Any,
+    carla_api: Any,
+    distance_to_stop_line_m: float,
+    *,
+    candidate_index: int = 0,
+) -> tuple[Any, Any]:
+    """Return a real signal and a driving-lane transform behind its stop line."""
+    actors = world.get_actors()
+    lights = list(
+        actors.filter("traffic.traffic_light*")
+        if callable(getattr(actors, "filter", None))
+        else ()
+    )
+    lights.sort(key=lambda actor: int(getattr(actor, "id", 0)))
+    candidates: list[tuple[int, Any, Any]] = []
+    for light in lights:
+        getter = getattr(light, "get_stop_waypoints", None)
+        if not callable(getter):
+            continue
+        for waypoint in getter() or ():
+            transform = waypoint.transform
+            forward = transform.get_forward_vector()
+            stop_location = transform.location
+            behind = carla_api.Location(
+                x=float(stop_location.x) - float(forward.x) * distance_to_stop_line_m,
+                y=float(stop_location.y) - float(forward.y) * distance_to_stop_line_m,
+                z=float(stop_location.z),
+            )
+            driving = world_map.get_waypoint(behind, project_to_road=True)
+            if driving is None:
+                continue
+            driving_transform = driving.transform
+            spawn_transform = carla_api.Transform(
+                carla_api.Location(
+                    x=float(driving_transform.location.x),
+                    y=float(driving_transform.location.y),
+                    z=float(driving_transform.location.z) + 0.5,
+                ),
+                carla_api.Rotation(
+                    pitch=float(getattr(driving_transform.rotation, "pitch", 0.0)),
+                    yaw=float(driving_transform.rotation.yaw),
+                    roll=float(getattr(driving_transform.rotation, "roll", 0.0)),
+                ),
+            )
+            candidates.append((int(getattr(light, "id", 0)), light, spawn_transform))
+    if not candidates:
+        raise RuntimeError("current map has no usable traffic-light stop waypoint")
+    candidates.sort(key=lambda item: item[0])
+    _, light, transform = candidates[candidate_index % len(candidates)]
+    return light, transform
+
+
+def _scenario_traffic_light_observation(
+    scene: PerceptionFrame,
+    ego: Any,
+    light: Any,
+) -> tuple[PerceptionFrame, dict[str, str]]:
+    """Bind D08 to the selected real CARLA signal and map stop waypoint."""
+    state = str(light.get_state()).split(".")[-1].upper()
+    if state not in {"RED", "YELLOW", "GREEN"}:
+        raise RuntimeError(f"selected CARLA traffic light has unsupported state {state!r}")
+    signed_clearance_m = _scenario_traffic_light_signed_clearance_m(ego, light)
+    distance_to_stop_line_m = max(0.0, signed_clearance_m)
+    red_light_violation = (
+        scene.red_light_violation
+        or (state == "RED" and signed_clearance_m < 0.0)
+    )
+    source = "CARLA_SCENARIO_TRAFFIC_LIGHT_ACTOR_STOP_WAYPOINT"
+    return replace(
+        scene,
+        traffic_light=state,
+        distance_to_stop_line_m=distance_to_stop_line_m,
+        red_light_violation=red_light_violation,
+    ), {
+        "traffic_light": source,
+        "distance_to_stop_line_m": source,
+    }
+
+
+def _scenario_traffic_light_distance_to_stop_line_m(ego: Any, light: Any) -> float:
+    """Measure non-negative front-bumper distance for perception/control."""
+    return max(0.0, _scenario_traffic_light_signed_clearance_m(ego, light))
+
+
+def _scenario_traffic_light_signed_clearance_m(ego: Any, light: Any) -> float:
+    """Measure signed front-bumper clearance to the selected CARLA stop line.
+
+    Positive is before the line and negative is crossed.  The perception
+    contract remains non-negative, while this signed value is retained for
+    acceptance evidence so crossing then stopping cannot look successful.
+    """
+    ego_location = ego.get_location()
+    forward = ego.get_transform().get_forward_vector()
+    extent = getattr(getattr(ego, "bounding_box", None), "extent", None)
+    front_offset_m = max(0.0, float(getattr(extent, "x", 0.0)))
+    candidates: list[tuple[float, float, float]] = []
+    getter = getattr(light, "get_stop_waypoints", None)
+    if callable(getter):
+        for waypoint in getter() or ():
+            location = waypoint.transform.location
+            dx = float(location.x) - float(ego_location.x)
+            dy = float(location.y) - float(ego_location.y)
+            along = (
+                dx * float(forward.x)
+                + dy * float(forward.y)
+            )
+            lateral = abs(-dx * float(forward.y) + dy * float(forward.x))
+            candidates.append((lateral, abs(along), along - front_offset_m))
+    if not candidates:
+        raise RuntimeError("selected CARLA traffic light has no stop waypoint")
+    # Prefer the stop waypoint in the ego lane, then the longitudinally nearest
+    # one.  This remains stable for a few frames after the line is crossed.
+    lane_candidates = [item for item in candidates if item[0] <= 4.5]
+    selected = min(lane_candidates or candidates, key=lambda item: (item[0], item[1]))
+    return selected[2]
+
+
+def _apply_virtual_scenario(scene: PerceptionFrame, ego: Any, origin: tuple[float, float, float], args: argparse.Namespace) -> PerceptionFrame:
+    location = ego.get_location()
+    travelled_m = math.sqrt((location.x - origin[0]) ** 2 + (location.y - origin[1]) ** 2 + (location.z - origin[2]) ** 2)
+    if args.scenario == "red_stop":
+        return replace(scene, traffic_light="RED", distance_to_stop_line_m=max(0.0, args.stop_line_m - travelled_m))
+    if args.scenario in {"follow", "emergency"}:
+        initial_gap_m = args.lead_distance_m if args.scenario == "follow" else args.emergency_distance_m
+        # Deterministic simulator truth used until the RGB/LiDAR tracker is
+        # available. It represents a stationary lead on the active route and
+        # cannot be displaced by CARLA's map-dependent spawn relocation.
+        return replace(scene, lead_distance_m=max(0.1, initial_gap_m - travelled_m), lead_speed_mps=0.0)
+    return scene
+
+
+def _scenario_facts(
+    ego: Any,
+    origin: tuple[float, float, float],
+    spec: ScenarioSpec,
+    *,
+    frame: int,
+    sim_time_s: float,
+    elapsed_s: float,
+) -> PerceptionFrame:
+    """Build deterministic configured actors without mutating perception."""
+    location = ego.get_location()
+    travelled_m = math.sqrt(
+        (location.x - origin[0]) ** 2
+        + (location.y - origin[1]) ** 2
+        + (location.z - origin[2]) ** 2
+    )
+    updates: dict[str, object] = {}
+    for actor in spec.actors:
+        actor_type = str(actor.get("type", "")).lower()
+        if actor_type == "traffic_light":
+            stop_line = float(actor.get("distance_to_stop_line_m", 0.0))
+            updates["traffic_light"] = str(actor.get("state", "UNKNOWN")).upper()
+            updates["distance_to_stop_line_m"] = max(0.0, stop_line - travelled_m)
+            continue
+        if actor_type == "vehicle":
+            spawn = actor.get("spawn", {})
+            behavior = actor.get("behavior", {})
+            if not isinstance(spawn, dict) or not isinstance(behavior, dict):
+                continue
+            initial_gap = float(spawn.get("x", 18.0))
+            initial_speed = float(behavior.get("initial_speed_mps", 0.0))
+            brake_at_s = float(behavior.get("brake_at_s", math.inf))
+            target_speed = float(behavior.get("target_speed_mps", initial_speed))
+            lead_speed = initial_speed if elapsed_s < brake_at_s else target_speed
+            lead_travel_m = _lead_vehicle_travel_m(
+                elapsed_s, initial_speed, brake_at_s, target_speed,
+            )
+            candidate_gap = max(0.1, initial_gap + lead_travel_m - travelled_m)
+            if candidate_gap < float(updates.get("lead_distance_m", math.inf)):
+                updates["lead_distance_m"] = candidate_gap
+                updates["lead_speed_mps"] = lead_speed
+            continue
+        if actor_type.startswith("walker"):
+            spawn = actor.get("spawn", {})
+            behavior = actor.get("behavior", {})
+            if not isinstance(spawn, dict) or not isinstance(behavior, dict):
+                continue
+            start_s = float(behavior.get("start_time_s", 0.0))
+            speed_mps = float(behavior.get("speed_mps", 0.0))
+            target = behavior.get("target_xy_m", [spawn.get("x", 0.0), spawn.get("y", 0.0)])
+            if not isinstance(target, list) or len(target) != 2 or elapsed_s < start_s:
+                continue
+            spawn_y = float(spawn.get("y", 0.0))
+            target_y = float(target[1])
+            direction = 1.0 if target_y >= spawn_y else -1.0
+            current_y = spawn_y + direction * speed_mps * (elapsed_s - start_s)
+            if min(spawn_y, target_y) - 1e-6 <= current_y <= max(spawn_y, target_y) + 1e-6 and abs(current_y) <= 2.0:
+                candidate_gap = max(0.1, float(spawn.get("x", 0.0)) - travelled_m)
+                if candidate_gap < float(updates.get("lead_distance_m", math.inf)):
+                    updates["lead_distance_m"] = candidate_gap
+                    updates["lead_speed_mps"] = 0.0
+    return PerceptionFrame(frame, sim_time_s, **updates)
+
+
+def _lead_vehicle_travel_m(
+    elapsed_s: float,
+    initial_speed_mps: float,
+    brake_at_s: float,
+    target_speed_mps: float,
+) -> float:
+    """Integrate the scenario lead's piecewise speed without a position jump at braking."""
+    before_brake_s = min(elapsed_s, brake_at_s)
+    after_brake_s = max(0.0, elapsed_s - brake_at_s)
+    return initial_speed_mps * before_brake_s + target_speed_mps * after_brake_s
+
+
+def _select_scene_facts(
+    perception: PerceptionFrame,
+    scenario: PerceptionFrame | None,
+    mode: str,
+) -> tuple[PerceptionFrame, dict[str, str]]:
+    """Select perception, scenario truth, or perception-first fallback."""
+    if mode not in {"perception", "scenario", "fuse"}:
+        raise ValueError(f"unsupported scenario facts mode: {mode!r}")
+    if scenario is None or mode == "perception":
+        return perception, {}
+
+    fact_fields = ("lead_distance_m", "lead_speed_mps", "distance_to_stop_line_m")
+    if mode == "scenario":
+        # Scenario-truth mode is authoritative, including explicit absence.
+        # Keeping a perceived value when the scenario field is None lets
+        # unrelated Town traffic lights/actors contaminate deterministic
+        # controller acceptance runs.
+        values = {name: getattr(scenario, name) for name in fact_fields}
+        values["traffic_light"] = scenario.traffic_light
+        return replace(perception, **values), {
+            name: "SCENARIO_CONFIG_TRUTH" for name in values
+        }
+
+    values = {
+        name: getattr(scenario, name)
+        for name in fact_fields
+        if getattr(perception, name) is None and getattr(scenario, name) is not None
+    }
+    if perception.traffic_light == "UNKNOWN" and scenario.traffic_light != "UNKNOWN":
+        values["traffic_light"] = scenario.traffic_light
+    return replace(perception, **values), {
+        name: "SCENARIO_CONFIG_FALLBACK" for name in values
+    }
+
+
+def _apply_scenario_speed_limit(
+    scene: PerceptionFrame,
+    scenario_limit_mps: float | None,
+    sources: dict[str, str],
+    *,
+    override_map_limit: bool = False,
+) -> PerceptionFrame:
+    """Expose the scenario speed contract to both Qwen and local control.
+
+    The default remains fail-safe and only tightens CARLA's map limit.  A
+    scenario may explicitly replace it when the simulator-map sign metadata is
+    not the competition road contract; this is opt-in and never affects other
+    scenes.
+    """
+    if scenario_limit_mps is None:
+        return scene
+    configured_limit = max(0.0, float(scenario_limit_mps))
+    effective_limit = (
+        configured_limit
+        if override_map_limit or scene.speed_limit_mps is None
+        else min(float(scene.speed_limit_mps), configured_limit)
+    )
+    sources["speed_limit_mps"] = (
+        "SCENARIO_SPEED_POLICY_OVERRIDE"
+        if override_map_limit else
+        "SCENARIO_SPEED_POLICY"
+    )
+    return replace(scene, speed_limit_mps=effective_limit)
+
+
+def _load_command(args: argparse.Namespace) -> dict[str, object] | None:
+    if args.command_json:
+        command = json.loads(Path(args.command_json).read_text(encoding="utf-8"))
+        if not isinstance(command, Mapping):
+            raise TypeError("voice command JSON root must be an object")
+        command = dict(command)
+        if is_high_level_command(command):
+            command = HighLevelCommandAdapter().adapt(command)
+        if args.test_command_ttl_s is not None:
+            command["valid_duration_s"] = args.test_command_ttl_s
+        return command
+    if args.audio:
+        audio_path = Path(args.audio)
+        if not audio_path.is_file():
+            raise FileNotFoundError(
+                f"audio file not found: {audio_path}. Pass an existing 16 kHz mono WAV path via --audio."
+            )
+        from voice_group.pipeline import audio_to_command, preload_voice_models
+
+        preload = preload_voice_models()
+        print(f"voice model preload: {preload}", flush=True)
+        command = audio_to_command(str(audio_path))
+        if not isinstance(command, Mapping):
+            raise TypeError("voice pipeline result must be an object")
+        command = dict(command)
+        if args.test_command_ttl_s is not None:
+            command["valid_duration_s"] = args.test_command_ttl_s
+        return command
+    return None
+
+
+def _qwen_voice_command(args: argparse.Namespace, spec: ScenarioSpec | None) -> str:
+    explicit = str(getattr(args, "qwen_voice_command", "") or "").strip()
+    if explicit:
+        return explicit
+    if spec is None:
+        raise ValueError("--qwen-remote requires --qwen-voice-command or a scenario file")
+    if len(spec.commands) != 1 or spec.commands[0].time_s > 1e-9:
+        raise ValueError(
+            "remote Qwen scenario mode currently requires exactly one command at time_s=0"
+        )
+    source_text = str(spec.commands[0].envelope.get("source_text", "")).strip()
+    if not source_text:
+        raise ValueError("scenario command must provide source_text for remote Qwen")
+    return source_text
+
+
+def _qwen_desired_speed_mps(args: argparse.Namespace, spec: ScenarioSpec | None) -> float:
+    fallback = float(args.default_speed_mps)
+    if spec is None or len(spec.commands) != 1:
+        return fallback
+    resolved = resolve_scenario_command(
+        spec.commands[0].envelope,
+        requested_speed_mps=fallback,
+    )
+    parameters = resolved.get("parameters")
+    if not isinstance(parameters, Mapping):
+        return fallback
+    speed = parameters.get("speed")
+    if type(speed) not in (int, float) or isinstance(speed, bool):
+        return fallback
+    value = float(speed)
+    unit = str(parameters.get("unit", "m/s")).strip().lower().replace(" ", "")
+    if unit in {"m/s", "mps", "米/秒"}:
+        return value
+    if unit in {"km/h", "kph", "kmh", "公里/小时", "千米/小时"}:
+        return value / 3.6
+    raise ValueError(f"unsupported Qwen desired-speed unit: {unit!r}")
+
+
+def _save_qwen_rgb_image(
+    measurement: Any,
+    image_root: str | Path,
+    *,
+    request_id: str,
+) -> str:
+    """Persist one aligned CARLA RGB frame and return an image-root-relative ref."""
+    try:
+        from PIL import Image
+    except ImportError as error:
+        raise RuntimeError("remote Qwen live mode requires Pillow") from error
+    root = Path(image_root).expanduser().resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    safe_id = "".join(character for character in request_id if character.isalnum() or character in "-_")
+    if not safe_id:
+        raise ValueError("request_id has no filesystem-safe characters")
+    path = root / f"{safe_id}.jpg"
+    Image.fromarray(carla_rgb_array(measurement), mode="RGB").save(
+        path,
+        format="JPEG",
+        quality=90,
+        optimize=True,
+    )
+    return path.relative_to(root).as_posix()
+
+
+def _build_qwen_context(
+    *,
+    request_id: str,
+    voice_command: str,
+    rgb_ref: str,
+    state: RuntimeVehicleState,
+    scene: PerceptionFrame,
+    behavior_state: str,
+    desired_speed_mps: float,
+    route_end_distance_m: float | None,
+    c_safety_state: Mapping[str, object] | None,
+) -> QwenInputContext:
+    detected_objects = [
+        {
+            "class_name": item.class_name,
+            "confidence": item.confidence,
+            "distance_m": item.distance_m,
+            "bbox_xyxy_norm": list(item.bbox_xyxy_norm),
+        }
+        for item in scene.detected_objects
+    ]
+    safety = dict(c_safety_state or {})
+    return QwenInputContext(
+        request_id=request_id,
+        frame=state.frame,
+        sim_time_s=state.sim_time_s,
+        voice_command=voice_command,
+        rgb_ref=rgb_ref,
+        scene_state={
+            "speed_mps": state.speed_mps,
+            "behavior_state": behavior_state,
+            "desired_speed_mps": desired_speed_mps,
+            "route_end_distance_m": route_end_distance_m,
+        },
+        perception={
+            "lead_distance_m": scene.lead_distance_m,
+            "lead_speed_mps": scene.lead_speed_mps,
+            "traffic_light": scene.traffic_light,
+            "distance_to_stop_line_m": scene.distance_to_stop_line_m,
+            "speed_limit_mps": scene.speed_limit_mps,
+            "lane_offset_m": scene.lane_offset_m,
+            "route_deviation_m": scene.route_deviation_m,
+            "detected_objects": detected_objects,
+            "visual_valid": True,
+        },
+        safety_state={
+            "collision": scene.collision,
+            "red_light_violation": scene.red_light_violation,
+            "lane_invasion": scene.lane_invasion,
+            "minimum_ttc_s": safety.get("ttc_s"),
+            "recommended_action": safety.get("recommended_action"),
+            "fusion_mode": safety.get("fusion_mode"),
+            "fused_valid": safety.get("fused_valid"),
+        },
+    )
+
+
+def _evidence_recorder(args: argparse.Namespace, spec: ScenarioSpec | None = None) -> ScenarioEvidenceRecorder | None:
+    if args.no_log:
+        return None
+    directory = Path(args.log_dir)
+    directory.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    path = directory / f"{args.scenario}_{stamp}.jsonl"
+    recorder = ScenarioEvidenceRecorder(path)
+    config = {
+        key: value for key, value in vars(args).items()
+        if type(value) in (str, int, float, bool) or value is None
+    }
+    config["seed"] = getattr(args, "evidence_seed", getattr(args, "seed", None))
+    config["config_path"] = getattr(args, "scenario_file", None)
+    config["code_version"] = os.environ.get("CARLA_DRIVING_CODE_VERSION") or _git_code_version()
+    recorder.start_run(scenario_id=args.scenario, difficulty=getattr(args, "scenario_difficulty", "basic"), config=config, expected_route_deviation=(
+        spec is not None and spec.expected.get("expected_route_deviation_event") is True
+    ))
+    print(f"run log: {path}")
+    return recorder
+
+
+def _git_code_version() -> str:
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=Path(__file__).resolve().parents[1],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2.0,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "UNKNOWN"
+    return completed.stdout.strip() or "UNKNOWN"
+
+
+def _rejected_load_envelope(error: BaseException) -> dict[str, object]:
+    """Represent voice loading failures as a vehicle-side auditable NO_OP."""
+    return {
+        "schema_version": "1.0",
+        "command_id": f"voice-load-error-{time.monotonic_ns()}",
+        "source_text": "<voice input unavailable>",
+        "intent": "UNKNOWN",
+        "parameters": {},
+        "intent_confidence": 0.0,
+        "confidence": 0.0,
+        "status": "invalid",
+        "ambiguity_type": "INPUT_ERROR",
+        "confirm_required": False,
+        "errors": [{"code": "VOICE_INPUT_ERROR", "message": f"{type(error).__name__}: {error}"}],
+        "warnings": [],
+        "valid_duration_s": 3.0,
+    }
+
+
+def _warm_up_sensor_bridge(session: Any, world: Any, bridge: CarlaPerceptionBridge, *, attempts: int,
+                           tick_timeout_s: float, sensor_timeout_s: float) -> None:
+    """Wait for a stable aligned RGB/LiDAR stream before command execution."""
+    last_error: PerceptionAcquisitionError | None = None
+    required_streak = min(2, attempts)
+    aligned_streak = 0
+    for _ in range(attempts):
+        frame = session.tick(tick_timeout_s)
+        snapshot = world.get_snapshot()
+        sim_time_s = snapshot.timestamp.elapsed_seconds
+        try:
+            bridge.acquire(frame, sim_time_s, timeout_s=sensor_timeout_s)
+            aligned_streak += 1
+        except PerceptionAcquisitionError as error:
+            last_error = error
+            aligned_streak = 0
+    if aligned_streak >= required_streak:
+        return
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError(
+        f"sensor warm-up did not produce {required_streak} consecutive aligned frames"
+    )
+
+
+def _scenario_completed(args: argparse.Namespace, *, frames: int, final_speed_mps: float | None,
+                        final_scene: PerceptionFrame | None, min_gap_m: float | None,
+                        collision_seen: bool, max_speed_mps: float = 0.0) -> bool:
+    if frames != args.frames or final_speed_mps is None or collision_seen:
+        return False
+    if args.scenario == "red_stop":
+        return (final_scene is not None and final_scene.distance_to_stop_line_m is not None
+                and final_speed_mps <= 0.15 and final_scene.distance_to_stop_line_m <= 1.0)
+    if args.scenario == "follow":
+        return min_gap_m is not None and min_gap_m >= 3.0 and max_speed_mps >= 0.2
+    if args.scenario == "emergency":
+        return final_speed_mps <= 0.15
+    return max_speed_mps >= 0.2
+
+
+def _runtime_health_completed(safety_reasons: set[str]) -> bool:
+    """Reject ordinary scenario success after a runtime/integration fail-safe.
+
+    Intentional D interventions are evaluated separately by
+    ``_expected_safety_completed``.  The basic runner must not report success
+    merely because a watchdog-latched vehicle stayed still and avoided impact.
+    """
+    non_failure_perception_reasons = {
+        "PERCEPTION_STARTUP_GRACE",
+        # A semantic hazard observation from the live perception chain is not
+        # a sensor/runtime outage. The resulting emergency response is scored
+        # by the declared safety contracts below.
+        "PERCEPTION_EMERGENCY",
+    }
+    return not any(
+        reason in {"WATCHDOG_ALERT", "INTEGRATION_FAILURE"}
+        or (
+            reason.startswith("PERCEPTION_")
+            and reason not in non_failure_perception_reasons
+        )
+        for reason in safety_reasons
+    )
+
+
+def _declared_scenario_runtime_completed(
+    spec: ScenarioSpec,
+    *,
+    frames: int,
+    final_speed_mps: float | None,
+    collision_seen: bool,
+    command_finished: bool,
+    safety_reasons: set[str],
+    route_run_ended_early: bool = False,
+) -> bool:
+    """Check runtime health only; declared contracts own task semantics.
+
+    A valid STOP/HOLD task may begin and end at rest.  Requiring arbitrary
+    motion here makes such scenarios fail despite satisfying every explicit
+    base, extension, and oracle contract.
+    """
+    return (
+        (frames == spec.frame_count or route_run_ended_early)
+        and final_speed_mps is not None
+        and not collision_seen
+        and command_finished
+        and _runtime_health_completed(safety_reasons)
+    )
+
+
+def _c_perception_safety_reason(c_safety_state: Mapping[str, object] | None) -> str | None:
+    """Convert C fail-closed perception summaries into acceptance evidence."""
+    if not c_safety_state:
+        return None
+    action = str(c_safety_state.get("recommended_action", "")).strip().upper()
+    if action not in {"FULL_BRAKE", "EMERGENCY_BRAKE"}:
+        return None
+    object_class = str(c_safety_state.get("object_class") or "HAZARD").strip().upper()
+    if object_class in {"PERSON", "PEDESTRIAN"}:
+        object_class = "PEDESTRIAN"
+    reason = str(c_safety_state.get("reason") or "FAIL_CLOSED").strip().upper()
+    reason = "".join(char if char.isalnum() else "_" for char in reason).strip("_")
+    return f"C_FRONT_{object_class}_{reason or 'FAIL_CLOSED'}"
+
+
+def _c_safety_speed_cap_mps(c_safety_state: Mapping[str, object] | None) -> float | None:
+    """Accept only an explicit finite C-side temporary speed cap.
+
+    A cap is intentionally transient: it is applied to the current control
+    step's route reference and never overwrites the driver's requested speed
+    or command FSM state.  D still arbitrates the resulting control.
+    """
+    if not c_safety_state:
+        return None
+    if str(c_safety_state.get("recommended_action", "")).upper() != "SLOW_DOWN":
+        return None
+    candidate = c_safety_state.get("recommended_speed_cap_mps")
+    if type(candidate) not in (int, float) or isinstance(candidate, bool):
+        return None
+    cap = float(candidate)
+    return cap if math.isfinite(cap) and cap >= 0.0 else None
+
+
+def _single_sensor_fault_speed_cap_mps(
+    active_sensor_faults: set[str],
+    nominal_speed_mps: float,
+) -> float | None:
+    """Cap speed while exactly one primary perception sensor remains unavailable."""
+    affected = {str(item) for item in active_sensor_faults}.intersection({"front_rgb", "lidar"})
+    if len(affected) != 1:
+        return None
+    nominal = max(0.0, float(nominal_speed_mps))
+    return min(nominal, DEFAULT_STRATEGY.sensor_fault.single_sensor_speed_cap_mps)
+
+
+def _c_speed_cap_control_override(
+    current_speed_mps: float,
+    speed_cap_mps: float | None,
+) -> dict[str, float] | None:
+    """Return a D-arbitrated braking request when a temporary C cap is exceeded."""
+    if speed_cap_mps is None or not math.isfinite(current_speed_mps):
+        return None
+    excess = float(current_speed_mps) - speed_cap_mps
+    policy = DEFAULT_STRATEGY.sensor_fault
+    if excess <= policy.speed_cap_tolerance_mps:
+        return None
+    # The request is deliberately bounded and remains a raw input to D; it is
+    # not an alternate control owner.  A large excess requires prompt braking
+    # because the cap was issued from an aligned VRU observation.
+    brake = min(1.0, policy.speed_cap_base_brake + policy.speed_cap_brake_gain * excess)
+    return {"throttle": 0.0, "brake": brake, "steer": 0.0}
+
+
+def _expected_safety_completed(
+    spec: ScenarioSpec,
+    *,
+    frames: int,
+    final_speed_mps: float | None,
+    collision_seen: bool,
+    safety_reasons: set[str],
+    route_run_ended_early: bool = False,
+) -> bool | None:
+    """Evaluate scenario contracts whose success is an intentional D intervention."""
+    expected = spec.expected
+    requires_override = expected.get("expected_safety_override") is True
+    allows_override = expected.get("expected_safety_override_allowed") is True
+    requires_route_event = expected.get("expected_route_deviation_event") is True
+    requires_emergency = expected.get("must_emergency_brake") is True
+    if not (requires_override or allows_override or requires_route_event or requires_emergency):
+        return None
+    if (
+        (frames != spec.frame_count and not route_run_ended_early)
+        or final_speed_mps is None
+        or collision_seen
+    ):
+        return False
+    meaningful = {reason for reason in safety_reasons if reason not in {"NONE", "PERCEPTION_STARTUP_GRACE"}}
+    if requires_override and not meaningful:
+        return False
+    if allows_override and not _runtime_health_completed(safety_reasons):
+        return False
+    if requires_route_event and not any("ROUTE_DEVIATION" in reason for reason in meaningful):
+        return False
+    if requires_emergency and not (
+        any("TTC" in reason or "EMERGENCY" in reason for reason in meaningful)
+        or final_speed_mps <= float(expected.get("stop_speed_threshold_mps", 0.3))
+    ):
+        return False
+    tokens = expected.get("expected_reason_contains", [])
+    if isinstance(tokens, list) and tokens:
+        joined = " ".join(meaningful).lower()
+        if not any(str(token).lower() in joined for token in tokens):
+            return False
+    return True
+
+
+def _scenario_raw_control_fault(spec: ScenarioSpec | None, elapsed_s: float) -> dict[str, object] | None:
+    """Build the one-shot pre-D fault required by D05/D06 contracts."""
+    if spec is None or elapsed_s < 5.0:
+        return None
+    expected = spec.expected
+    reason_tokens = {
+        str(token).strip().lower()
+        for token in expected.get("expected_reason_contains", ())
+    }
+    if (
+        expected.get("final_control_must_be_finite") is True
+        and reason_tokens.intersection({"invalid", "nan"})
+    ):
+        return {"throttle": 0.0, "brake": 0.0, "steer": "NaN", "fault_injected": True}
+    if (
+        expected.get("final_control_no_throttle_brake_overlap") is True
+        and reason_tokens.intersection({"throttle", "brake", "conflict"})
+    ):
+        return {"throttle": 0.5, "brake": 0.5, "steer": 0.0, "fault_injected": True}
+    return None
+
+
+def _route_contract_completed(
+    spec: ScenarioSpec | None,
+    distance_to_route_end_m: float | None,
+    route_remaining_m: float | None = None,
+) -> bool | None:
+    """Evaluate explicit route-finish contracts instead of treating frame exhaustion as success."""
+    if spec is None or spec.expected.get("must_finish_route") is not True:
+        return None
+    return _route_finish_reached(
+        route_remaining_m=route_remaining_m,
+        distance_to_route_end_m=distance_to_route_end_m,
+        finish_radius_m=spec.finish_radius_m,
+    )
+
+
+def _route_finish_reached(
+    *,
+    route_remaining_m: float | None,
+    distance_to_route_end_m: float | None,
+    finish_radius_m: float,
+) -> bool:
+    """Accept the continuous endpoint without trusting a coarse waypoint alone.
+
+    Route progress remains the primary guard so that a looping route cannot finish
+    merely because it passes close to its endpoint early. Near the final few
+    samples, however, physical endpoint distance is more precise than the
+    nearest-waypoint remainder.
+    """
+    if route_remaining_m is not None and route_remaining_m <= finish_radius_m:
+        return True
+    if distance_to_route_end_m is None or distance_to_route_end_m > finish_radius_m:
+        return False
+    if route_remaining_m is None:
+        return True
+    near_end_guard_m = max(finish_radius_m * 2.0, finish_radius_m + 2.5)
+    return route_remaining_m <= near_end_guard_m
+
+
+def _route_run_can_end_early(
+    spec: ScenarioSpec | None,
+    *,
+    elapsed_s: float,
+    speed_mps: float,
+    route_remaining_m: float | None,
+    distance_to_route_end_m: float | None,
+    timeline_completed: bool,
+    command_finished: bool,
+    canonical_pending: bool,
+    deferred_command_count: int,
+    maneuver_active: bool,
+    qwen_contract_completed: bool,
+    extension_contract_completed: bool,
+    collision_seen: bool,
+    safety_reasons: set[str],
+) -> bool:
+    """End a bounded route run once its real completion contracts are terminal.
+
+    ``duration_s`` remains a fail-safe upper bound. Long routes may finish
+    earlier, but only after their declared minimum evidence duration and every
+    command/Qwen/extension lifecycle has completed.
+    """
+    if spec is None or spec.expected.get("must_finish_route") is not True:
+        return False
+    min_run_time_s = float(spec.expected.get("min_run_time_s", 0.0))
+    return (
+        elapsed_s >= min_run_time_s
+        and _route_finish_reached(
+            route_remaining_m=route_remaining_m,
+            distance_to_route_end_m=distance_to_route_end_m,
+            finish_radius_m=spec.finish_radius_m,
+        )
+        and speed_mps <= 0.15
+        and timeline_completed
+        and command_finished
+        and not canonical_pending
+        and deferred_command_count == 0
+        and not maneuver_active
+        and qwen_contract_completed
+        and extension_contract_completed
+        and not collision_seen
+        and _runtime_health_completed(safety_reasons)
+    )
+
+
+def _remaining_route_distances(
+    points: Sequence[tuple[float, float]],
+) -> tuple[float, ...]:
+    """Return distance-to-go at each route point, including repeated coordinates."""
+    if not points:
+        return ()
+    remaining = [0.0] * len(points)
+    for index in range(len(points) - 2, -1, -1):
+        remaining[index] = remaining[index + 1] + math.dist(
+            points[index], points[index + 1],
+        )
+    return tuple(remaining)
+
+
+def _distance_contract_remaining_m(
+    total_distance_m: float,
+    route_progress_m: float,
+) -> float:
+    """Return distance-to-go from independent mission progress.
+
+    A voice manoeuvre may temporarily replace the controller's local route.
+    Distance-coverage completion must not freeze on the last nearest index of
+    the replaced route.
+    """
+    total = float(total_distance_m)
+    progress = float(route_progress_m)
+    if not math.isfinite(total) or total < 0.0:
+        raise ValueError("total_distance_m must be finite and non-negative")
+    if not math.isfinite(progress) or progress < 0.0:
+        raise ValueError("route_progress_m must be finite and non-negative")
+    return max(0.0, total - progress)
+
+
+def _minimum_gap_contract_completed(spec: ScenarioSpec | None, min_gap_m: float | None) -> bool | None:
+    """Evaluate a declared front-gap floor as a hard scenario contract."""
+    if spec is None or "min_front_gap_m" not in spec.expected:
+        return None
+    required_m = float(spec.expected["min_front_gap_m"])
+    return min_gap_m is not None and min_gap_m >= required_m
+
+
+def _intentional_qwen_failure_completed(
+    spec: ScenarioSpec | None,
+    *,
+    frames: int,
+    final_speed_mps: float | None,
+    collision_seen: bool,
+) -> bool | None:
+    """Accept fail-closed system probes without requiring a valid Qwen plan."""
+    if spec is None:
+        return None
+    proposed = spec.extensions.get("proposed_acceptance", {})
+    if not isinstance(proposed, Mapping):
+        return None
+    expects_failure = any(
+        int(proposed.get(key, 0) or 0) > 0
+        for key in ("qwen_timeout_count", "qwen_invalid_result_count")
+    )
+    if not expects_failure:
+        return None
+    max_speed_mps = float(spec.expected.get("max_speed_mps", 0.5))
+    return (
+        frames == spec.frame_count
+        and final_speed_mps is not None
+        and final_speed_mps <= max_speed_mps
+        and not collision_seen
+    )
+
+
+def _route_stop_trigger_m(speed_mps: float, finish_radius_m: float, decel_mps2: float = 2.5) -> float:
+    """Choose an endpoint braking trigger that stops inside the finish radius.
+
+    Aim for the middle of the permitted standstill envelope rather than its
+    outer edge.  The margin absorbs controller and route-projection error while
+    a realistic closed-loop service deceleration still avoids stopping a long
+    route before its physical distance contract is satisfied.
+    """
+    if speed_mps < 0.0 or finish_radius_m < 0.0 or decel_mps2 <= 0.0:
+        raise ValueError("speed/finish radius must be non-negative and deceleration positive")
+    target_standstill_remaining_m = finish_radius_m * 0.5
+    return target_standstill_remaining_m + speed_mps * speed_mps / (2.0 * decel_mps2)
+
+
+def _topology_planning_distance_m(
+    remaining_contract_m: float,
+    finish_radius_m: float,
+) -> float:
+    """Keep a topology reference available until physical coverage is complete.
+
+    Ego motion can be slightly shorter than the sampled centreline because the
+    controller rounds corners.  Planning exactly the remaining distance can
+    therefore exhaust the reference before the distance tracker reaches its
+    contract.  A small proportional reserve prevents terminal speed tapering;
+    physical coverage remains the only completion metric.
+    """
+    if remaining_contract_m < 0.0 or finish_radius_m < 0.0:
+        raise ValueError("remaining contract and finish radius must be non-negative")
+    reserve_m = max(finish_radius_m * 2.0, remaining_contract_m * 0.01)
+    return remaining_contract_m + reserve_m
+
+
+def _route_recovery_hold_reference(vehicle: RuntimeVehicleState) -> RouteReference:
+    """Build a valid ego-aligned zero-speed reference while replanning is pending."""
+    yaw_rad = math.radians(vehicle.yaw_deg)
+    forward_x, forward_y = math.cos(yaw_rad), math.sin(yaw_rad)
+    points = tuple(
+        (
+            vehicle.x_m + distance_m * forward_x,
+            vehicle.y_m + distance_m * forward_y,
+        )
+        for distance_m in (0.0, 4.0, 8.0, 12.0)
+    )
+    return RouteReference(
+        points,
+        curvature_per_m=0.0,
+        target_speed_mps=0.0,
+        route_id="route-recovery-hold",
+        metadata={"temporary": True, "purpose": "safe_replan_hold"},
+    )
+
+
+def _route_local_reference_needs_refresh(
+    reference: RouteReference | None,
+    global_route: GlobalRoute,
+    route_s: float,
+    refresh_margin_m: float,
+) -> bool:
+    """Refresh a local window only when its usable forward horizon is exhausted."""
+    if reference is None:
+        return True
+    metadata = reference.metadata
+    if metadata.get("global_route_id") != global_route.reference.route_id:
+        return True
+    start_s = float(metadata.get("global_s_start_m", math.inf))
+    end_s = float(metadata.get("global_s_end_m", -1.0))
+    if route_s < start_s:
+        return True
+    return (
+        end_s < global_route.total_length_m - 1e-6
+        and route_s >= end_s - refresh_margin_m
+    )
+
+
+def _map_short_name(map_name: str) -> str:
+    return map_name.rsplit("/", maxsplit=1)[-1]
+
+
+def _map_contract_name(map_name: str) -> str:
+    short_name = _map_short_name(map_name)
+    return short_name[:-4] if short_name.lower().endswith("_opt") else short_name
+
+
+def _scenario_clean_world_on_start(spec: ScenarioSpec | None) -> bool:
+    """Return an explicit isolated-run reset policy without affecting other scenes."""
+    if spec is None:
+        return False
+    value = spec.extensions.get("clean_world_on_start", False)
+    if type(value) is not bool:
+        raise TypeError("extensions.clean_world_on_start must be bool")
+    return value
+
+
+def _build_resume_segment_spec(
+    spec: ScenarioSpec,
+    *,
+    route_progress_m: float,
+    completed_command_count: int,
+    target_speed_kph: float,
+) -> tuple[ScenarioSpec, tuple[str, ...]]:
+    """Derive a clearly labelled continuation contract from verified progress."""
+    if route_progress_m <= 0.0:
+        return spec, ()
+    if not 0 <= completed_command_count <= len(spec.commands):
+        raise ValueError("resume command count exceeds the scenario command count")
+
+    restored_phases = tuple(
+        command.phase_id
+        for command in spec.commands[:completed_command_count]
+        if command.phase_id
+    )
+    remaining_commands = spec.commands[completed_command_count:]
+    remaining_phase_ids = {
+        command.phase_id for command in remaining_commands if command.phase_id
+    }
+    remaining_actors = tuple(
+        actor for actor in spec.actors
+        if not _actor_deactivation_due(
+            actor,
+            elapsed_s=0.0,
+            route_progress_m=route_progress_m,
+        )
+    )
+    remaining_actor_ids = {
+        str(actor.get("actor_id", "")) for actor in remaining_actors
+    }
+
+    extensions = dict(spec.extensions)
+    proposed = dict(extensions.get("proposed_acceptance", {}))
+    qwen_commands = tuple(remaining_commands)
+    proposed["qwen_request_count"] = len(qwen_commands)
+    if "qwen_missing_request_count" in proposed:
+        proposed["qwen_missing_request_count"] = 0
+    proposed["expected_phase_count"] = len(remaining_commands)
+    proposed.pop("must_return_to_original_lane", None)
+    for key in (
+        "command_progress_windows_m",
+        "minimum_approach_speed_kph_by_phase",
+        "minimum_resumed_speed_kph_by_phase",
+        "phase_min_speed_ranges_kph",
+        "phase_target_speed_tolerance_kph",
+    ):
+        values = proposed.get(key)
+        if not isinstance(values, Mapping):
+            continue
+        retained = {
+            str(item_id): value for item_id, value in values.items()
+            if str(item_id) in remaining_phase_ids
+        }
+        if retained:
+            proposed[key] = retained
+        else:
+            proposed.pop(key, None)
+
+    activation_windows = proposed.get("actor_activation_progress_windows_m")
+    if isinstance(activation_windows, Mapping):
+        adjusted_windows: dict[str, object] = {}
+        for actor_id, window in activation_windows.items():
+            normalized_actor_id = str(actor_id)
+            if normalized_actor_id not in remaining_actor_ids:
+                continue
+            actor_spec = next(
+                actor for actor in remaining_actors
+                if str(actor.get("actor_id", "")) == normalized_actor_id
+            )
+            adjusted_windows[normalized_actor_id] = (
+                [route_progress_m - 1.0, route_progress_m + 1.0]
+                if _actor_activation_due(
+                    actor_spec,
+                    elapsed_s=0.0,
+                    route_progress_m=route_progress_m,
+                ) else window
+            )
+        if adjusted_windows:
+            proposed["actor_activation_progress_windows_m"] = adjusted_windows
+        else:
+            proposed.pop("actor_activation_progress_windows_m", None)
+    minimum_distances = proposed.get("minimum_actor_distances_m")
+    if isinstance(minimum_distances, Mapping):
+        retained_distances = {
+            str(actor_id): value for actor_id, value in minimum_distances.items()
+            if str(actor_id) in remaining_actor_ids
+        }
+        if retained_distances:
+            proposed["minimum_actor_distances_m"] = retained_distances
+        else:
+            proposed.pop("minimum_actor_distances_m", None)
+    for key in (
+        "required_emergency_event_ids",
+        "required_emergency_recovery_ids",
+    ):
+        actor_ids = proposed.get(key)
+        if not isinstance(actor_ids, Sequence) or isinstance(actor_ids, (str, bytes)):
+            continue
+        retained_ids = [
+            str(actor_id) for actor_id in actor_ids
+            if str(actor_id) in remaining_actor_ids
+        ]
+        if retained_ids:
+            proposed[key] = retained_ids
+        else:
+            proposed.pop(key, None)
+
+    extensions["proposed_acceptance"] = proposed
+    extensions["phase_plan"] = [
+        phase_id for phase_id in extensions.get("phase_plan", ())
+        if phase_id in remaining_phase_ids
+    ]
+    if not remaining_commands:
+        proposed.pop("all_phases_must_complete", None)
+    extensions["resume_segment"] = {
+        "route_progress_m": route_progress_m,
+        "completed_command_count": completed_command_count,
+        "target_speed_kph": target_speed_kph,
+    }
+    if not qwen_commands:
+        extensions.pop("oracle", None)
+
+    qwen_expected = None
+    if spec.qwen_expected is not None and remaining_commands:
+        qwen_expected = dict(spec.qwen_expected)
+        qwen_expected["min_calls"] = len(qwen_commands)
+        qwen_expected["max_calls"] = len(qwen_commands)
+        qwen_expected["route"] = "QWEN_PLAN"
+        qwen_expected.pop("route_counts", None)
+        expected_behaviors = (
+            {"KEEP_LANE"} if qwen_commands else set()
+        )
+        for command in qwen_commands:
+            intent = str(command.envelope.get("intent", "")).upper()
+            if intent in {"SLOW_DOWN", "YIELD"}:
+                expected_behaviors.add(intent)
+        if any(
+            str(command.envelope.get("intent", "")).upper() == "EMERGENCY_STOP"
+            for command in qwen_commands
+        ):
+            expected_behaviors.add("STOP")
+        qwen_expected["expected_behaviors"] = sorted(expected_behaviors)
+
+    return replace(
+        spec,
+        scenario_id=f"{spec.scenario_id}_RESUME_{int(round(route_progress_m))}M",
+        commands=remaining_commands,
+        actors=remaining_actors,
+        qwen_expected=qwen_expected,
+        extensions=extensions,
+    ), restored_phases
+
+
+def _select_load_map(requested_map: str, available_maps: tuple[str, ...]) -> str:
+    requested_short = _map_short_name(requested_map)
+    if requested_short.lower().endswith("_opt"):
+        return requested_map
+    optimized_short = f"{requested_short}_Opt"
+    for available in available_maps:
+        if _map_short_name(available).lower() == optimized_short.lower():
+            return optimized_short
+    return requested_map
+
+
+def _warm_up_loaded_map(world: Any, timeout_s: float) -> None:
+    """Ensure a prior interrupted synchronous run cannot stall map warm-up."""
+    settings = world.get_settings()
+    if bool(getattr(settings, "synchronous_mode", False)):
+        settings.synchronous_mode = False
+        settings.fixed_delta_seconds = None
+        world.apply_settings(settings)
+    try:
+        world.wait_for_tick(timeout_s)
+    except RuntimeError:
+        print("warning: map warm-up wait timed out; continuing with synchronous warm-up")
+
+
+def _import_carla_api() -> Any:
+    try:
+        return importlib.import_module("carla")
+    except ModuleNotFoundError as error:
+        if error.name != "carla":
+            raise
+
+    py_tag = f"cp{sys.version_info.major}{sys.version_info.minor}"
+    project_root = Path(__file__).resolve().parents[1]
+    candidate_roots = (
+        project_root / "simulator" / "carla0916" / "PythonAPI" / "carla" / "dist",
+        project_root.parent / "simulator" / "carla0916" / "PythonAPI" / "carla" / "dist",
+    )
+    for root in candidate_roots:
+        wheels = sorted(root.glob(f"carla-0.9.16-{py_tag}-{py_tag}-*.whl"))
+        if not wheels:
+            continue
+        wheel = wheels[0]
+        extract_root = Path("/tmp") / "carla_python_api" / wheel.stem
+        if not extract_root.exists():
+            extract_root.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(wheel) as archive:
+                archive.extractall(extract_root)
+        sys.path.insert(0, str(extract_root))
+        return importlib.import_module("carla")
+    searched = ", ".join(str(root) for root in candidate_roots)
+    raise ModuleNotFoundError(
+        f"No CARLA Python API for {py_tag}; searched {searched}. "
+        "Use Python 3.10/3.11/3.12 with the bundled CARLA 0.9.16 wheel."
+    )
+
+
+
+def _maneuver_junction_exited(
+    *,
+    junction_seen: bool,
+    current_is_junction: bool,
+    heading_change_deg: float,
+    distance_from_start_m: float,
+    behavior: str | None,
+) -> bool:
+    """Return whether an explicit turn maneuver has completed the junction.
+
+    Prefer CARLA's waypoint junction transition when it is available.  Some
+    valid turns do not expose a reliable ``is_junction`` transition, so an
+    explicit TURN_LEFT/TURN_RIGHT step may use a conservative geometric
+    fallback after a substantial heading change and forward displacement.
+    """
+    if (
+        junction_seen
+        and not current_is_junction
+        and heading_change_deg >= 25.0
+    ):
+        return True
+
+    return (
+        behavior in {"TURN_LEFT", "TURN_RIGHT"}
+        and not current_is_junction
+        and heading_change_deg >= 70.0
+        and distance_from_start_m >= 8.0
+    )
+
+
+def run(args: argparse.Namespace) -> None:
+    driving_policy = load_driving_policy(getattr(args, "driving_policy", None))
+    args.driving_policy = str(driving_policy.source_path)
+    spec = ScenarioSpec.load(args.scenario_file) if args.scenario_file else None
+    resume_progress_m = float(getattr(args, "resume_route_progress_m", 0.0) or 0.0)
+    resume_command_count = int(getattr(args, "resume_command_count", 0) or 0)
+    resume_target_speed_kph = float(getattr(args, "resume_target_speed_kph", 40.0))
+    restored_terminal_phases: tuple[str, ...] = ()
+    if resume_progress_m > 0.0:
+        if spec is None:
+            raise ValueError("--resume-route-progress-m requires --scenario-file")
+        spec, restored_terminal_phases = _build_resume_segment_spec(
+            spec,
+            route_progress_m=resume_progress_m,
+            completed_command_count=resume_command_count,
+            target_speed_kph=resume_target_speed_kph,
+        )
+    extension_runtime = (
+        ScenarioExtensionRuntime(spec.extensions)
+        if spec is not None and spec.extensions
+        else None
+    )
+    qwen_scenario_monitor = (
+        QwenScenarioMonitor(spec.qwen_expected)
+        if spec is not None and spec.qwen_expected is not None
+        else None
+    )
+    if extension_runtime is not None:
+        for phase_id in restored_terminal_phases:
+            extension_runtime.restore_terminal_phase(phase_id)
+    if args.validate_scenario_only:
+        if spec is None:
+            raise ValueError("--validate-scenario-only requires --scenario-file")
+        print(json.dumps({
+            "scenario_id": spec.scenario_id,
+            "official_level": spec.official_level,
+            "map": spec.map_name,
+            "weather": spec.weather,
+            "fixed_delta_s": spec.fixed_delta_s,
+            "duration_s": spec.duration_s,
+            "frame_count": spec.frame_count,
+            "route_points": len(spec.local_route_xy_m),
+            "commands": len(spec.commands),
+            "actors": len(spec.actors),
+            "validation": "PASS",
+        }, ensure_ascii=False, indent=2))
+        return
+
+    if (
+        extension_runtime is not None
+        and isinstance(spec.extensions.get("qwen_policy"), Mapping)
+        and spec.extensions["qwen_policy"].get("required_for_every_voice_event") is True
+        and not args.qwen_service_url
+    ):
+        raise ValueError(
+            "acceptance-suite v2 requires --qwen-service-url so every voice event is audited by Qwen"
+        )
+
+    qwen_enabled = bool(getattr(args, "qwen_remote", False))
+    qwen_voice_text = _qwen_voice_command(args, spec) if qwen_enabled else ""
+    qwen_desired_speed_mps = (
+        _qwen_desired_speed_mps(args, spec) if qwen_enabled else float(args.default_speed_mps)
+    )
+    qwen_image_root = Path(
+        getattr(args, "qwen_image_dir", "artifacts/runtime/qwen_live")
+    ).expanduser().resolve()
+    if args.live_mic and (args.audio or args.command_json or args.scenario_file):
+        raise ValueError("--live-mic cannot be combined with --audio, --command-json, or --scenario-file")
+
+    carla = _import_carla_api()
+
+    detector = None
+    detector_model = getattr(args, "rgb_detector_model", None)
+    if detector_model:
+        if args.perception_mode != "sensors":
+            raise ValueError("--rgb-detector-model requires --perception-mode sensors")
+        detector = OnnxYoloDetector(
+            detector_model,
+            confidence_threshold=args.rgb_detector_confidence,
+            iou_threshold=args.rgb_detector_iou,
+            input_size=args.rgb_detector_input_size,
+        )
+
+    if spec is not None:
+        args.map = None if args.use_current_map else spec.map_name
+        args.fixed_delta_s = spec.fixed_delta_s
+        args.frames = spec.frame_count
+        if args.max_frames is not None:
+            args.frames = min(args.frames, args.max_frames)
+        args.scenario = spec.scenario_id
+        args.scenario_difficulty = spec.official_level
+        args.evidence_seed = spec.seed if args.seed is None else args.seed
+        declared_sensor_profile = spec.extensions.get("sensor_profile")
+        if declared_sensor_profile is not None:
+            # Scene-owned sensor requirements are authoritative.  Resolving
+            # the profile here also fails before CARLA actor creation if a
+            # contract names an unavailable profile.
+            sensor_specs_for_profile(str(declared_sensor_profile))
+            args.sensor_profile = str(declared_sensor_profile)
+        if args.seed is not None:
+            args.spawn_index = args.seed
+        owns_real_scene_actor = bool(
+            _scenario_actors(spec, "vehicle")
+            or _scenario_actor(spec, "traffic_light") is not None
+            or _scenario_walkers(spec)
+            or _scenario_static_props(spec)
+        )
+        requires_sensor_grounded_control = (
+            args.perception_mode == "sensors"
+            and (owns_real_scene_actor or spec.requires_qwen_semantics)
+        )
+        if requires_sensor_grounded_control and args.scenario_facts_mode != "perception":
+            print(
+                "scenario facts: forcing perception mode for sensor-grounded control",
+                flush=True,
+            )
+            args.scenario_facts_mode = "perception"
+
+    recorder = _evidence_recorder(args, spec)
+    ego: Any | None = None
+    frames_completed = 0
+    route_run_ended_early = False
+    final_state: RuntimeVehicleState | None = None
+    final_scene: PerceptionFrame | None = None
+    min_gap_m: float | None = None
+    collision_seen = False
+    safety_reasons: set[str] = set()
+    raw_control_fault_injected = False
+    final_route_end_distance_m: float | None = None
+    final_route_remaining_m: float | None = None
+    max_speed_mps = 0.0
+    runtime: ControlRuntime | None = None
+    last_sim_time_s = 0.0
+    scenario_traffic_light: Any | None = None
+    live_voice: LiveVoiceSource | None = None
+    canonical_orchestrator: PipelineOrchestrator | None = None
+    canonical_bridge: CanonicalRuntimeBridge | None = None
+    qwen_image_stager: QwenImageStager | None = None
+    qwen_client: QwenServiceClient | None = None
+    qwen_pre_submit_timing: dict[str, dict[str, float]] = {}
+    qwen_target_aliases_by_command: dict[str, dict[str, str]] = {}
+    deferred_commands: list[_DeferredCommand] = []
+    traffic_light_original_state: Any | None = None
+    traffic_light_original_frozen: bool | None = None
+    qwen_backend: OpenAICompatibleQwenVLBackend | None = None
+    qwen_adapter: StrictQwenVLAdapter | None = None
+    qwen_bridge: AsyncQwenDecisionBridge | None = None
+    qwen_submitted = False
+    qwen_ready = False
+    qwen_terminal_recorded = False
+    qwen_request_id: str | None = None
+    maneuver_fsm = ManeuverFSM()
+    maneuver_lane_ids: dict[str, str] = {}
+    maneuver_start_xy: tuple[float, float] | None = None
+    maneuver_step_start_xy: tuple[float, float] | None = None
+    maneuver_start_yaw_deg: float | None = None
+    maneuver_junction_seen = False
+    maneuver_target_id: str | None = None
+    maneuver_target_aliases: dict[str, str] = {}
+    maneuver_target_seen = False
+    maneuver_target_pass_after_m: float | None = None
+    maneuver_route_steps_applied: set[str] = set()
+    maneuver_mission_route: RouteReference | None = None
+    maneuver_mission_progress_m: float | None = None
+    maneuver_persistent_speed_mps: float | None = None
+    maneuver_return_destination_xy: tuple[float, float] | None = None
+    scenario_actor_progress_trackers: dict[str, RouteProgressTracker] = {}
+    dynamic_out_and_back = _scenario_uses_dynamic_out_and_back(spec)
+    lane_change_profile = _scenario_lane_change_profile(spec)
+    qwen_status = (
+        "NOT_SUBMITTED" if qwen_enabled
+        else "CANONICAL_READY" if args.qwen_service_url
+        else "DISABLED"
+    )
+    ego_standstill_since_s: float | None = None
+    extension_frame: Any | None = None
+    try:
+        if qwen_enabled:
+            qwen_backend = OpenAICompatibleQwenVLBackend(
+                base_url=args.qwen_base_url,
+                api_key=os.environ.get("QWEN_API_KEY", "unused"),
+                model=args.qwen_model,
+                timeout_s=args.qwen_request_timeout_s,
+                max_tokens=args.qwen_max_tokens,
+                image_max_side=args.qwen_image_max_side,
+                jpeg_quality=args.qwen_jpeg_quality,
+            )
+            qwen_adapter = StrictQwenVLAdapter(
+                qwen_backend,
+                image_root=qwen_image_root,
+            )
+            qwen_bridge = AsyncQwenDecisionBridge(
+                qwen_adapter.infer,
+                ttl_s=args.qwen_decision_ttl_s,
+                max_inference_s=args.qwen_max_inference_s,
+                command_ttl_s=args.qwen_command_ttl_s,
+            )
+            print(
+                "qwen stage: remote backend ready "
+                f"base_url={args.qwen_base_url} model={args.qwen_model}",
+                flush=True,
+            )
+        if args.live_mic:
+            live_voice = LiveVoiceSource(LiveVoiceConfig(source=args.live_mic_source))
+            print("live voice: preloading ASR models", flush=True)
+            print(f"live voice preload: {live_voice.preload()}", flush=True)
+        client = carla.Client(args.host, args.port)
+        client.set_timeout(args.timeout_s)
+        world = client.get_world()
+        if args.map:
+            current_map = world.get_map().name
+            requested_map = args.map
+            if (
+                _scenario_clean_world_on_start(spec)
+                or _map_contract_name(current_map).lower()
+                != _map_contract_name(requested_map).lower()
+            ):
+                load_map = _select_load_map(requested_map, tuple(client.get_available_maps()))
+                world = client.load_world(load_map)
+        if spec is not None:
+            weather = getattr(carla.WeatherParameters, spec.weather, None)
+            if weather is None:
+                raise ValueError(f"CARLA has no WeatherParameters preset named {spec.weather!r}")
+            if extension_runtime is not None:
+                for name, value in extension_runtime.weather_parameters.items():
+                    if not hasattr(weather, name):
+                        raise ValueError(f"CARLA weather has no parameter {name!r}")
+                    setattr(weather, name, value)
+            world.set_weather(weather)
+        world_map = world.get_map()
+        stale_actor_count = _cleanup_stale_scenario_actors(world, spec)
+        if stale_actor_count:
+            print(
+                f"scenario cleanup: removed {stale_actor_count} stale owned actor(s)",
+                flush=True,
+            )
+        blueprints = world.get_blueprint_library().filter("vehicle.*model3*")
+        if not blueprints:
+            raise RuntimeError("no Tesla Model 3 vehicle blueprint is available")
+        bp = blueprints[0]
+        # Give the ego the same ownership prefix as every other actor created
+        # by this runner.  If a suite process is interrupted before
+        # CarlaSession.__exit__ can clean up, the next scenario can then remove
+        # the orphan instead of colliding with an unowned ``autopilot`` ego.
+        if callable(getattr(bp, "has_attribute", None)) and bp.has_attribute("role_name"):
+            bp.set_attribute("role_name", "acceptance84:ego")
+        spawn_points = world_map.get_spawn_points()
+        if not spawn_points:
+            raise RuntimeError("map has no vehicle spawn points")
+        if args.test_command_ttl_s is not None:
+            fsm_timeout_s = args.test_command_ttl_s + 1.0
+        elif spec is not None:
+            fsm_timeout_s = max(15.0, spec.duration_s + 1.0)
+        else:
+            fsm_timeout_s = 15.0
+        route_deviation_trigger_m = 3.0
+        if spec is not None and "route_deviation_trigger_m" in spec.control_policy:
+            route_deviation_trigger_m = float(
+                spec.control_policy["route_deviation_trigger_m"]
+            )
+        scenario_safety = SafetySupervisor(driving_policy.safety_config(
+            stop_line_guard_override_m=args.stop_line_guard_m,
+            route_deviation_override_m=route_deviation_trigger_m,
+        ))
+        runtime = ControlRuntime(_acceptance_lateral_controller(),
+                                 default_speed_mps=0.0 if qwen_enabled else args.default_speed_mps,
+                                 command_timeout_s=fsm_timeout_s, safety=scenario_safety)
+        if args.qwen_service_url:
+            qwen_image_stager = QwenImageStager(
+                args.qwen_image_root,
+                ref_prefix=args.qwen_image_prefix,
+            )
+            qwen_client = QwenServiceClient(
+                args.qwen_service_url,
+                timeout_s=max(0.1, args.qwen_timeout_ms / 1000.0 + 0.05),
+                request_transform=qwen_image_stager.prepare_request,
+            )
+            qwen_faults: list[Mapping[str, Any]] = []
+            if spec is not None and spec.qwen_fault is not None:
+                qwen_faults.append(spec.qwen_fault)
+            if extension_runtime is not None:
+                qwen_faults.extend(extension_runtime.qwen_faults)
+            qwen_infer = (
+                ScenarioQwenFaultInjector(
+                    qwen_client,
+                    qwen_faults,
+                    command_times_s=(
+                        tuple(item.time_s for item in spec.commands)
+                        if spec is not None else ()
+                    ),
+                )
+                if qwen_faults else qwen_client
+            )
+            # The canonical orchestrator has a single semantic route: every
+            # valid voice event is submitted to Qwen. Local D safety remains
+            # authoritative while inference is pending.
+            # JSON Schema compilation is deterministic runtime initialization,
+            # not decision work.  Compile once and share the registry so the
+            # first scored voice command does not pay Python/jsonschema import
+            # and schema compilation costs.
+            canonical_registry = InterfaceRegistry()
+            canonical_registry.warm()
+            canonical_orchestrator = PipelineOrchestrator(
+                infer=qwen_infer,
+                config=OrchestratorConfig(
+                    qwen_queue_size=args.qwen_queue_size,
+                    model_timeout_ms=args.qwen_timeout_ms,
+                    stop_line_guard_m=args.stop_line_guard_m,
+                    qwen_mode=args.qwen_mode,
+                ),
+                registry=canonical_registry,
+            )
+            canonical_bridge = CanonicalRuntimeBridge(
+                runtime, canonical_orchestrator, registry=canonical_registry,
+            )
+            print(json.dumps({
+                "record_type": "canonical_routing_ready",
+                "qwen_service_url": args.qwen_service_url,
+                "qwen_timeout_ms": args.qwen_timeout_ms,
+                "qwen_queue_size": args.qwen_queue_size,
+                "qwen_mode": args.qwen_mode,
+                "qwen_image_root": str(args.qwen_image_root),
+                "qwen_image_prefix": args.qwen_image_prefix,
+                "policy": "ALL_VOICE_QWEN_ASYNC_WITH_LOCAL_SAFETY_HOLD",
+            }, ensure_ascii=False), flush=True)
+        route_anchor = spawn_points[args.spawn_index % len(spawn_points)]
+        topology_route: RouteReference | None = None
+        global_route_manager: RouteManager | None = None
+        global_route: GlobalRoute | None = None
+        global_route_destination: Any | None = None
+        global_route_recovery: RouteRecoveryTracker | None = None
+        global_route_progress_offset_m = 0.0
+        global_route_recovery_status: str | None = None
+        global_local_reference: RouteReference | None = None
+        prevalidated_avoid_route: RouteReference | None = None
+        road_fit_required = (
+            spec is not None
+            and (
+                spec.category == "lateral_B"
+                or spec.expected.get("must_finish_route") is True
+                or spec.extensions.get("topology_route_required") is True
+            )
+        )
+        adjacent_lane_anchor_required = (
+            spec is not None and _scenario_requires_adjacent_lane_anchor(spec)
+        )
+        seeded_route_anchor = (
+            spec is not None
+            and args.seed is not None
+            and _scenario_traffic_light_distance(spec) is None
+        )
+        destination_planning = (
+            spec is not None and spec.route_planning_mode == "destination"
+        )
+        topology_coverage_planning = (
+            spec is not None and spec.route_planning_mode == "topology_coverage"
+        )
+        managed_route_planning = destination_planning or topology_coverage_planning
+        configured_anchor_index = (
+            None
+            if spec is None
+            else spec.extensions.get("route_anchor_spawn_index")
+        )
+        if configured_anchor_index is not None:
+            if (
+                isinstance(configured_anchor_index, bool)
+                or not isinstance(configured_anchor_index, int)
+            ):
+                raise TypeError(
+                    "extensions.route_anchor_spawn_index must be an integer"
+                )
+            if not 0 <= configured_anchor_index < len(spawn_points):
+                raise ValueError(
+                    "extensions.route_anchor_spawn_index is outside the map spawn list"
+                )
+            route_anchor = spawn_points[configured_anchor_index]
+        if (
+            road_fit_required or seeded_route_anchor or adjacent_lane_anchor_required
+        ) and not managed_route_planning:
+            maneuver = _scenario_anchor_maneuver(spec)
+            if configured_anchor_index is not None:
+                anchor_index = configured_anchor_index
+                topology_route = build_scenario_route_reference(
+                    world_map,
+                    spawn_points[anchor_index].location,
+                    args.default_speed_mps,
+                    maneuver=maneuver,
+                    distance_m=_scenario_route_distance_m(spec),
+                )
+                anchor_score = 0.0
+            else:
+                anchor_index, topology_route, anchor_score = select_topology_route_anchor(
+                    world_map,
+                    spawn_points,
+                    maneuver=maneuver,
+                    target_speed_mps=args.default_speed_mps,
+                    distance_m=_scenario_route_distance_m(spec),
+                    forbidden_points_xy=_traffic_light_stop_points(world),
+                    route_validator=(
+                        (
+                            lambda candidate: _scenario_actor_lanes_fit_route(
+                                carla, world_map, candidate, spec,
+                            )
+                        )
+                        if adjacent_lane_anchor_required else None
+                    ),
+                )
+            route_anchor = spawn_points[anchor_index]
+            seed_offset_m = float(getattr(args, "evidence_seed", 0) % 5) * 2.0
+            if seeded_route_anchor and seed_offset_m > 0.0:
+                anchor_waypoint = world_map.get_waypoint(
+                    route_anchor.location, project_to_road=True,
+                )
+                advanced = tuple(anchor_waypoint.next(seed_offset_m)) if anchor_waypoint else ()
+                if advanced:
+                    advanced_transform = advanced[0].transform
+                    advanced_transform.location.z = route_anchor.location.z
+                    route_anchor = advanced_transform
+            if adjacent_lane_anchor_required or dynamic_out_and_back:
+                # The adjacent lane is needed only as a real occupancy target;
+                # keep ego's reference route in its original lane so a rejected
+                # lane-change request cannot move the vehicle implicitly.  S2's
+                # out-and-back route is also generated only when the compiled
+                # Qwen lane-change step starts; the startup topology probe must
+                # never become an uncommanded lane change.
+                topology_route = build_route_reference(
+                    world_map,
+                    route_anchor.location,
+                    args.default_speed_mps,
+                    distance_m=_scenario_route_distance_m(spec),
+                )
+            if any(
+                str(item.envelope.get("intent", "")).upper() == "AVOID_OBSTACLE"
+                for item in spec.commands
+            ) and not dynamic_out_and_back:
+                # Avoidance must leave the blocked corridor earlier than a
+                # comfort-oriented ordinary lane change.  The topology anchor
+                # has already proved that the adjacent lane is legal.
+                prevalidated_avoid_route = RouteReference(
+                    spec.world_route(
+                        route_anchor.location.x,
+                        route_anchor.location.y,
+                        route_anchor.rotation.yaw,
+                    ),
+                    0.0,
+                    args.default_speed_mps,
+                )
+                topology_route = build_route_reference(
+                    world_map,
+                    route_anchor.location,
+                    args.default_speed_mps,
+                    distance_m=_scenario_route_distance_m(spec),
+                )
+            print(
+                f"route anchor: spawn_index={anchor_index} maneuver={maneuver} "
+                f"topology_score={anchor_score:.3f} seed_offset_m={seed_offset_m:.1f}"
+            )
+        if destination_planning:
+            assert spec is not None
+            destination_xy = spec.world_destination(
+                route_anchor.location.x,
+                route_anchor.location.y,
+                route_anchor.rotation.yaw,
+            )
+            assert destination_xy is not None
+            recovery_policy = RouteRecoveryPolicy.from_mapping(
+                spec.route_contract.get("recovery"),
+            )
+            global_route_manager = RouteManager(
+                world_map,
+                sample_step_m=spec.route_resample_interval_m,
+                finish_radius_m=spec.finish_radius_m,
+                off_route_threshold_m=recovery_policy.off_route_threshold_m,
+            )
+            global_route_recovery = RouteRecoveryTracker(
+                recovery_policy,
+            )
+            global_route_destination = carla.Location(
+                x=destination_xy[0],
+                y=destination_xy[1],
+                z=route_anchor.location.z,
+            )
+            try:
+                global_route = global_route_manager.plan(
+                    route_anchor,
+                    global_route_destination,
+                    args.default_speed_mps,
+                )
+            except RoutePlanningError as error:
+                print(json.dumps({
+                    "record_type": "route_planning_failed",
+                    "reason": error.code,
+                    "detail": error.detail,
+                }, ensure_ascii=False), flush=True)
+                raise
+            topology_route = global_route.reference
+            print(json.dumps({
+                "record_type": "global_route_ready",
+                "planner": topology_route.metadata.get("planner"),
+                "planning_mode": "destination",
+                **global_route.validation.to_dict(),
+            }, ensure_ascii=False), flush=True)
+        elif topology_coverage_planning:
+            assert spec is not None
+            recovery_policy = RouteRecoveryPolicy.from_mapping(
+                spec.route_contract.get("recovery"),
+            )
+            global_route_manager = RouteManager(
+                world_map,
+                sample_step_m=spec.route_resample_interval_m,
+                finish_radius_m=spec.finish_radius_m,
+                off_route_threshold_m=recovery_policy.off_route_threshold_m,
+            )
+            global_route_recovery = RouteRecoveryTracker(recovery_policy)
+            try:
+                global_route = global_route_manager.plan_distance(
+                    route_anchor,
+                    _topology_planning_distance_m(
+                        spec.route_distance_contract_m,
+                        spec.finish_radius_m,
+                    ),
+                    args.default_speed_mps,
+                )
+            except RoutePlanningError as error:
+                print(json.dumps({
+                    "record_type": "route_planning_failed",
+                    "reason": error.code,
+                    "detail": error.detail,
+                }, ensure_ascii=False), flush=True)
+                raise
+            global_route_destination = carla.Location(
+                x=global_route.destination_xy_m[0],
+                y=global_route.destination_xy_m[1],
+                z=route_anchor.location.z,
+            )
+            topology_route = global_route.reference
+            print(json.dumps({
+                "record_type": "global_route_ready",
+                "planner": topology_route.metadata.get("planner"),
+                "planning_mode": "topology_coverage",
+                "requested_distance_m": spec.route_distance_contract_m,
+                **global_route.validation.to_dict(),
+            }, ensure_ascii=False), flush=True)
+        traffic_light_distance = _scenario_traffic_light_distance(spec)
+        if traffic_light_distance is not None:
+            seeded_stop_distance_m = traffic_light_distance + (
+                (getattr(args, "evidence_seed", 0) % 5) - 2
+            ) * 0.5
+            scenario_traffic_light, route_anchor = _traffic_light_scenario_anchor(
+                world,
+                world_map,
+                carla,
+                seeded_stop_distance_m,
+            )
+            traffic_light_original_state = scenario_traffic_light.get_state()
+            frozen_getter = getattr(scenario_traffic_light, "is_frozen", None)
+            traffic_light_original_frozen = (
+                bool(frozen_getter()) if callable(frozen_getter) else False
+            )
+            configured_light = _scenario_actor(spec, "traffic_light")
+            assert configured_light is not None
+            configured_state = str(configured_light.get("state", "RED")).strip().title()
+            desired_state = getattr(carla.TrafficLightState, configured_state, None)
+            if desired_state is None:
+                raise ValueError(
+                    f"CARLA has no TrafficLightState {configured_state!r}"
+                )
+            scenario_traffic_light.set_state(desired_state)
+            scenario_traffic_light.freeze(True)
+            print(
+                "scenario actor: bound real traffic light "
+                f"id={getattr(scenario_traffic_light, 'id', 'unknown')} "
+                f"state={configured_state.upper()} "
+                f"stop_distance_m={seeded_stop_distance_m:.2f}",
+                flush=True,
+            )
+            if managed_route_planning:
+                # Traffic-light binding chooses the only start pose that can
+                # satisfy the declared stop-line distance.  Rebuild a managed
+                # route from that final pose; retaining the provisional route
+                # from the CLI/default spawn gives ego a reference on another
+                # road and fails before any semantic event can run.
+                assert global_route_manager is not None
+                if topology_coverage_planning:
+                    global_route = global_route_manager.plan_distance(
+                        route_anchor,
+                        _topology_planning_distance_m(
+                            spec.route_distance_contract_m,
+                            spec.finish_radius_m,
+                        ),
+                        args.default_speed_mps,
+                    )
+                else:
+                    destination_xy = spec.world_destination(
+                        route_anchor.location.x,
+                        route_anchor.location.y,
+                        route_anchor.rotation.yaw,
+                    )
+                    assert destination_xy is not None
+                    global_route = global_route_manager.plan(
+                        route_anchor,
+                        carla.Location(
+                            x=destination_xy[0],
+                            y=destination_xy[1],
+                            z=route_anchor.location.z,
+                        ),
+                        args.default_speed_mps,
+                    )
+                global_route_destination = carla.Location(
+                    x=global_route.destination_xy_m[0],
+                    y=global_route.destination_xy_m[1],
+                    z=route_anchor.location.z,
+                )
+                topology_route = global_route.reference
+                print(json.dumps({
+                    "record_type": "global_route_reanchored_to_signal",
+                    "planner": topology_route.metadata.get("planner"),
+                    "route_length_m": global_route.total_length_m,
+                    "traffic_light_id": getattr(
+                        scenario_traffic_light, "id", "unknown",
+                    ),
+                }, ensure_ascii=False), flush=True)
+        spawn_transform = route_anchor
+        if spec is not None:
+            local_x, local_y, local_z, local_yaw = spec.ego_spawn_xyzyaw
+            anchor_yaw_rad = math.radians(route_anchor.rotation.yaw)
+            spawn_transform = carla.Transform(
+                carla.Location(
+                    x=route_anchor.location.x + local_x * math.cos(anchor_yaw_rad) - local_y * math.sin(anchor_yaw_rad),
+                    y=route_anchor.location.y + local_x * math.sin(anchor_yaw_rad) + local_y * math.cos(anchor_yaw_rad),
+                    z=route_anchor.location.z + max(0.0, local_z - 0.5),
+                ),
+                carla.Rotation(
+                    pitch=route_anchor.rotation.pitch,
+                    yaw=route_anchor.rotation.yaw + local_yaw,
+                    roll=route_anchor.rotation.roll,
+                ),
+            )
+        spectator_transform = carla.Transform(
+            carla.Location(x=spawn_transform.location.x, y=spawn_transform.location.y,
+                           z=spawn_transform.location.z + 25.0),
+            carla.Rotation(pitch=-45.0, yaw=spawn_transform.rotation.yaw),
+        )
+        world.get_spectator().set_transform(spectator_transform)
+        _warm_up_loaded_map(world, args.timeout_s)
+
+        with CarlaSession(world, fixed_delta_seconds=args.fixed_delta_s) as session:
+            for _ in range(args.warmup_frames):
+                session.tick(args.timeout_s)
+            ego = session.spawn_ego(bp, spawn_transform)
+            ego.set_simulate_physics(True)
+            # A freshly spawned actor has autopilot disabled. Calling
+            # set_autopilot(False) still asks CARLA 0.9.16 to create/connect a
+            # Traffic Manager server and can fail when its default port is
+            # already occupied, even though this runner never uses TM.
+            session.tick(args.timeout_s)
+            start_location = ego.get_location()
+            origin = (start_location.x, start_location.y, start_location.z)
+
+            scenario_spawn_route: RouteReference | None = None
+            if spec is not None:
+                prepared_route = prepare_scenario_route(
+                    spec,
+                    route_anchor,
+                    runtime.requested_speed_mps,
+                    topology_route,
+                )
+                scenario_spawn_route = prepared_route.reference
+                print(json.dumps({
+                    "record_type": "route_quality",
+                    **prepared_route.quality.to_dict(),
+                }, ensure_ascii=False), flush=True)
+                if resume_progress_m > 0.0:
+                    resume_pose = route_pose_at_s(
+                        scenario_spawn_route.points_xy_m,
+                        resume_progress_m,
+                    )
+                    resume_waypoint = world_map.get_waypoint(
+                        carla.Location(x=resume_pose.x_m, y=resume_pose.y_m, z=0.0),
+                        project_to_road=True,
+                    )
+                    resume_z_m = (
+                        float(resume_waypoint.transform.location.z) + 0.5
+                        if resume_waypoint is not None else spawn_transform.location.z
+                    )
+                    ego.set_transform(carla.Transform(
+                        carla.Location(
+                            x=resume_pose.x_m,
+                            y=resume_pose.y_m,
+                            z=resume_z_m,
+                        ),
+                        carla.Rotation(
+                            pitch=(resume_waypoint.transform.rotation.pitch
+                                   if resume_waypoint is not None else 0.0),
+                            yaw=resume_pose.yaw_deg,
+                            roll=(resume_waypoint.transform.rotation.roll
+                                  if resume_waypoint is not None else 0.0),
+                        ),
+                    ))
+                    ego.set_target_velocity(carla.Vector3D(0.0, 0.0, 0.0))
+                    ego.set_target_angular_velocity(carla.Vector3D(0.0, 0.0, 0.0))
+                    runtime.requested_speed_mps = resume_target_speed_kph / 3.6
+                    scenario_spawn_route = replace(
+                        scenario_spawn_route,
+                        target_speed_mps=runtime.requested_speed_mps,
+                    )
+                    session.tick(args.timeout_s)
+                    start_location = ego.get_location()
+                    origin = (start_location.x, start_location.y, start_location.z)
+                    print(json.dumps({
+                        "record_type": "route_resume_reconstructed",
+                        "route_progress_m": resume_pose.s_m,
+                        "completed_command_count": resume_command_count,
+                        "remaining_command_count": len(spec.commands),
+                        "target_speed_kph": resume_target_speed_kph,
+                    }, ensure_ascii=False), flush=True)
+
+            scenario_lead = None
+            scenario_vehicles: list[tuple[Any, Mapping[str, object]]] = []
+            scenario_walkers: list[tuple[Any, Mapping[str, object], Any]] = []
+            scenario_props: list[tuple[Any, Mapping[str, object]]] = []
+            spawned_scenario_actor_types: list[str] = []
+            pending_vehicle_specs: list[Mapping[str, object]] = []
+            pending_walker_specs: list[Mapping[str, object]] = []
+            pending_prop_specs: list[Mapping[str, object]] = []
+            for vehicle_spec in _scenario_actors(spec, "vehicle"):
+                if (
+                    vehicle_spec.get("activation_trigger") is not None
+                    and not getattr(args, "spawn_all_scenario_actors", False)
+                ):
+                    pending_vehicle_specs.append(vehicle_spec)
+                    continue
+                actor_route, actor_spawn_spec = _active_actor_route_context(
+                    vehicle_spec,
+                    scenario_spawn_route,
+                    global_route,
+                    global_route_progress_offset_m,
+                )
+                vehicle = _spawn_scenario_vehicle(
+                    session, world, carla, ego, bp, actor_spawn_spec,
+                    route=actor_route,
+                    seed=spec.seed if spec is not None else 0,
+                )
+                scenario_vehicles.append((vehicle, vehicle_spec))
+                spawned_scenario_actor_types.append("vehicle")
+            for walker_spec in _scenario_walkers(spec):
+                if (
+                    walker_spec.get("activation_trigger") is not None
+                    and not getattr(args, "spawn_all_scenario_actors", False)
+                ):
+                    pending_walker_specs.append(walker_spec)
+                    continue
+                actor_route, actor_spawn_spec = _active_actor_route_context(
+                    walker_spec,
+                    scenario_spawn_route,
+                    global_route,
+                    global_route_progress_offset_m,
+                )
+                walker, target = _spawn_scenario_walker(
+                    session, world, carla, ego, actor_spawn_spec,
+                    route=actor_route,
+                    seed=spec.seed if spec is not None else 0,
+                )
+                scenario_walkers.append((walker, walker_spec, target))
+                spawned_scenario_actor_types.append(
+                    str(walker_spec.get("type", "walker.pedestrian")).lower()
+                )
+            for prop_spec in _scenario_static_props(spec):
+                if (
+                    prop_spec.get("activation_trigger") is not None
+                    and not getattr(args, "spawn_all_scenario_actors", False)
+                ):
+                    pending_prop_specs.append(prop_spec)
+                    continue
+                actor_route, actor_spawn_spec = _active_actor_route_context(
+                    prop_spec,
+                    scenario_spawn_route,
+                    global_route,
+                    global_route_progress_offset_m,
+                )
+                prop = _spawn_scenario_static_prop(
+                    session, world, carla, ego, actor_spawn_spec,
+                    route=actor_route,
+                    seed=spec.seed if spec is not None else 0,
+                )
+                scenario_props.append((prop, prop_spec))
+                spawned_scenario_actor_types.append(
+                    str(prop_spec.get("type", "static.prop")).lower()
+                )
+            if scenario_vehicles or scenario_walkers or scenario_props:
+                # CARLA may return a default transform until the first world
+                # tick after spawn. Occupancy evidence must use settled poses.
+                session.tick(args.timeout_s)
+            scenario_lead = _select_scenario_lead(
+                ego, [vehicle for vehicle, _ in scenario_vehicles],
+            )
+            if (
+                extension_runtime is not None
+                and spec is not None
+                and _scenario_requires_target_lane_occupancy(spec)
+            ):
+                extension_runtime.note_target_lane_occupancy(
+                    _scenario_target_lane_occupied_count(
+                        world_map, ego, scenario_vehicles, _scenario_maneuver(spec),
+                    )
+                )
+            if args.perception_mode in {"sensors", "world"} and args.scenario in {"follow", "emergency"}:
+                lead_distance = args.lead_distance_m if args.scenario == "follow" else args.emergency_distance_m
+                scenario_lead = _spawn_static_lead(session, world, world_map, ego, bp, lead_distance)
+
+            perception_bridge = None
+            world_events: EventLedger | None = None
+            if args.perception_mode == "sensors":
+                sensor_profile = getattr(args, "sensor_profile", "default")
+                print(
+                    f"sensor stage: attaching profile={sensor_profile}",
+                    flush=True,
+                )
+                sensors = attach_default_sensors(
+                    session, world, ego, carla,
+                    specs=sensor_specs_for_profile(sensor_profile),
+                    sensor_tick_s=args.fixed_delta_s,
+                )
+                c_fusion = ConservativeSensorFusion(
+                    driving_policy.perception_parameters(
+                        visual_confidence_override=args.c_visual_confidence_threshold,
+                    )
+                )
+                perception_bridge = CarlaPerceptionBridge(
+                    world, world_map, ego, session, sensors,
+                    detector=detector, fusion=c_fusion,
+                )
+                print("sensor stage: warming up RGB/LiDAR", flush=True)
+                _warm_up_sensor_bridge(
+                    session, world, perception_bridge,
+                    attempts=args.sensor_warmup_frames,
+                    tick_timeout_s=args.timeout_s,
+                    sensor_timeout_s=args.sensor_timeout_s,
+                )
+                print("sensor stage: RGB/LiDAR ready", flush=True)
+            elif args.perception_mode == "world":
+                world_events = attach_event_sensors(
+                    session, world, ego, carla,
+                ).events
+
+            if live_voice is not None:
+                live_voice.start()
+                print(
+                    "live voice: READY - speak a command, then pause briefly",
+                    flush=True,
+                )
+
+            # Do not accept a command until required sensors are ready. This
+            # guarantees that every accepted command can enter the frame loop
+            # and receive an auditable terminal status.
+            initial = world.get_snapshot()
+            last_sim_time_s = initial.timestamp.elapsed_seconds
+            episode_start_s = last_sim_time_s
+            timeline = (
+                CommandTimeline(spec.commands)
+                if spec is not None and not qwen_enabled
+                else None
+            )
+            command: dict[str, object] | None
+            if qwen_enabled:
+                command = None
+            elif spec is None and live_voice is None:
+                try:
+                    command = _load_command(args)
+                except Exception as error:
+                    command = _rejected_load_envelope(error)
+                    print(f"warning: voice input rejected without changing vehicle control: {error}")
+            else:
+                command = None
+            adapted = None
+            if command is not None:
+                received_ns = time.monotonic_ns()
+                if canonical_bridge is not None:
+                    deferred_commands.append(_DeferredCommand(
+                        dict(command), received_ns, "INITIAL",
+                    ))
+                else:
+                    adapted = runtime.submit_voice(command, now_s=initial.timestamp.elapsed_seconds)
+                    if recorder is not None:
+                        recorder.record_command(
+                            command,
+                            disposition="ACCEPTED" if adapted.control_authorized else "REJECTED_NO_OP",
+                            adapted_command=adapted.command,
+                            received_ns=received_ns,
+                            submitted_sim_time_s=initial.timestamp.elapsed_seconds,
+                        )
+                        if adapted.feedback is not None:
+                            recorder.record_feedback(adapted.feedback)
+
+            turn_direction = "STRAIGHT"
+            if adapted is not None and adapted.control_authorized and not adapted.command.requires_confirmation:
+                turn_direction = command_turn_direction(command)
+            if spec is None:
+                route = build_route_reference(
+                    world_map, ego, runtime.requested_speed_mps,
+                    turn_direction=turn_direction, distance_m=args.route_distance_m,
+                )
+            elif scenario_spawn_route is not None:
+                route = scenario_spawn_route
+            else:
+                route = RouteReference(
+                    spec.world_route(
+                        route_anchor.location.x,
+                        route_anchor.location.y,
+                        route_anchor.rotation.yaw,
+                    ),
+                    0.0,
+                    runtime.requested_speed_mps,
+                )
+            if (
+                spec is not None
+                and not dynamic_out_and_back
+                and prevalidated_avoid_route is None
+                and any(
+                    str(item.envelope.get("intent", "")).upper() == "AVOID_OBSTACLE"
+                    for item in spec.commands
+                )
+            ):
+                prevalidated_avoid_route = route
+
+            contract_route_points = (
+                route.points_xy_m
+                if spec is not None and spec.expected.get("must_finish_route") is True
+                else None
+            )
+            contract_route_remaining = (
+                _remaining_route_distances(contract_route_points)
+                if contract_route_points is not None else ()
+            )
+            if contract_route_remaining:
+                final_route_remaining_m = contract_route_remaining[0]
+
+            if spec is None:
+                route_index_started_ns = time.monotonic_ns()
+                indexed_waypoints = warm_heading_waypoint_cache(world_map)
+                print(json.dumps({
+                    "record_type": "route_heading_index_ready",
+                    "waypoints": indexed_waypoints,
+                    "latency_ms": (
+                        time.monotonic_ns() - route_index_started_ns
+                    ) / 1e6,
+                }, ensure_ascii=False), flush=True)
+
+            watchdog = RuntimeWatchdog(
+                timeout_s=args.watchdog_timeout_s,
+                required_modules=("perception", "control"),
+                startup_grace_s=args.watchdog_startup_grace_s,
+                started_at_s=time.monotonic(),
+            )
+            # The synchronous simulator is frozen while ``world.tick()`` is
+            # waiting for UE rendering/physics.  Exclude that external frame
+            # source wait (and optional visual pacing) from module-health time.
+            watchdog.pause(now_s=time.monotonic())
+            progress_tracker = RouteProgressTracker(
+                scenario_spawn_route.points_xy_m
+                if scenario_spawn_route is not None else route.points_xy_m,
+                progress_m=resume_progress_m,
+            )
+            distance_coverage_tracker = DistanceCoverageTracker(
+                progress_m=resume_progress_m,
+            )
+            global_route_state = None
+            for step_index in range(args.frames):
+                route_recovery_hold = False
+                simulator_tick_start_ns = time.monotonic_ns()
+                frame = session.tick(args.timeout_s)
+                simulator_tick_end_ns = time.monotonic_ns()
+                watchdog.resume(now_s=time.monotonic())
+                # Validate the completed previous frame immediately.  A
+                # check after waiting for this frame's sensors/Qwen work
+                # measures in-progress latency as a stale control heartbeat
+                # and can create a false permanent stop.
+                runtime_watchdog_timed_out = (
+                    watchdog.check(now_s=time.monotonic()) is not None
+                )
+                snapshot = world.get_snapshot()
+                state = _vehicle_state(ego, frame, snapshot.timestamp.elapsed_seconds, world_map)
+                max_speed_mps = max(max_speed_mps, state.speed_mps)
+                last_sim_time_s = state.sim_time_s
+                elapsed_s = state.sim_time_s - episode_start_s
+                if state.speed_mps <= 0.15:
+                    if ego_standstill_since_s is None:
+                        ego_standstill_since_s = state.sim_time_s
+                else:
+                    ego_standstill_since_s = None
+                standstill_duration_s = (
+                    0.0 if ego_standstill_since_s is None
+                    else state.sim_time_s - ego_standstill_since_s
+                )
+                route_progress_m = progress_tracker.update(
+                    state.x_m,
+                    state.y_m,
+                    speed_mps=state.speed_mps,
+                    delta_s=args.fixed_delta_s,
+                )
+                coverage_progress_m = distance_coverage_tracker.update(
+                    state.x_m,
+                    state.y_m,
+                    speed_mps=state.speed_mps,
+                    delta_s=args.fixed_delta_s,
+                )
+                if global_route_manager is not None and global_route is not None:
+                    global_route_state = global_route_manager.state(
+                        global_route,
+                        state.x_m,
+                        state.y_m,
+                        previous_s_m=(
+                            resume_progress_m
+                            if global_route_state is None
+                            else global_route_state.route_s
+                        ),
+                    )
+                    if topology_coverage_planning:
+                        route_progress_m = coverage_progress_m
+                    else:
+                        route_progress_m = (
+                            global_route_progress_offset_m
+                            + global_route_state.route_s
+                        )
+                    assert global_route_recovery is not None
+                    intentional_maneuver_active = (
+                        maneuver_fsm.plan is not None
+                        and maneuver_fsm.state not in TERMINAL_STATES
+                    )
+                    recovery_decision = global_route_recovery.observe(
+                        global_route_state,
+                        state.sim_time_s,
+                        recovery_suppressed=intentional_maneuver_active,
+                    )
+                    route_recovery_hold = recovery_decision.status in {
+                        "OFF_ROUTE_CONFIRMING",
+                        "REPLANNING",
+                        "REPLAN_COOLDOWN",
+                        "RECOVERY_EXHAUSTED",
+                    }
+                    if recovery_decision.status != global_route_recovery_status:
+                        recovery_payload = {
+                            "frame": frame,
+                            "status": recovery_decision.status,
+                            "reason": recovery_decision.reason,
+                            "attempt": recovery_decision.attempt,
+                            "route_s": global_route_state.route_s,
+                            "mission_route_progress_m": route_progress_m,
+                            "cross_track_error_m": global_route_state.cross_track_error_m,
+                        }
+                        print(json.dumps({
+                            "record_type": "route_recovery_state",
+                            **recovery_payload,
+                        }, ensure_ascii=False), flush=True)
+                        if recorder is not None:
+                            recorder.record_route_recovery_event(
+                                event_type="route_recovery_state",
+                                payload=recovery_payload,
+                            )
+                        global_route_recovery_status = recovery_decision.status
+                    if recovery_decision.should_replan:
+                        assert global_route_destination is not None
+                        replan_origin_m = route_progress_m
+                        try:
+                            if topology_coverage_planning:
+                                assert spec is not None
+                                remaining_contract_m = max(
+                                    spec.finish_radius_m * 2.0,
+                                    spec.route_distance_contract_m - replan_origin_m,
+                                )
+                                replanned_route = global_route_manager.plan_distance(
+                                    ego.get_transform(),
+                                    _topology_planning_distance_m(
+                                        remaining_contract_m,
+                                        spec.finish_radius_m,
+                                    ),
+                                    runtime.requested_speed_mps,
+                                )
+                                global_route_destination = carla.Location(
+                                    x=replanned_route.destination_xy_m[0],
+                                    y=replanned_route.destination_xy_m[1],
+                                    z=ego.get_location().z,
+                                )
+                            else:
+                                replanned_route = global_route_manager.replan(
+                                    ego.get_transform(),
+                                    global_route_destination,
+                                    runtime.requested_speed_mps,
+                                )
+                        except RoutePlanningError as error:
+                            replan_failure_payload = {
+                                "frame": frame,
+                                "attempt": recovery_decision.attempt,
+                                "reason": error.code,
+                                "detail": error.detail,
+                                "mission_route_progress_m": replan_origin_m,
+                            }
+                            print(json.dumps({
+                                "record_type": "route_replan_failed",
+                                **replan_failure_payload,
+                            }, ensure_ascii=False), flush=True)
+                            if recorder is not None:
+                                recorder.record_route_recovery_event(
+                                    event_type="route_replan_failed",
+                                    payload=replan_failure_payload,
+                                )
+                            if (
+                                recovery_decision.attempt
+                                >= global_route_recovery.policy.maximum_attempts
+                            ):
+                                runtime.requested_speed_mps = 0.0
+                                route = replace(route, target_speed_mps=0.0)
+                        else:
+                            route_recovery_hold = False
+                            recovery_resume_speed_mps = max(
+                                runtime.requested_speed_mps,
+                                route.target_speed_mps,
+                            )
+                            global_route_progress_offset_m = replan_origin_m
+                            global_route = replanned_route
+                            global_local_reference = None
+                            scenario_actor_progress_trackers.clear()
+                            route = replace(
+                                replanned_route.reference,
+                                target_speed_mps=recovery_resume_speed_mps,
+                            )
+                            runtime.requested_speed_mps = recovery_resume_speed_mps
+                            cleared_lateral_alerts = (
+                                runtime.clear_safety_alert_prefix("LATERAL_")
+                            )
+                            if cleared_lateral_alerts and not runtime.safety_latched:
+                                # Keep the recorder's historical override evidence,
+                                # but do not let a recovered lateral-only watchdog
+                                # remain an active runtime-health failure.
+                                safety_reasons.discard("WATCHDOG_ALERT")
+                            runtime.lateral.reset()
+                            global_route_recovery.note_replan_succeeded()
+                            global_route_state = global_route_manager.state(
+                                global_route,
+                                state.x_m,
+                                state.y_m,
+                                previous_s_m=0.0,
+                            )
+                            if not topology_coverage_planning:
+                                route_progress_m = (
+                                    global_route_progress_offset_m
+                                    + global_route_state.route_s
+                                )
+                            global_route_recovery_status = "REPLANNED"
+                            replan_payload = {
+                                "frame": frame,
+                                "attempt": recovery_decision.attempt,
+                                "reason": "OFF_ROUTE_REPLAN",
+                                "mission_route_progress_offset_m": (
+                                    global_route_progress_offset_m
+                                ),
+                                "new_route_length_m": global_route.total_length_m,
+                                "new_route_id": global_route.reference.route_id,
+                                "resume_speed_mps": recovery_resume_speed_mps,
+                                "cleared_alerts": list(cleared_lateral_alerts),
+                            }
+                            print(json.dumps({
+                                "record_type": "route_replanned",
+                                **replan_payload,
+                            }, ensure_ascii=False), flush=True)
+                            if recorder is not None:
+                                recorder.record_route_recovery_event(
+                                    event_type="route_replanned",
+                                    payload=replan_payload,
+                                )
+                if topology_coverage_planning and spec is not None:
+                    final_route_remaining_m = _distance_contract_remaining_m(
+                        spec.route_distance_contract_m, coverage_progress_m,
+                    )
+                elif global_route_state is None and contract_route_remaining:
+                    final_route_remaining_m = _distance_contract_remaining_m(
+                        contract_route_remaining[0], route_progress_m,
+                    )
+                for entry in tuple(scenario_vehicles):
+                    actor, actor_spec = entry
+                    if _release_scenario_actor_if_due(
+                        session, actor, actor_spec,
+                        elapsed_s=elapsed_s,
+                        route_progress_m=route_progress_m,
+                    ):
+                        scenario_vehicles.remove(entry)
+                for entry in tuple(scenario_walkers):
+                    actor, actor_spec, _target = entry
+                    if _release_scenario_actor_if_due(
+                        session, actor, actor_spec,
+                        elapsed_s=elapsed_s,
+                        route_progress_m=route_progress_m,
+                    ):
+                        scenario_walkers.remove(entry)
+                for entry in tuple(scenario_props):
+                    actor, actor_spec = entry
+                    if _release_scenario_actor_if_due(
+                        session, actor, actor_spec,
+                        elapsed_s=elapsed_s,
+                        route_progress_m=route_progress_m,
+                    ):
+                        scenario_props.remove(entry)
+                for vehicle_spec in tuple(pending_vehicle_specs):
+                    if not _actor_activation_due(
+                        vehicle_spec,
+                        elapsed_s=elapsed_s,
+                        route_progress_m=route_progress_m,
+                    ):
+                        continue
+                    actor_route, actor_spawn_spec = _active_actor_route_context(
+                        vehicle_spec,
+                        scenario_spawn_route,
+                        global_route,
+                        global_route_progress_offset_m,
+                    )
+                    vehicle = _spawn_scenario_vehicle(
+                        session, world, carla, ego, bp, actor_spawn_spec,
+                        route=actor_route,
+                        seed=spec.seed if spec is not None else 0,
+                    )
+                    scenario_vehicles.append((vehicle, vehicle_spec))
+                    spawned_scenario_actor_types.append("vehicle")
+                    pending_vehicle_specs.remove(vehicle_spec)
+                    if extension_runtime is not None:
+                        extension_runtime.note_actor_activated(
+                            str(vehicle_spec.get("actor_id", "vehicle")),
+                            route_progress_m=route_progress_m,
+                        )
+                for walker_spec in tuple(pending_walker_specs):
+                    if not _actor_activation_due(
+                        walker_spec,
+                        elapsed_s=elapsed_s,
+                        route_progress_m=route_progress_m,
+                    ):
+                        continue
+                    actor_route, actor_spawn_spec = _active_actor_route_context(
+                        walker_spec,
+                        scenario_spawn_route,
+                        global_route,
+                        global_route_progress_offset_m,
+                    )
+                    walker, target = _spawn_scenario_walker(
+                        session, world, carla, ego, actor_spawn_spec,
+                        route=actor_route,
+                        seed=spec.seed if spec is not None else 0,
+                    )
+                    scenario_walkers.append((walker, walker_spec, target))
+                    spawned_scenario_actor_types.append(
+                        str(walker_spec.get("type", "walker.pedestrian")).lower()
+                    )
+                    pending_walker_specs.remove(walker_spec)
+                    if extension_runtime is not None:
+                        extension_runtime.note_actor_activated(
+                            str(walker_spec.get("actor_id", "walker.pedestrian")),
+                            route_progress_m=route_progress_m,
+                        )
+                for prop_spec in tuple(pending_prop_specs):
+                    if not _actor_activation_due(
+                        prop_spec,
+                        elapsed_s=elapsed_s,
+                        route_progress_m=route_progress_m,
+                    ):
+                        continue
+                    actor_route, actor_spawn_spec = _active_actor_route_context(
+                        prop_spec,
+                        scenario_spawn_route,
+                        global_route,
+                        global_route_progress_offset_m,
+                    )
+                    prop = _spawn_scenario_static_prop(
+                        session, world, carla, ego, actor_spawn_spec,
+                        route=actor_route,
+                        seed=spec.seed if spec is not None else 0,
+                    )
+                    scenario_props.append((prop, prop_spec))
+                    spawned_scenario_actor_types.append(
+                        str(prop_spec.get("type", "static.prop")).lower()
+                    )
+                    pending_prop_specs.remove(prop_spec)
+                    if extension_runtime is not None:
+                        extension_runtime.note_actor_activated(
+                            str(prop_spec.get("actor_id", "static.prop")),
+                            route_progress_m=route_progress_m,
+                        )
+                actor_distances_m: dict[str, float] = {}
+                actor_longitudinal_clearances_m: dict[str, float] = {}
+                for actor, actor_spec in [
+                    *scenario_vehicles,
+                    *((walker, walker_spec) for walker, walker_spec, _target in scenario_walkers),
+                    *scenario_props,
+                ]:
+                    actor_id = str(actor_spec.get("actor_id", ""))
+                    if actor_id:
+                        actor_distances_m[actor_id] = _actor_bbox_clearance_m(
+                            ego, actor,
+                        )
+                        actor_route_position = actor_spec.get("route_position")
+                        active_actor_route = (
+                            global_route.reference
+                            if global_route is not None else scenario_spawn_route
+                        )
+                        if (
+                            active_actor_route is not None
+                            and isinstance(actor_route_position, Mapping)
+                            and actor_route_position.get("s_m") is not None
+                        ):
+                            tracker = scenario_actor_progress_trackers.get(actor_id)
+                            if tracker is None:
+                                configured_s_m = max(
+                                    0.0,
+                                    float(actor_route_position["s_m"])
+                                    - global_route_progress_offset_m
+                                    - 20.0,
+                                )
+                                tracker = RouteProgressTracker(
+                                    active_actor_route.points_xy_m,
+                                    progress_m=configured_s_m,
+                                )
+                                scenario_actor_progress_trackers[actor_id] = tracker
+                            actor_location = actor.get_location()
+                            actor_progress_m = (
+                                global_route_progress_offset_m
+                                + tracker.update(
+                                    float(actor_location.x),
+                                    float(actor_location.y),
+                                    speed_mps=_speed_mps(actor.get_velocity()),
+                                    delta_s=args.fixed_delta_s,
+                                )
+                            )
+                            actor_longitudinal_clearances_m[actor_id] = (
+                                _actor_signed_route_clearance_m(
+                                    route_progress_m,
+                                    actor_progress_m,
+                                    ego,
+                                    actor,
+                                )
+                            )
+                        else:
+                            actor_longitudinal_clearances_m[actor_id] = (
+                                _actor_signed_longitudinal_clearance_m(ego, actor)
+                            )
+                traffic_state = (
+                    str(scenario_traffic_light.get_state()).rsplit(".", 1)[-1].upper()
+                    if scenario_traffic_light is not None else "UNKNOWN"
+                )
+                extension_stop_line_m = (
+                    _scenario_traffic_light_signed_clearance_m(
+                        ego, scenario_traffic_light,
+                    )
+                    if scenario_traffic_light is not None else None
+                )
+                if extension_runtime is not None:
+                    extension_frame = extension_runtime.update_frame(
+                        elapsed_s=elapsed_s,
+                        route_progress_m=route_progress_m,
+                        ego_speed_mps=state.speed_mps,
+                        ego_standstill_duration_s=standstill_duration_s,
+                        actor_distances_m=actor_distances_m,
+                        traffic_light_state=traffic_state,
+                        distance_to_stop_line_m=extension_stop_line_m,
+                        lane_id=state.lane_id,
+                    )
+                    emergency_recovery = extension_runtime.ready_emergency_recovery(
+                        elapsed_s=elapsed_s,
+                    )
+                    if emergency_recovery is not None:
+                        recovered_actor_id, recovery_speed_mps = emergency_recovery
+                        if runtime.release_scenario_stop_hold(
+                            requested_speed_mps=recovery_speed_mps,
+                        ):
+                            extension_runtime.note_emergency_recovered(
+                                recovered_actor_id, elapsed_s=elapsed_s,
+                            )
+                            route = replace(route, target_speed_mps=recovery_speed_mps)
+                            print(json.dumps({
+                                "record_type": "scenario_emergency_recovery",
+                                "actor_id": recovered_actor_id,
+                                "elapsed_s": elapsed_s,
+                                "resume_speed_mps": recovery_speed_mps,
+                            }, ensure_ascii=False), flush=True)
+                    light_spec = _scenario_actor(spec, "traffic_light")
+                    if light_spec is not None and scenario_traffic_light is not None:
+                        light_state = extension_runtime.actor_state(
+                            light_spec,
+                            elapsed_s=elapsed_s,
+                            trigger_context=extension_frame.trigger_context,
+                        )["traffic_light_state"]
+                        desired_state = getattr(
+                            carla.TrafficLightState, str(light_state).title(), None,
+                        )
+                        if desired_state is not None:
+                            scenario_traffic_light.set_state(desired_state)
+                    for fault_id in extension_frame.newly_active_fault_ids:
+                        print(json.dumps({
+                            "record_type": "scenario_fault",
+                            "fault_id": fault_id,
+                            "status": "ACTIVE",
+                            "elapsed_s": elapsed_s,
+                        }, ensure_ascii=False), flush=True)
+                    for fault_id in extension_frame.newly_recovered_fault_ids:
+                        print(json.dumps({
+                            "record_type": "scenario_fault",
+                            "fault_id": fault_id,
+                            "status": "RECOVERED",
+                            "elapsed_s": elapsed_s,
+                        }, ensure_ascii=False), flush=True)
+                for vehicle, vehicle_spec in scenario_vehicles:
+                    actor_state = (
+                        extension_runtime.actor_state(
+                            vehicle_spec,
+                            elapsed_s=elapsed_s,
+                            trigger_context=extension_frame.trigger_context,
+                        )
+                        if extension_runtime is not None else {}
+                    )
+                    _update_scenario_vehicle(
+                        vehicle, vehicle_spec, elapsed_s, carla,
+                        desired_speed_mps=actor_state.get("target_speed_mps"),
+                        behavior_elapsed_s=actor_state.get("elapsed_since_event_s"),
+                        world_map=world_map,
+                        route_points_xy_m=(
+                            global_route.reference.points_xy_m
+                            if global_route is not None
+                            else scenario_spawn_route.points_xy_m
+                            if scenario_spawn_route is not None
+                            else route.points_xy_m
+                        ),
+                    )
+                for walker, walker_spec, walker_target in scenario_walkers:
+                    walker_behavior = walker_spec.get("behavior", {})
+                    walker_trigger = (
+                        walker_behavior.get("trigger")
+                        if isinstance(walker_behavior, Mapping) else None
+                    )
+                    walker_ready = (
+                        walker_trigger is None
+                        or extension_frame is None
+                        or scenario_trigger_satisfied(
+                            walker_trigger,
+                            elapsed_s=elapsed_s,
+                            context=extension_frame.trigger_context,
+                        )
+                    )
+                    if (
+                        walker_ready
+                        and walker_trigger is not None
+                        and extension_runtime is not None
+                    ):
+                        trigger_actor_id = walker_trigger.get("actor_id")
+                        if not isinstance(trigger_actor_id, str):
+                            trigger_actor_id = walker_spec.get("actor_id")
+                        if isinstance(trigger_actor_id, str):
+                            extension_runtime.note_actor_trigger(
+                                trigger_actor_id, elapsed_s=elapsed_s,
+                            )
+                        phase_id = walker_behavior.get("phase_id")
+                        if isinstance(phase_id, str):
+                            extension_runtime.note_phase_completed(phase_id)
+                    _update_scenario_walker(
+                        walker, walker_spec, elapsed_s, walker_target, carla,
+                        trigger_ready=walker_ready,
+                    )
+                if scenario_vehicles:
+                    scenario_lead = _select_scenario_lead(
+                        ego, [vehicle for vehicle, _ in scenario_vehicles],
+                    )
+                if timeline is not None:
+                    for scheduled in timeline.due(
+                        elapsed_s,
+                        None if extension_frame is None else extension_frame.trigger_context,
+                    ):
+                        scenario_command = resolve_scenario_command(
+                            scheduled,
+                            requested_speed_mps=runtime.requested_speed_mps,
+                            preserve_high_level=(
+                                spec is not None and spec.requires_qwen_semantics
+                            ),
+                        )
+                        received_ns = time.monotonic_ns()
+                        if canonical_bridge is not None:
+                            deferred_commands.append(_DeferredCommand(
+                                dict(scenario_command), received_ns, "SCENARIO",
+                            ))
+                        else:
+                            scenario_adapted = runtime.submit_voice(
+                                scenario_command, now_s=state.sim_time_s,
+                            )
+                            if recorder is not None:
+                                recorder.record_command(
+                                    scenario_command,
+                                    disposition=("ACCEPTED_SCENARIO" if scenario_adapted.control_authorized
+                                                 else "REJECTED_SCENARIO_NO_OP"),
+                                    adapted_command=scenario_adapted.command,
+                                    received_ns=received_ns,
+                                    submitted_sim_time_s=state.sim_time_s,
+                                )
+                                if scenario_adapted.feedback is not None:
+                                    recorder.record_feedback(scenario_adapted.feedback)
+                            route = replace(route, target_speed_mps=runtime.requested_speed_mps)
+                if live_voice is not None:
+                    for live_result in live_voice.poll():
+                        if live_result.error is not None:
+                            print(json.dumps({
+                                "record_type": "live_voice_error",
+                                "error": live_result.error,
+                            }, ensure_ascii=False), flush=True)
+                            continue
+                        assert live_result.command is not None
+                        live_command = dict(live_result.command)
+                        if args.test_command_ttl_s is not None:
+                            live_command["valid_duration_s"] = args.test_command_ttl_s
+                        received_ns = time.monotonic_ns()
+                        if canonical_bridge is not None:
+                            deferred_commands.append(_DeferredCommand(
+                                live_command, received_ns, "LIVE_MIC", live_result.duration_s,
+                            ))
+                        else:
+                            live_adapted = runtime.submit_voice(
+                                live_command, now_s=state.sim_time_s,
+                            )
+                            if recorder is not None:
+                                recorder.record_command(
+                                    live_command,
+                                    disposition=("ACCEPTED_LIVE_MIC" if live_adapted.control_authorized
+                                                 else "REJECTED_LIVE_MIC_NO_OP"),
+                                    adapted_command=live_adapted.command,
+                                    received_ns=received_ns,
+                                    submitted_sim_time_s=state.sim_time_s,
+                                )
+                                if live_adapted.feedback is not None:
+                                    recorder.record_feedback(live_adapted.feedback)
+                            print(json.dumps({
+                                "record_type": "live_voice_command",
+                                "source_text": live_command.get("source_text"),
+                                "intent": live_command.get("intent"),
+                                "status": live_command.get("status"),
+                                "confirm_required": live_command.get("confirm_required"),
+                                "control_authorized": live_adapted.control_authorized,
+                                "audio_duration_s": round(live_result.duration_s, 2),
+                            }, ensure_ascii=False), flush=True)
+                            route = replace(
+                                route, target_speed_mps=runtime.requested_speed_mps,
+                            )
+                ego_location = ego.get_location()
+                route_end_point = (
+                    contract_route_points[-1]
+                    if contract_route_points is not None else route.points_xy_m[-1]
+                )
+                distance_to_route_end_m = math.hypot(
+                    ego_location.x - route_end_point[0],
+                    ego_location.y - route_end_point[1],
+                )
+                final_route_end_distance_m = distance_to_route_end_m
+                if global_route_state is not None and not topology_coverage_planning:
+                    final_route_remaining_m = global_route_state.route_remaining_m
+                remaining_for_finish_m = (
+                    global_route_state.route_remaining_m
+                    if global_route_state is not None and not topology_coverage_planning
+                    else final_route_remaining_m
+                    if final_route_remaining_m is not None
+                    else distance_to_route_end_m
+                )
+                finish_contract_route = (
+                    spec is not None
+                    and (
+                        spec.category == "lateral_B"
+                        or spec.expected.get("must_finish_route") is True
+                    )
+                    and remaining_for_finish_m <= _route_stop_trigger_m(
+                        state.speed_mps, spec.finish_radius_m,
+                    )
+                    and (
+                        global_route_state is None
+                        or global_route_state.cross_track_error_m
+                        <= global_route_manager.off_route_threshold_m
+                    )
+                )
+                if finish_contract_route and runtime.requested_speed_mps > 0.0:
+                    runtime.requested_speed_mps = 0.0
+                    route = replace(route, target_speed_mps=0.0)
+                # A live route is already 500 m by default. Re-projecting every
+                # N frames can snap an ego at a crossing to a geometrically
+                # nearer road whose heading points behind the vehicle. Extend
+                # only near the route end and keep a rejected replacement from
+                # corrupting the active reference.
+                refresh_live_route = (
+                    spec is None
+                    and distance_to_route_end_m <= max(10.0, state.speed_mps * 5.0)
+                )
+                extend_finished_scenario_route = (
+                    spec is not None
+                    and spec.category != "lateral_B"
+                    and spec.expected.get("must_finish_route") is not True
+                    and distance_to_route_end_m <= 10.0
+                )
+                route_refresh_alerts: list[str] = []
+                if ((refresh_live_route or extend_finished_scenario_route) and not runtime.safety_latched):
+                    try:
+                        candidate_route = build_route_reference(
+                            world_map, ego, runtime.requested_speed_mps,
+                            distance_m=args.route_distance_m,
+                        )
+                        route = candidate_route
+                        runtime.lateral.reset()
+                    except Exception as error:
+                        route_refresh_alerts.append("ROUTE_REFRESH_INVALID")
+                        print(json.dumps({
+                            "record_type": "route_refresh_rejected",
+                            "frame": frame,
+                            "error_type": type(error).__name__,
+                            "error": str(error),
+                            "action": "KEEP_OLD_ROUTE_AND_FAIL_CLOSED",
+                        }, ensure_ascii=False), flush=True)
+
+                perception_sources: dict[str, str] = {}
+                c_safety_state: dict[str, object] | None = None
+                perception_control_override: dict[str, object] | None = None
+                c_perception_override_reason: str | None = None
+                c_speed_cap_mps: float | None = None
+                scenario_sensor_fault_speed_cap_mps: float | None = None
+                watchdog_alerts: list[str] = list(route_refresh_alerts)
+                sensor_startup_grace = False
+                qwen_rgb_measurement: Any | None = None
+                current_rgb: Any | None = None
+                current_multiview_rgb: Mapping[str, Any] = {}
+                sensor_ready_ns: int | None = None
+                perception_start_ns = time.monotonic_ns()
+                try:
+                    if perception_bridge is not None:
+                        sample = perception_bridge.acquire(
+                            frame, state.sim_time_s, route=route, timeout_s=args.sensor_timeout_s,
+                        )
+                        sensor_ready_ns = sample.sensor_ready_ns
+                        scene = sample.frame
+                        qwen_rgb_measurement = sample.rgb
+                        current_rgb = sample.rgb
+                        current_multiview_rgb = sample.multi_view_rgb
+                        perception_sources = dict(sample.source_by_field)
+                        c_safety_state = sample.safety_summary.to_dict()
+                        if extension_runtime is not None:
+                            extension_runtime.note_front_path_observation(
+                                elapsed_s=elapsed_s,
+                                path_clear=(
+                                    sample.safety_summary.recommended_action
+                                    == "KEEP_SPEED"
+                                ),
+                            )
+                        c_speed_cap_mps = _c_safety_speed_cap_mps(c_safety_state)
+                        if c_speed_cap_mps is not None:
+                            perception_sources["c_speed_cap_mps"] = (
+                                "C_FUSION_TEMPORARY_VRU_SPEED_CAP"
+                            )
+                            cap_override = _c_speed_cap_control_override(
+                                state.speed_mps, c_speed_cap_mps,
+                            )
+                            if cap_override is not None:
+                                perception_control_override = cap_override
+                                c_perception_override_reason = "C_VRU_SPEED_CAP_BRAKE"
+                                perception_sources["c_control_override"] = (
+                                    "C_FUSION_VRU_SPEED_CAP_BRAKE"
+                                )
+                        if sample.safety_summary.fail_closed:
+                            # C owns this perception-dependent control request;
+                            # it is not a runtime-health failure.  Feed a full
+                            # brake request through D for this frame without
+                            # poisoning the persistent watchdog latch.
+                            perception_control_override = {
+                                "throttle": 0.0,
+                                "brake": 1.0,
+                                "steer": 0.0,
+                            }
+                            c_perception_override_reason = _c_perception_safety_reason(c_safety_state)
+                            perception_sources["c_control_override"] = (
+                                "C_FUSION_" + sample.safety_summary.reason.upper()
+                            )
+                    else:
+                        scene, perception_sources = _scene_from_world(
+                            world_map,
+                            ego,
+                            frame,
+                            state.sim_time_s,
+                            route=route,
+                            scenario_lead=scenario_lead,
+                            scenario_vehicles=tuple(
+                                vehicle for vehicle, _spec in scenario_vehicles
+                            ),
+                            events=world_events,
+                        )
+                        sensor_ready_ns = time.monotonic_ns()
+                        if args.perception_mode == "virtual":
+                            scene = _apply_virtual_scenario(scene, ego, origin, args)
+                            perception_sources["scenario"] = "VIRTUAL_ACCEPTANCE_TRUTH"
+                            if args.scenario == "red_stop":
+                                perception_sources["traffic_light"] = "VIRTUAL_ACCEPTANCE_TRUTH"
+                                perception_sources["distance_to_stop_line_m"] = "VIRTUAL_ACCEPTANCE_TRUTH"
+                            elif args.scenario in {"follow", "emergency"}:
+                                perception_sources["lead_distance_m"] = "VIRTUAL_ACCEPTANCE_TRUTH"
+                                perception_sources["lead_speed_mps"] = "VIRTUAL_ACCEPTANCE_TRUTH"
+                        else:
+                            perception_sources["scenario"] = "CARLA_WORLD_TRUTH"
+                    if (
+                        scenario_traffic_light is not None
+                        and args.scenario_facts_mode != "perception"
+                    ):
+                        scene, traffic_sources = _scenario_traffic_light_observation(
+                            scene, ego, scenario_traffic_light,
+                        )
+                        perception_sources.update(traffic_sources)
+                    if spec is not None:
+                        configured_scene = _scenario_facts(
+                            ego,
+                            origin,
+                            spec,
+                            frame=frame,
+                            sim_time_s=state.sim_time_s,
+                            elapsed_s=elapsed_s,
+                        )
+                        scene, fact_sources = _select_scene_facts(
+                            scene, configured_scene, args.scenario_facts_mode,
+                        )
+                        perception_sources.update(fact_sources)
+                    if extension_frame is not None:
+                        active_sensor_faults = {
+                            str(item.get("sensor", ""))
+                            for item in extension_frame.active_faults
+                            if str(item.get("type", "")).lower() in {
+                                "sensor_blackout", "sensor_stale",
+                            }
+                        }
+                        for sensor_name in sorted(active_sensor_faults):
+                            perception_sources[f"fault_{sensor_name}"] = "SCENARIO_FAULT_ACTIVE"
+                        scenario_sensor_fault_speed_cap_mps = _single_sensor_fault_speed_cap_mps(
+                            active_sensor_faults, route.target_speed_mps,
+                        )
+                        if scenario_sensor_fault_speed_cap_mps is not None:
+                            perception_sources["scenario_sensor_fault_speed_cap_mps"] = (
+                                "SCENARIO_SINGLE_SENSOR_DEGRADED_SPEED_CAP"
+                            )
+                            fault_cap_override = _c_speed_cap_control_override(
+                                state.speed_mps, scenario_sensor_fault_speed_cap_mps,
+                            )
+                            if fault_cap_override is not None and perception_control_override is None:
+                                perception_control_override = fault_cap_override
+                                c_perception_override_reason = (
+                                    "SCENARIO_SINGLE_SENSOR_DEGRADED_SPEED_CAP"
+                                )
+                        if {"front_rgb", "lidar"}.issubset(active_sensor_faults):
+                            perception_control_override = {
+                                "throttle": 0.0, "brake": 1.0, "steer": 0.0,
+                            }
+                            c_perception_override_reason = "SCENARIO_PERCEPTION_INSUFFICIENT"
+                        if any(
+                            str(item.get("type", "")).lower() == "actor_visibility"
+                            and item.get("visible") is False
+                            for item in extension_frame.active_faults
+                        ):
+                            scene = replace(scene, detected_objects=())
+                            perception_sources["actor_visibility"] = "SCENARIO_TARGET_OCCLUDED"
+                        scene = _apply_scenario_speed_limit(
+                            scene,
+                            extension_frame.speed_limit_mps,
+                            perception_sources,
+                            override_map_limit=(
+                                extension_frame.speed_limit_overrides_map
+                            ),
+                        )
+                    source_audit = audit_control_sources(
+                        perception_sources,
+                        strict_sensor_mode=(
+                            args.perception_mode == "sensors"
+                            and args.scenario_facts_mode == "perception"
+                        ),
+                    )
+                    if source_audit.control_clean:
+                        perception_sources["control_source_boundary"] = "AUDITED_SENSOR_CONTROL_INPUT"
+                    else:
+                        watchdog_alerts.append("CONTROL_SOURCE_BOUNDARY_VIOLATION")
+                        print(json.dumps({
+                            "record_type": "control_source_boundary_violation",
+                            **source_audit.to_dict(),
+                        }, ensure_ascii=False), flush=True)
+                    watchdog.heartbeat("perception", now_s=time.monotonic())
+                except PerceptionAcquisitionError as error:
+                    scene = PerceptionFrame(frame, state.sim_time_s)
+                    sensor_ready_ns = time.monotonic_ns()
+                    perception_sources = {"failure": type(error).__name__}
+                    sensor_startup_grace = step_index < args.sensor_startup_grace_frames
+                    if not sensor_startup_grace:
+                        watchdog_alerts.append(f"PERCEPTION_{type(error).__name__.upper()}")
+                perception_completed_ns = time.monotonic_ns()
+
+                if qwen_bridge is not None:
+                    if not qwen_submitted and qwen_rgb_measurement is not None:
+                        run_token = (
+                            recorder.run_id
+                            if recorder is not None and recorder.run_id is not None
+                            else str(time.monotonic_ns())
+                        )
+                        qwen_request_id = f"qwen-{run_token}-{frame}"
+                        rgb_ref = _save_qwen_rgb_image(
+                            qwen_rgb_measurement,
+                            qwen_image_root,
+                            request_id=qwen_request_id,
+                        )
+                        qwen_context = _build_qwen_context(
+                            request_id=qwen_request_id,
+                            voice_command=qwen_voice_text,
+                            rgb_ref=rgb_ref,
+                            state=state,
+                            scene=scene,
+                            behavior_state=runtime.fsm.state.value,
+                            desired_speed_mps=qwen_desired_speed_mps,
+                            route_end_distance_m=distance_to_route_end_m,
+                            c_safety_state=c_safety_state,
+                        )
+                        qwen_bridge.submit(qwen_context, now_s=state.sim_time_s)
+                        qwen_submitted = True
+                        qwen_status = "PENDING"
+                        if recorder is not None:
+                            recorder.record_qwen_event(
+                                request_id=qwen_request_id,
+                                status="PENDING",
+                                context=qwen_context.to_payload(),
+                            )
+                        print(
+                            f"qwen stage: submitted request_id={qwen_request_id} frame={frame}",
+                            flush=True,
+                        )
+
+                    # A terminal result is consumed exactly once. Continuing to
+                    # poll a READY result would eventually reclassify the
+                    # already-submitted command as STALE after its decision TTL.
+                    qwen_result = (
+                        qwen_bridge.latest(now_s=state.sim_time_s)
+                        if qwen_submitted and not qwen_terminal_recorded
+                        else None
+                    )
+                    if qwen_result is not None:
+                        qwen_status = qwen_result.status
+                        if qwen_result.ready and not qwen_terminal_recorded:
+                            runtime.clear_safety_alerts(("QWEN_PENDING",))
+                            if qwen_result.runtime_command is None:
+                                raise RuntimeError("ready Qwen result has no runtime command")
+                            high_level = dict(qwen_result.high_level_command or {})
+                            runtime_command = dict(qwen_result.runtime_command)
+                            qwen_action = str(high_level.get("action", "")).strip().upper()
+                            qwen_source = str(
+                                high_level.get("decision_source", "")
+                            ).strip().upper()
+                            if (
+                                qwen_source == "SAFETY_RULE"
+                                and qwen_action in {"STOP", "EMERGENCY_STOP"}
+                            ):
+                                # This is a D-owned high-level safety
+                                # intervention, even when no additional
+                                # frame-level brake override is required.
+                                safety_reasons.add("QWEN_SAFETY_RULE")
+                            if str(high_level.get("action", "")).upper() == "START":
+                                runtime.requested_speed_mps = qwen_desired_speed_mps
+                            received_ns = time.monotonic_ns()
+                            qwen_adapted = runtime.submit_voice(
+                                runtime_command,
+                                now_s=state.sim_time_s,
+                            )
+                            if not qwen_adapted.control_authorized:
+                                qwen_status = "ERROR"
+                                watchdog_alerts.append("QWEN_ERROR")
+                            else:
+                                qwen_ready = True
+                                route = replace(
+                                    route,
+                                    target_speed_mps=runtime.requested_speed_mps,
+                                )
+                            if recorder is not None:
+                                recorder.record_qwen_event(
+                                    request_id=qwen_request_id or "unknown-qwen-request",
+                                    status="READY" if qwen_ready else "ERROR",
+                                    high_level_command=high_level,
+                                    runtime_command=runtime_command,
+                                    trace=None if qwen_adapter is None else qwen_adapter.last_trace,
+                                    error=None if qwen_ready else "Qwen command rejected by A boundary",
+                                )
+                                recorder.record_command(
+                                    runtime_command,
+                                    disposition=(
+                                        "ACCEPTED_QWEN_REMOTE"
+                                        if qwen_adapted.control_authorized
+                                        else "REJECTED_QWEN_REMOTE_NO_OP"
+                                    ),
+                                    adapted_command=qwen_adapted.command,
+                                    received_ns=received_ns,
+                                    submitted_sim_time_s=state.sim_time_s,
+                                )
+                                if qwen_adapted.feedback is not None:
+                                    recorder.record_feedback(qwen_adapted.feedback)
+                            qwen_terminal_recorded = True
+                            print(
+                                "qwen stage: decision "
+                                + json.dumps(high_level, ensure_ascii=False, sort_keys=True),
+                                flush=True,
+                            )
+                        elif not qwen_result.ready:
+                            watchdog_alerts.extend(qwen_result.watchdog_alerts)
+                            if (
+                                qwen_result.status in {"TIMEOUT", "STALE", "ERROR"}
+                                and not qwen_terminal_recorded
+                            ):
+                                if recorder is not None:
+                                    recorder.record_qwen_event(
+                                        request_id=qwen_request_id or "unknown-qwen-request",
+                                        status=qwen_result.status,
+                                        trace=None if qwen_adapter is None else qwen_adapter.last_trace,
+                                        error=qwen_result.error,
+                                    )
+                                qwen_terminal_recorded = True
+                                print(
+                                    f"qwen stage: {qwen_result.status} error={qwen_result.error}",
+                                    flush=True,
+                                )
+                    perception_sources["qwen_status"] = qwen_status
+                evidence_actor_ids: tuple[str, ...] | None = None
+                evidence_target_aliases: dict[str, str] | None = None
+                scenario_actor_bindings = (
+                    tuple(scenario_vehicles)
+                    + tuple((actor, actor_spec) for actor, actor_spec, _target in scenario_walkers)
+                    + tuple(scenario_props)
+                )
+                if spec is not None and not (
+                    args.perception_mode == "sensors"
+                    and args.scenario_facts_mode == "perception"
+                ):
+                    scene = _bind_scenario_actor_ids(
+                        scene,
+                        ego,
+                        scenario_actor_bindings,
+                    )
+                    if any(item.track_id for item in scene.detected_objects):
+                        perception_sources["target_ids"] = "CARLA_SCENARIO_TRACK_ASSOCIATION"
+                elif spec is not None:
+                    evidence_target_aliases = _sensor_evidence_target_aliases(
+                        scene, ego, scenario_actor_bindings,
+                    )
+                    evidence_actor_ids = tuple(dict.fromkeys(
+                        evidence_target_aliases.values()
+                    ))
+                elif any(item.track_id for item in scene.detected_objects):
+                    perception_sources["target_ids"] = "C_SENSOR_TEMPORAL_TRACKER"
+                if extension_runtime is not None:
+                    extension_runtime.note_perception_observation(
+                        elapsed_s=elapsed_s,
+                        detected_actor_ids=(
+                            evidence_actor_ids
+                            if evidence_actor_ids is not None
+                            else tuple(
+                                item.track_id for item in scene.detected_objects
+                                if item.track_id is not None
+                            )
+                        ),
+                    )
+                if (
+                    timeline is not None
+                    and extension_frame is not None
+                    and evidence_actor_ids is not None
+                ):
+                    sensor_trigger_context = dict(extension_frame.trigger_context)
+                    sensor_trigger_context["sensor_detected_actor_ids"] = (
+                        evidence_actor_ids
+                    )
+                    for scheduled in timeline.due(elapsed_s, sensor_trigger_context):
+                        if canonical_bridge is None:
+                            raise RuntimeError(
+                                "sensor-bound scenario commands require canonical routing"
+                            )
+                        scenario_command = resolve_scenario_command(
+                            scheduled,
+                            requested_speed_mps=runtime.requested_speed_mps,
+                            preserve_high_level=(
+                                spec is not None and spec.requires_qwen_semantics
+                            ),
+                        )
+                        deferred_commands.append(_DeferredCommand(
+                            dict(scenario_command), time.monotonic_ns(), "SCENARIO",
+                        ))
+                scene_bound_ns = time.monotonic_ns()
+                if sensor_ready_ns is None:
+                    raise RuntimeError("sensor-ready timestamp was not captured")
+                if canonical_bridge is not None:
+                    canonical_mode = (
+                        "sensor_failure" if "failure" in perception_sources
+                        else args.perception_mode
+                    )
+                    if (
+                        canonical_mode == "sensors"
+                        and perception_sources.get("radar_modality")
+                        == "CARLA_RADAR_FRAME_ALIGNED"
+                    ):
+                        canonical_mode = "sensors_radar"
+                    queued_now, retained_commands = _select_deferred_commands(
+                        deferred_commands,
+                        scenario_plan_active=(
+                            maneuver_fsm.plan is not None
+                            and maneuver_fsm.state not in TERMINAL_STATES
+                        ),
+                        perception_target_available=bool(scene.detected_objects),
+                    )
+                    deferred_commands[:] = retained_commands
+                    slow_submitted_now = False
+                    emergency_submitted_now = False
+                    for deferred in queued_now:
+                        image_stage_started_ns = time.monotonic_ns()
+                        rgb_ref = None
+                        staged_command_id = str(
+                            deferred.envelope.get("command_id", "")
+                        )
+                        if current_rgb is not None and qwen_image_stager is not None:
+                            if current_multiview_rgb:
+                                rgb_ref = qwen_image_stager.stage_multiview(
+                                    staged_command_id,
+                                    {
+                                        "rgb_front": current_rgb,
+                                        **current_multiview_rgb,
+                                    },
+                                    frame_id=frame,
+                                )
+                            else:
+                                rgb_ref = qwen_image_stager.stage(
+                                    staged_command_id, current_rgb, frame_id=frame,
+                                )
+                        image_staged_ns = time.monotonic_ns()
+                        planner_state = _planner_runtime_state(
+                            world_map, ego, scene, route,
+                        )
+                        requested_actor_id = (
+                            deferred.envelope.get("parameters", {}).get(
+                                "target_actor_id"
+                            )
+                            if isinstance(
+                                deferred.envelope.get("parameters"), Mapping,
+                            )
+                            else None
+                        )
+                        if (
+                            isinstance(requested_actor_id, str)
+                            and requested_actor_id in actor_distances_m
+                        ):
+                            # This is an explicit completion target backed by a
+                            # live owned CARLA actor. It is not inserted into
+                            # PerceptionState.objects and therefore cannot pose
+                            # as a camera/LiDAR detection.
+                            planner_state["grounded_target_ids"] = [
+                                requested_actor_id
+                            ]
+                        planner_state_ready_ns = time.monotonic_ns()
+                        submission = canonical_bridge.submit(
+                            deferred.envelope,
+                            scene,
+                            state,
+                            sim_time_s=state.sim_time_s,
+                            perception_mode=canonical_mode,
+                            received_at_ns=deferred.received_ns,
+                            captured_at_ns=sensor_ready_ns,
+                            rgb_ref=rgb_ref,
+                            runtime_state=planner_state,
+                        )
+                        qwen_target_aliases_by_command[staged_command_id] = dict(
+                            evidence_target_aliases or {}
+                        )
+                        submitted_ns = time.monotonic_ns()
+                        if sensor_ready_ns is not None:
+                            qwen_pre_submit_timing[staged_command_id] = {
+                                "perception_pipeline_ms": max(
+                                    0, perception_completed_ns - sensor_ready_ns,
+                                ) / 1e6,
+                                "post_perception_binding_ms": max(
+                                    0, scene_bound_ns - perception_completed_ns,
+                                ) / 1e6,
+                                "image_stage_ms": max(
+                                    0, image_staged_ns - image_stage_started_ns,
+                                ) / 1e6,
+                                "planner_runtime_state_ms": max(
+                                    0, planner_state_ready_ns - image_staged_ns,
+                                ) / 1e6,
+                                "canonical_submit_ms": max(
+                                    0, submitted_ns - planner_state_ready_ns,
+                                ) / 1e6,
+                            }
+                        slow_submitted_now = slow_submitted_now or (
+                            submission.orchestration.disposition == "SLOW_PENDING"
+                        )
+                        emergency_submitted_now = emergency_submitted_now or (
+                            submission.orchestration.disposition == "SLOW_PENDING"
+                            and str(deferred.envelope.get("intent", "")).upper()
+                            == "EMERGENCY_STOP"
+                        )
+                        if extension_runtime is not None:
+                            extension_runtime.note_command_submitted(
+                                deferred.envelope,
+                                qwen=submission.orchestration.disposition == "SLOW_PENDING",
+                            )
+                            if submission.orchestration.feedback is not None:
+                                _note_extension_terminal(
+                                    extension_runtime, submission.orchestration.feedback,
+                                )
+                        for feedback in submission.feedbacks:
+                            _note_safety_feedback(safety_reasons, feedback)
+                        if qwen_scenario_monitor is not None:
+                            request_routing = (
+                                submission.orchestration.model_request or {}
+                            ).get("routing", {})
+                            observed_route = str(
+                                request_routing.get("disposition", "QWEN_PLAN")
+                            )
+                            qwen_scenario_monitor.record_routing(
+                                observed_route,
+                                qwen_submitted=(
+                                    submission.orchestration.disposition == "SLOW_PENDING"
+                                ),
+                                command_id=submission.orchestration.command_id,
+                            )
+                            control_command = submission.orchestration.control_command
+                            if control_command is not None:
+                                qwen_scenario_monitor.record_behavior(
+                                    control_command["behavior"],
+                                )
+                            elif submission.orchestration.disposition == "SLOW_PENDING":
+                                # The bridge installs a deterministic STOP while
+                                # Qwen is pending.  At the maneuver-contract level
+                                # this is the observable HOLD behavior.
+                                qwen_scenario_monitor.record_behavior("HOLD")
+                            feedback = submission.orchestration.feedback
+                            if feedback is not None:
+                                qwen_scenario_monitor.record_terminal(
+                                    feedback["status"], command_id=feedback["command_id"],
+                                )
+                        if (
+                            qwen_image_stager is not None
+                            and submission.orchestration.disposition != "SLOW_PENDING"
+                        ):
+                            qwen_image_stager.discard(staged_command_id)
+                        runtime_adapted = submission.runtime_adapted
+                        if recorder is not None:
+                            recorder.record_command(
+                                deferred.envelope,
+                                disposition=(
+                                    f"{deferred.origin}_{submission.orchestration.disposition}"
+                                ),
+                                adapted_command=(
+                                    None if runtime_adapted is None
+                                    else runtime_adapted.command
+                                ),
+                                received_ns=deferred.received_ns,
+                                submitted_sim_time_s=state.sim_time_s,
+                            )
+                            recorder.record_canonical_routing(
+                                phase="SUBMIT",
+                                command_id=submission.orchestration.command_id,
+                                payload={
+                                    "canonical_command": submission.canonical_command,
+                                    "perception_state": submission.perception_state,
+                                    "orchestration": submission.orchestration,
+                                },
+                            )
+                            if submission.safety_envelope is not None:
+                                recorder.record_command(
+                                    submission.safety_envelope,
+                                    disposition="INTERNAL_QWEN_WAIT_STOP",
+                                    adapted_command=(
+                                        None if submission.safety_adapted is None
+                                        else submission.safety_adapted.command
+                                    ),
+                                    received_ns=sensor_ready_ns,
+                                    submitted_sim_time_s=state.sim_time_s,
+                                )
+                            for feedback in submission.feedbacks:
+                                recorder.record_feedback(feedback)
+                                _note_extension_terminal(extension_runtime, feedback)
+                            if (
+                                submission.safety_adapted is not None
+                                and submission.safety_adapted.feedback is not None
+                            ):
+                                recorder.record_feedback(submission.safety_adapted.feedback)
+                        queue_snapshot = submission.orchestration.queues
+                        print(json.dumps({
+                            "record_type": "canonical_command_route",
+                            "origin": deferred.origin,
+                            "command_id": submission.orchestration.command_id,
+                            "source_text": deferred.envelope.get("source_text"),
+                            "intent": submission.canonical_command["intent"],
+                            "disposition": submission.orchestration.disposition,
+                            "reason_code": submission.orchestration.reason_code,
+                            "queues": (
+                                None if queue_snapshot is None
+                                else asdict(queue_snapshot)
+                            ),
+                        }, ensure_ascii=False), flush=True)
+                        if deferred.origin == "LIVE_MIC":
+                            print(json.dumps({
+                                "record_type": "live_voice_command",
+                                "source_text": deferred.envelope.get("source_text"),
+                                "intent": deferred.envelope.get("intent"),
+                                "status": deferred.envelope.get("status"),
+                                "confirm_required": deferred.envelope.get("confirm_required"),
+                                "control_authorized": (
+                                    runtime_adapted is not None
+                                    and runtime_adapted.control_authorized
+                                ),
+                                "routing_disposition": submission.orchestration.disposition,
+                                "audio_duration_s": (
+                                    None if deferred.audio_duration_s is None
+                                    else round(deferred.audio_duration_s, 2)
+                                ),
+                            }, ensure_ascii=False), flush=True)
+
+                    resolutions = canonical_bridge.poll(
+                        scene,
+                        state,
+                        sim_time_s=state.sim_time_s,
+                        perception_mode=canonical_mode,
+                        captured_at_ns=sensor_ready_ns,
+                        wait_timeout_ms=_canonical_poll_wait_timeout_ms(
+                            slow_submitted_now=slow_submitted_now,
+                            emergency_submitted_now=emergency_submitted_now,
+                            configured_timeout_ms=args.qwen_timeout_ms,
+                        ),
+                    )
+                    for resolution in resolutions:
+                        if qwen_image_stager is not None:
+                            qwen_image_stager.discard(resolution.command_id)
+                        target_aliases = qwen_target_aliases_by_command.pop(
+                            resolution.command_id, {},
+                        )
+                        orchestration = resolution.orchestration
+                        if extension_runtime is not None:
+                            resolution_reason = _qwen_resolution_reason(orchestration)
+                            extension_runtime.note_qwen_resolution(
+                                disposition=resolution.disposition,
+                                reason_code=resolution_reason,
+                                applied=(
+                                    resolution.disposition == "SLOW_READY"
+                                    and orchestration is not None
+                                    and orchestration.control_command is not None
+                                ),
+                                command_id=resolution.command_id,
+                            )
+                        if recorder is not None:
+                            recorder.record_canonical_routing(
+                                phase="RESOLVE",
+                                command_id=resolution.command_id,
+                                payload=resolution,
+                            )
+                            for feedback in resolution.feedbacks:
+                                recorder.record_feedback(feedback)
+                                _note_extension_terminal(extension_runtime, feedback)
+                                _note_safety_feedback(safety_reasons, feedback)
+                            if resolution.vehicle_feedback is not None:
+                                recorder.record_feedback(resolution.vehicle_feedback)
+                        if qwen_scenario_monitor is not None:
+                            orchestration = resolution.orchestration
+                            if orchestration is not None and orchestration.decision_plan is not None:
+                                qwen_scenario_monitor.record_plan(orchestration.decision_plan)
+                            if orchestration is not None and orchestration.compiled_plan is not None:
+                                for compiled_step in orchestration.compiled_plan.get("steps", ()):
+                                    if isinstance(compiled_step, Mapping):
+                                        qwen_scenario_monitor.record_behavior(
+                                            compiled_step.get("behavior", ""),
+                                        )
+                            for feedback in resolution.feedbacks:
+                                qwen_scenario_monitor.record_terminal(
+                                    feedback["status"], command_id=feedback["command_id"],
+                                )
+                        for feedback in resolution.feedbacks:
+                            _note_extension_terminal(extension_runtime, feedback)
+                        if extension_runtime is not None and orchestration is not None:
+                            if orchestration.decision_plan is not None:
+                                extension_runtime.note_qwen_plan(
+                                    orchestration.decision_plan,
+                                    elapsed_s=elapsed_s,
+                                    target_aliases=target_aliases,
+                                )
+                        if (
+                            orchestration is not None
+                            and orchestration.compiled_plan is not None
+                            and resolution.disposition == "SLOW_READY"
+                        ):
+                            try:
+                                compiled_contract = _compiled_plan_from_payload(
+                                    orchestration.compiled_plan,
+                                )
+                                maneuver_update = maneuver_fsm.start(
+                                    compiled_contract,
+                                    now_s=state.sim_time_s,
+                                )
+                                maneuver_start_xy = (state.x_m, state.y_m)
+                                maneuver_step_start_xy = maneuver_start_xy
+                                maneuver_start_yaw_deg = state.yaw_deg
+                                maneuver_junction_seen = False
+                                maneuver_target_id = str(
+                                    maneuver_fsm.current_step.target.get("target_id")
+                                    or ""
+                                )
+                                maneuver_target_aliases = dict(target_aliases)
+                                maneuver_target_seen = _maneuver_target_visible(
+                                    maneuver_fsm.current_step, scene,
+                                )
+                                grounded_target_distance_m = _maneuver_target_distance_m(
+                                    maneuver_fsm.current_step,
+                                    scene,
+                                    actor_distances_m,
+                                )
+                                maneuver_target_seen = (
+                                    _maneuver_target_visible(
+                                        maneuver_fsm.current_step, scene,
+                                    )
+                                    or grounded_target_distance_m is not None
+                                )
+                                maneuver_target_pass_after_m = (
+                                    # Keep a full longitudinal recovery gap
+                                    # before cutting back into the original
+                                    # lane.  Eight metres left the slow actor
+                                    # alongside ego's rear quarter and caused
+                                    # a correct low-TTC safety preemption.
+                                    max(20.0, grounded_target_distance_m + 20.0)
+                                    if grounded_target_distance_m is not None
+                                    else None
+                                )
+                                maneuver_route_steps_applied.clear()
+                                maneuver_persistent_speed_mps = None
+                                maneuver_return_destination_xy = None
+                                maneuver_lane_ids = {"CURRENT": state.lane_id}
+                                plan_waypoint = world_map.get_waypoint(
+                                    ego.get_location(), project_to_road=True,
+                                )
+                                if plan_waypoint is not None:
+                                    left_lane = plan_waypoint.get_left_lane()
+                                    right_lane = plan_waypoint.get_right_lane()
+                                    if left_lane is not None:
+                                        maneuver_lane_ids["LEFT_ADJACENT"] = str(left_lane.lane_id)
+                                    if right_lane is not None:
+                                        maneuver_lane_ids["RIGHT_ADJACENT"] = str(right_lane.lane_id)
+                                _record_maneuver_update(
+                                    maneuver_update,
+                                    monitor=qwen_scenario_monitor,
+                                    recorder=recorder,
+                                    extension_runtime=extension_runtime,
+                                )
+                                lane_change_steps = tuple(
+                                    step for step in compiled_contract.steps
+                                    if step.behavior in {
+                                        "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
+                                    }
+                                )
+                                route_before_maneuver = route
+                                route, compiled_speed, route_behavior = _apply_compiled_plan_route(
+                                    orchestration.compiled_plan,
+                                    world_map=world_map,
+                                    ego=ego,
+                                    current_route=route,
+                                    requested_speed_mps=runtime.requested_speed_mps,
+                                    distance_m=(
+                                        args.route_distance_m
+                                        if spec is None
+                                        else _scenario_route_distance_m(spec)
+                                    ),
+                                    prevalidated_maneuver_route=(
+                                        None
+                                        if dynamic_out_and_back
+                                        else prevalidated_avoid_route or topology_route
+                                    ),
+                                    lane_change_profile=lane_change_profile,
+                                )
+                                maneuver_mission_route = (
+                                    route_before_maneuver
+                                    if _retain_route_for_maneuver(
+                                        topology_coverage_planning=topology_coverage_planning,
+                                        dynamic_out_and_back=dynamic_out_and_back,
+                                        must_finish_route=(
+                                            spec is not None
+                                            and spec.expected.get("must_finish_route") is True
+                                        ),
+                                        lane_change_step_count=len(lane_change_steps),
+                                        route_behavior=route_behavior,
+                                    )
+                                    else None
+                                )
+                                maneuver_mission_progress_m = (
+                                    project_route_progress_m(
+                                        maneuver_mission_route.points_xy_m,
+                                        state.x_m,
+                                        state.y_m,
+                                        previous_s_m=route_progress_m,
+                                    )
+                                    if maneuver_mission_route is not None
+                                    else None
+                                )
+                                runtime.requested_speed_mps = compiled_speed
+                                if route_behavior is not None:
+                                    first_route_step = next(
+                                        (
+                                            step.step_id
+                                            for step in compiled_contract.steps
+                                            if step.behavior in {
+                                                "TURN_LEFT", "TURN_RIGHT",
+                                                "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT",
+                                            }
+                                        ),
+                                        None,
+                                    )
+                                    if first_route_step is not None:
+                                        maneuver_route_steps_applied.add(first_route_step)
+                                trajectory_ready_ns = time.monotonic_ns()
+                                if (
+                                    recorder is not None
+                                    and orchestration.model_request is not None
+                                    and orchestration.model_completed_ns is not None
+                                ):
+                                    request_id = str(
+                                        orchestration.model_request["request_id"]
+                                    )
+                                    timing_breakdown = {
+                                        **qwen_pre_submit_timing.pop(
+                                            resolution.command_id, {},
+                                        ),
+                                        **dict(orchestration.model_timing or {}),
+                                        **(
+                                            {}
+                                            if qwen_client is None
+                                            else qwen_client.pop_timing(request_id) or {}
+                                        ),
+                                    }
+                                    recorder.record_qwen_trajectory(
+                                        command_id=resolution.command_id,
+                                        request_id=request_id,
+                                        sensor_ready_ns=int(orchestration.model_request["created_at_ns"]),
+                                        model_completed_ns=orchestration.model_completed_ns,
+                                        trajectory_ready_ns=trajectory_ready_ns,
+                                        breakdown=timing_breakdown,
+                                    )
+                                else:
+                                    timing_breakdown = dict(
+                                        orchestration.model_timing or {}
+                                    )
+                                print(json.dumps({
+                                    "record_type": "qwen_plan_route_applied",
+                                    "command_id": resolution.command_id,
+                                    "plan_id": orchestration.compiled_plan.get("plan_id"),
+                                    "route_behavior": route_behavior,
+                                    "target_speed_mps": compiled_speed,
+                                    "compiled_steps": len(
+                                        orchestration.compiled_plan.get("steps", ())
+                                    ),
+                                    "sensor_to_trajectory_ms": (
+                                        trajectory_ready_ns
+                                        - int(orchestration.model_request["created_at_ns"])
+                                    ) / 1e6,
+                                    "model_timing": timing_breakdown,
+                                }, ensure_ascii=False), flush=True)
+                            except (AttributeError, KeyError, TypeError, ValueError, RuntimeError) as error:
+                                watchdog_alerts.append("QWEN_PLAN_ROUTE_INFEASIBLE")
+                                print(json.dumps({
+                                    "record_type": "qwen_plan_route_rejected",
+                                    "command_id": resolution.command_id,
+                                    "error": f"{type(error).__name__}: {error}",
+                                }, ensure_ascii=False), flush=True)
+                        print(json.dumps({
+                            "record_type": "canonical_slow_result",
+                            "command_id": resolution.command_id,
+                            "disposition": resolution.disposition,
+                            "feedback": list(resolution.feedbacks),
+                            "runtime_intent": (
+                                None if resolution.runtime_envelope is None
+                                else resolution.runtime_envelope.get("intent")
+                            ),
+                        }, ensure_ascii=False), flush=True)
+                    if queued_now or resolutions:
+                        route = replace(
+                            route, target_speed_mps=runtime.requested_speed_mps,
+                        )
+                    perception_sources["canonical_state"] = (
+                        "PERCEPTION_STATE_V1_" + canonical_mode.upper()
+                    )
+                if not sensor_startup_grace and runtime_watchdog_timed_out:
+                    watchdog_alerts.append("RUNTIME_WATCHDOG_TIMEOUT")
+                if watchdog_alerts:
+                    # Preserve the concrete upstream fault in evidence.  D's
+                    # public safety reason intentionally remains the stable
+                    # WATCHDOG_ALERT category, but that category alone cannot
+                    # distinguish a sensor timeout from a route or Qwen fault.
+                    perception_sources["runtime_alerts"] = ",".join(
+                        sorted(set(watchdog_alerts))
+                    )
+
+                command_id = runtime.active_command_id
+                decision_start_ns = time.monotonic_ns()
+                raw_control_override = None
+                if not raw_control_fault_injected:
+                    raw_control_override = _scenario_raw_control_fault(spec, elapsed_s)
+                    raw_control_fault_injected = raw_control_override is not None
+                if extension_frame is not None:
+                    steer_fault = next((
+                        item for item in extension_frame.active_faults
+                        if str(item.get("type", "")).lower() == "steer_bias"
+                    ), None)
+                    if steer_fault is not None:
+                        raw_control_override = {
+                            "throttle": 0.10,
+                            "brake": 0.0,
+                            "steer": float(steer_fault.get("value", 0.0)),
+                            "fault_injected": True,
+                        }
+                if raw_control_override is None:
+                    raw_control_override = perception_control_override
+                effective_route = route
+                extension_speed_cap_mps = (
+                    None if extension_frame is None else extension_frame.speed_limit_mps
+                )
+                active_speed_cap_mps = min(
+                    value for value in (
+                        c_speed_cap_mps, extension_speed_cap_mps,
+                        scenario_sensor_fault_speed_cap_mps,
+                    )
+                    if value is not None
+                ) if any(
+                    value is not None for value in (
+                        c_speed_cap_mps, extension_speed_cap_mps,
+                        scenario_sensor_fault_speed_cap_mps,
+                    )
+                ) else None
+                if route_recovery_hold:
+                    effective_route = _route_recovery_hold_reference(state)
+                    active_speed_cap_mps = 0.0
+                elif finish_contract_route:
+                    # Once the explicit endpoint braking window begins, the
+                    # last sampled route target can legitimately fall behind
+                    # ego.  Hold a valid forward reference while longitudinal
+                    # control completes the stop instead of latching a false
+                    # lateral watchdog at an otherwise successful endpoint.
+                    effective_route = _route_recovery_hold_reference(state)
+                elif (
+                    global_route_manager is not None
+                    and global_route is not None
+                    and global_route_state is not None
+                    and route.route_id == global_route.reference.route_id
+                ):
+                    refresh_margin_m = max(20.0, state.speed_mps * 3.0)
+                    if _route_local_reference_needs_refresh(
+                        global_local_reference,
+                        global_route,
+                        global_route_state.route_s,
+                        refresh_margin_m,
+                    ):
+                        global_local_reference = global_route_manager.local_reference(
+                            global_route,
+                            global_route_state.route_s,
+                            route.target_speed_mps,
+                            lookbehind_m=max(8.0, state.speed_mps * 1.5),
+                            lookahead_m=max(60.0, state.speed_mps * 8.0 + 20.0),
+                        )
+                        print(json.dumps({
+                            "record_type": "route_local_reference_ready",
+                            "frame": frame,
+                            "global_route_id": global_route.reference.route_id,
+                            "global_route_s_m": global_route_state.route_s,
+                            "global_s_start_m": global_local_reference.metadata[
+                                "global_s_start_m"
+                            ],
+                            "global_s_end_m": global_local_reference.metadata[
+                                "global_s_end_m"
+                            ],
+                            "point_count": len(global_local_reference.points_xy_m),
+                        }, ensure_ascii=False), flush=True)
+                    effective_route = replace(
+                        global_local_reference,
+                        target_speed_mps=route.target_speed_mps,
+                    )
+                if active_speed_cap_mps is not None:
+                    effective_route = replace(
+                        effective_route,
+                        target_speed_mps=min(
+                            effective_route.target_speed_mps,
+                            active_speed_cap_mps,
+                        ),
+                    )
+                result = runtime.step(
+                    state, scene, effective_route, dt_s=args.fixed_delta_s,
+                    watchdog_alerts=tuple(watchdog_alerts),
+                    raw_control_override=raw_control_override,
+                    speed_cap_mps=active_speed_cap_mps,
+                    safety_override_reason=c_perception_override_reason,
+                )
+                if scene.red_light_violation and runtime.yellow_clear_committed:
+                    # Crossing after a safe yellow dilemma-zone commitment is
+                    # not a red-light violation. Keep the raw signal transition
+                    # auditable without charging a false safety event.
+                    scene = replace(scene, red_light_violation=False)
+                    perception_sources["red_light_violation"] = (
+                        "YELLOW_CLEARANCE_COMMITMENT"
+                    )
+                if qwen_scenario_monitor is not None:
+                    for feedback in result.feedback:
+                        qwen_scenario_monitor.record_terminal(
+                            feedback.status,
+                            command_id=feedback.command_id,
+                            reason_code=(
+                                result.safety_reason
+                                if str(getattr(feedback.status, "value", feedback.status)).upper()
+                                == "SAFETY_OVERRIDE"
+                                else None
+                            ),
+                        )
+                for feedback in result.feedback:
+                    _note_extension_terminal(extension_runtime, feedback)
+                if sensor_startup_grace:
+                    result = replace(
+                        result,
+                        final_control=ControlOutput(0.0, 1.0, 0.0),
+                        safety_reason="PERCEPTION_STARTUP_GRACE",
+                        safety_override=True,
+                    )
+                elif c_perception_override_reason is not None and not result.safety_override:
+                    result = replace(
+                        result,
+                        safety_reason=c_perception_override_reason,
+                        safety_override=True,
+                    )
+                lane_marking_crossing_expected = False
+                if (
+                    maneuver_fsm.plan is not None
+                    and maneuver_fsm.state not in TERMINAL_STATES
+                ):
+                    if maneuver_mission_route is not None:
+                        maneuver_mission_progress_m = project_route_progress_m(
+                            maneuver_mission_route.points_xy_m,
+                            state.x_m,
+                            state.y_m,
+                            previous_s_m=maneuver_mission_progress_m,
+                        )
+                    maneuver_step_before_update = maneuver_fsm.current_step
+                    lane_marking_crossing_expected = (
+                        maneuver_step_before_update is not None
+                        and maneuver_step_before_update.behavior in {
+                            "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT", "RETURN_TO_LANE",
+                        }
+                    )
+                    plan_capabilities = _planner_runtime_state(
+                        world_map, ego, scene, route,
+                    )
+                    current_waypoint = world_map.get_waypoint(
+                        ego.get_location(), project_to_road=True,
+                    )
+                    current_is_junction = bool(
+                        getattr(current_waypoint, "is_junction", False)
+                    )
+                    maneuver_junction_seen = (
+                        maneuver_junction_seen or current_is_junction
+                    )
+                    lane_label = _maneuver_lane_label(
+                        state.lane_id,
+                        maneuver_lane_ids,
+                        maneuver_fsm.current_step,
+                        maneuver_mission_route,
+                        x_m=state.x_m,
+                        y_m=state.y_m,
+                        return_destination_xy=maneuver_return_destination_xy,
+                    )
+                    heading_change_deg = (
+                        0.0
+                        if maneuver_start_yaw_deg is None
+                        else abs(
+                            (state.yaw_deg - maneuver_start_yaw_deg + 180.0)
+                            % 360.0 - 180.0
+                        )
+                    )
+                    target_visible = _maneuver_target_visible(
+                        maneuver_fsm.current_step, scene,
+                    )
+                    current_target_id = (
+                        ""
+                        if maneuver_fsm.current_step is None
+                        else str(
+                            maneuver_fsm.current_step.target.get("target_id") or ""
+                        )
+                    )
+                    grounded_target_clearance_m = (
+                        actor_longitudinal_clearances_m.get(
+                            _physical_actor_id_for_target(
+                                current_target_id,
+                                maneuver_target_aliases,
+                            )
+                        )
+                        if current_target_id else None
+                    )
+                    maneuver_target_seen = (
+                        maneuver_target_seen
+                        or target_visible
+                        or grounded_target_clearance_m is not None
+                    )
+                    distance_from_plan_start_m = (
+                        0.0
+                        if maneuver_step_start_xy is None
+                        else math.dist(
+                            maneuver_step_start_xy,
+                            (state.x_m, state.y_m),
+                        )
+                    )
+                    terminal_safety = (
+                        result.safety_reason.startswith("C_FRONT_")
+                        or result.safety_reason in {
+                            "COLLISION_DETECTED",
+                            "RISK_EMERGENCY_BRAKE_REQUESTED",
+                            "LOW_TTC",
+                            "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE",
+                            "RED_LIGHT_STOP_LINE_GUARD",
+                        }
+                    )
+                    maneuver_update = maneuver_fsm.update(
+                        {
+                            **plan_capabilities,
+                            "perception_fresh": not sensor_startup_grace,
+                            "no_emergency_risk": not terminal_safety,
+                            "emergency": terminal_safety,
+                            "emergency_reason": result.safety_reason,
+                            "risk_level": "EMERGENCY" if terminal_safety else "LOW",
+                            "speed_mps": state.speed_mps,
+                            "lane": lane_label,
+                            "lateral_error_m": scene.lane_offset_m or 0.0,
+                            "junction_exited": _maneuver_junction_exited(
+                                junction_seen=maneuver_junction_seen,
+                                current_is_junction=current_is_junction,
+                                heading_change_deg=heading_change_deg,
+                                distance_from_start_m=distance_from_plan_start_m,
+                                behavior=(
+                                    None
+                                    if maneuver_step_before_update is None
+                                    else maneuver_step_before_update.behavior
+                                ),
+                            ),
+                            "target_visible": target_visible,
+                            "target_seen": maneuver_target_seen,
+                            "target_gap_s": (
+                                _maneuver_target_gap_s(
+                                    maneuver_fsm.current_step, scene, state.speed_mps,
+                                    actor_distances_m,
+                                )
+                                or -math.inf
+                            ),
+                            "target_passed": (
+                                grounded_target_clearance_m <= -5.0
+                                if grounded_target_clearance_m is not None
+                                else _maneuver_target_passed(
+                                    target_seen=maneuver_target_seen,
+                                    target_visible=target_visible,
+                                    distance_from_plan_start_m=distance_from_plan_start_m,
+                                    pass_after_m=maneuver_target_pass_after_m,
+                                )
+                            ),
+                            "hold_condition": True,
+                        },
+                        now_s=state.sim_time_s,
+                    )
+                    _record_maneuver_update(
+                        maneuver_update,
+                        monitor=qwen_scenario_monitor,
+                        recorder=recorder,
+                        extension_runtime=extension_runtime,
+                    )
+                    if maneuver_update.state == "SUCCEEDED":
+                        step_feedback = runtime.complete_active(
+                            now_s=state.sim_time_s,
+                            detail="outer Qwen maneuver plan completed",
+                        )
+                        if step_feedback is not None and recorder is not None:
+                            recorder.record_feedback(step_feedback)
+                    # A finite maneuver route must never remain the active
+                    # lateral reference after the maneuver has terminated.
+                    # Topology-coverage missions continue from the terminal
+                    # pose and current lane for the untravelled contract
+                    # distance. Dynamic out-and-back plans restore their
+                    # retained mission route after the explicit return leg.
+                    if (
+                        maneuver_update.state in TERMINAL_STATES
+                        and maneuver_mission_route is not None
+                    ):
+                        synchronized_route_index = None
+                        restore_source = "RETAINED_MISSION_ROUTE"
+                        if topology_coverage_planning:
+                            assert spec is not None
+                            assert global_route_manager is not None
+                            remaining_contract_m = max(
+                                spec.finish_radius_m * 2.0,
+                                spec.route_distance_contract_m - route_progress_m,
+                            )
+                            continuation = global_route_manager.plan_distance(
+                                ego.get_transform(),
+                                _topology_planning_distance_m(
+                                    remaining_contract_m,
+                                    spec.finish_radius_m,
+                                ),
+                                runtime.requested_speed_mps,
+                            )
+                            global_route = continuation
+                            global_route_destination = carla.Location(
+                                x=continuation.destination_xy_m[0],
+                                y=continuation.destination_xy_m[1],
+                                z=ego.get_location().z,
+                            )
+                            topology_route = continuation.reference
+                            global_local_reference = None
+                            route = replace(
+                                continuation.reference,
+                                target_speed_mps=runtime.requested_speed_mps,
+                            )
+                            # The route identity/progress changes here, but the
+                            # vehicle is still in one continuous manoeuvre. Keep
+                            # the last applied steer so the next reference is
+                            # subject to the same per-frame rate limit.
+                            runtime.lateral.reset(preserve_steer=True)
+                            global_route_state = global_route_manager.state(
+                                continuation,
+                                state.x_m,
+                                state.y_m,
+                                previous_s_m=0.0,
+                            )
+                            scenario_actor_progress_trackers.clear()
+                            restore_source = "TOPOLOGY_CONTINUATION"
+                        else:
+                            synchronize_route_progress = getattr(
+                                runtime.lateral,
+                                "synchronize_route_progress",
+                                None,
+                            )
+                            synchronized_route_index = (
+                                synchronize_route_progress(
+                                    maneuver_mission_route,
+                                    maneuver_mission_progress_m or 0.0,
+                                )
+                                if callable(synchronize_route_progress)
+                                else None
+                            )
+                            restored_mission_speed_mps = _mission_speed_after_maneuver(
+                                maneuver_mission_route.target_speed_mps,
+                                maneuver_persistent_speed_mps,
+                            )
+                            runtime.requested_speed_mps = restored_mission_speed_mps
+                            route = replace(
+                                maneuver_mission_route,
+                                target_speed_mps=restored_mission_speed_mps,
+                            )
+                        restore_payload = {
+                            "record_type": "qwen_mission_route_restored",
+                            "command_id": maneuver_fsm.plan.command_id,
+                            "plan_id": maneuver_fsm.plan.plan_id,
+                            "terminal_state": maneuver_update.state,
+                            "route_points": len(route.points_xy_m),
+                            "target_speed_mps": route.target_speed_mps,
+                            "mission_route_progress_m": maneuver_mission_progress_m,
+                            "synchronized_route_index": synchronized_route_index,
+                            "restore_source": restore_source,
+                        }
+                        print(json.dumps(restore_payload, ensure_ascii=False), flush=True)
+                        if recorder is not None:
+                            recorder.record_canonical_routing(
+                                phase="MISSION_ROUTE_RESTORED",
+                                command_id=maneuver_fsm.plan.command_id,
+                                payload=restore_payload,
+                            )
+                        if extension_runtime is not None:
+                            extension_runtime.note_mission_route_restored()
+                        maneuver_mission_route = None
+                        maneuver_mission_progress_m = None
+                        maneuver_persistent_speed_mps = None
+                        maneuver_return_destination_xy = None
+                    started_route_step = (
+                        maneuver_update.current_step
+                        if any(
+                            event.event_type == "qwen_step_started"
+                            for event in maneuver_update.events
+                        )
+                        and maneuver_update.current_step is not None
+                        and maneuver_update.current_step.step_id
+                        not in maneuver_route_steps_applied
+                        else None
+                    )
+                    if started_route_step is not None:
+                        try:
+                            # Completion distances belong to the step that
+                            # declares them.  Counting SLOW/WAIT/LANE travel
+                            # toward PASS_TARGET can make the vehicle return
+                            # before it has actually cleared the obstacle.
+                            maneuver_step_start_xy = (state.x_m, state.y_m)
+                            started_target_id = str(
+                                started_route_step.target.get("target_id") or ""
+                            )
+                            target_changed = started_target_id != maneuver_target_id
+                            if _maneuver_step_reanchors_target(
+                                started_route_step,
+                                maneuver_target_id,
+                            ):
+                                target_seen_before_step = (
+                                    maneuver_target_seen
+                                    if not target_changed else False
+                                )
+                                maneuver_target_id = started_target_id
+                                target_visible_at_step_start = _maneuver_target_visible(
+                                    started_route_step, scene,
+                                )
+                                grounded_target_distance_m = _maneuver_target_distance_m(
+                                    started_route_step,
+                                    scene,
+                                    actor_distances_m,
+                                )
+                                maneuver_target_seen = (
+                                    target_seen_before_step
+                                    or target_visible_at_step_start
+                                    or grounded_target_distance_m is not None
+                                )
+                                maneuver_target_pass_after_m = (
+                                    max(20.0, grounded_target_distance_m + 20.0)
+                                    if grounded_target_distance_m is not None
+                                    else None
+                                )
+                            step_speed = started_route_step.target.get(
+                                "target_speed_mps",
+                            )
+                            if step_speed is not None:
+                                runtime.requested_speed_mps = float(step_speed)
+                                if started_route_step.behavior == "SET_SPEED":
+                                    # SET_SPEED is a persistent mission-state
+                                    # update. Finite maneuver target speeds are
+                                    # temporary execution speeds.
+                                    maneuver_persistent_speed_mps = float(step_speed)
+                            route_step_applied = False
+                            deferred_dynamic_lane_change = _is_deferred_dynamic_lane_change(
+                                started_route_step,
+                                dynamic_out_and_back=dynamic_out_and_back,
+                                mission_route=maneuver_mission_route,
+                            )
+                            if (
+                                started_route_step.behavior.startswith("CHANGE_LANE_")
+                                and prevalidated_avoid_route is not None
+                                and not dynamic_out_and_back
+                                and (
+                                    route.points_xy_m
+                                    == prevalidated_avoid_route.points_xy_m
+                                    or _route_starts_near_ego(
+                                        prevalidated_avoid_route, ego,
+                                    )
+                                )
+                            ):
+                                # The acceptance scenario declares one legal
+                                # out-and-back detour. Keep that full route for
+                                # both the outbound and return semantic steps.
+                                route = replace(
+                                    (
+                                        route
+                                        if route.points_xy_m
+                                        == prevalidated_avoid_route.points_xy_m
+                                        else prevalidated_avoid_route
+                                    ),
+                                    target_speed_mps=runtime.requested_speed_mps,
+                                )
+                                route_step_applied = True
+                            elif started_route_step.behavior.startswith("TURN_"):
+                                route = build_route_reference(
+                                    world_map,
+                                    ego,
+                                    runtime.requested_speed_mps,
+                                    turn_direction=started_route_step.behavior.rsplit("_", 1)[-1],
+                                    distance_m=(
+                                        args.route_distance_m
+                                        if spec is None
+                                        else _scenario_route_distance_m(spec)
+                                    ),
+                                )
+                                route_step_applied = True
+                            elif started_route_step.behavior.startswith("CHANGE_LANE_"):
+                                route_parameters = _lane_change_route_parameters(
+                                    lane_change_profile,
+                                    mission_distance_m=(
+                                        args.route_distance_m
+                                        if spec is None
+                                        else _scenario_route_distance_m(spec)
+                                    ),
+                                )
+                                return_to_retained_route = bool(
+                                    deferred_dynamic_lane_change
+                                    and str(
+                                        started_route_step.target.get("target_lane") or ""
+                                    ).strip().upper() == "CURRENT"
+                                )
+                                try:
+                                    route = build_lane_change_route_reference(
+                                        world_map,
+                                        ego,
+                                        runtime.requested_speed_mps,
+                                        direction=started_route_step.behavior.rsplit("_", 1)[-1],
+                                        defer_until_safe=deferred_dynamic_lane_change,
+                                        **route_parameters,
+                                    )
+                                except ValueError as error:
+                                    if not (
+                                        return_to_retained_route
+                                        and maneuver_mission_route is not None
+                                        and "no safe post-junction lane-change corridor"
+                                        in str(error)
+                                    ):
+                                        raise
+                                    destination_xy = _dynamic_return_destination_xy(
+                                        maneuver_mission_route,
+                                        state.x_m,
+                                        state.y_m,
+                                        previous_progress_m=maneuver_mission_progress_m,
+                                    )
+                                    maneuver_return_destination_xy = destination_xy
+                                    route = build_destination_route_reference(
+                                        world_map,
+                                        ego.get_transform(),
+                                        destination_xy,
+                                        runtime.requested_speed_mps,
+                                    )
+                                    end_location = ego.get_location()
+                                    end_location.x, end_location.y = route.points_xy_m[-1]
+                                    destination_waypoint = world_map.get_waypoint(
+                                        end_location,
+                                        project_to_road=True,
+                                    )
+                                    if destination_waypoint is not None:
+                                        maneuver_lane_ids["CURRENT"] = str(
+                                            destination_waypoint.lane_id
+                                        )
+                                route_step_applied = True
+                            elif (
+                                dynamic_out_and_back
+                                and started_route_step.behavior == "PASS_TARGET"
+                            ):
+                                # CHANGE_LANE_* uses a finite maneuver reference.
+                                # Once the outbound lane change completes, PASS_TARGET
+                                # must continue forward in the ego's current adjacent
+                                # lane instead of exhausting that finite reference.
+                                #
+                                # Replanning STRAIGHT from the current map pose keeps
+                                # the vehicle in its present lane until the semantic
+                                # RETURN_TO_LANE step explicitly requests the return.
+                                route = _build_pass_target_continuation(
+                                    world_map=world_map,
+                                    ego=ego,
+                                    target_speed_mps=runtime.requested_speed_mps,
+                                    mission_distance_m=(
+                                        args.route_distance_m
+                                        if spec is None
+                                        else _scenario_route_distance_m(spec)
+                                    ),
+                                )
+                                runtime.lateral.reset(preserve_steer=True)
+                                route_step_applied = True
+                            else:
+                                route = replace(
+                                    route,
+                                    target_speed_mps=runtime.requested_speed_mps,
+                                )
+                            maneuver_route_steps_applied.add(started_route_step.step_id)
+                            print(json.dumps({
+                                "record_type": (
+                                    "qwen_step_route_applied"
+                                    if route_step_applied
+                                    else "qwen_step_speed_applied"
+                                ),
+                                "command_id": maneuver_fsm.plan.command_id,
+                                "plan_id": maneuver_fsm.plan.plan_id,
+                                "step_id": started_route_step.step_id,
+                                "route_behavior": started_route_step.behavior,
+                                "target_speed_mps": runtime.requested_speed_mps,
+                            }, ensure_ascii=False), flush=True)
+                        except (AttributeError, RuntimeError, TypeError, ValueError) as error:
+                            failed_update = maneuver_fsm.fail(
+                                "STEP_ROUTE_INFEASIBLE",
+                                now_s=state.sim_time_s,
+                            )
+                            _record_maneuver_update(
+                                failed_update,
+                                monitor=qwen_scenario_monitor,
+                                recorder=recorder,
+                                extension_runtime=extension_runtime,
+                            )
+                            watchdog_alerts.append("QWEN_STEP_ROUTE_INFEASIBLE")
+                            print(json.dumps({
+                                "record_type": "qwen_step_route_rejected",
+                                "command_id": maneuver_fsm.plan.command_id,
+                                "plan_id": maneuver_fsm.plan.plan_id,
+                                "step_id": started_route_step.step_id,
+                                "error": f"{type(error).__name__}: {error}",
+                            }, ensure_ascii=False), flush=True)
+                if result.safety_override and not (
+                    qwen_enabled
+                    and qwen_status == "PENDING"
+                    and result.safety_reason == "WATCHDOG_ALERT"
+                ):
+                    safety_reasons.add(result.safety_reason)
+                if extension_runtime is not None:
+                    extension_runtime.note_control_observation(
+                        elapsed_s=elapsed_s,
+                        speed_mps=state.speed_mps,
+                        route_progress_m=route_progress_m,
+                        brake=result.final_control.brake,
+                        throttle=result.final_control.throttle,
+                        safety_override=result.safety_override,
+                        safety_reason=result.safety_reason,
+                        route_deviation_m=scene.route_deviation_m,
+                        collision=scene.collision,
+                        lateral_offset_m=scene.lane_offset_m,
+                    )
+                decision_end_ns = time.monotonic_ns()
+                ego.apply_control(carla.VehicleControl(
+                    throttle=result.final_control.throttle,
+                    brake=result.final_control.brake,
+                    steer=result.final_control.steer,
+                    hand_brake=False, reverse=False, manual_gear_shift=False,
+                ))
+                if args.follow_spectator or args.live_mic:
+                    _follow_ego_spectator(world, ego, carla)
+                control_applied_ns = time.monotonic_ns()
+                timing = FrameTiming(
+                    sensor_ready_ns=sensor_ready_ns,
+                    decision_start_ns=decision_start_ns,
+                    decision_end_ns=decision_end_ns,
+                    control_applied_ns=control_applied_ns,
+                    simulator_tick_start_ns=simulator_tick_start_ns,
+                    simulator_tick_end_ns=simulator_tick_end_ns,
+                    perception_start_ns=perception_start_ns,
+                )
+                if recorder is not None:
+                    recorder.record_runtime_frame(
+                        result, scene,
+                        raw_control=result.raw_control or result.final_control,
+                        timing=timing,
+                        command_id=command_id,
+                        fsm_state=runtime.fsm.state.value,
+                        perception_sources=perception_sources,
+                        c_safety_state=c_safety_state,
+                        lane_marking_crossing_expected=lane_marking_crossing_expected,
+                    )
+
+                frames_completed += 1
+                final_state, final_scene = state, scene
+                collision_seen = collision_seen or scene.collision
+                if scene.lead_distance_m is not None:
+                    min_gap_m = scene.lead_distance_m if min_gap_m is None else min(min_gap_m, scene.lead_distance_m)
+                record = {
+                    "record_type": "frame", "scenario": args.scenario,
+                    "perception_mode": args.perception_mode, "frame": frame,
+                    "sim_time_s": state.sim_time_s, "elapsed_s": elapsed_s,
+                    "speed_mps": state.speed_mps, "x_m": state.x_m, "y_m": state.y_m,
+                    "z_m": state.z_m, "yaw_deg": state.yaw_deg, "lane_id": state.lane_id,
+                    "target_speed_mps": None if result.longitudinal is None else result.longitudinal.target_speed_mps,
+                    "longitudinal_state": None if result.longitudinal is None else result.longitudinal.state,
+                    "ttc_s": None if result.longitudinal is None else result.longitudinal.risk.ttc_s,
+                    "lead_distance_m": scene.lead_distance_m,
+                    "distance_to_stop_line_m": scene.distance_to_stop_line_m,
+                    "control": result.final_control.to_dict(), "safety": result.safety_reason,
+                    "safety_reason_category": result.safety_reason_category,
+                    "safety_override": result.safety_override,
+                    "qwen_status": qwen_status,
+                }
+                if global_route_state is not None:
+                    record["route_state"] = global_route_state.to_dict()
+                    record["mission_route_progress_m"] = route_progress_m
+                if step_index % args.print_every == 0 or step_index == args.frames - 1:
+                    print(json.dumps(record, ensure_ascii=False))
+                # The synchronous world is still frozen until the next tick.
+                # Mark the frame healthy after evidence/console I/O so a slow
+                # flush cannot age the previous control heartbeat and create a
+                # permanent false safety latch on the following frame.
+                frame_completed_at_s = time.monotonic()
+                # Both stages completed this frame.  Refreshing only control
+                # leaves the earlier perception timestamp to age while the
+                # same healthy frame is being controlled and logged.
+                watchdog.heartbeat("perception", now_s=frame_completed_at_s)
+                watchdog.heartbeat("control", now_s=frame_completed_at_s)
+                watchdog.pause(now_s=time.monotonic())
+                maneuver_active = (
+                    maneuver_fsm.plan is not None
+                    and maneuver_fsm.state not in TERMINAL_STATES
+                )
+                early_route_candidate = (
+                    spec is not None
+                    and spec.expected.get("must_finish_route") is True
+                    and elapsed_s >= float(spec.expected.get("min_run_time_s", 0.0))
+                    and _route_finish_reached(
+                        route_remaining_m=final_route_remaining_m,
+                        distance_to_route_end_m=distance_to_route_end_m,
+                        finish_radius_m=spec.finish_radius_m,
+                    )
+                    and state.speed_mps <= 0.15
+                )
+                qwen_contract_completed = qwen_scenario_monitor is None
+                extension_contract_completed = extension_runtime is None
+                if early_route_candidate and qwen_scenario_monitor is not None:
+                    qwen_contract_completed = qwen_scenario_monitor.finalize().passed
+                if early_route_candidate and extension_runtime is not None and spec is not None:
+                    proposed = spec.extensions.get("proposed_acceptance", {})
+                    if not isinstance(proposed, Mapping):
+                        raise TypeError("extensions.proposed_acceptance must be an object")
+                    extension_contract_completed = bool(extension_runtime.evaluate(
+                        proposed,
+                        expected_command_count=len(spec.commands),
+                        safety_reasons=tuple(sorted(safety_reasons)),
+                        oracle=spec.extensions.get("oracle", {}),
+                    )["passed"])
+                route_run_ended_early = _route_run_can_end_early(
+                    spec,
+                    elapsed_s=elapsed_s,
+                    speed_mps=state.speed_mps,
+                    route_remaining_m=final_route_remaining_m,
+                    distance_to_route_end_m=distance_to_route_end_m,
+                    timeline_completed=(timeline is None or timeline.completed),
+                    command_finished=runtime.active_command_id is None,
+                    canonical_pending=(
+                        canonical_bridge is not None and canonical_bridge.has_pending
+                    ),
+                    deferred_command_count=len(deferred_commands),
+                    maneuver_active=maneuver_active,
+                    qwen_contract_completed=qwen_contract_completed,
+                    extension_contract_completed=extension_contract_completed,
+                    collision_seen=collision_seen,
+                    safety_reasons=safety_reasons,
+                )
+                if route_run_ended_early:
+                    print(json.dumps({
+                        "record_type": "route_run_completed_early",
+                        "frame": frame,
+                        "elapsed_s": elapsed_s,
+                        "route_remaining_m": final_route_remaining_m,
+                        "frame_budget": args.frames,
+                    }, ensure_ascii=False), flush=True)
+                    break
+                if args.realtime:
+                    # ``--realtime`` targets one wall-clock period per frame;
+                    # it must not add a full period after tick+control work.
+                    active_wall_s = (
+                        time.monotonic_ns() - simulator_tick_start_ns
+                    ) / 1e9
+                    remaining_s = args.fixed_delta_s - active_wall_s
+                    if remaining_s > 0.0:
+                        time.sleep(remaining_s)
+
+        if canonical_bridge is not None:
+            unresolved = canonical_bridge.fail_all_pending(
+                sim_time_s=last_sim_time_s,
+                emitted_at_ns=time.monotonic_ns(),
+            )
+            for resolution in unresolved:
+                if qwen_image_stager is not None:
+                    qwen_image_stager.discard(resolution.command_id)
+                if recorder is not None:
+                    recorder.record_canonical_routing(
+                        phase="RUNTIME_END",
+                        command_id=resolution.command_id,
+                        payload=resolution,
+                    )
+                    for feedback in resolution.feedbacks:
+                        recorder.record_feedback(feedback)
+                    if resolution.vehicle_feedback is not None:
+                        recorder.record_feedback(resolution.vehicle_feedback)
+                if qwen_scenario_monitor is not None:
+                    for feedback in resolution.feedbacks:
+                        qwen_scenario_monitor.record_terminal(
+                            feedback["status"], command_id=feedback["command_id"],
+                        )
+                print(json.dumps({
+                    "record_type": "canonical_slow_result",
+                    "command_id": resolution.command_id,
+                    "disposition": resolution.disposition,
+                    "feedback": list(resolution.feedbacks),
+                    "runtime_intent": None,
+                }, ensure_ascii=False), flush=True)
+
+        if maneuver_fsm.plan is not None and maneuver_fsm.state not in TERMINAL_STATES:
+            _record_maneuver_update(
+                maneuver_fsm.fail("RUNTIME_ENDED", now_s=last_sim_time_s),
+                monitor=qwen_scenario_monitor,
+                recorder=recorder,
+                extension_runtime=extension_runtime,
+            )
+
+        final_speed = None if final_state is None else final_state.speed_mps
+        expected_completion = None if spec is None else _expected_safety_completed(
+            spec,
+            frames=frames_completed,
+            final_speed_mps=final_speed,
+            collision_seen=collision_seen,
+            safety_reasons=safety_reasons,
+            route_run_ended_early=route_run_ended_early,
+        )
+        command_finished = runtime is None or runtime.active_command_id is None
+        if not command_finished and runtime is not None:
+            detail = (
+                "scenario safety constraints prevented command completion before frame budget ended"
+                if expected_completion is True
+                else "scenario frame budget ended before command completion"
+            )
+            feedback = runtime.fail_active(
+                now_s=last_sim_time_s,
+                detail=detail,
+            )
+            if feedback is not None and recorder is not None:
+                recorder.record_feedback(feedback)
+        if expected_completion is not None:
+            completion = expected_completion
+        elif spec is not None:
+            completion = _declared_scenario_runtime_completed(
+                spec,
+                frames=frames_completed,
+                final_speed_mps=final_speed,
+                collision_seen=collision_seen,
+                command_finished=command_finished,
+                safety_reasons=safety_reasons,
+                route_run_ended_early=route_run_ended_early,
+            )
+        else:
+            completion = (
+                command_finished
+                and _runtime_health_completed(safety_reasons)
+                and _scenario_completed(
+                    args, frames=frames_completed,
+                    final_speed_mps=final_speed,
+                    final_scene=final_scene, min_gap_m=min_gap_m,
+                    collision_seen=collision_seen, max_speed_mps=max_speed_mps,
+                )
+            )
+        intentional_qwen_failure_completion = _intentional_qwen_failure_completed(
+            spec,
+            frames=frames_completed,
+            final_speed_mps=final_speed,
+            collision_seen=collision_seen,
+        )
+        if intentional_qwen_failure_completion is not None:
+            completion = intentional_qwen_failure_completion
+        route_contract_completion = _route_contract_completed(
+            spec, final_route_end_distance_m, final_route_remaining_m,
+        )
+        if route_contract_completion is not None:
+            completion = completion and route_contract_completion
+        gap_contract_completion = _minimum_gap_contract_completed(spec, min_gap_m)
+        if gap_contract_completion is not None:
+            completion = completion and gap_contract_completion
+        if qwen_enabled and intentional_qwen_failure_completion is None:
+            completion = completion and qwen_ready and qwen_status == "READY"
+        qwen_contract_report = None
+        if qwen_scenario_monitor is not None:
+            qwen_contract_report = qwen_scenario_monitor.finalize()
+            completion = completion and qwen_contract_report.passed
+            print(json.dumps({
+                "record_type": "qwen_scenario_acceptance",
+                **qwen_contract_report.to_dict(),
+            }, ensure_ascii=False), flush=True)
+        extension_report = None
+        if extension_runtime is not None:
+            proposed = spec.extensions.get("proposed_acceptance", {})
+            if not isinstance(proposed, Mapping):
+                raise TypeError("extensions.proposed_acceptance must be an object")
+            extension_report = extension_runtime.evaluate(
+                proposed,
+                expected_command_count=len(spec.commands),
+                safety_reasons=tuple(sorted(safety_reasons)),
+                oracle=spec.extensions.get("oracle", {}),
+            )
+            completion = completion and bool(extension_report["passed"])
+            print(json.dumps({
+                "record_type": "scenario_extension_acceptance",
+                "scenario": spec.scenario_id,
+                **extension_report,
+            }, ensure_ascii=False), flush=True)
+        if recorder is not None:
+            expected_contract = None if spec is None else dict(spec.expected)
+            if expected_contract is not None and road_fit_required:
+                # A route-relative CTE can be small even when a bad reference
+                # itself leaves the road. Bound distance to CARLA's nearest
+                # driving-lane centre as an independent acceptance check.
+                expected_contract.setdefault("max_lane_center_offset_m", 2.2)
+            extension_event_count = (
+                int(extension_runtime.evidence()["runtime_event_count"])
+                if extension_runtime is not None else 0
+            )
+            acceptance_context = (
+                {}
+                if spec is None else
+                build_acceptance_context(
+                    spec,
+                    final_route_end_distance_m=final_route_end_distance_m,
+                    final_route_remaining_m=final_route_remaining_m,
+                    configured_route_deviation_trigger_m=route_deviation_trigger_m,
+                    spawned_scenario_actor_types=spawned_scenario_actor_types,
+                    extension_acceptance=extension_report,
+                    qwen_acceptance=(
+                        None if qwen_contract_report is None
+                        else qwen_contract_report.to_dict()
+                    ),
+                    extension_event_count=extension_event_count,
+                )
+            )
+            summary = recorder.complete(
+                completion=completion,
+                detail="scenario acceptance criteria evaluated",
+                expected=expected_contract,
+                acceptance_context=acceptance_context,
+            )
+            acceptance = summary.get("acceptance")
+            print(json.dumps({
+                "record_type": "scenario_acceptance",
+                "scenario": args.scenario,
+                "status": summary["status"],
+                "score": summary["score"]["final_score"],
+                "checks": None if acceptance is None else acceptance["check_count"],
+                "failed_keys": [] if acceptance is None else acceptance["failed_keys"],
+                "unsupported_keys": [] if acceptance is None else acceptance["unsupported_keys"],
+            }, ensure_ascii=False))
+    except BaseException as error:
+        print(json.dumps({
+            "record_type": "runtime_failure_diagnosis",
+            **diagnose_runtime_failure(error).to_dict(),
+        }, ensure_ascii=False), flush=True)
+        if ego is not None and getattr(ego, "is_alive", True):
+            try:
+                ego.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0, steer=0.0))
+            except Exception:
+                pass
+        if runtime is not None:
+            feedback = runtime.fail_active(
+                now_s=last_sim_time_s,
+                detail=f"outer runtime failure: {type(error).__name__}",
+            )
+            if feedback is not None and recorder is not None:
+                try:
+                    recorder.record_feedback(feedback)
+                except RuntimeError:
+                    pass
+        if recorder is not None:
+            try:
+                recorder.fail(error)
+            except RuntimeError:
+                pass
+        raise
+    finally:
+        if qwen_bridge is not None:
+            qwen_bridge.close()
+        if qwen_backend is not None:
+            qwen_backend.close()
+        if live_voice is not None:
+            live_voice.stop()
+        if canonical_orchestrator is not None:
+            canonical_orchestrator.close()
+        if recorder is not None:
+            recorder.close()
+        if scenario_traffic_light is not None:
+            try:
+                if traffic_light_original_state is not None:
+                    scenario_traffic_light.set_state(traffic_light_original_state)
+                scenario_traffic_light.freeze(
+                    False if traffic_light_original_frozen is None
+                    else traffic_light_original_frozen
+                )
+            except Exception as error:
+                print(
+                    f"warning: failed to restore scenario traffic light: {error}",
+                    flush=True,
+                )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="CARLA voice-to-control acceptance runner")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=2000)
+    parser.add_argument("--timeout-s", type=float, default=30.0)
+    parser.add_argument("--fixed-delta-s", type=float, default=0.05)
+    parser.add_argument("--frames", type=int, default=200)
+    parser.add_argument("--max-frames", type=int,
+                        help="debug cap applied after a scenario file computes its normal frame count")
+    parser.add_argument("--realtime", action="store_true",
+                        help="pace control frames in wall-clock time for visual observation")
+    parser.add_argument("--print-every", type=int, default=10,
+                        help="emit one telemetry line every N control frames")
+    parser.add_argument("--log-dir", default="artifacts/logs",
+                        help="directory for automatic per-run JSONL evidence logs")
+    parser.add_argument("--no-log", action="store_true", help="disable automatic JSONL evidence logging")
+    parser.add_argument("--spawn-index", type=int, default=0)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help="evidence seed override; selects deterministic spawn/signal candidates",
+    )
+    parser.add_argument("--warmup-frames", type=int, default=40,
+                        help="synchronous ticks used to stream a tiled map before spawning ego")
+    parser.add_argument("--map", help="optional CARLA map name, e.g. Town05; omit to use current world")
+    parser.add_argument("--default-speed-mps", type=float, default=5.0)
+    parser.add_argument(
+        "--driving-policy",
+        help="validated JSON policy shared by C perception and D safety; defaults to config/driving_policy.json",
+    )
+    parser.add_argument("--perception-mode", choices=("sensors", "world", "virtual"), default="sensors",
+                        help="sensors uses required RGB/LiDAR plus optional aligned Radar; world is a debug truth bridge; virtual is deterministic test-only input")
+    parser.add_argument("--sensor-timeout-s", type=float, default=0.5,
+                        help="wall-clock wait for one aligned RGB/LiDAR frame")
+    parser.add_argument("--sensor-warmup-frames", type=int, default=10,
+                        help="maximum ticks used to obtain the first aligned RGB/LiDAR frame")
+    parser.add_argument("--sensor-startup-grace-frames", type=int, default=2,
+                        help="initial perception misses that brake without permanently latching watchdog")
+    parser.add_argument("--sensor-profile", choices=("default", "low", "competition_multiview"), default="default",
+                        help="default uses full validation density; low reduces RGB/LiDAR/Radar load "
+                             "for unstable Windows/UE4 hosts")
+    parser.add_argument("--rgb-detector-model",
+                        help="optional Ultralytics-style ONNX model for RGB vehicle/person detection")
+    parser.add_argument("--rgb-detector-confidence", type=float, default=0.35,
+                        help="minimum RGB detector confidence")
+    parser.add_argument("--rgb-detector-iou", type=float, default=0.45,
+                        help="class-aware NMS IoU threshold")
+    parser.add_argument("--rgb-detector-input-size", type=int, default=640,
+                        help="fallback square input size for dynamic ONNX models")
+    parser.add_argument("--c-visual-confidence-threshold", type=float,
+                        default=DEFAULT_STRATEGY.perception_safety.visual_confidence_threshold,
+                        help="C-side minimum visual confidence accepted by safety fusion")
+    parser.add_argument("--qwen-remote", action="store_true",
+                        help="use the OpenAI-compatible remote Qwen 2B high-level planner")
+    parser.add_argument("--qwen-voice-command",
+                        help="Chinese command sent to Qwen; a one-command scenario can supply source_text")
+    parser.add_argument("--qwen-base-url",
+                        default=os.environ.get("QWEN_BASE_URL", "http://127.0.0.1:18000/v1"),
+                        help="OpenAI-compatible /v1 endpoint; QWEN_API_KEY is read only from the environment")
+    parser.add_argument("--qwen-model",
+                        default=os.environ.get(
+                            "QWEN_MODEL", DEFAULT_QWEN_MODEL
+                        ),
+                        help="exact remote Qwen 2B model id")
+    parser.add_argument("--qwen-request-timeout-s", type=float, default=15.0,
+                        help="OpenAI client wall-clock timeout")
+    parser.add_argument("--qwen-max-inference-s", type=float, default=10.0,
+                        help="fail-closed wall-clock deadline enforced by the async bridge")
+    parser.add_argument("--qwen-decision-ttl-s", type=float, default=12.0,
+                        help="maximum simulation-time age of a usable Qwen result")
+    parser.add_argument("--qwen-command-ttl-s", type=float, default=30.0,
+                        help="maximum simulation-time duration for the accepted runtime command")
+    parser.add_argument("--qwen-max-tokens", type=int, default=1,
+                        help="fixed one-token budget for the A-E decision choice")
+    parser.add_argument("--qwen-image-max-side", type=int, default=256,
+                        help="square montage side sent to the remote Qwen model")
+    parser.add_argument("--qwen-jpeg-quality", type=int, default=75)
+    parser.add_argument("--qwen-image-dir", default="artifacts/runtime/qwen_live",
+                        help="local replay images; this directory is gitignored")
+    parser.add_argument("--watchdog-timeout-s", type=float, default=1.0)
+    parser.add_argument("--watchdog-startup-grace-s", type=float, default=0.5)
+    parser.add_argument("--route-distance-m", type=float, default=500.0)
+    parser.add_argument(
+        "--resume-route-progress-m", type=float, default=0.0,
+        help="reconstruct a scenario segment at this deterministic route arc length",
+    )
+    parser.add_argument(
+        "--resume-command-count", type=int, default=0,
+        help="verified leading scenario commands omitted from a reconstructed segment",
+    )
+    parser.add_argument(
+        "--resume-target-speed-kph", type=float, default=40.0,
+        help="desired cruise speed restored for a reconstructed segment",
+    )
+    parser.add_argument("--route-refresh-frames", type=int, default=200)
+    parser.add_argument("--scenario", choices=("cruise", "follow", "red_stop", "emergency"), default="cruise",
+                        help="basic CARLA acceptance scenario; all use the same A/B/C/D control loop")
+    parser.add_argument("--lead-distance-m", type=float, default=18.0,
+                        help="initial stationary lead distance for --scenario follow")
+    parser.add_argument("--emergency-distance-m", type=float, default=6.0,
+                        help="initial stationary lead distance for --scenario emergency")
+    parser.add_argument("--stop-line-m", type=float, default=20.0,
+                        help="virtual red stop-line distance for --scenario red_stop")
+    parser.add_argument("--stop-line-guard-m", type=float,
+                        default=DEFAULT_STRATEGY.supervisor.stop_line_guard_m,
+                        help="D safety fallback distance used by the acceptance runner; C plans the approach before it")
+    parser.add_argument("--test-command-ttl-s", type=float,
+                        help="explicit test-only command TTL override; keeps long acceptance runs from expiring early")
+    parser.add_argument("--command-json")
+    parser.add_argument("--audio")
+    parser.add_argument("--live-mic", action="store_true",
+                        help="continuously segment and recognize PulseAudio microphone commands")
+    parser.add_argument("--live-mic-source", default="@DEFAULT_SOURCE@",
+                        help="PulseAudio source name used by --live-mic")
+    parser.add_argument("--qwen-service-url",
+                        help="enable canonical async routing and use this Qwen service URL")
+    parser.add_argument(
+        "--qwen-mode", choices=("atomic_v1", "planner_v2"), default="atomic_v1",
+        help="atomic_v1 keeps the five-action baseline; planner_v2 expects ManeuverPlan V2",
+    )
+    parser.add_argument("--qwen-timeout-ms", type=float, default=300.0,
+                        help="wall-clock deadline for one complex Qwen request")
+    parser.add_argument("--qwen-queue-size", type=int, default=1,
+                        help="bounded pending Qwen request queue; newest request wins")
+    parser.add_argument(
+        "--qwen-image-root", type=Path,
+        default=Path(__file__).resolve().parents[1],
+        help="shared filesystem root configured on the Qwen service",
+    )
+    parser.add_argument(
+        "--qwen-image-prefix", default="artifacts/runtime/qwen_images",
+        help="safe relative subdirectory for asynchronously staged RGB frames",
+    )
+    parser.add_argument("--follow-spectator", action="store_true",
+                        help="move the graphical spectator camera behind the ego each frame")
+    parser.add_argument("--scenario-file",
+                        help="run a scenarios/*.json contract; overrides map, fixed delta, frames and scenario id")
+    parser.add_argument(
+        "--spawn-all-scenario-actors",
+        action="store_true",
+        help="placement-only debug: ignore activation triggers and validate all actors at startup",
+    )
+    parser.add_argument("--validate-scenario-only", action="store_true",
+                        help="load and validate --scenario-file without connecting to CARLA")
+    parser.add_argument("--use-current-map", action="store_true",
+                        help="debug only: run a scenario contract on the current CARLA map without load_world")
+    parser.add_argument("--scenario-facts-mode", choices=("perception", "scenario", "fuse"), default="fuse",
+                        help="perception: measured facts only; scenario: configured actors override; "
+                             "fuse: perception first, configured actors fill missing fields")
+    args = parser.parse_args()
+    if args.print_every < 1:
+        parser.error("--print-every must be >= 1")
+    if args.max_frames is not None and args.max_frames < 1:
+        parser.error("--max-frames must be >= 1")
+    if args.resume_route_progress_m < 0.0:
+        parser.error("--resume-route-progress-m must be >= 0")
+    if args.resume_command_count < 0:
+        parser.error("--resume-command-count must be >= 0")
+    if args.resume_target_speed_kph <= 0.0:
+        parser.error("--resume-target-speed-kph must be positive")
+    if (args.frames < 1 or args.warmup_frames < 0 or args.route_refresh_frames < 1
+            or args.sensor_warmup_frames < 1 or args.sensor_startup_grace_frames < 0):
+        parser.error("--frames, --route-refresh-frames and --sensor-warmup-frames must be positive; "
+                     "--warmup-frames and --sensor-startup-grace-frames must be non-negative")
+    for name in ("fixed_delta_s", "timeout_s", "sensor_timeout_s", "watchdog_timeout_s",
+                 "route_distance_m", "lead_distance_m", "emergency_distance_m",
+                 "stop_line_m", "stop_line_guard_m"):
+        if getattr(args, name) <= 0.0:
+            parser.error(f"--{name.replace('_', '-')} must be positive")
+    if args.watchdog_startup_grace_s < 0.0:
+        parser.error("--watchdog-startup-grace-s must be non-negative")
+    if args.test_command_ttl_s is not None and args.test_command_ttl_s <= 0.0:
+        parser.error("--test-command-ttl-s must be positive")
+    if args.qwen_timeout_ms <= 0.0:
+        parser.error("--qwen-timeout-ms must be positive")
+    if args.qwen_queue_size < 1:
+        parser.error("--qwen-queue-size must be >= 1")
+    if not 0.0 < args.rgb_detector_confidence <= 1.0:
+        parser.error("--rgb-detector-confidence must be in (0, 1]")
+    if not 0.0 < args.rgb_detector_iou <= 1.0:
+        parser.error("--rgb-detector-iou must be in (0, 1]")
+    if args.rgb_detector_input_size < 32:
+        parser.error("--rgb-detector-input-size must be >= 32")
+    if not 0.0 <= args.c_visual_confidence_threshold <= 1.0:
+        parser.error("--c-visual-confidence-threshold must be in [0, 1]")
+    if args.qwen_remote and not args.validate_scenario_only:
+        if args.perception_mode != "sensors":
+            parser.error("--qwen-remote requires --perception-mode sensors")
+        if not args.realtime:
+            parser.error("--qwen-remote requires --realtime so remote latency tracks simulation time")
+        if args.command_json or args.audio:
+            parser.error("--qwen-remote cannot be combined with --command-json or --audio")
+        if not args.qwen_voice_command and not args.scenario_file:
+            parser.error("--qwen-remote requires --qwen-voice-command or --scenario-file")
+        if not str(args.qwen_base_url).strip() or not str(args.qwen_model).strip():
+            parser.error("--qwen-base-url and --qwen-model must be non-empty")
+        if not str(args.qwen_image_dir).strip():
+            parser.error("--qwen-image-dir must be non-empty")
+    for name in (
+        "qwen_request_timeout_s",
+        "qwen_max_inference_s",
+        "qwen_decision_ttl_s",
+        "qwen_command_ttl_s",
+    ):
+        if getattr(args, name) <= 0.0:
+            parser.error(f"--{name.replace('_', '-')} must be positive")
+    if args.qwen_max_tokens < 1 or args.qwen_image_max_side < 1:
+        parser.error("--qwen-max-tokens and --qwen-image-max-side must be positive")
+    if args.qwen_remote and args.qwen_max_tokens != 1:
+        parser.error("--qwen-remote requires --qwen-max-tokens 1 for the A-E action boundary")
+    if not 1 <= args.qwen_jpeg_quality <= 95:
+        parser.error("--qwen-jpeg-quality must be in [1, 95]")
+    run(args)
+
+
+if __name__ == "__main__":
+    main()

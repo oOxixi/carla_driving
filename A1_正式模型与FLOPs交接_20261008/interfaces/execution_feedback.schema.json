@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://carla-driving.local/interfaces/execution_feedback.schema.json",
+  "title": "ExecutionFeedback V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "command_id", "status", "action_summary", "emitted_at_ns",
+    "t_action_apply_ns", "latency_ms", "safety_event", "terminal_reason"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "command_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "status": {"enum": ["RECEIVED", "EXECUTING", "SUCCEEDED", "FAILED", "REJECTED", "EXPIRED", "TIMED_OUT", "SAFETY_OVERRIDE"]},
+    "action_summary": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "emitted_at_ns": {"type": "integer", "minimum": 0},
+    "t_action_apply_ns": {"type": ["integer", "null"], "minimum": 0},
+    "latency_ms": {"type": ["number", "null"], "minimum": 0},
+    "safety_event": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["reason_code", "raw_control", "final_control"],
+      "properties": {
+        "reason_code": {"type": "string", "minLength": 1, "maxLength": 128},
+        "raw_control": {"$ref": "#/$defs/vehicle_control"},
+        "final_control": {"$ref": "#/$defs/vehicle_control"}
+      }
+    },
+    "terminal_reason": {"type": ["string", "null"], "maxLength": 1000}
+  },
+  "$defs": {
+    "vehicle_control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["throttle", "brake", "steer"],
+      "properties": {
+        "throttle": {"type": "number", "minimum": 0, "maximum": 1},
+        "brake": {"type": "number", "minimum": 0, "maximum": 1},
+        "steer": {"type": "number", "minimum": -1, "maximum": 1}
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema_version": "1.0",
+      "command_id": "voice-0001",
+      "status": "SUCCEEDED",
+      "action_summary": "target speed reached and settled",
+      "emitted_at_ns": 1800000000,
+      "t_action_apply_ns": 1100000000,
+      "latency_ms": 100.0,
+      "safety_event": null,
+      "terminal_reason": "TARGET_REACHED"
+    }
+  ]
+}

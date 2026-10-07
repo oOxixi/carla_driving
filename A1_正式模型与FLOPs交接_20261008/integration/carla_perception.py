@@ -1,0 +1,1138 @@
+"""Frame-aligned CARLA sensor and simulator-truth perception bridge.
+
+The module deliberately avoids a module-level :mod:`carla` import so its
+geometry and failure behaviour can be tested without starting Unreal.  RGB and
+LiDAR are required continuous sensors; radar is exact-frame but optional so a
+single radar dropout degrades explicitly without stalling the control loop.
+Collision and lane-invasion sensors are event streams and are recorded in a
+separate frame-keyed ledger.
+
+This is a bridge, not an object detector.  The front range comes from LiDAR;
+CARLA actor truth is used only to associate that range with a vehicle speed.
+Every derived field carries an explicit source label in ``PerceptionSample``.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field, replace
+import math
+import threading
+import time
+from types import MappingProxyType
+from typing import Any, Callable, Iterable, Mapping, Sequence
+
+import numpy as np
+
+from car_control_A import CarlaSession
+from car_control_A.routing import RouteReference
+from car_control_C import ConservativeSensorFusion, SafetyStateSummary, VisualObservation
+
+from .contracts import DetectedObject, PerceptionFrame
+from .object_tracker import SensorObjectTracker
+from .rgb_detector import driving_corridor_detections
+
+
+RGB_SENSOR_ID = "rgb_front"
+LEFT_RGB_SENSOR_ID = "rgb_left"
+RIGHT_RGB_SENSOR_ID = "rgb_right"
+REAR_RGB_SENSOR_ID = "rgb_rear"
+LIDAR_SENSOR_ID = "lidar_roof"
+RADAR_SENSOR_ID = "radar_front"
+COLLISION_SENSOR_ID = "collision"
+LANE_INVASION_SENSOR_ID = "lane_invasion"
+REQUIRED_CONTINUOUS_SENSOR_IDS = (RGB_SENSOR_ID, LIDAR_SENSOR_ID)
+OPTIONAL_CONTINUOUS_SENSOR_IDS = (RADAR_SENSOR_ID,)
+CONTINUOUS_SENSOR_IDS = REQUIRED_CONTINUOUS_SENSOR_IDS + OPTIONAL_CONTINUOUS_SENSOR_IDS
+MULTIVIEW_RGB_SENSOR_IDS = (
+    LEFT_RGB_SENSOR_ID,
+    RIGHT_RGB_SENSOR_ID,
+    REAR_RGB_SENSOR_ID,
+)
+
+
+class PerceptionAcquisitionError(RuntimeError):
+    """Base error that requires the caller to suppress normal vehicle control."""
+
+    emergency_brake_required = True
+
+
+class PerceptionTimeoutError(PerceptionAcquisitionError, TimeoutError):
+    """A required continuous sensor did not produce the requested frame."""
+
+
+class FrameAlignmentError(PerceptionAcquisitionError):
+    """A callback payload was labelled with a different CARLA frame."""
+
+
+class PerceptionDataError(PerceptionAcquisitionError):
+    """A required sensor payload was present but malformed or unusable."""
+
+
+class ObjectDetectionError(PerceptionAcquisitionError):
+    """Configured RGB inference failed, so normal control is unsafe."""
+
+
+@dataclass(frozen=True, slots=True)
+class SensorMount:
+    x_m: float
+    y_m: float
+    z_m: float
+    pitch_deg: float = 0.0
+    yaw_deg: float = 0.0
+    roll_deg: float = 0.0
+
+
+@dataclass(frozen=True, slots=True)
+class CarlaSensorSpec:
+    sensor_id: str
+    blueprint_id: str
+    mount: SensorMount
+    attributes: Mapping[str, str] = field(default_factory=dict)
+    continuous: bool = True
+
+
+DEFAULT_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
+    CarlaSensorSpec(
+        RGB_SENSOR_ID,
+        "sensor.camera.rgb",
+        SensorMount(1.5, 0.0, 2.2, pitch_deg=-8.0),
+        MappingProxyType({
+            "image_size_x": "800", "image_size_y": "450", "fov": "100",
+            "sensor_tick": "0.05",
+        }),
+    ),
+    CarlaSensorSpec(
+        LIDAR_SENSOR_ID,
+        "sensor.lidar.ray_cast",
+        SensorMount(0.0, 0.0, 2.35),
+        MappingProxyType({
+            "channels": "32", "range": "80", "rotation_frequency": "20",
+            # At 56k points/s a 20 Hz scan produced only one or two returns
+            # from a passenger car 15--20 m ahead, below the three-point
+            # corridor cluster threshold on most frames.  The denser scan
+            # keeps that safety-critical range observable frame to frame.
+            "points_per_second": "224000", "upper_fov": "10",
+            "lower_fov": "-30", "sensor_tick": "0.05",
+        }),
+    ),
+    CarlaSensorSpec(
+        RADAR_SENSOR_ID,
+        "sensor.other.radar",
+        SensorMount(1.5, 0.0, 1.0),
+        MappingProxyType({
+            "horizontal_fov": "40", "vertical_fov": "10", "range": "80",
+            "points_per_second": "3000", "sensor_tick": "0.05",
+        }),
+    ),
+    CarlaSensorSpec(
+        COLLISION_SENSOR_ID, "sensor.other.collision", SensorMount(0.0, 0.0, 0.0),
+        MappingProxyType({}), continuous=False,
+    ),
+    CarlaSensorSpec(
+        LANE_INVASION_SENSOR_ID, "sensor.other.lane_invasion", SensorMount(0.0, 0.0, 0.0),
+        MappingProxyType({}), continuous=False,
+    ),
+)
+
+LOW_RESOURCE_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
+    CarlaSensorSpec(
+        RGB_SENSOR_ID,
+        "sensor.camera.rgb",
+        SensorMount(1.5, 0.0, 2.2, pitch_deg=-8.0),
+        MappingProxyType({
+            "image_size_x": "400", "image_size_y": "225", "fov": "100",
+            "sensor_tick": "0.05",
+        }),
+    ),
+    CarlaSensorSpec(
+        LIDAR_SENSOR_ID,
+        "sensor.lidar.ray_cast",
+        SensorMount(0.0, 0.0, 2.35),
+        MappingProxyType({
+            "channels": "16", "range": "60", "rotation_frequency": "20",
+            "points_per_second": "112000", "upper_fov": "10",
+            "lower_fov": "-30", "sensor_tick": "0.05",
+        }),
+    ),
+    CarlaSensorSpec(
+        RADAR_SENSOR_ID,
+        "sensor.other.radar",
+        SensorMount(1.5, 0.0, 1.0),
+        MappingProxyType({
+            "horizontal_fov": "40", "vertical_fov": "10", "range": "60",
+            "points_per_second": "1500", "sensor_tick": "0.05",
+        }),
+    ),
+    DEFAULT_SENSOR_SPECS[3],
+    DEFAULT_SENSOR_SPECS[4],
+)
+
+COMPETITION_MULTIVIEW_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = (
+    DEFAULT_SENSOR_SPECS[0],
+    CarlaSensorSpec(
+        LEFT_RGB_SENSOR_ID,
+        "sensor.camera.rgb",
+        SensorMount(0.9, -0.65, 1.65, pitch_deg=-3.0, yaw_deg=-55.0),
+        MappingProxyType({
+            "image_size_x": "800", "image_size_y": "450", "fov": "100",
+            "sensor_tick": "0.05",
+        }),
+    ),
+    CarlaSensorSpec(
+        RIGHT_RGB_SENSOR_ID,
+        "sensor.camera.rgb",
+        SensorMount(0.9, 0.65, 1.65, pitch_deg=-3.0, yaw_deg=55.0),
+        MappingProxyType({
+            "image_size_x": "800", "image_size_y": "450", "fov": "100",
+            "sensor_tick": "0.05",
+        }),
+    ),
+    CarlaSensorSpec(
+        REAR_RGB_SENSOR_ID,
+        "sensor.camera.rgb",
+        SensorMount(-1.8, 0.0, 1.65, pitch_deg=-3.0, yaw_deg=180.0),
+        MappingProxyType({
+            "image_size_x": "800", "image_size_y": "450", "fov": "100",
+            "sensor_tick": "0.05",
+        }),
+    ),
+    *DEFAULT_SENSOR_SPECS[1:],
+)
+
+SENSOR_PROFILES: Mapping[str, tuple[CarlaSensorSpec, ...]] = MappingProxyType({
+    "default": DEFAULT_SENSOR_SPECS,
+    "low": LOW_RESOURCE_SENSOR_SPECS,
+    "competition_multiview": COMPETITION_MULTIVIEW_SENSOR_SPECS,
+})
+
+
+def sensor_specs_for_profile(profile: str) -> tuple[CarlaSensorSpec, ...]:
+    key = str(profile).strip().lower()
+    try:
+        return SENSOR_PROFILES[key]
+    except KeyError as error:
+        raise ValueError(f"unknown sensor profile: {profile!r}") from error
+
+
+EVENT_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = tuple(
+    spec for spec in DEFAULT_SENSOR_SPECS if not spec.continuous
+)
+
+
+class EventLedger:
+    """Thread-safe exact-frame storage for sparse CARLA safety events."""
+
+    def __init__(self, *, retain_frames: int = 64) -> None:
+        if type(retain_frames) is not int or retain_frames < 1:
+            raise ValueError("retain_frames must be a positive integer")
+        self._retain_frames = retain_frames
+        self._collision_frames: set[int] = set()
+        self._lane_invasion_frames: set[int] = set()
+        self._lock = threading.Lock()
+
+    def collision_callback(self, event: Any) -> None:
+        self._record(self._collision_frames, event)
+
+    def lane_invasion_callback(self, event: Any) -> None:
+        self._record(self._lane_invasion_frames, event)
+
+    def _record(self, target: set[int], event: Any) -> None:
+        frame = getattr(event, "frame", None)
+        if type(frame) is not int or frame < 0:
+            return
+        with self._lock:
+            target.add(frame)
+            all_frames = self._collision_frames | self._lane_invasion_frames
+            if len(all_frames) > self._retain_frames:
+                keep_after = sorted(all_frames)[-self._retain_frames]
+                self._collision_frames = {item for item in self._collision_frames if item >= keep_after}
+                self._lane_invasion_frames = {item for item in self._lane_invasion_frames if item >= keep_after}
+
+    def flags_for_frame(self, frame: int) -> tuple[bool, bool]:
+        """Consume all safety events no newer than ``frame``.
+
+        Continuous sensor callbacks normally give sparse events enough time to
+        arrive, but CARLA does not guarantee callback ordering.  An event for
+        frame N that arrives after N was acquired is therefore surfaced on
+        frame N+1 instead of being discarded forever.
+        """
+        if type(frame) is not int or frame < 0:
+            raise ValueError("frame must be a non-negative integer")
+        with self._lock:
+            collision = any(item <= frame for item in self._collision_frames)
+            lane_invasion = any(item <= frame for item in self._lane_invasion_frames)
+            self._collision_frames = {item for item in self._collision_frames if item > frame}
+            self._lane_invasion_frames = {item for item in self._lane_invasion_frames if item > frame}
+        return collision, lane_invasion
+
+
+@dataclass(frozen=True, slots=True)
+class AttachedCarlaSensors:
+    actors: Mapping[str, Any]
+    events: EventLedger
+
+
+@dataclass(frozen=True, slots=True)
+class PerceptionSample:
+    """Controller frame plus auditable provenance and aligned raw payloads."""
+
+    frame: PerceptionFrame
+    sensor_ready_ns: int
+    source_by_field: Mapping[str, str]
+    rgb: Any
+    lidar: Any
+    radar: Any | None
+    safety_summary: SafetyStateSummary
+    multi_view_rgb: Mapping[str, Any] = field(default_factory=dict)
+
+
+def _make_transform(carla_api: Any, mount: SensorMount) -> Any:
+    location = carla_api.Location(x=mount.x_m, y=mount.y_m, z=mount.z_m)
+    rotation = carla_api.Rotation(
+        pitch=mount.pitch_deg, yaw=mount.yaw_deg, roll=mount.roll_deg,
+    )
+    return carla_api.Transform(location, rotation)
+
+
+def _configured_blueprint(world: Any, spec: CarlaSensorSpec) -> Any:
+    blueprint = world.get_blueprint_library().find(spec.blueprint_id)
+    if blueprint is None:
+        raise LookupError(f"CARLA blueprint not found: {spec.blueprint_id}")
+    for name, value in spec.attributes.items():
+        if hasattr(blueprint, "has_attribute") and not blueprint.has_attribute(name):
+            raise LookupError(f"{spec.blueprint_id} does not support attribute {name}")
+        blueprint.set_attribute(name, value)
+    return blueprint
+
+
+def attach_default_sensors(
+    session: CarlaSession,
+    world: Any,
+    ego: Any,
+    carla_api: Any,
+    *,
+    specs: Sequence[CarlaSensorSpec] = DEFAULT_SENSOR_SPECS,
+    sensor_tick_s: float | None = None,
+) -> AttachedCarlaSensors:
+    """Attach the standard sensor suite and register all actors with ``session``.
+
+    Event sensors intentionally bypass ``session.frame_buffer`` because they do
+    not emit a no-event sample on every tick.  Their actors still belong to the
+    session registry and are stopped/destroyed on context exit.
+    """
+    if ego is None:
+        raise ValueError("ego must not be None")
+    if sensor_tick_s is not None and (
+        type(sensor_tick_s) not in (int, float) or not math.isfinite(float(sensor_tick_s)) or sensor_tick_s <= 0.0
+    ):
+        raise ValueError("sensor_tick_s must be finite and positive")
+    events = EventLedger()
+    actors: dict[str, Any] = {}
+    for spec in specs:
+        if spec.sensor_id in actors:
+            raise ValueError(f"duplicate sensor_id: {spec.sensor_id}")
+        effective_spec = spec
+        if spec.continuous and sensor_tick_s is not None:
+            attributes = dict(spec.attributes)
+            attributes["sensor_tick"] = str(float(sensor_tick_s))
+            effective_spec = CarlaSensorSpec(
+                spec.sensor_id, spec.blueprint_id, spec.mount,
+                MappingProxyType(attributes), spec.continuous,
+            )
+        blueprint = _configured_blueprint(world, effective_spec)
+        transform = _make_transform(carla_api, spec.mount)
+        if spec.continuous:
+            actor = session.attach_sensor(blueprint, transform, ego, spec.sensor_id)
+        else:
+            actor = world.spawn_actor(blueprint, transform, attach_to=ego)
+            actor = session.track_actor(actor)
+            callback = (
+                events.collision_callback
+                if spec.sensor_id == COLLISION_SENSOR_ID
+                else events.lane_invasion_callback
+            )
+            try:
+                actor.listen(callback)
+            except Exception:
+                # The registry owns cleanup after a successful track_actor.
+                raise
+        actors[spec.sensor_id] = actor
+    return AttachedCarlaSensors(MappingProxyType(actors), events)
+
+
+def attach_event_sensors(
+    session: CarlaSession,
+    world: Any,
+    ego: Any,
+    carla_api: Any,
+) -> AttachedCarlaSensors:
+    """Attach collision/lane-invasion sensors without RGB/LiDAR streams."""
+    return attach_default_sensors(
+        session, world, ego, carla_api, specs=EVENT_SENSOR_SPECS,
+    )
+
+
+def _xyz(value: Any) -> tuple[float, float, float]:
+    return float(value.x), float(value.y), float(value.z)
+
+
+def _speed_mps(actor: Any) -> float:
+    x, y, z = _xyz(actor.get_velocity())
+    return math.hypot(x, y)
+
+
+def _lidar_xyz(measurement: Any) -> np.ndarray:
+    """Read CARLA float32 x/y/z/intensity data or a test ``points`` array."""
+    if hasattr(measurement, "points"):
+        points = np.asarray(measurement.points, dtype=np.float32)
+        if points.ndim != 2 or points.shape[1] < 3:
+            raise ValueError("lidar points must have shape (N, >=3)")
+        return points[:, :3]
+    raw_data = getattr(measurement, "raw_data", None)
+    if raw_data is None:
+        raise ValueError("lidar measurement has neither points nor raw_data")
+    values = np.frombuffer(raw_data, dtype=np.float32)
+    if values.size % 4:
+        raise ValueError("CARLA lidar raw_data length is not divisible by four floats")
+    return values.reshape((-1, 4))[:, :3]
+
+
+def front_lidar_distance_m(
+    measurement: Any,
+    *,
+    min_range_m: float = 1.0,
+    max_range_m: float = 60.0,
+    half_width_m: float = 1.35,
+    min_height_m: float = -1.8,
+    max_height_m: float = -0.70,
+    minimum_points: int = 3,
+) -> float | None:
+    """Return a conservative low-percentile range inside the ego lane corridor.
+
+    The roof LiDAR is mounted at 2.35 m while the competition ego's bounding
+    box reaches about 1.48 m. Returns above ``-0.70`` in the sensor frame are
+    therefore outside the ego collision envelope (including a small clearance
+    margin) and commonly come from tree canopies, traffic-light arms, and
+    flyover structures. Treating those overhead returns as a lead object can
+    hold the vehicle stopped forever on an otherwise clear lane.
+    """
+    points = _lidar_xyz(measurement)
+    if not len(points):
+        return None
+    mask = (
+        (points[:, 0] >= min_range_m) & (points[:, 0] <= max_range_m)
+        & (np.abs(points[:, 1]) <= half_width_m)
+        & (points[:, 2] >= min_height_m) & (points[:, 2] <= max_height_m)
+    )
+    forward = points[mask, 0]
+    if forward.size < minimum_points:
+        return None
+    # Requiring a small cluster and using the 10th percentile rejects most
+    # isolated rays while remaining conservative for an obstacle face.
+    return float(np.percentile(forward, 10.0))
+
+
+def adjacent_lidar_distances_m(
+    measurement: Any,
+    *,
+    min_forward_m: float = 1.0,
+    max_forward_m: float = 25.0,
+    inner_lateral_m: float = 1.75,
+    outer_lateral_m: float = 5.25,
+    min_height_m: float = -1.8,
+    max_height_m: float = -0.70,
+    minimum_points: int = 3,
+) -> tuple[float | None, float | None]:
+    """Return LiDAR-grounded left/right adjacent-lane obstacle ranges."""
+    points = _lidar_xyz(measurement)
+    if not len(points):
+        return None, None
+    common = (
+        (points[:, 0] >= min_forward_m) & (points[:, 0] <= max_forward_m)
+        & (points[:, 2] >= min_height_m) & (points[:, 2] <= max_height_m)
+    )
+
+    def distance(mask: np.ndarray) -> float | None:
+        selected = points[common & mask]
+        if selected.shape[0] < minimum_points:
+            return None
+        ranges = np.hypot(selected[:, 0], selected[:, 1])
+        return float(np.percentile(ranges, 10.0))
+
+    # CARLA sensor Y points right, so physical left is negative Y.
+    left = distance(
+        (points[:, 1] <= -inner_lateral_m)
+        & (points[:, 1] >= -outer_lateral_m)
+    )
+    right = distance(
+        (points[:, 1] >= inner_lateral_m)
+        & (points[:, 1] <= outer_lateral_m)
+    )
+    return left, right
+
+
+@dataclass(frozen=True, slots=True)
+class FrontRadarTarget:
+    distance_m: float
+    closing_speed_mps: float
+
+
+@dataclass(slots=True)
+class TemporalLeadTracker:
+    """Bridge brief LiDAR dropouts without releasing the following target.
+
+    Narrow road users such as bicycles can yield fewer than the required
+    LiDAR cluster points in an individual scan. Treating that one empty scan
+    as a clear road makes longitudinal control alternate between cruise and
+    emergency braking. This tracker keeps only a short, close-range history
+    and expires quickly so a departed target cannot become a persistent
+    phantom.
+    """
+
+    hold_s: float = 0.75
+    acquire_within_m: float = 35.0
+    max_lead_speed_mps: float = 20.0
+    distance_m: float | None = None
+    lead_speed_mps: float | None = None
+    last_update_s: float | None = None
+    last_observed_s: float | None = None
+    last_observed_distance_m: float | None = None
+    ego_travel_since_observation_m: float = 0.0
+
+    def reset(self) -> None:
+        self.distance_m = None
+        self.lead_speed_mps = None
+        self.last_update_s = None
+        self.last_observed_s = None
+        self.last_observed_distance_m = None
+        self.ego_travel_since_observation_m = 0.0
+
+    def update(
+        self,
+        *,
+        sim_time_s: float,
+        ego_speed_mps: float,
+        observed_distance_m: float | None,
+        observed_lead_speed_mps: float | None,
+    ) -> tuple[float | None, float | None, bool]:
+        """Return ``(gap, lead speed, predicted)`` for the current frame."""
+        now = float(sim_time_s)
+        ego_speed = max(0.0, float(ego_speed_mps))
+        dt_s = 0.0 if self.last_update_s is None else max(0.0, now - self.last_update_s)
+        if self.last_observed_s is not None:
+            self.ego_travel_since_observation_m += ego_speed * dt_s
+        self.last_update_s = now
+
+        if (
+            observed_distance_m is not None
+            and self.distance_m is not None
+            and self.last_observed_s is not None
+            and self.last_observed_distance_m is not None
+            and self.last_observed_distance_m <= self.acquire_within_m
+            and now - self.last_observed_s <= self.hold_s
+        ):
+            assumed_lead_speed = self.lead_speed_mps or 0.0
+            predicted_distance = max(
+                0.1,
+                self.distance_m
+                - max(0.0, ego_speed - assumed_lead_speed) * dt_s,
+            )
+            # A newly closer return can be a real cut-in or hazard and must
+            # always replace the current track. Only suppress an implausible
+            # release to a much farther return, which commonly comes from the
+            # background beside a bicycle on a bend.
+            if float(observed_distance_m) > predicted_distance + 3.0:
+                observed_distance_m = None
+
+        if observed_distance_m is not None:
+            observed = max(0.0, float(observed_distance_m))
+            sensor_speed = (
+                None
+                if observed_lead_speed_mps is None
+                else max(0.0, min(self.max_lead_speed_mps, float(observed_lead_speed_mps)))
+            )
+            inferred_speed: float | None = None
+            if self.last_observed_s is not None and self.last_observed_distance_m is not None:
+                observation_dt_s = now - self.last_observed_s
+                if 0.04 <= observation_dt_s <= self.hold_s + 0.15:
+                    inferred_speed = (
+                        observed - self.last_observed_distance_m
+                        + self.ego_travel_since_observation_m
+                    ) / observation_dt_s
+                    if not 0.0 <= inferred_speed <= self.max_lead_speed_mps:
+                        inferred_speed = None
+            measured_speed = sensor_speed if sensor_speed is not None else inferred_speed
+            if measured_speed is not None and self.lead_speed_mps is not None:
+                measured_speed = 0.65 * self.lead_speed_mps + 0.35 * measured_speed
+            self.distance_m = observed
+            self.lead_speed_mps = measured_speed
+            self.last_observed_s = now
+            self.last_observed_distance_m = observed
+            self.ego_travel_since_observation_m = 0.0
+            return observed, measured_speed, False
+
+        if (
+            self.distance_m is None
+            or self.last_observed_s is None
+            or self.last_observed_distance_m is None
+            or self.last_observed_distance_m > self.acquire_within_m
+            or now - self.last_observed_s > self.hold_s
+        ):
+            self.reset()
+            self.last_update_s = now
+            return None, None, False
+
+        assumed_lead_speed = self.lead_speed_mps
+        if assumed_lead_speed is None:
+            # One acquired scan is not enough to estimate velocity. Assuming
+            # stationary motion for a fraction of a second is conservative.
+            assumed_lead_speed = 0.0
+        closing_speed = max(0.0, ego_speed - assumed_lead_speed)
+        self.distance_m = max(0.1, self.distance_m - closing_speed * dt_s)
+        return self.distance_m, assumed_lead_speed, True
+
+
+def front_radar_target(
+    measurement: Any,
+    *,
+    sensor_x_offset_m: float = 1.5,
+    min_range_m: float = 1.0,
+    max_range_m: float = 80.0,
+    half_width_m: float = 1.75,
+    min_altitude_deg: float = -3.0,
+    max_altitude_deg: float = 3.0,
+) -> FrontRadarTarget | None:
+    """Select the nearest finite radar return inside the ego corridor.
+
+    CARLA reports ``depth`` along the ray. Its implementation computes radial
+    ``velocity`` as ``dot(target_velocity - sensor_velocity, outward_ray)``:
+    a slower lead approached by ego is therefore negative. The mount offset
+    converts the range to the ego coordinate origin; absolute lead speed is
+    derived later from ego speed plus that signed relative velocity.
+    """
+    detections = getattr(measurement, "detections", measurement)
+    try:
+        iterator = iter(detections)
+    except TypeError as error:
+        raise ValueError("radar measurement is not iterable") from error
+    candidates: list[FrontRadarTarget] = []
+    for detection in iterator:
+        values = tuple(
+            float(getattr(detection, name))
+            for name in ("depth", "azimuth", "altitude", "velocity")
+        )
+        if not all(math.isfinite(value) for value in values):
+            continue
+        depth, azimuth, altitude, velocity = values
+        forward = depth * math.cos(altitude) * math.cos(azimuth) + sensor_x_offset_m
+        lateral = depth * math.cos(altitude) * math.sin(azimuth)
+        if (
+            min_range_m <= forward <= max_range_m
+            and abs(lateral) <= half_width_m
+            and math.degrees(altitude) >= min_altitude_deg
+            and math.degrees(altitude) <= max_altitude_deg
+        ):
+            candidates.append(FrontRadarTarget(forward, velocity))
+    if not candidates:
+        return None
+    return min(candidates, key=lambda item: item.distance_m)
+
+
+def _normalise_light_state(value: Any) -> str:
+    state = str(value).split(".")[-1].upper()
+    return state if state in {"RED", "YELLOW", "GREEN"} else "UNKNOWN"
+
+
+def _upcoming_traffic_light(
+    ego: Any,
+    traffic_lights: Iterable[Any],
+    *,
+    world_map: Any | None = None,
+    max_distance_m: float = 50.0,
+    lateral_gate_m: float = 4.5,
+) -> tuple[str, float] | None:
+    """Find the nearest same-lane stop waypoint before CARLA marks it active."""
+    traffic_lights = tuple(traffic_lights)
+    if not traffic_lights:
+        return None
+    ego_location = ego.get_location()
+    ex, ey, _ = _xyz(ego_location)
+    ego_forward = ego.get_transform().get_forward_vector()
+    fx, fy, _ = _xyz(ego_forward)
+    norm = math.hypot(fx, fy)
+    if norm <= 1e-6:
+        return None
+    fx, fy = fx / norm, fy / norm
+    extent = getattr(getattr(ego, "bounding_box", None), "extent", None)
+    front_offset_m = max(0.0, float(getattr(extent, "x", 0.0)))
+    ego_waypoint = None
+    if world_map is not None:
+        get_waypoint = getattr(world_map, "get_waypoint", None)
+        if callable(get_waypoint):
+            ego_waypoint = get_waypoint(ego_location, project_to_road=True)
+    candidates: list[tuple[float, str]] = []
+    for light in traffic_lights:
+        if not getattr(light, "is_alive", True):
+            continue
+        get_waypoints = getattr(light, "get_stop_waypoints", None)
+        get_state = getattr(light, "get_state", None)
+        if not callable(get_waypoints) or not callable(get_state):
+            continue
+        state = _normalise_light_state(get_state())
+        for waypoint in get_waypoints() or ():
+            # The approach lane and a junction stop waypoint can have distinct
+            # OpenDRIVE road IDs. Geometry, heading, and lane identity below
+            # are the reliable association; requiring the same road ID makes
+            # a red light appear only a few metres before its stop line.
+            ego_lane_id = getattr(ego_waypoint, "lane_id", None)
+            stop_lane_id = getattr(waypoint, "lane_id", None)
+            if ego_lane_id is not None and stop_lane_id is not None and ego_lane_id != stop_lane_id:
+                continue
+            wx, wy, _ = _xyz(waypoint.transform.location)
+            dx, dy = wx - ex, wy - ey
+            along = dx * fx + dy * fy
+            clearance = along - front_offset_m
+            lateral = abs(-dx * fy + dy * fx)
+            if not 0.0 <= clearance <= max_distance_m or lateral > lateral_gate_m:
+                continue
+            waypoint_forward = getattr(waypoint.transform, "get_forward_vector", None)
+            if callable(waypoint_forward):
+                wfx, wfy, _ = _xyz(waypoint_forward())
+                if wfx * fx + wfy * fy < 0.5:
+                    continue
+            candidates.append((clearance, state))
+    if not candidates:
+        return None
+    distance, state = min(candidates, key=lambda item: item[0])
+    return state, distance
+
+
+def traffic_light_and_stop_distance(
+    ego: Any,
+    traffic_lights: Iterable[Any] = (),
+    *,
+    world_map: Any | None = None,
+) -> tuple[str, float | None, str]:
+    light = None
+    get_light = getattr(ego, "get_traffic_light", None)
+    if callable(get_light):
+        light = get_light()
+    at_light = bool(getattr(ego, "is_at_traffic_light", lambda: False)())
+    upcoming = _upcoming_traffic_light(ego, traffic_lights, world_map=world_map)
+    if light is None and not at_light:
+        if upcoming is not None:
+            return (*upcoming, "CARLA_MAP_UPCOMING_STOP_WAYPOINT")
+        return "UNKNOWN", None, "NO_ACTIVE_TRAFFIC_LIGHT"
+    if light is not None and callable(getattr(light, "get_state", None)):
+        state = _normalise_light_state(light.get_state())
+    else:
+        state = _normalise_light_state(ego.get_traffic_light_state())
+    if light is None:
+        return state, None, "CARLA_EGO_TRAFFIC_LIGHT_STATE"
+
+    ego_location = ego.get_location()
+    ex, ey, _ = _xyz(ego_location)
+    forward = ego.get_transform().get_forward_vector()
+    fx, fy, _ = _xyz(forward)
+    extent = getattr(getattr(ego, "bounding_box", None), "extent", None)
+    front_offset_m = max(0.0, float(getattr(extent, "x", 0.0)))
+    candidates: list[float] = []
+    get_stop_waypoints = getattr(light, "get_stop_waypoints", None)
+    if callable(get_stop_waypoints):
+        for waypoint in get_stop_waypoints() or ():
+            wx, wy, _ = _xyz(waypoint.transform.location)
+            clearance = (wx - ex) * fx + (wy - ey) * fy - front_offset_m
+            if clearance >= 0.0:
+                candidates.append(clearance)
+    if candidates:
+        active = (state, min(candidates))
+        if upcoming is not None and upcoming[1] < active[1]:
+            return (*upcoming, "CARLA_MAP_UPCOMING_STOP_WAYPOINT")
+        return (*active, "CARLA_MAP_STOP_WAYPOINT")
+
+    # Some CARLA traffic-light actors expose only a local trigger volume.  It
+    # is an approximation, explicitly labelled as such in the provenance map.
+    trigger = getattr(light, "trigger_volume", None)
+    transform = getattr(light, "get_transform", lambda: None)()
+    if trigger is not None and transform is not None:
+        location = trigger.location
+        if callable(getattr(transform, "transform", None)):
+            location = transform.transform(location)
+        tx, ty, _ = _xyz(location)
+        clearance = (tx - ex) * fx + (ty - ey) * fy - front_offset_m
+        if clearance >= 0.0:
+            return state, clearance, "CARLA_TRIGGER_VOLUME_APPROXIMATION"
+        return state, None, "CARLA_TRIGGER_VOLUME_PASSED"
+    if upcoming is not None:
+        return (*upcoming, "CARLA_MAP_UPCOMING_STOP_WAYPOINT")
+    return state, None, "CARLA_MAP_STOP_WAYPOINT_PASSED"
+
+
+def actor_speed_limit_mps(ego: Any) -> float | None:
+    """Return CARLA's map speed limit in m/s when it is finite and positive."""
+    get_speed_limit = getattr(ego, "get_speed_limit", None)
+    if not callable(get_speed_limit):
+        return None
+    speed_limit_kph = float(get_speed_limit())
+    if not math.isfinite(speed_limit_kph) or speed_limit_kph <= 0.0:
+        return None
+    return speed_limit_kph / 3.6
+
+
+def route_deviation_m(x_m: float, y_m: float, route: RouteReference) -> float:
+    """Return planar distance from a point to the nearest route segment."""
+    points = route.points_xy_m
+    if len(points) == 1:
+        return math.hypot(x_m - points[0][0], y_m - points[0][1])
+    segment_distances: list[float] = []
+    for (ax, ay), (bx, by) in zip(points, points[1:]):
+        dx, dy = bx - ax, by - ay
+        length_squared = dx * dx + dy * dy
+        if length_squared <= 1e-12:
+            segment_distances.append(math.hypot(x_m - ax, y_m - ay))
+            continue
+        projection = max(0.0, min(1.0, ((x_m - ax) * dx + (y_m - ay) * dy) / length_squared))
+        nearest_x, nearest_y = ax + projection * dx, ay + projection * dy
+        segment_distances.append(math.hypot(x_m - nearest_x, y_m - nearest_y))
+    return min(segment_distances)
+
+
+def lane_metrics(world_map: Any, ego: Any, route: RouteReference | None) -> tuple[float | None, float | None]:
+    """Return signed lane-center offset and route deviation from CARLA map geometry."""
+    location = ego.get_location()
+    waypoint = world_map.get_waypoint(location, project_to_road=True)
+    lane_offset: float | None = None
+    if waypoint is not None:
+        center = waypoint.transform.location
+        cx, cy, _ = _xyz(center)
+        ex, ey, _ = _xyz(location)
+        right = waypoint.transform.get_right_vector()
+        rx, ry, _ = _xyz(right)
+        lane_offset = (ex - cx) * rx + (ey - cy) * ry
+    route_deviation: float | None = None
+    if route is not None:
+        ex, ey, _ = _xyz(location)
+        route_deviation = route_deviation_m(ex, ey, route)
+    elif lane_offset is not None:
+        route_deviation = abs(lane_offset)
+    return lane_offset, route_deviation
+
+
+class CarlaPerceptionBridge:
+    """Convert one exact CARLA sensor frame into the controller contract."""
+
+    def __init__(
+        self, world: Any, world_map: Any, ego: Any, session: CarlaSession,
+        sensors: AttachedCarlaSensors, detector: Any | None = None,
+        *,
+        visual_provider: Callable[[Any], VisualObservation] | None = None,
+        fusion: ConservativeSensorFusion | None = None,
+    ) -> None:
+        if detector is not None and visual_provider is not None:
+            raise ValueError("configure detector or visual_provider, not both")
+        self._world = world
+        self._map = world_map
+        self._ego = ego
+        self._session = session
+        self._sensors = sensors
+        self._detector = detector
+        self._visual_provider = visual_provider
+        self._fusion = fusion or ConservativeSensorFusion()
+        self._object_tracker = SensorObjectTracker()
+        self._lead_tracker = TemporalLeadTracker()
+        self._traffic_lights = tuple(
+            actor
+            for actor in world.get_actors()
+            if str(getattr(actor, "type_id", "")).startswith("traffic.traffic_light")
+        )
+
+    def acquire(
+        self, frame: int, sim_time_s: float, *, route: RouteReference | None = None,
+        timeout_s: float = 0.25,
+    ) -> PerceptionSample:
+        """Acquire a frame or raise a fail-closed ``PerceptionAcquisitionError``."""
+        try:
+            multiview_ids = tuple(
+                sensor_id
+                for sensor_id in MULTIVIEW_RGB_SENSOR_IDS
+                if sensor_id in self._sensors.actors
+            )
+            aligned = self._session.frame_buffer.pop_aligned_optional(
+                REQUIRED_CONTINUOUS_SENSOR_IDS + multiview_ids,
+                OPTIONAL_CONTINUOUS_SENSOR_IDS,
+                frame,
+                timeout_s=timeout_s,
+                optional_grace_s=min(0.005, timeout_s),
+            )
+        except TimeoutError as error:
+            pending = self._session.frame_buffer.pending_frames
+            raise PerceptionTimeoutError(
+                f"required RGB/LiDAR frame {frame} unavailable; pending sensor frames={pending}; "
+                "normal control must be suppressed"
+            ) from error
+        # Official latency starts only after every continuous input for this
+        # frame is present. Capture that boundary before validation/fusion so
+        # the interval includes all downstream perception work.
+        sensor_ready_ns = time.monotonic_ns()
+        rgb, lidar = aligned[RGB_SENSOR_ID], aligned[LIDAR_SENSOR_ID]
+        radar = aligned.get(RADAR_SENSOR_ID)
+        multi_view_rgb = MappingProxyType({
+            sensor_id: aligned[sensor_id]
+            for sensor_id in multiview_ids
+        })
+        for sensor_id, payload in aligned.items():
+            payload_frame = getattr(payload, "frame", None)
+            if payload_frame != frame:
+                raise FrameAlignmentError(
+                    f"{sensor_id} payload frame={payload_frame!r}, expected frame={frame}"
+                )
+        sources: dict[str, str] = {}
+        for sensor_id in multiview_ids:
+            sources[f"{sensor_id}_modality"] = "CARLA_RGB_EXACT_FRAME"
+        detected_objects = ()
+        corridor_objects = ()
+        visual: VisualObservation
+        if self._detector is not None:
+            try:
+                detected_objects = tuple(self._detector.detect_measurement(rgb))
+                corridor_objects = driving_corridor_detections(detected_objects)
+            except Exception as error:
+                raise ObjectDetectionError(
+                    f"RGB ONNX detection failed for frame {frame}: {error}"
+                ) from error
+            sources["detected_objects"] = "RGB_ONNX_OBJECT_DETECTOR"
+            if corridor_objects:
+                selected = max(corridor_objects, key=lambda item: item.confidence)
+                visual = VisualObservation(
+                    frame, True, selected.class_name, selected.confidence,
+                    "RGB_ONNX_OBJECT_DETECTOR",
+                )
+            else:
+                visual = VisualObservation.unavailable(
+                    frame, source="RGB_ONNX_NO_CORRIDOR_OBJECT",
+                )
+        elif self._visual_provider is None:
+            visual = VisualObservation.unavailable(frame)
+        else:
+            try:
+                visual = self._visual_provider(rgb)
+                if not isinstance(visual, VisualObservation):
+                    raise TypeError("visual_provider must return VisualObservation")
+            except Exception as error:
+                raise ObjectDetectionError(
+                    f"configured RGB provider failed for frame {frame}: {error}"
+                ) from error
+            if visual.frame != frame:
+                raise ObjectDetectionError(
+                    f"configured RGB provider returned frame {visual.frame}, expected {frame}"
+                )
+
+        try:
+            lead_distance = front_lidar_distance_m(lidar)
+            adjacent_distances = adjacent_lidar_distances_m(lidar)
+        except (TypeError, ValueError) as error:
+            raise PerceptionDataError(
+                f"LiDAR frame {frame} is unusable; normal control must be suppressed"
+            ) from error
+        lead_speed: float | None = None
+        if lead_distance is not None:
+            if self._detector is not None and corridor_objects:
+                selected = max(corridor_objects, key=lambda item: item.confidence)
+                detected_objects = tuple(
+                    replace(item, distance_m=lead_distance) if item is selected else item
+                    for item in detected_objects
+                )
+                lead_speed = 0.0
+                sources["lead_distance_m"] = "RGB_ONNX_LIDAR_FRONT_CORRIDOR"
+                sources["lead_speed_mps"] = "RGB_LIDAR_STATIC_OBSTACLE_ASSUMPTION"
+            elif self._detector is not None:
+                # A LiDAR obstacle must not disappear because RGB missed it.
+                # A detected but unclassified obstacle is conservatively
+                # treated as stationary.  It must not disappear from C/D just
+                # because actor association failed.
+                lead_speed = 0.0
+                sources["lead_distance_m"] = "LIDAR_UNCLASSIFIED_FRONT_CORRIDOR"
+                sources["lead_speed_mps"] = "LIDAR_STATIC_OBSTACLE_ASSUMPTION"
+            else:
+                sources["lead_distance_m"] = "LIDAR_FRONT_CORRIDOR"
+                # Actor-registry velocity is simulator oracle data.  Leave
+                # speed unset so C estimates closing speed from consecutive
+                # LiDAR frames; an aligned radar observation may replace it
+                # below with a sensor-grounded radial velocity.
+                sources["lead_speed_mps"] = "LIDAR_TEMPORAL_ESTIMATE_PENDING"
+        radar_target: FrontRadarTarget | None = None
+        if radar is None:
+            sources["radar_modality"] = "RADAR_FRAME_MISSING_DEGRADED"
+        else:
+            try:
+                radar_target = front_radar_target(radar)
+                sources["radar_modality"] = "CARLA_RADAR_FRAME_ALIGNED"
+            except (TypeError, ValueError, AttributeError) as error:
+                sources["radar_modality"] = f"RADAR_FRAME_INVALID_{type(error).__name__.upper()}"
+            if radar_target is None and sources["radar_modality"] == "CARLA_RADAR_FRAME_ALIGNED":
+                sources["radar_observation"] = "CARLA_RADAR_NO_FRONT_CORRIDOR_TARGET"
+        if radar_target is not None and lead_distance is None:
+            # Long-range radar-only returns are common under Town03's flyovers
+            # and on tight bends. Dense LiDAR must corroborate those objects
+            # before they constrain normal cruising. Preserve a short-range
+            # radar-only fail-safe so a genuinely close target is never hidden.
+            if radar_target.distance_m <= 8.0:
+                lead_distance = radar_target.distance_m
+                sources["lead_distance_m"] = "RADAR_FRONT_CORRIDOR_DEGRADED_RANGE"
+                lead_speed = max(
+                    0.0, _speed_mps(self._ego) + radar_target.closing_speed_mps,
+                )
+                sources["lead_speed_mps"] = "RADAR_ONLY_RADIAL_VELOCITY"
+                sources["radar_observation"] = "RADAR_FRONT_CORRIDOR_CLOSE_FAILSAFE"
+            else:
+                sources["radar_observation"] = (
+                    "RADAR_FRONT_CORRIDOR_UNCORROBORATED_IGNORED"
+                )
+        elif radar_target is not None and abs(
+            radar_target.distance_m - lead_distance
+        ) <= 4.0:
+            lead_speed = max(0.0, _speed_mps(self._ego) + radar_target.closing_speed_mps)
+            sources["lead_speed_mps"] = "RADAR_LIDAR_ASSOCIATED_RADIAL_VELOCITY"
+            sources["radar_observation"] = "RADAR_FRONT_CORRIDOR_ASSOCIATED"
+        elif radar_target is not None:
+            sources["radar_observation"] = "RADAR_LIDAR_RANGE_GATE_REJECTED"
+        lead_track_was_active = self._lead_tracker.last_observed_s is not None
+        lead_distance, tracked_lead_speed, lead_predicted = self._lead_tracker.update(
+            sim_time_s=sim_time_s,
+            ego_speed_mps=_speed_mps(self._ego),
+            observed_distance_m=lead_distance,
+            observed_lead_speed_mps=lead_speed,
+        )
+        if lead_predicted:
+            lead_speed = tracked_lead_speed
+            sources["lead_distance_m"] = "LIDAR_TEMPORAL_SHORT_HOLD"
+            sources["lead_speed_mps"] = "LIDAR_TEMPORAL_PREDICTED_LEAD_SPEED"
+        elif lead_distance is not None and tracked_lead_speed is not None:
+            # The tracker already rejects impossible values and smooths each
+            # accepted range/radar velocity. Feeding the raw radar sample to
+            # C here bypassed that filter, so a narrow bicycle could alternate
+            # between its real radial velocity and a static background return
+            # on consecutive scans. That became alternating throttle/brake
+            # even though the temporal track itself was stable.
+            speed_was_sensor_grounded = lead_speed is not None
+            lead_speed = tracked_lead_speed
+            if not speed_was_sensor_grounded:
+                sources["lead_speed_mps"] = "LIDAR_TEMPORAL_INFERRED_LEAD_SPEED"
+            elif lead_track_was_active:
+                sources["lead_speed_mps"] = "LIDAR_TEMPORAL_FILTERED_SENSOR_LEAD_SPEED"
+        if lead_distance is not None and not corridor_objects:
+            # Keep a range-grounded generic target available to the
+            # high-level planner without pretending that RGB supplied a
+            # semantic class. This also covers radar-range fallback frames.
+            lidar_target = DetectedObject(
+                0,
+                "obstacle",
+                1.0,
+                (0.40, 0.30, 0.60, 0.80),
+                lead_distance,
+            )
+            detected_objects = (lidar_target,) + tuple(detected_objects)
+            sources["detected_objects"] = "LIDAR_RADAR_FRONT_CORRIDOR_OBJECT"
+        elif radar_target is not None and not corridor_objects:
+            # A long-range radar return is too weak to constrain longitudinal
+            # control without LiDAR corroboration, but it is still legitimate
+            # sensor evidence that a pending visual/semantic command has a
+            # candidate ahead.  Expose it to Qwen without assigning it to
+            # ``lead_distance_m``; C/D therefore keep their stricter fusion
+            # gate while event-driven commands can be evaluated before a
+            # predeclared manoeuvre route has moved behind the ego.
+            radar_candidate = DetectedObject(
+                0,
+                "obstacle",
+                0.55,
+                (0.42, 0.34, 0.58, 0.76),
+                radar_target.distance_m,
+            )
+            detected_objects = (radar_candidate,) + tuple(detected_objects)
+            sources["detected_objects"] = "RADAR_FRONT_CORRIDOR_QWEN_CANDIDATE"
+        if self._detector is not None and corridor_objects and lead_distance is not None:
+            selected = max(corridor_objects, key=lambda item: item.confidence)
+            detected_objects = tuple(
+                replace(item, distance_m=lead_distance) if item is selected else item
+                for item in detected_objects
+            )
+        adjacent_objects = []
+        for side, distance_m in zip(("LEFT", "RIGHT"), adjacent_distances):
+            if distance_m is None:
+                continue
+            center_x = 0.22 if side == "LEFT" else 0.78
+            adjacent_objects.append(DetectedObject(
+                0,
+                "obstacle",
+                1.0,
+                (center_x - 0.10, 0.30, center_x + 0.10, 0.80),
+                distance_m,
+            ))
+        if adjacent_objects:
+            detected_objects = tuple(detected_objects) + tuple(adjacent_objects)
+            previous_source = sources.get("detected_objects")
+            sources["detected_objects"] = (
+                "LIDAR_ADJACENT_LANE_OBJECT"
+                if previous_source is None
+                else f"{previous_source}+LIDAR_ADJACENT_LANE_OBJECT"
+            )
+        if detected_objects:
+            detected_objects = self._object_tracker.update(frame, detected_objects)
+            sources["target_ids"] = "C_SENSOR_TEMPORAL_TRACKER"
+        safety_summary = self._fusion.update(
+            frame=frame,
+            sim_time_s=sim_time_s,
+            ego_speed_mps=_speed_mps(self._ego),
+            front_distance_m=lead_distance,
+            lidar_valid=True,
+            visual=visual,
+            lead_speed_mps=lead_speed,
+            road_curvature_per_m=0.0 if route is None else route.curvature_per_m,
+            lead_speed_source=sources.get("lead_speed_mps", "LEAD_TRACKER_UNAVAILABLE"),
+        )
+        sources["visual_object_class"] = visual.source
+        sources["c_fusion_mode"] = safety_summary.fusion_mode
+        sources["c_recommended_action"] = safety_summary.recommended_action
+
+        traffic_light, stop_distance, traffic_source = traffic_light_and_stop_distance(
+            self._ego, self._traffic_lights, world_map=self._map,
+        )
+        sources["traffic_light"] = traffic_source
+        if stop_distance is not None:
+            sources["distance_to_stop_line_m"] = traffic_source
+        speed_limit = actor_speed_limit_mps(self._ego)
+        if speed_limit is not None:
+            sources["speed_limit_mps"] = "CARLA_MAP_SPEED_LIMIT"
+
+        lane_offset, route_deviation = lane_metrics(self._map, self._ego, route)
+        if lane_offset is not None:
+            sources["lane_offset_m"] = "CARLA_MAP_WAYPOINT"
+        if route_deviation is not None:
+            sources["route_deviation_m"] = "ROUTE_REFERENCE_NEAREST_SEGMENT" if route else "CARLA_MAP_WAYPOINT"
+        collision, lane_invasion = self._sensors.events.flags_for_frame(frame)
+        red_light_violation = (
+            traffic_light == "RED" and stop_distance is not None and stop_distance <= 0.5
+            and _speed_mps(self._ego) > 0.5
+        )
+        sources["collision"] = "CARLA_COLLISION_EVENT"
+        sources["lane_invasion"] = "CARLA_LANE_INVASION_EVENT"
+        sources["red_light_violation"] = "CARLA_RED_LIGHT_STOP_LINE_CROSSING"
+
+        perception = PerceptionFrame(
+            frame=frame,
+            sim_time_s=sim_time_s,
+            lead_distance_m=lead_distance,
+            lead_speed_mps=lead_speed,
+            traffic_light=traffic_light,
+            distance_to_stop_line_m=stop_distance,
+            speed_limit_mps=speed_limit,
+            lane_offset_m=lane_offset,
+            route_deviation_m=route_deviation,
+            collision=collision,
+            red_light_violation=red_light_violation,
+            lane_invasion=lane_invasion,
+            detected_objects=detected_objects,
+        )
+        return PerceptionSample(
+            perception, sensor_ready_ns, MappingProxyType(sources),
+            rgb, lidar, radar, safety_summary, multi_view_rgb,
+        )

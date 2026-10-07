@@ -1,0 +1,190 @@
+"""Candidate identity (the five mandatory identifiers) and hashing helpers."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, asdict
+import hashlib
+import json
+from pathlib import Path
+import re
+import subprocess
+from typing import Any, Mapping
+
+
+IDENTITY_FIELDS: tuple[str, ...] = (
+    "git_sha",
+    "model_id",
+    "model_sha256",
+    "dataset_version",
+    "config_id",
+)
+
+UNRESOLVED = "UNRESOLVED"
+
+#: Marker written into `CandidateIdentity.verification` by the only function
+#: that recomputes a digest from a file on disk.  Anything that has to decide
+#: whether a candidate is gate-verified looks for this marker, so a hand-written
+#: identity cannot claim verification it never performed.
+VERIFICATION_METHOD_MANIFEST = "weights_manifest_vs_artifact_sha256"
+
+_SHA1_RE = re.compile(r"[0-9a-fA-F]{40}")
+
+
+def sha256_file(path: str | Path, chunk_size: int = 1 << 20) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        while True:
+            block = stream.read(chunk_size)
+            if not block:
+                break
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def git_head(repo: str | Path) -> str:
+    """Return the current commit SHA, or UNRESOLVED when git cannot answer."""
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=20.0,
+            check=True,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return UNRESOLVED
+    value = completed.stdout.strip()
+    return value if _SHA1_RE.fullmatch(value) else UNRESOLVED
+
+
+@dataclass(frozen=True, slots=True)
+class CandidateIdentity:
+    """Identity of the artifact under test.
+
+    ``UNRESOLVED`` is allowed so the harness can run before A2/A3 deliver; it
+    is never allowed to appear in a report that claims a gate result.
+    """
+
+    git_sha: str = UNRESOLVED
+    model_id: str = UNRESOLVED
+    model_sha256: str = UNRESOLVED
+    dataset_version: str = UNRESOLVED
+    config_id: str = UNRESOLVED
+    gate_status: str = "NOT_PROVIDED"
+    weights_manifest: str | None = None
+    #: Machine-produced record of the digest check performed in
+    #: `identity_from_weight_manifest`.  ``None`` means "nobody verified this
+    #: identity against a file", which keeps every downstream claim diagnostic.
+    verification: dict[str, Any] | None = None
+
+    def __post_init__(self) -> None:
+        for name in IDENTITY_FIELDS:
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"identity field {name} must be a non-empty string")
+        if self.git_sha != UNRESOLVED and not _SHA1_RE.fullmatch(self.git_sha):
+            raise ValueError("git_sha must be a full 40-character Git SHA or UNRESOLVED")
+        if self.model_sha256 != UNRESOLVED and not re.fullmatch(r"[0-9a-fA-F]{64}", self.model_sha256):
+            raise ValueError("model_sha256 must be a 64-character hex digest or UNRESOLVED")
+
+    @property
+    def complete(self) -> bool:
+        return all(getattr(self, name) != UNRESOLVED for name in IDENTITY_FIELDS)
+
+    def missing(self) -> tuple[str, ...]:
+        return tuple(name for name in IDENTITY_FIELDS if getattr(self, name) == UNRESOLVED)
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["complete"] = self.complete
+        payload["missing"] = list(self.missing())
+        return payload
+
+
+def identity_from_weight_manifest(
+    weights: str | Path,
+    manifest_path: str | Path,
+) -> CandidateIdentity:
+    """Read A3's weight manifest and verify its digest against the real file.
+
+    The manifest's self-reported hash is never trusted: the SHA256 is recomputed
+    from the artifact on disk.
+
+    Two layouts are accepted, because A3 ships both:
+
+    * flat — the five identifiers at the top level;
+    * nested — the five identifiers under `candidate_identity` (this is the shape of
+      `challenge/distillation/candidate_handoff.py`'s `handoff_manifest.json`).
+
+    Top-level keys win when a manifest carries both, and the layout that was used is
+    recorded in the verification block so a reader never has to guess which fields
+    were verified.
+    """
+    path = Path(weights)
+    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    if not isinstance(manifest, Mapping):
+        raise ValueError("weight manifest must be a JSON object")
+    nested = manifest.get("candidate_identity")
+    nested = nested if isinstance(nested, Mapping) else {}
+
+    def field(name: str) -> Any:
+        value = manifest.get(name)
+        return value if value not in (None, "") else nested.get(name)
+
+    actual = sha256_file(path)
+    reported = str(field("weights_sha256") or "")
+    if reported and reported.lower() != actual.lower():
+        raise ValueError(
+            f"weight manifest SHA256 mismatch: manifest={reported} actual={actual}"
+        )
+    gate_status = str(field("gate_status") or "NOT_PROVIDED")
+    return CandidateIdentity(
+        git_sha=str(field("git_sha") or UNRESOLVED),
+        model_id=str(field("model_id") or UNRESOLVED),
+        model_sha256=actual,
+        dataset_version=str(field("dataset_version") or UNRESOLVED),
+        config_id=str(field("config_id") or UNRESOLVED),
+        gate_status=gate_status,
+        weights_manifest=str(manifest_path),
+        verification={
+            "method": VERIFICATION_METHOD_MANIFEST,
+            "verified": True,
+            "layout": "nested_candidate_identity" if nested else "flat",
+            "identity_source": "candidate_identity" if nested else "top_level",
+            "manifest_path": str(manifest_path),
+            "manifest_sha256": sha256_file(manifest_path),
+            "reported_weights_sha256": reported or None,
+            "artifact_path": str(path),
+            "artifact_sha256": actual,
+            "gate_status": gate_status,
+        },
+    )
+
+
+def identity_from_artifact(
+    artifact: str | Path,
+    *,
+    model_id: str = UNRESOLVED,
+    config_id: str = UNRESOLVED,
+    dataset_version: str = UNRESOLVED,
+    git_sha: str = UNRESOLVED,
+) -> CandidateIdentity:
+    return CandidateIdentity(
+        git_sha=git_sha,
+        model_id=model_id,
+        model_sha256=sha256_file(artifact),
+        dataset_version=dataset_version,
+        config_id=config_id,
+    )
+
+
+__all__ = [
+    "IDENTITY_FIELDS",
+    "UNRESOLVED",
+    "VERIFICATION_METHOD_MANIFEST",
+    "CandidateIdentity",
+    "sha256_file",
+    "git_head",
+    "identity_from_weight_manifest",
+    "identity_from_artifact",
+]

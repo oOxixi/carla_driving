@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "status": "STAGED_NOT_READY",
+  "prepared_by": "俞乾齐工作材料",
+  "basic_source_sha": "5c1a7c4978f6ecba2ed88602f331b1e4c56ef051",
+  "challenge_source_sha": "3c10b121d7d1dda169a873df76dc80bc8a226e26",
+  "model": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "runtime_image": "carla-review-runtime:20261005",
+  "carla_image": "carla-simulator:0.9.16",
+  "host_python": "3.12.10",
+  "historical_metrics_sha256": "ff3b9dd0ac08eec052befba1c004f6005937386bf2353cf03c2821a30c6d2738",
+  "production_qwen_weights": "VERIFIED",
+  "local_gpu_runtime": "BLOCKED_DRIVER_CUDA_13_2_REQUIREMENT",
+  "blocked": [
+    "new_model_runtime_and_true_audio_S123_videos",
+    "Bench2Drive_agent_entry_verified",
+    "full_voice_runtime_dependencies",
+    "signed_application_identity",
+    "final_model_gate_and_raw_evidence",
+    "same_candidate_full_scoring_metrics"
+  ]
+}

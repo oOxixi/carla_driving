@@ -1,0 +1,18 @@
+{
+  "python": "3.12.10",
+  "platform": "Windows-11-10.0.26100-SP0",
+  "student_packages": {
+    "torch": "2.6.0+cu124",
+    "numpy": "2.1.2",
+    "Pillow": "11.0.0",
+    "onnx": "1.22.0",
+    "onnxruntime": "1.27.0",
+    "pytest": "8.4.2"
+  },
+  "teacher_analysis": {
+    "python": "3.12.3",
+    "torch": "2.12.1+cu132",
+    "transformers": "5.14.1",
+    "device": "CPU/meta (no inference)"
+  }
+}

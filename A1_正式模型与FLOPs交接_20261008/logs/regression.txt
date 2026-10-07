@@ -1,0 +1,4 @@
+COMMAND: C:\Users\admin\AppData\Local\Programs\Python\Python312\python.exe -m pytest -q challenge/tests/test_a1_student.py challenge/tests/test_flops_denominator.py --disable-warnings --maxfail=1
+EXIT: 0
+.....................                                                    [100%]
+21 passed in 3.03s

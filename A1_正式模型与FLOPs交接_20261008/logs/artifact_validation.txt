@@ -1,0 +1,54 @@
+COMMAND: C:\Users\admin\AppData\Local\Programs\Python\Python312\python.exe -m challenge.export.validate_artifacts --root .
+EXIT: 0
+{
+  "status": "PASS",
+  "artifact": "challenge\\student_v0_fp32.onnx",
+  "artifact_sha256": "ffb1ed5e9b23aa7100343bb4f02c8cfef3da5049e9c5eba4c0e66247c96ee243",
+  "parameters": 23006581,
+  "operators": [
+    "AveragePool",
+    "Concat",
+    "Constant",
+    "Conv",
+    "Flatten",
+    "Gemm",
+    "Identity",
+    "Mul",
+    "Relu",
+    "Reshape",
+    "Sigmoid"
+  ],
+  "input_shapes": {
+    "rgb": [
+      1,
+      3,
+      224,
+      224
+    ],
+    "text_tokens": [
+      1,
+      32
+    ],
+    "targets": [
+      1,
+      8,
+      14
+    ],
+    "state": [
+      1,
+      64
+    ]
+  },
+  "output_names": [
+    "plan_length_logits",
+    "behavior_logits",
+    "target_pointer_logits",
+    "target_lane_logits",
+    "target_speed_mps",
+    "completion_type_logits",
+    "on_failure_logits",
+    "confidence",
+    "requires_confirmation_logits",
+    "replan_condition_logits"
+  ]
+}

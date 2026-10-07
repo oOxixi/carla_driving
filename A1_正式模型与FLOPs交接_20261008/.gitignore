@@ -1,0 +1,3 @@
+# These curated verification logs are part of the A1 handoff.
+!logs/
+!logs/**

@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "frame_id": 120,
+  "sim_time_s": 6.0,
+  "captured_at_ns": 3000000000,
+  "coordinate_frame": "ego_front_x_left_y_up_z_m",
+  "objects": [{"track_id": "vehicle-0001", "class": "vehicle", "position_m": [12.0, -3.5, 0.0], "velocity_mps": [4.0, 0.0, 0.0], "distance_m": 12.5, "ttc_s": null, "confidence": 0.94, "sources": ["RGB", "RADAR", "LIDAR"], "bbox_xyxy_norm": [0.62, 0.40, 0.79, 0.76]}],
+  "traffic_light": "GREEN",
+  "distance_to_stop_line_m": null,
+  "speed_limit_mps": 8.3333333333,
+  "ttc_s": null,
+  "min_gap_m": 12.5,
+  "risk_level": "LOW",
+  "modality_valid": {"rgb": true, "radar": true, "lidar": true, "vehicle_state": true},
+  "stale": false,
+  "sync": {"reference_frame_id": 120, "max_skew_ms": 18.0, "within_tolerance": true, "missing_modalities": []},
+  "degraded_reason_codes": []
+}

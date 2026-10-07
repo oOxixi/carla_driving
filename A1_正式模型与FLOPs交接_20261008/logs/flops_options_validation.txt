@@ -1,0 +1,16 @@
+COMMAND: py -3.12 -m challenge.export.flops_options
+EXIT: 0
+Student arithmetic_total: 499437133
+Student arithmetic_plus_comparisons_total: 500219341
+Teacher conv_linear_flops: 892929605632
+Teacher vision_attention_qk_av: 6442450944
+Teacher text_attention_qk_av: 3503996928
+Teacher serial_delta_core_updates: 8819048448
+Teacher expanded_dominant_flops: 911695101952
+Teacher exact_whole_network_flops: null
+Candidate options: 4
+
+COMMAND: py -3.12 -m pytest -q challenge/tests/test_flops_options.py --disable-warnings
+EXIT: 0
+.                                                                        [100%]
+1 passed in 1.64s

@@ -1,0 +1,4044 @@
+{
+  "schema_version": "1.0",
+  "teacher_model_id": "Qwen/Qwen3.5-2B",
+  "teacher_model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "expected_weight_artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+  "weight_execution": "NOT_RUN: shape inventory from pinned config, not quality evidence",
+  "config_file_sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4",
+  "source_git_sha": "7b6393d611080d08cf932f527faed90fc5fbd4cb",
+  "method": "Analytical dense Conv/Linear module inventory, not runtime operator profiling",
+  "workload": {
+    "batch": 1,
+    "rgb_fixture": "synthetic black 224x224 RGB",
+    "request": {
+      "schema_version": "1.0",
+      "request_id": "qwen-0001",
+      "command_id": "voice-0002",
+      "created_at_ns": 2000000000,
+      "deadline_ns": 2300000000,
+      "source_text": "跟随右侧较近的车辆",
+      "rgb_ref": "frames/rgb_000120.png",
+      "scene_summary": {
+        "frame_id": 120,
+        "sim_time_s": 6.0,
+        "traffic_light": "GREEN",
+        "risk_level": "LOW",
+        "min_gap_m": 12.0,
+        "ttc_s": null
+      },
+      "targets": [
+        {
+          "target_id": "vehicle-right-01",
+          "class": "vehicle",
+          "distance_m": 12.0,
+          "relative_speed_mps": -1.0,
+          "confidence": 0.94,
+          "relation": "right_adjacent_near"
+        }
+      ],
+      "constraints": {
+        "speed_limit_mps": 8.3333333333,
+        "allowed_behaviors": [
+          "KEEP_LANE",
+          "SLOW_DOWN",
+          "STOP",
+          "FOLLOW"
+        ],
+        "must_stop": false,
+        "max_target_speed_mps": 8.3333333333
+      }
+    },
+    "request_sha256": "a7cbb6b2819debb4ff6932be1555b2914dd8a7f00da093c950b1af4b72859cb1",
+    "prompt": "Choose exactly one safe high-level driving action code. Traffic rules and emergency safety override voice. No explanation.\nA=KEEP_LANE C=SLOW_DOWN D=STOP F=FOLLOW\nINPUT={\"command\":\"跟随右侧较近的车辆\",\"visual_input\":\"front camera\",\"scene\":{\"traffic_light\":\"GREEN\",\"risk_level\":\"LOW\",\"min_gap_m\":12.0,\"ttc_s\":null},\"targets\":[{\"target_id\":\"vehicle-right-01\",\"class\":\"vehicle\",\"distance_m\":12.0,\"relative_speed_mps\":-1.0,\"relation\":\"right_adjacent_near\"}],\"constraints\":{\"speed_limit_mps\":8.3333333333,\"allowed_behaviors\":[\"KEEP_LANE\",\"SLOW_DOWN\",\"STOP\",\"FOLLOW\"],\"must_stop\":false,\"max_target_speed_mps\":8.3333333333},\"lanes\":{},\"route\":{}}",
+    "prompt_sha256": "ffc832e204701cfe77e36cef1049d7abc04e91b3e9d76a75c24dd8e3ae7994b3",
+    "image_grid_thw": [
+      [
+        1,
+        16,
+        16
+      ]
+    ],
+    "patch_tokens": 256,
+    "processed_pixel_values_shape": [
+      256,
+      1536
+    ],
+    "processed_pixel_values_dtype": "torch.float32",
+    "llm_visual_tokens": 64,
+    "total_prefill_tokens": 267,
+    "generated_tokens": 1,
+    "logits_positions": 1,
+    "input_ids": [
+      [
+        248045,
+        846,
+        198,
+        248053,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248056,
+        248054,
+        23298,
+        6681,
+        799,
+        5902,
+        1496,
+        11258,
+        9550,
+        1852,
+        1970,
+        13,
+        35755,
+        5426,
+        321,
+        12483,
+        6925,
+        2723,
+        7497,
+        13,
+        2233,
+        15673,
+        13,
+        198,
+        32,
+        28,
+        50057,
+        66170,
+        351,
+        69744,
+        9162,
+        20508,
+        414,
+        28,
+        48964,
+        426,
+        79388,
+        29204,
+        198,
+        28461,
+        15319,
+        5454,
+        3147,
+        110691,
+        110754,
+        96447,
+        96450,
+        120909,
+        2129,
+        28263,
+        5715,
+        3147,
+        6735,
+        6053,
+        2129,
+        21784,
+        21624,
+        52175,
+        27727,
+        3147,
+        54079,
+        2129,
+        78151,
+        8016,
+        3147,
+        9162,
+        2129,
+        1030,
+        50046,
+        697,
+        763,
+        16,
+        17,
+        13,
+        15,
+        1288,
+        5391,
+        66,
+        625,
+        763,
+        2827,
+        49471,
+        44030,
+        64331,
+        5480,
+        816,
+        3147,
+        19161,
+        6491,
+        12,
+        15,
+        16,
+        2129,
+        1005,
+        3147,
+        19161,
+        2129,
+        18761,
+        697,
+        763,
+        16,
+        17,
+        13,
+        15,
+        1288,
+        19809,
+        16447,
+        697,
+        1630,
+        50303,
+        16,
+        13,
+        15,
+        1288,
+        21533,
+        3147,
+        1246,
+        41145,
+        17640,
+        73728,
+        8934,
+        27573,
+        63106,
+        21624,
+        19755,
+        14335,
+        697,
+        1630,
+        763,
+        23,
+        13,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        1288,
+        20327,
+        41815,
+        21488,
+        35580,
+        50057,
+        66170,
+        2129,
+        50,
+        9162,
+        20508,
+        2129,
+        48964,
+        2129,
+        37,
+        29204,
+        66550,
+        24028,
+        18466,
+        763,
+        3721,
+        1288,
+        2721,
+        10800,
+        16447,
+        697,
+        1630,
+        763,
+        23,
+        13,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        49471,
+        10399,
+        287,
+        763,
+        6061,
+        1288,
+        8695,
+        763,
+        90,
+        3307,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    ]
+  },
+  "counting_convention": "1 MAC = 2 FLOPs; dense direct Conv/Linear; batch=1",
+  "core_flops": 892929605632,
+  "core_flops_by_group": {
+    "vision_encoder": 155424129024,
+    "vision_merger": 3221225472,
+    "text_prefill": 733267132416,
+    "output_projection": 1017118720
+  },
+  "one_text_token_mlp_only_lower_bound_flops": 1811939328,
+  "excluded_operators": [
+    "attention QK/AV matmul",
+    "gated delta recurrence/chunk updates",
+    "embedding lookups",
+    "bias/norm/activation/elementwise/position ops",
+    "ASR/NLU/preprocessing/tokenization/safety/controller",
+    "inactive MTP branch"
+  ],
+  "comparison": {
+    "core_flops_ratio": 0.0005584324820847111,
+    "scope": "Dense Conv/Linear model-only arithmetic; not complete network FLOPs",
+    "ratio_target": 0.5,
+    "formal_ratio_pass": null,
+    "team_denominator_approval": "PENDING"
+  },
+  "runtime": {
+    "python": "3.12.3",
+    "torch": "2.12.1+cu132",
+    "transformers": "5.14.1",
+    "device": "CPU/meta (no inference)"
+  },
+  "modules": [
+    {
+      "module": "model.visual.patch_embed.proj",
+      "type": "Conv3d",
+      "weight_shape": [
+        1024,
+        3,
+        2,
+        16,
+        16
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 402653184,
+      "flops": 805306368
+    },
+    {
+      "module": "model.visual.blocks.0.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.0.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.0.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.0.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.1.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.1.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.1.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.1.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.2.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.2.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.2.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.2.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.3.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.3.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.3.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.3.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.4.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.4.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.4.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.4.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.5.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.5.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.5.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.5.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.6.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.6.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.6.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.6.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.7.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.7.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.7.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.7.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.8.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.8.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.8.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.8.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.9.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.9.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.9.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.9.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.10.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.10.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.10.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.10.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.11.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.11.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.11.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.11.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.12.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.12.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.12.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.12.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.13.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.13.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.13.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.13.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.14.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.14.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.14.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.14.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.15.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.15.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.15.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.15.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.16.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.16.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.16.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.16.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.17.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.17.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.17.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.17.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.18.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.18.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.18.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.18.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.19.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.19.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.19.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.19.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.20.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.20.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.20.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.20.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.21.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.21.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.21.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.21.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.22.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.22.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.22.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.22.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.23.attn.qkv",
+      "type": "Linear",
+      "weight_shape": [
+        3072,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 805306368,
+      "flops": 1610612736
+    },
+    {
+      "module": "model.visual.blocks.23.attn.proj",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 268435456,
+      "flops": 536870912
+    },
+    {
+      "module": "model.visual.blocks.23.mlp.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        1024
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.blocks.23.mlp.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "rows_or_output_positions": 256,
+      "group": "vision_encoder",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.merger.linear_fc1",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        4096
+      ],
+      "rows_or_output_positions": 64,
+      "group": "vision_merger",
+      "macs": 1073741824,
+      "flops": 2147483648
+    },
+    {
+      "module": "model.visual.merger.linear_fc2",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        4096
+      ],
+      "rows_or_output_positions": 64,
+      "group": "vision_merger",
+      "macs": 536870912,
+      "flops": 1073741824
+    },
+    {
+      "module": "model.language_model.layers.0.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.0.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.0.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.0.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.0.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.0.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.0.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.0.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.0.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.1.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.1.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.1.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.1.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.1.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.1.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.1.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.1.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.1.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.2.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.2.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.2.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.2.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.2.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.2.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.2.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.2.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.2.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.3.self_attn.q_proj",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 2239758336,
+      "flops": 4479516672
+    },
+    {
+      "module": "model.language_model.layers.3.self_attn.k_proj",
+      "type": "Linear",
+      "weight_shape": [
+        512,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 279969792,
+      "flops": 559939584
+    },
+    {
+      "module": "model.language_model.layers.3.self_attn.v_proj",
+      "type": "Linear",
+      "weight_shape": [
+        512,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 279969792,
+      "flops": 559939584
+    },
+    {
+      "module": "model.language_model.layers.3.self_attn.o_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.3.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.3.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.3.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.4.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.4.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.4.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.4.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.4.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.4.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.4.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.4.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.4.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.5.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.5.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.5.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.5.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.5.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.5.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.5.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.5.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.5.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.6.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.6.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.6.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.6.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.6.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.6.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.6.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.6.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.6.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.7.self_attn.q_proj",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 2239758336,
+      "flops": 4479516672
+    },
+    {
+      "module": "model.language_model.layers.7.self_attn.k_proj",
+      "type": "Linear",
+      "weight_shape": [
+        512,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 279969792,
+      "flops": 559939584
+    },
+    {
+      "module": "model.language_model.layers.7.self_attn.v_proj",
+      "type": "Linear",
+      "weight_shape": [
+        512,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 279969792,
+      "flops": 559939584
+    },
+    {
+      "module": "model.language_model.layers.7.self_attn.o_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.7.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.7.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.7.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.8.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.8.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.8.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.8.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.8.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.8.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.8.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.8.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.8.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.9.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.9.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.9.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.9.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.9.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.9.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.9.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.9.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.9.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.10.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.10.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.10.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.10.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.10.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.10.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.10.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.10.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.10.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.11.self_attn.q_proj",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 2239758336,
+      "flops": 4479516672
+    },
+    {
+      "module": "model.language_model.layers.11.self_attn.k_proj",
+      "type": "Linear",
+      "weight_shape": [
+        512,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 279969792,
+      "flops": 559939584
+    },
+    {
+      "module": "model.language_model.layers.11.self_attn.v_proj",
+      "type": "Linear",
+      "weight_shape": [
+        512,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 279969792,
+      "flops": 559939584
+    },
+    {
+      "module": "model.language_model.layers.11.self_attn.o_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.11.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.11.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.11.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.12.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.12.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.12.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.12.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.12.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.12.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.12.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.12.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.12.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.13.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.13.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.13.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.13.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.13.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.13.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.13.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.13.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.13.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.14.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.14.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.14.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.14.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.14.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.14.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.14.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.14.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.14.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.15.self_attn.q_proj",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 2239758336,
+      "flops": 4479516672
+    },
+    {
+      "module": "model.language_model.layers.15.self_attn.k_proj",
+      "type": "Linear",
+      "weight_shape": [
+        512,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 279969792,
+      "flops": 559939584
+    },
+    {
+      "module": "model.language_model.layers.15.self_attn.v_proj",
+      "type": "Linear",
+      "weight_shape": [
+        512,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 279969792,
+      "flops": 559939584
+    },
+    {
+      "module": "model.language_model.layers.15.self_attn.o_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.15.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.15.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.15.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.16.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.16.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.16.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.16.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.16.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.16.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.16.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.16.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.16.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.17.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.17.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.17.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.17.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.17.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.17.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.17.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.17.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.17.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.18.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.18.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.18.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.18.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.18.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.18.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.18.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.18.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.18.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.19.self_attn.q_proj",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 2239758336,
+      "flops": 4479516672
+    },
+    {
+      "module": "model.language_model.layers.19.self_attn.k_proj",
+      "type": "Linear",
+      "weight_shape": [
+        512,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 279969792,
+      "flops": 559939584
+    },
+    {
+      "module": "model.language_model.layers.19.self_attn.v_proj",
+      "type": "Linear",
+      "weight_shape": [
+        512,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 279969792,
+      "flops": 559939584
+    },
+    {
+      "module": "model.language_model.layers.19.self_attn.o_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.19.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.19.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.19.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.20.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.20.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.20.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.20.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.20.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.20.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.20.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.20.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.20.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.21.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.21.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.21.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.21.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.21.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.21.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.21.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.21.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.21.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.22.linear_attn.conv1d",
+      "type": "Conv1d",
+      "weight_shape": [
+        6144,
+        1,
+        4
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 6561792,
+      "flops": 13123584
+    },
+    {
+      "module": "model.language_model.layers.22.linear_attn.out_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.22.linear_attn.in_proj_qkv",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.22.linear_attn.in_proj_z",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.22.linear_attn.in_proj_b",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.22.linear_attn.in_proj_a",
+      "type": "Linear",
+      "weight_shape": [
+        16,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 8749056,
+      "flops": 17498112
+    },
+    {
+      "module": "model.language_model.layers.22.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.22.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.22.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.23.self_attn.q_proj",
+      "type": "Linear",
+      "weight_shape": [
+        4096,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 2239758336,
+      "flops": 4479516672
+    },
+    {
+      "module": "model.language_model.layers.23.self_attn.k_proj",
+      "type": "Linear",
+      "weight_shape": [
+        512,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 279969792,
+      "flops": 559939584
+    },
+    {
+      "module": "model.language_model.layers.23.self_attn.v_proj",
+      "type": "Linear",
+      "weight_shape": [
+        512,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 279969792,
+      "flops": 559939584
+    },
+    {
+      "module": "model.language_model.layers.23.self_attn.o_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 1119879168,
+      "flops": 2239758336
+    },
+    {
+      "module": "model.language_model.layers.23.mlp.gate_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.23.mlp.up_proj",
+      "type": "Linear",
+      "weight_shape": [
+        6144,
+        2048
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "model.language_model.layers.23.mlp.down_proj",
+      "type": "Linear",
+      "weight_shape": [
+        2048,
+        6144
+      ],
+      "rows_or_output_positions": 267,
+      "group": "text_prefill",
+      "macs": 3359637504,
+      "flops": 6719275008
+    },
+    {
+      "module": "lm_head",
+      "type": "Linear",
+      "weight_shape": [
+        248320,
+        2048
+      ],
+      "rows_or_output_positions": 1,
+      "group": "output_projection",
+      "macs": 508559360,
+      "flops": 1017118720
+    }
+  ]
+}
