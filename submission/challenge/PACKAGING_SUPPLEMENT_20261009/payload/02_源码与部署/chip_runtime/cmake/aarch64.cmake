@@ -1,0 +1,7 @@
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR aarch64)
+if(NOT DEFINED ENV{ARM_TOOLCHAIN_BIN})
+  message(FATAL_ERROR "Set ARM_TOOLCHAIN_BIN to Arm GNU Toolchain 12.2.Rel1 bin directory")
+endif()
+set(CMAKE_C_COMPILER "$ENV{ARM_TOOLCHAIN_BIN}/aarch64-none-linux-gnu-gcc")
+set(CMAKE_CXX_COMPILER "$ENV{ARM_TOOLCHAIN_BIN}/aarch64-none-linux-gnu-g++")

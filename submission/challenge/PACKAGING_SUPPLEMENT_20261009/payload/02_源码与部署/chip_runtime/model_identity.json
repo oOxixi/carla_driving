@@ -1,0 +1,9 @@
+{
+  "hbm_file": "student_v0_v3.hbm",
+  "hbm_sha256": "c55de94e6269f24a93b3bb5063c2b2616a4d8918cb1f442ad7aea3f748a71c3f",
+  "reference_bc_file": "student_v0_v3_quantized_model.bc",
+  "reference_bc_sha256": "b3a62af432bc782781bdc9e1794672e8b75c996974c477fa9c07b863cf635f83",
+  "march_from_existing_compiler_report": "nash-p",
+  "hbdk_from_existing_compiler_report": "4.11.11",
+  "external_tensor_properties_read": false
+}

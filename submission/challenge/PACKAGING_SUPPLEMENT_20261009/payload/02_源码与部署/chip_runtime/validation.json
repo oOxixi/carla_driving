@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-08",
+  "python_syntax": "PASS (ast.parse with bundled Python)",
+  "cpu_prepare_real_example": "PASS (student_board.py --prepare ../source/interfaces/examples/model_request.json)",
+  "cpu_prepare_files": {
+    "rgb.f32": 602112,
+    "text_tokens.f32": 128,
+    "targets.f32": 448,
+    "state.f32": 256
+  },
+  "cpu_prepare_case_directory": "validation_case_input",
+  "published_overlay_excludes_input_tensor_binaries": true,
+  "published_overlay_retains_request_json": true,
+  "sdk_headers_available": false,
+  "sdk_compile": "NOT_RUN: no OE SDK headers/libraries or Arm compiler available in current environment",
+  "board_inference": "NOT_RUN: no J6 board attached",
+  "hbm_external_dtype_and_shape": "NOT_VERIFIED: validated at runtime by SDK initialization",
+  "cpu_adapter_on_real_bpu_outputs": "NOT_RUN: no real BPU outputs generated",
+  "mock_sdk_or_fabricated_bpu_outputs_used": false,
+  "reported_bpu_performance": null
+}

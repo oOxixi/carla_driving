@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-08",
+  "status": "SCRIPTS_READY_DOCKER_ENVIRONMENT_REQUIRED",
+  "base_image": "openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1",
+  "docker_available_in_current_environment": false,
+  "image_built": false,
+  "image_archive_created": false,
+  "image_digest": null,
+  "model_inference_run": false,
+  "powershell_parser": "PASS",
+  "powershell_utf8_bom": "PASS",
+  "python_and_json_syntax": "PASS",
+  "bash_syntax": "NOT_VERIFIED: Git Bash could not create signal pipe (Win32 error 5) in current sandbox",
+  "bash_encoding": "UTF-8 without BOM, LF",
+  "dependency_constraints": "B3 direct baseline versions; PyYAML >=6,<7",
+  "no_operating_system_changes_or_large_downloads_performed": true
+}

@@ -1,0 +1,16 @@
+{
+  "march": "nash-p",
+  "openexplorer_version": "3.9.1",
+  "hbdk_version": "4.11.11",
+  "horizon_tc_ui_version": "3.5.16",
+  "model_relative_to_chip_runtime": "../../05_B3性能与评测/03_BPU工具原报告/student_v0_v3.hbm",
+  "reference_ir_relative_to_chip_runtime": "../../05_B3性能与评测/03_BPU工具原报告/student_v0_v3_quantized_model.bc",
+  "api": "hbDNNInferV2 + hbUCPSubmitTask + hbUCPWaitTaskDone",
+  "input_contract": "ModelRequest V1 / four float32 featuremaps",
+  "output_contract": "ManeuverPlan V2 via existing StudentPlanAdapter",
+  "scheduling": "one resident SDK worker; one request in flight; HB_UCP_BPU_CORE_ANY",
+  "supported_external_tensor_type": "HB_DNN_TENSOR_TYPE_F32",
+  "supported_external_quanti_type": "NONE",
+  "board_execution_verified": false,
+  "sdk_compilation_verified": false
+}

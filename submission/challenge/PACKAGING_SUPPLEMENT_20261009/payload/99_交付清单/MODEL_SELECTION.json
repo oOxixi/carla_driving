@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "release_status": "MATERIALS_INTEGRATED_PENDING_B2_FINAL_DECISION",
+  "model_id": "student-v0-r3-fp32",
+  "config_id": "student-v0-r3-structure-20260911",
+  "default_runtime_variant": "full_int8",
+  "selection_reason": "Full INT8 has the packaged 83-scenario paired result; Mixed Top-3 is retained as a candidate alternative, not declared independently better.",
+  "training_weights": {
+    "path": "03_训练与模型/A3训练交接/candidate_release/student_v0_fp32_candidate.pt",
+    "sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805"
+  },
+  "models": {
+    "fp32": {
+      "path": "03_训练与模型/A2模型与量化/models/student_v0_fp32_candidate.onnx",
+      "sha256": "681a5d4bf16ba61741ef0e559649c43c041de649eef3e8e6f0b6285beaab4286"
+    },
+    "full_int8": {
+      "path": "03_训练与模型/A2模型与量化/models/full_int8/student_int8.onnx",
+      "sha256": "275dce5c426fff85a0375eb286fc67febac8d835c1e36fe15b0fbd707cf836c3"
+    },
+    "mixed_top3": {
+      "path": "03_训练与模型/A2模型与量化/models/mixed_precision_top3/student_int8_mixed_top3.onnx",
+      "sha256": "9a08a03c42a9ea59ead664d168254cd3685d73d176d5ab53507bd4a4467132d3"
+    }
+  },
+  "adapter": {
+    "path": "02_源码与部署/source/challenge/planner/student_adapter.py",
+    "sha256": "bb30726b8287b422516820af8e8af21e5d6a205cd81d3f9de6871de9badfcf21"
+  },
+  "docker": {
+    "base_image": "openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1",
+    "prepared": true,
+    "image_exported": false,
+    "export_entrypoint": "02_源码与部署/docker/build_and_export.ps1",
+    "export_destination": "02_源码与部署/docker/exports/<run_time>"
+  },
+  "chip_runtime": {
+    "hbm": "05_B3性能与评测/03_BPU工具原报告/student_v0_v3.hbm",
+    "bc": "05_B3性能与评测/03_BPU工具原报告/student_v0_v3_quantized_model.bc",
+    "runtime_received": false,
+    "source_received": true,
+    "source_path": "02_源码与部署/chip_runtime",
+    "sdk_compile_verified": false,
+    "board_inference_verified": false
+  },
+  "candidate_gate_status": "PENDING_A3_FP32_GATE",
+  "formal_gate_promoted": false
+}

@@ -1,0 +1,101 @@
+{
+  "updated_date": "2026-10-09",
+  "scope": "挑战赛道打包代补",
+  "status": "MATERIALS_INTEGRATED_PENDING_MEMBER_INPUTS",
+  "final_archive_generated": false,
+  "formal_gate_promoted": false,
+  "supplement_directory": "PACKAGING_SUPPLEMENT_20261009",
+  "completed": [
+    {
+      "members": [
+        "A4",
+        "B4"
+      ],
+      "item": "X86 Docker 构建/依赖校验/镜像导出工程",
+      "code_complete": true,
+      "image_exported": false
+    },
+    {
+      "members": [
+        "A4"
+      ],
+      "item": "J6 hbDNN/UCP SDK 推理与 CPU/BPU 桥接源码",
+      "code_complete": true,
+      "sdk_compiled": false,
+      "board_inference_run": false
+    },
+    {
+      "members": [
+        "B2",
+        "B3"
+      ],
+      "item": "既有 240 条预测、250 条 ASR 及 83/850 汇总的指标整理和复算脚本",
+      "saved_data_statistics_complete": true,
+      "new_model_evaluation_run": false,
+      "student_850_per_case_predictions_received": false
+    },
+    {
+      "members": [
+        "B3"
+      ],
+      "item": "既有 CPU 利用率原始记录汇总与 BPU 工具预估口径说明",
+      "saved_data_statistics_complete": true,
+      "official_heterogeneous_utilization": null
+    },
+    {
+      "members": [
+        "B3",
+        "语音成员"
+      ],
+      "item": "当前 Student + CARLA 演示启动与真实摄像头录制代码",
+      "code_complete": true,
+      "actual_demo_recorded": false
+    },
+    {
+      "members": [
+        "B2"
+      ],
+      "item": "可选冻结 new240 采集入口",
+      "code_complete": true,
+      "collection_run": false,
+      "official_mandatory_sample_count": false
+    },
+    {
+      "members": [
+        "打包负责人"
+      ],
+      "item": "报告附件映射、模型身份、运行入口、数据与结果说明、收件表",
+      "documentation_complete": true
+    }
+  ],
+  "remaining_receipts": [
+    {
+      "member": "有 Docker 环境的人（A4/B4 均可）",
+      "missing": "运行已补导出脚本后交回整个 exports/<时间> 目录：student-x86-image.tar、image_manifest.json、image_inspect.json、runtime_dependencies.json、runtime_freeze.txt、image_sha256.txt。无需再写 Docker 工程，不需要开发板。",
+      "destination": "02_源码与部署/docker/exports"
+    },
+    {
+      "member": "B2/B3，持有当前原始评测输出的人",
+      "missing": "当前版本同批 Teacher/FP32/INT8 逐例输出，特别是 850 例 Student 原始预测；对应案例/policy 清单、模型 SHA、环境及 ASR 同基准转写输出与前端配置/权重身份。已有 240 条预测和历史 250 条 ASR 原件不用重交，统计表与脚本已代补。",
+      "destination": "06_评测说明与冻结方案/final_results/raw_current_run"
+    },
+    {
+      "member": "有 CARLA 与语音环境的人（B3/语音成员，用户也可操作）",
+      "missing": "用已补演示入口实际录制的一整次 runs/<时间> 目录：当前 Student 视频、输入/现场录音、ASR/Student/CARLA 日志及身份清单。缺的是实际运行产物，启动和录像代码已经完成。",
+      "destination": "07_演示材料/runs"
+    },
+    {
+      "member": "队长（仅收现有文件）",
+      "missing": "用户已确认正式初审申报表已填写完成；只需交回已填 .docx/.pdf 原文件归档，不重新填写，不再索要成员登记信息。",
+      "destination": "08_申报与官方要求"
+    }
+  ],
+  "scope_notes": [
+    "代码完成不等于实际镜像、录像、板卡推理或采集产物已经生成。",
+    "正式申报表已由队长填写，只等待原文件归档。",
+    "new240 属于团队额外方案，不作为官方固定样本数要求。",
+    "X86 初审与工具链材料可在无开发板条件下完成；工具预估不冒称板端计数器。",
+    "现有评测的诊断/非独立 Gate 边界与候选身份保持原记录。",
+    "补丁仅发布新增工程与说明，不重复上传模型、数据、原始大包或中间 ZIP。"
+  ]
+}

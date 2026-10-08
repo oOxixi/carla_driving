@@ -1,0 +1,12 @@
+services:
+  student:
+    platform: linux/amd64
+    image: challenge-student-x86:20261008
+    build:
+      context: ../..
+      dockerfile: 02_源码与部署/docker/Dockerfile.student-x86
+    ports:
+      - "8100:8100"
+    volumes:
+      - ../../runs:/opt/challenge/runs
+    command: ["--mode", "http", "--variant", "full_int8", "--host", "0.0.0.0", "--port", "8100"]

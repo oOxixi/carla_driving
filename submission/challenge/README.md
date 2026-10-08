@@ -28,3 +28,13 @@
 只有 B2、A2、A4、B3 的正式 Gate 全部绑定同一 RC，且完成干净环境复现后，才能依据
 `docs/architecture/modules/B4_REPRODUCTION_RELEASE_AND_SUBMISSION.md` 建立
 `final_submission/`。当前禁止把 Candidate、X86 预验证、BPU 估算或本地外置包改名为 Final。
+
+## 2026-10-09 打包代补进度
+
+打包负责人已补齐部署、统计、演示入口与附件说明。最新完成项和仍需收取的实体文件见
+[PACKAGING_PROGRESS_20261009.md](PACKAGING_PROGRESS_20261009.md)，机器可读状态见
+[PACKAGING_PROGRESS_20261009.json](PACKAGING_PROGRESS_20261009.json)。
+新增可安装工程见 [PACKAGING_SUPPLEMENT_20261009](PACKAGING_SUPPLEMENT_20261009/README.md)。
+代码与整理完成不代表镜像、同批原始记录或实际演示已经生成；本次不生成最终 ZIP，
+也不改变上述候选模型与正式 Gate 状态。
+

@@ -1,0 +1,22 @@
+[
+  {
+    "member": "有 Docker 环境的人（A4/B4 均可）",
+    "missing": "运行已补导出脚本后交回整个 exports/<时间> 目录：student-x86-image.tar、image_manifest.json、image_inspect.json、runtime_dependencies.json、runtime_freeze.txt、image_sha256.txt。无需再写 Docker 工程，不需要开发板。",
+    "destination": "02_源码与部署/docker/exports"
+  },
+  {
+    "member": "B2/B3，持有当前原始评测输出的人",
+    "missing": "当前版本同批 Teacher/FP32/INT8 逐例输出，特别是 850 例 Student 原始预测；对应案例/policy 清单、模型 SHA、环境及 ASR 同基准转写输出与前端配置/权重身份。已有 240 条预测和历史 250 条 ASR 原件不用重交，统计表与脚本已代补。",
+    "destination": "06_评测说明与冻结方案/final_results/raw_current_run"
+  },
+  {
+    "member": "有 CARLA 与语音环境的人（B3/语音成员，用户也可操作）",
+    "missing": "用已补演示入口实际录制的一整次 runs/<时间> 目录：当前 Student 视频、输入/现场录音、ASR/Student/CARLA 日志及身份清单。缺的是实际运行产物，启动和录像代码已经完成。",
+    "destination": "07_演示材料/runs"
+  },
+  {
+    "member": "队长（仅收现有文件）",
+    "missing": "用户已确认正式初审申报表已填写完成；只需交回已填 .docx/.pdf 原文件归档，不重新填写，不再索要成员登记信息。",
+    "destination": "08_申报与官方要求"
+  }
+]

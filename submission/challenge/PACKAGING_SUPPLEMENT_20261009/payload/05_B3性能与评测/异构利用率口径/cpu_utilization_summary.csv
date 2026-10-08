@@ -1,0 +1,4 @@
+﻿run_id,round,cpu_cores,samples_valid,process_cpu_percent_mean,mean_equivalent_cpu_cores,normalized_host_capacity_percent_mean,normalized_host_capacity_percent_p95,samples_invalid,source_csv
+b3-20261007T121843Z-2824a906,1,20,9,883.9888888888888,8.839888888888888,44.19944444444444,50.120999999999995,0,05_B3性能与评测/02_X86性能报告与原始日志/full_539x3/b3-20261007T121843Z-2824a906/utilization_raw.csv
+b3-20261007T121843Z-2824a906,2,20,9,888.3222222222222,8.883222222222223,44.41611111111111,50.141,0,05_B3性能与评测/02_X86性能报告与原始日志/full_539x3/b3-20261007T121843Z-2824a906/utilization_raw.csv
+b3-20261007T121843Z-2824a906,3,20,9,888.5,8.885,44.425,50.076,0,05_B3性能与评测/02_X86性能报告与原始日志/full_539x3/b3-20261007T121843Z-2824a906/utilization_raw.csv

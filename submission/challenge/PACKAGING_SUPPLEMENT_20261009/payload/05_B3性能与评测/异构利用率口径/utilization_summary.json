@@ -1,0 +1,129 @@
+{
+  "schema_version": "1.0",
+  "operation": "summary_of_existing_telemetry_only",
+  "new_inference_or_hardware_measurement_performed": false,
+  "cpu_results": [
+    {
+      "run_id": "b3-20261007T121843Z-2824a906",
+      "round": "1",
+      "source_csv": "05_B3性能与评测/02_X86性能报告与原始日志/full_539x3/b3-20261007T121843Z-2824a906/utilization_raw.csv",
+      "environment_source": "05_B3性能与评测/02_X86性能报告与原始日志/full_539x3/b3-20261007T121843Z-2824a906/hardware_env.json",
+      "cpu_cores": 20,
+      "samples_total": 9,
+      "samples_valid": 9,
+      "samples_missing": 0,
+      "samples_invalid": 0,
+      "invalid_samples": [],
+      "process_cpu_percent_mean": 883.9888888888888,
+      "process_cpu_percent_p95": 1002.42,
+      "process_cpu_percent_max": 1003.1,
+      "mean_equivalent_cpu_cores": 8.839888888888888,
+      "normalized_host_capacity_percent_mean": 44.19944444444444,
+      "normalized_host_capacity_percent_p95": 50.120999999999995,
+      "scope": "planner_process_cpu_time_over_monotonic_wall_window",
+      "aggregation": "arithmetic_mean_of_valid_raw_samples; initialization_zero_retained",
+      "bpu_measured": false
+    },
+    {
+      "run_id": "b3-20261007T121843Z-2824a906",
+      "round": "2",
+      "source_csv": "05_B3性能与评测/02_X86性能报告与原始日志/full_539x3/b3-20261007T121843Z-2824a906/utilization_raw.csv",
+      "environment_source": "05_B3性能与评测/02_X86性能报告与原始日志/full_539x3/b3-20261007T121843Z-2824a906/hardware_env.json",
+      "cpu_cores": 20,
+      "samples_total": 9,
+      "samples_valid": 9,
+      "samples_missing": 0,
+      "samples_invalid": 0,
+      "invalid_samples": [],
+      "process_cpu_percent_mean": 888.3222222222222,
+      "process_cpu_percent_p95": 1002.8199999999999,
+      "process_cpu_percent_max": 1003.3,
+      "mean_equivalent_cpu_cores": 8.883222222222223,
+      "normalized_host_capacity_percent_mean": 44.41611111111111,
+      "normalized_host_capacity_percent_p95": 50.141,
+      "scope": "planner_process_cpu_time_over_monotonic_wall_window",
+      "aggregation": "arithmetic_mean_of_valid_raw_samples; initialization_zero_retained",
+      "bpu_measured": false
+    },
+    {
+      "run_id": "b3-20261007T121843Z-2824a906",
+      "round": "3",
+      "source_csv": "05_B3性能与评测/02_X86性能报告与原始日志/full_539x3/b3-20261007T121843Z-2824a906/utilization_raw.csv",
+      "environment_source": "05_B3性能与评测/02_X86性能报告与原始日志/full_539x3/b3-20261007T121843Z-2824a906/hardware_env.json",
+      "cpu_cores": 20,
+      "samples_total": 9,
+      "samples_valid": 9,
+      "samples_missing": 0,
+      "samples_invalid": 0,
+      "invalid_samples": [],
+      "process_cpu_percent_mean": 888.5,
+      "process_cpu_percent_p95": 1001.52,
+      "process_cpu_percent_max": 1001.8,
+      "mean_equivalent_cpu_cores": 8.885,
+      "normalized_host_capacity_percent_mean": 44.425,
+      "normalized_host_capacity_percent_p95": 50.076,
+      "scope": "planner_process_cpu_time_over_monotonic_wall_window",
+      "aggregation": "arithmetic_mean_of_valid_raw_samples; initialization_zero_retained",
+      "bpu_measured": false
+    }
+  ],
+  "cpu_definition": "Per-process CPU seconds / wall seconds * 100; a multi-thread process can exceed 100%. Host-capacity normalization divides by the captured logical-core count.",
+  "bpu_analysis": {
+    "scope": "BPU_ESTIMATED",
+    "placement": {
+      "nodes": 59,
+      "on_bpu": 59,
+      "cpu_fallback": 0,
+      "output_types": {
+        "si8": 37,
+        "f32": 15,
+        "si16": 4,
+        "fused": 3
+      },
+      "worst_calibrated_cosine": 0.971495,
+      "worst_quantized_cosine": 0.971386
+    },
+    "performance_estimate": {
+      "latency_us": 615.1,
+      "latency_ms": 0.615,
+      "fps": 1625.78,
+      "run_per_second": 1625.78,
+      "multicore_sync_us": 0,
+      "ddr_megabytes_per_run": 22.887,
+      "ddr_megabytes_per_second": 37209.1,
+      "min_memory_requirement_bytes": 24185240,
+      "static_memory_bytes": 23579544,
+      "input_memory_bytes": 603136,
+      "output_memory_bytes": 2560,
+      "dynamic_memory_bytes": 605696
+    },
+    "interval_compute_utilization": {
+      "samples": [
+        0.243,
+        0.154,
+        0.126,
+        0.084,
+        0.084,
+        0.182,
+        0.091
+      ],
+      "interval_ms": 0.1,
+      "mean": 0.138,
+      "max": 0.243,
+      "reading": "average computing-unit utilization inside one inference is ~14%; the model is memory bound"
+    },
+    "source": "05_B3性能与评测/03_BPU工具原报告/01_bpu_performance_estimate_v3.json"
+  },
+  "official_heterogeneous_utilization": {
+    "value": null,
+    "status": "NOT_DECLARED_FROM_PROXY_STATISTICS",
+    "reason": "The published rule describes end-to-end CPU/GPU/NPU/DSP use but provides no device aggregation formula. Captured process CPU use, BPU operator placement and simulated BPU compute occupancy are separate quantities.",
+    "board_required_for_initial_material_submission": false,
+    "real_bpu_counter_measured": false
+  },
+  "raw_evidence_sha256": {
+    "05_B3性能与评测/02_X86性能报告与原始日志/full_539x3/b3-20261007T121843Z-2824a906/utilization_raw.csv": "c9e746dd16d9408fde058e6f32d602d5bafd780e3e9a3890549dc3c2d269d36d",
+    "05_B3性能与评测/02_X86性能报告与原始日志/full_539x3/b3-20261007T121843Z-2824a906/hardware_env.json": "f6506e4798a59b20f46dd3e0e1e33219aa7e23e2bc150ea84327810f26f96dc3",
+    "05_B3性能与评测/03_BPU工具原报告/01_bpu_performance_estimate_v3.json": "4226e29a5c7caf8394dcc8c854976857c950f46818be521b3a40f8f1ce6db75c"
+  }
+}
