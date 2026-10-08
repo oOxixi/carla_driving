@@ -8,12 +8,19 @@ import numpy as np
 import pytest
 import torch
 
+from car_control_A.maneuver_fsm import ManeuverFSM
 from challenge.planner.backend import PlannerBackend
+from challenge.planner.common import validation_scene
 from challenge.planner.student_adapter import StudentPlanAdapter
 from challenge.planner.student_backend import StudentBackend, validate_weight_manifest
 from challenge.planner.teacher_backend import QwenTeacherBackend
 from challenge.planner.frozen_contracts import assert_frozen_contracts
-from challenge.student.contract import OUTPUT_NAMES, StudentShapeContract
+from challenge.student.contract import (
+    BEHAVIOR_TO_ID,
+    OUTPUT_NAMES,
+    TARGET_LANE_TO_ID,
+    StudentShapeContract,
+)
 from challenge.student.model import StudentModelConfig, StudentPlannerV0
 from challenge.student.preprocess import StudentPreprocessor
 from challenge.student.training_contract import (
@@ -26,6 +33,8 @@ from challenge.student.training_contract import (
 from challenge.export.export_onnx import StudentOnnxExportWrapper
 from runtime.interface_registry import InterfaceValidationError
 from runtime.interface_registry import InterfaceRegistry
+from runtime.plan_compiler import PlanCompiler
+from runtime.plan_validator import PlanValidator
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -33,6 +42,30 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def _request() -> dict:
     return json.loads((ROOT / "interfaces/examples/model_request.json").read_text(encoding="utf-8"))
+
+
+def _controlled_outputs(
+    behavior: str,
+    *,
+    target_lane: str = "NONE",
+    pointer: int = 8,
+    speed_mps: float = 4.0,
+) -> dict[str, torch.Tensor]:
+    contract = StudentShapeContract()
+    outputs = {
+        name: torch.full(shape, -20.0, dtype=torch.float32)
+        for name, shape in contract.output_shapes.items()
+    }
+    outputs["plan_length_logits"][0, 0] = 20.0
+    outputs["behavior_logits"][0, 0, BEHAVIOR_TO_ID[behavior]] = 20.0
+    outputs["target_pointer_logits"][0, 0, pointer] = 20.0
+    outputs["target_lane_logits"][0, 0, TARGET_LANE_TO_ID[target_lane]] = 20.0
+    outputs["target_speed_mps"][0, 0] = speed_mps
+    outputs["completion_type_logits"][0, 0, 7] = 20.0
+    outputs["on_failure_logits"][0, 0, 0] = 20.0
+    outputs["confidence"][0, 0] = 0.99
+    outputs["requires_confirmation_logits"][0, 0] = -20.0
+    return outputs
 
 
 def test_student_has_fixed_shapes_and_all_structured_heads() -> None:
@@ -236,6 +269,232 @@ def test_adapter_bounds_plan_id_for_maximum_request_id() -> None:
         outputs = model(*StudentPreprocessor()(request).as_tuple())
     plan = StudentPlanAdapter().decode(request, outputs)
     assert len(plan["plan_id"]) <= 128
+
+
+@pytest.mark.parametrize(
+    "behavior",
+    ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW", "HOLD"],
+)
+def test_adapter_materializes_current_lane_for_non_lane_selecting_behavior(
+    behavior: str,
+) -> None:
+    request = _request()
+    if behavior == "HOLD":
+        request["constraints"]["allowed_behaviors"] = ["TURN"]
+        request["scene_capabilities"] = {
+            "route_available": False, "intersection_ahead": False,
+        }
+    else:
+        request["constraints"]["allowed_behaviors"] = [
+            "KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
+        ]
+    plan = StudentPlanAdapter().decode(
+        request,
+        _controlled_outputs(behavior, pointer=0 if behavior == "FOLLOW" else 8),
+    )
+    assert plan["steps"][0]["target"]["target_lane"] == "CURRENT"
+
+
+def test_adapter_keeps_explicit_routed_turn_before_intersection_and_fsm_gates_it() -> None:
+    request = _request()
+    request["command_hint"] = {
+        "intent": "TURN", "direction": "LEFT", "target_speed_mps": 4.0,
+    }
+    request["constraints"]["allowed_behaviors"] = ["TURN", "STOP"]
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT"],
+        "left_lane_exists": False,
+        "right_lane_exists": False,
+        "left_gap_safe": False,
+        "right_gap_safe": False,
+        "route_available": True,
+        "intersection_ahead": False,
+        "stop_line_clear": True,
+    }
+    plan = StudentPlanAdapter().decode(
+        request,
+        _controlled_outputs("TURN_LEFT", target_lane="ROUTE_BRANCH"),
+    )
+    step = plan["steps"][0]
+    assert step["behavior"] == "TURN_LEFT"
+    assert step["target"]["target_lane"] == "ROUTE_BRANCH"
+    assert "INTERSECTION_AHEAD" in step["preconditions"]
+
+    validated = PlanValidator().validate(
+        plan,
+        scene=validation_scene(request),
+        expected_request_id=request["request_id"],
+        expected_command_id=request["command_id"],
+        now_ns=request["created_at_ns"],
+    )
+    compiled = PlanCompiler().compile(validated, scene=validation_scene(request))
+    assert compiled.steps[0].preconditions[-2:] == (
+        "ROUTE_AVAILABLE", "INTERSECTION_AHEAD",
+    )
+    fsm = ManeuverFSM()
+    fsm.start(compiled, now_s=0.0)
+    waiting = fsm.update(
+        {
+            "perception_fresh": True,
+            "no_emergency_risk": True,
+            "route_available": True,
+            "intersection_ahead": False,
+            "risk_level": "LOW",
+            "junction_exited": False,
+        },
+        now_s=0.1,
+    )
+    assert waiting.safe_behavior == "SLOW_DOWN"
+    assert waiting.state == "PLAN_EXECUTING"
+    turning = fsm.update(
+        {
+            "perception_fresh": True,
+            "no_emergency_risk": True,
+            "route_available": True,
+            "intersection_ahead": True,
+            "risk_level": "LOW",
+            "junction_exited": False,
+        },
+        now_s=0.2,
+    )
+    assert turning.safe_behavior is None
+    assert turning.state == "TURNING"
+
+
+@pytest.mark.parametrize(
+    ("command_hint", "intersection_ahead", "expected"),
+    [
+        ({"intent": "KEEP_LANE"}, False, "STOP"),
+        ({"intent": "TURN", "direction": None}, False, "STOP"),
+        ({"intent": "TURN", "direction": "RIGHT"}, False, "STOP"),
+        ({"intent": "TURN", "direction": "RIGHT"}, True, "STOP"),
+    ],
+)
+def test_adapter_does_not_unmask_ambiguous_or_wrong_direction_turn(
+    command_hint: dict,
+    intersection_ahead: bool,
+    expected: str,
+) -> None:
+    request = _request()
+    request["command_hint"] = command_hint
+    request["constraints"]["allowed_behaviors"] = ["TURN", "STOP"]
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT"],
+        "route_available": True,
+        "intersection_ahead": intersection_ahead,
+    }
+    outputs = _controlled_outputs("TURN_LEFT")
+    outputs["behavior_logits"][0, 0, BEHAVIOR_TO_ID["STOP"]] = 19.0
+    plan = StudentPlanAdapter().decode(request, outputs)
+    assert plan["steps"][0]["behavior"] == expected
+
+
+def test_adapter_emits_model_selected_available_lane_for_avoidance() -> None:
+    request = _request()
+    request["constraints"]["allowed_behaviors"] = ["AVOID_OBSTACLE", "STOP"]
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT", "LEFT_ADJACENT"],
+        "left_lane_exists": True,
+        "right_lane_exists": False,
+        "left_gap_safe": True,
+        "right_gap_safe": False,
+        "route_available": True,
+        "intersection_ahead": False,
+    }
+    plan = StudentPlanAdapter().decode(
+        request,
+        _controlled_outputs(
+            "AVOID_OBSTACLE", target_lane="LEFT_ADJACENT", pointer=0,
+        ),
+    )
+    step = plan["steps"][0]
+    assert step["target"]["target_lane"] == "LEFT_ADJACENT"
+    validated = PlanValidator().validate(
+        plan,
+        scene=validation_scene(request),
+        now_ns=request["created_at_ns"],
+    )
+    compiled = PlanCompiler().compile(validated, scene=validation_scene(request))
+    assert compiled.steps[1].behavior == "WAIT_SAFE_GAP"
+    assert "LEFT_GAP_SAFE" in compiled.steps[1].preconditions
+
+
+def test_adapter_never_emits_known_unavailable_avoidance_lane() -> None:
+    request = _request()
+    request["constraints"]["allowed_behaviors"] = ["AVOID_OBSTACLE", "STOP"]
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT", "RIGHT_ADJACENT"],
+        "left_lane_exists": False,
+        "right_lane_exists": True,
+        "left_gap_safe": False,
+        "right_gap_safe": False,
+        "route_available": True,
+        "intersection_ahead": False,
+    }
+    plan = StudentPlanAdapter().decode(
+        request,
+        _controlled_outputs(
+            "AVOID_OBSTACLE", target_lane="LEFT_ADJACENT", pointer=0,
+        ),
+    )
+    assert plan["steps"][0]["target"]["target_lane"] == "RIGHT_ADJACENT"
+
+
+def test_adapter_masks_avoidance_when_no_adjacent_lane_exists() -> None:
+    request = _request()
+    request["constraints"]["allowed_behaviors"] = ["AVOID_OBSTACLE", "STOP"]
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT"],
+        "left_lane_exists": False,
+        "right_lane_exists": False,
+        "left_gap_safe": False,
+        "right_gap_safe": False,
+        "route_available": True,
+        "intersection_ahead": False,
+    }
+    outputs = _controlled_outputs(
+        "AVOID_OBSTACLE", target_lane="LEFT_ADJACENT", pointer=0,
+    )
+    outputs["behavior_logits"][0, 0, BEHAVIOR_TO_ID["STOP"]] = 19.0
+    plan = StudentPlanAdapter().decode(request, outputs)
+    assert plan["steps"][0]["behavior"] == "STOP"
+
+
+def test_adapter_preserves_slow_down_target_and_uses_speed_below_completion() -> None:
+    request = _request()
+    request["constraints"]["allowed_behaviors"] = ["SLOW_DOWN", "STOP"]
+    plan = StudentPlanAdapter().decode(
+        request,
+        _controlled_outputs("SLOW_DOWN", pointer=0, speed_mps=3.5),
+    )
+    step = plan["steps"][0]
+    assert step["target"]["target_id"] == request["targets"][0]["target_id"]
+    assert step["target"]["target_lane"] == "CURRENT"
+    assert step["completion"] == {
+        "type": "SPEED_BELOW",
+        "value": 3.5,
+        "lane": None,
+        "hold_frames": 3,
+    }
+
+
+def test_adapter_keeps_unsafe_lane_change_masked_to_stop() -> None:
+    request = _request()
+    request["constraints"]["allowed_behaviors"] = ["CHANGE_LANE", "STOP"]
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT", "LEFT_ADJACENT"],
+        "left_lane_exists": True,
+        "right_lane_exists": False,
+        "left_gap_safe": False,
+        "right_gap_safe": False,
+        "route_available": True,
+        "intersection_ahead": False,
+    }
+    plan = StudentPlanAdapter().decode(
+        request,
+        _controlled_outputs("CHANGE_LANE_LEFT", target_lane="LEFT_ADJACENT"),
+    )
+    assert plan["steps"][0]["behavior"] == "STOP"
 
 
 def test_random_student_backend_returns_valid_confirmation_plan() -> None:

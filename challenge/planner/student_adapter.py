@@ -20,6 +20,22 @@ from challenge.student.contract import (
 from challenge.student.preprocess import _expanded_allowed_behaviors
 
 
+_IMPLICIT_CURRENT_BEHAVIORS = frozenset({
+    "FOLLOW",
+    "HOLD",
+    "KEEP_LANE",
+    "SET_SPEED",
+    "SLOW_DOWN",
+    "STOP",
+    "YIELD",
+})
+_POINTER_GROUNDED_BEHAVIORS = frozenset({
+    "FOLLOW",
+    "AVOID_OBSTACLE",
+    "SLOW_DOWN",
+})
+
+
 class StudentPlanAdapter:
     def __init__(self, *, model_id: str = "student-v0-r3-fp32") -> None:
         self.model_id = model_id
@@ -83,6 +99,7 @@ class StudentPlanAdapter:
                 speed=speed,
                 completion=completion,
                 on_failure=on_failure,
+                request=request,
             ))
             if behavior in {"STOP", "HOLD", "PULL_OVER"}:
                 break
@@ -141,14 +158,46 @@ def _feasible_behaviors(request: Mapping[str, Any], allowed: set[str]) -> set[st
         feasible.discard("CHANGE_LANE_RIGHT")
     if not bool(capabilities.get("route_available", False)):
         feasible.difference_update(("TURN_LEFT", "TURN_RIGHT", "RETURN_TO_LANE"))
-    if not bool(capabilities.get("intersection_ahead", False)):
+    explicit_turn = _explicit_route_turn(request)
+    if explicit_turn is not None:
+        for behavior in ("TURN_LEFT", "TURN_RIGHT"):
+            if behavior != explicit_turn:
+                feasible.discard(behavior)
+    elif not bool(capabilities.get("intersection_ahead", False)):
         feasible.difference_update(("TURN_LEFT", "TURN_RIGHT"))
+    if _available_avoid_lane("NONE", request) is None:
+        feasible.discard("AVOID_OBSTACLE")
     available_lanes = {
         str(item).upper() for item in capabilities.get("available_lanes", ())
     }
     if "SHOULDER" not in available_lanes:
         feasible.discard("PULL_OVER")
     return feasible
+
+
+def _explicit_route_turn(request: Mapping[str, Any]) -> str | None:
+    """Return the exact routed turn explicitly requested by the command.
+
+    A route-backed voice command can legitimately be issued before the next
+    junction enters the perception horizon.  Keeping the matching turn in the
+    decode mask lets the FSM receive the intended maneuver early; the emitted
+    ``INTERSECTION_AHEAD`` precondition still prevents execution until the
+    junction is observable.  This exception is deliberately unavailable for
+    ambiguous text, missing route context, or a directionless TURN command.
+    """
+    capabilities = request.get("scene_capabilities") or {}
+    if not bool(capabilities.get("route_available", False)):
+        return None
+    hint = request.get("command_hint") or {}
+    intent = str(hint.get("intent", "")).strip().upper()
+    if intent in {"TURN_LEFT", "TURN_RIGHT"}:
+        return intent
+    if intent != "TURN":
+        return None
+    direction = str(hint.get("direction", "")).strip().upper()
+    if direction in {"LEFT", "RIGHT"}:
+        return f"TURN_{direction}"
+    return None
 
 
 def _plan_id(request_id: str) -> str:
@@ -182,8 +231,10 @@ def _compatible_completion(behavior: str, predicted: str) -> str:
     }
     if behavior in required:
         return required[behavior]
-    if behavior in {"SET_SPEED", "SLOW_DOWN"}:
+    if behavior == "SET_SPEED":
         return "SPEED_REACHED"
+    if behavior == "SLOW_DOWN":
+        return "SPEED_BELOW"
     if behavior == "RETURN_TO_LANE":
         return "LANE_CENTERED"
     return predicted
@@ -198,8 +249,11 @@ def _step(
     speed: float,
     completion: str,
     on_failure: str,
+    request: Mapping[str, Any],
 ) -> dict[str, Any]:
-    lane: str | None = None
+    lane: str | None = (
+        "CURRENT" if behavior in _IMPLICIT_CURRENT_BEHAVIORS else None
+    )
     preconditions = ["PERCEPTION_FRESH"]
     if behavior not in {"STOP", "HOLD", "YIELD"}:
         preconditions.append("NO_EMERGENCY_RISK")
@@ -215,7 +269,10 @@ def _step(
     elif behavior == "RETURN_TO_LANE":
         lane = "CURRENT"
         preconditions.append("ROUTE_AVAILABLE")
-    elif behavior in {"FOLLOW", "AVOID_OBSTACLE"}:
+    elif behavior == "AVOID_OBSTACLE":
+        lane = _available_avoid_lane(predicted_lane, request)
+        preconditions.append("TARGET_VISIBLE")
+    elif behavior == "FOLLOW":
         preconditions.append("TARGET_VISIBLE")
 
     if behavior == "PULL_OVER":
@@ -223,7 +280,7 @@ def _step(
 
     target_id = (
         target["target_id"]
-        if target is not None and behavior in {"FOLLOW", "AVOID_OBSTACLE"}
+        if target is not None and behavior in _POINTER_GROUNDED_BEHAVIORS
         else None
     )
     target_speed = speed if behavior in {"SET_SPEED", "SLOW_DOWN", "FOLLOW"} else None
@@ -261,6 +318,41 @@ def _step(
         "timeout_s": timeout,
         "on_failure": on_failure,
     }
+
+
+def _available_avoid_lane(
+    predicted_lane: str,
+    request: Mapping[str, Any],
+) -> str | None:
+    """Ground an avoidance lane in the lanes reported by perception.
+
+    Prefer the model head, but never publish an adjacent lane that is known to
+    be absent.  The plan compiler adds the corresponding live gap gate, so an
+    existing but temporarily unsafe lane is waited for rather than entered.
+    """
+    capabilities = request.get("scene_capabilities") or {}
+    declared = capabilities.get("available_lanes")
+    available = (
+        {str(item).upper() for item in declared}
+        if isinstance(declared, Sequence) and not isinstance(declared, (str, bytes))
+        else None
+    )
+
+    candidates: list[str] = []
+    if predicted_lane in {"LEFT_ADJACENT", "RIGHT_ADJACENT"}:
+        candidates.append(predicted_lane)
+    candidates.extend(
+        lane for lane in ("LEFT_ADJACENT", "RIGHT_ADJACENT")
+        if lane not in candidates
+    )
+    for lane in candidates:
+        side = "left" if lane == "LEFT_ADJACENT" else "right"
+        if not bool(capabilities.get(f"{side}_lane_exists", False)):
+            continue
+        if available is not None and lane not in available:
+            continue
+        return lane
+    return None
 
 
 __all__ = ["StudentPlanAdapter"]

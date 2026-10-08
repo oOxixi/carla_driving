@@ -71,6 +71,8 @@ EXPECTED_WEIGHTS_SHA256 = (
 )
 CORE_MAX_DROP = 0.015
 SAFETY_MAX_DROP = 0.0
+ADAPTER_CONTRACT_ID = "student-plan-adapter-v3.1-semantic-contract"
+ADAPTER_PATH = Path("challenge/planner/student_adapter.py")
 
 
 class DiagnosticError(RuntimeError):
@@ -417,6 +419,17 @@ def git_sha(repo_root: Path) -> str:
     return completed.stdout.strip()
 
 
+def git_tracked_worktree_clean(repo_root: Path) -> bool:
+    completed = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return not completed.stdout.strip()
+
+
 def package_versions() -> dict[str, str]:
     result: dict[str, str] = {}
     for name in ("numpy", "onnxruntime", "Pillow", "torch"):
@@ -448,6 +461,7 @@ def build_readme(report: Mapping[str, Any]) -> str:
             "Independent Validation signature and cannot promote the candidate to FINAL.",
             "",
             f"- Candidate freeze: `{report['candidate_freeze']['status']}`",
+            f"- Adapter contract: `{report['candidate_freeze']['adapter_contract_id']}`",
             f"- Formal release status: `{report['formal_release_status']}`",
             f"- Samples: `{report['dataset']['sample_count']}`",
             f"- Student replay coverage: `{report['student_evidence']['coverage']['success_count']}`/"
@@ -542,6 +556,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "scope": "candidate selection only; no B2 Gate signature",
             "model_id": candidate_identity.get("model_id"),
             "config_id": candidate_identity.get("config_id"),
+            "adapter_contract_id": ADAPTER_CONTRACT_ID,
             "training_dataset_version": candidate_identity.get("dataset_version"),
             "weights_sha256": args.expected_weights_sha256,
             "fp32_onnx_sha256": actual_onnx_sha256,
@@ -582,8 +597,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         },
         "source_bindings": {
             "evaluation_git_sha": git_sha(repo_root),
+            "evaluation_tracked_worktree_clean": git_tracked_worktree_clean(repo_root),
             "diagnostic_runner_path": Path(__file__).resolve().relative_to(repo_root).as_posix(),
             "diagnostic_runner_checkout_sha256": sha256_file(Path(__file__).resolve()),
+            "student_adapter_path": ADAPTER_PATH.as_posix(),
+            "student_adapter_checkout_sha256": sha256_file(repo_root / ADAPTER_PATH),
             "handoff_manifest_path": handoff_path.relative_to(repo_root).as_posix(),
             "handoff_manifest_checkout_sha256": sha256_file(handoff_path),
             "handoff_manifest_logical_lf_sha256": sha256_logical_lf(handoff_path),
@@ -600,12 +618,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         },
         "formal_blockers": [
             "RUN_EXECUTED_BY_A2_ROLE_EXCEPTION_NOT_INDEPENDENT_B2",
+            "BENCHMARK_LABELS_EXPOSED_BEFORE_THIS_ADAPTER_REVISION",
             "HISTORICAL_TEMPLATE_LINEAGE_UNRECOVERABLE",
             "FORMAL_B2_POLICY_NOT_FROZEN",
             "A3_HANDOFF_REMAINS_PENDING_A3_FP32_GATE",
         ],
         "use_restrictions": [
             "Do not use these 240 labels for training, calibration, threshold selection, or error-driven iteration.",
+            "Treat an improved replay after an Adapter revision as post-hoc regression evidence, not an independent Gate.",
             "Do not rename this package to A3_FP32_GATE_PASSED or A2_INT8_GATE_PASSED.",
             "A B2 owner must issue any formal Gate decision from independently controlled evidence.",
         ],
