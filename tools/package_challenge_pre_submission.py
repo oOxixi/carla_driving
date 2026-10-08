@@ -102,19 +102,19 @@ EXTERNAL_ARTIFACTS = (
     {
         "owner": "A2",
         "recipient": "A3",
-        "path": "artifacts/a2/handoff_20261007_3ebd0682/A2_to_A3_gate_feedback_3ebd0682.zip",
+        "path": "artifacts/a2/handoff_20261008_v31_a2354507/A2_to_A3_gate_feedback_a2354507.zip",
         "claim_scope": "DIAGNOSTIC_ONLY",
     },
     {
         "owner": "A2",
         "recipient": "B2",
-        "path": "artifacts/a2/handoff_20261007_3ebd0682/A2_to_B2_evaluation_3ebd0682.zip",
+        "path": "artifacts/a2/handoff_20261008_v31_a2354507/A2_to_B2_evaluation_a2354507.zip",
         "claim_scope": "DIAGNOSTIC_ONLY",
     },
     {
         "owner": "A2",
         "recipient": "A4",
-        "path": "artifacts/a2/handoff_20261007_3ebd0682/PRE_GATE_ONLY_A2_to_A4_openexplorer_3ebd0682.zip",
+        "path": "artifacts/a2/handoff_20261008_v31_a2354507/PRE_GATE_ONLY_A2_to_A4_openexplorer_a2354507.zip",
         "claim_scope": "PRE_GATE_ONLY",
     },
 )
