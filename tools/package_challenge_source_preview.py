@@ -15,8 +15,8 @@ from typing import Any
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_ID = "challenge_source_runtime_preview_20261008"
-ARCHIVE_NAME = "CHALLENGE_SOURCE_RUNTIME_PREVIEW_20261008.zip"
+PACKAGE_ID = "challenge_source_runtime_preview_v3_1_20261008"
+ARCHIVE_NAME = "CHALLENGE_SOURCE_RUNTIME_PREVIEW_V3_1_20261008.zip"
 
 INCLUDED_ROOTS = (
     "challenge/benchmark/",
@@ -236,7 +236,8 @@ def build(repo: Path, output: Path) -> dict[str, Any]:
 
 This archive contains the tracked Student, benchmark, quantization, runtime,
 CARLA integration, control, interface, Docker-definition, script, and tooling
-sources at the Git identity recorded in `SOURCE_MANIFEST.json`.
+sources at the Git identity recorded in `SOURCE_MANIFEST.json`, including the
+implemented Adapter V3.1 semantic contract and its regression evaluators.
 
 It deliberately excludes weights, ONNX, datasets, generated evidence, compiled
 J6P artifacts, and Docker images. It is `PRE_GATE_SOURCE_RUNTIME_PREVIEW`, not a

@@ -3,7 +3,7 @@
   "freeze_date": "2026-10-08",
   "freeze_type": "CANDIDATE_SELECTION_ONLY",
   "overall_status": "FROZEN_CANDIDATE_BLOCKED_NOT_FINAL",
-  "base_git_sha": "5007990f1e6c4be06367fc16868b4f3eeb50ba92",
+  "base_git_sha": "8899fb5f300fc7b465ba023105a069ed90af3a68",
   "candidate": {
     "release": "challenge/distillation/releases/a3_b1_closeout_robust_fp32_candidate_v3",
     "model_id": "student-v0-r3-fp32",
@@ -11,8 +11,11 @@
     "training_dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
     "weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
     "fp32_onnx_sha256": "681a5d4bf16ba61741ef0e559649c43c041de649eef3e8e6f0b6285beaab4286",
+    "adapter_contract_id": "student-plan-adapter-v3.1-semantic-contract",
+    "adapter_git_sha": "2900258aa97392a1ed9936748decfc8c27067cd9",
+    "adapter_sha256": "bb30726b8287b422516820af8e8af21e5d6a205cd81d3f9de6871de9badfcf21",
     "selection_status": "V3_FROZEN_AS_SOLE_RELEASE_CANDIDATE",
-    "promotion_status": "REJECTED_FOR_CURRENT_FINAL"
+    "promotion_status": "POST_HOC_PROJECTION_PASSED_PENDING_UNSEEN_B2_GATE"
   },
   "independent_validation_diagnostic": {
     "role": "A2_ROLE_EXCEPTION_DIAGNOSTIC",
@@ -36,6 +39,44 @@
       "safety_critical_behavior_recall": {"teacher": 1.0, "student": 1.0, "drop": 0.0, "limit": 0.0, "pass": true}
     }
   },
+  "adapter_v3_1_post_hoc_diagnostic": {
+    "formal_gate_eligible": false,
+    "dataset_version": "b1_independent_validation_v1",
+    "sample_count": 240,
+    "student_success_count": 240,
+    "schema_validity": 1.0,
+    "threshold_projection": "PASS",
+    "evaluation_git_sha": "2900258aa97392a1ed9936748decfc8c27067cd9",
+    "external_directory": "artifacts/b2_role_exception_v3_1_adapter_20261008_final",
+    "diagnostic_report_sha256": "bb9a2e5a08de59f7e795095942b6ee161cb3c283a7d16f8b55260d35f9572585",
+    "student_predictions_sha256": "75148883dbcaee1a661989136ed4685ee03d56b8327ecebfa811a070e40d3285",
+    "metrics": {
+      "behavior_accuracy": {"teacher": 1.0, "student": 0.9923664122137404, "drop": 0.007633587786259555, "limit": 0.015, "pass": true},
+      "target_pointer_accuracy": {"teacher": 1.0, "student": 1.0, "drop": 0.0, "limit": 0.015, "pass": true},
+      "target_lane_accuracy": {"teacher": 1.0, "student": 0.9923664122137404, "drop": 0.007633587786259555, "limit": 0.015, "pass": true},
+      "completion_accuracy": {"teacher": 1.0, "student": 0.9923664122137404, "drop": 0.007633587786259555, "limit": 0.015, "pass": true},
+      "plan_sequence_accuracy": {"teacher": 1.0, "student": 0.9916666666666667, "drop": 0.008333333333333304, "limit": 0.015, "pass": true},
+      "safety_critical_behavior_recall": {"teacher": 1.0, "student": 1.0, "drop": 0.0, "limit": 0.0, "pass": true}
+    },
+    "formal_limit": "BENCHMARK_LABELS_EXPOSED_BEFORE_ADAPTER_REVISION"
+  },
+  "int8_post_hoc_diagnostics": {
+    "preferred_for_next_unseen_gate": "MIXED_TOP3",
+    "selection_basis": "lower frozen-calibration discrete-head drift for 1.50% size overhead; old 240-case decoded metrics tie",
+    "full_int8": {
+      "sha256": "275dce5c426fff85a0375eb286fc67febac8d835c1e36fe15b0fbd707cf836c3",
+      "diagnostic_report_sha256": "d970ffb87ca8eb0791b4c7944627568c3164826374bf40699870008234b36931",
+      "threshold_projection": "PASS",
+      "fp32_plan_gate_field_agreement": "240/240"
+    },
+    "mixed_top3": {
+      "sha256": "9a08a03c42a9ea59ead664d168254cd3685d73d176d5ab53507bd4a4467132d3",
+      "diagnostic_report_sha256": "4326f032e9a5baa02355f1657f1a96ca0426980c9d65a07cfb7f86d138141e4b",
+      "threshold_projection": "PASS",
+      "fp32_plan_gate_field_agreement": "240/240"
+    },
+    "formal_gate_eligible": false
+  },
   "gate_state": {
     "A3_FP32_GATE_PASSED": false,
     "A2_INT8_GATE_PASSED": false,
@@ -43,7 +84,8 @@
     "final_submission_allowed": false
   },
   "formal_blockers": [
-    "CURRENT_V3_THRESHOLD_PROJECTION_FAIL",
+    "POST_HOC_PASS_CANNOT_REPLACE_UNSEEN_B2_GATE",
+    "BENCHMARK_LABELS_EXPOSED_BEFORE_ADAPTER_V3_1",
     "RUN_EXECUTED_BY_A2_ROLE_EXCEPTION_NOT_INDEPENDENT_B2",
     "HISTORICAL_TEMPLATE_LINEAGE_UNRECOVERABLE",
     "FORMAL_B2_POLICY_NOT_FROZEN",
@@ -60,18 +102,22 @@
     "B3_deployment_estimate_and_decay": "challenge/hil/evidence/deployment_estimate_and_decay_20261008",
     "B3_full83_loop": "challenge/hil/evidence/carla_student_loop_20261007",
     "B3_local_teacher_route_a_falsification": "challenge/hil/evidence/teacher_local_bringup_20261008",
-    "A2_post_hoc_field_semantic_normalization": "artifacts/b2_role_exception_v3_20261008_semantic_normalized"
+    "A2_post_hoc_field_semantic_normalization": "artifacts/b2_role_exception_v3_20261008_semantic_normalized",
+    "A2_adapter_v3_1_fp32_post_hoc": "artifacts/b2_role_exception_v3_1_adapter_20261008_final",
+    "A2_full_int8_post_hoc": "artifacts/b2_role_exception_v3_1_full_int8_20261008_final",
+    "A2_mixed_top3_post_hoc": "artifacts/b2_role_exception_v3_1_mixed_int8_20261008_final"
   },
   "next_release_requirements": [
-    "A3 creates a new versioned candidate using only Train/Development evidence, without tuning on the exposed 240-case labels.",
-    "B2 freezes a template-valid, previously unseen independent benchmark and formal policy, then independently evaluates the exact new weights.",
-    "Only after FP32 PASS may A2 freeze the matching ONNX/INT8 identity and request the INT8 Gate.",
+    "A3 acknowledges the exact weights plus Adapter V3.1 composite identity; any further model changes use only Train/Development evidence.",
+    "B2 freezes a template-valid, previously unseen independent benchmark and formal policy, then independently evaluates the exact weights, ONNX, and Adapter commit.",
+    "Only after formal FP32 PASS may A2 sign the matching INT8 manifest and request the INT8 Gate; Mixed Top-3 is the diagnostic first choice and Full INT8 remains the fallback.",
     "A4 and B3 must rerun compile/runtime/X86/J6P evidence on that exact RC identity.",
     "B4 may create FINAL_SUBMISSION only after the complete Gate chain and clean reproduction pass."
   ],
   "prohibitions": [
     "Do not rename this freeze record to RELEASE_MANIFEST or FINAL_SUBMISSION.",
     "Do not use the exposed independent-validation labels for training, calibration, selection, or error-driven iteration.",
+    "Do not represent the Adapter V3.1 post-hoc PASS projection as an independent B2 Gate decision.",
     "Do not represent BPU_ESTIMATED as J6P_MEASURED or stored Teacher plans as a fresh Teacher-service replay."
   ]
 }

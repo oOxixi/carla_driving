@@ -6,10 +6,12 @@
 - [x] 锁定 A2 FP32 ONNX SHA `681a5d4b...b4286`
 - [x] 完成 240/240 条一次性回放并锁定 raw predictions SHA
 - [x] 如实冻结本轮阈值投影为 `FAIL`
-- [ ] A3 仅用 Train/Dev 生成新候选，不触碰已暴露 240 标签
+- [x] 实现 Adapter V3.1 固定语义合同，并保留路口/车道/安全间隙 fail-closed 门禁
+- [x] V3.1 FP32 在旧 240 条上完成回归投影：238/240 完整计划、28/28 安全召回，`PASS`
+- [x] Full INT8 与 Mixed Top-3 完成同口径诊断：均与 FP32 核心字段 240/240 一致
 - [ ] B1/B2 提供新的 template-valid、未暴露独立基准
-- [ ] B2 冻结 formal policy，由独立负责人签发新候选 FP32 decision
-- [ ] FP32 PASS 后由 A2 产生新候选的 FP32/INT8/OpenExplorer 正式链路
+- [ ] B2 冻结 formal policy，独立评估 exact weights+ONNX+Adapter V3.1 并签发 FP32 decision
+- [ ] 正式 FP32 PASS 后由 A2 将首选 Mixed Top-3（Full 为备选）重签正式 INT8 manifest
 - [ ] B2 在同一冻结基准上签发 INT8 decision
 
 ## 可计入预提交的仓内证据
@@ -22,11 +24,12 @@
 - [x] B3 本机 Teacher 完整计划路线 A 否证（42.3–58.2 s/次、严格解析 0/4）
 - [x] V3 240 条 role-exception 诊断总结与外置 raw predictions 哈希
 - [x] V3 `null/CURRENT` 字段语义归一化并行诊断（lane 89.31%、sequence 86.67%，仍 FAIL）
+- [x] Adapter V3.1 实际回放与 Full/Mixed INT8 三方诊断（旧集投影 PASS，明确非正式 Gate）
 
 ## 必须继续收集的原件
 
 - [ ] B2 正式 benchmark/policy manifest、Teacher/Student raw predictions、Gate decision package
-- [ ] A3 新候选正式 `.pt` 与签发 manifest
+- [ ] A3/B2 对 exact V3 weights、FP32 ONNX、Adapter commit 的复合候选签发正式 manifest
 - [ ] A2 同一候选正式 FP32 ONNX、INT8 ONNX、`int8_manifest.json`、量化误差报告
 - [ ] A4 与 A2 exact SHA 一致的 `.bc/.hbm`、YAML、operator mapping、fallback report、Runtime
 - [ ] B3 Final RC X86 与 J6P latency/memory/stability/utilization 原始证据

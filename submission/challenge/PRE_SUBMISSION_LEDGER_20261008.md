@@ -2,12 +2,14 @@
 
 ## 总结论
 
-当前可以冻结和打包的是**唯一候选 RC 与全部已有证据**，不是可提交的 Final。
-V3 在 240 条 B1 Independent Validation v1 上的一次性阈值投影为 `FAIL`，因此
-FP32 Gate 不能签发，INT8、A4 Final Runtime、B3 J6P 和 B4 Final 包都不能越过该门禁。
+当前可以冻结和打包的是**V3 权重/ONNX + Adapter V3.1 复合候选与全部已有证据**，
+不是可提交的 Final。原始 V3 严格回放为 `FAIL`；落地固定语义合同后的 V3.1 在同一
+240 条上的回归投影为 `PASS`，Full/Mixed INT8 也通过投影。但这次修订发生在旧集合
+结果已暴露之后，不能由 A2 自签正式 Gate，仍需 B2 用新的未暴露集合独立复核。
 
 冻结状态见 `RC_V3_FREEZE_20261008.json`，完整指标见
-`V3_INDEPENDENT_DIAGNOSTIC_20261008.md`。
+`V3_INDEPENDENT_DIAGNOSTIC_20261008.md`；V3.1 实现和结果见
+`V3_1_ADAPTER_INT8_POSTHOC_20261008.md`。
 
 ## 唯一候选身份
 
@@ -16,10 +18,11 @@ FP32 Gate 不能签发，INT8、A4 Final Runtime、B3 J6P 和 B4 Final 包都不
 | A3 release | `a3_b1_closeout_robust_fp32_candidate_v3` | 唯一候选 |
 | FP32 weights SHA256 | `7f379c78...6e805` | `PENDING_A3_FP32_GATE` |
 | A2 FP32 ONNX SHA256 | `681a5d4b...b4286` | 诊断候选 |
+| Adapter contract | `student-plan-adapter-v3.1-semantic-contract` | 已实现，待未暴露集复核 |
 | A2 Full INT8 SHA256 | `275dce5c...836c3` | `DIAGNOSTIC_ONLY` |
-| A2 Mixed Top-3 SHA256 | `9a08a03c...132d3` | `DIAGNOSTIC_ONLY` |
+| A2 Mixed Top-3 SHA256 | `9a08a03c...132d3` | 下一轮 Gate 首选，仍为 `DIAGNOSTIC_ONLY` |
 | B1 Independent Validation | 240 samples / 240 groups | `FROZEN` |
-| FP32 阈值投影 | `FAIL` | 不允许升级 Final |
+| 原始 V3 / V3.1 回归投影 | `FAIL` / `PASS` | 后者为 post-hoc，不允许直接升级 Final |
 
 ## 新增的实测事实
 
@@ -46,15 +49,28 @@ target lane 从 17.1756% 升至 **89.3130%**，plan sequence 从 10.8333% 升至
 **86.6667%**，分别恢复 189 个 step 和 182 个完整 plan。这证明表示差异是主要因素，
 但归一化结果仍低于 98.5% 门槛，且 behavior/completion 仍失败，所以总投影仍为 FAIL。
 
+随后把固定规则真正实现为 Adapter V3.1，而不是继续对评分结果做后处理，并补齐了转弯
+方向约束、路口前 FSM 等待、避障车道存在性、SLOW_DOWN 指针/completion 与不安全换道
+fail-closed 测试。干净提交 `2900258a` 上重跑 240 条：behavior/lane/completion 均
+260/262，pointer 262/262，完整计划 238/240，安全召回 28/28，阈值投影为 **PASS**。
+仅余两条 `left_gap_safe=false` 的换道样本，Student 安全地输出 STOP。
+
+同一 Adapter 下 Full INT8 与 Mixed Top-3 均 240/240 成功，Teacher 指标与 FP32 相同，
+且相对 FP32 的 behavior/pointer/lane/completion/完整计划核心字段全部 100% 一致；109 个
+带速度目标步骤的绝对差为 mean 0.150893、P95 0.395727、max 0.597761 m/s。两份 INT8
+在本集合上的解码 predictions 字节相同。依据此前 Calibration v1 的无标签逐 Head 漂移，
+Mixed Top-3 以约 1.50% 体积代价降低三个离散头误差，故作为下一轮未暴露 Gate 首选；
+Full INT8 保留为体积优先备选。
+
 ## A1–B4 全员当前交付
 
 | 角色 | 已有产物 | 当前结论 | Final 前还缺 |
 |---|---|---|---|
 | A1 | `A1_正式模型与FLOPs交接_20261008/` | Student 0.498640896 GFLOPs；Teacher 固定样例 892.929605632 GFLOPs | 团队/评审认可原始模型与计数范围 |
 | B1 | closeout、Calibration v1、Independent Validation v1、泄漏检查 | 数据治理完整；历史 template lineage 不可恢复 | 新建 template-valid 未暴露独立集，不能伪造旧 `template_id` |
-| A3 | robust v3 权重、训练证据和 handoff | V3 候选已冻结，本轮阈值投影 FAIL | 只用 Train/Dev 产生新版本；不得用已暴露 240 标签调参 |
-| B2 | 评估/Gate 工具与 fail-closed 逻辑 | 无正式 decision | 冻结新基准与 policy，由独立负责人评估新候选 |
-| A2 | FP32 ONNX、Full INT8、Mixed Top-3、300 组/1200 NPY、B2/A4 ZIP、字段语义归一化诊断 | 表示差异已量化，但归一化后仍 FAIL；不能签 INT8 PASS | 先由 B2 预先冻结等价规则并获得新候选 FP32 PASS，再重建并冻结正式 INT8 |
+| A3 | robust v3 权重、训练证据和 handoff | 权重继续冻结；Adapter V3.1 复合候选旧集投影 PASS | 确认复合候选身份；如未暴露集失败，只能用 Train/Dev 产生新版本 |
+| B2 | 评估/Gate 工具与 fail-closed 逻辑 | 无正式 decision；旧集 post-hoc 投影 PASS | 冻结新未暴露基准与 policy，独立评估 exact weights+ONNX+Adapter |
+| A2 | FP32 ONNX、Full/Mixed INT8、1200 NPY、Adapter V3.1、三方回放证据 | FP32/两份 INT8 旧集投影均 PASS；Mixed 为下一轮首选；不能自签 Gate | B2 未暴露 FP32 PASS 后签正式 INT8 manifest，再由 B2 签 INT8 decision |
 | A4 | OpenExplorer 预编译证据 | 59/59 BPU、0 fallback，0.615 ms 为估算 | 绑定 A2 exact ONNX/INT8 的 `.hbm/.bc`、Runtime、fallback 和环境证据 |
 | B3 | 850 例衰减、83 场景学生闭环、BPU 估算、X86 证据、本机 Teacher 路线 A 否证 | 诊断证据已齐；完整 Teacher 本机复跑不可行；不是最终 J6P | exact Final RC 的 X86 重跑和 J6P latency/memory/stability/utilization；如需同机 Teacher，另走受约束单 token 路线并声明口径差异 |
 | B4 | 规范和预提交目录 | `BLOCKED_NOT_FINAL` | Gate 链、Docker、干净复现、技术报告、演示视频、最终 manifest |
@@ -67,6 +83,9 @@ target lane 从 17.1756% 升至 **89.3130%**，plan sequence 从 10.8333% 升至
 | A4 | `artifacts/a2/handoff_20261007_3ebd0682/PRE_GATE_ONLY_A2_to_A4_openexplorer_3ebd0682.zip` | `543a2ee2...3918` | 1200 NPY 与预门禁模型；必须保留 `PRE_GATE_ONLY` |
 | 团队/B2 | `artifacts/b2_role_exception_v3_20261008_final/` | report `8e155001...6dae` | 240 条一次性诊断原始 predictions；不是 B2 签发 |
 | 团队/B2 | `artifacts/b2_role_exception_v3_20261008_semantic_normalized/` | 见目录 `SHA256SUMS` | `null/CURRENT` 字段对齐诊断；不覆盖严格结果，不是 B2 签发 |
+| 团队/B2 | `artifacts/b2_role_exception_v3_1_adapter_20261008_final/` | report `bb9a2e5a...72585` | Adapter V3.1 FP32 实际回放；旧集 PASS 投影，非正式 Gate |
+| 团队/B2 | `artifacts/b2_role_exception_v3_1_full_int8_20261008_final/` | report `d970ffb8...b36931` | Full INT8 与 Teacher/FP32 三方诊断；非正式 Gate |
+| 团队/B2 | `artifacts/b2_role_exception_v3_1_mixed_int8_20261008_final/` | report `4326f032...141e4b` | Mixed Top-3 三方诊断；下一轮 Gate 首选，非正式 Gate |
 
 预提交综合包另生成在 `artifacts/submission/`，其中会包含代码/证据索引和小型
 报告，大模型、NPY、`.hbm/.bc`、Docker 和视频通过外置哈希发送。
@@ -83,8 +102,9 @@ target lane 从 17.1756% 升至 **89.3130%**，plan sequence 从 10.8333% 升至
 
 ## 冻结规则
 
-1. 保留 V3 作为当前唯一可追溯候选，不把它改名为 Final。
-2. 不修改本次诊断结果，不用 240 条标签做调参。
-3. 新模型必须新建版本和全套 SHA，由 B2 在新的未暴露基准上独立签发。
+1. 保留 V3 weights/ONNX + Adapter V3.1 作为当前唯一可追溯复合候选，不改名为 Final。
+2. 原始 FAIL、字段归一化 FAIL 和 V3.1 post-hoc PASS 三组结果并列保留，不覆盖历史证据，
+   不再用 240 条标签做训练、校准或逐错调参。
+3. 任何模型/Adapter 变化必须新建版本和全套 SHA，由 B2 在新的未暴露基准上独立签发。
 4. 只有 FP32→INT8→A4/B3→B4 同一 RC 门禁链全部通过，才能生成
    `RELEASE_MANIFEST.json` 和 `FINAL_SUBMISSION`。

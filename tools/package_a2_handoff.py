@@ -113,6 +113,7 @@ def package_manifest(
         "artifacts": artifacts,
         "limitations": [
             "DIAGNOSTIC_ONLY; not A3_FP32_GATE_PASSED or A2_INT8_GATE_PASSED.",
+            "Adapter V3.1 PASS is post-hoc on an already exposed benchmark.",
             "B2 must decide the exact FP32 and INT8 bytes on its frozen benchmark.",
             "OpenExplorer and J6P claims require A4/B3 evidence.",
         ],
@@ -178,6 +179,34 @@ def build_packages(
     recovery_attestation_path = recovery / "recovery_attestation.json"
     recovery_attestation = read_json(require_file(recovery_attestation_path))
     recovery_provenance = read_json(require_file(recovery / "provenance_manifest.json"))
+    adapter_path = require_file(repo / "challenge" / "planner" / "student_adapter.py")
+    adapter_report_path = require_file(
+        repo / "submission" / "challenge" / "V3_1_ADAPTER_INT8_POSTHOC_20261008.md"
+    )
+    post_hoc_directories = {
+        "fp32": require_file(
+            repo
+            / "artifacts"
+            / "b2_role_exception_v3_1_adapter_20261008_final"
+            / "diagnostic_report.json"
+        ).parent,
+        "full_int8": require_file(
+            repo
+            / "artifacts"
+            / "b2_role_exception_v3_1_full_int8_20261008_final"
+            / "diagnostic_report.json"
+        ).parent,
+        "mixed_top3": require_file(
+            repo
+            / "artifacts"
+            / "b2_role_exception_v3_1_mixed_int8_20261008_final"
+            / "diagnostic_report.json"
+        ).parent,
+    }
+    post_hoc_reports = {
+        name: read_json(directory / "diagnostic_report.json")
+        for name, directory in post_hoc_directories.items()
+    }
 
     expected_weight_sha = str(candidate.get("weights_sha256") or "")
     weights = require_file(release / "student_v0_fp32_candidate.pt")
@@ -232,6 +261,34 @@ def build_packages(
     )
     if recovery_release_sha != candidate.get("b1_governed_release_manifest_sha256"):
         raise ValueError("B1 recovery evidence binds a different governed release")
+    adapter_sha = sha256_file(adapter_path)
+    fp32_post_hoc = post_hoc_reports["fp32"]
+    if fp32_post_hoc.get("formal_gate_eligible") is not False:
+        raise ValueError("Adapter V3.1 FP32 evidence must remain non-formal")
+    if (fp32_post_hoc.get("threshold_projection") or {}).get("status") != "PASS":
+        raise ValueError("Adapter V3.1 FP32 post-hoc projection is not PASS")
+    if (
+        (fp32_post_hoc.get("source_bindings") or {}).get(
+            "student_adapter_checkout_sha256"
+        )
+        != adapter_sha
+    ):
+        raise ValueError("Adapter V3.1 FP32 evidence binds a different adapter")
+    for label in ("full_int8", "mixed_top3"):
+        report = post_hoc_reports[label]
+        if report.get("formal_gate_eligible") is not False:
+            raise ValueError(f"{label} evidence must remain non-formal")
+        if not (report.get("threshold_projection") or {}).get("pass"):
+            raise ValueError(f"{label} post-hoc projection is not PASS")
+        if (report.get("source_bindings") or {}).get("adapter_sha256") != adapter_sha:
+            raise ValueError(f"{label} evidence binds a different adapter")
+        expected_int8_sha = (
+            full.get("int8_artifact_sha256")
+            if label == "full_int8"
+            else mixed.get("int8_artifact_sha256")
+        )
+        if (report.get("int8_candidate") or {}).get("int8_sha256") != expected_int8_sha:
+            raise ValueError(f"{label} evidence binds a different INT8 artifact")
 
     fp32 = require_file(source / "student_v0_fp32_candidate.onnx")
     full_model = require_file(source / "ptq_int8" / "student_int8.onnx")
@@ -244,6 +301,18 @@ def build_packages(
         "fp32_onnx_sha256": sha256_file(fp32),
         "full_int8_sha256": sha256_file(full_model),
         "mixed_precision_top3_sha256": sha256_file(mixed_model),
+        "preferred_int8_candidate": "mixed_precision_top3",
+        "adapter_contract_id": "student-plan-adapter-v3.1-semantic-contract",
+        "adapter_sha256": adapter_sha,
+        "adapter_v3_1_fp32_report_sha256": sha256_file(
+            post_hoc_directories["fp32"] / "diagnostic_report.json"
+        ),
+        "full_int8_post_hoc_report_sha256": sha256_file(
+            post_hoc_directories["full_int8"] / "diagnostic_report.json"
+        ),
+        "mixed_top3_post_hoc_report_sha256": sha256_file(
+            post_hoc_directories["mixed_top3"] / "diagnostic_report.json"
+        ),
         "openexplorer_input_manifest_sha256": sha256_file(oe_manifest),
         "calibration_jsonl_sha256": calibration.get("jsonl_sha256"),
         "calibration_manifest_sha256": calibration.get("manifest_sha256"),
@@ -308,6 +377,7 @@ def build_packages(
                     f"用途：`{purpose}`。",
                     "",
                     "本包严格保持 `PENDING_A3_FP32_GATE` / `DIAGNOSTIC_ONLY`。",
+                    "Adapter V3.1 的旧集 PASS 仅为 post-hoc 投影，不是 B2 正式签发。",
                     "接收方须先核验 `SHA256SUMS.txt`，不得将候选结果表述为正式 Gate 或板端结论。",
                     "",
                 )
@@ -341,6 +411,13 @@ def build_packages(
                 recovery / "provenance_manifest.json",
                 package / "reports" / "b1_legacy_template_recovery_provenance.json",
             )
+            copy_file(adapter_report_path, package / "reports" / adapter_report_path.name)
+            copy_file(adapter_path, package / "source" / "student_adapter.py")
+            for label, directory in post_hoc_directories.items():
+                copy_file(
+                    directory / "diagnostic_report.json",
+                    package / "reports" / f"{label}_post_hoc_diagnostic.json",
+                )
         elif recipient == "B2":
             copy_identity(release, package / "identity", quant_config)
             copy_b1_identity(repo, package / "identity")
@@ -361,6 +438,15 @@ def build_packages(
                 recovery,
                 package / "governance" / "b1_legacy_template_identity_recovery_v1",
             )
+            copy_file(adapter_report_path, package / "reports" / adapter_report_path.name)
+            for source_file in (
+                adapter_path,
+                repo / "tools" / "run_v3_independent_diagnostic.py",
+                repo / "tools" / "run_v3_int8_diagnostic.py",
+            ):
+                copy_file(source_file, package / "source" / source_file.name)
+            for label, directory in post_hoc_directories.items():
+                copy_tree(directory, package / "evaluation" / label)
         else:
             copy_file(fp32, package / fp32.name)
             for source_file in (
@@ -384,6 +470,8 @@ def build_packages(
             copy_file(full_model, package / "models" / full_model.name)
             copy_file(mixed_model, package / "models" / mixed_model.name)
             copy_tree(source / "openexplorer_oe391", package / "openexplorer_oe391")
+            copy_file(adapter_path, package / "source" / "student_adapter.py")
+            copy_file(adapter_report_path, package / "analysis" / adapter_report_path.name)
 
         file_count, sums_sha = write_sums(package)
         zip_path = output / f"{zip_stem}_{evidence_commit[:8]}.zip"

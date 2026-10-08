@@ -22,6 +22,7 @@ PACKAGE_FILES = (
     "submission/challenge/RC_V3_FREEZE_20261008.json",
     "submission/challenge/V3_INDEPENDENT_DIAGNOSTIC_20261008.md",
     "submission/challenge/V3_FIELD_SEMANTIC_NORMALIZATION_20261008.md",
+    "submission/challenge/V3_1_ADAPTER_INT8_POSTHOC_20261008.md",
     "submission/challenge/PRE_SUBMISSION_LEDGER_20261008.md",
     "submission/challenge/SUBMISSION_COLLECTION_CHECKLIST_20261008.md",
     # A1 formal structure/FLOPs handoff, excluding its random-init smoke ONNX
@@ -92,6 +93,9 @@ PACKAGE_TREES = (
     "challenge/hil/evidence/teacher_local_bringup_20261008",
     "artifacts/b2_role_exception_v3_20261008_final",
     "artifacts/b2_role_exception_v3_20261008_semantic_normalized",
+    "artifacts/b2_role_exception_v3_1_adapter_20261008_final",
+    "artifacts/b2_role_exception_v3_1_full_int8_20261008_final",
+    "artifacts/b2_role_exception_v3_1_mixed_int8_20261008_final",
 )
 
 EXTERNAL_ARTIFACTS = (
@@ -203,9 +207,9 @@ def zip_crc(path: Path) -> dict[str, Any]:
 
 
 def build(repo: Path, output_root: Path) -> dict[str, Any]:
-    package_id = "challenge_rc_v3_freeze_evidence_20261008"
+    package_id = "challenge_rc_v3_1_adapter_evidence_20261008"
     package = output_root / package_id
-    archive_path = output_root / "CHALLENGE_RC_V3_FREEZE_EVIDENCE_20261008.zip"
+    archive_path = output_root / "CHALLENGE_RC_V3_1_ADAPTER_EVIDENCE_20261008.zip"
     archive_sha_path = archive_path.with_suffix(archive_path.suffix + ".sha256")
     if package.exists() or archive_path.exists() or archive_sha_path.exists():
         raise FileExistsError("pre-submission package output already exists")
@@ -252,8 +256,11 @@ def build(repo: Path, output_root: Path) -> dict[str, Any]:
             "candidate": {
                 "weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
                 "fp32_onnx_sha256": "681a5d4bf16ba61741ef0e559649c43c041de649eef3e8e6f0b6285beaab4286",
+                "adapter_contract_id": "student-plan-adapter-v3.1-semantic-contract",
+                "preferred_int8_sha256": "9a08a03c42a9ea59ead664d168254cd3685d73d176d5ab53507bd4a4467132d3",
                 "selection_status": "V3_FROZEN_AS_SOLE_RELEASE_CANDIDATE",
-                "threshold_projection": "FAIL",
+                "original_v3_threshold_projection": "FAIL",
+                "adapter_v3_1_post_hoc_projection": "PASS_NOT_FORMAL_GATE",
             },
             "included_files": sorted(copied, key=lambda item: str(item["path"])),
             "external_large_artifacts": externals,
@@ -265,8 +272,9 @@ def build(repo: Path, output_root: Path) -> dict[str, Any]:
             ],
             "limitations": [
                 "This is a pre-submission evidence package, not FINAL_SUBMISSION.",
-                "The current V3 threshold projection failed; no formal FP32 or INT8 Gate is claimed.",
-                "The null/CURRENT semantic normalization is post-hoc diagnostic evidence and does not replace the strict result.",
+                "The original V3 projection failed; Adapter V3.1 passes only a post-hoc replay on the already exposed benchmark.",
+                "Neither the V3.1 FP32 nor INT8 projection is an independent formal Gate decision.",
+                "The original strict, null/CURRENT normalization, and implemented V3.1 results are all retained for audit.",
                 "BPU estimates are not J6P measurements.",
             ],
         }
@@ -275,9 +283,9 @@ def build(repo: Path, output_root: Path) -> dict[str, Any]:
 
 This archive freezes all currently available small reports, manifests, and raw
 role-exception diagnostic predictions across A1-A4 and B1-B4. It is not a Final
-submission: the current V3 threshold projection is FAIL and the formal Gate
-chain is incomplete. The parallel null/CURRENT normalization result is explicitly
-post-hoc and does not overwrite the strict metric result.
+submission. Adapter V3.1 and both INT8 candidates pass the old 240-case replay,
+but that replay is post-hoc because the benchmark was already exposed. It does
+not overwrite the original FAIL result or complete the formal Gate chain.
 
 Start with `submission/challenge/PRE_SUBMISSION_LEDGER_20261008.md` and
 `submission/challenge/RC_V3_FREEZE_20261008.json`. Large A2 model/NPY payloads
