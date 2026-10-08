@@ -9,6 +9,8 @@
 - [x] 实现 Adapter V3.1 固定语义合同，并保留路口/车道/安全间隙 fail-closed 门禁
 - [x] V3.1 FP32 在旧 240 条上完成回归投影：238/240 完整计划、28/28 安全召回，`PASS`
 - [x] Full INT8 与 Mixed Top-3 完成同口径诊断：均与 FP32 核心字段 240/240 一致
+- [x] A2 代理跑完 B2 代码合同测试：184/184 通过，真实 240 条复跑哈希可重复
+- [x] 生成 B2 proxy audit ZIP，冻结聚合 PASS 投影、8 个切片告警和 2 条安全收紧差异
 - [ ] B1/B2 提供新的 template-valid、未暴露独立基准
 - [ ] B2 冻结 formal policy，独立评估 exact weights+ONNX+Adapter V3.1 并签发 FP32 decision
 - [ ] 正式 FP32 PASS 后由 A2 将首选 Mixed Top-3（Full 为备选）重签正式 INT8 manifest
@@ -25,6 +27,7 @@
 - [x] V3 240 条 role-exception 诊断总结与外置 raw predictions 哈希
 - [x] V3 `null/CURRENT` 字段语义归一化并行诊断（lane 89.31%、sequence 86.67%，仍 FAIL）
 - [x] Adapter V3.1 实际回放与 Full/Mixed INT8 三方诊断（旧集投影 PASS，明确非正式 Gate）
+- [x] B2 proxy audit：合同测试、重跑、Gate 投影、readiness、切片告警、raw predictions 和 SHA256 完整打包
 - [x] 重建 A3/B2/A4 三份 V3.1 交接 ZIP；CRC 与逐成员 SHA256 全部 PASS
 - [x] 生成 V3.1 全赛道小型证据包与源码/Runtime 预览包；CRC 与逐文件 SHA256 全部 PASS
 

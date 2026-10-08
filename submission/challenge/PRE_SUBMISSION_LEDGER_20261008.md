@@ -9,7 +9,8 @@
 
 冻结状态见 `RC_V3_FREEZE_20261008.json`，完整指标见
 `V3_INDEPENDENT_DIAGNOSTIC_20261008.md`；V3.1 实现和结果见
-`V3_1_ADAPTER_INT8_POSTHOC_20261008.md`。
+`V3_1_ADAPTER_INT8_POSTHOC_20261008.md`；A2 代理执行的 B2 全套合同测试与真实
+回放审计见 `B2_PROXY_EVALUATION_V3_1_20261008.md`。
 
 ## 唯一候选身份
 
@@ -69,7 +70,7 @@ Full INT8 保留为体积优先备选。
 | A1 | `A1_正式模型与FLOPs交接_20261008/` | Student 0.498640896 GFLOPs；Teacher 固定样例 892.929605632 GFLOPs | 团队/评审认可原始模型与计数范围 |
 | B1 | closeout、Calibration v1、Independent Validation v1、泄漏检查 | 数据治理完整；历史 template lineage 不可恢复 | 新建 template-valid 未暴露独立集，不能伪造旧 `template_id` |
 | A3 | robust v3 权重、训练证据和 handoff | 权重继续冻结；Adapter V3.1 复合候选旧集投影 PASS | 确认复合候选身份；如未暴露集失败，只能用 Train/Dev 产生新版本 |
-| B2 | 评估/Gate 工具与 fail-closed 逻辑 | 无正式 decision；旧集 post-hoc 投影 PASS | 冻结新未暴露基准与 policy，独立评估 exact weights+ONNX+Adapter |
+| B2 | 评估/Gate 工具与 fail-closed 逻辑；A2 代理完成 184 项合同测试和 240 条实际复跑 | 代码测试全 PASS，预测可重复，聚合 Gate 投影 PASS；正式 decision 仍阻塞 | 冻结新未暴露基准与 policy，补 Seen/Variant/Unseen，由独立 B2 评估 exact weights+ONNX+Adapter |
 | A2 | FP32 ONNX、Full/Mixed INT8、1200 NPY、Adapter V3.1、三方回放证据 | FP32/两份 INT8 旧集投影均 PASS；Mixed 为下一轮首选；不能自签 Gate | B2 未暴露 FP32 PASS 后签正式 INT8 manifest，再由 B2 签 INT8 decision |
 | A4 | OpenExplorer 预编译证据 | 59/59 BPU、0 fallback，0.615 ms 为估算 | 绑定 A2 exact ONNX/INT8 的 `.hbm/.bc`、Runtime、fallback 和环境证据 |
 | B3 | 850 例衰减、83 场景学生闭环、BPU 估算、X86 证据、本机 Teacher 路线 A 否证 | 诊断证据已齐；完整 Teacher 本机复跑不可行；不是最终 J6P | exact Final RC 的 X86 重跑和 J6P latency/memory/stability/utilization；如需同机 Teacher，另走受约束单 token 路线并声明口径差异 |
@@ -89,6 +90,7 @@ Full INT8 保留为体积优先备选。
 | 团队/B2 | `artifacts/b2_role_exception_v3_1_adapter_20261008_final/` | report `bb9a2e5a...72585` | Adapter V3.1 FP32 实际回放；旧集 PASS 投影，非正式 Gate |
 | 团队/B2 | `artifacts/b2_role_exception_v3_1_full_int8_20261008_final/` | report `d970ffb8...b36931` | Full INT8 与 Teacher/FP32 三方诊断；非正式 Gate |
 | 团队/B2 | `artifacts/b2_role_exception_v3_1_mixed_int8_20261008_final/` | report `4326f032...141e4b` | Mixed Top-3 三方诊断；下一轮 Gate 首选，非正式 Gate |
+| 团队/B2/B4 | `artifacts/submission/B2_PROXY_AUDIT_V3_1_20261008.zip` | `285b96a1...981ac` | 184 项 B2 测试、240 条复跑、Gate 投影、readiness、切片与差异证据；`A2_ASSISTED_B2_PROXY`，非正式签发 |
 
 预提交综合包已生成在 `artifacts/submission/`：
 

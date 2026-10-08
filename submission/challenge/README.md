@@ -8,6 +8,8 @@
 - `V3_FIELD_SEMANTIC_NORMALIZATION_20261008.md`：`null/CURRENT` 统一后的并行诊断；
 - `V3_1_ADAPTER_INT8_POSTHOC_20261008.md`：Adapter V3.1 实现、FP32/INT8 回归
   PASS 投影及正式 Gate 边界；
+- `B2_PROXY_EVALUATION_V3_1_20261008.md`：A2 代理执行的 184 项 B2 合同测试、
+  240 条真实复跑、切片告警和非独立 Gate 投影；
 - `PRE_SUBMISSION_LEDGER_20261008.md`：A1–B4 最新产物、缺口和外置包路径；
 - `SUBMISSION_COLLECTION_CHECKLIST_20261008.md`：最终收件与晋级清单。
 
