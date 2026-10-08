@@ -40,6 +40,12 @@ Qwen2.5-VL-3B FP16 单次完整计划生成耗时 42.3–58.2 s，严格解析 0
 `KEEP_LANE/STOP` 填 `CURRENT`，Student Adapter 按设计留空。这可解释部分差距，
 但不能在已查看独立集结果后直接改 Adapter 并把同一集合当作独立重测。
 
+已增加不覆盖原结果的字段语义归一化诊断：仅把非 lane-critical 行为中的 Student
+`target_lane=null` 在评分副本中映射为 `CURRENT`，共调整 204 步/201 样本。
+target lane 从 17.1756% 升至 **89.3130%**，plan sequence 从 10.8333% 升至
+**86.6667%**，分别恢复 189 个 step 和 182 个完整 plan。这证明表示差异是主要因素，
+但归一化结果仍低于 98.5% 门槛，且 behavior/completion 仍失败，所以总投影仍为 FAIL。
+
 ## A1–B4 全员当前交付
 
 | 角色 | 已有产物 | 当前结论 | Final 前还缺 |
@@ -48,7 +54,7 @@ Qwen2.5-VL-3B FP16 单次完整计划生成耗时 42.3–58.2 s，严格解析 0
 | B1 | closeout、Calibration v1、Independent Validation v1、泄漏检查 | 数据治理完整；历史 template lineage 不可恢复 | 新建 template-valid 未暴露独立集，不能伪造旧 `template_id` |
 | A3 | robust v3 权重、训练证据和 handoff | V3 候选已冻结，本轮阈值投影 FAIL | 只用 Train/Dev 产生新版本；不得用已暴露 240 标签调参 |
 | B2 | 评估/Gate 工具与 fail-closed 逻辑 | 无正式 decision | 冻结新基准与 policy，由独立负责人评估新候选 |
-| A2 | FP32 ONNX、Full INT8、Mixed Top-3、300 组/1200 NPY、B2/A4 ZIP | 可交接诊断包，不能签 INT8 PASS | 先获得新候选 FP32 PASS，再重建并冻结正式 INT8 |
+| A2 | FP32 ONNX、Full INT8、Mixed Top-3、300 组/1200 NPY、B2/A4 ZIP、字段语义归一化诊断 | 表示差异已量化，但归一化后仍 FAIL；不能签 INT8 PASS | 先由 B2 预先冻结等价规则并获得新候选 FP32 PASS，再重建并冻结正式 INT8 |
 | A4 | OpenExplorer 预编译证据 | 59/59 BPU、0 fallback，0.615 ms 为估算 | 绑定 A2 exact ONNX/INT8 的 `.hbm/.bc`、Runtime、fallback 和环境证据 |
 | B3 | 850 例衰减、83 场景学生闭环、BPU 估算、X86 证据、本机 Teacher 路线 A 否证 | 诊断证据已齐；完整 Teacher 本机复跑不可行；不是最终 J6P | exact Final RC 的 X86 重跑和 J6P latency/memory/stability/utilization；如需同机 Teacher，另走受约束单 token 路线并声明口径差异 |
 | B4 | 规范和预提交目录 | `BLOCKED_NOT_FINAL` | Gate 链、Docker、干净复现、技术报告、演示视频、最终 manifest |
@@ -60,6 +66,7 @@ Qwen2.5-VL-3B FP16 单次完整计划生成耗时 42.3–58.2 s，严格解析 0
 | B2 | `artifacts/a2/handoff_20261007_3ebd0682/A2_to_B2_evaluation_3ebd0682.zip` | `95e05330...a59f` | A2 模型与量化证据；旧包，不含本次独立集回放 |
 | A4 | `artifacts/a2/handoff_20261007_3ebd0682/PRE_GATE_ONLY_A2_to_A4_openexplorer_3ebd0682.zip` | `543a2ee2...3918` | 1200 NPY 与预门禁模型；必须保留 `PRE_GATE_ONLY` |
 | 团队/B2 | `artifacts/b2_role_exception_v3_20261008_final/` | report `8e155001...6dae` | 240 条一次性诊断原始 predictions；不是 B2 签发 |
+| 团队/B2 | `artifacts/b2_role_exception_v3_20261008_semantic_normalized/` | 见目录 `SHA256SUMS` | `null/CURRENT` 字段对齐诊断；不覆盖严格结果，不是 B2 签发 |
 
 预提交综合包另生成在 `artifacts/submission/`，其中会包含代码/证据索引和小型
 报告，大模型、NPY、`.hbm/.bc`、Docker 和视频通过外置哈希发送。

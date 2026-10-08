@@ -59,7 +59,8 @@
     "A2_quantization_handoff": "artifacts/a2/handoff_20261007_3ebd0682",
     "B3_deployment_estimate_and_decay": "challenge/hil/evidence/deployment_estimate_and_decay_20261008",
     "B3_full83_loop": "challenge/hil/evidence/carla_student_loop_20261007",
-    "B3_local_teacher_route_a_falsification": "challenge/hil/evidence/teacher_local_bringup_20261008"
+    "B3_local_teacher_route_a_falsification": "challenge/hil/evidence/teacher_local_bringup_20261008",
+    "A2_post_hoc_field_semantic_normalization": "artifacts/b2_role_exception_v3_20261008_semantic_normalized"
   },
   "next_release_requirements": [
     "A3 creates a new versioned candidate using only Train/Development evidence, without tuning on the exposed 240-case labels.",

@@ -21,6 +21,7 @@ PACKAGE_FILES = (
     "submission/challenge/README.md",
     "submission/challenge/RC_V3_FREEZE_20261008.json",
     "submission/challenge/V3_INDEPENDENT_DIAGNOSTIC_20261008.md",
+    "submission/challenge/V3_FIELD_SEMANTIC_NORMALIZATION_20261008.md",
     "submission/challenge/PRE_SUBMISSION_LEDGER_20261008.md",
     "submission/challenge/SUBMISSION_COLLECTION_CHECKLIST_20261008.md",
     # A1 formal structure/FLOPs handoff, excluding its random-init smoke ONNX
@@ -90,6 +91,7 @@ PACKAGE_TREES = (
     "challenge/hil/evidence/a3_v3_simulation_20261007",
     "challenge/hil/evidence/teacher_local_bringup_20261008",
     "artifacts/b2_role_exception_v3_20261008_final",
+    "artifacts/b2_role_exception_v3_20261008_semantic_normalized",
 )
 
 EXTERNAL_ARTIFACTS = (
@@ -264,6 +266,7 @@ def build(repo: Path, output_root: Path) -> dict[str, Any]:
             "limitations": [
                 "This is a pre-submission evidence package, not FINAL_SUBMISSION.",
                 "The current V3 threshold projection failed; no formal FP32 or INT8 Gate is claimed.",
+                "The null/CURRENT semantic normalization is post-hoc diagnostic evidence and does not replace the strict result.",
                 "BPU estimates are not J6P measurements.",
             ],
         }
@@ -273,7 +276,8 @@ def build(repo: Path, output_root: Path) -> dict[str, Any]:
 This archive freezes all currently available small reports, manifests, and raw
 role-exception diagnostic predictions across A1-A4 and B1-B4. It is not a Final
 submission: the current V3 threshold projection is FAIL and the formal Gate
-chain is incomplete.
+chain is incomplete. The parallel null/CURRENT normalization result is explicitly
+post-hoc and does not overwrite the strict metric result.
 
 Start with `submission/challenge/PRE_SUBMISSION_LEDGER_20261008.md` and
 `submission/challenge/RC_V3_FREEZE_20261008.json`. Large A2 model/NPY payloads

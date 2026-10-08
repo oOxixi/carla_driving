@@ -21,6 +21,7 @@
 - [x] B3 83 场景闭环、850 例衰减、BPU 估算、FLOPs 交叉核对
 - [x] B3 本机 Teacher 完整计划路线 A 否证（42.3–58.2 s/次、严格解析 0/4）
 - [x] V3 240 条 role-exception 诊断总结与外置 raw predictions 哈希
+- [x] V3 `null/CURRENT` 字段语义归一化并行诊断（lane 89.31%、sequence 86.67%，仍 FAIL）
 
 ## 必须继续收集的原件
 
