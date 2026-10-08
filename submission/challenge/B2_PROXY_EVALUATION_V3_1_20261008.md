@@ -39,7 +39,7 @@ Adapter V3.1 修订前已暴露给 A2，因此这次只能作为可复算的 pos
 - V3.1 字段语义归一与 INT8 三方对比计算。
 
 结果：`184 passed / 0 failed / 0 errors / 0 skipped`。JUnit 证据 SHA256：
-`93dd3e7da656acef2794bbae557a7bd6aa0430fe8c214c7ac5079e42ddbc5039`。
+`89a75935dd9da97763f3ef417af3c24674d93b355794c70c5137cd065bb3f07e`。
 
 ## 真实 240 条指标
 
@@ -93,9 +93,9 @@ B2 冻结 policy 时明确是否要求切片同样满足 1.5%。
 - 可直接发送 ZIP：
   `artifacts/submission/B2_PROXY_AUDIT_V3_1_20261008.zip`；
 - ZIP SHA256：
-  `285b96a182449ff549c17a13bc95ea73ebfcc5bbb5c957924c39fce97aa981ac`；
+  `9d1975473b5035e75384af98ba0705709d315064de1081022f607f4fe7cab9a5`；
 - 核心 audit JSON SHA256：
-  `e63a273c0de511d7ee32e6a9f05b8e941c760414e9362f5f72186ca2211a2402`；
+  `e5ee85f9c35c804f3f061ca2c58d4c7154c7d935108c3ec5abc212b705285c11`；
 - ZIP 验证：21 entries，CRC PASS，20 个受管成员逐文件 SHA256 PASS。
 
 包内含实际 Teacher/Student raw predictions、240 条 cases、B1 身份、候选身份、JUnit、

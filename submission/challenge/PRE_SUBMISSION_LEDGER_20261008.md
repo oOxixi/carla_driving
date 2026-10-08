@@ -90,7 +90,7 @@ Full INT8 保留为体积优先备选。
 | 团队/B2 | `artifacts/b2_role_exception_v3_1_adapter_20261008_final/` | report `bb9a2e5a...72585` | Adapter V3.1 FP32 实际回放；旧集 PASS 投影，非正式 Gate |
 | 团队/B2 | `artifacts/b2_role_exception_v3_1_full_int8_20261008_final/` | report `d970ffb8...b36931` | Full INT8 与 Teacher/FP32 三方诊断；非正式 Gate |
 | 团队/B2 | `artifacts/b2_role_exception_v3_1_mixed_int8_20261008_final/` | report `4326f032...141e4b` | Mixed Top-3 三方诊断；下一轮 Gate 首选，非正式 Gate |
-| 团队/B2/B4 | `artifacts/submission/B2_PROXY_AUDIT_V3_1_20261008.zip` | `285b96a1...981ac` | 184 项 B2 测试、240 条复跑、Gate 投影、readiness、切片与差异证据；`A2_ASSISTED_B2_PROXY`，非正式签发 |
+| 团队/B2/B4 | `artifacts/submission/B2_PROXY_AUDIT_V3_1_20261008.zip` | `9d197547...ab9a5` | 184 项 B2 测试、240 条复跑、Gate 投影、readiness、切片与差异证据；`A2_ASSISTED_B2_PROXY`，非正式签发 |
 
 预提交综合包已生成在 `artifacts/submission/`：
 
