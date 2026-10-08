@@ -1,0 +1,53 @@
+{
+  "experiment": "bring up the Qwen teacher locally so the Teacher/Student comparison can run on one machine",
+  "conclusion": "route A (local Qwen2.5-VL-3B checkpoint behind qwen_service) is NOT viable on this laptop; recorded as a falsified alternative",
+  "environment": {
+    "host_gpu": "NVIDIA GeForce RTX 4060 Laptop GPU, 8188 MiB",
+    "wsl_gpu_visible": true,
+    "wsl_python": "3.10.12",
+    "torch": "2.6.0+cu124",
+    "transformers": "5.19.0",
+    "checkpoints": {
+      "qwen2.5-vl-3b-fp16": "D:/nana/oe/models/qwen2.5-vl-3b-fp16 (7.0 GB, matches the repository loader Qwen2_5_VLForConditionalGeneration)",
+      "qwen3-vl-2b-int4": "D:/nana/oe/models/qwen3vl-2b-int4 (2.1 GB, matches the loop profile qwen3vl-2b-int4)",
+      "qwen3-vl-2b-fp16": "D:/nana/oe/models/qwen3vl-2b-fp16 (4.1 GB)"
+    }
+  },
+  "what_worked": [
+    "qwen_service starts in WSL and reports READY with the local checkpoint (planner_v2 mode)",
+    "GPU is used: torch.cuda.is_available() is true and the service reserves ~6.43 GB",
+    "requests are accepted after the client sends a relative rgb_ref (the service rejects absolute paths when image_root is set)"
+  ],
+  "what_failed": {
+    "latency_seconds_per_plan": [58.18, 42.3, 48.1, 47.8],
+    "latency_cause": "3B FP16 needs ~6.2 GB of weights; with 8 GB VRAM the loader offloads some layers to the CPU ('Some parameters are on the meta device because they were offloaded to the cpu'), so every plan generation mixes GPU and CPU and takes tens of seconds",
+    "strict_parse": "0 of 4 responses passed the repository parser: MODEL_OUTPUT_MUST_BE_BARE_JSON_OBJECT",
+    "parse_cause": "the 3B FP16 instruct model does not reliably emit the bare JSON ManeuverPlan the strict parser requires (the team's own runs used Qwen2.5-VL-7B-AWQ)",
+    "loop_impact": "the CARLA loop runs realtime with a 12-15 s decision TTL and 35 s per scenario, so a 42-58 s plan cannot drive the loop"
+  },
+  "why_this_matters": [
+    "it rules out the cheapest 'teacher on the same laptop' route before spending hours on a scenario run",
+    "it documents that the existing same-protocol decay estimate (47 shared scenarios, teacher macro 92.12% vs student 74.47%, relative decay 19.16%) keeps its cross-machine caveat until a faster teacher serving stack exists"
+  ],
+  "alternatives_if_the_teacher_must_run_here": [
+    {
+      "route": "A2: 4-bit AWQ checkpoint (Qwen2.5-VL-3B-AWQ or the team's 7B-AWQ)",
+      "pros": "should fit in 8 GB without CPU offload",
+      "cons": "needs an AWQ runtime (autoawq/gptqmodel) whose versions are brittle against torch 2.6; a 4-bit 3B still generates ~200 tokens per plan, so latency may stay in the tens of seconds"
+    },
+    {
+      "route": "B: one-token constrained choice behind an OpenAI-compatible endpoint (the loop's --qwen-remote A-E path, or qwen_service with --vllm-base-url)",
+      "pros": "only one token per request, so even the 2B INT4 model that already fits in VRAM answers in ~1 s; matches how the team's 83-scenario runs were executed",
+      "cons": "produces decisions through the choice path rather than the full-plan JSON path the dataset teacher used, so the protocol differs from the frozen teacher_plan rows and must be declared"
+    },
+    {
+      "route": "C: keep the cross-machine comparison",
+      "pros": "already done and documented",
+      "cons": "the teacher rows come from the A800 collection runs, so the decay number keeps a cross-machine caveat"
+    }
+  ],
+  "reproduce": [
+    "wsl: /root/venv-vllm/bin/python -m qwen_service --host 127.0.0.1 --port 8765 --model-path /mnt/d/nana/oe/models/qwen2.5-vl-3b-fp16 --qwen-mode planner_v2 --timeout-ms 180000 --image-root <image root>",
+    "client: POST /infer with a canonical model request whose rgb_ref is relative to the image root"
+  ]
+}

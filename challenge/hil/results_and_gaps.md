@@ -317,6 +317,27 @@ Adapter** 解码同一份 ONNX，逐步逐字段比对；Teacher 以自身为参
 差异声明：同场景同判据，但不同时间/机器/seed（教师来自 A800 采集运行、学生为本机单次 FP32 运行）。
 工具 `harness/x86_sim/teacher_student_protocol_decay.py`，证据 `evidence/deployment_estimate_and_decay_20261008/04_*`。
 
+### 2.16 本机跑"教师"的可行性实测（2026-10-08，结论：不可行）
+
+为把上述对比从"跨机器"升级为"同机"，尝试在本机（RTX 4060 Laptop **8 GB**）起 Qwen 教师服务：
+WSL 内装 CUDA 版 torch 2.6 + transformers 5.19，下载 `Qwen2.5-VL-3B-Instruct`（7.0 GB，匹配仓库加载器），
+用仓库自带 `qwen_service --model-path … --qwen-mode planner_v2` 起服务（READY、GPU 占用 6.43 GB），
+再用真实 canonical 请求做 4 次冒烟：
+
+| 项 | 实测 |
+|---|---|
+| 单次计划生成延迟 | **58.2 / 42.3 / 48.1 / 47.8 s** |
+| 原因 | 3B FP16 ≈6.2 GB 权重，8 GB 显存下**部分层被 offload 到 CPU**（日志明示），每次推理混合 GPU/CPU |
+| 严格解析 | **0/4 通过**（`MODEL_OUTPUT_MUST_BE_BARE_JSON_OBJECT`）——3B FP16 不能稳定输出裸 JSON 计划 |
+| 对闭环 | 循环 `--realtime` + TTL 12–15 s + 每场 35 s → **几十秒的计划无法驱动** |
+
+顺带确认两条接口事实：服务要求 `rgb_ref` **相对于 image_root**；仓库本地加载器**只支持 Qwen2.5-VL 架构**
+（Qwen3-VL 会报 `Qwen3VLVisionConfig` 不匹配）。
+
+→ **同机教师需要换路径**：A2 用 4-bit AWQ（依赖 autoawq，风险高）或 **B 改走单 token 约束选择**
+（2B INT4 可整块入显存、~1 s/次，但与冻结 `teacher_plan` 的生成路径不同，须声明）。
+证据：`evidence/teacher_local_bringup_20261008/`。
+
 ### 2.15 A1 交接包的独立复核（2026-10-08）
 
 上游新增提交 `ca5cb179`（A1 的模型/FLOPs 交接包），B3 按验证职责做了独立复核
