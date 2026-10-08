@@ -1,0 +1,74 @@
+{
+  "candidate": {
+    "adapter_contract_id": "student-plan-adapter-v3.1-semantic-contract",
+    "adapter_sha256": "bb30726b8287b422516820af8e8af21e5d6a205cd81d3f9de6871de9badfcf21",
+    "config_id": "student-v0-r3-structure-20260911",
+    "fp32_onnx_sha256": "681a5d4bf16ba61741ef0e559649c43c041de649eef3e8e6f0b6285beaab4286",
+    "model_id": "student-v0-r3-fp32",
+    "training_dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+    "weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805"
+  },
+  "diagnostic_id": "b2-proxy-candidate-unexposed-seen-stress-v1-20261008",
+  "evidence_role": "A2_ACTING_AS_B2_PROXY_DIAGNOSTIC",
+  "exposure_boundary": {
+    "allowed_seen_overlap_fields": [
+      "normalized_request_sha256",
+      "scenario_id",
+      "source_text_sha256"
+    ],
+    "governed_sources_design_path": "challenge/benchmark/b2_proxy_unseen_v1/acquisition_design.json",
+    "required_zero_overlap_fields": [
+      "group_key",
+      "rgb_sha256",
+      "sample_id",
+      "seed"
+    ]
+  },
+  "formal_gate_eligible": false,
+  "input_selection": {
+    "expected_primary_counts": {
+      "complex": 56,
+      "normal": 199,
+      "safety_critical": 53
+    },
+    "expected_sample_count": 308,
+    "include_rule": "ALL_ROWS_IN_EXACT_LOCKED_SOURCE_IN_SOURCE_ORDER; NO_RESULT_BASED_FILTERING",
+    "release_lock_path": "challenge/dataset/releases/d3_wave1_addon_v1/b1_release_lock.sha256",
+    "release_manifest_path": "challenge/dataset/releases/d3_wave1_addon_v1/release_manifest.json",
+    "require_all_rgb_sha256_and_size": true,
+    "signed_pass_path": "challenge/dataset/releases/d3_wave1_addon_v1/B1_SIGNED_PASS.json",
+    "source_file": "challenge/dataset/releases/d3_wave1_addon_v1/hard_negative_addition.jsonl",
+    "source_file_logical_lf_sha256": "c0b3a3c5374c9ebfcfe2a0be90bab5fdf52d5b0a754c720a17aa0798232ad585",
+    "teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+    "teacher_model_id": "Qwen/Qwen3.5-2B",
+    "teacher_profile": "b1-pinned-teacher-v4"
+  },
+  "metrics": {
+    "aggregation": "micro",
+    "core": [
+      "behavior_accuracy",
+      "target_pointer_accuracy",
+      "target_lane_accuracy",
+      "completion_accuracy",
+      "plan_sequence_accuracy"
+    ],
+    "failure_handling": "ZERO_NUMERATOR_CREDIT_WITH_REFERENCE_ELIGIBLE_DENOMINATORS_RETAINED",
+    "safety": [
+      "safety_critical_behavior_recall"
+    ],
+    "schema_validity_denominator": "ALL_308_FIXED_ROWS"
+  },
+  "policy_status": "FROZEN_PRE_INFERENCE",
+  "schema_version": "1.0",
+  "threshold_projection": {
+    "core_max_drop": 0.015,
+    "safety_max_drop": 0.0,
+    "schema_validity_required": 1.0
+  },
+  "use_restrictions": [
+    "This is a candidate-unexposed Seen stress diagnostic, not a formal B2 Frozen Benchmark Gate.",
+    "Stored Teacher plans are references; no fresh Teacher-service replay occurs.",
+    "Repository-visible labels, Seen templates, and A2 proxy execution prevent an independent B2 signature.",
+    "No candidate or adapter revised after reading this result may cite this run as blind evidence."
+  ]
+}
