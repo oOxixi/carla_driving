@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0",
+  "freeze_id": "b2-proxy-prospective-unseen-v1-20261008",
+  "authority": {
+    "executor_role": "A2_ACTING_AS_B2_PROXY",
+    "authorization_source": "TEAM_OWNER_EXPLICIT_CHAT_AUTHORIZATION_20261008",
+    "role_separation": "WAIVED_BY_TEAM_OWNER",
+    "independence_model": "PROSPECTIVE_TEMPORAL_HOLDOUT",
+    "prohibition": "NO_CANDIDATE_OR_ADAPTER_CHANGE_AFTER_THIS_FREEZE MAY USE THIS BENCHMARK AS BLIND EVIDENCE"
+  },
+  "candidate": {
+    "model_id": "student-v0-r3-fp32",
+    "config_id": "student-v0-r3-structure-20260911",
+    "training_dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+    "weights_path": "challenge/distillation/releases/a3_b1_closeout_robust_fp32_candidate_v3/student_v0_fp32_candidate.pt",
+    "weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+    "onnx_path": "artifacts/a2/a3_robust_fp32_candidate_v3_11823750/student_v0_fp32_candidate.onnx",
+    "onnx_sha256": "681a5d4bf16ba61741ef0e559649c43c041de649eef3e8e6f0b6285beaab4286",
+    "export_evidence_path": "artifacts/a2/a3_robust_fp32_candidate_v3_11823750/export_consistency.json",
+    "handoff_path": "challenge/distillation/releases/a3_b1_closeout_robust_fp32_candidate_v3/handoff_manifest.json",
+    "adapter_path": "challenge/planner/student_adapter.py",
+    "adapter_contract_id": "student-plan-adapter-v3.1-semantic-contract",
+    "adapter_sha256": "bb30726b8287b422516820af8e8af21e5d6a205cd81d3f9de6871de9badfcf21"
+  },
+  "policy_config_path": "challenge/benchmark/b2_proxy_unseen_v1/benchmark_config.yaml",
+  "samples_per_base": 10,
+  "expected_slots": {
+    "seen": 80,
+    "variant": 80,
+    "unseen": 80,
+    "total": 240
+  },
+  "seed_derivation": "SHA256(freeze_id|cohort|slot_id|attempt), first 31 bits; reject any governed Train/Dev/Calibration/prior-IV seed and any prior slot seed",
+  "case_selection": "For each frozen slot select exactly the predeclared command_ordinal from the first quality-valid run. A missing event blocks the slot; it is not replaced after seeing Teacher or Student output.",
+  "exposure_jsonl": {
+    "train": [
+      "challenge/dataset/releases/d2_v1_1/train.jsonl",
+      "challenge/dataset/releases/d3_wave1_addon_v1/train_addition.jsonl",
+      "challenge/dataset/releases/d3_wave2_safe_short_v1/train_addition.jsonl",
+      "challenge/dataset/releases/d3_targeted_gap_strict_v1/train_addition.jsonl",
+      "challenge/dataset/releases/d3_turn_gap_60_strict_v1/train_addition.jsonl",
+      "challenge/dataset/releases/d3_gap300_strict_v1/train_addition.jsonl",
+      "challenge/dataset/releases/b1_ms34_supplement_v1/train_addition.jsonl"
+    ],
+    "development": [
+      "challenge/dataset/releases/d2_v1_1/val.jsonl",
+      "challenge/dataset/releases/d3_wave1_addon_v1/val_addition.jsonl",
+      "challenge/dataset/releases/d3_wave2_safe_short_v1/val_addition.jsonl",
+      "challenge/dataset/releases/d3_targeted_gap_strict_v1/val_addition.jsonl",
+      "challenge/dataset/releases/d3_turn_gap_60_strict_v1/val_addition.jsonl",
+      "challenge/dataset/releases/d3_gap300_strict_v1/val_addition.jsonl",
+      "challenge/dataset/releases/b1_ms34_supplement_v1/val_addition.jsonl"
+    ],
+    "calibration": [
+      "challenge/dataset/releases/calibration_v1/calibration.jsonl"
+    ],
+    "prior_independent_validation": [
+      "challenge/dataset/governance/b1_closeout_v1/independent_validation_v1/cases.jsonl"
+    ]
+  },
+  "cohorts": {
+    "seen": [
+      "scenarios/acceptance_suite/basic/ACC_B02_set_speed_20.json",
+      "scenarios/acceptance_suite/advanced/ACC_A02_red_light_conflict.json",
+      "scenarios/acceptance_suite/advanced/ACC_A05_lane_change_left.json",
+      "scenarios/acceptance_suite/advanced/ACC_A06_obstacle_detour_return.json",
+      "scenarios/acceptance_suite/challenge/ACC_C04_multi_target_binding.json",
+      "scenarios/qwen_fullchain/QWF_01_turn_then_speed.json",
+      "scenarios/safety_D/D07_low_ttc_emergency_brake.json",
+      "scenarios/acceptance_suite/supplemental/advanced/SUP_A15_lane_change_blocked.json"
+    ],
+    "variant": [
+      "scenarios/acceptance_suite/advanced/ACC_A01_lead_brake.json",
+      "scenarios/acceptance_suite/advanced/ACC_A03_pedestrian_crossing.json",
+      "scenarios/acceptance_suite/advanced/ACC_A04_static_obstacle_stop.json",
+      "scenarios/acceptance_suite/advanced/ACC_A06_obstacle_detour_return.json",
+      "scenarios/acceptance_suite/complex/CX01_urban_intersection_conflict.json",
+      "scenarios/acceptance_suite/complex/CX02_multi_vehicle_target_follow_brake.json",
+      "scenarios/regression/REG_014_occluded_pedestrian_crossing.json",
+      "scenarios/acceptance_suite/supplemental/advanced/SUP_A07_pedestrian_right_to_left.json"
+    ],
+    "unseen": [
+      "scenarios/development/ROUTE_GEN_TOWN05_DESTINATION.json",
+      "scenarios/development/S2_bicycle_follow_targeted.json",
+      "scenarios/qwen_routing/QWR_09_ambiguous_white_vehicle.json",
+      "scenarios/acceptance_suite/challenge/ACC_C02_ambiguous_instruction.json",
+      "scenarios/acceptance_suite/challenge/ACC_C03_illegal_instruction.json",
+      "scenarios/acceptance_suite/challenge/ACC_C05_perception_failure.json",
+      "scenarios/acceptance_suite/complex/CX04_heavy_rain_ambiguous_multi_target.json",
+      "scenarios/acceptance_suite/supplemental/challenge/SUP_C04_vague_pull_over.json"
+    ]
+  },
+  "variant_axes": {
+    "weather": ["ClearNoon", "CloudySunset", "WetCloudyNoon", "HardRainNight"],
+    "actor_longitudinal_offset_m": [-1.5, 0.0, 1.5],
+    "actor_lateral_offset_m": [-0.15, 0.0, 0.15],
+    "actor_speed_scale": [0.9, 1.0, 1.1],
+    "brake_time_offset_s": [-0.5, 0.0, 0.5],
+    "pedestrian_start_offset_s": [-0.25, 0.0, 0.25]
+  },
+  "collection_requirements": {
+    "teacher_profile": "b1-pinned-teacher-v4",
+    "teacher_git_sha": "95e97b00def8ec36f12937da34ce8bb9082c4a04",
+    "teacher_model_id": "Qwen/Qwen3.5-2B",
+    "teacher_model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "teacher_artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "fresh_teacher_service_replay_required": true,
+    "carla_required": true,
+    "stored_teacher_plan_substitution_allowed": false,
+    "student_inference_during_collection_allowed": false
+  }
+}

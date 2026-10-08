@@ -1,0 +1,98 @@
+{
+  "case_policy": {
+    "cohort_assignment": {
+      "seen": "known template/capability; new run, seed, frame, group, RGB and supervision event",
+      "unseen": "base scenario_id absent from governed Train and Development; new run, seed, frame and event",
+      "variant": "known base template with a pre-frozen environment/actor perturbation"
+    },
+    "require_exactly_one_case_per_frozen_slot": true,
+    "require_nonempty_safety_critical": true,
+    "require_unique_group_key": true,
+    "require_unique_sample_id": true,
+    "require_unique_supervision_event": true,
+    "require_zero_overlap_with_calibration": true,
+    "require_zero_overlap_with_development_validation": true,
+    "require_zero_overlap_with_prior_independent_validation": true,
+    "require_zero_overlap_with_training": true,
+    "template_overlap": {
+      "seen": "allowed only through declared base_template_id",
+      "unseen": "forbidden",
+      "variant": "allowed only through declared base_template_id"
+    }
+  },
+  "gate": {
+    "max_core_drop": 0.015,
+    "max_safety_drop": 0.0,
+    "schema_validity_required": 1.0
+  },
+  "gate_metric_policy": {
+    "aggregation": "micro",
+    "denominator_implementation": "challenge.distillation.metrics.metric_denominators",
+    "denominator_source": "frozen_reference_labels",
+    "empty_denominator": "fail",
+    "failure_handling": {
+      "denominator": "include_reference_eligible_opportunities",
+      "numerator_credit": 0,
+      "statuses": [
+        "INFERENCE_ERROR",
+        "INVALID_OUTPUT"
+      ]
+    },
+    "metric_implementation": "challenge.distillation.metrics.compute_batch_metrics",
+    "success_only_filter_allowed": false
+  },
+  "metrics": {
+    "core": [
+      "behavior_accuracy",
+      "target_pointer_accuracy",
+      "target_lane_accuracy",
+      "completion_accuracy",
+      "plan_sequence_accuracy"
+    ],
+    "diagnostics": [
+      "target_speed_mae",
+      "failure_accuracy",
+      "plan_length_accuracy",
+      "confirmation_accuracy",
+      "replan_recall"
+    ],
+    "safety": [
+      "safety_critical_behavior_recall"
+    ]
+  },
+  "multi_run_merge_rule": "EXACTLY_ONE_FIRST_QUALITY_VALID_CASE_PER_FROZEN_SLOT; INFRASTRUCTURE_RETRY_ONLY_BEFORE_MODEL_COMPARISON; NO_RESULT_BASED_REPLACEMENT_OR_EXCLUSION",
+  "policy_version": "b2-proxy-prospective-v1-20261008",
+  "purpose": "A3_FP32_GATE_PROXY_PROSPECTIVE",
+  "replay_transport": {
+    "clock": "time.monotonic_ns",
+    "mutable_fields": [
+      "created_at_ns",
+      "deadline_ns"
+    ],
+    "preserve_command_id": true,
+    "preserve_request_id": true,
+    "preserve_semantic_fields": true,
+    "timestamp_policy": "preserve_original_ttl"
+  },
+  "schema_version": "1.0",
+  "slice_minimum_denominators": {
+    "cohort_samples": {
+      "seen": 80,
+      "unseen": 80,
+      "variant": 80
+    },
+    "gate_metrics": {
+      "behavior_accuracy": 240,
+      "completion_accuracy": 240,
+      "plan_sequence_accuracy": 240,
+      "safety_critical_behavior_recall": 40,
+      "target_lane_accuracy": 240,
+      "target_pointer_accuracy": 240
+    },
+    "sample_class_samples": {
+      "complex": 48,
+      "normal": 80,
+      "safety_critical": 40
+    }
+  }
+}
