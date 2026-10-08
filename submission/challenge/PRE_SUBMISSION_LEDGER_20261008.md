@@ -90,8 +90,17 @@ Full INT8 保留为体积优先备选。
 | 团队/B2 | `artifacts/b2_role_exception_v3_1_full_int8_20261008_final/` | report `d970ffb8...b36931` | Full INT8 与 Teacher/FP32 三方诊断；非正式 Gate |
 | 团队/B2 | `artifacts/b2_role_exception_v3_1_mixed_int8_20261008_final/` | report `4326f032...141e4b` | Mixed Top-3 三方诊断；下一轮 Gate 首选，非正式 Gate |
 
-预提交综合包另生成在 `artifacts/submission/`，其中会包含代码/证据索引和小型
-报告，大模型、NPY、`.hbm/.bc`、Docker 和视频通过外置哈希发送。
+预提交综合包已生成在 `artifacts/submission/`：
+
+- `CHALLENGE_RC_V3_1_ADAPTER_EVIDENCE_20261008.zip`，SHA256
+  `d16c902d986818a91f4ed86e80fd3345981e0884d63d73ab860ac5f1a7ebfce6`，115 个文件，
+  ZIP CRC 与逐文件 SHA256 均 PASS；
+- `CHALLENGE_SOURCE_RUNTIME_PREVIEW_V3_1_20261008.zip`，SHA256
+  `0c0439fcd475d09153903742f9d9512acbf97a360ad12668ed1a51b97c234ed4`，610 个文件，
+  ZIP CRC 与逐文件 SHA256 均 PASS。
+
+大模型、1200 NPY、`.hbm/.bc`、Docker 和视频不放入小型综合包；其中现有模型/NPY 已由
+上表 A3/B2/A4 收件人专用 ZIP 及 SHA256 外置交付。
 
 ## 现在不存在于本工作区的关键原件
 

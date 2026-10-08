@@ -26,6 +26,7 @@
 - [x] V3 `null/CURRENT` 字段语义归一化并行诊断（lane 89.31%、sequence 86.67%，仍 FAIL）
 - [x] Adapter V3.1 实际回放与 Full/Mixed INT8 三方诊断（旧集投影 PASS，明确非正式 Gate）
 - [x] 重建 A3/B2/A4 三份 V3.1 交接 ZIP；CRC 与逐成员 SHA256 全部 PASS
+- [x] 生成 V3.1 全赛道小型证据包与源码/Runtime 预览包；CRC 与逐文件 SHA256 全部 PASS
 
 ## 必须继续收集的原件
 
