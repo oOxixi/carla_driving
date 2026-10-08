@@ -21,6 +21,7 @@ external/scenario_runner/
 CARLA_0.9.16/
 AdditionalMaps_0.9.16/
 .pytest_cache/
+pytest-cache-files-*/
 *.zip
 *.mp3
 *.wav

@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "freeze_date": "2026-10-08",
+  "freeze_type": "CANDIDATE_SELECTION_ONLY",
+  "overall_status": "FROZEN_CANDIDATE_BLOCKED_NOT_FINAL",
+  "base_git_sha": "5007990f1e6c4be06367fc16868b4f3eeb50ba92",
+  "candidate": {
+    "release": "challenge/distillation/releases/a3_b1_closeout_robust_fp32_candidate_v3",
+    "model_id": "student-v0-r3-fp32",
+    "config_id": "student-v0-r3-structure-20260911",
+    "training_dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+    "weights_sha256": "7f379c78c170228713e3d91b8e2eabd04172010ae0ed0b8cf71afe291fe6e805",
+    "fp32_onnx_sha256": "681a5d4bf16ba61741ef0e559649c43c041de649eef3e8e6f0b6285beaab4286",
+    "selection_status": "V3_FROZEN_AS_SOLE_RELEASE_CANDIDATE",
+    "promotion_status": "REJECTED_FOR_CURRENT_FINAL"
+  },
+  "independent_validation_diagnostic": {
+    "role": "A2_ROLE_EXCEPTION_DIAGNOSTIC",
+    "formal_gate_eligible": false,
+    "dataset_version": "b1_independent_validation_v1",
+    "case_set_digest_sha256": "da1d032f7d20147a26e4426c10a97def8b470a780b854ea852143697292f7dec",
+    "sample_count": 240,
+    "student_success_count": 240,
+    "schema_validity": 1.0,
+    "threshold_projection": "FAIL",
+    "external_directory": "artifacts/b2_role_exception_v3_20261008_final",
+    "diagnostic_report_sha256": "8e155001739857f7976be98aceec4099ce284ef63d7476d5dbe270783bfb6dae",
+    "student_predictions_sha256": "07e8f33dd6e3a8f0234c875efb8c9a58f307f625de08cc0afad5e5f7bcba5e58",
+    "teacher_reference_predictions_sha256": "96d8545b129bf32cd1ae15787ad1f53aa735324eb659c6ea7ae77f4f3d024bdd",
+    "metrics": {
+      "behavior_accuracy": {"teacher": 1.0, "student": 0.9427480916030534, "drop": 0.057251908396946605, "limit": 0.015, "pass": false},
+      "target_pointer_accuracy": {"teacher": 1.0, "student": 0.9847328244274809, "drop": 0.01526717557251911, "limit": 0.015, "pass": false},
+      "target_lane_accuracy": {"teacher": 1.0, "student": 0.1717557251908397, "drop": 0.8282442748091603, "limit": 0.015, "pass": false},
+      "completion_accuracy": {"teacher": 1.0, "student": 0.9274809160305344, "drop": 0.0725190839694656, "limit": 0.015, "pass": false},
+      "plan_sequence_accuracy": {"teacher": 1.0, "student": 0.10833333333333334, "drop": 0.8916666666666666, "limit": 0.015, "pass": false},
+      "safety_critical_behavior_recall": {"teacher": 1.0, "student": 1.0, "drop": 0.0, "limit": 0.0, "pass": true}
+    }
+  },
+  "gate_state": {
+    "A3_FP32_GATE_PASSED": false,
+    "A2_INT8_GATE_PASSED": false,
+    "B2_formal_decision_issued": false,
+    "final_submission_allowed": false
+  },
+  "formal_blockers": [
+    "CURRENT_V3_THRESHOLD_PROJECTION_FAIL",
+    "RUN_EXECUTED_BY_A2_ROLE_EXCEPTION_NOT_INDEPENDENT_B2",
+    "HISTORICAL_TEMPLATE_LINEAGE_UNRECOVERABLE",
+    "FORMAL_B2_POLICY_NOT_FROZEN",
+    "A3_HANDOFF_REMAINS_PENDING_A3_FP32_GATE",
+    "A2_INT8_IS_DIAGNOSTIC_ONLY",
+    "A4_FINAL_EXACT_RC_RUNTIME_AND_COMPILED_ARTIFACT_MISSING",
+    "B3_J6P_MEASUREMENT_MISSING",
+    "B4_CLEAN_REPRODUCTION_REPORT_DOCKER_REPORT_AND_DEMO_MISSING"
+  ],
+  "available_nonfinal_evidence": {
+    "A1_formal_structure_flops_package": "A1_正式模型与FLOPs交接_20261008",
+    "B1_data_closeout": "challenge/dataset/governance/b1_closeout_v1",
+    "A2_quantization_handoff": "artifacts/a2/handoff_20261007_3ebd0682",
+    "B3_deployment_estimate_and_decay": "challenge/hil/evidence/deployment_estimate_and_decay_20261008",
+    "B3_full83_loop": "challenge/hil/evidence/carla_student_loop_20261007",
+    "B3_local_teacher_route_a_falsification": "challenge/hil/evidence/teacher_local_bringup_20261008"
+  },
+  "next_release_requirements": [
+    "A3 creates a new versioned candidate using only Train/Development evidence, without tuning on the exposed 240-case labels.",
+    "B2 freezes a template-valid, previously unseen independent benchmark and formal policy, then independently evaluates the exact new weights.",
+    "Only after FP32 PASS may A2 freeze the matching ONNX/INT8 identity and request the INT8 Gate.",
+    "A4 and B3 must rerun compile/runtime/X86/J6P evidence on that exact RC identity.",
+    "B4 may create FINAL_SUBMISSION only after the complete Gate chain and clean reproduction pass."
+  ],
+  "prohibitions": [
+    "Do not rename this freeze record to RELEASE_MANIFEST or FINAL_SUBMISSION.",
+    "Do not use the exposed independent-validation labels for training, calibration, selection, or error-driven iteration.",
+    "Do not represent BPU_ESTIMATED as J6P_MEASURED or stored Teacher plans as a fresh Teacher-service replay."
+  ]
+}

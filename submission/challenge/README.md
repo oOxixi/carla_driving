@@ -1,7 +1,14 @@
 # 挑战赛道预提交入口
 
 本目录用于 Final Freeze 之前的全赛道文件盘点，不是 `final_submission/`，也不表示任何
-模型或 Gate 已经通过。当前机器可读快照见：
+模型或 Gate 已经通过。最新快照为 2026-10-08：
+
+- `RC_V3_FREEZE_20261008.json`：唯一候选身份和 `BLOCKED_NOT_FINAL` 冻结决议；
+- `V3_INDEPENDENT_DIAGNOSTIC_20261008.md`：240 条一次性回放、指标和证据边界；
+- `PRE_SUBMISSION_LEDGER_20261008.md`：A1–B4 最新产物、缺口和外置包路径；
+- `SUBMISSION_COLLECTION_CHECKLIST_20261008.md`：最终收件与晋级清单。
+
+2026-10-07 历史快照保留用于追溯：
 
 - `PRE_SUBMISSION_INVENTORY_20261007.json`：角色、Gate、证据和外置大文件台账；
 - `PRE_SUBMISSION_LEDGER_20261007.md`：面向成员的缺口、收件顺序和整理规则；
