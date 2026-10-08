@@ -79,13 +79,13 @@ behavior、target pointer、target lane、completion 和完整计划核心字段
 ## 测试与边界
 
 - Adapter 定向测试：21 passed；
-- Student 核心测试（排除两个 Windows 临时目录 ACL 用例）：31 passed；
-- schema/compiler/FSM/语义归一化回归：34 passed；
+- Student 核心测试（排除两个 Windows 临时目录 ACL 用例）：33 passed；
+- schema/compiler/FSM/FP32 与 INT8 诊断回归：37 passed；
 - INT8 诊断工具单元测试：3 passed；
 - FP32、Full INT8、Mixed Top-3 三次 240 条回放均为 240/240 SUCCESS。
 
 两个 `tmp_path` 测试在当前 Windows 主机因 pytest 临时目录 ACL 无法建立而未执行；相同文件
-中的其余 31 项已通过。这是本机测试基础设施限制，不计作模型 PASS，也未被隐瞒。
+中的其余 33 项已通过。这是本机测试基础设施限制，不计作模型 PASS，也未被隐瞒。
 
 正式剩余项：B2 冻结新未暴露 benchmark/policy 并独立复测 exact
 weights+ONNX+Adapter；通过后 A2 才能生成正式 INT8 manifest；随后 A4/B3 对 exact
