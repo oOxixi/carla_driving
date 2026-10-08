@@ -79,8 +79,11 @@ Full INT8 保留为体积优先备选。
 
 | 接收方 | 文件 | SHA256 | 用途/限制 |
 |---|---|---|---|
-| B2 | `artifacts/a2/handoff_20261007_3ebd0682/A2_to_B2_evaluation_3ebd0682.zip` | `95e05330...a59f` | A2 模型与量化证据；旧包，不含本次独立集回放 |
-| A4 | `artifacts/a2/handoff_20261007_3ebd0682/PRE_GATE_ONLY_A2_to_A4_openexplorer_3ebd0682.zip` | `543a2ee2...3918` | 1200 NPY 与预门禁模型；必须保留 `PRE_GATE_ONLY` |
+| A3 | `artifacts/a2/handoff_20261008_v31_a2354507/A2_to_A3_gate_feedback_a2354507.zip` | `30474422...793ac` | Adapter V3.1 与 FP32/INT8 post-hoc 反馈；非正式 Gate |
+| B2 | `artifacts/a2/handoff_20261008_v31_a2354507/A2_to_B2_evaluation_a2354507.zip` | `7c531ba8...ace5f` | 当前完整评估包：weights、FP32、两份 INT8、Adapter 和三方 raw predictions |
+| A4 | `artifacts/a2/handoff_20261008_v31_a2354507/PRE_GATE_ONLY_A2_to_A4_openexplorer_a2354507.zip` | `ebe7626d...03c7d` | 当前 1200 NPY/模型/Adapter 预门禁包；必须保留 `PRE_GATE_ONLY` |
+| B2（历史） | `artifacts/a2/handoff_20261007_3ebd0682/A2_to_B2_evaluation_3ebd0682.zip` | `95e05330...a59f` | 旧包，不含 Adapter V3.1 回放，已被上行当前包替代 |
+| A4（历史） | `artifacts/a2/handoff_20261007_3ebd0682/PRE_GATE_ONLY_A2_to_A4_openexplorer_3ebd0682.zip` | `543a2ee2...3918` | 旧预门禁包，已被上行当前包替代 |
 | 团队/B2 | `artifacts/b2_role_exception_v3_20261008_final/` | report `8e155001...6dae` | 240 条一次性诊断原始 predictions；不是 B2 签发 |
 | 团队/B2 | `artifacts/b2_role_exception_v3_20261008_semantic_normalized/` | 见目录 `SHA256SUMS` | `null/CURRENT` 字段对齐诊断；不覆盖严格结果，不是 B2 签发 |
 | 团队/B2 | `artifacts/b2_role_exception_v3_1_adapter_20261008_final/` | report `bb9a2e5a...72585` | Adapter V3.1 FP32 实际回放；旧集 PASS 投影，非正式 Gate |
