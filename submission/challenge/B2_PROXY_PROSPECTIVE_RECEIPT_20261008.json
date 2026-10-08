@@ -1,0 +1,138 @@
+{
+  "authority": {
+    "executor_role": "A2_ACTING_AS_B2_PROXY",
+    "independence_model": "PROSPECTIVE_TEMPORAL_HOLDOUT",
+    "role_separation": "WAIVED_BY_TEAM_OWNER"
+  },
+  "benchmark_tests": {
+    "failed": 0,
+    "junit_path": "artifacts/b2_proxy_benchmark_tests_20261008.xml",
+    "junit_sha256": "f702574b61515d1dcad821e64868f11a1f5d028937c720ffbe4cebd70ac57c35",
+    "passed": 197
+  },
+  "deliveries": {
+    "prospective_freeze_zip": {
+      "crc_pass": true,
+      "entry_count": 256,
+      "managed_member_sha256_pass": true,
+      "managed_members": 255,
+      "path": "artifacts/submission/B2_PROSPECTIVE_BENCHMARK_FREEZE_V1_20261008.zip",
+      "sha256": "a84c66134cc1880db78a2d971192e19603e251db8096b56e88b8f211b224f778"
+    },
+    "seen_stress_zip": {
+      "crc_pass": true,
+      "entry_count": 19,
+      "managed_member_sha256_pass": true,
+      "managed_members": 18,
+      "path": "artifacts/submission/B2_CANDIDATE_UNEXPOSED_SEEN_STRESS_V1_20261008.zip",
+      "sha256": "bce32f1dc56b95e036c45ea9b716dca7592bbf091bbc50d36e73a85e642f1339"
+    }
+  },
+  "gate_state": {
+    "A2_INT8_GATE_PASSED": false,
+    "A3_FP32_GATE_PASSED": false,
+    "formal_b2_decision_issued": false,
+    "final_submission_allowed": false
+  },
+  "overall_status": "ACQUISITION_POLICY_FROZEN_STRESS_DIAGNOSTIC_FAILED_FORMAL_GATE_BLOCKED",
+  "prospective_benchmark": {
+    "cohort_counts": {
+      "seen": 80,
+      "unseen": 80,
+      "variant": 80
+    },
+    "evaluation_git_sha": "2d59d9284bfe06b6896bac45b5af75756eb85f31",
+    "formal_gate_decision": false,
+    "freeze_id": "b2-proxy-prospective-unseen-v1-20261008",
+    "freeze_lock_sha256": "b54535a2472596dadfdc0adfe114ec406b925f6b6eb56ba1d4f8215859e5eea9",
+    "governed_exposure_row_count": 7735,
+    "policy_manifest_sha256": "b7e45788a8fb54f04233689d8f64c0c9af954d53a22b108dfe5e35fd4f323fa3",
+    "scenario_schema_valid_count": 240,
+    "seed_overlap_with_governed_data": 0,
+    "slot_count": 240,
+    "status": "ACQUISITION_AND_POLICY_FROZEN_AWAITING_COLLECTION",
+    "unique_scenario_id_count": 240,
+    "unique_seed_count": 240
+  },
+  "schema_version": "1.0",
+  "seen_stress_diagnostic": {
+    "candidate_unexposed_identity_overlap": {
+      "group_key": 0,
+      "rgb_sha256": 0,
+      "sample_id": 0,
+      "seed": 0
+    },
+    "classification": "CANDIDATE_UNEXPOSED_SEEN_STRESS",
+    "evaluation_git_sha": "ee9e4197be30f3ae1b02f9a3ac8a34ac0f9c86bb",
+    "formal_gate_decision": false,
+    "metric_comparison": {
+      "behavior_accuracy": {
+        "drop": 0.07848837209302328,
+        "pass": false,
+        "student": 0.9215116279069767,
+        "teacher": 1.0
+      },
+      "completion_accuracy": {
+        "drop": 0.07848837209302328,
+        "pass": false,
+        "student": 0.9215116279069767,
+        "teacher": 1.0
+      },
+      "plan_sequence_accuracy": {
+        "drop": 0.20454545454545459,
+        "pass": false,
+        "student": 0.7954545454545454,
+        "teacher": 1.0
+      },
+      "safety_critical_behavior_recall": {
+        "drop": 0.0,
+        "pass": true,
+        "student": 1.0,
+        "teacher": 1.0
+      },
+      "target_lane_accuracy": {
+        "drop": 0.18313953488372092,
+        "pass": false,
+        "student": 0.8168604651162791,
+        "teacher": 1.0
+      },
+      "target_pointer_accuracy": {
+        "drop": 0.0,
+        "pass": true,
+        "student": 1.0,
+        "teacher": 1.0
+      }
+    },
+    "mismatch_patterns": [
+      {
+        "count": 36,
+        "pattern": "AVOID_OBSTACLE CURRENT -> AVOID_OBSTACLE LEFT_ADJACENT",
+        "scenario_id": "QWR_07_visual_avoid_return"
+      },
+      {
+        "count": 27,
+        "pattern": "CHANGE_LANE_LEFT -> STOP",
+        "scenario_id": "SUP_A15_lane_change_blocked"
+      }
+    ],
+    "mismatch_sample_id_set_sha256": "8541141aace902a741278a957c4b99354aadd5b2edf881d4218da94114c40511",
+    "policy_sha256": "bf0422365be195275423ec9d86f4868ecc17f035847358d215d7a1c0e15081c6",
+    "repeatability": {
+      "metric_comparison_identical": true,
+      "student_predictions_identical": true,
+      "student_predictions_sha256": "c4568227c5f0063aad1362f3d933d1a9f7930466ee8a5b16d4e937b6ba2950dd",
+      "teacher_predictions_identical": true,
+      "teacher_predictions_sha256": "f8c1a97db2684082f5ba5fb3088d8d8a39be3eee7e7de1fe8773c5bc84f6f109"
+    },
+    "sample_count": 308,
+    "schema_validity": 1.0,
+    "stress_report_sha256": "9c79ed504c74503ae7af70418cacf9c315dd59b87c6fe89bac6788c6774fe168",
+    "student_success_count": 308,
+    "template_overlap": {
+      "normalized_request_sha256": 44,
+      "scenario_id": 16,
+      "source_text_sha256": 15
+    },
+    "threshold_projection": "FAIL"
+  }
+}

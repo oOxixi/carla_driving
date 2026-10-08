@@ -15,7 +15,7 @@
     "adapter_git_sha": "2900258aa97392a1ed9936748decfc8c27067cd9",
     "adapter_sha256": "bb30726b8287b422516820af8e8af21e5d6a205cd81d3f9de6871de9badfcf21",
     "selection_status": "V3_FROZEN_AS_SOLE_RELEASE_CANDIDATE",
-    "promotion_status": "POST_HOC_PROJECTION_PASSED_PENDING_UNSEEN_B2_GATE"
+    "promotion_status": "SEEN_STRESS_PROJECTION_FAILED_PENDING_PROSPECTIVE_THREE_COHORT_GATE"
   },
   "independent_validation_diagnostic": {
     "role": "A2_ROLE_EXCEPTION_DIAGNOSTIC",
@@ -77,6 +77,45 @@
     },
     "formal_gate_eligible": false
   },
+  "b2_proxy_prospective_benchmark_v1": {
+    "freeze_id": "b2-proxy-prospective-unseen-v1-20261008",
+    "status": "ACQUISITION_AND_POLICY_FROZEN_AWAITING_COLLECTION",
+    "formal_gate_decision": false,
+    "evaluation_git_sha": "2d59d9284bfe06b6896bac45b5af75756eb85f31",
+    "slot_count": 240,
+    "cohort_counts": {"seen": 80, "variant": 80, "unseen": 80},
+    "unique_seed_count": 240,
+    "schema_valid_scenarios": 240,
+    "governed_exposure_row_count": 7735,
+    "policy_manifest_sha256": "b7e45788a8fb54f04233689d8f64c0c9af954d53a22b108dfe5e35fd4f323fa3",
+    "freeze_lock_sha256": "b54535a2472596dadfdc0adfe114ec406b925f6b6eb56ba1d4f8215859e5eea9",
+    "collection_blockers": [
+      "CARLA_RUNTIME_NOT_AVAILABLE_ON_CURRENT_HOST",
+      "EXACT_TEACHER_V4_SERVICE_NOT_REACHABLE_FROM_CURRENT_HOST",
+      "CASE_MANIFEST_AND_CASE_SET_DIGEST_NOT_YET_ISSUED"
+    ]
+  },
+  "b2_proxy_candidate_unexposed_seen_stress_v1": {
+    "classification": "CANDIDATE_UNEXPOSED_SEEN_STRESS",
+    "formal_gate_eligible": false,
+    "threshold_projection": "FAIL",
+    "sample_count": 308,
+    "student_success_count": 308,
+    "schema_validity": 1.0,
+    "evaluation_git_sha": "ee9e4197be30f3ae1b02f9a3ac8a34ac0f9c86bb",
+    "stress_report_sha256": "9c79ed504c74503ae7af70418cacf9c315dd59b87c6fe89bac6788c6774fe168",
+    "student_predictions_sha256": "c4568227c5f0063aad1362f3d933d1a9f7930466ee8a5b16d4e937b6ba2950dd",
+    "teacher_predictions_sha256": "f8c1a97db2684082f5ba5fb3088d8d8a39be3eee7e7de1fe8773c5bc84f6f109",
+    "repeat_predictions_byte_identical": true,
+    "metrics": {
+      "behavior_accuracy": {"teacher": 1.0, "student": 0.9215116279069767, "drop": 0.07848837209302328, "pass": false},
+      "target_pointer_accuracy": {"teacher": 1.0, "student": 1.0, "drop": 0.0, "pass": true},
+      "target_lane_accuracy": {"teacher": 1.0, "student": 0.8168604651162791, "drop": 0.18313953488372092, "pass": false},
+      "completion_accuracy": {"teacher": 1.0, "student": 0.9215116279069767, "drop": 0.07848837209302328, "pass": false},
+      "plan_sequence_accuracy": {"teacher": 1.0, "student": 0.7954545454545454, "drop": 0.20454545454545459, "pass": false},
+      "safety_critical_behavior_recall": {"teacher": 1.0, "student": 1.0, "drop": 0.0, "pass": true}
+    }
+  },
   "gate_state": {
     "A3_FP32_GATE_PASSED": false,
     "A2_INT8_GATE_PASSED": false,
@@ -88,7 +127,8 @@
     "BENCHMARK_LABELS_EXPOSED_BEFORE_ADAPTER_V3_1",
     "RUN_EXECUTED_BY_A2_ROLE_EXCEPTION_NOT_INDEPENDENT_B2",
     "HISTORICAL_TEMPLATE_LINEAGE_UNRECOVERABLE",
-    "FORMAL_B2_POLICY_NOT_FROZEN",
+    "PROSPECTIVE_B2_CASES_NOT_COLLECTED",
+    "CANDIDATE_UNEXPOSED_SEEN_STRESS_PROJECTION_FAILED",
     "A3_HANDOFF_REMAINS_PENDING_A3_FP32_GATE",
     "A2_INT8_IS_DIAGNOSTIC_ONLY",
     "A4_FINAL_EXACT_RC_RUNTIME_AND_COMPILED_ARTIFACT_MISSING",
@@ -105,11 +145,13 @@
     "A2_post_hoc_field_semantic_normalization": "artifacts/b2_role_exception_v3_20261008_semantic_normalized",
     "A2_adapter_v3_1_fp32_post_hoc": "artifacts/b2_role_exception_v3_1_adapter_20261008_final",
     "A2_full_int8_post_hoc": "artifacts/b2_role_exception_v3_1_full_int8_20261008_final",
-    "A2_mixed_top3_post_hoc": "artifacts/b2_role_exception_v3_1_mixed_int8_20261008_final"
+    "A2_mixed_top3_post_hoc": "artifacts/b2_role_exception_v3_1_mixed_int8_20261008_final",
+    "B2_prospective_freeze": "artifacts/b2_proxy_unseen_v1_freeze",
+    "B2_candidate_unexposed_seen_stress": "artifacts/b2_candidate_unexposed_seen_stress_v1_20261008"
   },
   "next_release_requirements": [
     "A3 acknowledges the exact weights plus Adapter V3.1 composite identity; any further model changes use only Train/Development evidence.",
-    "B2 freezes a template-valid, previously unseen independent benchmark and formal policy, then independently evaluates the exact weights, ONNX, and Adapter commit.",
+    "B2 collects the already frozen 240-slot Seen/Variant/Unseen acquisition with exact Teacher v4, issues the case manifest/digest, then evaluates the exact weights, ONNX, and Adapter once.",
     "Only after formal FP32 PASS may A2 sign the matching INT8 manifest and request the INT8 Gate; Mixed Top-3 is the diagnostic first choice and Full INT8 remains the fallback.",
     "A4 and B3 must rerun compile/runtime/X86/J6P evidence on that exact RC identity.",
     "B4 may create FINAL_SUBMISSION only after the complete Gate chain and clean reproduction pass."

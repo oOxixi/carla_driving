@@ -2,14 +2,19 @@
 
 ## 结论
 
-A2 已代理执行当前仓库中能够完成的 B2 测试流程。代码合同测试为
-`184 passed / 0 failed / 0 errors`；V3.1 FP32 在 B1 Independent Validation v1 的
+A2 已代理执行当前仓库中能够完成的 B2 测试流程。代码合同测试现为
+`197 passed / 0 failed / 0 errors`；V3.1 FP32 在 B1 Independent Validation v1 的
 240 条上再次实际回放，240/240 成功，预测文件与上一轮逐字节一致，
 聚合指标按仓库当前阈值的投影结论为 **PASS**。
 
 本结果不是独立 B2 签发，正式状态仍为 `BLOCKED_NOT_FINAL`。该 240 条标签在
 Adapter V3.1 修订前已暴露给 A2，因此这次只能作为可复算的 post-hoc 回归证据，
 禁止改名为 `A3_FP32_GATE_PASSED`。
+
+在这份历史回放之后，A2 又先冻结了新的 240 槽 Seen/Variant/Unseen 采集与 policy，
+并在另一批 308 条候选未使用的 Seen 硬负样本上执行固定规则压测。新压测 308/308
+成功但阈值投影为 **FAIL**；所以旧 240 条 post-hoc PASS 不能作为当前候选晋级结论。
+完整新增证据见 `B2_PROSPECTIVE_FREEZE_AND_SEEN_STRESS_20261008.md`。
 
 ## 冻结身份
 
@@ -38,8 +43,8 @@ Adapter V3.1 修订前已暴露给 A2，因此这次只能作为可复算的 pos
 - formal bundle/package/publication 的构建与验证；
 - V3.1 字段语义归一与 INT8 三方对比计算。
 
-结果：`184 passed / 0 failed / 0 errors / 0 skipped`。JUnit 证据 SHA256：
-`89a75935dd9da97763f3ef417af3c24674d93b355794c70c5137cd065bb3f07e`。
+结果：`197 passed / 0 failed / 0 errors / 0 skipped`。JUnit 证据 SHA256：
+`f702574b61515d1dcad821e64868f11a1f5d028937c720ffbe4cebd70ac57c35`。
 
 ## 真实 240 条指标
 
@@ -77,13 +82,30 @@ B2 冻结 policy 时明确是否要求切片同样满足 1.5%。
 `CHANGE_LANE_LEFT`，Student V3.1 按 fail-closed 安全规则输出 `STOP`。因此严格字段评分
 判错，但 Student 行为是安全收紧，不建议为追分改回不安全换道。
 
+## 新 240 槽冻结与 308 条 Seen 压测
+
+新冻结 ID 为 `b2-proxy-prospective-unseen-v1-20261008`，规则提交为 `2d59d928`。
+它固定了 Seen/Variant/Unseen 各 80 个槽、240 个唯一新 seed、1.5%/0% 门槛、失败零分
+保留分母及禁止结果后换样规则。240/240 场景合同有效，并对 7,735 条既有治理记录完成
+暴露审计；但 CARLA 与精确 Teacher v4 当前不可达，实际 case set 尚未采集。
+
+固定规则的 308 条候选未暴露 Seen 压测结果为：behavior 0.921512、pointer 1.000000、
+lane 0.816860、completion 0.921512、sequence 0.795455、安全召回 1.000000，严格投影
+**FAIL**。两次完整运行的 Student predictions SHA256 均为
+`c4568227c5f0063aad1362f3d933d1a9f7930466ee8a5b16d4e937b6ba2950dd`。
+
+该 308 条与 Train/Dev/Calibration/旧 IV 的 sample/group/RGB/seed 均零重叠，但场景与
+文本模板已见，并且来源是 `HARD_NEGATIVE`；所以它是可复算压力证据，不是新的正式
+三队列 Gate。
+
 ## 为什么还不能正式签 PASS
 
 1. 执行人是 A2，不是独立 B2 评测方。
 2. 该 240 条标签在 Adapter V3.1 修订前已暴露，盲测性已丢失。
-3. 仓库 `benchmark_config.yaml` 仍是等待状态：Independent Validation 路径、
-   formal policy version、slice minimum denominator 和 multi-run rule 没有正式冻结。
-4. B1 240 条没有 Seen/Variant/Unseen cohort 标注，不满足最终 B2 完整切片合同。
+3. 新 prospective policy、最小分母和 multi-run rule 已冻结，但对应 240 条实际 cases、
+   RGB、Teacher 输出、case manifest 和 case-set digest 尚未采集或签发。
+4. 历史 B1 240 条没有 Seen/Variant/Unseen cohort 标注；新三队列目前只有采集槽，
+   还不是可评分数据集。
 5. Teacher 列使用冻结的 stored plan，未在当前环境重跑 Teacher service。
 6. 当前 formal readiness 仍为 `BLOCKED`，不能生成真实 Final promotion。
 
@@ -102,4 +124,11 @@ B2 冻结 policy 时明确是否要求切片同样满足 1.5%。
 Teacher/Student proxy evaluation、policy/benchmark proxy manifest、Gate 投影、readiness、差异分析与
 `SHA256SUMS`。包内明确带有 `A2_ASSISTED_B2_PROXY` 和 `formal_gate_eligible=false`，
 不会被误当成正式签发。
+
+新增可发送包：
+
+- `artifacts/submission/B2_PROSPECTIVE_BENCHMARK_FREEZE_V1_20261008.zip`，SHA256
+  `a84c66134cc1880db78a2d971192e19603e251db8096b56e88b8f211b224f778`；
+- `artifacts/submission/B2_CANDIDATE_UNEXPOSED_SEEN_STRESS_V1_20261008.zip`，SHA256
+  `bce32f1dc56b95e036c45ea9b716dca7592bbf091bbc50d36e73a85e642f1339`。
 

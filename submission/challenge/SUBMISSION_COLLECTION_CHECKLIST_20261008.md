@@ -9,10 +9,12 @@
 - [x] 实现 Adapter V3.1 固定语义合同，并保留路口/车道/安全间隙 fail-closed 门禁
 - [x] V3.1 FP32 在旧 240 条上完成回归投影：238/240 完整计划、28/28 安全召回，`PASS`
 - [x] Full INT8 与 Mixed Top-3 完成同口径诊断：均与 FP32 核心字段 240/240 一致
-- [x] A2 代理跑完 B2 代码合同测试：184/184 通过，真实 240 条复跑哈希可重复
+- [x] A2 代理跑完 B2 代码合同测试：197/197 通过，真实 240 条复跑哈希可重复
 - [x] 生成 B2 proxy audit ZIP，冻结聚合 PASS 投影、8 个切片告警和 2 条安全收紧差异
-- [ ] B1/B2 提供新的 template-valid、未暴露独立基准
-- [ ] B2 冻结 formal policy，独立评估 exact weights+ONNX+Adapter V3.1 并签发 FP32 decision
+- [x] 冻结新的 240 槽 Seen/Variant/Unseen 采集设计、formal policy、seed 和换样规则
+- [x] 对 308 条候选未暴露 Seen 硬负样本完成两次确定性压测；严格投影 FAIL，不冒充 Gate
+- [ ] 在 CARLA + 精确 Teacher v4 上采集上述 240 槽并签发 case manifest/digest
+- [ ] B2 按已冻结 policy 评估 exact weights+ONNX+Adapter V3.1 并签发 FP32 decision
 - [ ] 正式 FP32 PASS 后由 A2 将首选 Mixed Top-3（Full 为备选）重签正式 INT8 manifest
 - [ ] B2 在同一冻结基准上签发 INT8 decision
 
@@ -28,12 +30,13 @@
 - [x] V3 `null/CURRENT` 字段语义归一化并行诊断（lane 89.31%、sequence 86.67%，仍 FAIL）
 - [x] Adapter V3.1 实际回放与 Full/Mixed INT8 三方诊断（旧集投影 PASS，明确非正式 Gate）
 - [x] B2 proxy audit：合同测试、重跑、Gate 投影、readiness、切片告警、raw predictions 和 SHA256 完整打包
+- [x] 新 240 槽冻结包与 308 条 Seen 压测包：CRC 和逐成员 SHA256 全部 PASS
 - [x] 重建 A3/B2/A4 三份 V3.1 交接 ZIP；CRC 与逐成员 SHA256 全部 PASS
 - [x] 生成 V3.1 全赛道小型证据包与源码/Runtime 预览包；CRC 与逐文件 SHA256 全部 PASS
 
 ## 必须继续收集的原件
 
-- [ ] B2 正式 benchmark/policy manifest、Teacher/Student raw predictions、Gate decision package
+- [ ] B2 新 240 槽实际 cases、Teacher/Student raw predictions、case manifest/digest 和 Gate decision package（policy 已冻结）
 - [ ] A3/B2 对 exact V3 weights、FP32 ONNX、Adapter commit 的复合候选签发正式 manifest
 - [ ] A2 同一候选正式 FP32 ONNX、INT8 ONNX、`int8_manifest.json`、量化误差报告
 - [ ] A4 与 A2 exact SHA 一致的 `.bc/.hbm`、YAML、operator mapping、fallback report、Runtime
