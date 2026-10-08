@@ -1,0 +1,720 @@
+{
+  "fp32": "D:\\nana\\oe\\work\\a2_v3_int8\\student_v0_fp32_candidate.onnx",
+  "variants": {
+    "full": {
+      "path": "D:\\nana\\oe\\work\\a2_v3_int8\\student_int8.onnx",
+      "cohorts": {
+        "d2_v1_1_val": {
+          "numeric": {
+            "cases": 539,
+            "per_output": {
+              "plan_length_logits": {
+                "max_abs_diff": 0.20345783233642578,
+                "argmax_agreement": "539/539"
+              },
+              "behavior_logits": {
+                "max_abs_diff": 0.19490575790405273,
+                "argmax_agreement": "539/539"
+              },
+              "target_pointer_logits": {
+                "max_abs_diff": 0.2393207550048828,
+                "argmax_agreement": "530/539"
+              },
+              "target_lane_logits": {
+                "max_abs_diff": 0.1941056251525879,
+                "argmax_agreement": "539/539"
+              },
+              "target_speed_mps": {
+                "max_abs_diff": 0.8976993560791016,
+                "argmax_agreement": "539/539"
+              },
+              "completion_type_logits": {
+                "max_abs_diff": 0.17997360229492188,
+                "argmax_agreement": "539/539"
+              },
+              "on_failure_logits": {
+                "max_abs_diff": 0.2875862121582031,
+                "argmax_agreement": "539/539"
+              },
+              "confidence": {
+                "max_abs_diff": 0.010078966617584229,
+                "argmax_agreement": "539/539"
+              },
+              "requires_confirmation_logits": {
+                "max_abs_diff": 0.2793102264404297,
+                "argmax_agreement": "539/539"
+              },
+              "replan_condition_logits": {
+                "max_abs_diff": 0.3361663818359375,
+                "argmax_agreement": "507/539"
+              }
+            },
+            "worst_max_abs_diff": 0.8976993560791016
+          },
+          "plan": {
+            "cases_compared": 539,
+            "plans_identical": 289,
+            "plan_identical_rate": 0.536178107606679,
+            "plans_identical_within_0p05_mps": 360,
+            "plan_identical_rate_within_0p05_mps": 0.6679035250463822,
+            "steps_compared": 594,
+            "behaviour_identical_rate": 1.0
+          }
+        },
+        "d3_wave2_safe_short_v1_val": {
+          "numeric": {
+            "cases": 56,
+            "per_output": {
+              "plan_length_logits": {
+                "max_abs_diff": 0.1324443817138672,
+                "argmax_agreement": "56/56"
+              },
+              "behavior_logits": {
+                "max_abs_diff": 0.1617727279663086,
+                "argmax_agreement": "56/56"
+              },
+              "target_pointer_logits": {
+                "max_abs_diff": 0.17418861389160156,
+                "argmax_agreement": "56/56"
+              },
+              "target_lane_logits": {
+                "max_abs_diff": 0.1485433578491211,
+                "argmax_agreement": "56/56"
+              },
+              "target_speed_mps": {
+                "max_abs_diff": 1.18011474609375,
+                "argmax_agreement": "54/56"
+              },
+              "completion_type_logits": {
+                "max_abs_diff": 0.13844704627990723,
+                "argmax_agreement": "56/56"
+              },
+              "on_failure_logits": {
+                "max_abs_diff": 0.195343017578125,
+                "argmax_agreement": "56/56"
+              },
+              "confidence": {
+                "max_abs_diff": 0.005200564861297607,
+                "argmax_agreement": "56/56"
+              },
+              "requires_confirmation_logits": {
+                "max_abs_diff": 0.23400020599365234,
+                "argmax_agreement": "56/56"
+              },
+              "replan_condition_logits": {
+                "max_abs_diff": 0.2570838928222656,
+                "argmax_agreement": "56/56"
+              }
+            },
+            "worst_max_abs_diff": 1.18011474609375
+          },
+          "plan": {
+            "cases_compared": 56,
+            "plans_identical": 33,
+            "plan_identical_rate": 0.5892857142857143,
+            "plans_identical_within_0p05_mps": 43,
+            "plan_identical_rate_within_0p05_mps": 0.7678571428571429,
+            "steps_compared": 73,
+            "behaviour_identical_rate": 1.0
+          }
+        },
+        "d3_targeted_gap_strict_v1_val": {
+          "numeric": {
+            "cases": 99,
+            "per_output": {
+              "plan_length_logits": {
+                "max_abs_diff": 0.3952350616455078,
+                "argmax_agreement": "99/99"
+              },
+              "behavior_logits": {
+                "max_abs_diff": 0.4464387893676758,
+                "argmax_agreement": "99/99"
+              },
+              "target_pointer_logits": {
+                "max_abs_diff": 0.5239200592041016,
+                "argmax_agreement": "99/99"
+              },
+              "target_lane_logits": {
+                "max_abs_diff": 0.4493589401245117,
+                "argmax_agreement": "99/99"
+              },
+              "target_speed_mps": {
+                "max_abs_diff": 0.8463821411132812,
+                "argmax_agreement": "99/99"
+              },
+              "completion_type_logits": {
+                "max_abs_diff": 0.49946069717407227,
+                "argmax_agreement": "99/99"
+              },
+              "on_failure_logits": {
+                "max_abs_diff": 0.5123004913330078,
+                "argmax_agreement": "99/99"
+              },
+              "confidence": {
+                "max_abs_diff": 0.007264196872711182,
+                "argmax_agreement": "99/99"
+              },
+              "requires_confirmation_logits": {
+                "max_abs_diff": 0.6520748138427734,
+                "argmax_agreement": "99/99"
+              },
+              "replan_condition_logits": {
+                "max_abs_diff": 0.7211799621582031,
+                "argmax_agreement": "90/99"
+              }
+            },
+            "worst_max_abs_diff": 0.8463821411132812
+          },
+          "plan": {
+            "cases_compared": 99,
+            "plans_identical": 59,
+            "plan_identical_rate": 0.5959595959595959,
+            "plans_identical_within_0p05_mps": 69,
+            "plan_identical_rate_within_0p05_mps": 0.696969696969697,
+            "steps_compared": 99,
+            "behaviour_identical_rate": 1.0
+          }
+        },
+        "d3_turn_gap_60_strict_v1_val": {
+          "numeric": {
+            "cases": 29,
+            "per_output": {
+              "plan_length_logits": {
+                "max_abs_diff": 0.14677143096923828,
+                "argmax_agreement": "29/29"
+              },
+              "behavior_logits": {
+                "max_abs_diff": 0.15234804153442383,
+                "argmax_agreement": "29/29"
+              },
+              "target_pointer_logits": {
+                "max_abs_diff": 0.16252899169921875,
+                "argmax_agreement": "29/29"
+              },
+              "target_lane_logits": {
+                "max_abs_diff": 0.1584949493408203,
+                "argmax_agreement": "29/29"
+              },
+              "target_speed_mps": {
+                "max_abs_diff": 1.6302871704101562,
+                "argmax_agreement": "29/29"
+              },
+              "completion_type_logits": {
+                "max_abs_diff": 0.12516021728515625,
+                "argmax_agreement": "29/29"
+              },
+              "on_failure_logits": {
+                "max_abs_diff": 0.17904901504516602,
+                "argmax_agreement": "29/29"
+              },
+              "confidence": {
+                "max_abs_diff": 0.0063672661781311035,
+                "argmax_agreement": "29/29"
+              },
+              "requires_confirmation_logits": {
+                "max_abs_diff": 0.22186565399169922,
+                "argmax_agreement": "29/29"
+              },
+              "replan_condition_logits": {
+                "max_abs_diff": 0.2360668182373047,
+                "argmax_agreement": "26/29"
+              }
+            },
+            "worst_max_abs_diff": 1.6302871704101562
+          },
+          "plan": {
+            "cases_compared": 29,
+            "plans_identical": 18,
+            "plan_identical_rate": 0.6206896551724138,
+            "plans_identical_within_0p05_mps": 19,
+            "plan_identical_rate_within_0p05_mps": 0.6551724137931034,
+            "steps_compared": 29,
+            "behaviour_identical_rate": 1.0
+          }
+        },
+        "d3_gap300_strict_v1_val": {
+          "numeric": {
+            "cases": 123,
+            "per_output": {
+              "plan_length_logits": {
+                "max_abs_diff": 0.1370549201965332,
+                "argmax_agreement": "123/123"
+              },
+              "behavior_logits": {
+                "max_abs_diff": 0.1730937957763672,
+                "argmax_agreement": "123/123"
+              },
+              "target_pointer_logits": {
+                "max_abs_diff": 0.20302200317382812,
+                "argmax_agreement": "123/123"
+              },
+              "target_lane_logits": {
+                "max_abs_diff": 0.16436481475830078,
+                "argmax_agreement": "123/123"
+              },
+              "target_speed_mps": {
+                "max_abs_diff": 0.8735103607177734,
+                "argmax_agreement": "123/123"
+              },
+              "completion_type_logits": {
+                "max_abs_diff": 0.14850330352783203,
+                "argmax_agreement": "123/123"
+              },
+              "on_failure_logits": {
+                "max_abs_diff": 0.23322677612304688,
+                "argmax_agreement": "123/123"
+              },
+              "confidence": {
+                "max_abs_diff": 0.007501780986785889,
+                "argmax_agreement": "123/123"
+              },
+              "requires_confirmation_logits": {
+                "max_abs_diff": 0.19946956634521484,
+                "argmax_agreement": "123/123"
+              },
+              "replan_condition_logits": {
+                "max_abs_diff": 0.2976818084716797,
+                "argmax_agreement": "92/123"
+              }
+            },
+            "worst_max_abs_diff": 0.8735103607177734
+          },
+          "plan": {
+            "cases_compared": 123,
+            "plans_identical": 78,
+            "plan_identical_rate": 0.6341463414634146,
+            "plans_identical_within_0p05_mps": 79,
+            "plan_identical_rate_within_0p05_mps": 0.6422764227642277,
+            "steps_compared": 123,
+            "behaviour_identical_rate": 1.0
+          }
+        },
+        "b1_ms34_supplement_v1_val": {
+          "numeric": {
+            "cases": 4,
+            "per_output": {
+              "plan_length_logits": {
+                "max_abs_diff": 0.07709918916225433,
+                "argmax_agreement": "4/4"
+              },
+              "behavior_logits": {
+                "max_abs_diff": 0.13965415954589844,
+                "argmax_agreement": "4/4"
+              },
+              "target_pointer_logits": {
+                "max_abs_diff": 0.1402301788330078,
+                "argmax_agreement": "4/4"
+              },
+              "target_lane_logits": {
+                "max_abs_diff": 0.11734390258789062,
+                "argmax_agreement": "4/4"
+              },
+              "target_speed_mps": {
+                "max_abs_diff": 0.3737044334411621,
+                "argmax_agreement": "4/4"
+              },
+              "completion_type_logits": {
+                "max_abs_diff": 0.11474990844726562,
+                "argmax_agreement": "4/4"
+              },
+              "on_failure_logits": {
+                "max_abs_diff": 0.11952781677246094,
+                "argmax_agreement": "4/4"
+              },
+              "confidence": {
+                "max_abs_diff": 0.005173027515411377,
+                "argmax_agreement": "4/4"
+              },
+              "requires_confirmation_logits": {
+                "max_abs_diff": 0.14345550537109375,
+                "argmax_agreement": "4/4"
+              },
+              "replan_condition_logits": {
+                "max_abs_diff": 0.171478271484375,
+                "argmax_agreement": "2/4"
+              }
+            },
+            "worst_max_abs_diff": 0.3737044334411621
+          },
+          "plan": {
+            "cases_compared": 4,
+            "plans_identical": 4,
+            "plan_identical_rate": 1.0,
+            "plans_identical_within_0p05_mps": 4,
+            "plan_identical_rate_within_0p05_mps": 1.0,
+            "steps_compared": 14,
+            "behaviour_identical_rate": 1.0
+          }
+        }
+      },
+      "totals": {
+        "worst_max_abs_diff": 1.6302871704101562,
+        "cases_compared": 850,
+        "plans_identical": 481,
+        "plan_identical_rate": 0.5658823529411765,
+        "plans_identical_within_0p05_mps": 574,
+        "plan_identical_rate_within_0p05_mps": 0.6752941176470588,
+        "steps_compared": 932,
+        "behaviour_identical_rate": 1.0
+      }
+    },
+    "mixed": {
+      "path": "D:\\nana\\oe\\work\\a2_v3_int8\\student_int8_mixed_top3.onnx",
+      "cohorts": {
+        "d2_v1_1_val": {
+          "numeric": {
+            "cases": 539,
+            "per_output": {
+              "plan_length_logits": {
+                "max_abs_diff": 0.20345783233642578,
+                "argmax_agreement": "539/539"
+              },
+              "behavior_logits": {
+                "max_abs_diff": 0.15777969360351562,
+                "argmax_agreement": "539/539"
+              },
+              "target_pointer_logits": {
+                "max_abs_diff": 0.1728363037109375,
+                "argmax_agreement": "538/539"
+              },
+              "target_lane_logits": {
+                "max_abs_diff": 0.14142417907714844,
+                "argmax_agreement": "539/539"
+              },
+              "target_speed_mps": {
+                "max_abs_diff": 0.8976993560791016,
+                "argmax_agreement": "539/539"
+              },
+              "completion_type_logits": {
+                "max_abs_diff": 0.17997360229492188,
+                "argmax_agreement": "539/539"
+              },
+              "on_failure_logits": {
+                "max_abs_diff": 0.2875862121582031,
+                "argmax_agreement": "539/539"
+              },
+              "confidence": {
+                "max_abs_diff": 0.010078966617584229,
+                "argmax_agreement": "539/539"
+              },
+              "requires_confirmation_logits": {
+                "max_abs_diff": 0.2793102264404297,
+                "argmax_agreement": "539/539"
+              },
+              "replan_condition_logits": {
+                "max_abs_diff": 0.3361663818359375,
+                "argmax_agreement": "507/539"
+              }
+            },
+            "worst_max_abs_diff": 0.8976993560791016
+          },
+          "plan": {
+            "cases_compared": 539,
+            "plans_identical": 289,
+            "plan_identical_rate": 0.536178107606679,
+            "plans_identical_within_0p05_mps": 360,
+            "plan_identical_rate_within_0p05_mps": 0.6679035250463822,
+            "steps_compared": 594,
+            "behaviour_identical_rate": 1.0
+          }
+        },
+        "d3_wave2_safe_short_v1_val": {
+          "numeric": {
+            "cases": 56,
+            "per_output": {
+              "plan_length_logits": {
+                "max_abs_diff": 0.1324443817138672,
+                "argmax_agreement": "56/56"
+              },
+              "behavior_logits": {
+                "max_abs_diff": 0.105621337890625,
+                "argmax_agreement": "56/56"
+              },
+              "target_pointer_logits": {
+                "max_abs_diff": 0.09564018249511719,
+                "argmax_agreement": "56/56"
+              },
+              "target_lane_logits": {
+                "max_abs_diff": 0.08751487731933594,
+                "argmax_agreement": "56/56"
+              },
+              "target_speed_mps": {
+                "max_abs_diff": 1.18011474609375,
+                "argmax_agreement": "54/56"
+              },
+              "completion_type_logits": {
+                "max_abs_diff": 0.13844704627990723,
+                "argmax_agreement": "56/56"
+              },
+              "on_failure_logits": {
+                "max_abs_diff": 0.195343017578125,
+                "argmax_agreement": "56/56"
+              },
+              "confidence": {
+                "max_abs_diff": 0.005200564861297607,
+                "argmax_agreement": "56/56"
+              },
+              "requires_confirmation_logits": {
+                "max_abs_diff": 0.23400020599365234,
+                "argmax_agreement": "56/56"
+              },
+              "replan_condition_logits": {
+                "max_abs_diff": 0.2570838928222656,
+                "argmax_agreement": "56/56"
+              }
+            },
+            "worst_max_abs_diff": 1.18011474609375
+          },
+          "plan": {
+            "cases_compared": 56,
+            "plans_identical": 33,
+            "plan_identical_rate": 0.5892857142857143,
+            "plans_identical_within_0p05_mps": 43,
+            "plan_identical_rate_within_0p05_mps": 0.7678571428571429,
+            "steps_compared": 73,
+            "behaviour_identical_rate": 1.0
+          }
+        },
+        "d3_targeted_gap_strict_v1_val": {
+          "numeric": {
+            "cases": 99,
+            "per_output": {
+              "plan_length_logits": {
+                "max_abs_diff": 0.3952350616455078,
+                "argmax_agreement": "99/99"
+              },
+              "behavior_logits": {
+                "max_abs_diff": 0.4304676055908203,
+                "argmax_agreement": "99/99"
+              },
+              "target_pointer_logits": {
+                "max_abs_diff": 0.4889812469482422,
+                "argmax_agreement": "99/99"
+              },
+              "target_lane_logits": {
+                "max_abs_diff": 0.38140106201171875,
+                "argmax_agreement": "99/99"
+              },
+              "target_speed_mps": {
+                "max_abs_diff": 0.8463821411132812,
+                "argmax_agreement": "99/99"
+              },
+              "completion_type_logits": {
+                "max_abs_diff": 0.49946069717407227,
+                "argmax_agreement": "99/99"
+              },
+              "on_failure_logits": {
+                "max_abs_diff": 0.5123004913330078,
+                "argmax_agreement": "99/99"
+              },
+              "confidence": {
+                "max_abs_diff": 0.007264196872711182,
+                "argmax_agreement": "99/99"
+              },
+              "requires_confirmation_logits": {
+                "max_abs_diff": 0.6520748138427734,
+                "argmax_agreement": "99/99"
+              },
+              "replan_condition_logits": {
+                "max_abs_diff": 0.7211799621582031,
+                "argmax_agreement": "90/99"
+              }
+            },
+            "worst_max_abs_diff": 0.8463821411132812
+          },
+          "plan": {
+            "cases_compared": 99,
+            "plans_identical": 59,
+            "plan_identical_rate": 0.5959595959595959,
+            "plans_identical_within_0p05_mps": 69,
+            "plan_identical_rate_within_0p05_mps": 0.696969696969697,
+            "steps_compared": 99,
+            "behaviour_identical_rate": 1.0
+          }
+        },
+        "d3_turn_gap_60_strict_v1_val": {
+          "numeric": {
+            "cases": 29,
+            "per_output": {
+              "plan_length_logits": {
+                "max_abs_diff": 0.14677143096923828,
+                "argmax_agreement": "29/29"
+              },
+              "behavior_logits": {
+                "max_abs_diff": 0.08988475799560547,
+                "argmax_agreement": "29/29"
+              },
+              "target_pointer_logits": {
+                "max_abs_diff": 0.09044265747070312,
+                "argmax_agreement": "29/29"
+              },
+              "target_lane_logits": {
+                "max_abs_diff": 0.08182430267333984,
+                "argmax_agreement": "29/29"
+              },
+              "target_speed_mps": {
+                "max_abs_diff": 1.6302871704101562,
+                "argmax_agreement": "29/29"
+              },
+              "completion_type_logits": {
+                "max_abs_diff": 0.12516021728515625,
+                "argmax_agreement": "29/29"
+              },
+              "on_failure_logits": {
+                "max_abs_diff": 0.17904901504516602,
+                "argmax_agreement": "29/29"
+              },
+              "confidence": {
+                "max_abs_diff": 0.0063672661781311035,
+                "argmax_agreement": "29/29"
+              },
+              "requires_confirmation_logits": {
+                "max_abs_diff": 0.22186565399169922,
+                "argmax_agreement": "29/29"
+              },
+              "replan_condition_logits": {
+                "max_abs_diff": 0.2360668182373047,
+                "argmax_agreement": "26/29"
+              }
+            },
+            "worst_max_abs_diff": 1.6302871704101562
+          },
+          "plan": {
+            "cases_compared": 29,
+            "plans_identical": 18,
+            "plan_identical_rate": 0.6206896551724138,
+            "plans_identical_within_0p05_mps": 19,
+            "plan_identical_rate_within_0p05_mps": 0.6551724137931034,
+            "steps_compared": 29,
+            "behaviour_identical_rate": 1.0
+          }
+        },
+        "d3_gap300_strict_v1_val": {
+          "numeric": {
+            "cases": 123,
+            "per_output": {
+              "plan_length_logits": {
+                "max_abs_diff": 0.1370549201965332,
+                "argmax_agreement": "123/123"
+              },
+              "behavior_logits": {
+                "max_abs_diff": 0.11554241180419922,
+                "argmax_agreement": "123/123"
+              },
+              "target_pointer_logits": {
+                "max_abs_diff": 0.1310415267944336,
+                "argmax_agreement": "123/123"
+              },
+              "target_lane_logits": {
+                "max_abs_diff": 0.14073848724365234,
+                "argmax_agreement": "123/123"
+              },
+              "target_speed_mps": {
+                "max_abs_diff": 0.8735103607177734,
+                "argmax_agreement": "123/123"
+              },
+              "completion_type_logits": {
+                "max_abs_diff": 0.14850330352783203,
+                "argmax_agreement": "123/123"
+              },
+              "on_failure_logits": {
+                "max_abs_diff": 0.23322677612304688,
+                "argmax_agreement": "123/123"
+              },
+              "confidence": {
+                "max_abs_diff": 0.007501780986785889,
+                "argmax_agreement": "123/123"
+              },
+              "requires_confirmation_logits": {
+                "max_abs_diff": 0.19946956634521484,
+                "argmax_agreement": "123/123"
+              },
+              "replan_condition_logits": {
+                "max_abs_diff": 0.2976818084716797,
+                "argmax_agreement": "92/123"
+              }
+            },
+            "worst_max_abs_diff": 0.8735103607177734
+          },
+          "plan": {
+            "cases_compared": 123,
+            "plans_identical": 78,
+            "plan_identical_rate": 0.6341463414634146,
+            "plans_identical_within_0p05_mps": 79,
+            "plan_identical_rate_within_0p05_mps": 0.6422764227642277,
+            "steps_compared": 123,
+            "behaviour_identical_rate": 1.0
+          }
+        },
+        "b1_ms34_supplement_v1_val": {
+          "numeric": {
+            "cases": 4,
+            "per_output": {
+              "plan_length_logits": {
+                "max_abs_diff": 0.07709918916225433,
+                "argmax_agreement": "4/4"
+              },
+              "behavior_logits": {
+                "max_abs_diff": 0.0828862190246582,
+                "argmax_agreement": "4/4"
+              },
+              "target_pointer_logits": {
+                "max_abs_diff": 0.06191682815551758,
+                "argmax_agreement": "4/4"
+              },
+              "target_lane_logits": {
+                "max_abs_diff": 0.054239749908447266,
+                "argmax_agreement": "4/4"
+              },
+              "target_speed_mps": {
+                "max_abs_diff": 0.3737044334411621,
+                "argmax_agreement": "4/4"
+              },
+              "completion_type_logits": {
+                "max_abs_diff": 0.11474990844726562,
+                "argmax_agreement": "4/4"
+              },
+              "on_failure_logits": {
+                "max_abs_diff": 0.11952781677246094,
+                "argmax_agreement": "4/4"
+              },
+              "confidence": {
+                "max_abs_diff": 0.005173027515411377,
+                "argmax_agreement": "4/4"
+              },
+              "requires_confirmation_logits": {
+                "max_abs_diff": 0.14345550537109375,
+                "argmax_agreement": "4/4"
+              },
+              "replan_condition_logits": {
+                "max_abs_diff": 0.171478271484375,
+                "argmax_agreement": "2/4"
+              }
+            },
+            "worst_max_abs_diff": 0.3737044334411621
+          },
+          "plan": {
+            "cases_compared": 4,
+            "plans_identical": 4,
+            "plan_identical_rate": 1.0,
+            "plans_identical_within_0p05_mps": 4,
+            "plan_identical_rate_within_0p05_mps": 1.0,
+            "steps_compared": 14,
+            "behaviour_identical_rate": 1.0
+          }
+        }
+      },
+      "totals": {
+        "worst_max_abs_diff": 1.6302871704101562,
+        "cases_compared": 850,
+        "plans_identical": 481,
+        "plan_identical_rate": 0.5658823529411765,
+        "plans_identical_within_0p05_mps": 574,
+        "plan_identical_rate_within_0p05_mps": 0.6752941176470588,
+        "steps_compared": 932,
+        "behaviour_identical_rate": 1.0
+      }
+    }
+  },
+  "protocol": "FP32 vs each INT8 artifact on every frozen held-out cohort; numeric level compares raw outputs, plan level decodes both sides with the same StudentPlanAdapter (V3.1)"
+}

@@ -61,16 +61,23 @@ def sample(duration_s: float, interval_s: float, out_dir: Path) -> dict:
             for process in _match_processes().values():
                 for item in process:
                     handles.setdefault(item.pid, item)
-            # Drop launcher stubs: keep only matched processes whose parent is
-            # not itself matched (``py -3.12 -m x`` spawns ``python.exe -m x``).
-            matched_pids = set(handles)
-            for pid in list(handles):
-                try:
-                    parent = handles[pid].ppid()
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    parent = None
-                if parent in matched_pids:
-                    handles.pop(pid, None)
+            # ``py -3.12 -m tool`` spawns ``python.exe -m tool``: both match the
+            # hint, and the launcher stub has a tiny RSS.  Keep the worker (the
+            # matched process with the largest RSS) per hint instead of guessing
+            # by parent/child direction, which previously dropped the worker.
+            for _, hints in PROCESS_HINTS:
+                candidates = []
+                for pid, process in list(handles.items()):
+                    try:
+                        cmdline = " ".join(process.cmdline() or [])
+                        if any(hint in cmdline for hint in hints):
+                            candidates.append((process.memory_info().rss, pid))
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        handles.pop(pid, None)
+                if len(candidates) > 1:
+                    candidates.sort(reverse=True)
+                    for _, pid in candidates[1:]:
+                        handles.pop(pid, None)
             row: dict = {
                 "wall_time_utc": datetime.now(timezone.utc).isoformat(),
                 "elapsed_s": round(tick - started, 3),

@@ -1,0 +1,178 @@
+{
+  "experiment": "same-protocol Teacher/Student decay under the V3.1 adapter",
+  "case_level_fp32": {
+    "summary": {
+      "cases": 850,
+      "teacher_steps": 931,
+      "student_steps": 932,
+      "steps_compared": 931,
+      "step_count_agreement": 0.9988235294117647,
+      "behaviour_agreement": 0.9957035445757251,
+      "lane_agreement": 0.9978517722878625,
+      "lane_agreement_when_both_present": 0.9978517722878625,
+      "lane_both_null": 0,
+      "lane_teacher_only": 0,
+      "completion_agreement": 0.9978517722878625,
+      "completion_agreement_when_both_present": 0.9978517722878625,
+      "target_id_agreement": 0.8873239436619719,
+      "target_id_agreement_when_both_present": 1.0,
+      "target_id_teacher_only": 24,
+      "speed_mae_mps": 0.22619674544101653,
+      "speed_max_abs_error_mps": 6.131767100758022,
+      "speed_within_0p5_mps_rate": 0.22448979591836735,
+      "speed_missing": 561,
+      "extra_student_steps": 1,
+      "missing_student_steps": 0
+    },
+    "decay": {
+      "step_count_agreement": 0.0011764705882353343,
+      "behaviour_agreement": 0.004296455424274925,
+      "lane_agreement": 0.002148227712137518,
+      "completion_agreement": 0.002148227712137518,
+      "target_id_agreement": 0.11267605633802813
+    },
+    "per_cohort": {
+      "d2_v1_1_val": {
+        "cases": 539,
+        "teacher_steps": 593,
+        "behaviour_agreement": 1.0,
+        "lane_agreement": 0.9966273187183811,
+        "lane_agreement_when_both_present": 0.9966273187183811,
+        "lane_teacher_only": 0,
+        "completion_agreement": 1.0,
+        "target_id_agreement": 1.0,
+        "speed_mae_mps": 0.2784998387193242,
+        "speed_within_0p5_mps_rate": 0.19392917369308602
+      },
+      "d3_wave2_safe_short_v1_val": {
+        "cases": 56,
+        "teacher_steps": 73,
+        "behaviour_agreement": 1.0,
+        "lane_agreement": 1.0,
+        "lane_agreement_when_both_present": 1.0,
+        "lane_teacher_only": 0,
+        "completion_agreement": 1.0,
+        "target_id_agreement": 1.0,
+        "speed_mae_mps": 0.11185072763869758,
+        "speed_within_0p5_mps_rate": 0.2191780821917808
+      },
+      "d3_targeted_gap_strict_v1_val": {
+        "cases": 99,
+        "teacher_steps": 99,
+        "behaviour_agreement": 1.0,
+        "lane_agreement": 1.0,
+        "lane_agreement_when_both_present": 1.0,
+        "lane_teacher_only": 0,
+        "completion_agreement": 1.0,
+        "target_id_agreement": 0.2727272727272727,
+        "speed_mae_mps": 0.08692904540852937,
+        "speed_within_0p5_mps_rate": 0.3838383838383838
+      },
+      "d3_turn_gap_60_strict_v1_val": {
+        "cases": 29,
+        "teacher_steps": 29,
+        "behaviour_agreement": 1.0,
+        "lane_agreement": 1.0,
+        "lane_agreement_when_both_present": 1.0,
+        "lane_teacher_only": 0,
+        "completion_agreement": 1.0,
+        "target_id_agreement": 0.6666666666666666,
+        "speed_mae_mps": 0.1840057898298533,
+        "speed_within_0p5_mps_rate": 0.27586206896551724
+      },
+      "d3_gap300_strict_v1_val": {
+        "cases": 123,
+        "teacher_steps": 123,
+        "behaviour_agreement": 1.0,
+        "lane_agreement": 1.0,
+        "lane_agreement_when_both_present": 1.0,
+        "lane_teacher_only": 0,
+        "completion_agreement": 1.0,
+        "target_id_agreement": 0.6,
+        "speed_mae_mps": 0.18968714737310619,
+        "speed_within_0p5_mps_rate": 0.2601626016260163
+      },
+      "b1_ms34_supplement_v1_val": {
+        "cases": 4,
+        "teacher_steps": 14,
+        "behaviour_agreement": 0.7142857142857143,
+        "lane_agreement": 1.0,
+        "lane_agreement_when_both_present": 1.0,
+        "lane_teacher_only": 0,
+        "completion_agreement": 0.8571428571428571,
+        "target_id_agreement": 0.6666666666666666,
+        "speed_mae_mps": 0.0,
+        "speed_within_0p5_mps_rate": 0.0
+      }
+    }
+  },
+  "case_level_int8": {
+    "summary": {
+      "cases": 850,
+      "teacher_steps": 931,
+      "student_steps": 932,
+      "steps_compared": 931,
+      "step_count_agreement": 0.9988235294117647,
+      "behaviour_agreement": 0.9957035445757251,
+      "lane_agreement": 0.9978517722878625,
+      "lane_agreement_when_both_present": 0.9978517722878625,
+      "lane_both_null": 0,
+      "lane_teacher_only": 0,
+      "completion_agreement": 0.9978517722878625,
+      "completion_agreement_when_both_present": 0.9978517722878625,
+      "target_id_agreement": 0.8873239436619719,
+      "target_id_agreement_when_both_present": 1.0,
+      "target_id_teacher_only": 24,
+      "speed_mae_mps": 0.24210942854302528,
+      "speed_max_abs_error_mps": 6.616512484020657,
+      "speed_within_0p5_mps_rate": 0.21052631578947367,
+      "speed_missing": 561,
+      "extra_student_steps": 1,
+      "missing_student_steps": 0
+    },
+    "decay": {
+      "step_count_agreement": 0.0011764705882353343,
+      "behaviour_agreement": 0.004296455424274925,
+      "lane_agreement": 0.002148227712137518,
+      "completion_agreement": 0.002148227712137518,
+      "target_id_agreement": 0.11267605633802813
+    }
+  },
+  "scenario_level": {
+    "coverage": {
+      "teacher_scenarios": 98,
+      "teacher_rows": 850,
+      "student_scenarios": 83,
+      "shared_scenarios": 47
+    },
+    "result": {
+      "teacher_micro_pass_rate": 0.9598765432098766,
+      "teacher_macro_pass_rate": 0.9211583924349882,
+      "student_macro_pass_rate": 0.7872340425531915,
+      "relative_decay": 0.14538688566662383,
+      "student_passed": 37
+    },
+    "teacher_passed_student_failed": [
+      "ACC_A04_static_obstacle_stop",
+      "ACC_B02_set_speed_20",
+      "ACC_B06_offset_recovery",
+      "SUP_A06_yellow_to_red",
+      "SUP_A10_static_vehicle_center",
+      "SUP_B06_right_offset_recovery",
+      "VAR_B06_lane_keep_smooth_curve"
+    ],
+    "student_passed_teacher_had_failures": [
+      "SUP_A07_pedestrian_right_to_left",
+      "SUP_A08_fast_pedestrian",
+      "VAR_A04_lane_change_right"
+    ]
+  },
+  "protocol": {
+    "benchmark": "6 frozen held-out cohorts (850 cases) shipped with the releases",
+    "teacher_side": "teacher_plan recorded in each frozen case (pinned Qwen teacher)",
+    "student_side": "Student ONNX decoded with the same StudentPlanAdapter",
+    "comparison": "step-aligned field-by-field comparison; Teacher is the reference",
+    "speed_tolerance_mps": 0.5
+  },
+  "reading": "case level: FP32/V3.1 lifts behaviour to 0.9957, lane 0.9979, completion 0.9979; INT8 matches FP32 on those fields and is marginally worse on speed; scenario level: teacher macro 0.9212 vs student 0.7872 -> relative decay 0.1454"
+}

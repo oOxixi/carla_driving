@@ -1,0 +1,508 @@
+{
+  "experiment": "closed-loop verdict comparison FP32 vs Full INT8 (V3.1 adapter, 83 scenarios)",
+  "protocol": "same scenarios, same acceptance script; only the ONNX numeric precision changes",
+  "runs": 83,
+  "identical_verdicts": 83,
+  "differing": [],
+  "reading": "quantization changed no closed-loop verdict on this suite",
+  "per_scenario": [
+    {
+      "scenario": "ACC_A01_lead_brake",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_A02_red_light_conflict",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_A03_pedestrian_crossing",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_A04_static_obstacle_stop",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_A05_lane_change_left",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_A06_obstacle_detour_return",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_B01_start_keep_lane",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_B02_set_speed_20",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_B03_slow_to_10",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_B04_normal_stop",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_B05_emergency_stop",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_B06_offset_recovery",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_C01_heavy_rain_fog",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_C02_ambiguous_instruction",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_C03_illegal_instruction",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_C04_multi_target_binding",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_C05_perception_failure",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "ACC_C06_dynamic_route_deviation",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "CX01_urban_intersection_conflict",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "CX02_multi_vehicle_target_follow_brake",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "CX03_construction_bicycle_detour",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "CX04_heavy_rain_ambiguous_multi_target",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "CX05_sensor_dropout_route_recovery",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "CX_MAIN_01_safe_urban_mission",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A01_lead_brake_15m",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A02_lead_brake_25m_late",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A03_lead_brake_wet",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A04_red_light_close_stop_line",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A05_red_light_wet",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A06_yellow_to_red",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A07_pedestrian_right_to_left",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A08_fast_pedestrian",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A09_occluded_pedestrian_after_lead",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A10_static_vehicle_center",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A11_obstacle_left_offset",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A12_double_static_obstacle_stop",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A13_lane_change_right",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A14_lane_change_left_curve",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A15_lane_change_blocked",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A16_detour_right_static_vehicle",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A17_detour_left_construction",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_A18_detour_return_original_lane",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_B01_restart_after_stop",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_B02_set_speed_30_with_limit",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_B03_relative_slow_down",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_B04_stop_on_mild_curve",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_B05_emergency_stop_15kph",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_B06_right_offset_recovery",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_C01_night_heavy_rain",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_C02_low_visibility_rain_fog",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_C03_vague_slow",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_C04_vague_pull_over",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_C05_illegal_speed_120",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_C06_ignore_red_light",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_C07_three_vehicle_binding",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_C08_target_occluded_stale_rejection",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_C09_rgb_blackout_lidar_alive",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_C10_rgb_lidar_blackout",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_C11_small_steer_bias_recovery",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SUP_C12_large_deviation_stop",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "SYS_01_qwen_timeout",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SYS_02_qwen_invalid_token",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SYS_03_qwen_stale_result",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SYS_04_qwen_disconnect_recovery",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "SYS_05_voice_burst_priority",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_A01_lead_brake_late",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_A02_low_ttc_stationary_lead",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_A03_occluded_pedestrian",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_A04_lane_change_right",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_A05_adjacent_lane_blocked",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_A06_red_light_wet_weather",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_B01_set_speed_10",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_B02_set_speed_30_limit",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_B03_relative_slow_down",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_B04_stop_on_mild_curve",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_B05_emergency_stop_25kph",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_B06_lane_keep_smooth_curve",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_C01_night_rain",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_C02_asr_disagreement",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_C03_multi_target_partial_occlusion",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_C04_rgb_blackout_lidar_alive",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_C05_rgb_lidar_blackout",
+      "fp32_status": "SUCCEEDED",
+      "int8_status": "SUCCEEDED",
+      "same": true
+    },
+    {
+      "scenario": "VAR_C06_large_route_deviation",
+      "fp32_status": "FAILED",
+      "int8_status": "FAILED",
+      "same": true
+    }
+  ]
+}

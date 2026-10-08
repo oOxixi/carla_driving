@@ -1,0 +1,38 @@
+{
+  "measurement_notes": [
+    {
+      "item": "lid-close freeze during the FP32 round",
+      "detail": "CX_MAIN_01 in the FP32 round contains a 745.1 s gap between adjacent frames (machine frozen while the lid was closed); latency from that run is void",
+      "action": "CX_MAIN_01 was re-run cleanly under FP32; result identical failure keys",
+      "rerun": {
+        "scenario": "CX_MAIN_01_safe_urban_mission",
+        "status": "FAILED",
+        "failed_keys": [
+          "must_execute_commands_in_order",
+          "required_real_actor_types",
+          "must_stop_before_stop_line"
+        ],
+        "extension_failed_keys": [
+          "all_phases_must_complete",
+          "qwen_request_count",
+          "qwen_missing_request_count",
+          "must_return_to_original_lane"
+        ]
+      },
+      "prevention": "the Windows lid action is now set to 'do nothing' on both AC and DC (powercfg)"
+    },
+    {
+      "item": "resource sampler defect",
+      "detail": "the earlier dedup logic dropped the real worker process when a launcher stub matched the same hint, so service-side CPU was under-reported in the 83-scenario rounds",
+      "action": "sampler now keeps the matched process with the largest RSS per hint",
+      "affected_numbers": "planner-process CPU is valid; service-process CPU in the 83-scenario rounds must not be quoted"
+    }
+  ],
+  "freeze_check": {
+    "scanned_frame_logs": 27,
+    "scenarios_with_gap_over_30s": [
+      "CX_MAIN_01_safe_urban_mission"
+    ],
+    "note": "only that one scenario was affected"
+  }
+}
