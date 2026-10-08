@@ -1,0 +1,37 @@
+{
+  "chosen_option": "fixed_teacher_conv_linear",
+  "baseline": "Pinned Teacher Qwen3.5-2B",
+  "scope": "Conv/Linear only, declared 267-token/64-visual-token fixture",
+  "numerator_flops": 498640896,
+  "denominator_flops": 892929605632,
+  "ratio": 0.0005584324820847111,
+  "ratio_percent": 0.055843248208471113,
+  "rule_tier": {
+    "thresholds": {
+      "<=0.5": 15,
+      "<=0.7": 10,
+      "<=0.9": 5,
+      ">0.9": 0
+    },
+    "points_if_accepted": 15
+  },
+  "package_declared": {
+    "ratio": 0.0005584324820847111,
+    "ratio_kind": "exact within dense-layer analytical scope",
+    "numeric_le_0p5_under_declared_scope": true,
+    "conditional_tier_points": 15
+  },
+  "options_source": "A1_正式模型与FLOPs交接_20261008\\challenge\\flops_options.json",
+  "numerator_cross_check": {
+    "repository_report": "challenge\\flops_report.json",
+    "flops_per_fixed_batch": 498640896,
+    "matches": true
+  },
+  "caveats": [
+    "the tier is conditional: A1's package keeps formal_ratio_pass = null until the team fixes the denominator",
+    "numerator and denominator must come from the same counting scope; do not mix rows",
+    "1 MAC = 2 FLOPs; Conv/Linear only unless the option says otherwise",
+    "no ASR/NLU, preprocessing, adapter, safety layer or controller is included",
+    "the teacher number depends on the declared input fixture (267 prefill tokens, 64 visual, 224x224, batch=1)"
+  ]
+}

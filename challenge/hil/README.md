@@ -773,3 +773,13 @@ submission ledger 列了一条阻塞项：A2 的 FP32 ONNX（`681a5d4b…`）与
 3. **FLOPs 分母（A1 于 10-08 交付）**：按固定 Teacher（Qwen3.5-2B，24 层实配、267 prefill token）
    复算分母 **892.93 GFLOPs**，比值 **0.000558（0.0558%）** → 仍在 ≤0.5 的 15 分档；
    若选"同结构 FP32 学生"为原始模型则比值为 1.0。**待团队选定被认可口径**。
+
+### 11.15 选定 FLOPs 口径 + 场景级同口径衰减（2026-10-08）
+
+* **FLOPs 选定第 1 行 `fixed_teacher_conv_linear`**：分子 **498,640,896**、分母 **892,929,605,632**、
+  比值 **0.0005584325 → 15 分档**（条件档位）；分子与 `challenge/flops_report.json` 交叉核对一致；
+  工具 `harness/x86_sim/flops_ratio.py`，证据 `03_flops_ratio_chosen_option.json`。
+* **场景级同口径衰减**：release 每行带场景文件路径与教师闭环判定 → 与 B3 的 83 场全量运行取
+  **47 个共有场景**：教师 macro **92.12%**、学生 macro **74.47%**、**相对衰减 19.16%**；
+  教师全过而学生未过 **9 个场景**（A04/B02/B06/C01/SUP_A06/SUP_A10/SUP_B06/VAR_A01/VAR_B06），
+  反向 3 个（SUP_A07/SUP_A08/VAR_A04）；工具 `harness/x86_sim/teacher_student_protocol_decay.py`。

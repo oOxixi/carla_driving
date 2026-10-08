@@ -82,7 +82,53 @@ Teacher 以自身计划为参照，因此其一致率**构造性地为 100%**，
 |---|---|
 | `01_bpu_performance_estimate_v3.json` | BPU 预估数值、身份绑定、瓶颈判定、区间利用率与全部限制 |
 | `02_teacher_student_core_metric_decay.json` | 850 例同口径逐字段一致率/衰减、字段约定差异分类、逐队列明细 |
+| `03_flops_ratio_chosen_option.json` | **已选定口径** `fixed_teacher_conv_linear` 的正式测算：分子/分母/比值/档位/交叉核对/限制 |
+| `04_same_protocol_scenario_decay.json` | **同口径场景级衰减**：47 个共有场景上教师闭环记录 vs 学生全量运行 |
 | `../carla_student_loop_20261007/07_suite_full83_summary.json` | 83 场景闭环全量结果（判定/失败键/行为/时延/安全/舒适性） |
+
+## 5. FLOPs 压缩比：选定第一行并正式测算（2026-10-08）
+
+团队选定 **`fixed_teacher_conv_linear`**（原始模型＝固定 Teacher `Qwen/Qwen3.5-2B`，revision
+`15852e8c…`；计数范围＝Conv2D/Linear；固定输入样例＝267 prefill token（含 64 视觉 token）、224×224、batch=1）。
+
+| 项 | 值 |
+|---|---|
+| 分子（轻量化 Student） | **498,640,896 FLOPs**（与 `challenge/flops_report.json` **逐项一致**，本次测算做了交叉核对） |
+| 分母（原始 Teacher） | **892,929,605,632 FLOPs** |
+| **压缩比** | **0.0005584324820847111（0.055843%）** |
+| 规则档位 | ≤0.5 → **15 分**（条件档位；包内 `formal_ratio_pass` 仍为 `null`） |
+
+口径要点：1 MAC = 2 FLOPs；不含 ASR/NLU、图像预处理、Adapter、安全层与控制器；**INT8 量化不减少 MAC 次数**，
+因此不构成额外的 FLOPs 压缩。工具：`challenge/hil/harness/x86_sim/flops_ratio.py`。
+
+## 6. 同口径场景级衰减：47 个共有场景（2026-10-08）
+
+dataset release 的每一行都记录了 `metadata.scenario_config_path`（即验收套件里的场景文件）与
+**教师自己的闭环判定**（`closed_loop_quality.scenario_acceptance_passed`）。因此可以构造**同场景文件、
+同验收脚本、同判据**的两侧对比：教师侧用采集运行中记录的结果，学生侧用 B3 的 83 场全量运行。
+
+| 项 | 值 |
+|---|---|
+| 教师侧覆盖场景 / 记录数 | 98 个场景 / 850 次记录 |
+| 学生侧 | 83 个场景（每场景 1 次） |
+| **共有场景** | **47** |
+| 教师 逐记录（micro）通过率 | **311/324 = 96.0%** |
+| **教师 macro（每场景通过率均值）** | **92.12%** |
+| **学生 macro（每场景 1 次）** | **74.47%**（35/47） |
+| **相对衰减 = 1 − 学生/教师** | **19.16%** |
+
+**教师全过、学生未过的 9 个场景**（这是最可直接改进的清单）：
+`ACC_A04_static_obstacle_stop`、`ACC_B02_set_speed_20`、`ACC_B06_offset_recovery`、`ACC_C01_heavy_rain_fog`、
+`SUP_A06_yellow_to_red`、`SUP_A10_static_vehicle_center`、`SUP_B06_right_offset_recovery`、
+`VAR_A01_lead_brake_late`、`VAR_B06_lane_keep_smooth_curve`。
+
+**反向情况（学生过、教师也有失败记录）3 个**：`SUP_A07_pedestrian_right_to_left`（教师 1/2）、
+`SUP_A08_fast_pedestrian`（3/5）、`VAR_A04_lane_change_right`（3/4）——说明学生并非在所有场景都更差。
+
+**必须声明的差异**：这套对比是"**同场景文件、同判据、不同时间/机器/seed**"——教师行来自 A800/B1 侧的采集运行
+（每场景多条记录），学生行来自本机单次运行（seed 0、FP32 在环）。因此这是**同口径衰减估计**，
+仍不是 B2 冻结基准上的正式分子分母。工具：
+`challenge/hil/harness/x86_sim/teacher_student_protocol_decay.py`。
 
 复现命令：
 

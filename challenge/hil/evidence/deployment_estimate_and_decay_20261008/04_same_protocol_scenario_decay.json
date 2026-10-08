@@ -1,0 +1,531 @@
+{
+  "protocol": {
+    "benchmark": "acceptance-suite scenarios that appear in both the release rows and the B3 full run",
+    "judging": "the repository's own scenario acceptance (same script, same criteria)",
+    "teacher_side": "closed_loop_quality.scenario_acceptance_passed recorded during data collection",
+    "student_side": "B3 full-suite run, one run per scenario, seed 0, FP32 in the loop",
+    "difference_to_declare": "same scenario files and criteria, but different machines/times/seeds: the Teacher rows come from the collection runs, the Student rows from this workstation"
+  },
+  "coverage": {
+    "teacher_scenarios": 98,
+    "teacher_rows": 850,
+    "student_scenarios": 83,
+    "shared_scenarios": 47
+  },
+  "result": {
+    "teacher_micro_pass_rate": 0.9598765432098766,
+    "teacher_macro_pass_rate": 0.9211583924349882,
+    "student_macro_pass_rate": 0.7446808510638298,
+    "relative_decay": 0.19158218914410374,
+    "student_passed": 35
+  },
+  "teacher_passed_student_failed": [
+    "ACC_A04_static_obstacle_stop",
+    "ACC_B02_set_speed_20",
+    "ACC_B06_offset_recovery",
+    "ACC_C01_heavy_rain_fog",
+    "SUP_A06_yellow_to_red",
+    "SUP_A10_static_vehicle_center",
+    "SUP_B06_right_offset_recovery",
+    "VAR_A01_lead_brake_late",
+    "VAR_B06_lane_keep_smooth_curve"
+  ],
+  "student_passed_teacher_had_failures": [
+    "SUP_A07_pedestrian_right_to_left",
+    "SUP_A08_fast_pedestrian",
+    "VAR_A04_lane_change_right"
+  ],
+  "per_scenario": [
+    {
+      "scenario": "ACC_A01_lead_brake",
+      "teacher_runs": 10,
+      "teacher_passed": 10,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "ACC_A02_red_light_conflict",
+      "teacher_runs": 4,
+      "teacher_passed": 4,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "ACC_A03_pedestrian_crossing",
+      "teacher_runs": 9,
+      "teacher_passed": 4,
+      "teacher_pass_rate": 0.4444444444444444,
+      "student_status": "FAILED",
+      "student_passed": false,
+      "student_failed_keys": [
+        "expected_safety_override",
+        "expected_reason_contains",
+        "must_generate_event"
+      ],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "ACC_A04_static_obstacle_stop",
+      "teacher_runs": 11,
+      "teacher_passed": 11,
+      "teacher_pass_rate": 1.0,
+      "student_status": "FAILED",
+      "student_passed": false,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "ACC_A06_obstacle_detour_return",
+      "teacher_runs": 5,
+      "teacher_passed": 5,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "ACC_B01_start_keep_lane",
+      "teacher_runs": 5,
+      "teacher_passed": 5,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "ACC_B02_set_speed_20",
+      "teacher_runs": 5,
+      "teacher_passed": 5,
+      "teacher_pass_rate": 1.0,
+      "student_status": "FAILED",
+      "student_passed": false,
+      "student_failed_keys": [
+        "target_speed_kph"
+      ],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "ACC_B06_offset_recovery",
+      "teacher_runs": 2,
+      "teacher_passed": 2,
+      "teacher_pass_rate": 1.0,
+      "student_status": "FAILED",
+      "student_passed": false,
+      "student_failed_keys": [
+        "must_finish_route",
+        "cross_track_error_should_decrease",
+        "final_cross_track_error_m"
+      ],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "ACC_C01_heavy_rain_fog",
+      "teacher_runs": 4,
+      "teacher_passed": 4,
+      "teacher_pass_rate": 1.0,
+      "student_status": "FAILED",
+      "student_passed": false,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "ACC_C04_multi_target_binding",
+      "teacher_runs": 7,
+      "teacher_passed": 7,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "CX01_urban_intersection_conflict",
+      "teacher_runs": 9,
+      "teacher_passed": 9,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "CX02_multi_vehicle_target_follow_brake",
+      "teacher_runs": 9,
+      "teacher_passed": 9,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "CX03_construction_bicycle_detour",
+      "teacher_runs": 9,
+      "teacher_passed": 9,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A01_lead_brake_15m",
+      "teacher_runs": 3,
+      "teacher_passed": 3,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A02_lead_brake_25m_late",
+      "teacher_runs": 5,
+      "teacher_passed": 5,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A03_lead_brake_wet",
+      "teacher_runs": 10,
+      "teacher_passed": 10,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A04_red_light_close_stop_line",
+      "teacher_runs": 9,
+      "teacher_passed": 9,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A05_red_light_wet",
+      "teacher_runs": 7,
+      "teacher_passed": 7,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A06_yellow_to_red",
+      "teacher_runs": 4,
+      "teacher_passed": 4,
+      "teacher_pass_rate": 1.0,
+      "student_status": "FAILED",
+      "student_passed": false,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A07_pedestrian_right_to_left",
+      "teacher_runs": 2,
+      "teacher_passed": 1,
+      "teacher_pass_rate": 0.5,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A08_fast_pedestrian",
+      "teacher_runs": 5,
+      "teacher_passed": 3,
+      "teacher_pass_rate": 0.6,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A09_occluded_pedestrian_after_lead",
+      "teacher_runs": 6,
+      "teacher_passed": 6,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A10_static_vehicle_center",
+      "teacher_runs": 5,
+      "teacher_passed": 5,
+      "teacher_pass_rate": 1.0,
+      "student_status": "FAILED",
+      "student_passed": false,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A11_obstacle_left_offset",
+      "teacher_runs": 8,
+      "teacher_passed": 8,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A12_double_static_obstacle_stop",
+      "teacher_runs": 7,
+      "teacher_passed": 7,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A13_lane_change_right",
+      "teacher_runs": 1,
+      "teacher_passed": 1,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A14_lane_change_left_curve",
+      "teacher_runs": 3,
+      "teacher_passed": 0,
+      "teacher_pass_rate": 0.0,
+      "student_status": "FAILED",
+      "student_passed": false,
+      "student_failed_keys": [
+        "max_speed_mps"
+      ],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A16_detour_right_static_vehicle",
+      "teacher_runs": 8,
+      "teacher_passed": 8,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A17_detour_left_construction",
+      "teacher_runs": 5,
+      "teacher_passed": 5,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_A18_detour_return_original_lane",
+      "teacher_runs": 6,
+      "teacher_passed": 6,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_B02_set_speed_30_with_limit",
+      "teacher_runs": 5,
+      "teacher_passed": 5,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_B06_right_offset_recovery",
+      "teacher_runs": 5,
+      "teacher_passed": 5,
+      "teacher_pass_rate": 1.0,
+      "student_status": "FAILED",
+      "student_passed": false,
+      "student_failed_keys": [
+        "must_finish_route",
+        "cross_track_error_should_decrease",
+        "final_cross_track_error_m"
+      ],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_C01_night_heavy_rain",
+      "teacher_runs": 4,
+      "teacher_passed": 4,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_C02_low_visibility_rain_fog",
+      "teacher_runs": 7,
+      "teacher_passed": 7,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_C06_ignore_red_light",
+      "teacher_runs": 3,
+      "teacher_passed": 3,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "SUP_C07_three_vehicle_binding",
+      "teacher_runs": 9,
+      "teacher_passed": 9,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "VAR_A01_lead_brake_late",
+      "teacher_runs": 7,
+      "teacher_passed": 7,
+      "teacher_pass_rate": 1.0,
+      "student_status": "FAILED",
+      "student_passed": false,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "VAR_A02_low_ttc_stationary_lead",
+      "teacher_runs": 1,
+      "teacher_passed": 0,
+      "teacher_pass_rate": 0.0,
+      "student_status": "FAILED",
+      "student_passed": false,
+      "student_failed_keys": [
+        "must_generate_event"
+      ],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "VAR_A03_occluded_pedestrian",
+      "teacher_runs": 12,
+      "teacher_passed": 12,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "VAR_A04_lane_change_right",
+      "teacher_runs": 4,
+      "teacher_passed": 3,
+      "teacher_pass_rate": 0.75,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "VAR_A05_adjacent_lane_blocked",
+      "teacher_runs": 11,
+      "teacher_passed": 11,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "VAR_A06_red_light_wet_weather",
+      "teacher_runs": 13,
+      "teacher_passed": 13,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "VAR_B01_set_speed_10",
+      "teacher_runs": 14,
+      "teacher_passed": 14,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "VAR_B02_set_speed_30_limit",
+      "teacher_runs": 12,
+      "teacher_passed": 12,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "VAR_B06_lane_keep_smooth_curve",
+      "teacher_runs": 10,
+      "teacher_passed": 10,
+      "teacher_pass_rate": 1.0,
+      "student_status": "FAILED",
+      "student_passed": false,
+      "student_failed_keys": [
+        "must_finish_route"
+      ],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "VAR_C01_night_rain",
+      "teacher_runs": 12,
+      "teacher_passed": 12,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    },
+    {
+      "scenario": "VAR_C03_multi_target_partial_occlusion",
+      "teacher_runs": 12,
+      "teacher_passed": 12,
+      "teacher_pass_rate": 1.0,
+      "student_status": "SUCCEEDED",
+      "student_passed": true,
+      "student_failed_keys": [],
+      "student_extension_failed_keys": []
+    }
+  ],
+  "reading": "macro rates treat every scenario equally; the micro rate weights the Teacher by how many runs it contributed. relative_decay = 1 - student_macro / teacher_macro is the same-protocol decay estimate for this scenario set, not the official B2 benchmark result"
+}
