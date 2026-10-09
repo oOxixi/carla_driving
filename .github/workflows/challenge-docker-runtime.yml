@@ -22,7 +22,6 @@ jobs:
     timeout-minutes: 90
     env:
       CONTEXT_DIR: submission/challenge/DOCKER_RUNTIME_BUILD_20261009
-      OUT_DIR: ${{ runner.temp }}/challenge-docker-runtime-${{ github.run_id }}
       STAGE_IMAGE: challenge-student-runtime:20261009
       MAX_COMPRESSED_BYTES: '10737418240'
       MAX_IMAGE_BYTES: '21474836480'
@@ -41,6 +40,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          export OUT_DIR="$RUNNER_TEMP/challenge-docker-runtime-$GITHUB_RUN_ID"
+          echo "OUT_DIR=$OUT_DIR" >> "$GITHUB_ENV"
           mkdir -p "$OUT_DIR"
           docker version > "$OUT_DIR/docker_version.txt" 2>&1
           docker info > "$OUT_DIR/docker_info.txt" 2>&1
