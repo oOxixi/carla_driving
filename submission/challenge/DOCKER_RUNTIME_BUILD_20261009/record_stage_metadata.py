@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import shlex
 
 GIB = 1024 ** 3
 
@@ -21,6 +22,15 @@ def main():
     image = json.loads((out / 'image_inspect.json').read_text())[0]
     base = json.loads((out / 'base_image_inspect.json').read_text())[0]
     registry = json.loads((out / 'registry_metadata.json').read_text())
+    runtime = json.loads((out / 'runtime_dependencies.json').read_text())
+    base_runtime = json.loads((out / 'base_runtime.json').read_text())
+    base_os = {}
+    for line in (out / 'base_os_release.txt').read_text().splitlines():
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        values = shlex.split(value)
+        base_os[key] = values[0] if len(values) == 1 else value
     if image.get('Architecture') != 'amd64' or image.get('Os') != 'linux':
         raise RuntimeError('Runtime stage is not Linux amd64')
     size = image['Size']
@@ -35,6 +45,14 @@ def main():
         'image_ref': os.environ.get('STAGE_IMAGE'), 'image_id': image['Id'],
         'repo_digests': image.get('RepoDigests') or [],
         'base_ref': registry['base_tag'], 'resolved_base': registry['resolved_base'],
+        'base_kind': registry['base_kind'], 'official_base_ref': registry['official_base_ref'],
+        'official_base_access': registry['official_base_access'],
+        'official_environment_equivalent_candidate': registry['official_environment_equivalent_candidate'],
+        'official_environment_equivalent': registry['official_environment_equivalent'],
+        'official_equivalence_status': registry['official_equivalence_status'],
+        'actual_base_os': base_os, 'actual_base_runtime': base_runtime,
+        'actual_runtime_python': runtime['python'],
+        'actual_runtime_versions': runtime['packages'],
         'base_image_id': base['Id'], 'base_repo_digests': base.get('RepoDigests') or [],
         'image_size_bytes_observed': size,
         'image_rootfs_diff_ids': image.get('RootFS', {}).get('Layers', []),

@@ -13,6 +13,12 @@ import urllib.request
 
 REPOSITORY = "openexplorer/ai_toolchain_ubuntu_22_j6_cpu"
 TAG = "v3.9.1"
+OFFICIAL_BASE_REF = REPOSITORY + ":" + TAG
+OFFICIAL_BASE_ACCESS = {
+    "status": "ANONYMOUS_PULL_DENIED", "http_status": 401,
+    "run_id": 37884671386,
+    "run_url": "https://github.com/oOxixi/carla_driving/actions/runs/37884671386",
+}
 GIB = 1024 ** 3
 ACCEPT = ",".join((
     "application/vnd.oci.image.index.v1+json",
@@ -42,10 +48,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-compressed-bytes", type=int, default=10 * GIB)
+    parser.add_argument("--repository", default=REPOSITORY)
+    parser.add_argument("--tag", default=TAG)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
+    repository, tag = args.repository, args.tag
+    is_official_reference = repository == REPOSITORY and tag == TAG
+    base_kind = ("ORIGINAL_OE_TOOLCHAIN" if is_official_reference else
+                 "PUBLIC_X86_PINNED_RUNTIME" if repository == "library/python" else
+                 "CUSTOM_BASE_UNVERIFIED")
     metadata = {
-        "status": "PREFLIGHT_STARTED", "base_tag": REPOSITORY + ":" + TAG,
+        "status": "PREFLIGHT_STARTED", "base_tag": repository + ":" + tag,
+        "base_kind": base_kind, "official_base_ref": OFFICIAL_BASE_REF,
+        "official_base_access": OFFICIAL_BASE_ACCESS,
+        "official_environment_equivalent_candidate": is_official_reference,
+        "official_environment_equivalent": None if is_official_reference else False,
+        "official_equivalence_status": "OFFICIAL_REFERENCE_CANDIDATE_NOT_RUNTIME_VERIFIED" if is_official_reference else "CUSTOM_RUNTIME_NOT_EQUIVALENT_TO_OFFICIAL_TOOLCHAIN",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "run_id": os.environ.get("GITHUB_RUN_ID"),
         "source_commit": os.environ.get("GITHUB_SHA"),
@@ -54,13 +72,13 @@ def main():
     }
     try:
         query = urllib.parse.urlencode({
-            "service": "registry.docker.io", "scope": "repository:" + REPOSITORY + ":pull",
+            "service": "registry.docker.io", "scope": "repository:" + repository + ":pull",
         })
         auth, _ = read_json("https://auth.docker.io/token?" + query)
         # Do not log this transient anonymous bearer token or store it in artifacts.
         headers = {"Authorization": "Bearer " + auth["token"], "Accept": ACCEPT}
-        endpoint = "https://registry-1.docker.io/v2/" + REPOSITORY + "/manifests/"
-        manifest, tag_digest = read_json(endpoint + TAG, headers)
+        endpoint = "https://registry-1.docker.io/v2/" + repository + "/manifests/"
+        manifest, tag_digest = read_json(endpoint + tag, headers)
         write_json(args.output / "registry_tag_manifest.json", manifest)
         selected_digest = tag_digest
         if "manifests" in manifest:
@@ -84,7 +102,7 @@ def main():
         metadata.update({
             "tag_manifest_digest": tag_digest,
             "selected_platform_manifest_digest": selected_digest,
-            "resolved_base": REPOSITORY + "@" + selected_digest,
+            "resolved_base": repository + "@" + selected_digest,
             "compressed_layers_bytes": compressed, "layer_count": len(layers),
             "runner_output_free_bytes": free_output,
             "runner_docker_free_bytes": free_docker,
@@ -94,7 +112,7 @@ def main():
         })
         write_json(args.output / "registry_platform_manifest.json", manifest)
         if compressed > args.max_compressed_bytes:
-            raise RuntimeError("Official compressed layers exceed configured download limit")
+            raise RuntimeError("Selected base compressed layers exceed configured download limit")
         if min(free_output, free_docker) < conservative_required:
             raise RuntimeError("Runner has insufficient free disk for the conservative pull/build/export guard")
         metadata["status"] = "PREFLIGHT_PASSED_NO_IMAGE_LAYERS_DOWNLOADED"

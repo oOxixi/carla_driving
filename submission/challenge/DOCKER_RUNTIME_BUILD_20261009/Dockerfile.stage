@@ -1,13 +1,25 @@
-ARG BASE_IMAGE=openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1
+ARG BASE_IMAGE=python:3.10.12-slim-bullseye
 FROM ${BASE_IMAGE}
 LABEL challenge.artifact_kind="runtime_stage_without_private_models"
+LABEL challenge.base_kind="PUBLIC_X86_PINNED_RUNTIME" challenge.official_environment="false"
 ENV PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 WORKDIR /opt/challenge
 COPY source /opt/challenge/02_源码与部署/source
 COPY scripts /opt/challenge/02_源码与部署/scripts
 COPY docker /opt/challenge/02_源码与部署/docker
-# Baseline drift is fatal. Never implicitly upgrade the original core runtime.
-RUN python3 02_源码与部署/docker/verify_runtime.py --base \
+# This is a public self-built Student runtime, not the unavailable OE toolchain.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends libgomp1 libstdc++6 \
+ && rm -rf /var/lib/apt/lists/*
+# Lock the observed B3 core package versions, then fail on any version drift.
+RUN python3 -m pip install --no-cache-dir --only-binary=:all: \
+    --index-url https://download.pytorch.org/whl/cpu \
+    --extra-index-url https://pypi.org/simple \
+    -c 02_源码与部署/docker/requirements-runtime-lock.txt 'torch==2.8.0+cpu' \
+ && python3 -m pip install --no-cache-dir --only-binary=:all: \
+    -c 02_源码与部署/docker/requirements-runtime-lock.txt \
+    'numpy==1.23.0' 'onnxruntime==1.19.0' 'Pillow==9.3.0' \
+ && python3 02_源码与部署/docker/verify_runtime.py --base \
  && python3 -m pip install --no-cache-dir --only-binary=:all: \
     -c 02_源码与部署/docker/requirements-runtime-lock.txt \
     -r 02_源码与部署/docker/requirements-runtime-extra.txt \

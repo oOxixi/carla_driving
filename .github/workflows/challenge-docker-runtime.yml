@@ -23,6 +23,8 @@ jobs:
     env:
       CONTEXT_DIR: submission/challenge/DOCKER_RUNTIME_BUILD_20261009
       STAGE_IMAGE: challenge-student-runtime:20261009
+      PUBLIC_BASE_REPOSITORY: library/python
+      PUBLIC_BASE_TAG: 3.10.12-slim-bullseye
       MAX_COMPRESSED_BYTES: '10737418240'
       MAX_IMAGE_BYTES: '21474836480'
     steps:
@@ -47,6 +49,7 @@ jobs:
           docker info > "$OUT_DIR/docker_info.txt" 2>&1
           df -B1 "$OUT_DIR" /var/lib/docker > "$OUT_DIR/disk_before.txt"
           python3 "$CONTEXT_DIR/inspect_registry.py" --output "$OUT_DIR" \
+            --repository "$PUBLIC_BASE_REPOSITORY" --tag "$PUBLIC_BASE_TAG" \
             --max-compressed-bytes "$MAX_COMPRESSED_BYTES" \
             2>&1 | tee "$OUT_DIR/registry_preflight.log"
 

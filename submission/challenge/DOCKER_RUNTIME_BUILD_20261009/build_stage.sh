@@ -36,6 +36,11 @@ python3 "$task_context/verify_context.py" "$task_context" \
 docker pull --platform linux/amd64 "$RESOLVED_BASE" \
   2>&1 | tee "$OUT_DIR/pull.log"
 docker image inspect "$RESOLVED_BASE" > "$OUT_DIR/base_image_inspect.json"
+docker run --rm --entrypoint cat "$RESOLVED_BASE" /etc/os-release \
+  > "$OUT_DIR/base_os_release.txt" 2> "$OUT_DIR/base_os_release.log"
+docker run --rm --entrypoint python3 "$RESOLVED_BASE" -c \
+  'import json,platform; print(json.dumps({"python":platform.python_version(),"machine":platform.machine(),"platform":platform.platform()}))' \
+  > "$OUT_DIR/base_runtime.json" 2> "$OUT_DIR/base_runtime.log"
 df -B1 "$OUT_DIR" /var/lib/docker > "$OUT_DIR/disk_after_pull.txt"
 docker build --platform linux/amd64 --progress plain \
   --build-arg "BASE_IMAGE=$RESOLVED_BASE" \
@@ -53,6 +58,8 @@ docker run --rm --entrypoint python3 "$STAGE_IMAGE" \
   > "$OUT_DIR/deployment_import_check.json" 2> "$OUT_DIR/deployment_import_check.log"
 docker run --rm --entrypoint python3 "$STAGE_IMAGE" -m pip freeze --all \
   > "$OUT_DIR/runtime_freeze.txt" 2> "$OUT_DIR/runtime_freeze.log"
+docker run --rm --entrypoint dpkg-query "$STAGE_IMAGE" -W \
+  > "$OUT_DIR/os_packages.txt" 2> "$OUT_DIR/os_packages.log"
 docker image inspect "$STAGE_IMAGE" > "$OUT_DIR/image_inspect.json"
 python3 "$task_context/record_stage_metadata.py" --output "$OUT_DIR" \
   --max-image-bytes "$MAX_IMAGE_BYTES" --before-save
