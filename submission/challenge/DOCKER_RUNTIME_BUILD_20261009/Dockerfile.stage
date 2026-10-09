@@ -25,10 +25,12 @@ RUN python3 -m pip install --no-cache-dir --only-binary=:all: \
     -r 02_源码与部署/docker/requirements-runtime-extra.txt \
  && python3 02_源码与部署/docker/verify_runtime_stage.py \
     > /opt/challenge/02_源码与部署/docker/runtime_dependencies.json \
- && python3 02_源码与部署/scripts/check_deployment.py --profile files \
+ && (python3 02_源码与部署/scripts/check_deployment.py --profile files \
     > /opt/challenge/02_源码与部署/docker/deployment_files_check.json \
- && python3 02_源码与部署/scripts/check_deployment.py --profile student \
+    || { cat /opt/challenge/02_源码与部署/docker/deployment_files_check.json; exit 1; }) \
+ && (python3 02_源码与部署/scripts/check_deployment.py --profile student \
     > /opt/challenge/02_源码与部署/docker/deployment_import_check.json \
+    || { cat /opt/challenge/02_源码与部署/docker/deployment_import_check.json; exit 1; }) \
  && python3 -m pip freeze --all > /opt/challenge/02_源码与部署/docker/runtime_freeze.txt
 EXPOSE 8100
 # This becomes a complete Student service only after the real private ONNX
