@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "QWR_07_visual_avoid_return",
+  "category": "qwen_routing",
+  "official_level": "advanced",
+  "description": "视觉指代、绕障和返回车道组合必须调用 Planner V2。",
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 4107,
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 40},
+  "ego_spawn": {"x": 0, "y": 0, "z": 0.5, "yaw_deg": 0},
+  "route": {"coordinate_type": "scenario_local_xy_m", "points_xy_m": [[0, 0], [25, 0], [40, 3.5], [60, 3.5], [75, 0], [95, 0]], "resample_interval_m": 1.0, "finish_radius_m": 3.0},
+  "commands": [{"time_s": 1, "source_text": "绕过右前方停着的车，再回到当前车道", "intent": "AVOID_OBSTACLE", "parameters": {}, "intent_confidence": 0.96, "status": "valid", "confirm_required": false}],
+  "actors": [{"actor_id": "obstacle-01", "type": "vehicle", "blueprint_id": "vehicle.tesla.model3", "spawn": {"x": 28, "y": 0, "z": 0.5, "yaw_deg": 0}, "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 0, "brake_at_s": 0, "target_speed_mps": 0}}],
+  "qwen_expected": {"route": "QWEN_PLAN", "min_calls": 1, "max_calls": 2, "expected_behaviors": ["SLOW_DOWN", "AVOID_OBSTACLE", "RETURN_TO_LANE"], "expected_terminal": "SUCCEEDED", "allowed_replans": 1, "forbidden_low_level_fields": true},
+  "expected": {"must_no_collision": true, "must_no_route_deviation": true}
+}

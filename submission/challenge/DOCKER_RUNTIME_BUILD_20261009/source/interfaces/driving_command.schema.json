@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://carla-driving.local/interfaces/driving_command.schema.json",
+  "title": "DrivingCommand V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command_id",
+    "source_text",
+    "intent",
+    "parameters",
+    "confidence",
+    "received_at_ns",
+    "deadline_ns",
+    "source"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "command_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "source_text": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "intent": {
+      "enum": [
+        "START", "STOP", "EMERGENCY_STOP", "SET_SPEED", "SLOW_DOWN",
+        "KEEP_LANE", "FOLLOW", "YIELD", "CHANGE_LANE", "TURN",
+        "PULL_OVER", "AVOID_OBSTACLE", "UNKNOWN"
+      ]
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target_speed_mps": {"type": "number", "minimum": 0, "maximum": 50},
+        "direction": {"enum": ["LEFT", "RIGHT", "STRAIGHT"]},
+        "target_id": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "received_at_ns": {"type": "integer", "minimum": 0},
+    "deadline_ns": {"type": "integer", "minimum": 1},
+    "source": {"enum": ["VOICE", "TEXT", "SCENARIO", "API"]},
+    "ambiguity": {"type": "string", "maxLength": 128, "default": "NONE"},
+    "requires_confirmation": {"type": "boolean", "default": false}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"intent": {"const": "SET_SPEED"}}},
+      "then": {"properties": {"parameters": {"required": ["target_speed_mps"]}}}
+    }
+  ],
+  "examples": [
+    {
+      "schema_version": "1.0",
+      "command_id": "voice-0001",
+      "source_text": "速度设为20公里每小时",
+      "intent": "SET_SPEED",
+      "parameters": {"target_speed_mps": 5.5555555556},
+      "confidence": 0.98,
+      "received_at_ns": 1000000000,
+      "deadline_ns": 4000000000,
+      "source": "VOICE",
+      "ambiguity": "NONE",
+      "requires_confirmation": false
+    }
+  ]
+}

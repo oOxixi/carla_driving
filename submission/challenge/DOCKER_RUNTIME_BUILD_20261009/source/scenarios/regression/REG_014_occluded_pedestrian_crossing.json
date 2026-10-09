@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "REG_014_occluded_pedestrian_crossing",
+  "category": "regression",
+  "official_level": "challenge",
+  "description": "A real pedestrian crosses from behind a declared construction prop. Acceptance rejects runs that did not physically spawn both actor types.",
+  "map": "Town03",
+  "weather": "CloudyNoon",
+  "seed": 14,
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 28},
+  "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+  "route": {"coordinate_type": "scenario_local_xy_m", "points_xy_m": [[0, 0], [20, 0], [45, 0], [70, 0]], "resample_interval_m": 1.0, "finish_radius_m": 3.0},
+  "commands": [{"time_s": 0, "source_text": "保持车道，注意观察", "intent": "KEEP_LANE", "parameters": {"target_speed_kph": 18}, "intent_confidence": 0.95, "status": "valid", "confirm_required": false}],
+  "actors": [
+    {"actor_id": "construction_barrier", "type": "static.prop", "blueprint_id": "static.prop.warningconstruction", "spawn": {"x": 18.0, "y": -5.0, "z": 0.5, "yaw_deg": 90.0}},
+    {"actor_id": "ped_occluded", "type": "walker.pedestrian", "spawn": {"x": 22.0, "y": -3.4, "z": 0.5, "yaw_deg": 90.0}, "behavior": {"mode": "crossing", "target_xy_m": [22.0, 3.4], "start_time_s": 4.0, "speed_mps": 1.5}}
+  ],
+  "sensors": {"front_rgb": {"enabled": true, "width": 800, "height": 600, "fov": 90}, "collision": {"enabled": true}, "lane_invasion": {"enabled": true}},
+  "expected": {"must_no_pedestrian_collision": true, "required_real_actor_types": ["walker.pedestrian", "static.prop"], "expected_safety_override": true, "expected_reason_contains": ["ttc", "front", "pedestrian"], "must_generate_event": true}
+}

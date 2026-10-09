@@ -1,0 +1,10 @@
+# Direct runtime constraints from B3 hardware_env.json, 2026-10-07.
+# torch/ORT/NumPy/Pillow must already match the OE v3.9.1 base.
+# PyYAML exact baseline was not recorded; range is intentional, not a full lock.
+torch==2.8.0+cpu
+onnxruntime==1.19.0
+numpy==1.23.0
+Pillow==9.3.0
+jsonschema==4.25.1
+psutil==7.2.1
+PyYAML>=6,<7

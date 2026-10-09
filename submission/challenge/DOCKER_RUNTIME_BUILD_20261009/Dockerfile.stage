@@ -1,0 +1,25 @@
+ARG BASE_IMAGE=openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1
+FROM ${BASE_IMAGE}
+LABEL challenge.artifact_kind="runtime_stage_without_private_models"
+ENV PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+WORKDIR /opt/challenge
+COPY source /opt/challenge/02_源码与部署/source
+COPY scripts /opt/challenge/02_源码与部署/scripts
+COPY docker /opt/challenge/02_源码与部署/docker
+# Baseline drift is fatal. Never implicitly upgrade the original core runtime.
+RUN python3 02_源码与部署/docker/verify_runtime.py --base \
+ && python3 -m pip install --no-cache-dir --only-binary=:all: \
+    -c 02_源码与部署/docker/requirements-runtime-lock.txt \
+    -r 02_源码与部署/docker/requirements-runtime-extra.txt \
+ && python3 02_源码与部署/docker/verify_runtime_stage.py \
+    > /opt/challenge/02_源码与部署/docker/runtime_dependencies.json \
+ && python3 02_源码与部署/scripts/check_deployment.py --profile files \
+    > /opt/challenge/02_源码与部署/docker/deployment_files_check.json \
+ && python3 02_源码与部署/scripts/check_deployment.py --profile student \
+    > /opt/challenge/02_源码与部署/docker/deployment_import_check.json \
+ && python3 -m pip freeze --all > /opt/challenge/02_源码与部署/docker/runtime_freeze.txt
+EXPOSE 8100
+# This becomes a complete Student service only after the real private ONNX
+# files are added at their package paths and the resulting image is verified.
+ENTRYPOINT ["python3", "/opt/challenge/02_源码与部署/scripts/launch_student.py"]
+CMD ["--mode", "http", "--variant", "full_int8", "--host", "0.0.0.0", "--port", "8100"]

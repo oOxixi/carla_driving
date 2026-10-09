@@ -1,0 +1,16 @@
+{
+  "runtime_id": "packaged-student-x86-onnxruntime-v31",
+  "backend": "onnxruntime",
+  "model_path": "../../03_训练与模型/A2模型与量化/models/full_int8/student_int8.onnx",
+  "model_sha256": "275dce5c426fff85a0375eb286fc67febac8d835c1e36fe15b0fbd707cf836c3",
+  "model_id": "student-v0-r3-fp32",
+  "config_id": "student-v0-r3-structure-20260911",
+  "precision": "int8",
+  "dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+  "adapter_sha256": "bb30726b8287b422516820af8e8af21e5d6a205cd81d3f9de6871de9badfcf21",
+  "candidate_gate_status": "PENDING_A3_FP32_GATE",
+  "entrypoint_from_package_root": "python 02_源码与部署/scripts/launch_student.py --mode http --variant full_int8",
+  "execution_provider": "CPUExecutionProvider",
+  "is_chip_runtime": false,
+  "performance_reports": "05_B3性能与评测/02_X86性能报告与原始日志"
+}

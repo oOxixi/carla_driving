@@ -1,0 +1,1116 @@
+{
+  "scope": "Public runtime source only; no formal models, tensors, images, recordings or cases",
+  "model_weights_included": false,
+  "files": [
+    {
+      "path": "source/challenge/student/contract.py",
+      "bytes": 3348,
+      "sha256": "d7d1cc57c712ae2ec2e86424dfa093b1c366af8256a8061b58f7d976d2b66d51"
+    },
+    {
+      "path": "source/challenge/student/model.py",
+      "bytes": 6754,
+      "sha256": "070f490099e9a77715e0c1731cd5e825535e6b9230ddb0ac9413e4347b2da86c"
+    },
+    {
+      "path": "source/challenge/student/preprocess.py",
+      "bytes": 9394,
+      "sha256": "dbf256c6f8495525025dc86bff3d461bf6387460674a50c3efdae80c3d0619c4"
+    },
+    {
+      "path": "source/challenge/student/training_contract.py",
+      "bytes": 2790,
+      "sha256": "3f9663e0d7baada4a19791bddf794f9c5b806bd7a35dd42df8efb9e54208d69c"
+    },
+    {
+      "path": "source/challenge/student/__init__.py",
+      "bytes": 385,
+      "sha256": "3e377e647fe91aac4633c9fdd27b95614d0e6bce969550205adc855ba4d9a780"
+    },
+    {
+      "path": "source/challenge/planner/backend.py",
+      "bytes": 699,
+      "sha256": "e8efd847141550a8d03b0a4fceba4809c9dce575756b29ce21eb9a50e05b7270"
+    },
+    {
+      "path": "source/challenge/planner/common.py",
+      "bytes": 1174,
+      "sha256": "bc7c95bdf2adf8ebc244b9d0cf7d0cb44f3897b77aea6458a9bb5b0806b5c5e4"
+    },
+    {
+      "path": "source/challenge/planner/frozen_contracts.py",
+      "bytes": 1307,
+      "sha256": "b06f36f56415ec508cfa74bef1fdb07425e8a138d87d98df41bd196418aaf7c9"
+    },
+    {
+      "path": "source/challenge/planner/student_adapter.py",
+      "bytes": 13494,
+      "sha256": "bb30726b8287b422516820af8e8af21e5d6a205cd81d3f9de6871de9badfcf21"
+    },
+    {
+      "path": "source/challenge/planner/student_backend.py",
+      "bytes": 5142,
+      "sha256": "1596dc7354fe9444c50fff99a3db08d00574fb3829764d52ff6b8dee19b3b572"
+    },
+    {
+      "path": "source/challenge/planner/teacher_backend.py",
+      "bytes": 2040,
+      "sha256": "eb130409006b0dad2b0f0ee2061bd83dac1c7bfbd3b112371fcbcb3c76b0d0f5"
+    },
+    {
+      "path": "source/challenge/planner/__init__.py",
+      "bytes": 260,
+      "sha256": "bb6ea2f93b28eea05d458364b0a6912da34ced6352eb4063d3f4f010f81b26f6"
+    },
+    {
+      "path": "source/challenge/runtime/historical_random_init_contract_report_x86.json",
+      "bytes": 3047,
+      "sha256": "d31c6515bb96c897bbd22234e967bc3867dd7d0e254476429cc331f22e53307b"
+    },
+    {
+      "path": "source/challenge/runtime/historical_random_init_runtime_manifest.json",
+      "bytes": 1501,
+      "sha256": "f6739ce622a88a48fef7b9732046386e97721fa279539b2c106627058de70163"
+    },
+    {
+      "path": "source/challenge/runtime/historical_random_init_runtime_profile_x86.json",
+      "bytes": 1512,
+      "sha256": "d5c54c0b1969549d53e1b231434f22e38c47aa6c2f747c0a77a1a1cd10cf962f"
+    },
+    {
+      "path": "source/challenge/runtime/runtime_manifest.json",
+      "bytes": 869,
+      "sha256": "49a019b58f22ded94d32917473d34e46319cf8bbeb8c795dfb2d74787689aa5e"
+    },
+    {
+      "path": "source/challenge/runtime/student_x86.py",
+      "bytes": 15375,
+      "sha256": "65529cf3777d35e6e5614d3f0ed3dbf65732eac2d5ef61dc99f74d519b2732dd"
+    },
+    {
+      "path": "source/challenge/runtime/tests/test_student_x86.py",
+      "bytes": 4273,
+      "sha256": "4910052c3d580dd1da9fcb638e5a239bcec5266c6fb0d7d59ddd3b858a53b5ad"
+    },
+    {
+      "path": "source/challenge/hil/carla/analyse_resource_samples.py",
+      "bytes": 4163,
+      "sha256": "2d233d29723929e6aa91978ed0c69983698c4a2ee9ca5f1dd8a58ad153f1e760"
+    },
+    {
+      "path": "source/challenge/hil/carla/loop_resource_sampler.py",
+      "bytes": 8411,
+      "sha256": "b4873edfd0d59a5a3220f3a2aa9a634d6ead2d60bccbfee99336faa2a12c2538"
+    },
+    {
+      "path": "source/challenge/hil/carla/run_student_loop_suite.py",
+      "bytes": 8459,
+      "sha256": "a6d0ab6f20b18b480d51ce0ba9bc7258bcbdfacb5a05b1d8a3a3009b88e603ec"
+    },
+    {
+      "path": "source/challenge/hil/carla/student_action_service.py",
+      "bytes": 33276,
+      "sha256": "a62ae82ba9cde9c29868f06d0d9b95c3c2ee5a6310c6f0c7f3f44f8d28686714"
+    },
+    {
+      "path": "source/challenge/hil/carla/summarise_student_loop.py",
+      "bytes": 17763,
+      "sha256": "d6406e3cb70b3f19461dcbb2cd7563f1f9ec4f973cf25cd461ed67f9fdeffd07"
+    },
+    {
+      "path": "source/challenge/hil/carla/__init__.py",
+      "bytes": 82,
+      "sha256": "39796dac367ce9d1ac100773b97ebca6189cd2577b2c32aef4d74014a2ec62d8"
+    },
+    {
+      "path": "source/runtime/complexity_router.py",
+      "bytes": 21232,
+      "sha256": "d1785c61f636ebba3fa8b848c67502fd630c352a6ed4feb664546d76d5408a1c"
+    },
+    {
+      "path": "source/runtime/healthcheck.py",
+      "bytes": 6080,
+      "sha256": "1f886dc25826a59a7e623c7a385cab16e2961d7acde48c2dddd1041456b62df3"
+    },
+    {
+      "path": "source/runtime/interface_registry.py",
+      "bytes": 3108,
+      "sha256": "8463cc9681576af1abc1a47d7e2ce623b6e3cd76810f3a6f3090654b1db23e26"
+    },
+    {
+      "path": "source/runtime/latency_trace.py",
+      "bytes": 7712,
+      "sha256": "e5123cbd98fa24b8d75e01967b918b929dc3f421c79a7adcfac2291a4b1b59a4"
+    },
+    {
+      "path": "source/runtime/orchestrator.py",
+      "bytes": 53706,
+      "sha256": "92b0e09d23ccaaa2e663f9163916f31ebe1ed2427ffa60409b81d88cc92e8e27"
+    },
+    {
+      "path": "source/runtime/plan_compiler.py",
+      "bytes": 9738,
+      "sha256": "4ee22cfd30a6b6bf9cdcf2bb899d76e6d4c7f64c81fac9b8349df0fec02aa16b"
+    },
+    {
+      "path": "source/runtime/plan_validator.py",
+      "bytes": 13239,
+      "sha256": "e059390fd241b036a4fef16ccd63ce68c7b6b22a4d7157e6d9caba4f3c0a78da"
+    },
+    {
+      "path": "source/runtime/__init__.py",
+      "bytes": 930,
+      "sha256": "923e294c9ca542d4eae17f44e9a585a1663522086de007ee7063b4cc12d21893"
+    },
+    {
+      "path": "source/runtime/tests/test_complexity_router.py",
+      "bytes": 6993,
+      "sha256": "6fe43b40114724cb0f89513bd3358ccdab5bab3879cc1d5c0efef63a944e5ab8"
+    },
+    {
+      "path": "source/interfaces/control_command.schema.json",
+      "bytes": 2397,
+      "sha256": "db60cf6eb12ba29b67e887a8c6c3f9305814d59386a9d2cf963536b4ff51b50b"
+    },
+    {
+      "path": "source/interfaces/decision_plan.schema.json",
+      "bytes": 2207,
+      "sha256": "d53a3024663729e39e9cb8d7d52cb18f976e58c0c689645b312d2fa04601a697"
+    },
+    {
+      "path": "source/interfaces/driving_command.schema.json",
+      "bytes": 2222,
+      "sha256": "91bc78f58c65840155b9ccdc4d32d7606af2490db8a05fac3dcd24a66af2a364"
+    },
+    {
+      "path": "source/interfaces/execution_feedback.schema.json",
+      "bytes": 2206,
+      "sha256": "a727000e618e0d5f2b08318352f679f02a65dbe16f674e748f06aa121b444d2b"
+    },
+    {
+      "path": "source/interfaces/maneuver_plan.schema.json",
+      "bytes": 4418,
+      "sha256": "fb994ab58e4d44cb33ba10246d83bc8b4e79a4d99cafc3a772c91b4c189ac3df"
+    },
+    {
+      "path": "source/interfaces/model_request.schema.json",
+      "bytes": 5985,
+      "sha256": "3ef806ea5bdb15716e5bc0957fd31bdc10780f3c2632e40ea7b1c2c30e0c5b64"
+    },
+    {
+      "path": "source/interfaces/perception_state.schema.json",
+      "bytes": 4677,
+      "sha256": "a4cc34630735cffaf25dce28ff9fa929cd48c5421bf28f8369caf94fcda7897b"
+    },
+    {
+      "path": "source/interfaces/examples/control_command.json",
+      "bytes": 451,
+      "sha256": "6316675354305bf2cbe97658daa60f9e99e3219bd2e60c35ba22bcdf2202363c"
+    },
+    {
+      "path": "source/interfaces/examples/decision_plan.json",
+      "bytes": 444,
+      "sha256": "3896006da8c576a2e1314adbf1c16af71fd5cf1579c6ffd5963f137f444c387f"
+    },
+    {
+      "path": "source/interfaces/examples/driving_command.json",
+      "bytes": 361,
+      "sha256": "f41165bc514b6a949e39985a876398cb6e2e8c4e570f312c81c95ef9c1184024"
+    },
+    {
+      "path": "source/interfaces/examples/execution_feedback.json",
+      "bytes": 304,
+      "sha256": "c5ff2f5272213f0bcd9da63adb434adcb0e3f977b377691a38ff614d0d4eb131"
+    },
+    {
+      "path": "source/interfaces/examples/maneuver_plan.json",
+      "bytes": 1638,
+      "sha256": "0af9b12aa62483345deaed7a2323862b637894dfcb64c3ad5ad8eb023b905bd9"
+    },
+    {
+      "path": "source/interfaces/examples/model_request.json",
+      "bytes": 735,
+      "sha256": "a7cbb6b2819debb4ff6932be1555b2914dd8a7f00da093c950b1af4b72859cb1"
+    },
+    {
+      "path": "source/interfaces/examples/perception_state.json",
+      "bytes": 847,
+      "sha256": "00cbd37899c83d188abf3d91538a8b1a1ed2c919e4e4e167d89b0d274554a6e3"
+    },
+    {
+      "path": "source/config/driving_policy.json",
+      "bytes": 1091,
+      "sha256": "9918fcfbf9c8c8dfd96917f1ab47f65921e7e07a548c6a685578110c3de4ec27"
+    },
+    {
+      "path": "source/config/generalization_matrix.json",
+      "bytes": 965,
+      "sha256": "0ecfa645ee6cddf297906693bd74fc1275151a98b3d4b400a12c85b59120c32d"
+    },
+    {
+      "path": "source/config/strategy.py",
+      "bytes": 12645,
+      "sha256": "e5d794f808b6d759b07da5dea5f29ccfc75e03ec8de407544ff6f7e75477a680"
+    },
+    {
+      "path": "source/config/strategy_config.yaml",
+      "bytes": 2788,
+      "sha256": "56dcd0723e2dc63eba322028f6809a91fc954bb34b8ac917106dcc986e561584"
+    },
+    {
+      "path": "source/config/__init__.py",
+      "bytes": 71,
+      "sha256": "23404be01675e6744cfa1eeae554a961c8557fca5a9aae822a0212b3c67ced34"
+    },
+    {
+      "path": "source/scenarios/index.json",
+      "bytes": 4415,
+      "sha256": "f0b5701d605d2c4b48070171a6e43f867161f0a6e218bf38049dbc3befda6b33"
+    },
+    {
+      "path": "source/scenarios/scenario_schema.json",
+      "bytes": 3647,
+      "sha256": "17a3c1cdbf6f0764d2e1841f8b8653d28c28adf830164a3d6df0f5d0371a8b3d"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/matrix.json",
+      "bytes": 51664,
+      "sha256": "4d7a52269e90af2f46e259271d594206a64af8187b57c71e0733f3712b1283da"
+    },
+    {
+      "path": "source/scenarios/development/ROUTE_GEN_TOWN03_DESTINATION.json",
+      "bytes": 2044,
+      "sha256": "509e4a8a83510825c6c5d333f81f69a33360e0855a4a97f9c44227cee989298f"
+    },
+    {
+      "path": "source/scenarios/development/ROUTE_GEN_TOWN03_LEGAL_LANE_CHANGE.json",
+      "bytes": 2086,
+      "sha256": "2c894276bacf194c390f7b3ac8a956313d25a43dfce4cf971b8222b8b1cde9d2"
+    },
+    {
+      "path": "source/scenarios/development/ROUTE_GEN_TOWN03_OFF_ROUTE_RECOVERY.json",
+      "bytes": 2325,
+      "sha256": "372b20cd0698a7a7e8f0b2be6fd9196a3aa7292f73e6638a1083521603be2680"
+    },
+    {
+      "path": "source/scenarios/development/ROUTE_GEN_TOWN05_DESTINATION.json",
+      "bytes": 2003,
+      "sha256": "df9ba4358090a464c84c4234045172fc03b285c3d14ad9a8cb9d7cbe6d822730"
+    },
+    {
+      "path": "source/scenarios/development/S2_bicycle_follow_targeted.json",
+      "bytes": 5698,
+      "sha256": "bb8376236d5075bce146c6765f37b0357912fb2d9fb41ddb51210f0ec4702e3d"
+    },
+    {
+      "path": "source/scenarios/development/S2_P3_pedestrian_overtake_targeted.json",
+      "bytes": 7029,
+      "sha256": "2d5d05eefdb1f98798311ecd794a2d5e4566f0f2a79f667fd8ee8ff14678c233"
+    },
+    {
+      "path": "source/scenarios/development/S2_specific_events_compact.json",
+      "bytes": 10516,
+      "sha256": "694ffe97a1f8464542d3cd1cd001335c3b51c962de4f5680ecccbbbcd8363bcc"
+    },
+    {
+      "path": "source/scenarios/lateral_B/B01_straight_center.json",
+      "bytes": 3608,
+      "sha256": "e061b2969dcb6a021bb95230296604d3f85686c653869b1269ebf9c58e956b8b"
+    },
+    {
+      "path": "source/scenarios/lateral_B/B02_straight_left_offset.json",
+      "bytes": 3619,
+      "sha256": "d0450dff017504683c80bdad0383e5111f7e471f57b215f0666d45af27ea005b"
+    },
+    {
+      "path": "source/scenarios/lateral_B/B03_straight_right_offset.json",
+      "bytes": 3623,
+      "sha256": "840192c877e9684d08f554ae56ffa32169b42b29598c7cd8452e7c1794a71a1a"
+    },
+    {
+      "path": "source/scenarios/lateral_B/B04_smooth_left_curve.json",
+      "bytes": 3615,
+      "sha256": "c124497c301e57e349a6f954db9e32e6f69b3076ccdbc82e1a577fec363e2ff2"
+    },
+    {
+      "path": "source/scenarios/lateral_B/B05_smooth_right_curve.json",
+      "bytes": 3625,
+      "sha256": "8c2d308fc9939119ad42c8e8f9050643ee757dd06e5f18ff11cc1730338009a4"
+    },
+    {
+      "path": "source/scenarios/lateral_B/B06_left_turn.json",
+      "bytes": 3597,
+      "sha256": "dd25851401e8d921bbfa08411aaa89169fb9b63748b19eceb56ff769dbc0f1fb"
+    },
+    {
+      "path": "source/scenarios/lateral_B/B07_right_turn.json",
+      "bytes": 3606,
+      "sha256": "dbc6adbeda72630f97bc046b0156d78fc2ec548e4690877cd039256dab0e7160"
+    },
+    {
+      "path": "source/scenarios/lateral_B/B08_lane_change_left.json",
+      "bytes": 3561,
+      "sha256": "094a3ca17ee9b91becc7c581c52bf72613493c0920e519f78a2b3d823015861f"
+    },
+    {
+      "path": "source/scenarios/lateral_B/B09_lane_change_right.json",
+      "bytes": 3570,
+      "sha256": "83f03f90592d92ec808e0d41f7cc76fa8a7666b895e00445d1de206bd4abdb76"
+    },
+    {
+      "path": "source/scenarios/official_competition/S1_basic_voice_control_5km.json",
+      "bytes": 7825,
+      "sha256": "da46477314e9ef5fc6c1f897df50d8164f8de7c45844478e06916ded55b127ff"
+    },
+    {
+      "path": "source/scenarios/official_competition/S2_complex_avoidance_8km.json",
+      "bytes": 19629,
+      "sha256": "e2df6bb64118655b63b0743eb85fb710346958791c16fa378cd4df453f8ab77d"
+    },
+    {
+      "path": "source/scenarios/official_competition/S3_extreme_emergency_6km.json",
+      "bytes": 12257,
+      "sha256": "366875ca812f1e36ce0e4f23c4ec818987dd72aa476e6f720f067660abb66122"
+    },
+    {
+      "path": "source/scenarios/qwen_faults/QWX_01_model_timeout.json",
+      "bytes": 1131,
+      "sha256": "05dda1e81f6c3bd7b6f3f60497470b841f3f19fa7d88c873a13e7190b5da659f"
+    },
+    {
+      "path": "source/scenarios/qwen_faults/QWX_05_low_level_output_rejected.json",
+      "bytes": 1125,
+      "sha256": "63f6a615184a9d8b50604b7ef3a5418e31246b3a04c903d3c4bf311d20d3e876"
+    },
+    {
+      "path": "source/scenarios/qwen_faults/QWX_06_pedestrian_safety_override.json",
+      "bytes": 1665,
+      "sha256": "61842c2159e537e057e40a00ecc4b4f8f5e128a4475f93d004daf2b8c6a4b102"
+    },
+    {
+      "path": "source/scenarios/qwen_fullchain/QWF_01_turn_then_speed.json",
+      "bytes": 1236,
+      "sha256": "c7962a722f11bc642fdf2cdbcd0c1ca187abb09a2dddfe70de57d629ba1c7191"
+    },
+    {
+      "path": "source/scenarios/qwen_fullchain/QWF_02_lane_change_then_speed.json",
+      "bytes": 1243,
+      "sha256": "0e3e573f1472a9f724ed7b791dfb750418f6a56e3ea3217d89c0699464d0cea2"
+    },
+    {
+      "path": "source/scenarios/qwen_routing/QWR_01_speed_through_qwen.json",
+      "bytes": 1101,
+      "sha256": "4cb08d7f955c024f63f9fbff0fbca6995f7b5412d084941563742da7a72069d3"
+    },
+    {
+      "path": "source/scenarios/qwen_routing/QWR_05_turn_requires_qwen.json",
+      "bytes": 1099,
+      "sha256": "8772f6daff676074ef493cb31b270f3f80b06506849a7d4dd4d5e9f0fb9a004d"
+    },
+    {
+      "path": "source/scenarios/qwen_routing/QWR_07_visual_avoid_return.json",
+      "bytes": 1417,
+      "sha256": "ac19e81d4407761b53e7d6c52e292e3c2ac2d14364e4108b034da86ce8d733b0"
+    },
+    {
+      "path": "source/scenarios/qwen_routing/QWR_09_ambiguous_white_vehicle.json",
+      "bytes": 1548,
+      "sha256": "31dc3d28ad18805873bcbd14b69d3106b004c200e4569344422d13d660a795fb"
+    },
+    {
+      "path": "source/scenarios/regression/REG_001_basic_clear_seed0.json",
+      "bytes": 3567,
+      "sha256": "ba4b7eb7323e707c0edb39db98bc0e5d7220ca3c554767631aa9d4d55c694207"
+    },
+    {
+      "path": "source/scenarios/regression/REG_002_basic_clear_seed1.json",
+      "bytes": 3588,
+      "sha256": "f821d3380a76f59d44006626b3e678b5a07e60fa1ec63f34dec9f15b48daec10"
+    },
+    {
+      "path": "source/scenarios/regression/REG_003_basic_clear_seed2.json",
+      "bytes": 3595,
+      "sha256": "ed3e79981844304194e8432cebee4c6f063e9dd90694848b2de9ba2951726941"
+    },
+    {
+      "path": "source/scenarios/regression/REG_004_advanced_rain_left_turn.json",
+      "bytes": 3587,
+      "sha256": "6a5f0443c124638f862723269a3763d66d15386483e489f45cf960a43f98329b"
+    },
+    {
+      "path": "source/scenarios/regression/REG_005_advanced_rain_right_turn.json",
+      "bytes": 3595,
+      "sha256": "9ec752441880d484b7fc541cd1b114edaf9eff972773959e4fd4b24d0bfeb332"
+    },
+    {
+      "path": "source/scenarios/regression/REG_006_advanced_red_light.json",
+      "bytes": 3678,
+      "sha256": "85a388ac113fcfc4896e3e207d81c4f3cea24cd4127b623e891c0632249f4525"
+    },
+    {
+      "path": "source/scenarios/regression/REG_007_advanced_front_vehicle.json",
+      "bytes": 3863,
+      "sha256": "c96873b6884d8cc98c7a359f93b2ff66f2dbf2ee47f51f70896f5ce2f33cc09b"
+    },
+    {
+      "path": "source/scenarios/regression/REG_008_challenge_pedestrian.json",
+      "bytes": 3922,
+      "sha256": "f021c5dc1016df90e90b67970a07b060b09b2fa7b1aa1cf9cefa62efbc2125e2"
+    },
+    {
+      "path": "source/scenarios/regression/REG_009_challenge_lane_change_left.json",
+      "bytes": 3562,
+      "sha256": "2018fbfd836e0c06167951e3e6114789ebcdf1bd4532c2456485abd48913a1bb"
+    },
+    {
+      "path": "source/scenarios/regression/REG_010_challenge_lane_change_right.json",
+      "bytes": 3570,
+      "sha256": "42268a7ea7bb8f7d84b4afa0b1a587a4f9ec7c83448a884ddc1bf4001478bd20"
+    },
+    {
+      "path": "source/scenarios/regression/REG_011_challenge_multi_command.json",
+      "bytes": 4069,
+      "sha256": "5ae63a794014e9c9f0fac3f3f1cdbb57ffe7d7f3a41d0bdd0fab7af7f4497139"
+    },
+    {
+      "path": "source/scenarios/regression/REG_012_challenge_long_run_stability.json",
+      "bytes": 3595,
+      "sha256": "8676809f33f6ec3c19bbaef725bba3adb01a86d44bb1aa62c5157e63e6a377a4"
+    },
+    {
+      "path": "source/scenarios/regression/REG_013_multi_vehicle_brake.json",
+      "bytes": 1761,
+      "sha256": "ce715af245aa4d2ef2b082a966c37c32fc1680f62bb1042293caddc22befb9a3"
+    },
+    {
+      "path": "source/scenarios/regression/REG_014_occluded_pedestrian_crossing.json",
+      "bytes": 1721,
+      "sha256": "86c493906ed74e8a7e3c1302e4a59c0f7d466d0ccd59bb71e29dd193e740a6fb"
+    },
+    {
+      "path": "source/scenarios/regression/REG_015_construction_bicycle_lead.json",
+      "bytes": 1697,
+      "sha256": "0b82a2733add7022d1e0e5f672f9ce56cc6c6ef286364232ff966caf48079d8b"
+    },
+    {
+      "path": "source/scenarios/safety_D/D01_red_light_stop.json",
+      "bytes": 3780,
+      "sha256": "512b45012cbf5b883913208ebf6b10f686489e0aad8c511890982b206e2bca46"
+    },
+    {
+      "path": "source/scenarios/safety_D/D02_pedestrian_crossing.json",
+      "bytes": 4084,
+      "sha256": "5230f478a1f2d7f75274e6e8e6515fe5c963c2d84f1119054242980be0ece4c2"
+    },
+    {
+      "path": "source/scenarios/safety_D/D03_front_vehicle_brake.json",
+      "bytes": 3946,
+      "sha256": "9d0c2e6032979c3d6203b7cab08a9148ddc7d6714dd6c4b6ddccb1b4b9845ca9"
+    },
+    {
+      "path": "source/scenarios/safety_D/D04_lane_deviation.json",
+      "bytes": 3705,
+      "sha256": "22cb86c21ea92fdec4a7c74c5eb34df732712f36b415687f1605e644bee7c715"
+    },
+    {
+      "path": "source/scenarios/safety_D/D05_invalid_control_nan.json",
+      "bytes": 3704,
+      "sha256": "2bbab0a7afa31ba741d225a6b463111477971ee85b7c979e233e7efad8a8b613"
+    },
+    {
+      "path": "source/scenarios/safety_D/D06_throttle_brake_conflict.json",
+      "bytes": 3720,
+      "sha256": "b6f16201b715677a673c4e7d50f2ed61d6c9633dcf7d39591c8307b2fab9e336"
+    },
+    {
+      "path": "source/scenarios/safety_D/D07_low_ttc_emergency_brake.json",
+      "bytes": 3845,
+      "sha256": "b71ac6cfb4c430a73ec5e0ce6f75814f9d42faedcefa0e5b9ffecc7cf2d38ecc"
+    },
+    {
+      "path": "source/scenarios/safety_D/D08_command_conflict_red_light_continue.json",
+      "bytes": 3781,
+      "sha256": "5af8eefa876f3e8bb7420cf351c9d9f64d4e66ef4f71795ac69764c8cf9f8e13"
+    },
+    {
+      "path": "source/scenarios/smoke/S00_chain_start.json",
+      "bytes": 3706,
+      "sha256": "70463589932f5d8d87b6d0196b004ea9971f3461a4c4474fdb25f166380e799b"
+    },
+    {
+      "path": "source/scenarios/smoke/S01_set_speed_20.json",
+      "bytes": 3593,
+      "sha256": "56e3dda1ed6f4b0b8f897af5f3b384175eb8118edd5a6c425c928e2390be0dfc"
+    },
+    {
+      "path": "source/scenarios/smoke/S02_slow_down.json",
+      "bytes": 3805,
+      "sha256": "bb9ca73bbaf2b6184d99509a841352bcbd4f6c6fc1ed3585a4f23a1d5b08aca3"
+    },
+    {
+      "path": "source/scenarios/smoke/S03_stop.json",
+      "bytes": 3740,
+      "sha256": "4580f4219f895ae5cdb86410bbfadcb7d9cc6af05a9c61d2b050a57d1a0c4012"
+    },
+    {
+      "path": "source/scenarios/smoke/S04_emergency_stop.json",
+      "bytes": 3811,
+      "sha256": "ab7641c2c0a96e9c456d9b636e2e00c99b77287b8d5c960add23aea4aed0e5ea"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/advanced/ACC_A01_lead_brake.json",
+      "bytes": 3594,
+      "sha256": "b2b0dae63d50094794ca91ad4b6dfd3e35d4e4dcd1dfee3a5d7cf9ceca7d9159"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/advanced/ACC_A02_red_light_conflict.json",
+      "bytes": 3306,
+      "sha256": "7c0f049760f914c2ee8813cf646578d9214e14040a6962cae7cc07e922a1d296"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/advanced/ACC_A03_pedestrian_crossing.json",
+      "bytes": 3614,
+      "sha256": "e4f1a1ab5754c1010dfa2202cee80294f10e703b18bd950d3f279c700b92022c"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/advanced/ACC_A04_static_obstacle_stop.json",
+      "bytes": 3826,
+      "sha256": "03ec77db4ca229c6f2563ac86af59bd966c3248d6a3348c888595efb744b7cb6"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/advanced/ACC_A05_lane_change_left.json",
+      "bytes": 3239,
+      "sha256": "38dfbec5c771b6910ce28ceafbf339fc3db191a518294973b1dc19b70161e58d"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/advanced/ACC_A06_obstacle_detour_return.json",
+      "bytes": 4158,
+      "sha256": "4cdc26d27eb278527b04ccaeb8ce771a01815d775a6088358d405d5b4d9e3a1c"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/basic/ACC_B01_start_keep_lane.json",
+      "bytes": 3296,
+      "sha256": "3debb131823ace7df6098c764cf098f46c4f8bc746e46125ee64931cb383f34c"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/basic/ACC_B02_set_speed_20.json",
+      "bytes": 3042,
+      "sha256": "8f853a85e22a94fabc59180ae0fda5056f60c149ef5a6ccb1075973d8ed2b0a9"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/basic/ACC_B03_slow_to_10.json",
+      "bytes": 3387,
+      "sha256": "c84588d8d8f05ef4f8bc52753b7acd31f11c2178cd2d9a5ead48ff39676cd772"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/basic/ACC_B04_normal_stop.json",
+      "bytes": 3321,
+      "sha256": "8a4fab98316f7b4f0d7b7f8ed0a5432b99fdf3ba648be410bcf7807b9668e946"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/basic/ACC_B05_emergency_stop.json",
+      "bytes": 3421,
+      "sha256": "502ac0292d81163117dc05de7fc04a55c2d27fe8a4157f7d1f231bfad8de9e7c"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/basic/ACC_B06_offset_recovery.json",
+      "bytes": 3150,
+      "sha256": "d558f1186b427e8196ac127809d73c588bb9e54eb0fd4de8983df1525c4cc75a"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/challenge/ACC_C01_heavy_rain_fog.json",
+      "bytes": 3349,
+      "sha256": "359c6aeab37ffdf50711286458caa8760290a147889cf1d01892c12581cabb7c"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/challenge/ACC_C02_ambiguous_instruction.json",
+      "bytes": 3800,
+      "sha256": "0ff1a3fea5df35f68adb972e4044bb7270fd611eaba2d12d5821f537a2e7093b"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/challenge/ACC_C03_illegal_instruction.json",
+      "bytes": 3326,
+      "sha256": "dcf2c673a64b4efd23d878d0220b50217e5301aaced5b7cda942c56e731ee0f1"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/challenge/ACC_C04_multi_target_binding.json",
+      "bytes": 4400,
+      "sha256": "f1147421dc6457bac1bd9bc746d8fdca830bb2568ea578e5e3527a5f5b044fa2"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/challenge/ACC_C05_perception_failure.json",
+      "bytes": 3654,
+      "sha256": "b50d890b49b220cbf2fd20ea72268ffd5ac9bfc937169d68bdd54e67a708d993"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/challenge/ACC_C06_dynamic_route_deviation.json",
+      "bytes": 3458,
+      "sha256": "f8d3d285d7dd4f68229f5ac2b0f4ab1d246cd22e4354168e15a9a1065653babf"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/complex/CX01_urban_intersection_conflict.json",
+      "bytes": 3803,
+      "sha256": "8466878d0073141d46984b2c6f2ef3015a16b8023a2254e5321f72ba6f79c8b4"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/complex/CX02_multi_vehicle_target_follow_brake.json",
+      "bytes": 4434,
+      "sha256": "9dbdc9230e9e804ab77999f00896231a9b243789bb4d1b4ee172643f36510313"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/complex/CX03_construction_bicycle_detour.json",
+      "bytes": 4123,
+      "sha256": "d1cfb3f716ff43560e8a27e316d599eef07db9dfd7201aa02452980372ac727d"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/complex/CX04_heavy_rain_ambiguous_multi_target.json",
+      "bytes": 4380,
+      "sha256": "12229fb47a22cb7e88e61a93aa14b895b691dc0317d73e85cfad6e1548eade22"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/complex/CX05_sensor_dropout_route_recovery.json",
+      "bytes": 3780,
+      "sha256": "141eb530bf0f5dc4666c2eea89e3adfa977e0731fd45d2e02738b0f7b96736c8"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/complex/CX_MAIN_01_safe_urban_mission.json",
+      "bytes": 12427,
+      "sha256": "5cbabc92c689397285887ec452db0059daeb4720dfa9e9174055c0ffdc9f3559"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_A01_lead_brake_late.json",
+      "bytes": 3489,
+      "sha256": "fcb6c1165e0d71f25c6bc5d599ad11b51ddfa9ec41d2163e195b31218d9ea772"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_A02_low_ttc_stationary_lead.json",
+      "bytes": 3534,
+      "sha256": "423455f3dbb309234401ec58441098a3922e0c34da7927be0062d432f375fe3e"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_A03_occluded_pedestrian.json",
+      "bytes": 3881,
+      "sha256": "17b37942cd40ac54a440d3caca5ba526d790d44c9ae8f4396ea9785d0d5db301"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_A04_lane_change_right.json",
+      "bytes": 3123,
+      "sha256": "3f2f932f97eb2f2156ea04a5f6b122a439fdd9eb51248e6915813576eeaf7fb3"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_A05_adjacent_lane_blocked.json",
+      "bytes": 3949,
+      "sha256": "59437b6eb53e14d6e2cf46877c23fb4810f3363f2864d2e85857121a84cc5eb1"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_A06_red_light_wet_weather.json",
+      "bytes": 3280,
+      "sha256": "69f8ad35f5c5784f901dbd6f6d94e2ce90df3e3f131714f83471f76ff6e13617"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_B01_set_speed_10.json",
+      "bytes": 2984,
+      "sha256": "c2f5656d14da7df1fe0b8a6fdd4c2686e27581b956067ced0ff5988890a1d3cd"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_B02_set_speed_30_limit.json",
+      "bytes": 3157,
+      "sha256": "1eb3f360d5cd49383cc138db190f43591307dde6408f2411975a00a8e5938654"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_B03_relative_slow_down.json",
+      "bytes": 3332,
+      "sha256": "4d0bc9568561178e8e1ca1ce04348b3c49ffd0607eb366f5e3c3439ca6c8cd38"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_B04_stop_on_mild_curve.json",
+      "bytes": 3384,
+      "sha256": "50357ff8e5116c33bb8cda7a619a583339d3f32a44302e19e53d550676cceca3"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_B05_emergency_stop_25kph.json",
+      "bytes": 3431,
+      "sha256": "61cf12b460d216063cbc6b4339e2a2dcd1c7bba31bd9fcd8c8af3039fbd140f5"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_B06_lane_keep_smooth_curve.json",
+      "bytes": 3062,
+      "sha256": "e32204c765c6c4a402921dca9b7b490453df2a45780eb8c01844bb21cf134cde"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_C01_night_rain.json",
+      "bytes": 3044,
+      "sha256": "f0df073cf8fee53178a465df2ed221d038745324579be89224eb0d69a05efb3b"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_C02_asr_disagreement.json",
+      "bytes": 3138,
+      "sha256": "0984fef749eac88345765e404a14351525801dde490ec212c6ec0797e6a0f1f3"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_C03_multi_target_partial_occlusion.json",
+      "bytes": 4263,
+      "sha256": "e3380d25e1dcc05441a411ea2e2ccc8653e54709d09d001f10a3665cf17b41ab"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_C04_rgb_blackout_lidar_alive.json",
+      "bytes": 3395,
+      "sha256": "076b889b5818f1d626b599e569c8eb02243142ddf9b3572d58fbedded54f0612"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_C05_rgb_lidar_blackout.json",
+      "bytes": 3615,
+      "sha256": "e067f755022cfc3119223dd654c250beeb6239e13fdb595154d8928abba35834"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/variants/VAR_C06_large_route_deviation.json",
+      "bytes": 3521,
+      "sha256": "9a60809cb5653e0c1dca396a18a0d7ad7ba7518e15a220243de50f777bd420cb"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A01_lead_brake_15m.json",
+      "bytes": 4049,
+      "sha256": "63261bc83d89093c518de986c45fc6686d72b42bc623428c58c1fc0e3a410fee"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A02_lead_brake_25m_late.json",
+      "bytes": 4054,
+      "sha256": "88000c376037c993d9dea76af303875308d6edd30cbe9b5369d3f41c2b2f5b9f"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A03_lead_brake_wet.json",
+      "bytes": 4060,
+      "sha256": "f7d2e7d099e32058dd0ec21e8205331f117293c063eca08ad6a0c80faa186a22"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A04_red_light_close_stop_line.json",
+      "bytes": 3273,
+      "sha256": "9182f4115e6bced21b7b2636d9ad0435e3d696aa9e682e04aab28faffe062c91"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A05_red_light_wet.json",
+      "bytes": 3310,
+      "sha256": "28745166178c3b9b8b12e62fb020df011f4e3a2c18e188432d499db1367f78f4"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A06_yellow_to_red.json",
+      "bytes": 3976,
+      "sha256": "08f15f296a7d45367489a1482ca41dd9fd7a116b308c3d898964adfad6553c60"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A07_pedestrian_right_to_left.json",
+      "bytes": 3533,
+      "sha256": "fb027befbaaf19e1d420eb57f8bdcb6dc5b261e2a5145c5c1bcd17aa81b9457f"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A08_fast_pedestrian.json",
+      "bytes": 3533,
+      "sha256": "aa893eae5d17cc5c40123e3a345ecaf505b0219f61ff4666d845b3a981a83da1"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A09_occluded_pedestrian_after_lead.json",
+      "bytes": 4243,
+      "sha256": "4f6cce5ead795b43b3143b508f7e7dc68f3f2be1924cf72b0eb12db0a31ae213"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A10_static_vehicle_center.json",
+      "bytes": 3633,
+      "sha256": "fa430dd3d0a9850e880f8f9e381c25750c30b7e642086d1bd2418f74afe086d2"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A11_obstacle_left_offset.json",
+      "bytes": 3822,
+      "sha256": "3c08f98426f32bf8f3fe7874c3caf8731b46f101deae20deeeaf7100a52850be"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A12_double_static_obstacle_stop.json",
+      "bytes": 4185,
+      "sha256": "29bdf7aa872756f96ad1e5270f34ee2cc933d8d83af7a27ac4a0cd5e618ab3f5"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A13_lane_change_right.json",
+      "bytes": 3337,
+      "sha256": "e8c88811ca3f83f499714767f8be82902823e5f23347457fb68520c5d2327d76"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A14_lane_change_left_curve.json",
+      "bytes": 3321,
+      "sha256": "d9ccfc23ec03e078a093e98075a9f467e6930987a7fdabd4ab8e3b849e60437c"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A15_lane_change_blocked.json",
+      "bytes": 4146,
+      "sha256": "e1c8c88b6629c4ae9622d8f01f80b446878f08e0746692933953c282de5d4054"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A16_detour_right_static_vehicle.json",
+      "bytes": 3953,
+      "sha256": "89815f9e3f77d01dc2a3577c3a81f0c72a116597255a0ed855bbf463a5b30eac"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A17_detour_left_construction.json",
+      "bytes": 4250,
+      "sha256": "470a592c72de38635197dc5dfbe82b1dc471c79a1b6f67dba1de0a88de8a659c"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/advanced/SUP_A18_detour_return_original_lane.json",
+      "bytes": 4042,
+      "sha256": "0e5a7ff14fcf780cb78dc2ce9d56e1124435942c2169154fb3f780e767e1367e"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/basic/SUP_B01_restart_after_stop.json",
+      "bytes": 3816,
+      "sha256": "b3137849a1ac9889cae4431ae5933e945663ddf039a112ba55c9ca739e7b554b"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/basic/SUP_B02_set_speed_30_with_limit.json",
+      "bytes": 3299,
+      "sha256": "70b8a49a8478cfcebb972afaf96ee0d869220cbe6121f196225ef9f9f247df5c"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/basic/SUP_B03_relative_slow_down.json",
+      "bytes": 3489,
+      "sha256": "320e4072ea744485741416b62235b75d92948195da7d0914a4761d293c30383f"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/basic/SUP_B04_stop_on_mild_curve.json",
+      "bytes": 3456,
+      "sha256": "8b9d7f581f7d5b984d6bdb83d0b7fea3fcaae9fe615a1a1ea62416d09d553640"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/basic/SUP_B05_emergency_stop_15kph.json",
+      "bytes": 3490,
+      "sha256": "bc7afc04d635963b24c057a69b896689bb1e75d42c5d125be63b489fda89652e"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/basic/SUP_B06_right_offset_recovery.json",
+      "bytes": 3193,
+      "sha256": "95f74aab0dbf721befb0d0569b706159bf675fcc452aa51ceb550336fe651a27"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/challenge/SUP_C01_night_heavy_rain.json",
+      "bytes": 3138,
+      "sha256": "5ac4b23924542c7223c5abd6ae3da5a1c78f027972a74ecfe342f6b4b8150134"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/challenge/SUP_C02_low_visibility_rain_fog.json",
+      "bytes": 3306,
+      "sha256": "e3e354222e7296ed54dcaead38eda5081b86cc1b2aad55983905975e943377e3"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/challenge/SUP_C03_vague_slow.json",
+      "bytes": 3242,
+      "sha256": "21b4e467e5f04a2806c9d6dd940ca99a23f7eb0f3941278acb1df511bed79f16"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/challenge/SUP_C04_vague_pull_over.json",
+      "bytes": 3203,
+      "sha256": "4fa7825c7ea96d254813caf90c7a0bf4443e42c877bbf19f171fde2bc23b2ca8"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/challenge/SUP_C05_illegal_speed_120.json",
+      "bytes": 3288,
+      "sha256": "cd8537dc9aaa63f974d2632f3df3b2d5fb96da781a5c37c08528f406848ab266"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/challenge/SUP_C06_ignore_red_light.json",
+      "bytes": 3460,
+      "sha256": "92fd1000795ad3b219a5b6307bdddc6a7f4401597a928889cf55cd44bbdd7935"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/challenge/SUP_C07_three_vehicle_binding.json",
+      "bytes": 4450,
+      "sha256": "5cecea7f78f1861d9c153f67159442bd641b69b66e08a54927b9eab8a3c89c38"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/challenge/SUP_C08_target_occluded_stale_rejection.json",
+      "bytes": 5360,
+      "sha256": "eb286df377292ade9ad4009c2053630b5684c859ed3f4a591c4ecf9a6c3f593f"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/challenge/SUP_C09_rgb_blackout_lidar_alive.json",
+      "bytes": 3535,
+      "sha256": "c18aa45784a25e262fbe873c1f9bda1e6aba57fabc50e534d15caeb0f526d947"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/challenge/SUP_C10_rgb_lidar_blackout.json",
+      "bytes": 3748,
+      "sha256": "e4e82fa0ee1f10b96a7eaa3ecac5adb6249610c2fc9894711937c347b3395223"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/challenge/SUP_C11_small_steer_bias_recovery.json",
+      "bytes": 3491,
+      "sha256": "bcde6b998185c693396dc982af033caa07ac59627963ff36f4ad05b8c6aa2c97"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/challenge/SUP_C12_large_deviation_stop.json",
+      "bytes": 3696,
+      "sha256": "0e4d8b50410e9d3dfce46b225122d5b2c3a64dcc05ceed9f640b6950b3f773c8"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/system/SYS_01_qwen_timeout.json",
+      "bytes": 3432,
+      "sha256": "12d5b334d28f335887e89f7ab7900b9fd1d26f52a982f3dfd1465f6b493986ea"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/system/SYS_02_qwen_invalid_token.json",
+      "bytes": 3428,
+      "sha256": "e2a3bc58761f0852d699018d24e990e12aea706b5598a6eb9f37d59a8a35f4ec"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/system/SYS_03_qwen_stale_result.json",
+      "bytes": 3817,
+      "sha256": "610d09433a08f2242a78c3fb891bafd84a8a61033d9e17d1e824cefd63083a4c"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/system/SYS_04_qwen_disconnect_recovery.json",
+      "bytes": 4093,
+      "sha256": "a94ce23498ff5920daedf6424f24e1110970e0bf488c2b1bfc0efce1d16c3da8"
+    },
+    {
+      "path": "source/scenarios/acceptance_suite/supplemental/system/SYS_05_voice_burst_priority.json",
+      "bytes": 4255,
+      "sha256": "c583d73406bbc0df5a1696fdb0fe4f14e1a156d71aee0c36be9d15d2b72fc8f1"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/unseen/ACC_A01_lead_brake__GEN_001.json",
+      "bytes": 4047,
+      "sha256": "b9330c76cfcb7a889e9d1ac34cd0cb11d5b5e06996fb8b00d8f7e7e85e3be05c"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/unseen/ACC_A03_pedestrian_crossing__GEN_001.json",
+      "bytes": 4075,
+      "sha256": "c048dd9746d1bc9d438758bc06cadcb943550d010ff2325d95ac216a638e856e"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/unseen/ACC_A04_static_obstacle_stop__GEN_001.json",
+      "bytes": 4288,
+      "sha256": "b4a965b89eda08e9490a3bde6250789d90a6dbb09be7a9ee88cb66f3bf573e2b"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/unseen/ACC_A06_obstacle_detour_return__GEN_001.json",
+      "bytes": 4584,
+      "sha256": "5c61223b54aa0c9d3dd73c8f2dfcf900b700761ea8e9ad41b50df30dd983a8cc"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/unseen/CX01_urban_intersection_conflict__GEN_001.json",
+      "bytes": 4334,
+      "sha256": "57398f024626d14bbf68589cc2c3010192a13a6a097aab8526321c848b3bfcf0"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/unseen/CX02_multi_vehicle_target_follow_brake__GEN_001.json",
+      "bytes": 5289,
+      "sha256": "6ef3b018a63374ca9357ac26dc47df4f4794219cfbbbd84f236c592e924729ad"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/unseen/OFFICIAL_S2_COMPLEX_AVOIDANCE_8KM__GEN_000.json",
+      "bytes": 24803,
+      "sha256": "ab1c57bdd7b2b30119aae75da4c5cad3367a097d1020f9521af3ba06d7523abc"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/unseen/OFFICIAL_S3_EXTREME_EMERGENCY_6KM__GEN_000.json",
+      "bytes": 13824,
+      "sha256": "302f1a9a5b4b8eb3acf8dce05f015c0feca17e6f317bde84aaaea05412ecaa3f"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/variant/ACC_A01_lead_brake__GEN_000.json",
+      "bytes": 4036,
+      "sha256": "0ebc536559bda485cd9c0f98d1402dfbe278bfe70688922117623822efd67212"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/variant/ACC_A03_pedestrian_crossing__GEN_000.json",
+      "bytes": 4077,
+      "sha256": "eb1a13f7407aebf6efb0e13da97cf75c9ba42c24749987c5b5eb0052aa5ef2d0"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/variant/ACC_A04_static_obstacle_stop__GEN_000.json",
+      "bytes": 4276,
+      "sha256": "a49f9963ee91ba0d0ae25c58dedddb3fe6387a828e6c1a92f07f7e36f420130e"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/variant/ACC_A06_obstacle_detour_return__GEN_000.json",
+      "bytes": 4610,
+      "sha256": "f1a5340253e7bed4726afeec99d1aca0af8c8fce870639ee83086b69e5c215f2"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/variant/CX01_urban_intersection_conflict__GEN_000.json",
+      "bytes": 4337,
+      "sha256": "9b5332053db8eab35643a1c3d460dcf6d0671b9d2443ae23dadad724d1dea258"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/variant/CX02_multi_vehicle_target_follow_brake__GEN_000.json",
+      "bytes": 4552,
+      "sha256": "3b3525a568d1cdccaeea5510f7cf7207dd111bf7a38e3acc9628149d1075f13d"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/variant/OFFICIAL_S2_COMPLEX_AVOIDANCE_8KM__GEN_001.json",
+      "bytes": 24661,
+      "sha256": "4623e82e4d24e9aba23608f2a71c840ba8fea04f4430f8652b6f620011502acf"
+    },
+    {
+      "path": "source/scenarios/generalization/member2/variant/OFFICIAL_S3_EXTREME_EMERGENCY_6KM__GEN_002.json",
+      "bytes": 13805,
+      "sha256": "fbbbdd7d247c24908c36bf0bc7975b577c16d1d57259ea5902754887094a86a8"
+    },
+    {
+      "path": "source/scenarios/targeted_collection/batch_a/TC_C01_true_3step_left.json",
+      "bytes": 3106,
+      "sha256": "4df0bc2ebf1a366d015274ecae42f749b517889fe99c999eb8fb08db18434dec"
+    },
+    {
+      "path": "source/scenarios/targeted_collection/batch_a/TC_C02_yield_left_3step.json",
+      "bytes": 3302,
+      "sha256": "c85edcb49f93d63a0261bdddd65c027f8e84b34a04a512b32cd841b7a33bbde8"
+    },
+    {
+      "path": "source/scenarios/targeted_collection/batch_a/TC_C03_true_4step_follow_left.json",
+      "bytes": 4088,
+      "sha256": "1c2e662e9ca2bf0d21fda4f74446ca87f0e06ddb8218757e1b17ff744c622e60"
+    },
+    {
+      "path": "source/scenarios/targeted_collection/multistep34/TC_MS34_real_3step_avoid_resume.json",
+      "bytes": 2784,
+      "sha256": "b866d8196eae0a8eb11591079c2a84ee7bc57be201b8b9001b2665bb5af86269"
+    },
+    {
+      "path": "source/scenarios/targeted_collection/multistep34/TC_MS34_real_4step_yield_avoid_resume.json",
+      "bytes": 6937,
+      "sha256": "3f434dec1546f27b3de36e3bc8a113d931bf049f650925fe37dda2dea7043be1"
+    },
+    {
+      "path": "source/challenge/hil/__init__.py",
+      "bytes": 331,
+      "sha256": "60fa814d119ffc85538df1a4bda5e9a6b3e63343054781b0e8795f5257684a7a"
+    },
+    {
+      "path": "source/challenge/hil/tensors.py",
+      "bytes": 5162,
+      "sha256": "f989a8c2334477fcc914d3e90b2c6409562c82f46f3b9aba0675bee0a6eb3fac"
+    },
+    {
+      "path": "scripts/check_deployment.py",
+      "bytes": 3294,
+      "sha256": "518b46e9ad06b19b3eb7283bdf1d451ee7d205fec54387f8402c4c7362b5562a"
+    },
+    {
+      "path": "scripts/launch_student.py",
+      "bytes": 3508,
+      "sha256": "087860f3356fdb908d29a45dbe019b32fb3d573c666e68da07be0f810e3d8d8d"
+    },
+    {
+      "path": "docker/verify_runtime.py",
+      "bytes": 2119,
+      "sha256": "4081cdeb19064b6da5a6969aaf976c786484c5f689b4e2edec684b89a1f622d4"
+    },
+    {
+      "path": "docker/requirements-runtime-extra.txt",
+      "bytes": 46,
+      "sha256": "dbc31eaa9236e7b86c714206f9dcce57c7fb0ad4b80e73f4738c3d1a6550eda8"
+    },
+    {
+      "path": "docker/requirements-runtime-lock.txt",
+      "bytes": 324,
+      "sha256": "0b66c8819cb4cbbbe369b435b6ad647bd095a43bda1d32a4aa9c199da3c12411"
+    }
+  ]
+}

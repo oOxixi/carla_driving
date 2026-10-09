@@ -1,0 +1,85 @@
+{
+  "runtime_mode": "x86_benchmark",
+  "backend": "onnxruntime",
+  "execution_provider": "CPUExecutionProvider",
+  "model": "/home/kk/workspace/carla_driving/challenge/student_v0_fp32.onnx",
+  "model_sha256": "ffb1ed5e9b23aa7100343bb4f02c8cfef3da5049e9c5eba4c0e66247c96ee243",
+  "git_sha": "c5c8e110c86484ae02f1ff6cc4ff4d7e8f04637e",
+  "model_id": "student-v0-r3-fp32",
+  "config_id": "student-v0-r3-structure-20260911",
+  "dataset_version": "NOT_APPLICABLE_RANDOM_INIT",
+  "precision": "fp32",
+  "warmup_runs": 5,
+  "benchmark_runs": 20,
+  "avg_ms": 5.2581592,
+  "min_ms": 2.781229,
+  "max_ms": 11.134482,
+  "input_shapes": {
+    "rgb": [
+      1,
+      3,
+      224,
+      224
+    ],
+    "text_tokens": [
+      1,
+      32
+    ],
+    "targets": [
+      1,
+      8,
+      14
+    ],
+    "state": [
+      1,
+      64
+    ]
+  },
+  "output_shapes": {
+    "plan_length_logits": [
+      1,
+      4
+    ],
+    "behavior_logits": [
+      1,
+      4,
+      14
+    ],
+    "target_pointer_logits": [
+      1,
+      4,
+      9
+    ],
+    "target_lane_logits": [
+      1,
+      4,
+      6
+    ],
+    "target_speed_mps": [
+      1,
+      4
+    ],
+    "completion_type_logits": [
+      1,
+      4,
+      8
+    ],
+    "on_failure_logits": [
+      1,
+      4,
+      4
+    ],
+    "confidence": [
+      1,
+      1
+    ],
+    "requires_confirmation_logits": [
+      1,
+      1
+    ],
+    "replan_condition_logits": [
+      1,
+      7
+    ]
+  }
+}

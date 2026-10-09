@@ -1,0 +1,79 @@
+name: Challenge Docker runtime stage
+
+on:
+  push:
+    branches: [challenge]
+    paths:
+      - '.github/workflows/challenge-docker-runtime.yml'
+      - 'submission/challenge/DOCKER_RUNTIME_BUILD_20261009/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: challenge-docker-runtime-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-runtime-stage:
+    if: github.ref == 'refs/heads/challenge'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      CONTEXT_DIR: submission/challenge/DOCKER_RUNTIME_BUILD_20261009
+      OUT_DIR: ${{ runner.temp }}/challenge-docker-runtime-${{ github.run_id }}
+      STAGE_IMAGE: challenge-student-runtime:20261009
+      MAX_COMPRESSED_BYTES: '10737418240'
+      MAX_IMAGE_BYTES: '21474836480'
+    steps:
+      - name: Checkout runtime sources only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # official v4.2.2
+        with:
+          fetch-depth: 1
+          lfs: false
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /submission/challenge/DOCKER_RUNTIME_BUILD_20261009/
+
+      - name: Inspect public base and runner capacity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUT_DIR"
+          docker version > "$OUT_DIR/docker_version.txt" 2>&1
+          docker info > "$OUT_DIR/docker_info.txt" 2>&1
+          df -B1 "$OUT_DIR" /var/lib/docker > "$OUT_DIR/disk_before.txt"
+          python3 "$CONTEXT_DIR/inspect_registry.py" --output "$OUT_DIR" \
+            --max-compressed-bytes "$MAX_COMPRESSED_BYTES" \
+            2>&1 | tee "$OUT_DIR/registry_preflight.log"
+
+      - name: Build, verify and export runtime stage
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash "$CONTEXT_DIR/build_stage.sh"
+
+      - name: Upload runtime stage archive
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # official v4.6.2
+        with:
+          name: challenge-student-runtime-stage-${{ github.run_id }}
+          path: ${{ env.OUT_DIR }}/runtime-stage-image.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+
+      - name: Preserve actual metadata and failure logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # official v4.6.2
+        with:
+          name: challenge-student-runtime-logs-${{ github.run_id }}
+          path: |
+            ${{ env.OUT_DIR }}/*.json
+            ${{ env.OUT_DIR }}/*.txt
+            ${{ env.OUT_DIR }}/*.log
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 3

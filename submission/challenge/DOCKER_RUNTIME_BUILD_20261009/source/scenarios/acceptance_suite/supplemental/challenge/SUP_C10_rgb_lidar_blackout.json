@@ -1,0 +1,173 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "SUP_C10_rgb_lidar_blackout",
+  "category": "regression",
+  "official_level": "challenge",
+  "description": "RGB 与 LiDAR 同时失效 2 秒，系统须在 1 秒内安全停车。",
+  "tags": [
+    "acceptance_suite",
+    "p1",
+    "rgb_lidar_blackout_v2"
+  ],
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 440,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 30,
+    "max_startup_wait_s": 10
+  },
+  "ego_spawn": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5,
+    "yaw_deg": 0.0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0,
+        0
+      ],
+      [
+        20,
+        0
+      ],
+      [
+        40,
+        0
+      ],
+      [
+        60,
+        0
+      ],
+      [
+        80,
+        0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "保持车道，关键感知失效时立即安全停车",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 15
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    }
+  ],
+  "actors": [],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 5
+    },
+    "lidar": {
+      "enabled": true
+    },
+    "collision": {
+      "enabled": true
+    },
+    "lane_invasion": {
+      "enabled": true
+    }
+  },
+  "controllers": {
+    "A_runtime": {
+      "only_apply_control_owner": true
+    },
+    "B_lateral": {
+      "enabled": true
+    },
+    "C_longitudinal": {
+      "enabled": true
+    },
+    "D_safety": {
+      "enabled": true,
+      "must_run_before_apply_control": true
+    }
+  },
+  "logging": {
+    "required_files": [
+      "frame_log.jsonl",
+      "event_log.jsonl",
+      "result.json",
+      "score_report.json",
+      "qwen_requests.jsonl"
+    ]
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_generate_logs": true,
+    "final_control_no_throttle_brake_overlap": true,
+    "expected_safety_override_allowed": true
+  },
+  "extensions": {
+    "suite_version": "acceptance-suite-2026.08-v2",
+    "priority": "P1",
+    "primary_capability": "rgb_lidar_blackout_v2",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "oracle": {
+      "expected_behaviors": [
+        "KEEP_LANE",
+        "STOP",
+        "HOLD"
+      ]
+    },
+    "faults": [
+      {
+        "fault_id": "rgb_blackout",
+        "type": "sensor_blackout",
+        "trigger": {
+          "type": "time",
+          "time_s": 8
+        },
+        "duration_s": 2,
+        "sensor": "front_rgb"
+      },
+      {
+        "fault_id": "lidar_blackout",
+        "type": "sensor_blackout",
+        "trigger": {
+          "type": "time",
+          "time_s": 8
+        },
+        "duration_s": 2,
+        "sensor": "lidar"
+      }
+    ],
+    "proposed_acceptance": {
+      "max_fault_response_s": 1.0,
+      "qwen_must_not_override_safety_stop": true,
+      "must_recover_after_fault": true
+    },
+    "runtime_support": {
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
+        "all_voice_qwen",
+        "fault_injection",
+        "fault_recovery_acceptance"
+      ]
+    }
+  },
+  "notes": [
+    "正式结果必须使用 perception_mode=sensors 与 scenario_facts_mode=perception。"
+  ]
+}

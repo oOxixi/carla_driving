@@ -1,0 +1,17 @@
+.git
+*.onnx
+*.pt
+*.pth
+*.bin
+*.ckpt
+*.safetensors
+*.hbm
+*.bc
+*.tar
+*.zip
+*.mp3
+*.wav
+*.mp4
+**/__pycache__
+**/*.pyc
+exports

@@ -1,0 +1,159 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "SUP_A14_lane_change_left_curve",
+  "category": "lateral_B",
+  "official_level": "advanced",
+  "description": "12 km/h 缓弯中执行左变道。",
+  "tags": [
+    "acceptance_suite",
+    "p1",
+    "curve_lane_change_left"
+  ],
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 424,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 40,
+    "max_startup_wait_s": 10
+  },
+  "ego_spawn": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5,
+    "yaw_deg": 0.0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0,
+        0
+      ],
+      [
+        12,
+        0.3
+      ],
+      [
+        24,
+        1.2
+      ],
+      [
+        36,
+        2.8
+      ],
+      [
+        48,
+        4.8
+      ],
+      [
+        65,
+        6.5
+      ],
+      [
+        80,
+        7.0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "在缓弯中确认安全后向左变道",
+      "intent": "CHANGE_LANE_LEFT",
+      "parameters": {
+        "target_speed_kph": 12
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    }
+  ],
+  "actors": [],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 800,
+      "height": 600,
+      "fov": 90,
+      "save_every_n_frames": 5
+    },
+    "lidar": {
+      "enabled": true
+    },
+    "collision": {
+      "enabled": true
+    },
+    "lane_invasion": {
+      "enabled": true
+    }
+  },
+  "controllers": {
+    "A_runtime": {
+      "only_apply_control_owner": true
+    },
+    "B_lateral": {
+      "enabled": true
+    },
+    "C_longitudinal": {
+      "enabled": true
+    },
+    "D_safety": {
+      "enabled": true,
+      "must_run_before_apply_control": true
+    }
+  },
+  "logging": {
+    "required_files": [
+      "frame_log.jsonl",
+      "event_log.jsonl",
+      "result.json",
+      "score_report.json",
+      "qwen_requests.jsonl"
+    ]
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_generate_logs": true,
+    "final_control_no_throttle_brake_overlap": true,
+    "must_finish_route": true,
+    "max_allowed_cross_track_error_m": 1.2,
+    "max_abs_steer": 0.8,
+    "max_speed_mps": 3.5
+  },
+  "extensions": {
+    "suite_version": "acceptance-suite-2026.08-v2",
+    "priority": "P1",
+    "primary_capability": "curve_lane_change_left",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "oracle": {
+      "expected_behaviors": [
+        "CHANGE_LANE_LEFT"
+      ]
+    },
+    "faults": [],
+    "proposed_acceptance": {
+      "target_lane_occupied_count": 0
+    },
+    "runtime_support": {
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": [
+        "all_voice_qwen",
+        "qwen_lane_change_detour_actions",
+        "target_lane_safety_check"
+      ]
+    }
+  },
+  "notes": [
+    "正式结果必须使用 perception_mode=sensors 与 scenario_facts_mode=perception。"
+  ]
+}
