@@ -1,0 +1,17 @@
+{
+  "status": "RUNTIME_STAGE_VERIFIED_WITHOUT_MODEL_FILES",
+  "python": "3.10.12",
+  "packages": {
+    "torch": "2.8.0+cpu",
+    "onnxruntime": "1.19.0",
+    "numpy": "1.23.0",
+    "Pillow": "9.3.0",
+    "jsonschema": "4.25.1",
+    "psutil": "7.2.1",
+    "PyYAML": "6.0.3"
+  },
+  "PyYAML_exact_baseline": "NOT_RECORDED",
+  "private_model_files_included": false,
+  "final_student_image_built": false,
+  "model_inference_run": false
+}

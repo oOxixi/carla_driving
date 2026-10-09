@@ -1,0 +1,70 @@
+[
+    {
+        "Id": "sha256:97109436656236c71f21815f9a0de626aed5d76876206019e866fc784e6e1d3e",
+        "RepoTags": [],
+        "RepoDigests": [
+            "python@sha256:2daf07926ccdff5dbeef6bee46cc5bb07322f417c102609601177a1559156385"
+        ],
+        "Parent": "",
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2023-07-22T09:49:12Z",
+        "DockerVersion": "",
+        "Author": "",
+        "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "LANG=C.UTF-8",
+                "GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D",
+                "PYTHON_VERSION=3.10.12",
+                "PYTHON_PIP_VERSION=23.0.1",
+                "PYTHON_SETUPTOOLS_VERSION=65.5.1",
+                "PYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/raw/9af82b715db434abb94a0a6f3569f43e72157346/public/get-pip.py",
+                "PYTHON_GET_PIP_SHA256=45a2bb8bf2bb5eff16fdd00faef6f29731831c7c59bd9fc2bf1f3bed511ff1fe"
+            ],
+            "Cmd": [
+                "python3"
+            ],
+            "ArgsEscaped": true,
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": null,
+            "OnBuild": null,
+            "Labels": null
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 125462035,
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/46182d042856119a16d91c157cbb01e8bdf7d83eaccf289e15e105ebb8328cb3/diff:/var/lib/docker/overlay2/8050a4acb474ed683ff91f764fb04e9d22854b461ef5dfaa3fec19dcf5c81c7e/diff:/var/lib/docker/overlay2/ea00f83fc09a17d0c760a2fb9869cb97bc0ec951f85590332272b2c6ef3f3889/diff:/var/lib/docker/overlay2/ef7f95b20893d24550560284b886082ea25a676abef98fed49716ba11173d2e5/diff",
+                "MergedDir": "/var/lib/docker/overlay2/f647826ce2d2dfbc224818d410eb3eb7e6f510f638c6724b4dd709be9f6a8923/merged",
+                "UpperDir": "/var/lib/docker/overlay2/f647826ce2d2dfbc224818d410eb3eb7e6f510f638c6724b4dd709be9f6a8923/diff",
+                "WorkDir": "/var/lib/docker/overlay2/f647826ce2d2dfbc224818d410eb3eb7e6f510f638c6724b4dd709be9f6a8923/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:63290f9c9e5201f0507ee1b5701aa06c7f48bef7cce287fc77db92bec634d737",
+                "sha256:83fbf4751a423a8251e1c6e307d662d9e8c52fce0abbe80d3481d178e21138b5",
+                "sha256:cbe0d454a8e72b8695f1df97c3759e512414b22c9c5dda1eb1f85475034329f0",
+                "sha256:642c12228692588f8c6d61113100f568e8439b8267cf2362d4aef7824f7f2eef",
+                "sha256:86f12be43bbb935355a8db0c4b084261faa89eeb7e9edb8b6ad71870a9020954"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "0001-01-01T00:00:00Z"
+        }
+    }
+]

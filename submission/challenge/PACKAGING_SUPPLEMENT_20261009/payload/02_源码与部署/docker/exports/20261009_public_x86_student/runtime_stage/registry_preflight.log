@@ -1,0 +1,31 @@
+{
+  "status": "PREFLIGHT_PASSED_NO_IMAGE_LAYERS_DOWNLOADED",
+  "base_tag": "library/python:3.10.12-slim-bullseye",
+  "base_kind": "PUBLIC_X86_PINNED_RUNTIME",
+  "official_base_ref": "openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1",
+  "official_base_access": {
+    "status": "ANONYMOUS_PULL_DENIED",
+    "http_status": 401,
+    "run_id": 37884671386,
+    "run_url": "https://github.com/oOxixi/carla_driving/actions/runs/37884671386"
+  },
+  "official_environment_equivalent_candidate": false,
+  "official_environment_equivalent": false,
+  "official_equivalence_status": "CUSTOM_RUNTIME_NOT_EQUIVALENT_TO_OFFICIAL_TOOLCHAIN",
+  "generated_at_utc": "2026-10-09T04:46:21.540804+00:00",
+  "run_id": "37885424825",
+  "source_commit": "6c01af2c50840248f07aee2373cc246274b77b37",
+  "registry_authentication": "ANONYMOUS_PULL_TOKEN_NO_CUSTOM_SECRET",
+  "private_model_files_included": false,
+  "final_student_image_built": false,
+  "tag_manifest_digest": "sha256:9e114b417be57d1c2b5ebb9770e415a9356f923c54d24827000378f625148363",
+  "selected_platform_manifest_digest": "sha256:2daf07926ccdff5dbeef6bee46cc5bb07322f417c102609601177a1559156385",
+  "resolved_base": "library/python@sha256:2daf07926ccdff5dbeef6bee46cc5bb07322f417c102609601177a1559156385",
+  "compressed_layers_bytes": 47406828,
+  "layer_count": 5,
+  "runner_output_free_bytes": 92562382848,
+  "runner_docker_free_bytes": 92562382848,
+  "conservative_minimum_free_bytes": 6584671428,
+  "capacity_formula": "3 * compressed_layers_bytes + 6 GiB; conservative guard, not measured expansion",
+  "max_compressed_bytes": 10737418240
+}

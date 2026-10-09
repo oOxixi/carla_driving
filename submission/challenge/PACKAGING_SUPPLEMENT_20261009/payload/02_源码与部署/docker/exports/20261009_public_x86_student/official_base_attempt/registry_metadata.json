@@ -1,0 +1,11 @@
+{
+  "status": "PREFLIGHT_FAILED",
+  "base_tag": "openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1",
+  "generated_at_utc": "2026-10-09T04:36:36.721838+00:00",
+  "run_id": "37884671386",
+  "source_commit": "ed0f8e3fef7b5a5df3417b4e90a6931d6e9319ad",
+  "registry_authentication": "ANONYMOUS_PULL_TOKEN_NO_CUSTOM_SECRET",
+  "private_model_files_included": false,
+  "final_student_image_built": false,
+  "error": "HTTPError: HTTP Error 401: Unauthorized"
+}

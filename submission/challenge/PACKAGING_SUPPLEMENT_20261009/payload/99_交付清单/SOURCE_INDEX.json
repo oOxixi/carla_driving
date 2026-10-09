@@ -67,5 +67,11 @@
     "source": "挑战赛道打包/挑战赛道提交报告_轻量化模型的车规级部署_gai.docx",
     "destination": "01_技术报告/备用修订报告",
     "note": "正文一致的格式保存变体，仅留存，不替换正式默认报告"
+  },
+  {
+    "record_id": "docker_actual_receipt_20261009",
+    "source": "https://github.com/oOxixi/carla_driving/actions/runs/37885424825 + 本机SHA验证的三份私有ONNX标准archive附加",
+    "destination": "02_源码与部署/docker/exports/20261009_public_x86_student",
+    "note": "自建Debian11/Python3.10.12运行时已Docker build/run/inspect/save；带模型tar本地附加；最终Linux加载/服务/推理未执行，非官方OE等同环境，无最终ZIP"
   }
 ]

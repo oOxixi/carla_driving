@@ -1,0 +1,179 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.stage
+#1 transferring dockerfile: 2.60kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python@sha256:2daf07926ccdff5dbeef6bee46cc5bb07322f417c102609601177a1559156385
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 163B done
+#3 DONE 0.0s
+
+#4 [1/7] FROM docker.io/library/python@sha256:2daf07926ccdff5dbeef6bee46cc5bb07322f417c102609601177a1559156385
+#4 DONE 0.0s
+
+#5 [2/7] WORKDIR /opt/challenge
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 1.11MB 0.0s done
+#6 DONE 0.1s
+
+#7 [3/7] COPY source /opt/challenge/02_源码与部署/source
+#7 DONE 0.0s
+
+#8 [4/7] COPY scripts /opt/challenge/02_源码与部署/scripts
+#8 DONE 0.0s
+
+#9 [5/7] COPY docker /opt/challenge/02_源码与部署/docker
+#9 DONE 0.0s
+
+#10 [6/7] RUN apt-get update  && apt-get install -y --no-install-recommends libgomp1 libstdc++6  && rm -rf /var/lib/apt/lists/*
+#10 0.148 Get:1 http://deb.debian.org/debian bullseye InRelease [75.1 kB]
+#10 0.157 Get:2 http://deb.debian.org/debian-security bullseye-security InRelease [27.1 kB]
+#10 0.157 Get:3 http://deb.debian.org/debian bullseye-updates InRelease [44.0 kB]
+#10 0.257 Get:4 http://deb.debian.org/debian bullseye/main amd64 Packages [8066 kB]
+#10 0.351 Get:5 http://deb.debian.org/debian-security bullseye-security/main amd64 Packages [475 kB]
+#10 0.443 Get:6 http://deb.debian.org/debian bullseye-updates/main amd64 Packages [18.8 kB]
+#10 1.185 Fetched 8706 kB in 1s (8334 kB/s)
+#10 1.185 Reading package lists...
+#10 1.572 Reading package lists...
+#10 1.948 Building dependency tree...
+#10 2.022 Reading state information...
+#10 2.119 libstdc++6 is already the newest version (10.2.1-6).
+#10 2.119 libstdc++6 set to manually installed.
+#10 2.119 The following NEW packages will be installed:
+#10 2.121   libgomp1
+#10 2.158 0 upgraded, 1 newly installed, 0 to remove and 46 not upgraded.
+#10 2.158 Need to get 99.9 kB of archives.
+#10 2.158 After this operation, 285 kB of additional disk space will be used.
+#10 2.158 Get:1 http://deb.debian.org/debian bullseye/main amd64 libgomp1 amd64 10.2.1-6 [99.9 kB]
+#10 2.255 debconf: delaying package configuration, since apt-utils is not installed
+#10 2.274 Fetched 99.9 kB in 0s (1956 kB/s)
+#10 2.288 Selecting previously unselected package libgomp1:amd64.
+#10 2.288 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7034 files and directories currently installed.)
+#10 2.295 Preparing to unpack .../libgomp1_10.2.1-6_amd64.deb ...
+#10 2.297 Unpacking libgomp1:amd64 (10.2.1-6) ...
+#10 2.319 Setting up libgomp1:amd64 (10.2.1-6) ...
+#10 2.321 Processing triggers for libc-bin (2.31-13+deb11u6) ...
+#10 DONE 2.4s
+
+#11 [7/7] RUN python3 -m pip install --no-cache-dir --only-binary=:all:     --index-url https://download.pytorch.org/whl/cpu     --extra-index-url https://pypi.org/simple     -c 02_源码与部署/docker/requirements-runtime-lock.txt 'torch==2.8.0+cpu'  && python3 -m pip install --no-cache-dir --only-binary=:all:     -c 02_源码与部署/docker/requirements-runtime-lock.txt     'numpy==1.23.0' 'onnxruntime==1.19.0' 'Pillow==9.3.0'  && python3 02_源码与部署/docker/verify_runtime.py --base  && python3 -m pip install --no-cache-dir --only-binary=:all:     -c 02_源码与部署/docker/requirements-runtime-lock.txt     -r 02_源码与部署/docker/requirements-runtime-extra.txt  && python3 02_源码与部署/docker/verify_runtime_stage.py     > /opt/challenge/02_源码与部署/docker/runtime_dependencies.json  && (python3 02_源码与部署/scripts/check_deployment.py --profile files     > /opt/challenge/02_源码与部署/docker/deployment_files_check.json     || { cat /opt/challenge/02_源码与部署/docker/deployment_files_check.json; exit 1; })  && (python3 02_源码与部署/scripts/check_deployment.py --profile student     > /opt/challenge/02_源码与部署/docker/deployment_import_check.json     || { cat /opt/challenge/02_源码与部署/docker/deployment_import_check.json; exit 1; })  && python3 -m pip freeze --all > /opt/challenge/02_源码与部署/docker/runtime_freeze.txt
+#11 1.338 Looking in indexes: https://download.pytorch.org/whl/cpu, https://pypi.org/simple
+#11 1.873 Collecting torch==2.8.0+cpu
+#11 1.873   Obtaining dependency information for torch==2.8.0+cpu from https://download-r2.pytorch.org/whl/cpu/torch-2.8.0%2Bcpu-cp310-cp310-manylinux_2_28_x86_64.whl.metadata
+#11 2.053   Downloading https://download-r2.pytorch.org/whl/cpu/torch-2.8.0%2Bcpu-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (29 kB)
+#11 2.093 Collecting jinja2
+#11 2.134   Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+#11 2.154      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 7.5 MB/s eta 0:00:00
+#11 2.239 Collecting filelock
+#11 2.251   Downloading filelock-4.0.12-py3-none-any.whl (111 kB)
+#11 2.254      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 111.7/111.7 kB 188.5 MB/s eta 0:00:00
+#11 2.308 Collecting typing-extensions>=4.10.0
+#11 2.320   Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+#11 2.322      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.6/45.6 kB 209.8 MB/s eta 0:00:00
+#11 2.390 Collecting networkx
+#11 2.403   Downloading networkx-3.4.2-py3-none-any.whl (1.7 MB)
+#11 2.431      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.7/1.7 MB 66.3 MB/s eta 0:00:00
+#11 2.506 Collecting fsspec
+#11 2.518   Downloading fsspec-2026.9.0-py3-none-any.whl (221 kB)
+#11 2.521      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 221.7/221.7 kB 305.7 MB/s eta 0:00:00
+#11 2.572 Collecting sympy>=1.13.3
+#11 2.584   Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+#11 2.616      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 216.3 MB/s eta 0:00:00
+#11 2.673 Collecting mpmath<1.4,>=1.1.0
+#11 2.686   Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+#11 2.690      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 292.4 MB/s eta 0:00:00
+#11 2.985 Collecting MarkupSafe>=2.0
+#11 2.997   Downloading markupsafe-3.0.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (20 kB)
+#11 3.041 Downloading https://download-r2.pytorch.org/whl/cpu/torch-2.8.0%2Bcpu-cp310-cp310-manylinux_2_28_x86_64.whl (184.0 MB)
+#11 3.849    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 184.0/184.0 MB 248.0 MB/s eta 0:00:00
+#11 3.858 Downloading https://download-r2.pytorch.org/whl/cpu/torch-2.8.0%2Bcpu-cp310-cp310-manylinux_2_28_x86_64.whl (184.0 MB)
+#11 4.668    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 184.0/184.0 MB 245.1 MB/s eta 0:00:00
+#11 5.210 Installing collected packages: mpmath, typing-extensions, sympy, networkx, MarkupSafe, fsspec, filelock, jinja2, torch
+#11 20.31 Successfully installed MarkupSafe-3.0.4 filelock-4.0.12 fsspec-2026.9.0 jinja2-3.1.6 mpmath-1.3.0 networkx-3.4.2 sympy-1.14.0 torch-2.8.0+cpu typing-extensions-4.16.0
+#11 20.31 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+#11 20.78 
+#11 20.78 [notice] A new release of pip is available: 23.0.1 -> 26.2.1
+#11 20.78 [notice] To update, run: pip install --upgrade pip
+#11 21.85 Collecting numpy==1.23.0
+#11 21.89   Downloading numpy-1.23.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (17.0 MB)
+#11 22.00      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 17.0/17.0 MB 219.6 MB/s eta 0:00:00
+#11 22.18 Collecting onnxruntime==1.19.0
+#11 22.19   Downloading onnxruntime-1.19.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (13.2 MB)
+#11 22.81      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.2/13.2 MB 19.1 MB/s eta 0:00:00
+#11 23.22 Collecting Pillow==9.3.0
+#11 23.23   Downloading Pillow-9.3.0-cp310-cp310-manylinux_2_28_x86_64.whl (3.3 MB)
+#11 23.26      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 118.9 MB/s eta 0:00:00
+#11 23.30 Collecting packaging
+#11 23.31   Downloading packaging-26.3-py3-none-any.whl (129 kB)
+#11 23.31      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 130.0/130.0 kB 257.2 MB/s eta 0:00:00
+#11 23.31 Requirement already satisfied: sympy in /usr/local/lib/python3.10/site-packages (from onnxruntime==1.19.0) (1.14.0)
+#11 23.34 Collecting coloredlogs
+#11 23.35   Downloading coloredlogs-15.0.1-py2.py3-none-any.whl (46 kB)
+#11 23.35      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 46.0/46.0 kB 251.6 MB/s eta 0:00:00
+#11 23.38 Collecting flatbuffers
+#11 23.39   Downloading flatbuffers-25.12.19-py2.py3-none-any.whl (26 kB)
+#11 23.74 Collecting protobuf
+#11 23.75   Downloading protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl (343 kB)
+#11 23.75      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343.2/343.2 kB 294.2 MB/s eta 0:00:00
+#11 23.81 Collecting humanfriendly>=9.1
+#11 23.82   Downloading humanfriendly-10.0-py2.py3-none-any.whl (86 kB)
+#11 23.82      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 86.8/86.8 kB 279.5 MB/s eta 0:00:00
+#11 23.83 Requirement already satisfied: mpmath<1.4,>=1.1.0 in /usr/local/lib/python3.10/site-packages (from sympy->onnxruntime==1.19.0) (1.3.0)
+#11 24.03 Installing collected packages: flatbuffers, protobuf, Pillow, packaging, numpy, humanfriendly, coloredlogs, onnxruntime
+#11 26.68 Successfully installed Pillow-9.3.0 coloredlogs-15.0.1 flatbuffers-25.12.19 humanfriendly-10.0 numpy-1.23.0 onnxruntime-1.19.0 packaging-26.3 protobuf-7.36.2
+#11 26.68 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+#11 26.78 
+#11 26.78 [notice] A new release of pip is available: 23.0.1 -> 26.2.1
+#11 26.78 [notice] To update, run: pip install --upgrade pip
+#11 28.04 {
+#11 28.04   "status": "VERIFIED",
+#11 28.04   "python": "3.10.12",
+#11 28.04   "packages": {
+#11 28.04     "torch": "2.8.0+cpu",
+#11 28.04     "onnxruntime": "1.19.0",
+#11 28.04     "numpy": "1.23.0",
+#11 28.04     "Pillow": "9.3.0"
+#11 28.04   },
+#11 28.04   "PyYAML_exact_baseline": "NOT_RECORDED",
+#11 28.04   "model_inference_run": false
+#11 28.04 }
+#11 28.61 Collecting jsonschema==4.25.1
+#11 28.78   Downloading jsonschema-4.25.1-py3-none-any.whl (90 kB)
+#11 28.85      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 90.0/90.0 kB 1.3 MB/s eta 0:00:00
+#11 29.00 Collecting psutil==7.2.1
+#11 29.05   Downloading psutil-7.2.1-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl (154 kB)
+#11 29.11      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 154.7/154.7 kB 3.0 MB/s eta 0:00:00
+#11 29.19 Collecting PyYAML<7,>=6
+#11 29.24   Downloading pyyaml-6.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (770 kB)
+#11 29.32      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 770.3/770.3 kB 10.2 MB/s eta 0:00:00
+#11 29.36 Collecting jsonschema-specifications>=2023.03.6
+#11 29.41   Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl (18 kB)
+#11 29.46 Collecting referencing>=0.28.4
+#11 29.51   Downloading referencing-0.37.0-py3-none-any.whl (26 kB)
+#11 30.16 Collecting rpds-py>=0.7.1
+#11 30.22   Downloading rpds_py-0.30.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (390 kB)
+#11 30.22      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 390.5/390.5 kB 53.3 MB/s eta 0:00:00
+#11 30.25 Collecting attrs>=22.2.0
+#11 30.30   Downloading attrs-26.1.0-py3-none-any.whl (67 kB)
+#11 30.31      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 67.5/67.5 kB 188.5 MB/s eta 0:00:00
+#11 30.36 Requirement already satisfied: typing-extensions>=4.4.0 in /usr/local/lib/python3.10/site-packages (from referencing>=0.28.4->jsonschema==4.25.1->-r 02_源码与部署/docker/requirements-runtime-extra.txt (line 1)) (4.16.0)
+#11 30.57 Installing collected packages: rpds-py, PyYAML, psutil, attrs, referencing, jsonschema-specifications, jsonschema
+#11 30.81 Successfully installed PyYAML-6.0.3 attrs-26.1.0 jsonschema-4.25.1 jsonschema-specifications-2025.9.1 psutil-7.2.1 referencing-0.37.0 rpds-py-0.30.0
+#11 30.81 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+#11 30.91 
+#11 30.91 [notice] A new release of pip is available: 23.0.1 -> 26.2.1
+#11 30.91 [notice] To update, run: pip install --upgrade pip
+#11 33.51 /opt/challenge/02_源码与部署/scripts/check_deployment.py:50: DeprecationWarning: Accessing jsonschema.__version__ is deprecated and will be removed in a future release. Use importlib.metadata directly to query for jsonschema's version.
+#11 33.51   versions[module] = getattr(imported, "__version__", "imported")
+#11 DONE 36.0s
+
+#12 exporting to image
+#12 exporting layers
+#12 exporting layers 4.5s done
+#12 writing image sha256:0254dc7b322a7ffac23b46375d89d8c903e655071052c570016cc4b3619526fb done
+#12 naming to docker.io/library/challenge-student-runtime:20261009 done
+#12 DONE 4.5s

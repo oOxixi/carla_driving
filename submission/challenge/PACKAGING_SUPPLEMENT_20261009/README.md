@@ -61,3 +61,7 @@ new240 不是官方硬性要求，不阻塞已有材料整理。该补丁只提�
 已恢复 167 个场景文件，并修复 Student health 与验收 runner 的接口。新增结果位于 payload/06_评测说明与冻结方案/final_results/offline850_new_cpu_*，比较位于 offline850_comparison_*。新本机 CPU 结果不替代旧 B3 官方镜像测量或正式 Gate；没有 ASR/Teacher/CARLA 新运行。完整剩余收件和效果口径见 [当前进度](../PACKAGING_PROGRESS_20261009.md)。
 
 备用报告仅发布版本说明，实际 DOCX 原件已在本地整理目录留存；安装本补丁不会替换原正式报告。
+
+## Docker 实体代补（2026-10-09）
+
+Student 自建 X86 运行环境已在 Linux 实际构建、校验并导出，三份正式 ONNX 已在本地加入镜像 tar。公开补丁只含工程和真实日志/身份/SHA，镜像及模型权重保留本地完整材料目录。最终镜像的 Linux 加载与服务启动仍待记录；该镜像不是官方 OE 统一环境，官方 v3.9.1 原镜像仍须由有访问权限的成员提供。未生成最终提交 ZIP。

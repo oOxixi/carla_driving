@@ -1,0 +1,145 @@
+{
+  "downloaded_at_utc": "2026-10-09T04:48:31.428079+00:00",
+  "run_id": 37885424825,
+  "artifact_id": 11596491735,
+  "kind": "logs",
+  "artifact_name": "challenge-student-runtime-logs-37885424825",
+  "transport_bytes": 50626,
+  "transport_sha256": "1611e085d19dec5a9877ba504e8cb3363c1f73bff4e818ec973b74d219d9c588",
+  "transport_sha_verified": true,
+  "files": [
+    {
+      "path": "archive_sha256.txt",
+      "bytes": 93
+    },
+    {
+      "path": "base_image_inspect.json",
+      "bytes": 3218
+    },
+    {
+      "path": "base_os_release.log",
+      "bytes": 0
+    },
+    {
+      "path": "base_os_release.txt",
+      "bytes": 267
+    },
+    {
+      "path": "base_runtime.json",
+      "bytes": 103
+    },
+    {
+      "path": "base_runtime.log",
+      "bytes": 0
+    },
+    {
+      "path": "build.log",
+      "bytes": 15139
+    },
+    {
+      "path": "build_status.json",
+      "bytes": 392
+    },
+    {
+      "path": "deployment_files_check.json",
+      "bytes": 194
+    },
+    {
+      "path": "deployment_files_check.log",
+      "bytes": 0
+    },
+    {
+      "path": "deployment_import_check.json",
+      "bytes": 407
+    },
+    {
+      "path": "deployment_import_check.log",
+      "bytes": 307
+    },
+    {
+      "path": "disk_after_pull.txt",
+      "bytes": 186
+    },
+    {
+      "path": "disk_after_save.txt",
+      "bytes": 186
+    },
+    {
+      "path": "disk_before.txt",
+      "bytes": 186
+    },
+    {
+      "path": "docker_info.txt",
+      "bytes": 1490
+    },
+    {
+      "path": "docker_version.txt",
+      "bytes": 769
+    },
+    {
+      "path": "image_inspect.json",
+      "bytes": 4768
+    },
+    {
+      "path": "os_packages.log",
+      "bytes": 0
+    },
+    {
+      "path": "os_packages.txt",
+      "bytes": 2804
+    },
+    {
+      "path": "public_context_check.json",
+      "bytes": 137
+    },
+    {
+      "path": "pull.log",
+      "bytes": 1048
+    },
+    {
+      "path": "registry_metadata.json",
+      "bytes": 1585
+    },
+    {
+      "path": "registry_platform_manifest.json",
+      "bytes": 1294
+    },
+    {
+      "path": "registry_preflight.log",
+      "bytes": 1585
+    },
+    {
+      "path": "registry_tag_manifest.json",
+      "bytes": 2167
+    },
+    {
+      "path": "runtime_dependencies.json",
+      "bytes": 433
+    },
+    {
+      "path": "runtime_freeze.log",
+      "bytes": 0
+    },
+    {
+      "path": "runtime_freeze.txt",
+      "bytes": 474
+    },
+    {
+      "path": "runtime_verify.log",
+      "bytes": 0
+    },
+    {
+      "path": "save.log",
+      "bytes": 0
+    },
+    {
+      "path": "stage_image_manifest.json",
+      "bytes": 3550
+    },
+    {
+      "path": "stage_image_metadata.json",
+      "bytes": 3484
+    }
+  ],
+  "final_submission_zip_generated": false
+}

@@ -1,0 +1,33 @@
+{
+  "downloaded_at_utc": "2026-10-09T04:40:59.538361+00:00",
+  "run_id": 37884671386,
+  "artifact_id": 11596385117,
+  "kind": "logs",
+  "artifact_name": "challenge-student-runtime-logs-37884671386",
+  "transport_bytes": 4886,
+  "transport_sha256": "ffba125efcc403288a141b6b9e0ef18f05a3c04d7aee89cd167312d3efd48fa2",
+  "transport_sha_verified": true,
+  "files": [
+    {
+      "path": "docker_info.txt",
+      "bytes": 1490
+    },
+    {
+      "path": "disk_before.txt",
+      "bytes": 186
+    },
+    {
+      "path": "docker_version.txt",
+      "bytes": 769
+    },
+    {
+      "path": "registry_metadata.json",
+      "bytes": 453
+    },
+    {
+      "path": "registry_preflight.log",
+      "bytes": 1322
+    }
+  ],
+  "final_submission_zip_generated": false
+}

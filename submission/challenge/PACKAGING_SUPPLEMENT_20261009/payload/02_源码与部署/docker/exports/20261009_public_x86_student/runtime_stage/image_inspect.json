@@ -1,0 +1,97 @@
+[
+    {
+        "Id": "sha256:0254dc7b322a7ffac23b46375d89d8c903e655071052c570016cc4b3619526fb",
+        "RepoTags": [
+            "challenge-student-runtime:20261009"
+        ],
+        "RepoDigests": [],
+        "Parent": "",
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-10-09T04:47:04.610628318Z",
+        "DockerVersion": "",
+        "Author": "",
+        "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "8100/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "LANG=C.UTF-8",
+                "GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D",
+                "PYTHON_VERSION=3.10.12",
+                "PYTHON_PIP_VERSION=23.0.1",
+                "PYTHON_SETUPTOOLS_VERSION=65.5.1",
+                "PYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/raw/9af82b715db434abb94a0a6f3569f43e72157346/public/get-pip.py",
+                "PYTHON_GET_PIP_SHA256=45a2bb8bf2bb5eff16fdd00faef6f29731831c7c59bd9fc2bf1f3bed511ff1fe",
+                "PYTHONUNBUFFERED=1",
+                "PYTHONIOENCODING=utf-8",
+                "OMP_NUM_THREADS=1",
+                "OPENBLAS_NUM_THREADS=1"
+            ],
+            "Cmd": [
+                "--mode",
+                "http",
+                "--variant",
+                "full_int8",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8100"
+            ],
+            "ArgsEscaped": true,
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "/opt/challenge",
+            "Entrypoint": [
+                "python3",
+                "/opt/challenge/02_源码与部署/scripts/launch_student.py"
+            ],
+            "OnBuild": null,
+            "Labels": {
+                "challenge.artifact_kind": "runtime_stage_without_private_models",
+                "challenge.base_kind": "PUBLIC_X86_PINNED_RUNTIME",
+                "challenge.official_environment": "false"
+            }
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 1038396557,
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/m4gjj4m1tc4p05azc2pgyk90i/diff:/var/lib/docker/overlay2/fwu5a1ea3n49a3nz9ysgeuvu8/diff:/var/lib/docker/overlay2/u8pn6cshe6wqemtnhdc8f5gei/diff:/var/lib/docker/overlay2/kv4grbmh1oiobu43yd5vqq50y/diff:/var/lib/docker/overlay2/gzyxds46pt04quz6igec83ft8/diff:/var/lib/docker/overlay2/f647826ce2d2dfbc224818d410eb3eb7e6f510f638c6724b4dd709be9f6a8923/diff:/var/lib/docker/overlay2/46182d042856119a16d91c157cbb01e8bdf7d83eaccf289e15e105ebb8328cb3/diff:/var/lib/docker/overlay2/8050a4acb474ed683ff91f764fb04e9d22854b461ef5dfaa3fec19dcf5c81c7e/diff:/var/lib/docker/overlay2/ea00f83fc09a17d0c760a2fb9869cb97bc0ec951f85590332272b2c6ef3f3889/diff:/var/lib/docker/overlay2/ef7f95b20893d24550560284b886082ea25a676abef98fed49716ba11173d2e5/diff",
+                "MergedDir": "/var/lib/docker/overlay2/l580qq340t1g73bvbe3hjbfu1/merged",
+                "UpperDir": "/var/lib/docker/overlay2/l580qq340t1g73bvbe3hjbfu1/diff",
+                "WorkDir": "/var/lib/docker/overlay2/l580qq340t1g73bvbe3hjbfu1/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:63290f9c9e5201f0507ee1b5701aa06c7f48bef7cce287fc77db92bec634d737",
+                "sha256:83fbf4751a423a8251e1c6e307d662d9e8c52fce0abbe80d3481d178e21138b5",
+                "sha256:cbe0d454a8e72b8695f1df97c3759e512414b22c9c5dda1eb1f85475034329f0",
+                "sha256:642c12228692588f8c6d61113100f568e8439b8267cf2362d4aef7824f7f2eef",
+                "sha256:86f12be43bbb935355a8db0c4b084261faa89eeb7e9edb8b6ad71870a9020954",
+                "sha256:fc822655f3c34e746fef6c9c0388c8e0760a61228769acbc7a198cbdb92def9c",
+                "sha256:91140ae1ec9d09ad8842e6379125152fa22ca6faf91bacdea01dbb39dc36cea5",
+                "sha256:60cdfc0b0119399f1f1760f8dc1c390f8b9fdd0f5801cfcd322e8293a6429b61",
+                "sha256:f7b51d4da83dcec748c6572156b9e03c57b787d53871267d2ab1a54f090d581d",
+                "sha256:d0a0f125bcca1771e27ef1f1e785ab6ea501a1885235ee567567a56a329b747a",
+                "sha256:08f1eed4b3a0b3b27465fd19d26d37a6cb94de17a9ff0b84b3f65209b4fc62e7"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-10-09T04:47:09.132052943Z"
+        }
+    }
+]

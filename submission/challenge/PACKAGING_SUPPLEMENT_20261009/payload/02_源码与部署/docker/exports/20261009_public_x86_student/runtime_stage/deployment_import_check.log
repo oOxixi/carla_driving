@@ -1,0 +1,2 @@
+/opt/challenge/02_源码与部署/scripts/check_deployment.py:50: DeprecationWarning: Accessing jsonschema.__version__ is deprecated and will be removed in a future release. Use importlib.metadata directly to query for jsonschema's version.
+  versions[module] = getattr(imported, "__version__", "imported")

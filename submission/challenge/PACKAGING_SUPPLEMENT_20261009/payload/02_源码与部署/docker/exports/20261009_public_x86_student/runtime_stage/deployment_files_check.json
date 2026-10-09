@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "profile": "files",
+  "acceptance_scenario_count": 83,
+  "imported_versions": {},
+  "errors": [],
+  "model_inference_run": false,
+  "carla_connection_attempted": false
+}

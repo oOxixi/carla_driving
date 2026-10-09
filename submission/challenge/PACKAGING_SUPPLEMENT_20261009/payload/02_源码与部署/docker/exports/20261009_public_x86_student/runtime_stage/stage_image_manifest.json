@@ -1,0 +1,78 @@
+{
+  "status": "RUNTIME_STAGE_BUILT_VERIFIED_EXPORTED_WITHOUT_PRIVATE_MODELS",
+  "generated_at_utc": "2026-10-09T04:47:39.850968+00:00",
+  "source_commit": "6c01af2c50840248f07aee2373cc246274b77b37",
+  "run_id": "37885424825",
+  "run_url": "https://github.com/oOxixi/carla_driving/actions/runs/37885424825",
+  "image_ref": "challenge-student-runtime:20261009",
+  "image_id": "sha256:0254dc7b322a7ffac23b46375d89d8c903e655071052c570016cc4b3619526fb",
+  "repo_digests": [],
+  "base_ref": "library/python:3.10.12-slim-bullseye",
+  "resolved_base": "library/python@sha256:2daf07926ccdff5dbeef6bee46cc5bb07322f417c102609601177a1559156385",
+  "base_kind": "PUBLIC_X86_PINNED_RUNTIME",
+  "official_base_ref": "openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1",
+  "official_base_access": {
+    "status": "ANONYMOUS_PULL_DENIED",
+    "http_status": 401,
+    "run_id": 37884671386,
+    "run_url": "https://github.com/oOxixi/carla_driving/actions/runs/37884671386"
+  },
+  "official_environment_equivalent_candidate": false,
+  "official_environment_equivalent": false,
+  "official_equivalence_status": "CUSTOM_RUNTIME_NOT_EQUIVALENT_TO_OFFICIAL_TOOLCHAIN",
+  "actual_base_os": {
+    "PRETTY_NAME": "Debian GNU/Linux 11 (bullseye)",
+    "NAME": "Debian GNU/Linux",
+    "VERSION_ID": "11",
+    "VERSION": "11 (bullseye)",
+    "VERSION_CODENAME": "bullseye",
+    "ID": "debian",
+    "HOME_URL": "https://www.debian.org/",
+    "SUPPORT_URL": "https://www.debian.org/support",
+    "BUG_REPORT_URL": "https://bugs.debian.org/"
+  },
+  "actual_base_runtime": {
+    "python": "3.10.12",
+    "machine": "x86_64",
+    "platform": "Linux-6.8.0-1064-azure-x86_64-with-glibc2.31"
+  },
+  "actual_runtime_python": "3.10.12",
+  "actual_runtime_versions": {
+    "torch": "2.8.0+cpu",
+    "onnxruntime": "1.19.0",
+    "numpy": "1.23.0",
+    "Pillow": "9.3.0",
+    "jsonschema": "4.25.1",
+    "psutil": "7.2.1",
+    "PyYAML": "6.0.3"
+  },
+  "base_image_id": "sha256:97109436656236c71f21815f9a0de626aed5d76876206019e866fc784e6e1d3e",
+  "base_repo_digests": [
+    "python@sha256:2daf07926ccdff5dbeef6bee46cc5bb07322f417c102609601177a1559156385"
+  ],
+  "image_size_bytes_observed": 1038396557,
+  "image_rootfs_diff_ids": [
+    "sha256:63290f9c9e5201f0507ee1b5701aa06c7f48bef7cce287fc77db92bec634d737",
+    "sha256:83fbf4751a423a8251e1c6e307d662d9e8c52fce0abbe80d3481d178e21138b5",
+    "sha256:cbe0d454a8e72b8695f1df97c3759e512414b22c9c5dda1eb1f85475034329f0",
+    "sha256:642c12228692588f8c6d61113100f568e8439b8267cf2362d4aef7824f7f2eef",
+    "sha256:86f12be43bbb935355a8db0c4b084261faa89eeb7e9edb8b6ad71870a9020954",
+    "sha256:fc822655f3c34e746fef6c9c0388c8e0760a61228769acbc7a198cbdb92def9c",
+    "sha256:91140ae1ec9d09ad8842e6379125152fa22ca6faf91bacdea01dbb39dc36cea5",
+    "sha256:60cdfc0b0119399f1f1760f8dc1c390f8b9fdd0f5801cfcd322e8293a6429b61",
+    "sha256:f7b51d4da83dcec748c6572156b9e03c57b787d53871267d2ab1a54f090d581d",
+    "sha256:d0a0f125bcca1771e27ef1f1e785ab6ea501a1885235ee567567a56a329b747a",
+    "sha256:08f1eed4b3a0b3b27465fd19d26d37a6cb94de17a9ff0b84b3f65209b4fc62e7"
+  ],
+  "private_model_files_included": false,
+  "runtime_dependency_check_run": true,
+  "runtime_import_check_run": true,
+  "model_inference_run": false,
+  "final_student_image_built": false,
+  "local_windows_docker_load_performed": false,
+  "registry_published": false,
+  "archive_file": "runtime-stage-image.tar.gz",
+  "archive_bytes": 338659946,
+  "archive_sha256": "88c99ad9ebed6ec77f812c4dd3d068ed18c6652fceb11487eaf541f2b8c646d5",
+  "archive_compression": "gzip -1; Docker save stream"
+}

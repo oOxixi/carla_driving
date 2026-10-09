@@ -2,7 +2,7 @@
 
 当前为待补齐的材料整理目录，尚未形成最终交付包。按用户要求，成员缺件补全前不生成压缩包；完整缺件见 99_交付清单/仅剩成员缺件.md。
 
-本包将当前鲁棒 V3 权重、Adapter V3.1、量化模型、历史数据与 RGB、B3 性能和评测材料整理为可查阅的交付目录。已原样纳入团队提供的《挑战赛道提交报告_轻量化模型的车规级部署.docx》，本次没有改写报告。总 README、创新要点、量化选型、数据与指标说明及 X86 启动和 Docker 构建材料均已补齐。应用指标终版、指定芯片工程和演示入口已补齐，镜像实体、实际演示以及尚未交回的原始运行输出按实体材料表收取。
+本包将当前鲁棒 V3 权重、Adapter V3.1、量化模型、历史数据与 RGB、B3 性能和评测材料整理为可查阅的交付目录。已原样纳入团队提供的《挑战赛道提交报告_轻量化模型的车规级部署.docx》，本次没有改写报告。总 README、创新要点、量化选型、数据与指标说明及 X86 启动和 Docker 构建材料均已补齐。应用指标终版、指定芯片工程和演示入口已补齐，自建 Student 镜像 tar 已补，最终 Linux 加载/启动、官方 OE 原镜像、实际演示与其他原始输出仍按实体材料表收取。
 
 ## 阅读入口
 
@@ -60,7 +60,7 @@ python 02_源码与部署/scripts/launch_student.py --mode serve --variant full_
 & '.\02_源码与部署\docker\build_and_export.ps1'
 ```
 
-Linux 执行 `bash 02_源码与部署/docker/build_and_export.sh`。完整成功的输出在 `02_源码与部署/docker/exports/<时间>/`，包含真实镜像 tar、image manifest/inspect、实际依赖版本、日志和 SHA256。本次没有可用 Docker 环境，未生成镜像实体。
+Linux 执行 `bash 02_源码与部署/docker/build_and_export.sh`。完整成功的输出在 `02_源码与部署/docker/exports/<时间>/`，包含真实镜像 tar、image manifest/inspect、实际依赖版本、日志和 SHA256。后续已通过真实 Linux runner 构建自建运行时，并本地附加私有模型生成 Student tar；官方 OE 基础镜像与最终 Linux 加载/启动仍待补。
 
 ## 芯片与演示工程
 
@@ -85,3 +85,9 @@ Linux 执行 `bash 02_源码与部署/docker/build_and_export.sh`。完整成功
 已在独立依赖目录中并行执行真实离线回放，FP32/Full INT8 各 850/850 成功、0 错误。新原始记录与指标见 `06_评测说明与冻结方案/final_results/offline850_comparison_20261009T024659_050722Z/RESULTS.md`；这是 Python3.12/Windows 本机 CPU 新回放，不覆盖官方镜像历史测量、不包含 ASR/CARLA，也不是正式 B2 Gate。
 
 现有 ASR LoRA/配置身份已导出，缺失基座/VAD/级联权重仍需真实前端运行环境提供。最新剩余收件见 `99_交付清单/仅剩成员缺件.md`。
+
+<!-- DOCKER_RECEIPT_20261009_START -->
+## 本次 Docker 实体代补
+
+自建 Student tar 与两类实际日志已归档，使用说明见 `02_源码与部署/docker/本次Docker交付_20261009.md`。运行时阶段实际完成 Docker build/run/inspect/save；最终带模型 archive 尚未 Linux load、启动或推理。Debian11 公共 Python base 不等同 OE 官方工具链。
+<!-- DOCKER_RECEIPT_20261009_END -->

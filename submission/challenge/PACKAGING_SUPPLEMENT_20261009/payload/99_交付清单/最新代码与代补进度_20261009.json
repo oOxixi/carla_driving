@@ -46,9 +46,9 @@
   "review_finished_utc": "2026-10-09T02:52:56.709805+00:00",
   "remaining_receipts": [
     {
-      "member": "A4/B4 或任一已有 Docker 环境的成员",
-      "missing": "运行已补 build_and_export 后交回完整 exports/<时间> 目录：Student 镜像 tar、image manifest/inspect、实际依赖版本、SHA 和日志。源码、场景与启动工程已经补齐，不需要开发板。",
-      "destination": "02_源码与部署/docker/exports"
+      "member": "A4/B4 或 B3 已有官方 OE 环境的人",
+      "missing": "提供 OE3.9.1 原官方基础镜像 tar、实际 image inspect 与依赖版本；在现有 Linux Docker 中加载已代补的 Student tar，交回真实加载与服务启动记录。工程和自建 Student 镜像归档已完成，不需要再写工程或提供开发板。",
+      "destination": "02_源码与部署/docker/exports/official_oe_and_linux_validation"
     },
     {
       "member": "B2/B3 与语音前端成员（已有 ASR 运行环境的人）",
@@ -65,5 +65,64 @@
       "missing": "已经填写好的正式初审申报表 .docx/.pdf 原文件。只归档，不重填或再索取登记信息。",
       "destination": "08_申报与官方要求"
     }
-  ]
+  ],
+  "docker_delivery_20261009": {
+    "receipt_id": "docker_actual_receipt_20261009",
+    "date": "2026-10-09",
+    "status": "IMAGE_ARCHIVE_ASSEMBLED_PRIVATE_MODELS_ATTACHED_LINUX_LOAD_PENDING",
+    "image_tag": "challenge-student-x86:20261009",
+    "archive_path": "02_源码与部署/docker/exports/20261009_public_x86_student/student-x86-image.tar",
+    "archive_bytes": 1200896000,
+    "archive_sha256": "2a227ef9847836ecb369e1dd1c81c0a1f84045e01ea896b1d2babf2bacd85f78",
+    "image_id_computed_from_config": "sha256:c61eb8b07e5872d5819c0cab82039e51fd3a0e592893db451990a57a28678413",
+    "runtime_stage_image_id_observed": "sha256:0254dc7b322a7ffac23b46375d89d8c903e655071052c570016cc4b3619526fb",
+    "runtime_stage_source_commit": "6c01af2c50840248f07aee2373cc246274b77b37",
+    "runtime_stage_run_url": "https://github.com/oOxixi/carla_driving/actions/runs/37885424825",
+    "base_kind": "PUBLIC_X86_PINNED_RUNTIME",
+    "base_image": "library/python:3.10.12-slim-bullseye",
+    "actual_base_os": {
+      "PRETTY_NAME": "Debian GNU/Linux 11 (bullseye)",
+      "NAME": "Debian GNU/Linux",
+      "VERSION_ID": "11",
+      "VERSION": "11 (bullseye)",
+      "VERSION_CODENAME": "bullseye",
+      "ID": "debian",
+      "HOME_URL": "https://www.debian.org/",
+      "SUPPORT_URL": "https://www.debian.org/support",
+      "BUG_REPORT_URL": "https://bugs.debian.org/"
+    },
+    "actual_runtime_python": "3.10.12",
+    "actual_runtime_versions": {
+      "torch": "2.8.0+cpu",
+      "onnxruntime": "1.19.0",
+      "numpy": "1.23.0",
+      "Pillow": "9.3.0",
+      "jsonschema": "4.25.1",
+      "psutil": "7.2.1",
+      "PyYAML": "6.0.3"
+    },
+    "official_environment_equivalent": false,
+    "official_base_ref": "openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1",
+    "official_base_access": {
+      "status": "ANONYMOUS_PULL_DENIED",
+      "http_status": 401,
+      "run_id": 37884671386,
+      "run_url": "https://github.com/oOxixi/carla_driving/actions/runs/37884671386"
+    },
+    "runtime_stage_docker_build_run": true,
+    "runtime_stage_docker_run_check": true,
+    "runtime_stage_docker_inspect_run": true,
+    "runtime_stage_docker_save_run": true,
+    "private_models_attached_locally": true,
+    "private_models_published": false,
+    "image_exported": true,
+    "official_image_exported": false,
+    "final_image_linux_docker_load_run": false,
+    "final_image_docker_inspect_run": false,
+    "final_image_service_started": false,
+    "final_image_model_inference_run": false,
+    "runtime_logs": "02_源码与部署/docker/exports/20261009_public_x86_student/runtime_stage",
+    "official_access_logs": "02_源码与部署/docker/exports/20261009_public_x86_student/official_base_attempt",
+    "final_submission_zip_generated": false
+  }
 }

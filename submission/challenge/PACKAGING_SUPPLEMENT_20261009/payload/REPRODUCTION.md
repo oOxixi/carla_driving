@@ -16,6 +16,6 @@ python 02_源码与部署/scripts/launch_student.py --mode serve --variant full_
 
 原始性能与评测脚本保持在 02_源码与部署/source/challenge 下，运行时从 source 目录启动，模型参数按根目录 MODEL_SELECTION.json 给出的实际路径传入。历史案例和 RGB 的仓库相对位置已经保留。
 
-运行模式、环境与日志口径分开记录：X86 模型和规划链以 B3 现有官方镜像原始日志为准；BC/HBM 是地平线编译实体；BPU 性能是工具预估。本次只整理文件和入口，没有运行新的模型测试或测量。指定芯片 SDK 源码已补，未做 SDK 编译/实板推理；Docker 镜像实体仍需有 Docker 的机器导出。
+运行模式、环境与日志口径分开记录：X86 模型和规划链以 B3 现有官方镜像原始日志为准；BC/HBM 是地平线编译实体；BPU 性能是工具预估。本次只整理文件和入口，没有运行新的模型测试或测量。指定芯片 SDK 源码已补，未做 SDK 编译/实板推理；自建 Student 镜像 tar 已补，最终 Linux 加载/启动和官方 OE 原基础镜像仍待补；见 docker/本次Docker交付_20261009.md。
 
 83 场景工具以 `02_源码与部署/source` 为源码根；场景与 health 衔接已补齐。新 CPU 850 例回放入口、依赖及证据范围见 `06_评测说明与冻结方案/final_results/OFFLINE_850.md`。

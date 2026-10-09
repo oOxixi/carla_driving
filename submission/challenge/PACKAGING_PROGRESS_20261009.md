@@ -1,6 +1,6 @@
 # 挑战赛道打包最新进度（2026-10-09 追加代补）
 
-最新 challenge 核对时仍是 `aa62f659`，已检查 A2/A4/B2 角色分支；没有更新的实体镜像或当前 ASR 原件可以直接收用。本轮继续补好了源码和材料的实际缺口，并完成真实 CPU 逐例输出。当前仍待收实体材料，没有生成最终 ZIP，也没有晋级正式 Gate。
+最新 challenge 核对时仍是 `aa62f659`，已检查 A2/A4/B2 角色分支；角色分支未交回官方 OE 镜像或当前 ASR 原件；本轮已直接代补自建 Student 镜像 tar。本轮继续补好了源码和材料的实际缺口，并完成真实 CPU 逐例输出。当前仍待收实体材料，没有生成最终 ZIP，也没有晋级正式 Gate。
 
 代补文件见 [PACKAGING_SUPPLEMENT_20261009](PACKAGING_SUPPLEMENT_20261009/README.md)，可安装回现有完整材料目录。模型、RGB 和历史原件保留既有来源，不重复上传。
 
@@ -19,7 +19,7 @@
 
 | 向谁收取 | 缺什么实体文件 |
 | --- | --- |
-| A4/B4 或任一已有 Docker 环境的人 | 用现成脚本成功导出的完整 exports/<时间>/：Student 镜像 tar、manifest/inspect、实际依赖、SHA、日志 |
+| A4/B4 或 B3 已有官方 OE 环境的人 | 提供 OE3.9.1 原官方基础镜像 tar、实际 image inspect 与依赖版本；在现有 Linux Docker 中加载已代补的 Student tar，交回真实加载与服务启动记录。工程和自建 Student 镜像归档已完成，不需要再写工程或提供开发板。 |
 | B2/B3 与语音前端成员 | 当前同基准真实 ASR 转写/错误/时延日志，与实际 SenseVoice/VAD/启用级联权重及配置身份绑定；若让本机代跑，先交缺失基座/VAD/级联权重 |
 | B3/语音成员或 CARLA 演示机操作者 | 现成脚本实际产生的同次视频、录音、ASR/Student/CARLA 日志及身份，交完整 runs/<时间>/ |
 | 队长 | 已经填好的正式初审申报表 .docx/.pdf，仅交原文件归档 |
@@ -33,3 +33,9 @@ FP32/Full INT8 的行为一致率均为 927/931=99.5704%，行为/完成/车道/
 这是 Windows/Python3.12/ORT1.19 的新本机 CPU 离线回放。Teacher 是已保存的参考计划，未重新推理；未运行 ASR、CARLA 或未见独立 B2 Gate，不作为官方镜像性能成绩。完整定义和逐例错误见补丁中的 final_results/offline850_comparison_*/RESULTS.md、comparison.json。
 
 无开发板可继续完成 X86 初审与工具链材料；真实板端推理/计数器为条件性补充。new240 是可选团队补采，未另列硬缺件。材料齐全后才形成最终交付包。
+
+<!-- DOCKER_RECEIPT_20261009_START -->
+## 2026-10-09 Docker 交付进度
+
+已真实完成自建运行时 Linux Docker build、版本/import run、inspect、save；三份私有 ONNX 在本地附加生成 Student tar，SHA/身份和两类原始日志已归档。实际运行见 [GitHub run 37885424825](https://github.com/oOxixi/carla_driving/actions/runs/37885424825)。最终带模型 tar 尚未 Linux load、服务启动或推理。Debian11 公共 Python base 不等同官方 OE；原 OE3.9.1 匿名访问为 HTTP401，仍待原官方镜像及最终 Linux 运行记录。候选 Gate、效果与官方成绩不变，无最终提交 ZIP。
+<!-- DOCKER_RECEIPT_20261009_END -->

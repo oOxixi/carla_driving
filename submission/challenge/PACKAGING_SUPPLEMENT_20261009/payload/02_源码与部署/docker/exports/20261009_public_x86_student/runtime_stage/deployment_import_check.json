@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "profile": "student",
+  "acceptance_scenario_count": 83,
+  "imported_versions": {
+    "numpy": "1.23.0",
+    "torch": "2.8.0+cpu",
+    "onnxruntime": "1.19.0",
+    "PIL": "9.3.0",
+    "jsonschema": "4.25.1",
+    "yaml": "6.0.3",
+    "challenge.hil.carla.student_action_service": "imported"
+  },
+  "errors": [],
+  "model_inference_run": false,
+  "carla_connection_attempted": false
+}

@@ -1,0 +1,165 @@
+{
+  "status": "IMAGE_ARCHIVE_ASSEMBLED_PRIVATE_MODELS_ATTACHED_LINUX_LOAD_PENDING",
+  "generated_at_utc": "2026-10-09T04:57:22Z",
+  "archive_file": "student-x86-image.tar",
+  "archive_bytes": 1200896000,
+  "archive_sha256": "2a227ef9847836ecb369e1dd1c81c0a1f84045e01ea896b1d2babf2bacd85f78",
+  "image_tag": "challenge-student-x86:20261009",
+  "image_id_computed_from_config": "sha256:c61eb8b07e5872d5819c0cab82039e51fd3a0e592893db451990a57a28678413",
+  "platform": "linux/amd64",
+  "runtime_stage_image_id_observed": "sha256:0254dc7b322a7ffac23b46375d89d8c903e655071052c570016cc4b3619526fb",
+  "runtime_stage_source_commit": "6c01af2c50840248f07aee2373cc246274b77b37",
+  "runtime_stage_archive_sha256": "88c99ad9ebed6ec77f812c4dd3d068ed18c6652fceb11487eaf541f2b8c646d5",
+  "runtime_stage_run_url": "https://github.com/oOxixi/carla_driving/actions/runs/37885424825",
+  "resolved_base": "library/python@sha256:2daf07926ccdff5dbeef6bee46cc5bb07322f417c102609601177a1559156385",
+  "base_kind": "PUBLIC_X86_PINNED_RUNTIME",
+  "official_environment_equivalent": false,
+  "official_base_ref": "openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1",
+  "official_base_access": {
+    "status": "ANONYMOUS_PULL_DENIED",
+    "http_status": 401,
+    "run_id": 37884671386,
+    "run_url": "https://github.com/oOxixi/carla_driving/actions/runs/37884671386"
+  },
+  "private_model_files_included": true,
+  "private_models_published": false,
+  "runtime_stage_dependency_check_run": true,
+  "runtime_stage_import_check_run": true,
+  "final_image_linux_docker_load_run": false,
+  "final_image_docker_inspect_run": false,
+  "final_image_model_inference_run": false,
+  "formal_A3_FP32_GATE_passed": false,
+  "final_submission_zip_generated": false,
+  "assembly_method": "Append one verified local model layer; preserve original stage layer bytes; emit manifest.json Docker archive",
+  "rootfs_diff_ids": [
+    "sha256:63290f9c9e5201f0507ee1b5701aa06c7f48bef7cce287fc77db92bec634d737",
+    "sha256:83fbf4751a423a8251e1c6e307d662d9e8c52fce0abbe80d3481d178e21138b5",
+    "sha256:cbe0d454a8e72b8695f1df97c3759e512414b22c9c5dda1eb1f85475034329f0",
+    "sha256:642c12228692588f8c6d61113100f568e8439b8267cf2362d4aef7824f7f2eef",
+    "sha256:86f12be43bbb935355a8db0c4b084261faa89eeb7e9edb8b6ad71870a9020954",
+    "sha256:fc822655f3c34e746fef6c9c0388c8e0760a61228769acbc7a198cbdb92def9c",
+    "sha256:91140ae1ec9d09ad8842e6379125152fa22ca6faf91bacdea01dbb39dc36cea5",
+    "sha256:60cdfc0b0119399f1f1760f8dc1c390f8b9fdd0f5801cfcd322e8293a6429b61",
+    "sha256:f7b51d4da83dcec748c6572156b9e03c57b787d53871267d2ab1a54f090d581d",
+    "sha256:d0a0f125bcca1771e27ef1f1e785ab6ea501a1885235ee567567a56a329b747a",
+    "sha256:08f1eed4b3a0b3b27465fd19d26d37a6cb94de17a9ff0b84b3f65209b4fc62e7",
+    "sha256:f52b27840d0da552c69c2f0832300751e1f7520ace24574d7b0cf587b0f8c41b"
+  ],
+  "original_layers": [
+    {
+      "archive_path": "blobs/sha256/08f1eed4b3a0b3b27465fd19d26d37a6cb94de17a9ff0b84b3f65209b4fc62e7",
+      "stored_bytes": 928765952,
+      "stored_sha256": "08f1eed4b3a0b3b27465fd19d26d37a6cb94de17a9ff0b84b3f65209b4fc62e7",
+      "diff_id": "sha256:08f1eed4b3a0b3b27465fd19d26d37a6cb94de17a9ff0b84b3f65209b4fc62e7",
+      "compression": "uncompressed"
+    },
+    {
+      "archive_path": "blobs/sha256/60cdfc0b0119399f1f1760f8dc1c390f8b9fdd0f5801cfcd322e8293a6429b61",
+      "stored_bytes": 15360,
+      "stored_sha256": "60cdfc0b0119399f1f1760f8dc1c390f8b9fdd0f5801cfcd322e8293a6429b61",
+      "diff_id": "sha256:60cdfc0b0119399f1f1760f8dc1c390f8b9fdd0f5801cfcd322e8293a6429b61",
+      "compression": "uncompressed"
+    },
+    {
+      "archive_path": "blobs/sha256/63290f9c9e5201f0507ee1b5701aa06c7f48bef7cce287fc77db92bec634d737",
+      "stored_bytes": 84029952,
+      "stored_sha256": "63290f9c9e5201f0507ee1b5701aa06c7f48bef7cce287fc77db92bec634d737",
+      "diff_id": "sha256:63290f9c9e5201f0507ee1b5701aa06c7f48bef7cce287fc77db92bec634d737",
+      "compression": "uncompressed"
+    },
+    {
+      "archive_path": "blobs/sha256/642c12228692588f8c6d61113100f568e8439b8267cf2362d4aef7824f7f2eef",
+      "stored_bytes": 5120,
+      "stored_sha256": "642c12228692588f8c6d61113100f568e8439b8267cf2362d4aef7824f7f2eef",
+      "diff_id": "sha256:642c12228692588f8c6d61113100f568e8439b8267cf2362d4aef7824f7f2eef",
+      "compression": "uncompressed"
+    },
+    {
+      "archive_path": "blobs/sha256/83fbf4751a423a8251e1c6e307d662d9e8c52fce0abbe80d3481d178e21138b5",
+      "stored_bytes": 3402240,
+      "stored_sha256": "83fbf4751a423a8251e1c6e307d662d9e8c52fce0abbe80d3481d178e21138b5",
+      "diff_id": "sha256:83fbf4751a423a8251e1c6e307d662d9e8c52fce0abbe80d3481d178e21138b5",
+      "compression": "uncompressed"
+    },
+    {
+      "archive_path": "blobs/sha256/86f12be43bbb935355a8db0c4b084261faa89eeb7e9edb8b6ad71870a9020954",
+      "stored_bytes": 12905984,
+      "stored_sha256": "86f12be43bbb935355a8db0c4b084261faa89eeb7e9edb8b6ad71870a9020954",
+      "diff_id": "sha256:86f12be43bbb935355a8db0c4b084261faa89eeb7e9edb8b6ad71870a9020954",
+      "compression": "uncompressed"
+    },
+    {
+      "archive_path": "blobs/sha256/91140ae1ec9d09ad8842e6379125152fa22ca6faf91bacdea01dbb39dc36cea5",
+      "stored_bytes": 1538048,
+      "stored_sha256": "91140ae1ec9d09ad8842e6379125152fa22ca6faf91bacdea01dbb39dc36cea5",
+      "diff_id": "sha256:91140ae1ec9d09ad8842e6379125152fa22ca6faf91bacdea01dbb39dc36cea5",
+      "compression": "uncompressed"
+    },
+    {
+      "archive_path": "blobs/sha256/cbe0d454a8e72b8695f1df97c3759e512414b22c9c5dda1eb1f85475034329f0",
+      "stored_bytes": 30546432,
+      "stored_sha256": "cbe0d454a8e72b8695f1df97c3759e512414b22c9c5dda1eb1f85475034329f0",
+      "diff_id": "sha256:cbe0d454a8e72b8695f1df97c3759e512414b22c9c5dda1eb1f85475034329f0",
+      "compression": "uncompressed"
+    },
+    {
+      "archive_path": "blobs/sha256/d0a0f125bcca1771e27ef1f1e785ab6ea501a1885235ee567567a56a329b747a",
+      "stored_bytes": 681472,
+      "stored_sha256": "d0a0f125bcca1771e27ef1f1e785ab6ea501a1885235ee567567a56a329b747a",
+      "diff_id": "sha256:d0a0f125bcca1771e27ef1f1e785ab6ea501a1885235ee567567a56a329b747a",
+      "compression": "uncompressed"
+    },
+    {
+      "archive_path": "blobs/sha256/f7b51d4da83dcec748c6572156b9e03c57b787d53871267d2ab1a54f090d581d",
+      "stored_bytes": 16384,
+      "stored_sha256": "f7b51d4da83dcec748c6572156b9e03c57b787d53871267d2ab1a54f090d581d",
+      "diff_id": "sha256:f7b51d4da83dcec748c6572156b9e03c57b787d53871267d2ab1a54f090d581d",
+      "compression": "uncompressed"
+    },
+    {
+      "archive_path": "blobs/sha256/fc822655f3c34e746fef6c9c0388c8e0760a61228769acbc7a198cbdb92def9c",
+      "stored_bytes": 2048,
+      "stored_sha256": "fc822655f3c34e746fef6c9c0388c8e0760a61228769acbc7a198cbdb92def9c",
+      "diff_id": "sha256:fc822655f3c34e746fef6c9c0388c8e0760a61228769acbc7a198cbdb92def9c",
+      "compression": "uncompressed"
+    }
+  ],
+  "new_model_layer_archive_path": "f52b27840d0da552c69c2f0832300751e1f7520ace24574d7b0cf587b0f8c41b/layer.tar",
+  "new_model_layer_diff_id": "sha256:f52b27840d0da552c69c2f0832300751e1f7520ace24574d7b0cf587b0f8c41b",
+  "models": [
+    {
+      "variant": "full_int8",
+      "package_relative_path": "03_训练与模型/A2模型与量化/models/full_int8/student_int8.onnx",
+      "container_path": "opt/challenge/03_训练与模型/A2模型与量化/models/full_int8/student_int8.onnx",
+      "bytes": 23273686,
+      "sha256": "275dce5c426fff85a0375eb286fc67febac8d835c1e36fe15b0fbd707cf836c3"
+    },
+    {
+      "variant": "fp32_candidate",
+      "package_relative_path": "03_训练与模型/A2模型与量化/models/student_v0_fp32_candidate.onnx",
+      "container_path": "opt/challenge/03_训练与模型/A2模型与量化/models/student_v0_fp32_candidate.onnx",
+      "bytes": 92041414,
+      "sha256": "681a5d4bf16ba61741ef0e559649c43c041de649eef3e8e6f0b6285beaab4286"
+    },
+    {
+      "variant": "mixed_precision_top3",
+      "package_relative_path": "03_训练与模型/A2模型与量化/models/mixed_precision_top3/student_int8_mixed_top3.onnx",
+      "container_path": "opt/challenge/03_训练与模型/A2模型与量化/models/mixed_precision_top3/student_int8_mixed_top3.onnx",
+      "bytes": 23622853,
+      "sha256": "9a08a03c42a9ea59ead664d168254cd3685d73d176d5ab53507bd4a4467132d3"
+    }
+  ],
+  "pending_validation": [
+    "Linux docker load of the final archive",
+    "Actual three-model ONNX load/inference and default HTTP service startup"
+  ],
+  "downloaded_sidecar_sha256": {
+    "stage_image_manifest.json": "7c7f3987c0f1f67b9595123a768b736b67a97ce120589cc00ba793e80b115b27",
+    "image_inspect.json": "5e6346d69d6b838a15427a3594c0c1383c5c99dbf3d62821a2b90e39b6141d7b",
+    "runtime_dependencies.json": "363431a75f5a4b1c03599fc9700f6d0690e563bc70d8a7b42fa0741ba4e45f16",
+    "build_status.json": "79138744fcd697879f94b0e33112356d35e7b0d7fe3f4f9af81aff5f2cfea9fa",
+    "public_context_check.json": "2ca509888771471329d3a391dd3a1eb81ae14e749d4e18bb32a0be26b1f61885",
+    "registry_metadata.json": "b2da40939b8b72706421683c51dfbcc2e64223fce443490083cf72a1f7b59b03",
+    "base_image_inspect.json": "d78b3ede9aae9bd1e2c184457380cb57f674491de241c5d1d61d69044a9eccd3"
+  }
+}

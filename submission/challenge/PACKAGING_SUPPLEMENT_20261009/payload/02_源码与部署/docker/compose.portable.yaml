@@ -1,0 +1,11 @@
+services:
+  student:
+    image: challenge-student-x86:20261009
+    pull_policy: never
+    platform: linux/amd64
+    ports:
+      - "8100:8100"
+    volumes:
+      - ../../runs/student:/opt/challenge/runs
+      - ../../runs/shared_images:/shared
+    command: ["--mode", "http", "--variant", "full_int8", "--host", "0.0.0.0", "--port", "8100", "--image-root", "/shared"]
