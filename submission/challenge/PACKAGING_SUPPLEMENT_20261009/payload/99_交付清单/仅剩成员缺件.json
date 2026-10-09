@@ -1,22 +1,22 @@
 [
   {
-    "member": "有 Docker 环境的人（A4/B4 均可）",
-    "missing": "运行已补导出脚本后交回整个 exports/<时间> 目录：student-x86-image.tar、image_manifest.json、image_inspect.json、runtime_dependencies.json、runtime_freeze.txt、image_sha256.txt。无需再写 Docker 工程，不需要开发板。",
+    "member": "A4/B4 或任一已有 Docker 环境的成员",
+    "missing": "运行已补 build_and_export 后交回完整 exports/<时间> 目录：Student 镜像 tar、image manifest/inspect、实际依赖版本、SHA 和日志。源码、场景与启动工程已经补齐，不需要开发板。",
     "destination": "02_源码与部署/docker/exports"
   },
   {
-    "member": "B2/B3，持有当前原始评测输出的人",
-    "missing": "当前版本同批 Teacher/FP32/INT8 逐例输出，特别是 850 例 Student 原始预测；对应案例/policy 清单、模型 SHA、环境及 ASR 同基准转写输出与前端配置/权重身份。已有 240 条预测和历史 250 条 ASR 原件不用重交，统计表与脚本已代补。",
-    "destination": "06_评测说明与冻结方案/final_results/raw_current_run"
+    "member": "B2/B3 与语音前端成员（已有 ASR 运行环境的人）",
+    "missing": "当前同基准真实 ASR 转写/错误/时延日志及与运行绑定的前端身份。现有 LoRA 与配置身份已导出；还需真实 SenseVoice、FSMN-VAD 及当前启用的 faster-whisper 基座权重身份。可直接用 export_asr_identity.py 导出，若需本机代跑再交缺失权重实体。850 例 FP32/INT8 逐例输出已代补，已有240预测、历史250音频/ASR不用重交。",
+    "destination": "06_评测说明与冻结方案/final_results/raw_current_asr_run"
   },
   {
-    "member": "有 CARLA 与语音环境的人（B3/语音成员，用户也可操作）",
-    "missing": "用已补演示入口实际录制的一整次 runs/<时间> 目录：当前 Student 视频、输入/现场录音、ASR/Student/CARLA 日志及身份清单。缺的是实际运行产物，启动和录像代码已经完成。",
+    "member": "B3/语音成员或任一有 CARLA+ASR 环境的操作者",
+    "missing": "运行已补演示入口，交回当前 Student 同次 runs/<时间> 整目录：真实视频、输入/现场录音、ASR/Student/CARLA 日志与身份。录像代码与启动工程已经完成。",
     "destination": "07_演示材料/runs"
   },
   {
     "member": "队长（仅收现有文件）",
-    "missing": "用户已确认正式初审申报表已填写完成；只需交回已填 .docx/.pdf 原文件归档，不重新填写，不再索要成员登记信息。",
+    "missing": "已经填写好的正式初审申报表 .docx/.pdf 原文件。只归档，不重填或再索取登记信息。",
     "destination": "08_申报与官方要求"
   }
 ]

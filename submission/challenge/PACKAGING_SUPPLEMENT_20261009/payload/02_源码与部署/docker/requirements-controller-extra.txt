@@ -1,0 +1,4 @@
+# Controller path only, installed on top of the verified B3 Student image.
+# Source controller lock records these versions; retain B3 NumPy/ORT/Pillow.
+carla==0.9.16
+pygame==2.6.1

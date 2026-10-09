@@ -1,0 +1,49 @@
+{
+  "scope": "Input inventory only; no model execution",
+  "cohorts": [
+    {
+      "cohort": "d2_v1_1_val",
+      "cases": 539,
+      "teacher_steps": 593,
+      "rgb_missing": [],
+      "rgb_hash_mismatches": []
+    },
+    {
+      "cohort": "d3_wave2_safe_short_v1_val",
+      "cases": 56,
+      "teacher_steps": 73,
+      "rgb_missing": [],
+      "rgb_hash_mismatches": []
+    },
+    {
+      "cohort": "d3_targeted_gap_strict_v1_val",
+      "cases": 99,
+      "teacher_steps": 99,
+      "rgb_missing": [],
+      "rgb_hash_mismatches": []
+    },
+    {
+      "cohort": "d3_turn_gap_60_strict_v1_val",
+      "cases": 29,
+      "teacher_steps": 29,
+      "rgb_missing": [],
+      "rgb_hash_mismatches": []
+    },
+    {
+      "cohort": "d3_gap300_strict_v1_val",
+      "cases": 123,
+      "teacher_steps": 123,
+      "rgb_missing": [],
+      "rgb_hash_mismatches": []
+    },
+    {
+      "cohort": "b1_ms34_supplement_v1_val",
+      "cases": 4,
+      "teacher_steps": 14,
+      "rgb_missing": [],
+      "rgb_hash_mismatches": []
+    }
+  ],
+  "total_cases": 850,
+  "rgb_path_rule": "source/challenge/hil/frozen/<cohort>/<case.rgb_path>"
+}

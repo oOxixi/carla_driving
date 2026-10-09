@@ -1,0 +1,71 @@
+[
+  {
+    "source": "挑战赛道打包/挑战赛道提交报告_轻量化模型的车规级部署.docx",
+    "destination": "01_技术报告/挑战赛道提交报告_轻量化模型的车规级部署.docx",
+    "note": "用户提供的提交报告，原样复制；未改写内容",
+    "sha256": "21216d7356d9449e6267eb3ada1c7de892790d4c64d0f13d3239dbe1e806e244"
+  },
+  {
+    "source": "A1_README.md 与本地 A1 正式交接目录",
+    "destination": "01_技术报告/A1原始结构与FLOPs交接",
+    "note": "结构、接口和计数范围"
+  },
+  {
+    "source": "A3_robust_V3_training_handoff_20261008.zip",
+    "destination": "03_训练与模型/A3训练交接",
+    "note": "替换旧 A3 训练交接"
+  },
+  {
+    "source": "原急交包 A2_to_B2_evaluation_a2354507.zip",
+    "destination": "03_训练与模型/A2模型与量化",
+    "note": "模型、校准、量化与诊断原件"
+  },
+  {
+    "source": "B3_交付包_X86性能与BPU工具报告_Teacher_FP32_INT8评测与衰减对比_各版本模型效果汇总_20261008.zip",
+    "destination": "05_B3性能与评测",
+    "note": "性能、工具、编译实体与结果"
+  },
+  {
+    "source": "carla_driving_a2 的历史 dataset 与 hil/frozen",
+    "destination": "02_源码与部署/source/challenge",
+    "note": "实际历史案例、Teacher 标注与 RGB 原件"
+  },
+  {
+    "source": "carla_driving/artifacts/voice 与 voice_group/test_samples",
+    "destination": "06_评测说明与冻结方案/历史ASR实跑证据",
+    "note": "历史 250 条 edge-tts 合成音频、转写真值、真实 ASR 推理输出和日志；GPU 历史条件，不改称当前模型的官方环境前后对照"
+  },
+  {
+    "source": "基于既有原件生成",
+    "destination": "README、报告附件对照与素材索引、创新要点、指标说明、量化选型、运行入口和构建脚本",
+    "note": "提交报告已原样收录；本次不重复撰写报告，不新增实验数字，不修改候选验收状态"
+  },
+  {
+    "source": "本轮并行代补，2026-10-09",
+    "destination": "SDK桥接工程、Docker导出、保存结果复算、CPU利用率汇总、可选采集与实际录像入口",
+    "note": "仅声明已执行的静态检查与保存数据汇总；没有SDK编译/实板推理、镜像构建、CARLA实录或新采集声明"
+  },
+  {
+    "source": "carla_driving_a2 tracked scenarios at 7cf419a0",
+    "destination": "02_源码与部署/source/scenarios",
+    "note": "恢复167场景原件，详细来源和冻结核心一致性见scenario_restore_manifest_20261009.json"
+  },
+  {
+    "source": "本轮真实Windows CPU离线回放，2026-10-09",
+    "destination": [
+      "06_评测说明与冻结方案/final_results/offline850_new_cpu_fp32_20261009T024659_050722Z",
+      "06_评测说明与冻结方案/final_results/offline850_new_cpu_full_int8_20261009T024659_043721Z"
+    ],
+    "note": "新生成原始Student逐例输出，非历史同次/非官方镜像性能/未运行ASR/Teacher/CARLA"
+  },
+  {
+    "source": "当前源文件及明确模型缓存的标准库离线身份盘点",
+    "destination": "07_演示材料/scripts/asr_identity.json",
+    "note": "已有LoRA/配置绑定；缺失基座明确missing，不是运行回执"
+  },
+  {
+    "source": "挑战赛道打包/挑战赛道提交报告_轻量化模型的车规级部署_gai.docx",
+    "destination": "01_技术报告/备用修订报告",
+    "note": "正文一致的格式保存变体，仅留存，不替换正式默认报告"
+  }
+]

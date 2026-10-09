@@ -1,0 +1,109 @@
+{
+  "schema_version": "1.0",
+  "created_utc": "2026-10-09T02:48:46.603855+00:00",
+  "status": "OFFLINE_IDENTITY_INVENTORY_NOT_A_RUN_BINDING",
+  "scope": "current files and current environment; does not attest historical ASR results or completeness/loadability",
+  "package_root": "D:\\Users\\刘雯静\\Downloads\\挑战杯\\揭榜挂帅\\挑战赛道_补齐整理包_20261008",
+  "configuration": {
+    "VOICE_USE_LORA": "1",
+    "VOICE_VAD_ENABLED": "1",
+    "VOICE_USE_ITN": "1",
+    "VOICE_ASR_LANGUAGE": "auto",
+    "VOICE_CASCADE_ENABLED": "1",
+    "VOICE_CASCADE_MODEL": "small",
+    "VOICE_CASCADE_DEVICE": "cuda",
+    "VOICE_CASCADE_COMPUTE_TYPE": "int8_float16",
+    "VOICE_CASCADE_MIN_CONFIDENCE": "0.90"
+  },
+  "asr_device_source_default": "cuda:0",
+  "components": {
+    "sensevoice": {
+      "path": "C:\\Users\\liuwenjing\\.cache\\modelscope\\models\\iic--SenseVoiceSmall\\snapshots\\master",
+      "status": "missing",
+      "files": [],
+      "model_id": "iic/SenseVoiceSmall",
+      "resolution": "explicit SENSEVOICE_MODEL_PATH or exact source default cache path; remote fallback not loaded"
+    },
+    "fsmn_vad": {
+      "path": "C:\\Users\\liuwenjing\\.cache\\modelscope\\models\\iic--speech_fsmn_vad_zh-cn-16k-common-pytorch\\snapshots\\master",
+      "status": "missing",
+      "files": [],
+      "enabled": true,
+      "model_id": "fsmn-vad",
+      "resolution": "explicit FSMN_VAD_MODEL_PATH or exact source default cache path; remote fallback not loaded"
+    },
+    "lora": {
+      "path": "D:\\Users\\刘雯静\\Downloads\\挑战杯\\揭榜挂帅\\挑战赛道_补齐整理包_20261008\\02_源码与部署\\source\\voice_group\\lora_dialect",
+      "status": "present_inventory_only",
+      "files": [
+        {
+          "path": "D:\\Users\\刘雯静\\Downloads\\挑战杯\\揭榜挂帅\\挑战赛道_补齐整理包_20261008\\02_源码与部署\\source\\voice_group\\lora_dialect\\README.md",
+          "status": "present",
+          "bytes": 2310,
+          "sha256": "604f56c4c0828734f75d551179c074c9f6de75bb7eb8476b60ab18bf76b20dc4",
+          "relative_path": "README.md"
+        },
+        {
+          "path": "D:\\Users\\刘雯静\\Downloads\\挑战杯\\揭榜挂帅\\挑战赛道_补齐整理包_20261008\\02_源码与部署\\source\\voice_group\\lora_dialect\\adapter_config.json",
+          "status": "present",
+          "bytes": 1151,
+          "sha256": "7b8cbbbbe2047c21ff4dde8cadbe89e6d3a6f8a483c0828d33aa3db9e5d6ff39",
+          "relative_path": "adapter_config.json"
+        },
+        {
+          "path": "D:\\Users\\刘雯静\\Downloads\\挑战杯\\揭榜挂帅\\挑战赛道_补齐整理包_20261008\\02_源码与部署\\source\\voice_group\\lora_dialect\\adapter_model.safetensors",
+          "status": "present",
+          "bytes": 6922192,
+          "sha256": "38d541099157ba5c35d8256f2ebd8a374cae85a5ca7eb9b2a7cb8a033c624de1",
+          "relative_path": "adapter_model.safetensors"
+        }
+      ],
+      "enabled": true
+    },
+    "faster_whisper": {
+      "path": "C:\\Users\\liuwenjing\\.cache\\huggingface\\hub\\models--Systran--faster-whisper-small\\snapshots\\MISSING_MAIN_REFERENCE",
+      "status": "missing",
+      "files": [],
+      "enabled": true,
+      "configured_model": "small",
+      "cached_revision": null
+    },
+    "cascade_calibration": {
+      "path": "D:\\Users\\刘雯静\\Downloads\\挑战杯\\揭榜挂帅\\挑战赛道_补齐整理包_20261008\\02_源码与部署\\source\\voice_group\\models\\faster_whisper_small_confidence.json",
+      "status": "present",
+      "bytes": 1101,
+      "sha256": "c5c79eb6ad2730327afbadd2bec4d6d57ddee2fb3b52a1e68e3dd17461d8e2ae"
+    }
+  },
+  "installed_package_versions": {
+    "funasr": "missing",
+    "modelscope": "missing",
+    "torch": "2.6.0+cu118",
+    "peft": "missing",
+    "faster-whisper": "missing",
+    "ctranslate2": "missing"
+  },
+  "source_files": [
+    {
+      "path": "D:\\Users\\刘雯静\\Downloads\\挑战杯\\揭榜挂帅\\挑战赛道_补齐整理包_20261008\\02_源码与部署\\source\\voice_group\\asr_vad.py",
+      "status": "present",
+      "bytes": 7567,
+      "sha256": "e195cdaf6cf240c999cb81d36526f49a7243de347d902fa6699aadb98cdc39a6"
+    },
+    {
+      "path": "D:\\Users\\刘雯静\\Downloads\\挑战杯\\揭榜挂帅\\挑战赛道_补齐整理包_20261008\\02_源码与部署\\source\\voice_group\\asr_cascade.py",
+      "status": "present",
+      "bytes": 11746,
+      "sha256": "75371967d8aba3114976c09c69e3e2d3fd84817bbd16e40d98314ca9f66be750"
+    },
+    {
+      "path": "D:\\Users\\刘雯静\\Downloads\\挑战杯\\揭榜挂帅\\挑战赛道_补齐整理包_20261008\\02_源码与部署\\source\\voice_group\\pipeline.py",
+      "status": "present",
+      "bytes": 6556,
+      "sha256": "79617349fd05b17153659bf28d5cb41c5785e38f50cb7c042cbbd0cd3a2e1e01"
+    }
+  ],
+  "asr_inference_executed": false,
+  "download_performed": false,
+  "same_batch_metrics_claimed": false
+}

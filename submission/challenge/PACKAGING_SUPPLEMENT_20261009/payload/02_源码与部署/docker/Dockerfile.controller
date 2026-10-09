@@ -1,0 +1,10 @@
+ARG STUDENT_IMAGE=challenge-student-x86:20261008
+FROM ${STUDENT_IMAGE}
+RUN python3 -m pip install --no-cache-dir --only-binary=:all: \
+    -c /opt/challenge/02_源码与部署/docker/requirements-runtime-lock.txt \
+    -r /opt/challenge/02_源码与部署/docker/requirements-controller-extra.txt \
+ && python3 /opt/challenge/02_源码与部署/scripts/check_deployment.py --profile controller
+WORKDIR /opt/challenge/02_源码与部署/source
+ENV PYTHONPATH=/opt/challenge/02_源码与部署/source
+ENTRYPOINT ["python3", "-m", "integration.carla_runner"]
+CMD ["--help"]

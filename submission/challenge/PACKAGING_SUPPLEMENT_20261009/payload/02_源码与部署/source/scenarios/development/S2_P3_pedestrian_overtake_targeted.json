@@ -1,0 +1,145 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "DEV_S2_P3_PEDESTRIAN_OVERTAKE_TARGETED",
+  "category": "regression",
+  "official_level": "advanced",
+  "description": "场景2第三阶段专项回归：行人横穿、停车让行、左变道超越慢车、回原车道并恢复巡航。",
+  "tags": ["development", "scene_2", "pedestrian", "overtake", "targeted_event"],
+  "map": "Town03_Opt",
+  "weather": "CloudySunset",
+  "seed": 20260202,
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 180.0, "max_startup_wait_s": 20.0},
+  "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [[0.0, 0.0], [450.0, 0.0]],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 4.0,
+    "distance_contract_m": 450.0,
+    "route_generation": "Town03_Opt CARLA waypoint topology; isolated P3 event regression"
+  },
+  "commands": [
+    {
+      "time_s": 0.0,
+      "source_text": "保持当前车道，以40公里每小时正常行驶",
+      "intent": "KEEP_LANE",
+      "parameters": {"target_speed_kph": 40.0},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "DEV_P3_START",
+      "trigger": {"type": "scenario_started"}
+    },
+    {
+      "time_s": 0.0,
+      "source_text": "看到前方横穿马路的行人，先减速避让，确认行人离开后向左变道超越前方慢车，超越完成后回到原车道并恢复40公里每小时行驶",
+      "intent": "AVOID_OBSTACLE",
+      "parameters": {"direction": "LEFT", "target_actor_id": "slow_vehicle", "target_speed_kph": 30.0},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "DEV_P3_PEDESTRIAN_OVERTAKE_RETURN",
+      "trigger": {"all": [
+        {"type": "previous_command_terminal", "phase_id": "DEV_P3_START"},
+        {"type": "route_progress_greater_than_m", "value": 125.0},
+        {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 35.0},
+        {"type": "ego_distance_to_actor_less_than_m", "actor_id": "slow_vehicle", "value": 60.0}
+      ]}
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "crossing_pedestrian",
+      "type": "walker.pedestrian",
+      "spawn": {"x": 160.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
+      "route_position": {"s_m": 160.0, "lateral_offset_m": 6.0},
+      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 50.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 340.0},
+      "behavior": {
+        "mode": "crossing",
+        "target_route_position": {"s_m": 160.0, "lateral_offset_m": -6.0},
+        "start_time_s": 0.0,
+        "speed_mps": 1.4,
+        "trigger": {"all": [
+          {"type": "route_progress_greater_than_m", "value": 80.0},
+          {"type": "ego_distance_to_actor_less_than_m", "actor_id": "crossing_pedestrian", "value": 70.0}
+        ]},
+        "phase_id": "DEV_EVT_PEDESTRIAN_CROSSING"
+      }
+    },
+    {
+      "actor_id": "slow_vehicle",
+      "type": "vehicle",
+      "blueprint_id": "vehicle.audi.tt",
+      "spawn": {"x": 170.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+      "route_position": {"s_m": 170.0, "lateral_offset_m": 0.0, "lane_relation": "CURRENT"},
+      "activation_trigger": {"type": "route_progress_greater_than_m", "value": 60.0},
+      "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 340.0},
+      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.5, "target_speed_mps": 1.5}
+    }
+  ],
+  "qwen_expected": {
+    "route": "QWEN_PLAN",
+    "min_calls": 2,
+    "max_calls": 2,
+    "expected_behaviors": ["KEEP_LANE", "YIELD", "AVOID_OBSTACLE", "RETURN_TO_LANE"],
+    "expected_terminal": "SUCCEEDED",
+    "allowed_replans": 0,
+    "forbidden_low_level_fields": true
+  },
+  "sensors": {
+    "front_rgb": {"enabled": true, "width": 800, "height": 450, "fov": 100, "exact_frame": true},
+    "left_rgb": {"enabled": true, "width": 800, "height": 450, "yaw_deg": -55.0, "exact_frame": true},
+    "right_rgb": {"enabled": true, "width": 800, "height": 450, "yaw_deg": 55.0, "exact_frame": true},
+    "rear_rgb": {"enabled": true, "width": 800, "height": 450, "yaw_deg": 180.0, "exact_frame": true},
+    "lidar": {"enabled": true, "channels": 32, "range_m": 80, "exact_frame": true},
+    "radar": {"enabled": true, "range_m": 80},
+    "collision": {"enabled": true},
+    "lane_invasion": {"enabled": true},
+    "vehicle_state": {"speed": true, "steering": true, "position": true, "lane_offset": true, "route_deviation": true}
+  },
+  "controllers": {
+    "A_runtime": {"only_apply_control_owner": true},
+    "B_lateral": {"enabled": true, "return_to_route_phase": true},
+    "C_longitudinal": {"enabled": true},
+    "D_safety": {"enabled": true, "must_run_before_apply_control": true}
+  },
+  "logging": {
+    "required_files": ["*.jsonl", "*.summary.json"],
+    "required_summary_sections": ["acceptance", "latency", "score", "score_report", "command_terminal_statuses"]
+  },
+  "expected": {
+    "must_start_carla": true,
+    "must_spawn_ego": true,
+    "must_finish_route": true,
+    "must_no_collision": true,
+    "must_no_pedestrian_collision": true,
+    "must_execute_commands_in_order": true,
+    "must_generate_logs": true,
+    "required_real_actor_types": ["vehicle", "walker.pedestrian"],
+    "expected_safety_override_allowed": true,
+    "final_control_no_throttle_brake_overlap": true
+  },
+  "extensions": {
+    "clean_world_on_start": true,
+    "sensor_profile": "competition_multiview",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {"required_for_every_voice_event": true, "safety_preemption": true, "high_level_only": true},
+    "speed_policy": {"scenario_limit_kph": 40.0, "map_limit_handling": "replace"},
+    "maneuver_route_mode": "dynamic_out_and_back",
+    "lane_change_profile": {"route_distance_m": 72.0, "step_m": 1.0, "transition_start_m": 8.0, "transition_length_m": 30.0, "target_lane_offset_m": 0.25},
+    "fixed_random_seed": true,
+    "route_anchor_spawn_index": 46,
+    "route_policy": {"loop": false},
+    "phase_plan": ["DEV_P3_START", "DEV_P3_PEDESTRIAN_OVERTAKE_RETURN"],
+    "runtime_support": {
+      "status": "current",
+      "requirements": ["event_triggers", "actor_distance_trigger", "dynamic_out_and_back_route", "route_progress_actor_activation", "route_progress_actor_lifecycle", "scenario_speed_limit"],
+      "declared_requirements": ["event_triggers", "actor_distance_trigger", "dynamic_out_and_back_route", "route_progress_actor_activation", "route_progress_actor_lifecycle", "scenario_speed_limit"]
+    }
+  },
+  "notes": [
+    "这是开发专项回归，不替代官方8km场景和最终成绩。",
+    "只缩短无事件路段；指令、Qwen 2B、四路RGB、LiDAR、Radar、车辆状态和控制链与正式场景一致。"
+  ]
+}

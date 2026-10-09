@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "ROUTE_GEN_TOWN03_DESTINATION",
+  "category": "lateral_B",
+  "official_level": "basic",
+  "description": "Route Manager regression: a previously untuned Town03_Opt start/destination pair.",
+  "tags": ["route_generalization", "destination", "no_qwen_required"],
+  "map": "Town03_Opt",
+  "weather": "ClearNoon",
+  "seed": 0,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 30.0,
+    "max_startup_wait_s": 30
+  },
+  "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "planning_mode": "destination",
+    "destination_xy_m": [47.37, 38.28],
+    "points_xy_m": [[0.0, 0.0], [1.0, 0.0]],
+    "distance_contract_m": 70.0,
+    "resample_interval_m": 2.0,
+    "finish_radius_m": 4.0
+  },
+  "commands": [
+    {
+      "time_s": 0.0,
+      "source_text": "保持当前车道，以每小时40公里行驶到终点",
+      "intent": "KEEP_LANE",
+      "parameters": {"target_speed_kph": 40.0},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "valid_duration_s": 20.0
+    }
+  ],
+  "actors": [],
+  "sensors": {
+    "front_rgb": {"enabled": true},
+    "lidar": {"enabled": true},
+    "collision": {"enabled": true},
+    "lane_invasion": {"enabled": true}
+  },
+  "expected": {
+    "must_finish_route": true,
+    "must_no_collision": true,
+    "must_start_carla": true,
+    "must_spawn_ego": true,
+    "must_call_B": true,
+    "must_call_C": true,
+    "must_call_D": true,
+    "must_generate_logs": true,
+    "max_cross_track_error_m": 2.0,
+    "max_speed_mps": 13.0,
+    "min_run_time_s": 1.0
+  },
+  "extensions": {
+    "topology_route_required": true,
+    "route_regression_only": true
+  },
+  "notes": [
+    "This fixture exercises routing/control integration without requiring Qwen semantics.",
+    "Start is selected by the runner input; no route_anchor_spawn_index is stored."
+  ]
+}

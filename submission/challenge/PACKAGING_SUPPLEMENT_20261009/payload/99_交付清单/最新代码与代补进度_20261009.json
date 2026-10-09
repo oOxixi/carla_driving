@@ -1,0 +1,69 @@
+{
+  "review_date": "2026-10-09",
+  "repository": "oOxixi/carla_driving",
+  "challenge_head_before_this_round": "aa62f659f781f78c55171ad47f44551bdb8b0f9d",
+  "challenge_has_new_remote_commit_since_previous_publication": false,
+  "reviewed_role_branches": {
+    "a2-quantization": "1b31804b8457641f219466a53b2a696d6f6bd208",
+    "a4-deploy": "0a421ceaefff497a2963fe2e02ae2b0ce9b1ec7a",
+    "b2-benchmark": "2275b3761858ff87acd1778d33204b320370b8cb",
+    "main_optimization": "5c1a7c4978f6ecba2ed88602f331b1e4c56ef051"
+  },
+  "findings": [
+    "b2-benchmark is already in challenge history; it adds readiness checks, not new current-run raw predictions.",
+    "a4-deploy is historical X86 smoke code and is not used to overwrite frozen V3 core code.",
+    "main_optimization is the basic-track Qwen2B production chain, not a newer challenge A3 handoff.",
+    "All 850 frozen inputs and RGB files are present locally; new Student CPU replay can supply missing per-case records.",
+    "Package source lacks scenarios/acceptance_suite and related scenario assets required by existing reproduction entrypoints.",
+    "Current Student health response lacks production_ready required by the existing acceptance runner.",
+    "The gai report has identical body text to the supplied report; it is archived only as a formatting/save variant."
+  ],
+  "no_final_archive_generated": true,
+  "formal_gate_promoted": false,
+  "completed_offline_runs": [
+    {
+      "variant": "fp32",
+      "path": "06_评测说明与冻结方案/final_results/offline850_new_cpu_fp32_20261009T024659_050722Z",
+      "success_count": 850,
+      "error_count": 0,
+      "new_replay": true,
+      "historical_same_run": false,
+      "asr_executed": false,
+      "formal_b2_gate": false
+    },
+    {
+      "variant": "full_int8",
+      "path": "06_评测说明与冻结方案/final_results/offline850_new_cpu_full_int8_20261009T024659_043721Z",
+      "success_count": 850,
+      "error_count": 0,
+      "new_replay": true,
+      "historical_same_run": false,
+      "asr_executed": false,
+      "formal_b2_gate": false
+    }
+  ],
+  "offline_comparison": "06_评测说明与冻结方案/final_results/offline850_comparison_20261009T024659_050722Z/RESULTS.md",
+  "review_finished_utc": "2026-10-09T02:52:56.709805+00:00",
+  "remaining_receipts": [
+    {
+      "member": "A4/B4 或任一已有 Docker 环境的成员",
+      "missing": "运行已补 build_and_export 后交回完整 exports/<时间> 目录：Student 镜像 tar、image manifest/inspect、实际依赖版本、SHA 和日志。源码、场景与启动工程已经补齐，不需要开发板。",
+      "destination": "02_源码与部署/docker/exports"
+    },
+    {
+      "member": "B2/B3 与语音前端成员（已有 ASR 运行环境的人）",
+      "missing": "当前同基准真实 ASR 转写/错误/时延日志及与运行绑定的前端身份。现有 LoRA 与配置身份已导出；还需真实 SenseVoice、FSMN-VAD 及当前启用的 faster-whisper 基座权重身份。可直接用 export_asr_identity.py 导出，若需本机代跑再交缺失权重实体。850 例 FP32/INT8 逐例输出已代补，已有240预测、历史250音频/ASR不用重交。",
+      "destination": "06_评测说明与冻结方案/final_results/raw_current_asr_run"
+    },
+    {
+      "member": "B3/语音成员或任一有 CARLA+ASR 环境的操作者",
+      "missing": "运行已补演示入口，交回当前 Student 同次 runs/<时间> 整目录：真实视频、输入/现场录音、ASR/Student/CARLA 日志与身份。录像代码与启动工程已经完成。",
+      "destination": "07_演示材料/runs"
+    },
+    {
+      "member": "队长（仅收现有文件）",
+      "missing": "已经填写好的正式初审申报表 .docx/.pdf 原文件。只归档，不重填或再索取登记信息。",
+      "destination": "08_申报与官方要求"
+    }
+  ]
+}

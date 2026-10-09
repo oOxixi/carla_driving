@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "REG_013_multi_vehicle_brake",
+  "category": "regression",
+  "official_level": "challenge",
+  "description": "Map-anchored multi-vehicle longitudinal interaction: two independently controlled traffic actors; the closest in-lane lead is selected without scenario-ID logic.",
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 13,
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 28},
+  "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+  "route": {"coordinate_type": "scenario_local_xy_m", "points_xy_m": [[0, 0], [20, 0], [45, 0], [70, 0]], "resample_interval_m": 1.0, "finish_radius_m": 3.0},
+  "commands": [{"time_s": 0, "source_text": "保持车道，注意前方车辆", "intent": "KEEP_LANE", "parameters": {"target_speed_kph": 20}, "intent_confidence": 0.95, "status": "valid", "confirm_required": false}],
+  "actors": [
+    {"actor_id": "lead_brake", "type": "vehicle", "blueprint_id": "vehicle.audi.tt", "spawn": {"x": 22.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0}, "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 3.5, "brake_at_s": 5.0, "target_speed_mps": 0.2}},
+    {"actor_id": "adjacent_traffic", "type": "vehicle", "blueprint_id": "vehicle.tesla.model3", "spawn": {"x": 30.0, "y": 3.5, "z": 0.5, "yaw_deg": 0.0}, "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 2.5, "brake_at_s": 9.0, "target_speed_mps": 0.0}}
+  ],
+  "sensors": {"front_rgb": {"enabled": true, "width": 800, "height": 600, "fov": 90}, "collision": {"enabled": true}, "lane_invasion": {"enabled": true}},
+  "expected": {"must_no_collision": true, "required_real_actor_types": ["vehicle"], "min_front_gap_m": 2.5, "expected_safety_override_allowed": true}
+}

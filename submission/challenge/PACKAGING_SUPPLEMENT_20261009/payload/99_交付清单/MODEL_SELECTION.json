@@ -44,5 +44,32 @@
     "board_inference_verified": false
   },
   "candidate_gate_status": "PENDING_A3_FP32_GATE",
-  "formal_gate_promoted": false
+  "formal_gate_promoted": false,
+  "offline_850_replay": {
+    "runs": [
+      {
+        "variant": "fp32",
+        "path": "06_评测说明与冻结方案/final_results/offline850_new_cpu_fp32_20261009T024659_050722Z",
+        "success_count": 850,
+        "error_count": 0,
+        "new_replay": true,
+        "historical_same_run": false,
+        "asr_executed": false,
+        "formal_b2_gate": false
+      },
+      {
+        "variant": "full_int8",
+        "path": "06_评测说明与冻结方案/final_results/offline850_new_cpu_full_int8_20261009T024659_043721Z",
+        "success_count": 850,
+        "error_count": 0,
+        "new_replay": true,
+        "historical_same_run": false,
+        "asr_executed": false,
+        "formal_b2_gate": false
+      }
+    ],
+    "comparison": "06_评测说明与冻结方案/final_results/offline850_comparison_20261009T024659_050722Z/RESULTS.md",
+    "official_image_performance": false,
+    "formal_gate_promoted": false
+  }
 }

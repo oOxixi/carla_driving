@@ -1,0 +1,196 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "CX01_urban_intersection_conflict__GEN_001",
+  "category": "regression",
+  "official_level": "challenge",
+  "description": "红灯、横穿行人与继续行驶命令同时出现。",
+  "tags": [
+    "acceptance_suite",
+    "p2",
+    "intersection_conflict"
+  ],
+  "map": "Town03_Opt",
+  "weather": "HardRainNight",
+  "seed": 20260521,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.1,
+    "duration_s": 40,
+    "max_startup_wait_s": 10
+  },
+  "ego_spawn": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5,
+    "yaw_deg": 0.0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0,
+        0
+      ],
+      [
+        20,
+        0
+      ],
+      [
+        40,
+        0
+      ],
+      [
+        60,
+        0
+      ],
+      [
+        80,
+        0
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "不用停，继续往前开",
+      "intent": "KEEP_LANE",
+      "parameters": {
+        "target_speed_kph": 18
+      },
+      "intent_confidence": 0.95,
+      "status": "valid",
+      "confirm_required": false
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "signal_001",
+      "type": "traffic_light",
+      "state": "red",
+      "distance_to_stop_line_m": 20,
+      "spawn": {
+        "x": 0.0,
+        "y": 0.3
+      }
+    },
+    {
+      "actor_id": "ped_001",
+      "type": "walker.pedestrian",
+      "spawn": {
+        "x": 18.0,
+        "y": -2.7,
+        "z": 0.5,
+        "yaw_deg": 90.0
+      },
+      "behavior": {
+        "mode": "crossing",
+        "target_xy_m": [
+          18.0,
+          3.3
+        ],
+        "start_time_s": 4.0,
+        "speed_mps": 1.4
+      }
+    }
+  ],
+  "sensors": {
+    "front_rgb": {
+      "enabled": true,
+      "width": 600,
+      "height": 450,
+      "fov": 90,
+      "save_every_n_frames": 5
+    },
+    "lidar": {
+      "enabled": true
+    },
+    "collision": {
+      "enabled": true
+    },
+    "lane_invasion": {
+      "enabled": true
+    }
+  },
+  "controllers": {
+    "A_runtime": {
+      "only_apply_control_owner": true
+    },
+    "B_lateral": {
+      "enabled": true
+    },
+    "C_longitudinal": {
+      "enabled": true
+    },
+    "D_safety": {
+      "enabled": true,
+      "must_run_before_apply_control": true
+    }
+  },
+  "logging": {
+    "required_files": [
+      "frame_log.jsonl",
+      "event_log.jsonl",
+      "result.json",
+      "score_report.json",
+      "qwen_requests.jsonl"
+    ]
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_generate_logs": true,
+    "final_control_no_throttle_brake_overlap": true,
+    "must_no_pedestrian_collision": true,
+    "must_stop_before_stop_line": true,
+    "required_real_actor_types": [
+      "walker.pedestrian"
+    ],
+    "expected_safety_override": true,
+    "safety_priority_over_command": true,
+    "expected_reason_contains": [
+      "red",
+      "pedestrian",
+      "stop"
+    ],
+    "must_generate_event": true
+  },
+  "extensions": {
+    "suite_version": "acceptance-suite-2026.08-v2",
+    "priority": "P2",
+    "primary_capability": "intersection_conflict",
+    "input_mode": "raw_text_qwen",
+    "qwen_policy": {
+      "required_for_every_voice_event": true,
+      "safety_preemption": true,
+      "high_level_only": true
+    },
+    "oracle": {
+      "expected_behaviors": [
+        "STOP"
+      ]
+    },
+    "faults": [],
+    "proposed_acceptance": {},
+    "runtime_support": {
+      "status": "current",
+      "requirements": [],
+      "declared_requirements": []
+    },
+    "generalization_case": {
+      "base_scenario_id": "CX01_urban_intersection_conflict",
+      "kind": "unseen",
+      "actor_longitudinal_offset_m": 0.0,
+      "actor_lateral_offset_m": 0.3,
+      "actor_speed_scale": 1.0,
+      "brake_time_offset_s": 1.0,
+      "pedestrian_start_offset_s": 0.0,
+      "actor_count_scale": 1.2,
+      "target_lane_relation": "RIGHT_ADJACENT",
+      "sensor_condition": "reduced_rgb"
+    }
+  },
+  "notes": [
+    "正式结果必须使用 perception_mode=sensors 与 scenario_facts_mode=perception。"
+  ]
+}

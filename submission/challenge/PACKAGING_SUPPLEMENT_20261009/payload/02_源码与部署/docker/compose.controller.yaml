@@ -1,0 +1,30 @@
+services:
+  student:
+    image: challenge-student-x86:20261008
+    platform: linux/amd64
+    ports:
+      - "8100:8100"
+    volumes:
+      - ../../runs/student:/opt/challenge/runs
+      - ../../runs/shared_images:/shared
+    command: ["--mode", "http", "--variant", "full_int8", "--host", "0.0.0.0", "--port", "8100", "--image-root", "/shared"]
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import json,urllib.request; assert json.load(urllib.request.urlopen('http://127.0.0.1:8100/health',timeout=5))['production_ready'] is True"]
+      interval: 10s
+      timeout: 6s
+      retries: 6
+  controller:
+    image: challenge-controller-cpu:20261009
+    platform: linux/amd64
+    build:
+      context: ../..
+      dockerfile: 02_源码与部署/docker/Dockerfile.controller
+    depends_on:
+      student:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../../runs/shared_images:/shared
+      - ../../runs/controller:/output
+    command: ["--host", "${CARLA_HOST:-host.docker.internal}", "--port", "${CARLA_PORT:-2000}", "--scenario-file", "scenarios/smoke/S01_set_speed_20.json", "--perception-mode", "sensors", "--scenario-facts-mode", "perception", "--sensor-profile", "low", "--realtime", "--qwen-service-url", "http://student:8100", "--qwen-mode", "planner_v2", "--qwen-image-root", "/shared", "--qwen-image-prefix", "frames", "--log-dir", "/output"]

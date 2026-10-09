@@ -1,5 +1,7 @@
 # Student X86 Docker 一键构建与导出
 
+2026-10-09 已恢复完整源码的场景文件，并补 Student 健康接口与独立 CPU controller 构建/compose 入口；见相邻 `../部署补齐说明_20261009.md`。Student 与 controller、GPU语音的依赖不混装。build 中的 `check_deployment.py` 检查场景和实际 imports，仍不跑模型评测。
+
 本目录是 GitHub 发布的源码 overlay，必须先将 `payload/` 内文件按相对路径覆盖到**完整交接材料根目录**（该目录同时具有 `02_源码与部署/source`、`scripts` 与 `03_训练与模型`）。仅克隆这份补丁不能独立构建；本次发布不含原模型、镜像、数据或已有源码副本。从完整材料根目录执行下述命令，基础镜像和三份 ONNX 模型仍由完整材料提供。
 
 Dockerfile 已补齐直接依赖约束与实际版本检查，采用官方 `openexplorer/ai_toolchain_ubuntu_22_j6_cpu:v3.9.1`。当前机器没有可用 Docker CLI/服务和 WSL 环境，**本次没有构建镜像、没有产生镜像 tar 或 digest**。脚本已完成，无需团队成员再写工程；只需在已有 Linux Docker 环境或启用 Linux 容器的 Windows Docker 环境运行。
