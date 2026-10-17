@@ -44,6 +44,7 @@ from integration.carla_runner import (
     _planner_runtime_state,
     _build_qwen_context,
     _c_safety_speed_cap_mps,
+    _c_safety_speed_cap_provenance,
     _c_speed_cap_control_override,
     _canonical_poll_wait_timeout_ms,
     _qwen_desired_speed_mps,
@@ -846,6 +847,15 @@ def test_c_vru_speed_cap_is_temporary_and_requires_a_valid_slow_down_summary() -
     assert _c_speed_cap_control_override(5.0, 2.0) == {
         "throttle": 0.0, "brake": 1.0, "steer": 0.0,
     }
+
+
+def test_c_speed_cap_provenance_distinguishes_vru_from_generic_hazards() -> None:
+    assert _c_safety_speed_cap_provenance({
+        "source_by_field": {"vru_speed_cap": "RGB_LIDAR_VRU_CAUTION_HOLD"},
+    }) == ("C_FUSION_TEMPORARY_VRU_SPEED_CAP", "C_VRU_SPEED_CAP_BRAKE")
+    assert _c_safety_speed_cap_provenance({
+        "source_by_field": {"hazard_speed_cap": "DYNAMIC_SAFETY_DISTANCE"},
+    }) == ("C_FUSION_DYNAMIC_HAZARD_SPEED_CAP", "C_HAZARD_SPEED_CAP_BRAKE")
 
 
 def test_single_sensor_fault_applies_degraded_speed_cap_only_while_partially_available() -> None:

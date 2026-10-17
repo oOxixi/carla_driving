@@ -208,6 +208,58 @@ def test_lidar_hazard_speed_cap_includes_range_uncertainty_buffer() -> None:
     assert baseline.recommended_speed_cap_mps < 1.8
 
 
+def test_lidar_hazard_speed_cap_does_not_lock_a_stopped_vehicle_at_zero() -> None:
+    fusion = ConservativeSensorFusion(
+        SafetyStateParameters(range_uncertainty_buffer_m=2.0)
+    )
+    summary = fusion.update(
+        frame=1,
+        sim_time_s=0.05,
+        ego_speed_mps=0.0,
+        front_distance_m=7.5,
+        lidar_valid=True,
+        lead_speed_mps=0.0,
+    )
+
+    assert summary.recommended_action == "SLOW_DOWN"
+    assert summary.recommended_speed_cap_mps is not None
+    assert summary.recommended_speed_cap_mps > 0.0
+
+
+def test_positive_hazard_ceiling_survives_occlusion_after_stopping() -> None:
+    fusion = ConservativeSensorFusion(
+        SafetyStateParameters(
+            range_uncertainty_buffer_m=2.0,
+            front_hazard_occlusion_hold_s=3.0,
+        )
+    )
+    observed = None
+    for frame in range(1, 4):
+        observed = fusion.update(
+            frame=frame,
+            sim_time_s=frame * 0.05,
+            ego_speed_mps=0.0,
+            front_distance_m=7.5,
+            lidar_valid=True,
+            lead_speed_mps=0.0,
+        )
+    assert observed is not None
+    assert observed.recommended_speed_cap_mps is not None
+    assert observed.recommended_speed_cap_mps > 0.0
+
+    missing = fusion.update(
+        frame=4,
+        sim_time_s=0.20,
+        ego_speed_mps=0.0,
+        front_distance_m=None,
+        lidar_valid=True,
+    )
+    assert missing.reason == "front_hazard_occlusion_hold"
+    assert missing.recommended_speed_cap_mps == pytest.approx(
+        observed.recommended_speed_cap_mps
+    )
+
+
 def test_missing_visual_semantics_are_explicit_and_not_invented() -> None:
     summary = ConservativeSensorFusion().update(
         frame=3,

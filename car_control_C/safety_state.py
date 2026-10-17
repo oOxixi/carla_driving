@@ -369,10 +369,16 @@ class ConservativeSensorFusion:
                 - envelope.sensor_margin_m
                 - self.parameters.range_uncertainty_buffer_m,
             )
-            speed_cap_mps = min(
-                ego_speed_mps,
-                (2.0 * DEFAULT_STRATEGY.common.comfortable_decel_mps2 * available) ** 0.5,
-            )
+            # This is a *safe target-speed ceiling*, not a command to freeze
+            # the current speed.  Clamping it to ``ego_speed_mps`` made zero
+            # an absorbing state: after stopping for a red light, a still
+            # visible but safely separated front return kept the cap at zero
+            # through every later green phase.  The longitudinal follower may
+            # accelerate only up to this range-derived ceiling and will
+            # recompute it as the gap closes.
+            speed_cap_mps = (
+                2.0 * self.parameters.comfortable_deceleration_mps2 * available
+            ) ** 0.5
             sources["hazard_speed_cap"] = "DYNAMIC_SAFETY_DISTANCE"
 
         observed_front_hazard = bool(
@@ -404,10 +410,10 @@ class ConservativeSensorFusion:
             mode = "FRONT_HAZARD_OCCLUSION_HOLD"
             action = "SLOW_DOWN"
             reason = "front_hazard_occlusion_hold"
-            speed_cap_mps = min(
-                ego_speed_mps,
-                float(self._front_hazard_speed_cap_mps),
-            )
+            # Preserve the last confirmed safe ceiling through a brief sensor
+            # occlusion.  Re-clamping it to the current speed would recreate
+            # the same zero-speed deadlock while the hold is active.
+            speed_cap_mps = float(self._front_hazard_speed_cap_mps)
             sources["hazard_speed_cap"] = "CONFIRMED_FRONT_HAZARD_OCCLUSION_HOLD"
 
         fused_valid = visual_valid and lidar_valid and front_distance_m is not None

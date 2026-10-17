@@ -2763,6 +2763,16 @@ def _c_safety_speed_cap_mps(c_safety_state: Mapping[str, object] | None) -> floa
     return cap if math.isfinite(cap) and cap >= 0.0 else None
 
 
+def _c_safety_speed_cap_provenance(
+    c_safety_state: Mapping[str, object] | None,
+) -> tuple[str, str]:
+    """Return auditable source and D-override reason for a C-side speed cap."""
+    sources = None if not c_safety_state else c_safety_state.get("source_by_field")
+    if isinstance(sources, Mapping) and sources.get("vru_speed_cap"):
+        return "C_FUSION_TEMPORARY_VRU_SPEED_CAP", "C_VRU_SPEED_CAP_BRAKE"
+    return "C_FUSION_DYNAMIC_HAZARD_SPEED_CAP", "C_HAZARD_SPEED_CAP_BRAKE"
+
+
 def _single_sensor_fault_speed_cap_mps(
     active_sensor_faults: set[str],
     nominal_speed_mps: float,
@@ -5017,17 +5027,18 @@ def run(args: argparse.Namespace) -> None:
                             )
                         c_speed_cap_mps = _c_safety_speed_cap_mps(c_safety_state)
                         if c_speed_cap_mps is not None:
-                            perception_sources["c_speed_cap_mps"] = (
-                                "C_FUSION_TEMPORARY_VRU_SPEED_CAP"
+                            cap_source, cap_override_reason = (
+                                _c_safety_speed_cap_provenance(c_safety_state)
                             )
+                            perception_sources["c_speed_cap_mps"] = cap_source
                             cap_override = _c_speed_cap_control_override(
                                 state.speed_mps, c_speed_cap_mps,
                             )
                             if cap_override is not None:
                                 perception_control_override = cap_override
-                                c_perception_override_reason = "C_VRU_SPEED_CAP_BRAKE"
+                                c_perception_override_reason = cap_override_reason
                                 perception_sources["c_control_override"] = (
-                                    "C_FUSION_VRU_SPEED_CAP_BRAKE"
+                                    cap_override_reason
                                 )
                         if sample.safety_summary.fail_closed:
                             # C owns this perception-dependent control request;
