@@ -21,6 +21,7 @@
 | 缺少一次命令的评委验收入口 | 现场证据分散、难复查 | 新增静态/在线一键验收，输出 JSON 与 Markdown |
 | 普通 LiDAR 障碍限速被当前车速二次截断 | 红灯停车后限速被锁为 0，即使转绿也无法起步 | 限速改为由可用制动距离计算的安全速度上限，短时遮挡继续保留该正值上限 |
 | 所有 C 侧限速都被记录成 VRU | 普通障碍与行人/非机动车证据无法区分 | 根据 `source_by_field` 分别记录动态障碍与 VRU 限速来源及接管原因 |
+| 断点恢复用 `z=0` 反查二维路线点 | Town03_Opt 叠层道路可能选中下层道路，导致高度跳变、偏航和无意义重规划 | 使用 Route Manager 保存的三维路线高程作投影提示，并在路线重建和传感器预热期间保持制动 |
 
 ## 当前生产模型合同
 
@@ -39,7 +40,7 @@
 
 本分支修改后已完成：
 
-- `python -m pytest -q`：1181 passed，3 skipped。
+- `python -m pytest -q`：1188 passed，3 skipped。
 - `python tools/validate_scenarios.py`：155 checked，0 failed。
 - `python tools/validate_official_scenes.py`：S1、S2、S3 全部 PASS。
 - PowerShell 官方场景入口的 ValidateOnly：PASS。
@@ -64,6 +65,16 @@
 该运行从 3500 m 恢复并限制为 90 秒，未到达后续 P4～P6 事件，因此完整 S2
 验收按合同为 `FAILED`。这里仅将它作为“红灯停车后可恢复”和“动态限速来源正确”
 的定向回归证据，不把它表述为完整 8 km 或 Qwen 全链路通过。
+
+同日使用相同 3500 m 恢复点完成20秒断点对齐复测。恢复位姿明确记录为
+`GLOBAL_ROUTE_3D`，首帧路线横向误差由旧实现约 1.93 m 降为 0.000043 m，整段最大
+偏差为 0.0017 m，重规划次数由2次降为0。车辆从静止正常加速到约37.7 km/h，随后
+在真实红灯停止线前停车；没有碰撞。原始证据位于服务器
+`artifacts/logs/S2_resume_alignment_fix/`。该短测只证明断点重建和启动阶段对齐，
+同样不作为完整 S2 成绩。
+
+此外新增 `integration/tests/test_stop_release_gate.py`，统一覆盖普通 LiDAR 障碍、
+短时遮挡、VRU 慢行和红灯解除四类“临时安全约束不能形成永久零速锁死”的跨模块门禁。
 
 ## 评委验收命令
 

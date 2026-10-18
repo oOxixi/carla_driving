@@ -3271,6 +3271,34 @@ def _build_resume_segment_spec(
     ), restored_phases
 
 
+def _resume_route_pose_and_elevation(
+    route: RouteReference,
+    route_progress_m: float,
+    *,
+    fallback_z_m: float,
+    global_route_manager: RouteManager | None = None,
+    global_route: GlobalRoute | None = None,
+) -> tuple[Any, float, str]:
+    """Resolve a resume pose without projecting a stacked road from z=0.
+
+    The controller route is intentionally two-dimensional, but a CARLA map can
+    contain several roads at the same x/y coordinates. Querying such a pose
+    with ``z=0`` may select the lower deck and make the ego fall or start on an
+    unrelated lane. Managed routes retain their authoritative 3-D waypoint
+    elevation, so use it as the map-projection hint while preserving the exact
+    interpolated x/y/yaw at the requested mission progress.
+    """
+    if (global_route_manager is None) != (global_route is None):
+        raise ValueError(
+            "global_route_manager and global_route must be supplied together"
+        )
+    pose = route_pose_at_s(route.points_xy_m, route_progress_m)
+    if global_route_manager is None or global_route is None:
+        return pose, float(fallback_z_m), "SCENARIO_ROUTE_FALLBACK"
+    placement = global_route_manager.placement(global_route, pose.s_m)
+    return pose, float(placement.z_m), "GLOBAL_ROUTE_3D"
+
+
 def _select_load_map(requested_map: str, available_maps: tuple[str, ...]) -> str:
     requested_short = _map_short_name(requested_map)
     if requested_short.lower().endswith("_opt"):
@@ -4029,6 +4057,12 @@ def run(args: argparse.Namespace) -> None:
                 session.tick(args.timeout_s)
             ego = session.spawn_ego(bp, spawn_transform)
             ego.set_simulate_physics(True)
+            # Hold the freshly spawned vehicle while route reconstruction and
+            # frame-aligned sensor warm-up run. Target velocity alone does not
+            # prevent gravity from rolling a vehicle on a grade.
+            ego.apply_control(carla.VehicleControl(
+                throttle=0.0, brake=1.0, steer=0.0,
+            ))
             # A freshly spawned actor has autopilot disabled. Calling
             # set_autopilot(False) still asks CARLA 0.9.16 to create/connect a
             # Traffic Manager server and can fail when its default port is
@@ -4051,12 +4085,21 @@ def run(args: argparse.Namespace) -> None:
                     **prepared_route.quality.to_dict(),
                 }, ensure_ascii=False), flush=True)
                 if resume_progress_m > 0.0:
-                    resume_pose = route_pose_at_s(
-                        scenario_spawn_route.points_xy_m,
-                        resume_progress_m,
+                    resume_pose, resume_elevation_m, resume_pose_source = (
+                        _resume_route_pose_and_elevation(
+                            scenario_spawn_route,
+                            resume_progress_m,
+                            fallback_z_m=float(spawn_transform.location.z),
+                            global_route_manager=global_route_manager,
+                            global_route=global_route,
+                        )
                     )
                     resume_waypoint = world_map.get_waypoint(
-                        carla.Location(x=resume_pose.x_m, y=resume_pose.y_m, z=0.0),
+                        carla.Location(
+                            x=resume_pose.x_m,
+                            y=resume_pose.y_m,
+                            z=resume_elevation_m,
+                        ),
                         project_to_road=True,
                     )
                     resume_z_m = (
@@ -4093,6 +4136,12 @@ def run(args: argparse.Namespace) -> None:
                         "completed_command_count": resume_command_count,
                         "remaining_command_count": len(spec.commands),
                         "target_speed_kph": resume_target_speed_kph,
+                        "pose_source": resume_pose_source,
+                        "x_m": resume_pose.x_m,
+                        "y_m": resume_pose.y_m,
+                        "z_hint_m": resume_elevation_m,
+                        "spawn_z_m": resume_z_m,
+                        "yaw_deg": resume_pose.yaw_deg,
                     }, ensure_ascii=False), flush=True)
 
             scenario_lead = None

@@ -57,6 +57,7 @@ from integration.carla_runner import (
     _rejected_load_envelope,
     _remaining_route_distances,
     _route_contract_completed,
+    _resume_route_pose_and_elevation,
     _route_recovery_hold_reference,
     _route_local_reference_needs_refresh,
     _route_run_can_end_early,
@@ -249,6 +250,54 @@ def test_resume_segment_keeps_only_unfinished_commands_and_live_actors() -> None
         4460.0, 4480.0,
     ]
     assert "S2_P2_BUS_STOP" not in proposed["minimum_approach_speed_kph_by_phase"]
+
+
+def test_resume_pose_uses_managed_route_elevation_on_stacked_roads() -> None:
+    route = RouteReference(((0.0, 0.0), (10.0, 0.0)), 0.0, 5.0)
+
+    class Manager:
+        @staticmethod
+        def placement(_global_route, route_s):
+            assert route_s == pytest.approx(4.0)
+            return type("Placement", (), {"z_m": 12.5})()
+
+    pose, elevation_m, source = _resume_route_pose_and_elevation(
+        route,
+        4.0,
+        fallback_z_m=0.5,
+        global_route_manager=Manager(),
+        global_route=object(),
+    )
+
+    assert (pose.x_m, pose.y_m, pose.yaw_deg) == pytest.approx((4.0, 0.0, 0.0))
+    assert elevation_m == pytest.approx(12.5)
+    assert source == "GLOBAL_ROUTE_3D"
+
+
+def test_resume_pose_falls_back_to_spawn_elevation_without_managed_route() -> None:
+    route = RouteReference(((0.0, 0.0), (0.0, 10.0)), 0.0, 5.0)
+
+    pose, elevation_m, source = _resume_route_pose_and_elevation(
+        route,
+        3.0,
+        fallback_z_m=7.25,
+    )
+
+    assert (pose.x_m, pose.y_m, pose.yaw_deg) == pytest.approx((0.0, 3.0, 90.0))
+    assert elevation_m == pytest.approx(7.25)
+    assert source == "SCENARIO_ROUTE_FALLBACK"
+
+
+def test_resume_pose_rejects_partial_managed_route_context() -> None:
+    route = RouteReference(((0.0, 0.0), (10.0, 0.0)), 0.0, 5.0)
+
+    with pytest.raises(ValueError, match="must be supplied together"):
+        _resume_route_pose_and_elevation(
+            route,
+            4.0,
+            fallback_z_m=0.5,
+            global_route_manager=object(),
+        )
 
 
 def test_s2_route_compatibility_is_parsed_without_a_fixed_spawn_anchor() -> None:
