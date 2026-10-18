@@ -1046,12 +1046,18 @@ def _maneuver_lane_label(
         and mission_route is not None
         and str(step.target.get("target_lane") or "").strip().upper() == "CURRENT"
     )
+    # Most plans (for example KEEP_LANE and SET_SPEED) do not retain a
+    # manoeuvre mission route.  Route proximity only has meaning for the
+    # explicit RETURN_TO_LANE leg, so avoid dereferencing the optional route
+    # for ordinary plan execution.
+    if not returning_to_current:
+        return label
     at_retained_route = (
         math.dist((x_m, y_m), return_destination_xy) <= return_tolerance_m
         if return_destination_xy is not None
         else route_deviation_m(x_m, y_m, mission_route) <= return_tolerance_m
     )
-    if returning_to_current and at_retained_route:
+    if at_retained_route:
         return "CURRENT"
     return label
 

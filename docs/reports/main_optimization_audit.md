@@ -22,6 +22,7 @@
 | 普通 LiDAR 障碍限速被当前车速二次截断 | 红灯停车后限速被锁为 0，即使转绿也无法起步 | 限速改为由可用制动距离计算的安全速度上限，短时遮挡继续保留该正值上限 |
 | 所有 C 侧限速都被记录成 VRU | 普通障碍与行人/非机动车证据无法区分 | 根据 `source_by_field` 分别记录动态障碍与 VRU 限速来源及接管原因 |
 | 断点恢复用 `z=0` 反查二维路线点 | Town03_Opt 叠层道路可能选中下层道路，导致高度跳变、偏航和无意义重规划 | 使用 Route Manager 保存的三维路线高程作投影提示，并在路线重建和传感器预热期间保持制动 |
+| 普通 Qwen 计划没有保留临时机动路线 | 车道标签函数仍无条件计算路线偏差，首条 `KEEP_LANE` 计划会解引用空路线并终止闭环 | 仅在显式回归原车道步骤中计算保留路线偏差；普通计划直接采用当前语义车道标签，并增加空路线回归测试 |
 
 ## 当前生产模型合同
 
@@ -40,7 +41,7 @@
 
 本分支修改后已完成：
 
-- `python -m pytest -q`：1188 passed，3 skipped。
+- `python -m pytest -q`：1188 passed，4 skipped（本机可选依赖跳过）。
 - `python tools/validate_scenarios.py`：155 checked，0 failed。
 - `python tools/validate_official_scenes.py`：S1、S2、S3 全部 PASS。
 - PowerShell 官方场景入口的 ValidateOnly：PASS。
@@ -75,6 +76,14 @@
 
 此外新增 `integration/tests/test_stop_release_gate.py`，统一覆盖普通 LiDAR 障碍、
 短时遮挡、VRU 慢行和红灯解除四类“临时安全约束不能形成永久零速锁死”的跨模块门禁。
+
+同日又以正式固定 Qwen3.5-2B、`planner_v2`、Town03_Opt 和全传感器模式执行
+600 帧 S2 smoke。严格健康门禁逐项核对 model、revision、artifact、模式和 CARLA 后
+通过；首条指令真实进入 Qwen，唯一终态为 `SUCCEEDED`，传感器到轨迹耗时约
+195.1 ms。车辆在红灯前停车并在绿灯后恢复到约 38.7 km/h，0 碰撞、0 车道侵入，
+最大路线偏差约 0.247 m。原始证据位于服务器
+`artifacts/logs/S2_smoke_qwen2b_fix_20261018/`。该运行只到 30 秒，后五个阶段尚未触发，
+所以完整场景验收失败是预期结果，不把 smoke 写成 8 km 通过。
 
 ## 评委验收命令
 
