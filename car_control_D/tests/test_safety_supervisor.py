@@ -214,3 +214,36 @@ def test_lane_offset_still_cautions_without_safe_route_confirmation() -> None:
     assert decision.safety_override
     assert decision.reason == "LANE_OFFSET_TOO_LARGE"
     assert decision.final_control.throttle == 0.0
+
+
+def test_authorized_lane_crossing_ignores_only_ordinary_lateral_warning() -> None:
+    supervisor = SafetySupervisor()
+    decision = supervisor.arbitrate(
+        raw_control={"steer": -0.6, "throttle": 0.4, "brake": 0.0},
+        vehicle_state={
+            "speed_mps": 2.5,
+            "lane_offset_m": 3.4,
+            "lane_invasion": True,
+            "route_deviation_m": 1.7,
+        },
+        lane_marking_crossing_expected=True,
+    )
+    assert not decision.safety_override
+    assert decision.reason == "NONE"
+    assert decision.final_control.steer == -0.6
+    assert decision.risk_metrics["lane_marking_crossing_expected"] is True
+
+
+def test_authorized_lane_crossing_keeps_severe_route_guard() -> None:
+    decision = SafetySupervisor().arbitrate(
+        raw_control={"steer": -0.6, "throttle": 0.4, "brake": 0.0},
+        vehicle_state={
+            "speed_mps": 2.5,
+            "lane_offset_m": 3.4,
+            "route_deviation_m": 4.0,
+        },
+        lane_marking_crossing_expected=True,
+    )
+    assert decision.safety_override
+    assert decision.reason == "ROUTE_DEVIATION_RECOVERY_STOP"
+    assert decision.final_control.throttle == 0.0

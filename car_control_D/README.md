@@ -57,7 +57,7 @@ frame_log.jsonl
 
 1. A 每帧收集车辆状态、命令状态、B/C 原始控制量和 C 的风险指标。
 2. A 合成 `raw_control = {steer, throttle, brake}`。
-3. A 调用 `SafetySupervisor.arbitrate(raw_control, vehicle_state, command, risk, watchdog_alerts)`。
+3. A 调用 `SafetySupervisor.arbitrate(raw_control, vehicle_state, command, risk, watchdog_alerts)`；仅当当前 Qwen 横向步骤已有成功构建的轨迹时，额外传入 `lane_marking_crossing_expected=True`。
 4. D 检查控制输出合法性、命令置信度、TTC、前方距离、红灯/停止线、路线偏差、watchdog 等风险。
 5. D 返回 `SafetyDecision`，包含 `final_control`、`safety_override`、`reason`、`risk_metrics`。
 6. A 使用 `final_control` 唯一下发 CARLA。
@@ -72,6 +72,8 @@ frame_log.jsonl
 | `VehicleStateView` | `frame`, `sim_time_s`, `speed_mps`, `front_distance_m`, `traffic_light`, `distance_to_stop_line_m`, `lane_offset_m`, `route_deviation_m` | A/感知层提供 |
 | `RiskView` | `ttc_s`, `desired_gap_m`, `emergency_brake_requested` | C 纵向模块提供 |
 | `SafetyDecision` | `final_control`, `safety_override`, `reason`, `risk_metrics`, `raw_control` | D 返回给 A 的最终仲裁结果 |
+
+`lane_marking_crossing_expected` 不是关闭安全层。它只抑制合法变道期间由最近车道中心跳变或预期压线产生的普通 `LANE_OFFSET_TOO_LARGE` / `LANE_INVASION_DETECTED` 告警；碰撞、前向距离、TTC、红灯、watchdog 和严重路线偏差仍按原顺序优先仲裁。未应用成功的横向轨迹不得设置该标志。
 
 ## 6. 配置、重置与生命周期
 

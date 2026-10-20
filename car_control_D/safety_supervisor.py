@@ -93,7 +93,11 @@ class SafetySupervisor:
         command: Any = None,
         risk: Any = None,
         watchdog_alerts: Optional[Iterable[str]] = None,
+        *,
+        lane_marking_crossing_expected: bool = False,
     ) -> SafetyDecision:
+        if type(lane_marking_crossing_expected) is not bool:
+            raise TypeError("lane_marking_crossing_expected must be bool")
         cfg = self.config
         control_result = validate_control(raw_control)
         try:
@@ -140,6 +144,7 @@ class SafetySupervisor:
             "traffic_light": vs.traffic_light,
             "road_curvature_per_m": vs.road_curvature_per_m,
             "watchdog_alerts": list(alerts),
+            "lane_marking_crossing_expected": lane_marking_crossing_expected,
         }
 
         closing_speed = None
@@ -291,9 +296,11 @@ class SafetySupervisor:
         )
         if (vs.lane_offset_m is not None
                 and abs(vs.lane_offset_m) >= lane_offset_threshold
-                and not route_confirms_lane_safe):
+                and not route_confirms_lane_safe
+                and not lane_marking_crossing_expected):
             return caution("LANE_OFFSET_TOO_LARGE")
-        if vs.lane_invasion and not route_confirms_lane_safe:
+        if (vs.lane_invasion and not route_confirms_lane_safe
+                and not lane_marking_crossing_expected):
             return caution("LANE_INVASION_DETECTED")
         if rv.ttc_s is not None and rv.ttc_s <= cfg.caution_ttc_s:
             return caution("CAUTION_TTC")

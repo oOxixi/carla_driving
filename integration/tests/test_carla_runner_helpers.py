@@ -27,6 +27,7 @@ from integration.carla_runner import (
     _load_command,
     _lead_vehicle_travel_m,
     _lane_change_route_parameters,
+    _lane_marking_crossing_authorized,
     _is_deferred_dynamic_lane_change,
     _dynamic_return_destination_xy,
     _physical_actor_id_for_target,
@@ -98,6 +99,21 @@ from integration.carla_runner import (
     _warm_up_loaded_map,
 )
 from integration.scenario_execution import ScenarioSpec
+
+
+class _LateralStep:
+    def __init__(self, step_id: str, behavior: str) -> None:
+        self.step_id = step_id
+        self.behavior = behavior
+
+
+def test_lane_crossing_authority_requires_lateral_step_and_applied_route() -> None:
+    step = _LateralStep("step-return", "CHANGE_LANE_RIGHT")
+    assert not _lane_marking_crossing_authorized(step, set())
+    assert _lane_marking_crossing_authorized(step, {"step-return"})
+    assert not _lane_marking_crossing_authorized(
+        _LateralStep("step-speed", "SET_SPEED"), {"step-speed"},
+    )
 
 
 @pytest.mark.parametrize(

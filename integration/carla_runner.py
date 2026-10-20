@@ -1062,6 +1062,30 @@ def _maneuver_lane_label(
     return label
 
 
+def _lane_marking_crossing_authorized(
+    step: object | None,
+    applied_route_step_ids: set[str],
+) -> bool:
+    """Authorize an ordinary boundary crossing for one applied lateral step.
+
+    Having a Qwen plan alone is insufficient: the live step must request
+    lateral motion and its route must already have been built successfully.
+    Collision, obstacle, TTC, signal, watchdog and severe route-deviation
+    guards remain active in D.
+    """
+    if step is None:
+        return False
+    behavior = str(getattr(step, "behavior", "")).strip().upper()
+    step_id = str(getattr(step, "step_id", "")).strip()
+    return (
+        behavior in {
+            "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT", "RETURN_TO_LANE",
+        }
+        and bool(step_id)
+        and step_id in applied_route_step_ids
+    )
+
+
 def _retain_route_for_maneuver(
     *,
     topology_coverage_planning: bool,
@@ -6011,12 +6035,29 @@ def run(args: argparse.Namespace) -> None:
                             active_speed_cap_mps,
                         ),
                     )
+                maneuver_step_before_update = (
+                    maneuver_fsm.current_step
+                    if (
+                        maneuver_fsm.plan is not None
+                        and maneuver_fsm.state not in TERMINAL_STATES
+                    )
+                    else None
+                )
+                lane_marking_crossing_expected = (
+                    _lane_marking_crossing_authorized(
+                        maneuver_step_before_update,
+                        maneuver_route_steps_applied,
+                    )
+                )
                 result = runtime.step(
                     state, scene, effective_route, dt_s=args.fixed_delta_s,
                     watchdog_alerts=tuple(watchdog_alerts),
                     raw_control_override=raw_control_override,
                     speed_cap_mps=active_speed_cap_mps,
                     safety_override_reason=c_perception_override_reason,
+                    lane_marking_crossing_expected=(
+                        lane_marking_crossing_expected
+                    ),
                 )
                 if scene.red_light_violation and runtime.yellow_clear_committed:
                     # Crossing after a safe yellow dilemma-zone commitment is
@@ -6053,7 +6094,6 @@ def run(args: argparse.Namespace) -> None:
                         safety_reason=c_perception_override_reason,
                         safety_override=True,
                     )
-                lane_marking_crossing_expected = False
                 if (
                     maneuver_fsm.plan is not None
                     and maneuver_fsm.state not in TERMINAL_STATES
@@ -6065,13 +6105,6 @@ def run(args: argparse.Namespace) -> None:
                             state.y_m,
                             previous_s_m=maneuver_mission_progress_m,
                         )
-                    maneuver_step_before_update = maneuver_fsm.current_step
-                    lane_marking_crossing_expected = (
-                        maneuver_step_before_update is not None
-                        and maneuver_step_before_update.behavior in {
-                            "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT", "RETURN_TO_LANE",
-                        }
-                    )
                     plan_capabilities = _planner_runtime_state(
                         world_map, ego, scene, route,
                     )

@@ -247,8 +247,11 @@ class ControlRuntime:
     def step(self, vehicle: RuntimeVehicleState, scene: PerceptionFrame, route: RouteReference, *, dt_s: float,
              watchdog_alerts: tuple[str, ...] = (), raw_control_override: object | None = None,
              speed_cap_mps: float | None = None,
-             safety_override_reason: str | None = None) -> FrameResult:
+             safety_override_reason: str | None = None,
+             lane_marking_crossing_expected: bool = False) -> FrameResult:
         """Compose lateral, longitudinal and final safety arbitration for one aligned frame."""
+        if type(lane_marking_crossing_expected) is not bool:
+            raise TypeError("lane_marking_crossing_expected must be bool")
         if safety_override_reason is not None and (
             type(safety_override_reason) is not str or not safety_override_reason.strip()
         ):
@@ -372,7 +375,10 @@ class ControlRuntime:
             safety = self.safety.arbitrate(raw_for_safety, safety_vehicle_state(
                 vehicle, control_scene, road_curvature_per_m=route.curvature_per_m,
             ), safety_command,
-                                           longitudinal.risk, tuple(expired_alerts))
+                                           longitudinal.risk, tuple(expired_alerts),
+                                           lane_marking_crossing_expected=(
+                                               lane_marking_crossing_expected
+                                           ))
             if safety_override_reason is not None and not safety.safety_override:
                 # C may request a semantic emergency brake that is already a
                 # valid raw control. D keeps the final control but owns the

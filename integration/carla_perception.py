@@ -396,6 +396,64 @@ def _lidar_xyz(measurement: Any) -> np.ndarray:
     return values.reshape((-1, 4))[:, :3]
 
 
+def _nearest_lidar_cluster_distance_m(
+    points: np.ndarray,
+    *,
+    minimum_points: int,
+    structural_check_range_m: float = 8.0,
+    maximum_forward_span_m: float = 0.50,
+    minimum_vertical_extent_m: float = 0.25,
+    compact_lateral_extent_m: float = 1.60,
+    radial_distance: bool = False,
+) -> float | None:
+    """Return the nearest credible obstacle cluster from pre-filtered points.
+
+    A fixed sensor-frame height window is normally sufficient to reject road
+    returns.  It is not sufficient where a steep downhill section abruptly
+    becomes flat: the road ahead rises into that window and looks like a close
+    obstacle.  Close physical obstacles produce returns over a vertical face,
+    whereas the road remains a thin surface inside a narrow forward slice.
+
+    Only near-field clusters require the vertical-extent check.  Farther
+    clusters retain the previous point-count behaviour so sparse road users do
+    not disappear merely because few LiDAR channels hit them.
+    """
+    if points.shape[0] < minimum_points:
+        return None
+    if maximum_forward_span_m <= 0.0:
+        raise ValueError("maximum_forward_span_m must be positive")
+
+    order = np.argsort(points[:, 0])
+    ordered = points[order]
+    start = 0
+    while start < ordered.shape[0]:
+        end = int(np.searchsorted(
+            ordered[:, 0],
+            ordered[start, 0] + maximum_forward_span_m,
+            side="right",
+        ))
+        cluster = ordered[start:end]
+        start = end
+        if cluster.shape[0] < minimum_points:
+            continue
+        near_distance = float(np.percentile(cluster[:, 0], 10.0))
+        if near_distance <= structural_check_range_m:
+            vertical_extent = float(np.ptp(cluster[:, 2]))
+            lateral_extent = float(np.ptp(cluster[:, 1]))
+            if (
+                vertical_extent < minimum_vertical_extent_m
+                and lateral_extent > compact_lateral_extent_m
+            ):
+                continue
+        ranges = (
+            np.hypot(cluster[:, 0], cluster[:, 1])
+            if radial_distance
+            else cluster[:, 0]
+        )
+        return float(np.percentile(ranges, 10.0))
+    return None
+
+
 def front_lidar_distance_m(
     measurement: Any,
     *,
@@ -423,12 +481,13 @@ def front_lidar_distance_m(
         & (np.abs(points[:, 1]) <= half_width_m)
         & (points[:, 2] >= min_height_m) & (points[:, 2] <= max_height_m)
     )
-    forward = points[mask, 0]
-    if forward.size < minimum_points:
-        return None
-    # Requiring a small cluster and using the 10th percentile rejects most
-    # isolated rays while remaining conservative for an obstacle face.
-    return float(np.percentile(forward, 10.0))
+    selected = points[mask]
+    # Point count removes isolated rays.  Near-field vertical structure also
+    # removes road-surface returns at steep-to-flat grade transitions.
+    return _nearest_lidar_cluster_distance_m(
+        selected,
+        minimum_points=minimum_points,
+    )
 
 
 def adjacent_lidar_distances_m(
@@ -453,10 +512,11 @@ def adjacent_lidar_distances_m(
 
     def distance(mask: np.ndarray) -> float | None:
         selected = points[common & mask]
-        if selected.shape[0] < minimum_points:
-            return None
-        ranges = np.hypot(selected[:, 0], selected[:, 1])
-        return float(np.percentile(ranges, 10.0))
+        return _nearest_lidar_cluster_distance_m(
+            selected,
+            minimum_points=minimum_points,
+            radial_distance=True,
+        )
 
     # CARLA sensor Y points right, so physical left is negative Y.
     left = distance(

@@ -769,3 +769,36 @@ def test_front_lidar_rejects_overhead_tree_canopy_cluster() -> None:
     ])
 
     assert front_lidar_distance_m(points) is None
+
+
+def test_front_lidar_rejects_near_road_surface_at_grade_transition() -> None:
+    points = Measurement(1, [
+        [5.00, -1.10, -1.42], [5.04, -0.55, -1.41],
+        [5.08, 0.00, -1.39], [5.12, 0.55, -1.38],
+        [5.16, 1.10, -1.36],
+    ])
+
+    assert front_lidar_distance_m(points) is None
+
+
+def test_front_lidar_keeps_near_obstacle_vertical_face() -> None:
+    points = Measurement(1, [
+        [5.02, -0.45, -1.70], [5.06, -0.20, -1.42],
+        [5.09, 0.05, -1.12], [5.13, 0.30, -0.82],
+    ])
+
+    assert front_lidar_distance_m(points) == pytest.approx(5.032, abs=0.02)
+
+
+def test_adjacent_lidar_rejects_grade_transition_but_keeps_vehicle() -> None:
+    points = Measurement(1, [
+        [5.00, -1.80, -1.42], [5.04, -2.60, -1.40],
+        [5.08, -3.40, -1.38], [5.12, -4.20, -1.36],
+        [6.02, 2.20, -1.70], [6.06, 2.55, -1.38],
+        [6.09, 2.90, -1.08], [6.13, 3.20, -0.82],
+    ])
+
+    left, right = adjacent_lidar_distances_m(points)
+
+    assert left is None
+    assert right == pytest.approx(math.hypot(6.02, 2.20), abs=0.08)
