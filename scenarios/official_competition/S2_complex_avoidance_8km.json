@@ -219,8 +219,8 @@
       "actor_id": "intersection_cut_in_car",
       "type": "vehicle",
       "blueprint_id": "vehicle.tesla.model3",
-      "spawn": {"x": 5275.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
-      "route_position": {"s_m": 5275.0, "lateral_offset_m": 0.0, "lane_relation": "LEFT_ADJACENT"},
+      "spawn": {"x": 5390.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+      "route_position": {"s_m": 5390.0, "lateral_offset_m": 0.0, "lane_relation": "LEFT_ADJACENT"},
       "activation_trigger": {"type": "route_progress_greater_than_m", "value": 5180.0},
       "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 5650.0},
       "behavior": {
@@ -241,13 +241,13 @@
     {
       "actor_id": "late_crossing_pedestrian",
       "type": "walker.pedestrian",
-      "spawn": {"x": 7085.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
-      "route_position": {"s_m": 7085.0, "lateral_offset_m": 6.0},
+      "spawn": {"x": 7150.0, "y": 6.0, "z": 0.5, "yaw_deg": -90.0},
+      "route_position": {"s_m": 7150.0, "lateral_offset_m": 6.0},
       "activation_trigger": {"type": "route_progress_greater_than_m", "value": 6935.0},
       "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 7480.0},
       "behavior": {
         "mode": "crossing",
-        "target_route_position": {"s_m": 7085.0, "lateral_offset_m": -6.0},
+        "target_route_position": {"s_m": 7150.0, "lateral_offset_m": -6.0},
         "start_time_s": 0.0,
         "speed_mps": 1.3,
         "trigger": {"all": [

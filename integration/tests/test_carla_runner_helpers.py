@@ -268,6 +268,35 @@ def test_resume_segment_keeps_only_unfinished_commands_and_live_actors() -> None
     assert "S2_P2_BUS_STOP" not in proposed["minimum_approach_speed_kph_by_phase"]
 
 
+def test_s2_late_hazard_instructions_precede_physical_actor_actions() -> None:
+    spec = ScenarioSpec.load(
+        Path("scenarios/official_competition/S2_complex_avoidance_8km.json")
+    )
+    commands = {command.phase_id: command for command in spec.commands}
+    actors = {str(actor["actor_id"]): actor for actor in spec.actors}
+
+    for phase_id, actor_id, physical_trigger_distance_m in (
+        ("S2_P5_INTERSECTION_MIXED_FLOW", "intersection_cut_in_car", 35.0),
+        ("S2_P6_LATE_PEDESTRIAN_YIELD", "late_crossing_pedestrian", 80.0),
+    ):
+        trigger_items = commands[phase_id].trigger["all"]
+        command_progress_m = next(
+            float(item["value"])
+            for item in trigger_items
+            if item["type"] == "route_progress_greater_than_m"
+        )
+        command_grounding_distance_m = next(
+            float(item["value"])
+            for item in trigger_items
+            if item["type"] == "ego_distance_to_actor_less_than_m"
+        )
+        actor_progress_m = float(actors[actor_id]["route_position"]["s_m"])
+        distance_at_command_m = actor_progress_m - command_progress_m
+
+        assert distance_at_command_m >= physical_trigger_distance_m + 10.0
+        assert distance_at_command_m <= command_grounding_distance_m
+
+
 def test_resume_pose_uses_managed_route_elevation_on_stacked_roads() -> None:
     route = RouteReference(((0.0, 0.0), (10.0, 0.0)), 0.0, 5.0)
 

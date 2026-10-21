@@ -11,7 +11,7 @@
     "emergency_ttc_s": 1.5
   },
   "safety_distance": {
-    "standstill_gap_m": 3.0,
+    "standstill_gap_m": 3.5,
     "reaction_time_s": 1.0,
     "emergency_reaction_time_s": 0.35,
     "sensor_base_margin_m": 0.75,

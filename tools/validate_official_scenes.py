@@ -204,6 +204,34 @@ def validate_all() -> dict[str, Any]:
         "S2: bicycle-specific 3m clearance acceptance is required",
     )
     _require(float(s2_acceptance["maximum_route_deviation_m"]) <= 1.0, "S2: route deviation acceptance is too loose")
+    s2_commands_by_phase = {
+        str(command.get("phase_id", "")): command for command in s2["commands"]
+    }
+    s2_actors_by_id = {
+        str(actor.get("actor_id", "")): actor for actor in s2["actors"]
+    }
+    for phase_id, actor_id, event_distance_m in (
+        ("S2_P5_INTERSECTION_MIXED_FLOW", "intersection_cut_in_car", 35.0),
+        ("S2_P6_LATE_PEDESTRIAN_YIELD", "late_crossing_pedestrian", 80.0),
+    ):
+        command_progress_m = _trigger_route_progress_m(
+            s2_commands_by_phase[phase_id].get("trigger")
+        )
+        actor_progress_m = float(
+            s2_actors_by_id[actor_id]["route_position"]["s_m"]
+        )
+        command_distance_m = next(
+            float(item["value"])
+            for item in s2_commands_by_phase[phase_id]["trigger"]["all"]
+            if item.get("type") == "ego_distance_to_actor_less_than_m"
+            and item.get("actor_id") == actor_id
+        )
+        _require(
+            command_progress_m is not None
+            and actor_progress_m - float(command_progress_m) >= event_distance_m + 10.0
+            and actor_progress_m - float(command_progress_m) <= command_distance_m,
+            f"S2: {phase_id} instruction must precede the physical hazard without losing actor grounding",
+        )
     _require(s2_extensions.get("maneuver_route_mode") == "dynamic_out_and_back", "S2: dynamic out-and-back route required")
     lane_profile = s2_extensions.get("lane_change_profile", {})
     _require(float(lane_profile.get("route_distance_m", 0.0)) >= 60.0, "S2: manoeuvre route is too short")
