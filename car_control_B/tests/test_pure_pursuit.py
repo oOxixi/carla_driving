@@ -52,6 +52,38 @@ def test_route_progress_reset_can_preserve_steering_rate_continuity() -> None:
     assert abs(second.steer - first.steer) <= 0.038
 
 
+def test_steering_slew_rate_is_normalized_by_simulation_time() -> None:
+    params = PurePursuitParams(
+        max_steer_delta_per_step=0.038,
+        min_steer_delta_per_step=0.038,
+        adaptive_max_steer_delta_per_step=0.038,
+    )
+    at_20_hz = PurePursuitController(params)
+    first_20_hz = at_20_hz.step(
+        VehiclePose(0.0, -1.0, 0.0, 5.0, sim_time_s=1.0), _ref(),
+    )
+    second_20_hz = at_20_hz.step(
+        VehiclePose(0.0, 1.0, 0.0, 5.0, sim_time_s=1.05), _ref(),
+    )
+
+    at_10_hz = PurePursuitController(params)
+    first_10_hz = at_10_hz.step(
+        VehiclePose(0.0, -1.0, 0.0, 5.0, sim_time_s=1.0), _ref(),
+    )
+    second_10_hz = at_10_hz.step(
+        VehiclePose(0.0, 1.0, 0.0, 5.0, sim_time_s=1.1), _ref(),
+    )
+
+    assert first_20_hz.steer == pytest.approx(first_10_hz.steer)
+    assert abs(second_20_hz.steer - first_20_hz.steer) == pytest.approx(0.038)
+    assert abs(second_10_hz.steer - first_10_hz.steer) == pytest.approx(0.076)
+
+
+def test_steering_rate_reference_period_must_be_positive() -> None:
+    with pytest.raises(ValueError, match="steer_rate_reference_dt_s"):
+        PurePursuitParams(steer_rate_reference_dt_s=0.0)
+
+
 def test_target_behind_ego_is_invalid_instead_of_silent_zero_steer():
     controller = _controller()
     vehicle = VehiclePose(10.0, 0.0, 0.0, 5.0)

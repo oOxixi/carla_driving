@@ -25,6 +25,7 @@ from integration.carla_perception import (
     PerceptionDataError,
     PerceptionTimeoutError,
     TemporalLeadTracker,
+    _range_to_ego_body_clearance_m,
     attach_default_sensors,
     attach_event_sensors,
     adjacent_lidar_distances_m,
@@ -751,6 +752,35 @@ def test_payload_frame_mismatch_is_rejected() -> None:
 def test_front_lidar_requires_a_cluster_in_lane_corridor() -> None:
     isolated = Measurement(1, [[5.0, 0.0, 0.0], [4.0, 5.0, 0.0], [3.0, 0.0, 3.0]])
     assert front_lidar_distance_m(isolated) is None
+
+
+def test_sensor_range_is_normalized_to_ego_front_body_clearance() -> None:
+    ego = SimpleNamespace(
+        bounding_box=SimpleNamespace(extent=SimpleNamespace(x=2.4)),
+    )
+
+    assert _range_to_ego_body_clearance_m(
+        10.0, ego, sensor_id=LIDAR_SENSOR_ID,
+    ) == pytest.approx(7.6)
+    assert _range_to_ego_body_clearance_m(
+        10.0, ego, sensor_id=RADAR_SENSOR_ID,
+    ) == pytest.approx(9.1)
+
+
+def test_sensor_range_normalization_is_safe_for_missing_or_invalid_extent() -> None:
+    assert _range_to_ego_body_clearance_m(
+        10.0, SimpleNamespace(), sensor_id=LIDAR_SENSOR_ID,
+    ) == pytest.approx(10.0)
+    ego = SimpleNamespace(
+        bounding_box=SimpleNamespace(extent=SimpleNamespace(x=float("nan"))),
+    )
+    assert _range_to_ego_body_clearance_m(
+        10.0, ego, sensor_id=LIDAR_SENSOR_ID,
+    ) == pytest.approx(10.0)
+    with pytest.raises(ValueError):
+        _range_to_ego_body_clearance_m(
+            -1.0, SimpleNamespace(), sensor_id=LIDAR_SENSOR_ID,
+        )
 
 
 def test_front_lidar_rejects_road_surface_cluster_but_keeps_vehicle_height() -> None:

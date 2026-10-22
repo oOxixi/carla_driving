@@ -204,6 +204,12 @@ SENSOR_PROFILES: Mapping[str, tuple[CarlaSensorSpec, ...]] = MappingProxyType({
     "competition_multiview": COMPETITION_MULTIVIEW_SENSOR_SPECS,
 })
 
+SENSOR_FORWARD_MOUNT_X_M: Mapping[str, float] = MappingProxyType({
+    spec.sensor_id: float(spec.mount.x_m)
+    for spec in DEFAULT_SENSOR_SPECS
+    if spec.sensor_id in {LIDAR_SENSOR_ID, RADAR_SENSOR_ID}
+})
+
 
 def sensor_specs_for_profile(profile: str) -> tuple[CarlaSensorSpec, ...]:
     key = str(profile).strip().lower()
@@ -211,6 +217,32 @@ def sensor_specs_for_profile(profile: str) -> tuple[CarlaSensorSpec, ...]:
         return SENSOR_PROFILES[key]
     except KeyError as error:
         raise ValueError(f"unknown sensor profile: {profile!r}") from error
+
+
+def _range_to_ego_body_clearance_m(
+    range_m: float,
+    ego: Any,
+    *,
+    sensor_id: str,
+) -> float:
+    """Convert a sensor-origin range to clearance beyond the ego front body.
+
+    CARLA LiDAR and radar ranges start at their sensor mounts. Passing those
+    values directly to the following controller overstates usable clearance by
+    the distance from the mount to the front bumper. That error is especially
+    visible for bicycles and at a 100 ms control step, where a nominally safe
+    sensor range can already be below the required body-to-body gap.
+    """
+    measured = float(range_m)
+    if not math.isfinite(measured) or measured < 0.0:
+        raise ValueError("range_m must be finite and non-negative")
+    extent = getattr(getattr(ego, "bounding_box", None), "extent", None)
+    front_extent_m = float(getattr(extent, "x", 0.0))
+    if not math.isfinite(front_extent_m) or front_extent_m < 0.0:
+        front_extent_m = 0.0
+    mount_x_m = SENSOR_FORWARD_MOUNT_X_M.get(str(sensor_id), 0.0)
+    sensor_to_front_m = max(0.0, front_extent_m - mount_x_m)
+    return max(0.0, measured - sensor_to_front_m)
 
 
 EVENT_SENSOR_SPECS: tuple[CarlaSensorSpec, ...] = tuple(
@@ -993,6 +1025,12 @@ class CarlaPerceptionBridge:
             raise PerceptionDataError(
                 f"LiDAR frame {frame} is unusable; normal control must be suppressed"
             ) from error
+        if lead_distance is not None:
+            lead_distance = _range_to_ego_body_clearance_m(
+                lead_distance,
+                self._ego,
+                sensor_id=LIDAR_SENSOR_ID,
+            )
         lead_speed: float | None = None
         if lead_distance is not None:
             if self._detector is not None and corridor_objects:
@@ -1025,6 +1063,15 @@ class CarlaPerceptionBridge:
         else:
             try:
                 radar_target = front_radar_target(radar)
+                if radar_target is not None:
+                    radar_target = replace(
+                        radar_target,
+                        distance_m=_range_to_ego_body_clearance_m(
+                            radar_target.distance_m,
+                            self._ego,
+                            sensor_id=RADAR_SENSOR_ID,
+                        ),
+                    )
                 sources["radar_modality"] = "CARLA_RADAR_FRAME_ALIGNED"
             except (TypeError, ValueError, AttributeError) as error:
                 sources["radar_modality"] = f"RADAR_FRAME_INVALID_{type(error).__name__.upper()}"

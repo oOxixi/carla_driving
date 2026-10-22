@@ -41,6 +41,11 @@ class PurePursuitParams:
     low_speed_steer_gain: float = DEFAULT_STRATEGY.lateral.low_speed_steer_gain
     curvature_rate_gain: float = DEFAULT_STRATEGY.lateral.curvature_rate_gain
     error_rate_gain: float = DEFAULT_STRATEGY.lateral.error_rate_gain
+    # The configured steering delta was calibrated at the official 20 Hz
+    # control rate. Scale it by measured simulation time so a 10 Hz variant
+    # keeps the same physical steering slew rate instead of responding at
+    # half speed.
+    steer_rate_reference_dt_s: float = 0.05
     cross_track_gain: float = 0.8
     cross_track_softening_speed_mps: float = 1.0
     # On the CARLA 0.9.16 Model 3, positive VehicleControl steering follows
@@ -67,6 +72,8 @@ class PurePursuitParams:
             raise ValueError("min_steer_limit must not exceed max_steer")
         if self.min_steer_delta_per_step > self.adaptive_max_steer_delta_per_step:
             raise ValueError("adaptive steer delta limits are inverted")
+        if self.steer_rate_reference_dt_s <= 0.0:
+            raise ValueError("steer_rate_reference_dt_s must be positive")
         if self.steer_sign not in {-1.0, 1.0}:
             raise ValueError("steer_sign must be -1 or 1")
         if self.nearest_search_window is not None and (
@@ -84,6 +91,7 @@ class PurePursuitController(LateralController):
     def __init__(self, params: PurePursuitParams | None = None):
         self.params = params or PurePursuitParams()
         self._last_steer = 0.0
+        self._last_sim_time_s: float | None = None
         self._last_nearest_index = 0
         self._active_route_points: object | None = None
         self._active_route_slot: int | None = None
@@ -97,6 +105,7 @@ class PurePursuitController(LateralController):
             raise TypeError("preserve_steer must be bool")
         if not preserve_steer:
             self._last_steer = 0.0
+        self._last_sim_time_s = None
         self._last_nearest_index = 0
         self._active_route_points = None
         self._active_route_slot = None
@@ -188,6 +197,25 @@ class PurePursuitController(LateralController):
             p.max_steer_delta_per_step * low_speed_multiplier * geometry_multiplier,
             p.min_steer_delta_per_step,
             max(p.adaptive_max_steer_delta_per_step, p.max_steer_delta_per_step),
+        )
+
+    def _steer_time_scale(self, sim_time_s: float | None) -> float:
+        """Return a bounded rate scale while preserving legacy untimed calls."""
+        if sim_time_s is None:
+            self._last_sim_time_s = None
+            return 1.0
+        now_s = float(sim_time_s)
+        if not math.isfinite(now_s):
+            self._last_sim_time_s = None
+            return 1.0
+        previous_s = self._last_sim_time_s
+        self._last_sim_time_s = now_s
+        if previous_s is None or now_s <= previous_s:
+            return 1.0
+        return clamp(
+            (now_s - previous_s) / self.params.steer_rate_reference_dt_s,
+            0.5,
+            4.0,
         )
 
     def step(self, vehicle: VehiclePose, reference: RouteReference) -> LateralOutput:
@@ -287,6 +315,7 @@ class PurePursuitController(LateralController):
         delta_limit = self._steer_delta_limit(
             vehicle.speed_mps, local_curvature, cte, heading_error,
         )
+        delta_limit *= self._steer_time_scale(vehicle.sim_time_s)
         delta = clamp(steer - self._last_steer, -delta_limit, delta_limit)
         steer = self._last_steer + delta
         self._last_steer = steer
