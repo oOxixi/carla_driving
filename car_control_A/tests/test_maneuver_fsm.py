@@ -331,6 +331,76 @@ def test_emergency_preempts_plan_once():
     assert second.events == ()
 
 
+def test_front_hazard_pauses_lane_change_then_resumes_same_step():
+    lane = _step(
+        behavior="CHANGE_LANE_LEFT",
+        preconditions=("PERCEPTION_FRESH", "LEFT_GAP_SAFE"),
+        completion={
+            "type": "LANE_CENTERED", "value": None,
+            "lane": "LEFT_ADJACENT", "hold_frames": 2,
+        },
+        timeout_s=5.0,
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(lane), now_s=0.0)
+    assert not fsm.update(_snapshot(left_gap_safe=True), now_s=0.1).terminal
+
+    held = fsm.update(_snapshot(
+        emergency=True,
+        emergency_reason="EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE",
+        left_gap_safe=True,
+    ), now_s=0.2)
+    assert held.state == "WAIT_HAZARD_CLEAR"
+    assert held.current_step is lane
+    assert held.safe_behavior == "EMERGENCY_STOP"
+    assert held.terminal is False
+
+    assert not fsm.update(_snapshot(
+        left_gap_safe=True,
+        lane="LEFT_ADJACENT",
+        lateral_error_m=0.05,
+    ), now_s=0.3).terminal
+    resumed = fsm.update(_snapshot(
+        left_gap_safe=True,
+        lane="LEFT_ADJACENT",
+        lateral_error_m=0.05,
+    ), now_s=0.4)
+    assert resumed.state == "SUCCEEDED"
+
+
+def test_collision_still_preempts_lane_change():
+    lane = _step(
+        behavior="CHANGE_LANE_LEFT",
+        preconditions=("PERCEPTION_FRESH", "LEFT_GAP_SAFE"),
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(lane), now_s=0.0)
+    terminal = fsm.update(_snapshot(
+        emergency=True,
+        emergency_reason="COLLISION_DETECTED",
+        left_gap_safe=True,
+    ), now_s=0.1)
+    assert terminal.state == "SAFETY_OVERRIDE"
+    assert terminal.events[-1].reason_code == "COLLISION_DETECTED"
+
+
+def test_lane_change_hazard_pause_obeys_step_timeout():
+    lane = _step(
+        behavior="CHANGE_LANE_LEFT",
+        preconditions=("PERCEPTION_FRESH", "LEFT_GAP_SAFE"),
+        timeout_s=1.0,
+    )
+    fsm = ManeuverFSM()
+    fsm.start(_plan(lane), now_s=0.0)
+    timed_out = fsm.update(_snapshot(
+        emergency=True,
+        emergency_reason="LOW_TTC",
+        left_gap_safe=True,
+    ), now_s=1.1)
+    assert timed_out.state == "FAILED"
+    assert timed_out.events[-1].reason_code == "MANEUVER_HAZARD_DID_NOT_CLEAR"
+
+
 def test_red_light_pauses_plan_and_resumes_without_consuming_timeout():
     keep_lane = _step(
         behavior="KEEP_LANE",

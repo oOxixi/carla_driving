@@ -501,7 +501,7 @@ def test_long_range_radar_only_return_does_not_constrain_clear_lidar_route() -> 
     )
 
 
-def test_close_radar_only_return_remains_a_fail_safe_obstacle() -> None:
+def test_close_radar_only_return_without_lidar_structure_is_advisory() -> None:
     ego, session = Actor(1, speed=5.0), Session()
     session.frame_buffer.push(RGB_SENSOR_ID, 47, Measurement(47))
     session.frame_buffer.push(LIDAR_SENSOR_ID, 47, Measurement(47))
@@ -515,10 +515,32 @@ def test_close_radar_only_return_remains_a_fail_safe_obstacle() -> None:
 
     sample = bridge.acquire(47, 2.35, timeout_s=0.01)
 
+    assert sample.frame.lead_distance_m is None
+    assert sample.source_by_field["radar_observation"] == (
+        "RADAR_FRONT_CORRIDOR_UNCORROBORATED_IGNORED"
+    )
+
+
+def test_close_radar_return_strengthens_sparse_lidar_obstacle() -> None:
+    ego, session = Actor(1, speed=5.0), Session()
+    session.frame_buffer.push(RGB_SENSOR_ID, 48, Measurement(48))
+    session.frame_buffer.push(LIDAR_SENSOR_ID, 48, Measurement(48, [
+        [6.45, -0.10, -1.62], [6.55, 0.12, -1.02],
+    ]))
+    session.frame_buffer.push(
+        RADAR_SENSOR_ID, 48,
+        RadarMeasurement(48, (RadarDetection(5.0, velocity=-1.0),)),
+    )
+    bridge = CarlaPerceptionBridge(
+        World((ego,)), WorldMap(), ego, session, _suite(session),
+    )
+
+    sample = bridge.acquire(48, 2.40, timeout_s=0.01)
+
     assert sample.frame.lead_distance_m == pytest.approx(6.5)
     assert sample.frame.lead_speed_mps == pytest.approx(4.0)
     assert sample.source_by_field["radar_observation"] == (
-        "RADAR_FRONT_CORRIDOR_CLOSE_FAILSAFE"
+        "RADAR_FRONT_CORRIDOR_CLOSE_WEAK_LIDAR_FAILSAFE"
     )
 
 
@@ -811,6 +833,90 @@ def test_front_lidar_rejects_near_road_surface_at_grade_transition() -> None:
     assert front_lidar_distance_m(points) is None
 
 
+def test_front_lidar_rejects_broad_rough_road_plane_at_grade_transition() -> None:
+    points = []
+    for forward_m, lateral_m in (
+        (5.00, -1.20), (5.12, -0.75), (5.24, -0.25),
+        (5.08, 0.25), (5.32, 0.75), (5.44, 1.20),
+    ):
+        road_height_m = -4.70 + 0.65 * forward_m + 0.02 * lateral_m
+        points.append([forward_m, lateral_m, road_height_m])
+
+    assert np.ptp(np.asarray(points)[:, 2]) > 0.25
+    assert front_lidar_distance_m(Measurement(1, points)) is None
+
+
+def test_front_lidar_rejects_road_plane_split_into_narrow_range_slices() -> None:
+    points = []
+    for forward_m, lateral_center_m in (
+        (5.0, -0.8), (5.6, -0.4), (6.2, 0.0),
+        (6.8, 0.4), (7.4, 0.8),
+    ):
+        for lateral_m in (
+            lateral_center_m - 0.4,
+            lateral_center_m,
+            lateral_center_m + 0.4,
+        ):
+            points.append([
+                forward_m,
+                lateral_m,
+                -3.25 + 0.30 * forward_m + 0.015 * lateral_m,
+            ])
+
+    assert front_lidar_distance_m(Measurement(1, points)) is None
+
+
+def test_front_lidar_rejects_grade_transition_beyond_eight_sensor_metres() -> None:
+    """Structural range is sensor-relative, before bumper-clearance conversion."""
+    points = []
+    for forward_m, lateral_center_m in (
+        (8.4, -0.8), (9.0, -0.4), (9.6, 0.0),
+        (10.2, 0.4), (10.8, 0.8),
+    ):
+        for lateral_m in (
+            lateral_center_m - 0.4,
+            lateral_center_m,
+            lateral_center_m + 0.4,
+        ):
+            points.append([
+                forward_m,
+                lateral_m,
+                -4.35 + 0.30 * forward_m + 0.015 * lateral_m,
+            ])
+
+    assert front_lidar_distance_m(Measurement(1, points)) is None
+
+
+def test_front_lidar_road_plane_removal_preserves_vertical_obstacle_outliers() -> None:
+    points = []
+    for forward_m in (5.0, 5.6, 6.2, 6.8, 7.4):
+        for lateral_m in (-0.75, 0.0, 0.75):
+            points.append([
+                forward_m,
+                lateral_m,
+                -3.25 + 0.30 * forward_m + 0.015 * lateral_m,
+            ])
+    points.extend([
+        [4.50, -0.25, -1.72], [4.55, -0.20, -1.40],
+        [4.60, -0.15, -1.08], [4.65, -0.10, -0.76],
+    ])
+
+    assert front_lidar_distance_m(Measurement(1, points)) == pytest.approx(
+        4.515, abs=0.04,
+    )
+
+
+def test_front_lidar_keeps_broad_vertical_obstacle_face() -> None:
+    points = Measurement(1, [
+        [5.00, -1.05, -1.70], [5.02, -1.05, -0.82],
+        [5.08, -0.35, -1.55], [5.10, -0.35, -0.88],
+        [5.16, 0.35, -1.62], [5.18, 0.35, -0.78],
+        [5.24, 1.05, -1.48], [5.26, 1.05, -0.86],
+    ])
+
+    assert front_lidar_distance_m(points) == pytest.approx(5.02, abs=0.04)
+
+
 def test_front_lidar_keeps_near_obstacle_vertical_face() -> None:
     points = Measurement(1, [
         [5.02, -0.45, -1.70], [5.06, -0.20, -1.42],
@@ -818,6 +924,42 @@ def test_front_lidar_keeps_near_obstacle_vertical_face() -> None:
     ])
 
     assert front_lidar_distance_m(points) == pytest.approx(5.032, abs=0.02)
+
+
+def test_bridge_rejects_front_sensor_cluster_outside_driving_surface() -> None:
+    class NarrowDrivingMap(WorldMap):
+        def get_waypoint(self, location, project_to_road=True):
+            if not project_to_road and abs(float(location.y)) > 1.0:
+                return None
+            return super().get_waypoint(location, project_to_road=project_to_road)
+
+    ego, session = Actor(1, speed=4.0), Session()
+    frame = 52
+    session.frame_buffer.push(RGB_SENSOR_ID, frame, Measurement(frame))
+    session.frame_buffer.push(LIDAR_SENSOR_ID, frame, Measurement(frame, [
+        [6.00, 1.15, -1.70], [6.05, 1.20, -1.38],
+        [6.10, 1.24, -1.06], [6.15, 1.28, -0.78],
+    ]))
+    session.frame_buffer.push(RADAR_SENSOR_ID, frame, RadarMeasurement(frame, (
+        RadarDetection(
+            6.0,
+            azimuth=math.atan2(1.2, 6.0),
+            velocity=-4.0,
+        ),
+    )))
+    bridge = CarlaPerceptionBridge(
+        World((ego,)), NarrowDrivingMap(), ego, session, _suite(session),
+    )
+
+    sample = bridge.acquire(frame, 2.6, timeout_s=0.01)
+
+    assert sample.frame.lead_distance_m is None
+    assert sample.source_by_field["lidar_observation"] == (
+        "LIDAR_OFF_DRIVING_SURFACE_IGNORED"
+    )
+    assert sample.source_by_field["radar_observation"] == (
+        "RADAR_OFF_DRIVING_SURFACE_IGNORED"
+    )
 
 
 def test_adjacent_lidar_rejects_grade_transition_but_keeps_vehicle() -> None:

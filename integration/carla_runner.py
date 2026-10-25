@@ -1033,8 +1033,11 @@ def _maneuver_lane_label(
     *,
     x_m: float,
     y_m: float,
+    yaw_deg: float | None = None,
+    mission_progress_m: float | None = None,
     return_destination_xy: tuple[float, float] | None = None,
     return_tolerance_m: float = 0.5,
+    return_heading_tolerance_deg: float = 15.0,
 ) -> str:
     """Resolve semantic lanes across junctions where CARLA renumbers lane IDs."""
     label = next(
@@ -1052,13 +1055,52 @@ def _maneuver_lane_label(
     # for ordinary plan execution.
     if not returning_to_current:
         return label
-    at_retained_route = (
-        math.dist((x_m, y_m), return_destination_xy) <= return_tolerance_m
-        if return_destination_xy is not None
-        else route_deviation_m(x_m, y_m, mission_route) <= return_tolerance_m
-    )
-    if at_retained_route:
+    retained_route_error_m = route_deviation_m(x_m, y_m, mission_route)
+    if return_destination_xy is not None and mission_progress_m is not None:
+        destination_progress_m = project_route_progress_m(
+            mission_route.points_xy_m,
+            *return_destination_xy,
+            previous_s_m=mission_progress_m,
+        )
+        # A point-radius completion gate can be skipped between two 20 Hz
+        # samples and cannot remain true for the required hold frames at road
+        # speed.  Once the intended merge progress has been reached, keep the
+        # gate true while the ego stays aligned with the retained route.
+        at_retained_route = (
+            retained_route_error_m <= return_tolerance_m
+            and mission_progress_m
+            >= destination_progress_m - return_tolerance_m
+        )
+    elif return_destination_xy is not None:
+        at_retained_route = (
+            math.dist((x_m, y_m), return_destination_xy) <= return_tolerance_m
+        )
+    else:
+        at_retained_route = retained_route_error_m <= return_tolerance_m
+    heading_aligned = True
+    if yaw_deg is not None:
+        retained_progress_m = project_route_progress_m(
+            mission_route.points_xy_m,
+            x_m,
+            y_m,
+            previous_s_m=mission_progress_m,
+        )
+        retained_pose = route_pose_at_s(
+            mission_route.points_xy_m,
+            retained_progress_m,
+        )
+        heading_error_deg = abs(
+            (float(yaw_deg) - retained_pose.yaw_deg + 180.0) % 360.0 - 180.0
+        )
+        heading_aligned = heading_error_deg <= return_heading_tolerance_deg
+    # Merely crossing the retained polyline is not a completed return.  Near
+    # junctions that can terminate the smooth lane-change route while the ego
+    # is still oblique to the mission lane, causing an abrupt opposite-steer
+    # handoff.  Require both geometric rejoin and heading alignment.
+    if at_retained_route and heading_aligned:
         return "CURRENT"
+    if label == "CURRENT":
+        return "RETURN_TRANSITION"
     return label
 
 
@@ -6124,6 +6166,8 @@ def run(args: argparse.Namespace) -> None:
                         maneuver_mission_route,
                         x_m=state.x_m,
                         y_m=state.y_m,
+                        yaw_deg=state.yaw_deg,
+                        mission_progress_m=maneuver_mission_progress_m,
                         return_destination_xy=maneuver_return_destination_xy,
                     )
                     heading_change_deg = (

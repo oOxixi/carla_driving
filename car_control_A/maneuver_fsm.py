@@ -30,6 +30,18 @@ _STATE_BY_BEHAVIOR = {
     "PULL_OVER": "PULLING_OVER",
 }
 
+_RECOVERABLE_LATERAL_HAZARDS = frozenset({
+    "EMERGENCY_FRONT_OBSTACLE_TOO_CLOSE",
+    "LOW_TTC",
+    "RISK_EMERGENCY_BRAKE_REQUESTED",
+})
+_RECOVERABLE_LATERAL_BEHAVIORS = frozenset({
+    "CHANGE_LANE_LEFT",
+    "CHANGE_LANE_RIGHT",
+    "PASS_TARGET",
+    "RETURN_TO_LANE",
+})
+
 
 @dataclass(frozen=True, slots=True)
 class ManeuverEvent:
@@ -140,6 +152,28 @@ class ManeuverFSM:
                         else "SLOW_DOWN_HAZARD_DID_NOT_CLEAR"
                     )
                     return self._step_failure(step, reason, now)
+                return self._update(safe_behavior="EMERGENCY_STOP")
+            if (
+                step.behavior in _RECOVERABLE_LATERAL_BEHAVIORS
+                and (
+                    emergency_reason in _RECOVERABLE_LATERAL_HAZARDS
+                    or emergency_reason.startswith("C_FRONT_")
+                )
+            ):
+                # A newly observed front hazard during an avoidance lane
+                # change is a temporary execution pause, not proof that the
+                # high-level plan is invalid.  D still owns full braking on
+                # every hazardous frame.  Keeping the step and its route
+                # alive lets it resume after the object clears; terminating
+                # here used to restore the retained mission polyline while
+                # ego was between lanes, which could leave its next target
+                # behind the vehicle and permanently latch the watchdog.
+                self._completion_frames = 0
+                if self.step_started_s is not None and now - self.step_started_s > step.timeout_s:
+                    return self._step_failure(
+                        step, "MANEUVER_HAZARD_DID_NOT_CLEAR", now,
+                    )
+                self.state = "WAIT_HAZARD_CLEAR"
                 return self._update(safe_behavior="EMERGENCY_STOP")
             return self._finish(
                 "SAFETY_OVERRIDE",

@@ -432,10 +432,14 @@ def _nearest_lidar_cluster_distance_m(
     points: np.ndarray,
     *,
     minimum_points: int,
-    structural_check_range_m: float = 8.0,
+    structural_check_range_m: float = 12.0,
     maximum_forward_span_m: float = 0.50,
     minimum_vertical_extent_m: float = 0.25,
     compact_lateral_extent_m: float = 1.60,
+    maximum_ground_plane_residual_m: float = 0.08,
+    maximum_ground_plane_intercept_m: float = -1.90,
+    maximum_ground_forward_slope: float = 1.0,
+    maximum_ground_lateral_slope: float = 0.50,
     radial_distance: bool = False,
 ) -> float | None:
     """Return the nearest credible obstacle cluster from pre-filtered points.
@@ -446,14 +450,60 @@ def _nearest_lidar_cluster_distance_m(
     obstacle.  Close physical obstacles produce returns over a vertical face,
     whereas the road remains a thin surface inside a narrow forward slice.
 
-    Only near-field clusters require the vertical-extent check.  Farther
-    clusters retain the previous point-count behaviour so sparse road users do
-    not disappear merely because few LiDAR channels hit them.
+    Only near-field clusters require the structural checks.  Besides the
+    simple vertical-extent rule, a broad cluster is rejected when it closely
+    fits a road plane whose extrapolated height beneath the sensor is near the
+    ground.  This catches rough/graded road returns whose vertical span is too
+    large for the simple rule, without discarding a vehicle's vertical rear
+    face or a compact bicycle/pedestrian cluster.  Farther clusters retain the
+    previous point-count behaviour so sparse road users do not disappear
+    merely because few LiDAR channels hit them.
     """
     if points.shape[0] < minimum_points:
         return None
     if maximum_forward_span_m <= 0.0:
         raise ValueError("maximum_forward_span_m must be positive")
+
+    # A grade transition can fill the near field with many individually thin
+    # range slices.  Testing each slice alone is not enough: a slice at the
+    # edge of the scan can be laterally narrow and look like a compact object.
+    # Fit the complete near-field cloud first and remove only dominant inliers
+    # of a physically plausible road plane.  Vertical obstacle returns remain
+    # as outliers and are clustered normally below.
+    near_mask = points[:, 0] <= structural_check_range_m
+    near_points = points[near_mask]
+    if (
+        near_points.shape[0] >= 12
+        and float(np.ptp(near_points[:, 1])) > compact_lateral_extent_m
+    ):
+        design = np.column_stack((
+            near_points[:, 0], near_points[:, 1],
+            np.ones(near_points.shape[0], dtype=np.float32),
+        ))
+        coefficients, *_ = np.linalg.lstsq(
+            design, near_points[:, 2], rcond=None,
+        )
+        residuals = np.abs(near_points[:, 2] - design @ coefficients)
+        plane_inlier_threshold_m = max(maximum_ground_plane_residual_m, 0.10)
+        inlier_ratio = float(np.mean(residuals <= plane_inlier_threshold_m))
+        plane_intercept = float(coefficients[2])
+        if (
+            inlier_ratio >= 0.65
+            and plane_intercept <= maximum_ground_plane_intercept_m
+            and abs(float(coefficients[0])) <= maximum_ground_forward_slope
+            and abs(float(coefficients[1])) <= maximum_ground_lateral_slope
+        ):
+            all_design = np.column_stack((
+                points[:, 0], points[:, 1],
+                np.ones(points.shape[0], dtype=np.float32),
+            ))
+            all_residuals = np.abs(points[:, 2] - all_design @ coefficients)
+            ground_inliers = near_mask & (
+                all_residuals <= plane_inlier_threshold_m
+            )
+            points = points[~ground_inliers]
+            if points.shape[0] < minimum_points:
+                return None
 
     order = np.argsort(points[:, 0])
     ordered = points[order]
@@ -472,11 +522,29 @@ def _nearest_lidar_cluster_distance_m(
         if near_distance <= structural_check_range_m:
             vertical_extent = float(np.ptp(cluster[:, 2]))
             lateral_extent = float(np.ptp(cluster[:, 1]))
-            if (
-                vertical_extent < minimum_vertical_extent_m
-                and lateral_extent > compact_lateral_extent_m
-            ):
-                continue
+            if lateral_extent > compact_lateral_extent_m:
+                if vertical_extent < minimum_vertical_extent_m:
+                    continue
+                if cluster.shape[0] >= 5:
+                    design = np.column_stack((
+                        cluster[:, 0], cluster[:, 1],
+                        np.ones(cluster.shape[0], dtype=np.float32),
+                    ))
+                    coefficients, *_ = np.linalg.lstsq(
+                        design, cluster[:, 2], rcond=None,
+                    )
+                    residuals = np.abs(
+                        cluster[:, 2] - design @ coefficients
+                    )
+                    plane_residual = float(np.percentile(residuals, 90.0))
+                    plane_intercept = float(coefficients[2])
+                    if (
+                        plane_residual <= maximum_ground_plane_residual_m
+                        and plane_intercept <= maximum_ground_plane_intercept_m
+                        and abs(float(coefficients[0])) <= maximum_ground_forward_slope
+                        and abs(float(coefficients[1])) <= maximum_ground_lateral_slope
+                    ):
+                        continue
         ranges = (
             np.hypot(cluster[:, 0], cluster[:, 1])
             if radial_distance
@@ -520,6 +588,29 @@ def front_lidar_distance_m(
         selected,
         minimum_points=minimum_points,
     )
+
+
+def _front_lidar_target_lateral_m(
+    measurement: Any,
+    distance_m: float,
+    *,
+    half_width_m: float = 1.35,
+    min_height_m: float = -1.8,
+    max_height_m: float = -0.70,
+    maximum_forward_span_m: float = 0.50,
+) -> float:
+    """Estimate the lateral centre of the cluster selected as front lead."""
+    points = _lidar_xyz(measurement)
+    selected = points[
+        (points[:, 0] >= float(distance_m) - 0.05)
+        & (points[:, 0] <= float(distance_m) + maximum_forward_span_m + 0.05)
+        & (np.abs(points[:, 1]) <= half_width_m)
+        & (points[:, 2] >= min_height_m)
+        & (points[:, 2] <= max_height_m)
+    ]
+    if not len(selected):
+        return 0.0
+    return float(np.median(selected[:, 1]))
 
 
 def adjacent_lidar_distances_m(
@@ -566,6 +657,7 @@ def adjacent_lidar_distances_m(
 class FrontRadarTarget:
     distance_m: float
     closing_speed_mps: float
+    lateral_m: float = 0.0
 
 
 @dataclass(slots=True)
@@ -723,10 +815,54 @@ def front_radar_target(
             and math.degrees(altitude) >= min_altitude_deg
             and math.degrees(altitude) <= max_altitude_deg
         ):
-            candidates.append(FrontRadarTarget(forward, velocity))
+            candidates.append(FrontRadarTarget(forward, velocity, lateral))
     if not candidates:
         return None
     return min(candidates, key=lambda item: item.distance_m)
+
+
+def _target_is_on_driving_surface(
+    world_map: Any,
+    ego: Any,
+    *,
+    forward_m: float,
+    lateral_m: float,
+) -> bool:
+    """Return whether a sensor target projects onto a CARLA driving lane.
+
+    A sensor-frame rectangle alone is insufficient near curbs, traffic-light
+    posts and other static street furniture: those objects can be directly in
+    front of the sensor while remaining outside the lane that ego occupies.
+    CARLA's non-projecting waypoint lookup supplies map geometry only; it does
+    not inspect actor identity or velocity and therefore remains valid in the
+    strict sensor-control path.
+
+    Lightweight test doubles used by the unit suite do not necessarily expose
+    CARLA's non-projecting lookup signature.  In that case retain the sensor
+    observation rather than silently weakening existing tests or control.
+    """
+    if not all(math.isfinite(float(value)) for value in (forward_m, lateral_m)):
+        return False
+    transform = ego.get_transform()
+    origin = transform.location
+    forward = transform.get_forward_vector()
+    get_right_vector = getattr(transform, "get_right_vector", None)
+    if not callable(get_right_vector):
+        return True
+    right = get_right_vector()
+    location_type = type(origin)
+    try:
+        candidate = location_type(
+            x=float(origin.x) + float(forward.x) * float(forward_m)
+            + float(right.x) * float(lateral_m),
+            y=float(origin.y) + float(forward.y) * float(forward_m)
+            + float(right.y) * float(lateral_m),
+            z=float(origin.z),
+        )
+        waypoint = world_map.get_waypoint(candidate, project_to_road=False)
+    except (AttributeError, TypeError):
+        return True
+    return waypoint is not None
 
 
 def _normalise_light_state(value: Any) -> str:
@@ -1026,6 +1162,20 @@ class CarlaPerceptionBridge:
                 f"LiDAR frame {frame} is unusable; normal control must be suppressed"
             ) from error
         if lead_distance is not None:
+            lead_lateral_m = _front_lidar_target_lateral_m(
+                lidar, lead_distance,
+            )
+            if not _target_is_on_driving_surface(
+                self._map,
+                self._ego,
+                forward_m=lead_distance,
+                lateral_m=lead_lateral_m,
+            ):
+                lead_distance = None
+                sources["lidar_observation"] = (
+                    "LIDAR_OFF_DRIVING_SURFACE_IGNORED"
+                )
+        if lead_distance is not None:
             lead_distance = _range_to_ego_body_clearance_m(
                 lead_distance,
                 self._ego,
@@ -1063,6 +1213,19 @@ class CarlaPerceptionBridge:
         else:
             try:
                 radar_target = front_radar_target(radar)
+                if (
+                    radar_target is not None
+                    and not _target_is_on_driving_surface(
+                        self._map,
+                        self._ego,
+                        forward_m=radar_target.distance_m,
+                        lateral_m=radar_target.lateral_m,
+                    )
+                ):
+                    radar_target = None
+                    sources["radar_observation"] = (
+                        "RADAR_OFF_DRIVING_SURFACE_IGNORED"
+                    )
                 if radar_target is not None:
                     radar_target = replace(
                         radar_target,
@@ -1076,20 +1239,45 @@ class CarlaPerceptionBridge:
             except (TypeError, ValueError, AttributeError) as error:
                 sources["radar_modality"] = f"RADAR_FRAME_INVALID_{type(error).__name__.upper()}"
             if radar_target is None and sources["radar_modality"] == "CARLA_RADAR_FRAME_ALIGNED":
-                sources["radar_observation"] = "CARLA_RADAR_NO_FRONT_CORRIDOR_TARGET"
+                sources.setdefault(
+                    "radar_observation",
+                    "CARLA_RADAR_NO_FRONT_CORRIDOR_TARGET",
+                )
         if radar_target is not None and lead_distance is None:
             # Long-range radar-only returns are common under Town03's flyovers
-            # and on tight bends. Dense LiDAR must corroborate those objects
-            # before they constrain normal cruising. Preserve a short-range
-            # radar-only fail-safe so a genuinely close target is never hidden.
-            if radar_target.distance_m <= 8.0:
+            # and at sharp grade transitions.  Radar can strengthen a sparse
+            # two-return LiDAR target, but a radar return with no physical
+            # LiDAR structure must remain advisory: allowing it to control at
+            # short range can hold the vehicle forever on road/gantry clutter.
+            # The ordinary LiDAR path still requires three returns, so this
+            # deliberately weaker query preserves narrow bicycles and
+            # pedestrians without making Radar an uncorroborated oracle.
+            relaxed_lidar_distance = front_lidar_distance_m(
+                lidar, minimum_points=2,
+            )
+            if relaxed_lidar_distance is not None:
+                relaxed_lidar_distance = _range_to_ego_body_clearance_m(
+                    relaxed_lidar_distance,
+                    self._ego,
+                    sensor_id=LIDAR_SENSOR_ID,
+                )
+            weakly_corroborated = (
+                radar_target.distance_m <= 8.0
+                and relaxed_lidar_distance is not None
+                and abs(relaxed_lidar_distance - radar_target.distance_m) <= 4.0
+            )
+            if weakly_corroborated:
                 lead_distance = radar_target.distance_m
-                sources["lead_distance_m"] = "RADAR_FRONT_CORRIDOR_DEGRADED_RANGE"
+                sources["lead_distance_m"] = (
+                    "RADAR_FRONT_CORRIDOR_WEAK_LIDAR_CORROBORATED"
+                )
                 lead_speed = max(
                     0.0, _speed_mps(self._ego) + radar_target.closing_speed_mps,
                 )
                 sources["lead_speed_mps"] = "RADAR_ONLY_RADIAL_VELOCITY"
-                sources["radar_observation"] = "RADAR_FRONT_CORRIDOR_CLOSE_FAILSAFE"
+                sources["radar_observation"] = (
+                    "RADAR_FRONT_CORRIDOR_CLOSE_WEAK_LIDAR_FAILSAFE"
+                )
             else:
                 sources["radar_observation"] = (
                     "RADAR_FRONT_CORRIDOR_UNCORROBORATED_IGNORED"

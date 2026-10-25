@@ -1220,6 +1220,66 @@ def test_dynamic_return_uses_retained_route_when_junction_renumbers_lane() -> No
     ) == "CURRENT"
 
 
+def test_dynamic_return_does_not_finish_while_crossing_route_obliquely() -> None:
+    mission = RouteReference(((0.0, 0.0), (100.0, 0.0)), target_speed_mps=8.0)
+    return_step = Namespace(
+        behavior="CHANGE_LANE_RIGHT",
+        target={"target_lane": "CURRENT"},
+    )
+
+    assert _maneuver_lane_label(
+        "-1",
+        {"CURRENT": "-1", "LEFT_ADJACENT": "-2"},
+        return_step,
+        mission,
+        x_m=60.0,
+        y_m=0.2,
+        yaw_deg=28.0,
+        mission_progress_m=60.0,
+    ) == "RETURN_TRANSITION"
+    assert _maneuver_lane_label(
+        "-1",
+        {"CURRENT": "-1", "LEFT_ADJACENT": "-2"},
+        return_step,
+        mission,
+        x_m=60.0,
+        y_m=0.2,
+        yaw_deg=8.0,
+        mission_progress_m=60.0,
+    ) == "CURRENT"
+
+
+def test_dynamic_return_destination_remains_complete_after_sampling_overshoot() -> None:
+    mission = RouteReference(((0.0, 0.0), (100.0, 0.0)), target_speed_mps=8.0)
+    return_step = Namespace(
+        behavior="CHANGE_LANE_RIGHT",
+        target={"target_lane": "CURRENT"},
+    )
+
+    assert _maneuver_lane_label(
+        "-1",
+        {"CURRENT": "-1", "LEFT_ADJACENT": "-2"},
+        return_step,
+        mission,
+        x_m=70.0,
+        y_m=0.1,
+        yaw_deg=0.0,
+        mission_progress_m=70.0,
+        return_destination_xy=(75.0, 0.0),
+    ) == "RETURN_TRANSITION"
+    assert _maneuver_lane_label(
+        "-1",
+        {"CURRENT": "-1", "LEFT_ADJACENT": "-2"},
+        return_step,
+        mission,
+        x_m=80.0,
+        y_m=0.1,
+        yaw_deg=0.0,
+        mission_progress_m=80.0,
+        return_destination_xy=(75.0, 0.0),
+    ) == "CURRENT"
+
+
 def test_ordinary_maneuver_lane_label_does_not_require_retained_route() -> None:
     keep_lane_step = Namespace(
         behavior="KEEP_LANE",
