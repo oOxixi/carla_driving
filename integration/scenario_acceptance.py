@@ -50,6 +50,7 @@ def evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, obje
         "must_execute_commands_in_order": "commands_in_order",
         "final_control_must_be_finite": "final_control_all_finite",
         "cross_track_error_should_decrease": "cross_track_error_decreased",
+        "must_follow_planned_lane_change_reference": "planned_lane_change_reference_valid",
     }
     max_metrics = {
         "max_cross_track_error_m": "max_abs_cross_track_error_m",
@@ -57,6 +58,7 @@ def evaluate_expected(expected: Mapping[str, object], metrics: Mapping[str, obje
         "mean_cross_track_error_m": "mean_abs_cross_track_error_m",
         "final_cross_track_error_m": "final_abs_cross_track_error_m",
         "max_lane_center_offset_m": "max_abs_lane_offset_m",
+        "max_lane_follow_center_offset_m": "max_abs_lane_follow_offset_m",
         "mean_lane_center_offset_m": "mean_abs_lane_offset_m",
         "max_abs_steer": "max_abs_steer",
         "max_steer_rate_per_s": "max_steer_rate_per_s",

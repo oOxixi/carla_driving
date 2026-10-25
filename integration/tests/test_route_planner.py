@@ -112,6 +112,28 @@ def test_retained_route_rejoin_rejects_arbitrary_distant_shortcut() -> None:
         )
 
 
+@pytest.mark.parametrize("points", [
+    ((0.0, 0.0), (22.0, 0.0), (22.0, 100.0)),
+    ((0.0, 0.0), (22.0, 0.0), (22.0, 5.0), (100.0, 5.0)),
+])
+def test_retained_rejoin_cannot_invent_a_junction_turn_or_cut_s_bend(points):
+    mission = RouteReference(points, curvature_per_m=0.0, target_speed_mps=8.0)
+    with pytest.raises(ValueError, match="parallel forward corridor"):
+        build_retained_route_rejoin_reference(
+            Actor(20.0, -3.5, 0.0), mission, 8.0, previous_progress_m=20.0,
+        )
+
+
+@pytest.mark.parametrize("heading_bound", [0.0, -1.0, 90.0, float("nan")])
+def test_retained_rejoin_rejects_invalid_heading_bounds(heading_bound):
+    mission = RouteReference(((0.0, 0.0), (100.0, 0.0)), 0.0, 8.0)
+    with pytest.raises(ValueError):
+        build_retained_route_rejoin_reference(
+            Actor(20.0, 3.5, 0.0), mission, 8.0,
+            maximum_heading_change_deg=heading_bound,
+        )
+
+
 @pytest.mark.parametrize(("direction", "expected_y"), [("LEFT", -2.0), ("STRAIGHT", 0.0), ("RIGHT", 2.0)])
 def test_route_selects_requested_first_branch(direction, expected_y):
     location = SimpleNamespace(x=0, y=0)

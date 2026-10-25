@@ -24,7 +24,7 @@ from uuid import uuid4
 from car_control_D.official_score import OfficialScorer
 from config.strategy import DEFAULT_STRATEGY
 from .scenario_acceptance import evaluate_expected
-from .evidence_reporting import scoped_command_statistics, safety_override_category
+from .evidence_reporting import LaneOffsetStatistics, scoped_command_statistics, safety_override_category
 
 
 SERIOUS_ROUTE_DEVIATION_M = DEFAULT_STRATEGY.supervisor.severe_route_deviation_m
@@ -201,6 +201,7 @@ class ScenarioEvidenceRecorder:
         self._frame_speeds_mps: list[float] = []
         self._cross_track_errors_m: list[float] = []
         self._lane_offsets_m: list[float] = []
+        self._lane_offset_context = LaneOffsetStatistics()
         self._steer_samples: list[tuple[float, float]] = []
         self._first_pose: tuple[float, float, float] | None = None
         self._last_pose: tuple[float, float, float] | None = None
@@ -413,6 +414,10 @@ class ScenarioEvidenceRecorder:
             self._cross_track_errors_m.append(float(cross_track_error))
         if type(lane_offset) in (int, float) and math.isfinite(float(lane_offset)):
             self._lane_offsets_m.append(float(lane_offset))
+        self._lane_offset_context.observe(
+            lane_offset, planned_crossing=lane_marking_crossing_expected,
+            route_error_m=_field(scene, "route_deviation_m"),
+        )
         if type(steer) in (int, float) and math.isfinite(float(steer)):
             self._steer_samples.append((sim_time, float(steer)))
         self._called_b = self._called_b or lateral is not None
@@ -857,6 +862,9 @@ class ScenarioEvidenceRecorder:
             "min_gap_m": self._min_gap_m,
             "max_abs_cross_track_error_m": max(abs_cte, default=None),
             "max_abs_lane_offset_m": max((abs(value) for value in self._lane_offsets_m), default=None),
+            "lane_offset_by_context": self._lane_offset_context.report(),
+            "max_abs_lane_follow_offset_m": self._lane_offset_context.report().get("lane_follow", {}).get("max_abs_m"),
+            "planned_lane_change_reference_valid": self._lane_offset_context.planned_reference_valid,
             "mean_abs_lane_offset_m": self._average(
                 [abs(value) for value in self._lane_offsets_m]
             ),

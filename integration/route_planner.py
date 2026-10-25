@@ -573,6 +573,7 @@ def build_retained_route_rejoin_reference(
     stabilization_m: float = 30.0,
     step_m: float = 1.0,
     maximum_lateral_offset_m: float = 8.0,
+    maximum_heading_change_deg: float = 30.0,
 ) -> RouteReference:
     """Build a bounded forward connector back to a retained mission route.
 
@@ -588,6 +589,7 @@ def build_retained_route_rejoin_reference(
         stabilization_m,
         step_m,
         maximum_lateral_offset_m,
+        maximum_heading_change_deg,
     )
     if any(not math.isfinite(float(value)) for value in values):
         raise ValueError("retained-route rejoin values must be finite")
@@ -595,6 +597,8 @@ def build_retained_route_rejoin_reference(
         raise ValueError("target_speed_mps must be non-negative")
     if min(merge_lookahead_m, stabilization_m, step_m, maximum_lateral_offset_m) <= 0.0:
         raise ValueError("retained-route rejoin distances must be positive")
+    if not 0.0 < maximum_heading_change_deg < 90.0:
+        raise ValueError("maximum_heading_change_deg must be between 0 and 90")
 
     transform = (
         anchor_or_transform.get_transform()
@@ -636,6 +640,20 @@ def build_retained_route_rejoin_reference(
             merge_pose.x_m - current_xy[0],
         ))
     )
+    # This fallback is a local parallel-lane merge, not a topology planner.
+    # A nearby mission point after a junction can be only a few metres away
+    # while facing 90 degrees away.  A Hermite chord to it invents a turn that
+    # the directed map has already rejected and is untrackable at road speed.
+    # Check the entire merge interval, not just its endpoint (an S bend can
+    # have the same start/end heading).  Leave such returns to topology planning.
+    probe_count = max(1, int(math.ceil(merge_lookahead_m / step_m)))
+    for index in range(probe_count + 1):
+        pose = route_pose_at_s(
+            retained_route.points_xy_m,
+            mission_progress_m + (merge_pose.s_m - mission_progress_m) * index / probe_count,
+        )
+        if abs(_wrap_degrees(pose.yaw_deg - current_yaw_deg)) > maximum_heading_change_deg:
+            raise ValueError("retained-route rejoin requires a parallel forward corridor")
     direct_distance_m = math.dist(current_xy, (merge_pose.x_m, merge_pose.y_m))
     sample_count = max(8, int(math.ceil(direct_distance_m / step_m)))
     tangent_scale_m = max(merge_lookahead_m, direct_distance_m) * 0.75
@@ -687,6 +705,7 @@ def build_retained_route_rejoin_reference(
         "rejoin_merge_s_m": merge_pose.s_m,
         "rejoin_lateral_offset_m": lateral_offset_m,
         "maximum_step_m": maximum_step_m,
+        "maximum_heading_change_deg": maximum_heading_change_deg,
     })
     return RouteReference(
         points,

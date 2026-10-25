@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import pytest
+import json
+from pathlib import Path
 
-from integration.scenario_execution import CommandTimeline, ScheduledCommand
+from integration.scenario_execution import CommandTimeline, ScheduledCommand, scenario_trigger_satisfied
 from integration.scenario_extensions import (
     IMPLEMENTED_RUNTIME_REQUIREMENTS,
     ScenarioExtensionRuntime,
@@ -39,6 +41,73 @@ def test_event_command_waits_for_time_and_trigger():
     assert timeline.due(4.9, {"route_progress_m": 20.0}) == ()
     assert timeline.due(5.0, {"route_progress_m": 9.0}) == ()
     assert timeline.due(5.1, {"route_progress_m": 10.0})[0]["command_id"] == "c1"
+
+
+def test_s2_slow_target_does_not_drift_away_during_distant_red_light_wait():
+    raw = json.loads((Path(__file__).resolve().parents[2] /
+                      "scenarios/official_competition/S2_complex_avoidance_8km.json").read_text(encoding="utf-8"))
+    actor = next(a for a in raw["actors"] if a.get("actor_id") == "slow_vehicle")
+    corridor = next(item for item in raw["route"]["topology_requirements"]["lane_corridors"]
+                    if item["id"] == "S2_OVERTAKE_CORRIDOR")
+    profile = raw["extensions"]["lane_change_profile"]
+    # Static placement reserves both a transition and a return before the
+    # declared corridor ends. Moving-target timing still needs real regression.
+    assert actor["route_position"]["s_m"] >= corridor["start_s_m"]
+    assert corridor["end_s_m"] - actor["route_position"]["s_m"] >= (
+        2 * profile["transition_length_m"] + profile["transition_start_m"])
+    runtime = ScenarioExtensionRuntime(raw["extensions"])
+    for elapsed_s in (0., 60., 180.):
+        waiting = runtime.actor_state(actor, elapsed_s=elapsed_s,
+                                      trigger_context={"actor_distances_m": {"slow_vehicle": 80.},
+                                                       "actor_route_distances_m": {"slow_vehicle": 180.}})
+        assert waiting["target_speed_mps"] == 0.
+        assert waiting["event_index"] == 0
+    encounter = runtime.actor_state(actor, elapsed_s=181.,
+                                    trigger_context={"actor_distances_m": {"slow_vehicle": 80.},
+                                                     "actor_route_distances_m": {"slow_vehicle": 119.}})
+    assert encounter["target_speed_mps"] == 1.5
+    assert encounter["event_index"] == 1
+    # Events latch: the actor does not stop again if ego brakes or turns away.
+    assert runtime.actor_state(actor, elapsed_s=190., trigger_context={
+        "actor_distances_m": {"slow_vehicle": 150.},
+        "actor_route_distances_m": {"slow_vehicle": 180.},
+    })["target_speed_mps"] == 1.5
+    assert raw["extensions"]["proposed_acceptance"]["command_progress_windows_m"][
+        "S2_P3_PEDESTRIAN_OVERTAKE_RETURN"] == [2500., 2560.]
+
+
+def test_actual_pass_evidence_stops_at_business_terminal():
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_command_submitted({"command_id": "cmd", "phase_id": "phase"}, qwen=True)
+    runtime.note_actor_longitudinal_clearances({"car": 50., "ped": 10.})
+    runtime.note_actor_longitudinal_clearances({"car": 8., "ped": -8.})
+    runtime.note_terminal("cmd", "SUCCEEDED")
+    runtime.note_actor_longitudinal_clearances({"car": -8.})
+    evidence = runtime.evidence()
+    assert evidence["passed_actor_ids_by_phase"]["phase"] == ["ped"]
+    assert evidence["actor_longitudinal_clearance_by_phase"]["phase"]["car"]["minimum_m"] == 8.
+
+
+def test_other_actor_overtaking_ego_is_not_an_ego_pass():
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_command_submitted({"command_id": "cmd", "phase_id": "phase"}, qwen=True)
+    runtime.note_actor_longitudinal_clearances({"car": -10.})
+    runtime.note_actor_longitudinal_clearances({"car": 10.})
+    assert runtime.evidence()["passed_actor_ids_by_phase"]["phase"] == []
+    runtime.note_actor_longitudinal_clearances({"car": -10.})
+    assert runtime.evidence()["passed_actor_ids_by_phase"]["phase"] == ["car"]
+
+
+@pytest.mark.parametrize("route_distance,expected", [
+    (119., True), (180., False), (-5., False), (None, False), (float("nan"), False),
+])
+def test_route_encounter_trigger_does_not_use_shortcuts_or_missing_data(route_distance, expected):
+    context = {"actor_distances_m": {"car": 80.}, "actor_route_distances_m": {"car": route_distance}}
+    trigger = {"type": "ego_route_distance_to_actor_less_than_m", "actor_id": "car", "value": 120.}
+    assert scenario_trigger_satisfied(trigger, elapsed_s=0., context=context) is expected
+    # Ordinary spatial conflict triggers intentionally retain their semantics.
+    assert scenario_trigger_satisfied({**trigger, "type": "ego_distance_to_actor_less_than_m"},
+                                      elapsed_s=0., context=context) is True
 
 
 def test_fault_window_activates_and_recovers_with_evidence():

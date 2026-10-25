@@ -196,6 +196,19 @@ def _apply_sensor_condition(scenario: dict[str, Any], condition: str) -> None:
             lidar["channels"] = max(8, round(float(lidar["channels"]) * 0.5))
 
 
+def _scale_behavior_speeds(value: object, scale: float) -> None:
+    """Scale actual scripted motion too, not just its initial speed label."""
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key in {"initial_speed_mps", "target_speed_mps", "speed_mps", "post_cut_in_speed_mps"}:
+                value[key] = max(0.0, float(child) * scale)
+            else:
+                _scale_behavior_speeds(child, scale)
+    elif isinstance(value, list):
+        for child in value:
+            _scale_behavior_speeds(child, scale)
+
+
 def perturb_scenario(raw_scenario: Mapping[str, Any], case: PerturbationCase) -> dict[str, Any]:
     """Return an in-memory variant without changing semantic commands/oracles."""
     scenario = deepcopy(dict(raw_scenario))
@@ -240,9 +253,7 @@ def perturb_scenario(raw_scenario: Mapping[str, Any], case: PerturbationCase) ->
                 position["lane_relation"] = case.target_lane_relation
         behavior = actor.get("behavior")
         if isinstance(behavior, dict):
-            for key in ("initial_speed_mps", "target_speed_mps", "speed_mps"):
-                if key in behavior:
-                    behavior[key] = max(0.0, float(behavior[key]) * case.actor_speed_scale)
+            _scale_behavior_speeds(behavior, case.actor_speed_scale)
             if "brake_at_s" in behavior:
                 behavior["brake_at_s"] = max(
                     0.0, float(behavior["brake_at_s"]) + case.brake_time_offset_s,

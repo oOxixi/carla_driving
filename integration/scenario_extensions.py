@@ -91,6 +91,7 @@ class ScenarioExtensionRuntime:
         self._actor_event_count = 0
         self._actor_event_time_s: dict[str, float] = {}
         self._actor_speed_mps: dict[str, float] = {}
+        self._actor_longitudinal_by_phase: dict[str, dict[str, dict[str, float | bool]]] = {}
         self._minimum_actor_distances_m: dict[str, float] = {}
         self._actor_distances_m: dict[str, float] = {}
         self._traffic_light_state: dict[str, str] = {}
@@ -483,10 +484,12 @@ class ScenarioExtensionRuntime:
         lane_id: str,
         lateral_offset_m: float | None = None,
         route_deviation_m: float | None = None,
+        actor_route_distances_m: Mapping[str, float] | None = None,
     ) -> ExtensionFrameState:
         context: dict[str, object] = {
             "route_progress_m": float(route_progress_m),
             "actor_distances_m": dict(actor_distances_m),
+            "actor_route_distances_m": dict(actor_route_distances_m or {}),
             "traffic_light_state": str(traffic_light_state).upper(),
             "distance_to_stop_line_m": distance_to_stop_line_m,
             "ego_speed_mps": float(ego_speed_mps),
@@ -703,6 +706,22 @@ class ScenarioExtensionRuntime:
                 0.0, self._last_route_progress_m - self._restart_route_progress_m,
             )
 
+    def note_actor_longitudinal_clearances(self, clearances: Mapping[str, float]) -> None:
+        """Audit actual passes while a business phase is active; not control input."""
+        for actor_id, value in clearances.items():
+            if type(value) not in (int, float) or not math.isfinite(value):
+                raise ValueError("actor longitudinal clearance must be finite")
+            for phase_id in self._active_command_phases:
+                actors = self._actor_longitudinal_by_phase.setdefault(phase_id, {})
+                bounds = actors.setdefault(str(actor_id), {"minimum_m": value, "maximum_m": value,
+                                                          "seen_ahead": False, "passed_after_ahead": False})
+                bounds["minimum_m"] = min(bounds["minimum_m"], value)
+                bounds["maximum_m"] = max(bounds["maximum_m"], value)
+                if value >= 5.:
+                    bounds["seen_ahead"] = True
+                if value <= -5. and bounds["seen_ahead"]:
+                    bounds["passed_after_ahead"] = True
+
     def actor_state(
         self,
         actor_spec: Mapping[str, object],
@@ -830,6 +849,15 @@ class ScenarioExtensionRuntime:
             "qwen_target_actor_ids": sorted(self._qwen_target_ids),
             "qwen_target_speeds_kph": list(self._qwen_target_speeds_kph),
             "minimum_actor_distances_m": dict(sorted(self._minimum_actor_distances_m.items())),
+            "actor_longitudinal_clearance_by_phase": {
+                phase: {actor: dict(bounds) for actor, bounds in actors.items()}
+                for phase, actors in self._actor_longitudinal_by_phase.items()
+            },
+            "passed_actor_ids_by_phase": {
+                phase: sorted(actor for actor, bounds in actors.items()
+                              if bounds["passed_after_ahead"])
+                for phase, actors in self._actor_longitudinal_by_phase.items()
+            },
             "qwen_outcomes": list(self._qwen_outcomes),
             "qwen_resolution_reasons": list(self._qwen_resolution_reasons),
             "qwen_stale_result_count": self._qwen_stale_results,

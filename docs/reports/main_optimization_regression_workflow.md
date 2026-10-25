@@ -37,6 +37,8 @@ python tools/run_s2_optimization_matrix.py \
 
 报告的 scope 为 `event_segment`，完整 8 km 状态为 `NOT_EVALUATED`。未执行的后续命令和未跑完的长程路线仍保留在原始 summary 中；原始整场景可能显示 FAILED。只有独立的目标段检查全部通过，目标段才算 PASS。缺少阶段、终态、出口里程或模型证据都会失败。
 
+当前检查还要求当前业务阶段遵守源场景的指令里程、Actor 激活、进入和恢复速度合同；行人超车必须在业务终态前真实超过指定慢车，不能仅凭计划 SUCCEEDED 或超过其他对象放行。详见 `main_optimization_event_integrity_20261025.md`。旧工具的历史 PASS 不自动获得这些新增证明。
+
 延迟数值继续记录；当前定点功能回归不以延迟判定通过。正式比赛 checker 仍使用原阈值。selected tasks 通过不表示整个 60 任务矩阵已通过；新版 manifest 只有全部任务通过才标记 PASS，否则已执行子集通过标记 PARTIAL_PASS，并显示未运行任务数量。
 
 检查项改进后，可基于原始 manifest 重新检查已有证据，无需重复驾驶：
@@ -48,6 +50,8 @@ python tools/run_s2_optimization_matrix.py \
 ```
 
 该过程核验保存的场景与 summary 哈希，并要求事件起止窗口和预算一致；不覆盖历史 manifest，不把评估代码当前的 SHA 写成历史驾驶代码版本。
+
+当前检查还核验选定阶段的指令/Actor 里程窗口、进入及恢复车速、实际指定目标先前后后的超越顺序，并要求车道保持与规划换道证据均存在。阶段结束后再经过目标不能补算，缺少新字段的历史证据也不能按新版检查自动通过。事件完整性、执行预算与安全回归修复的实测记录见 [事件完整性报告](main_optimization_event_integrity_20261025.md)。
 
 多次实验的覆盖率可以只读合并，不必重跑已经取得的证据：
 
@@ -77,6 +81,8 @@ RGB 尺寸和 LiDAR 通道扰动会由 `sensor_specs_for_scenario` 传入真实�
 `command_terminal_statuses` 与旧 `qwen_status_counts` 保留原始统计。新增 `command_statistics` 将外部指令、内部执行步骤、内部 Qwen 等待停车分开；extension evidence 新增 `external_qwen_terminal_statuses` 和 `external_qwen_status_counts`。内部等待被后续计划替换时的 FAILED 仍可追查，不算外部业务失败。失败阶段不再进入 completed_phase_ids。
 
 `safety_overrides_by_reason` 给出每种原因的帧数、原因段数和类别。连续接管中原因发生改变会拆分原因段，所以原因段数之和可能大于原 continuous override episodes。前障碍类只是触发原因，不能在没有独立真值时直接叫作误刹车。
+
+`lane_offset_by_context` 保留全量原始车道中心偏移，同时拆分普通车道保持、授权且贴合规划的换道、偏离规划的换道和缺少路线证明的换道。显式全程最大值/均值合同仍按原始数据判定；仅运行器自动添加的 2.2 m 默认项改为普通车道保持范围，并额外要求授权换道始终有有效的贴合规划证据。缺失数据不能当作零偏移。
 
 ## 审计已有日志
 

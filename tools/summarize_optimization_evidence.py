@@ -10,13 +10,14 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from integration.evidence_reporting import scoped_command_statistics, safety_override_category
+from integration.evidence_reporting import LaneOffsetStatistics, scoped_command_statistics, safety_override_category
 
 
 def audit_evidence(path: Path) -> dict:
     commands, terminals, safety = {}, {}, {}
     start, summary, previous_reason = {}, {}, None
     digest = hashlib.sha256()
+    lane_offsets = LaneOffsetStatistics()
     with path.open("rb") as stream:
         for line in stream:
             digest.update(line)
@@ -32,6 +33,11 @@ def audit_evidence(path: Path) -> dict:
                 feedback = row["feedback"]
                 terminals[feedback["command_id"]] = feedback["status"]
             elif kind == "frame":
+                lane_offsets.observe(
+                    row.get("scene", {}).get("lane_offset_m"),
+                    planned_crossing=row.get("lane_marking_crossing_expected"),
+                    route_error_m=row.get("scene", {}).get("route_deviation_m"),
+                )
                 override = row.get("safety", {})
                 reason = str(override.get("reason", "UNKNOWN")) if override.get("override") else None
                 if reason is not None:
@@ -50,6 +56,8 @@ def audit_evidence(path: Path) -> dict:
         "scenario_id": start.get("scenario_id"), "code_version_recorded": config.get("code_version"),
         "provenance": config.get("provenance", {"status": "LEGACY_NOT_RECORDED"}),
         "command_statistics": statistics, "safety_overrides_by_reason": safety,
+        "lane_offset_by_context": lane_offsets.report(),
+        "planned_lane_change_reference_valid": lane_offsets.planned_reference_valid,
         "route_finished": metrics.get("route_finished"),
         "collision_count": summary.get("collision_count"),
         "lane_invasion_count": summary.get("lane_invasion_count"),

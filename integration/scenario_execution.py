@@ -359,6 +359,14 @@ def scenario_trigger_satisfied(
         distances = values.get("actor_distances_m", {})
         distance = distances.get(actor_id) if isinstance(distances, Mapping) else None
         return distance is not None and float(distance) <= float(trigger.get("value", 0.0))
+    if trigger_type == "ego_route_distance_to_actor_less_than_m":
+        actor_id = str(trigger.get("actor_id", values.get("default_actor_id", "")))
+        distances = values.get("actor_route_distances_m", {})
+        distance = distances.get(actor_id) if isinstance(distances, Mapping) else None
+        # A spatially close parallel road or hairpin is not a local encounter.
+        # Require an ahead target along the retained route; never fall back to
+        # Euclidean distance or treat a missing actor as zero distance.
+        return distance is not None and 0.0 <= float(distance) <= float(trigger.get("value", 0.0))
     if trigger_type == "ego_distance_to_stop_line_less_than_m":
         distance = values.get("distance_to_stop_line_m")
         return distance is not None and float(distance) <= float(trigger.get("value", 0.0))

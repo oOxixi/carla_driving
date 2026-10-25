@@ -435,11 +435,7 @@ def _actor_signed_route_clearance_m(
     """Return signed body clearance along the monotonic mission route."""
     center_delta_m = float(actor_progress_m) - float(ego_progress_m)
     combined_radius_m = _actor_horizontal_radius_m(ego) + _actor_horizontal_radius_m(actor)
-    return (
-        center_delta_m - combined_radius_m
-        if center_delta_m >= 0.0
-        else center_delta_m + combined_radius_m
-    )
+    return math.copysign(max(0.0, abs(center_delta_m) - combined_radius_m), center_delta_m)
 
 
 def _actor_signed_longitudinal_clearance_m(ego: Any, actor: Any) -> float:
@@ -459,11 +455,39 @@ def _actor_signed_longitudinal_clearance_m(ego: Any, actor: Any) -> float:
     )
 
     combined_radius_m = _actor_horizontal_radius_m(ego) + _actor_horizontal_radius_m(actor)
-    return (
-        center_longitudinal_m - combined_radius_m
-        if center_longitudinal_m >= 0.0
-        else center_longitudinal_m + combined_radius_m
-    )
+    return math.copysign(max(0.0, abs(center_longitudinal_m) - combined_radius_m), center_longitudinal_m)
+
+
+def _maneuver_route_horizon_m(step: CompiledPlanStep, plan: CompiledManeuverPlan,
+                              base_distance_m: float) -> float:
+    """Cover the pass leg too; ordinary standalone lane changes stay unchanged."""
+    passing = next((candidate for candidate in plan.steps
+                    if candidate.behavior == "PASS_TARGET"
+                    and candidate.source_step_id == step.source_step_id), None)
+    if passing is None:
+        return base_distance_m
+    speed = float(passing.target.get("target_speed_mps") or 3.)
+    # The complete finite reference must outlive approach + pass execution.
+    # This is a planning horizon, not a relaxed lane/clearance completion gate.
+    return max(base_distance_m, 40. + 1.25 * max(0., speed) * passing.timeout_s)
+
+
+def _failed_maneuver_needs_route_hold(terminal_state: str, *, dynamic_out_and_back: bool,
+                                     retained_route_error_m: float) -> bool:
+    return (terminal_state in TERMINAL_STATES and terminal_state != "SUCCEEDED"
+            and dynamic_out_and_back
+            and (not math.isfinite(retained_route_error_m) or retained_route_error_m > .5))
+
+
+def _road_fit_expected_contract(expected: Mapping[str, object]) -> dict[str, object]:
+    """Keep explicit full-run limits; scope the default centre check to following."""
+    contract = dict(expected)
+    if "max_lane_center_offset_m" not in contract:
+        contract.setdefault("max_lane_follow_center_offset_m", 2.2)
+    # An authorized transition is not a waiver for loss of its planned path.
+    # Missing route evidence also fails this check, rather than being ignored.
+    contract.setdefault("must_follow_planned_lane_change_reference", True)
+    return contract
 
 
 def _acceptance_lateral_controller(vehicle: Any | None = None) -> PurePursuitController:
@@ -4902,12 +4926,14 @@ def run(args: argparse.Namespace) -> None:
                     if scenario_traffic_light is not None else None
                 )
                 if extension_runtime is not None:
+                    extension_runtime.note_actor_longitudinal_clearances(actor_longitudinal_clearances_m)
                     extension_frame = extension_runtime.update_frame(
                         elapsed_s=elapsed_s,
                         route_progress_m=route_progress_m,
                         ego_speed_mps=state.speed_mps,
                         ego_standstill_duration_s=standstill_duration_s,
                         actor_distances_m=actor_distances_m,
+                        actor_route_distances_m=actor_longitudinal_clearances_m,
                         traffic_light_state=traffic_state,
                         distance_to_stop_line_m=extension_stop_line_m,
                         lane_id=state.lane_id,
@@ -6329,6 +6355,31 @@ def run(args: argparse.Namespace) -> None:
                     # pose and current lane for the untravelled contract
                     # distance. Dynamic out-and-back plans restore their
                     # retained mission route after the explicit return leg.
+                    if (maneuver_mission_route is not None
+                            and _failed_maneuver_needs_route_hold(
+                                maneuver_update.state,
+                                dynamic_out_and_back=dynamic_out_and_back,
+                                retained_route_error_m=route_deviation_m(
+                                    state.x_m, state.y_m, maneuver_mission_route),
+                            )):
+                        # Failure between lanes must not switch the lateral
+                        # reference discontinuously to the original centreline.
+                        # Use an ego-aligned zero-speed reference for safe hold;
+                        # do not count this as a successful mission restoration.
+                        runtime.requested_speed_mps = 0.
+                        route = _route_recovery_hold_reference(state)
+                        payload = {"record_type": "qwen_mission_route_restore_deferred",
+                                   "command_id": maneuver_fsm.plan.command_id,
+                                   "terminal_state": maneuver_update.state,
+                                   "reason": "FAILED_MANEUVER_NOT_ON_RETAINED_ROUTE"}
+                        print(json.dumps(payload), flush=True)
+                        if recorder is not None:
+                            recorder.record_canonical_routing(
+                                phase="MISSION_ROUTE_RESTORE_DEFERRED",
+                                command_id=maneuver_fsm.plan.command_id, payload=payload)
+                        maneuver_mission_route = None
+                        maneuver_mission_progress_m = None
+                        maneuver_return_destination_xy = None
                     if (
                         maneuver_update.state in TERMINAL_STATES
                         and maneuver_mission_route is not None
@@ -6544,6 +6595,10 @@ def run(args: argparse.Namespace) -> None:
                                         else _scenario_route_distance_m(spec)
                                     ),
                                 )
+                                route_parameters["distance_m"] = _maneuver_route_horizon_m(
+                                    started_route_step, maneuver_fsm.plan,
+                                    route_parameters["distance_m"],
+                                )
                                 return_to_retained_route = bool(
                                     deferred_dynamic_lane_change
                                     and str(
@@ -6618,6 +6673,10 @@ def run(args: argparse.Namespace) -> None:
                                 "step_id": started_route_step.step_id,
                                 "route_behavior": started_route_step.behavior,
                                 "target_speed_mps": runtime.requested_speed_mps,
+                                "route_id": route.route_id,
+                                "planning_reason": route.metadata.get("planning_reason"),
+                                "route_point_count": len(route.points_xy_m),
+                                "return_destination_xy_m": maneuver_return_destination_xy,
                             }, ensure_ascii=False), flush=True)
                         except (AttributeError, RuntimeError, TypeError, ValueError) as error:
                             failed_update = maneuver_fsm.fail(
@@ -6922,10 +6981,7 @@ def run(args: argparse.Namespace) -> None:
         if recorder is not None:
             expected_contract = None if spec is None else dict(spec.expected)
             if expected_contract is not None and road_fit_required:
-                # A route-relative CTE can be small even when a bad reference
-                # itself leaves the road. Bound distance to CARLA's nearest
-                # driving-lane centre as an independent acceptance check.
-                expected_contract.setdefault("max_lane_center_offset_m", 2.2)
+                expected_contract = _road_fit_expected_contract(expected_contract)
             extension_event_count = (
                 int(extension_runtime.evidence()["runtime_event_count"])
                 if extension_runtime is not None else 0

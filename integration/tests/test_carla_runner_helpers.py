@@ -14,6 +14,9 @@ from integration.carla_perception import EventLedger, PerceptionTimeoutError
 from integration.carla_runner import (
     _DeferredCommand,
     _acceptance_lateral_controller,
+    _road_fit_expected_contract,
+    _failed_maneuver_needs_route_hold,
+    _maneuver_route_horizon_m,
     _active_actor_route_context,
     _actor_activation_due,
     _actor_deactivation_due,
@@ -532,6 +535,9 @@ def test_actor_signed_longitudinal_clearance_changes_sign_only_after_full_pass()
     assert _actor_signed_route_clearance_m(
         108.0, 100.0, ego, actor_at(999.0),
     ) == pytest.approx(-8.0 + radius)
+    for delta in (-1., 0., 1.):
+        assert _actor_signed_route_clearance_m(100., 100. + delta, ego, actor_at(999.)) == 0.
+        assert _actor_signed_longitudinal_clearance_m(ego, actor_at(delta)) == 0.
 from integration.contracts import DetectedObject, PerceptionFrame
 from integration.scenario_execution import ScenarioSpec
 from integration.voice_adapter import VoiceCommandAdapter
@@ -2600,6 +2606,41 @@ def test_acceptance_lateral_tuning_limits_steer_and_rate() -> None:
     assert controller.params.min_lookahead_m >= 2.5
     assert controller.params.nearest_search_window == 2
     assert controller.params.route_reacquire_search_window == 50
+
+
+def test_road_fit_default_does_not_apply_lane_follow_centre_limit_to_authorized_transitions():
+    assert _road_fit_expected_contract({}) == {
+        "max_lane_follow_center_offset_m": 2.2,
+        "must_follow_planned_lane_change_reference": True,
+    }
+    explicit = {"max_lane_center_offset_m": .25}
+    result = _road_fit_expected_contract(explicit)
+    assert result["max_lane_center_offset_m"] == .25
+    assert "max_lane_follow_center_offset_m" not in result
+    assert explicit == {"max_lane_center_offset_m": .25}
+
+
+@pytest.mark.parametrize("state,dynamic,error,hold", [
+    ("FAILED", True, 3.5, True), ("SAFETY_OVERRIDE", True, 2., True),
+    ("FAILED", True, float("nan"), True), ("FAILED", True, .2, False),
+    ("SUCCEEDED", True, .2, False), ("AVOIDING", True, 3.5, False),
+    ("FAILED", False, 3.5, False),
+])
+def test_failed_maneuver_does_not_claim_route_restored_between_lanes(state, dynamic, error, hold):
+    assert _failed_maneuver_needs_route_hold(state, dynamic_out_and_back=dynamic,
+                                            retained_route_error_m=error) is hold
+
+
+def test_avoidance_route_covers_pass_leg_but_does_not_extend_unrelated_lane_change():
+    from runtime.plan_compiler import CompiledManeuverPlan, CompiledPlanStep
+    def step(step_id, source, behavior, speed=8., timeout=60.):
+        return CompiledPlanStep(step_id, source, behavior, {"target_speed_mps": speed}, (), {}, timeout, "SAFE_STOP")
+    lane = step("avoid.lane", "avoid", "CHANGE_LANE_LEFT")
+    passing = step("avoid.pass", "avoid", "PASS_TARGET")
+    plan = CompiledManeuverPlan("cmd", "plan", (lane, passing), (), 10)
+    assert _maneuver_route_horizon_m(lane, plan, 70.) >= 8. * 60. + 40.
+    ordinary = step("ordinary", "ordinary", "CHANGE_LANE_LEFT")
+    assert _maneuver_route_horizon_m(ordinary, plan, 70.) == 70.
 
 
 def test_acceptance_lateral_uses_actual_front_wheel_steering_authority() -> None:

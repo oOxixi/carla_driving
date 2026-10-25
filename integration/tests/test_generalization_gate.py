@@ -88,6 +88,19 @@ def test_walker_perturbation_preserves_crossing_vector() -> None:
     assert start["lateral_offset_m"] - target["lateral_offset_m"] == pytest.approx(12.0)
 
 
+def test_actor_speed_perturbation_reaches_event_actions_without_changing_business_speed():
+    raw = json.loads((ROOT / "scenarios/official_competition/S2_complex_avoidance_8km.json").read_text(encoding="utf-8"))
+    case = next(c for c in load_generalization_matrix().cases(raw["scenario_id"]) if c.actor_speed_scale == .8)
+    variant = perturb_scenario(raw, case)
+    actor = next(a for a in variant["actors"] if a["actor_id"] == "slow_vehicle")
+    assert actor["behavior"]["initial_speed_mps"] == 0.
+    assert actor["behavior"]["target_speed_mps"] == pytest.approx(1.2)
+    assert actor["behavior"]["events"][0]["action"]["target_speed_mps"] == pytest.approx(1.2)
+    assert actor["behavior"]["events"][0]["trigger"]["value"] == 120.
+    assert variant["commands"] == raw["commands"]
+    assert next(a for a in raw["actors"] if a["actor_id"] == "slow_vehicle")["behavior"]["events"][0]["action"]["target_speed_mps"] == 1.5
+
+
 def test_s2_actor_events_cover_the_full_route_and_use_explicit_route_positions() -> None:
     raw = json.loads((
         ROOT / "scenarios" / "official_competition" / "S2_complex_avoidance_8km.json"

@@ -52,7 +52,7 @@ def build_matrix(output: Path, matrix_path: Path) -> dict:
     }
 
 
-def evaluate_segment(summary: dict, window: dict, phase_id: str) -> dict:
+def evaluate_segment(summary: dict, window: dict, phase_id: str, phase_contract: dict | None = None) -> dict:
     metrics = summary.get("acceptance", {}).get("metrics", {})
     evidence = metrics.get("extension_acceptance", metrics.get("scenario_extension_acceptance", {})).get("evidence", {})
     qwen = metrics.get("qwen_acceptance", {}).get("observed", {})
@@ -86,10 +86,53 @@ def evaluate_segment(summary: dict, window: dict, phase_id: str) -> dict:
     check("speed_recovered", isinstance(recovered, (int, float)) and recovered >= 32.0, recovered)
     if window.get("require_route_restore"):
         check("route_restored", evidence.get("mission_route_restore_count", 0) >= 1, evidence.get("mission_route_restore_count"))
+    if window.get("required_passed_actor_ids"):
+        passed_actors = evidence.get("passed_actor_ids_by_phase", {}).get(phase_id, [])
+        check("required_actors_physically_passed", all(actor in passed_actors for actor in window["required_passed_actor_ids"]),
+              {"actual": passed_actors, "required": window["required_passed_actor_ids"]})
     for actor, minimum in window.get("minimum_actor_gaps_m", {}).items():
         gap = evidence.get("minimum_actor_distances_m", {}).get(actor)
         check(f"gap_{actor}", isinstance(gap, (int, float)) and gap >= minimum, gap)
+    lateral_checks = set()
+    for item in summary.get("acceptance", {}).get("checks", []):
+        if item.get("key") in {
+            "max_lane_center_offset_m", "max_lane_follow_center_offset_m",
+            "must_follow_planned_lane_change_reference",
+        }:
+            lateral_checks.add(item["key"])
+            check(f"acceptance:{item['key']}", item.get("status") == "PASS", item)
+    check("lateral_acceptance_evidence", bool(lateral_checks.intersection({
+        "max_lane_center_offset_m", "max_lane_follow_center_offset_m",
+    })) and "must_follow_planned_lane_change_reference" in lateral_checks,
+          sorted(lateral_checks))
+    # Only the selected event's requirements apply here. Missing future phases
+    # must not fail a segment, but a successful plan must not hide a late
+    # command or a missed activation window for the event actually exercised.
+    if phase_contract is not None:
+        for requirement, observed, ids in (
+            ("command_progress_windows_m", "command_progress_m_by_phase", [phase_id]),
+            ("actor_activation_progress_windows_m", "actor_activation_progress_m", window["actor_ids"]),
+        ):
+            required_windows = phase_contract.get(requirement, {})
+            actual_values = evidence.get(observed, {})
+            for key in ids:
+                if key not in required_windows:
+                    continue
+                low, high = required_windows[key]
+                value = actual_values.get(key)
+                check(f"{requirement}:{key}", isinstance(value, (int, float)) and low <= value <= high,
+                      {"actual": value, "required": [low, high]})
+        for requirement, observed in (
+            ("minimum_approach_speed_kph_by_phase", "command_approach_speed_kph_by_phase"),
+            ("minimum_resumed_speed_kph_by_phase", "max_speed_after_phase_kph"),
+        ):
+            minimum = phase_contract.get(requirement, {}).get(phase_id)
+            if minimum is not None:
+                value = evidence.get(observed, {}).get(phase_id)
+                check(f"{requirement}:{phase_id}", isinstance(value, (int, float)) and value >= minimum,
+                      {"actual": value, "required": minimum})
     return {"scope": "event_segment", "full_8km": "NOT_EVALUATED",
+            "phase_contract_enforced": phase_contract is not None,
             "functional_passed": all(c["passed"] for c in checks.values()), "checks": checks,
             "performance": {"enforced": False, "sensor_to_trajectory_max_ms": summary.get("latency", {}).get("sensor_to_trajectory_max_ms")}}
 
@@ -114,7 +157,8 @@ def reevaluate_manifest(source: Path, matrix_path: Path) -> dict:
                 raise ValueError("event geometry/window changed; new driving evidence is required")
         raw = json.loads(scenario.read_text(encoding="utf-8"))
         summary = json.loads(summaries[0].read_text(encoding="utf-8"))
-        report = evaluate_segment(summary, windows[event], raw["commands"][windows[event]["command_index"]]["phase_id"])
+        report = evaluate_segment(summary, windows[event], raw["commands"][windows[event]["command_index"]]["phase_id"],
+                                  raw.get("extensions", {}).get("proposed_acceptance", {}))
         results.append({"case_index": index, "event": event, "report": report,
                         "summary_sha256": _sha(summaries[0])})
     passed = bool(results) and all(item["report"]["functional_passed"] for item in results)
@@ -198,7 +242,8 @@ def main() -> int:
                 if len(summaries) != 1:
                     raise ValueError("expected exactly one completed recorder summary")
                 summary = json.loads(summaries[0].read_text(encoding="utf-8"))
-                report = evaluate_segment(summary, window, raw["commands"][window["command_index"]]["phase_id"])
+                report = evaluate_segment(summary, window, raw["commands"][window["command_index"]]["phase_id"],
+                                          raw.get("extensions", {}).get("proposed_acceptance", {}))
                 report["recorder_summary_status"] = summary.get("status")
                 report["summary_sha256"] = _sha(summaries[0])
                 report["scenario_sha256"] = _sha(scenario)

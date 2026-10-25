@@ -508,6 +508,35 @@ def test_vllm_grounds_unavailable_named_target_to_visible_forward_object() -> No
     assert step["target"]["target_id"] == "crossing_pedestrian"
 
 
+def test_compound_plan_does_not_replace_grounded_vehicle_with_yield_pedestrian() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "让行人通过后向左超越前方慢车，回原车道并恢复行驶"
+    request["command_hint"] = {"intent": "AVOID_OBSTACLE", "direction": "LEFT",
+                               "target_speed_mps": 8., "target": "named_vehicle"}
+    request["scene_capabilities"] = {"grounded_target_ids": ["named_vehicle"]}
+    request["targets"] = [{"target_id": "sensor-pedestrian", "class": "pedestrian",
+                           "distance_m": 20., "relation": "center_ahead"}]
+    steps = backend._expanded_steps(request, "AVOID_OBSTACLE")
+    assert steps[0]["target"]["target_id"] == "sensor-pedestrian"
+    assert steps[1]["target"]["target_id"] == "named_vehicle"
+    assert steps[2]["behavior"] == "RETURN_TO_LANE"
+    assert steps[3]["behavior"] == "KEEP_LANE"
+    assert steps[1]["timeout_s"] == 60.
+
+
+@pytest.mark.parametrize("distance", [10., 40., 100.])
+def test_avoidance_budget_scales_with_observed_range_but_stays_schema_bounded(distance):
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {"intent": "AVOID_OBSTACLE", "direction": "LEFT",
+                               "target_speed_mps": 8., "target": "sensor-car"}
+    request["targets"] = [{"target_id": "sensor-car", "class": "vehicle",
+                           "distance_m": distance, "relation": "center_ahead"}]
+    step = backend._step(request, "AVOID_OBSTACLE", index=1)
+    assert step["timeout_s"] == min(60., max(20., 10. + 2. * (distance + 5.) / 3.))
+
+
 def test_vllm_yield_does_not_invent_unavailable_semantic_target_id() -> None:
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
     request = _request()

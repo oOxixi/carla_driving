@@ -756,13 +756,24 @@ class VllmQwenPlannerBackend:
         target_behaviors = {
             "FOLLOW", "AVOID_OBSTACLE", "YIELD", "SLOW_DOWN",
         }
+        grounded_target_ids = {
+            str(item) for item in (
+                capabilities.get("grounded_target_ids", ())
+                if isinstance(capabilities, Mapping) else ()
+            ) if item
+        }
         # A command may name a semantic scenario role (for example
         # ``slow_vehicle``), while the sensor tracker exposes only opaque
         # ``C-xxxx`` IDs. Never copy an unavailable semantic name into a plan:
         # bind it to a visible sensor target below, or leave target_id unset
         # for behaviors such as YIELD that can execute without identity.
-        target_id = None
-        if targets and behavior in target_behaviors:
+        # A trusted, explicitly named completion target has priority over a
+        # nearby unrelated detection. Otherwise "yield to the pedestrian,
+        # then pass the named vehicle" can pass the pedestrian twice and
+        # return to the lane while the actual vehicle is still ahead.
+        target_id = (requested_target if requested_target in grounded_target_ids
+                     and behavior in target_behaviors else None)
+        if targets and behavior in target_behaviors and target_id is None:
             preferred_relations = (
                 {"center_ahead", "far_ahead"}
                 if behavior == "FOLLOW"
@@ -878,24 +889,6 @@ class VllmQwenPlannerBackend:
             behavior == "SLOW_DOWN"
             and self._clearance_observation_requested(request)
         )
-        grounded_target_ids = {
-            str(item)
-            for item in (
-                capabilities.get("grounded_target_ids", ())
-                if isinstance(capabilities, Mapping) else ()
-            )
-            if item
-        }
-        if (
-            requested_target
-            and target_id is None
-            and requested_target in grounded_target_ids
-            and behavior in target_behaviors
-        ):
-            # The runner separately proves that this semantic ID belongs to a
-            # live owned CARLA actor.  It is an authorized completion/follow
-            # target, not a fabricated visual detection.
-            target_id = requested_target
         clearance_gated_slow = (
             sustained_observation
             and target_id is not None
@@ -909,6 +902,19 @@ class VllmQwenPlannerBackend:
         ) else 20.0 if behavior in {
             "AVOID_OBSTACLE", "YIELD",
         } or sustained_observation else 12.0 if behavior.startswith("CHANGE_LANE_") else 8.0
+        if behavior == "AVOID_OBSTACLE":
+            observed_range = next((item.get("distance_m") for item in targets
+                                   if str(item.get("target_id", "")) == target_id), None)
+            # A pass may span the approach plus a moving target on a curved
+            # road. Do not give it the same fixed 20 s as a stationary yield.
+            # Use a conservative travel budget, bounded by the V2 schema's
+            # 60 s maximum. An authorized target without a sensor range gets
+            # the bounded maximum, never an invented zero-distance estimate.
+            if type(observed_range) in (int, float) and math.isfinite(observed_range) and observed_range >= 0.:
+                travel_speed = max(1., min(3., float(target_speed or 1.)))
+                timeout = min(60., max(20., 10. + 2. * (observed_range + 5.) / travel_speed))
+            else:
+                timeout = 60.
         completion_value = target_speed
         if completion_type == "TARGET_GAP_REACHED":
             completion_value = 2.0

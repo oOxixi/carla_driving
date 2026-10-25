@@ -199,11 +199,18 @@
       "actor_id": "slow_vehicle",
       "type": "vehicle",
       "blueprint_id": "vehicle.audi.tt",
-      "spawn": {"x": 2600.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
-      "route_position": {"s_m": 2600.0, "lateral_offset_m": 0.0, "lane_relation": "CURRENT"},
+      "spawn": {"x": 2560.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+      "route_position": {"s_m": 2560.0, "lateral_offset_m": 0.0, "lane_relation": "CURRENT"},
       "activation_trigger": {"type": "route_progress_greater_than_m", "value": 2360.0},
       "deactivation_trigger": {"type": "route_progress_greater_than_m", "value": 2760.0},
-      "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 1.5, "target_speed_mps": 1.5}
+      "behavior": {
+        "mode": "lead_vehicle", "initial_speed_mps": 0.0, "target_speed_mps": 1.5,
+        "events": [{
+          "trigger": {"type": "ego_route_distance_to_actor_less_than_m", "actor_id": "slow_vehicle", "value": 120.0},
+          "action": {"type": "set_speed", "target_speed_mps": 1.5},
+          "phase_id": "S2_EVT_SLOW_VEHICLE_ENCOUNTER"
+        }]
+      }
     },
     {
       "actor_id": "bicycle_right",
