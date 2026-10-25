@@ -24,6 +24,7 @@ from uuid import uuid4
 from car_control_D.official_score import OfficialScorer
 from config.strategy import DEFAULT_STRATEGY
 from .scenario_acceptance import evaluate_expected
+from .evidence_reporting import scoped_command_statistics, safety_override_category
 
 
 SERIOUS_ROUTE_DEVIATION_M = DEFAULT_STRATEGY.supervisor.severe_route_deviation_m
@@ -174,6 +175,10 @@ class ScenarioEvidenceRecorder:
         self._safety_override_episodes = 0
         self._feedback_safety_event_count = 0
         self._override_active = False
+        self._override_reason: str | None = None
+        self._override_by_reason: dict[str, dict[str, int]] = {}
+        self._run_config: dict[str, object] = {}
+        self._mission_route_progress_m: float | None = None
         self._collisions = 0
         self._lane_marking_crossings = 0
         self._lane_invasions = 0
@@ -231,6 +236,7 @@ class ScenarioEvidenceRecorder:
         self._scenario_id = scenario_id
         self._difficulty = difficulty
         self._expected_route_deviation = bool(expected_route_deviation)
+        self._run_config = dict(config or {})
         self._write("run_start", scenario_id=scenario_id, difficulty=difficulty,
                     config=dict(config or {}))
         return self._run_id
@@ -362,9 +368,14 @@ class ScenarioEvidenceRecorder:
                       lateral: object | None = None,
                       perception_sources: Mapping[str, str] | None = None,
                       c_safety_state: object | None = None,
-                      lane_marking_crossing_expected: bool = False) -> None:
+                      lane_marking_crossing_expected: bool = False,
+                      mission_route_progress_m: float | None = None) -> None:
         """Record one applied control frame and update scenario aggregates."""
         self._ensure_active()
+        if mission_route_progress_m is not None:
+            if not math.isfinite(mission_route_progress_m):
+                raise ValueError("mission route progress must be finite")
+            self._mission_route_progress_m = float(mission_route_progress_m)
         if type(safety_override) is not bool:
             raise TypeError("safety_override must be bool")
         frame = _field(vehicle, "frame")
@@ -469,6 +480,10 @@ class ScenarioEvidenceRecorder:
             self._safety_override_frames += 1
             if not self._override_active:
                 self._safety_override_episodes += 1
+            counts = self._override_by_reason.setdefault(safety_reason, {"frames": 0, "episodes": 0})
+            counts["frames"] += 1
+            counts["episodes"] += int(self._override_reason != safety_reason)
+        self._override_reason = safety_reason if safety_override else None
         self._override_active = safety_override
 
         if command_id in self._commands:
@@ -505,6 +520,7 @@ class ScenarioEvidenceRecorder:
                 "reason_category": safety_reason_category,
             },
             lane_marking_crossing_expected=lane_marking_crossing_expected,
+            mission_route_progress_m=mission_route_progress_m,
             latency=latency,
         )
 
@@ -513,7 +529,8 @@ class ScenarioEvidenceRecorder:
                              fsm_state: str | None = None,
                              perception_sources: Mapping[str, str] | None = None,
                              c_safety_state: object | None = None,
-                             lane_marking_crossing_expected: bool = False) -> None:
+                             lane_marking_crossing_expected: bool = False,
+                             mission_route_progress_m: float | None = None) -> None:
         """Convenience adapter for :class:`integration.contracts.FrameResult`.
 
         ``raw_control`` stays mandatory: silently reconstructing it from the
@@ -530,6 +547,7 @@ class ScenarioEvidenceRecorder:
             longitudinal=_field(result, "longitudinal"), lateral=_field(result, "lateral"),
             perception_sources=perception_sources, c_safety_state=c_safety_state,
             lane_marking_crossing_expected=lane_marking_crossing_expected,
+            mission_route_progress_m=mission_route_progress_m,
         )
         for feedback in _field(result, "feedback", ()):
             self.record_feedback(feedback)
@@ -660,6 +678,9 @@ class ScenarioEvidenceRecorder:
             "frames": self._frames,
             "command_count": len(self._commands),
             "command_terminal_statuses": dict(self._terminal_statuses),
+            "command_statistics": scoped_command_statistics(self._commands, self._terminal_statuses),
+            "provenance": self._run_config.get("provenance"),
+            "mission_route_progress_m": self._mission_route_progress_m,
             "stop_error_m": self._stationary_stop_error_m,
             "final_speed_mps": self._last_speed_mps,
             "min_gap_m": self._min_gap_m,
@@ -680,6 +701,10 @@ class ScenarioEvidenceRecorder:
             "unfinished_task_count": 0 if completion else 1,
             "safety_override_frames": self._safety_override_frames,
             "safety_override_episodes": self._safety_override_episodes,
+            "safety_overrides_by_reason": {
+                reason: {**counts, "category": safety_override_category(reason)}
+                for reason, counts in sorted(self._override_by_reason.items())
+            },
             "feedback_safety_event_count": self._feedback_safety_event_count,
             "safety_reasons": sorted(self._safety_reasons),
             "latency": {

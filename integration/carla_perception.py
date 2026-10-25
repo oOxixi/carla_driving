@@ -219,6 +219,44 @@ def sensor_specs_for_profile(profile: str) -> tuple[CarlaSensorSpec, ...]:
         raise ValueError(f"unknown sensor profile: {profile!r}") from error
 
 
+def sensor_specs_for_scenario(
+    profile: str, sensors: Mapping[str, Any] | None = None,
+) -> tuple[CarlaSensorSpec, ...]:
+    """Apply declared resolution/range/channel overrides to the actual blueprints."""
+    aliases = {
+        RGB_SENSOR_ID: "front_rgb", LEFT_RGB_SENSOR_ID: "left_rgb",
+        RIGHT_RGB_SENSOR_ID: "right_rgb", REAR_RGB_SENSOR_ID: "rear_rgb",
+        LIDAR_SENSOR_ID: "lidar", RADAR_SENSOR_ID: "radar",
+    }
+    result = []
+    for spec in sensor_specs_for_profile(profile):
+        declared = (sensors or {}).get(aliases.get(spec.sensor_id, spec.sensor_id), {})
+        if not isinstance(declared, Mapping):
+            raise TypeError(f"sensor configuration for {spec.sensor_id} must be an object")
+        attributes = dict(spec.attributes)
+        mappings = (
+            {"width": "image_size_x", "height": "image_size_y", "fov": "fov"}
+            if spec.blueprint_id == "sensor.camera.rgb"
+            else {"channels": "channels", "range_m": "range"}
+            if spec.sensor_id == LIDAR_SENSOR_ID
+            else {"range_m": "range"} if spec.sensor_id == RADAR_SENSOR_ID else {}
+        )
+        for key, attribute in mappings.items():
+            if key not in declared:
+                continue
+            value = declared[key]
+            if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
+                raise ValueError(f"{spec.sensor_id}.{key} must be finite and positive")
+            if key in {"width", "height", "channels"} and int(value) != value:
+                raise ValueError(f"{spec.sensor_id}.{key} must be an integer")
+            attributes[attribute] = str(value)
+        result.append(CarlaSensorSpec(
+            spec.sensor_id, spec.blueprint_id, spec.mount,
+            MappingProxyType(attributes), spec.continuous,
+        ))
+    return tuple(result)
+
+
 def _range_to_ego_body_clearance_m(
     range_m: float,
     ego: Any,

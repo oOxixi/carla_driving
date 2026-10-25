@@ -1,0 +1,152 @@
+from __future__ import annotations
+
+import json
+import hashlib
+from pathlib import Path
+import subprocess
+
+import pytest
+
+from car_control_A import ControlOutput
+from integration.carla_perception import sensor_specs_for_profile, sensor_specs_for_scenario
+from integration.evidence_provenance import collect_provenance
+from integration.evidence_reporting import scoped_command_statistics
+from integration.scenario_evidence import ScenarioEvidenceRecorder
+from integration.scenario_extensions import ScenarioExtensionRuntime
+from integration.tests.test_scenario_evidence import _vehicle, _timing
+from integration.contracts import PerceptionFrame
+from tools.run_s2_optimization_matrix import build_matrix, evaluate_segment, reevaluate_manifest
+from tools.summarize_optimization_evidence import audit_evidence
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_provenance_identifies_clean_dirty_and_untracked_sources(tmp_path):
+    def git(*args):
+        subprocess.run(["git", *args], cwd=tmp_path, check=True, capture_output=True)
+    git("init")
+    (tmp_path / "model.py").write_text("value = 1\n")
+    git("add", "model.py")
+    git("-c", "user.name=test", "-c", "user.email=test@example.invalid", "commit", "-m", "base")
+    clean = collect_provenance(tmp_path, "model.py")
+    assert clean["source"]["dirty"] is False
+    (tmp_path / "model.py").write_text("value = 2\n")
+    (tmp_path / "config.json").write_text("{}")
+    dirty = collect_provenance(tmp_path, "model.py")
+    assert dirty["source"]["git_sha"] == clean["source"]["git_sha"]
+    assert dirty["source"]["dirty"] is True
+    assert "config.json" in dirty["source"]["untracked_sha256"]
+    assert dirty["source"]["changes_sha256"] != clean["source"]["changes_sha256"]
+    assert dirty["scenario"]["sha256"] != clean["scenario"]["sha256"]
+
+
+def test_matrix_sensor_perturbations_reach_actual_blueprint_specs(tmp_path):
+    manifest = build_matrix(tmp_path, ROOT / "config/s2_optimization_matrix.json")
+    assert manifest["event_task_count"] == 60
+    assert manifest["closed_loop_status"] == "NOT_RUN"
+    assert len({case["perturbation"]["seed"] for case in manifest["cases"]}) == 5
+    for case in manifest["cases"]:
+        raw = json.loads((tmp_path / case["scenario_path"]).read_text(encoding="utf-8"))
+        assert raw["map"] == "Town03_Opt"
+        actual = {item.sensor_id: item.attributes for item in sensor_specs_for_scenario("competition_multiview", raw["sensors"])}
+        condition = case["perturbation"]["sensor_condition"]
+        if condition == "sparse_lidar":
+            assert actual["lidar_roof"]["channels"] == "16"
+        if condition == "reduced_rgb":
+            for key in ("rgb_front", "rgb_left", "rgb_right", "rgb_rear"):
+                assert actual[key]["image_size_x"] == "600"
+                assert actual[key]["image_size_y"] == "338"
+    assert sensor_specs_for_scenario("default") == sensor_specs_for_profile("default")
+
+
+def test_invalid_sensor_resolution_rejected_before_spawn():
+    with pytest.raises(ValueError):
+        sensor_specs_for_scenario("default", {"front_rgb": {"width": 0}})
+
+
+def test_internal_failures_remain_visible_without_polluting_external_counts():
+    stats = scoped_command_statistics(
+        {"business": {}, "qwen-wait-a": {"disposition": "INTERNAL_QWEN_WAIT_STOP"}},
+        {"business": "SUCCEEDED", "qwen-wait-a": "FAILED", "qwen-step-business-1": "SUCCEEDED"},
+    )
+    assert stats["external"]["status_counts"] == {"SUCCEEDED": 1}
+    assert stats["internal_wait"]["status_counts"] == {"FAILED": 1}
+    assert stats["internal_step"]["status_counts"] == {"SUCCEEDED": 1}
+
+
+def test_extension_failed_phase_is_terminal_but_not_completed():
+    runtime = ScenarioExtensionRuntime({})
+    runtime.note_command_submitted({"command_id": "business", "phase_id": "P1"}, qwen=True)
+    runtime.note_terminal("qwen-wait-a", "FAILED")
+    runtime.note_terminal("business", "FAILED")
+    evidence = runtime.evidence()
+    assert evidence["external_qwen_status_counts"] == {"FAILED": 1}
+    assert "P1" not in evidence["completed_phase_ids"]
+
+
+def test_override_report_distinguishes_signal_wait_from_front_hazard(tmp_path):
+    recorder = ScenarioEvidenceRecorder(tmp_path / "evidence.jsonl")
+    recorder.start_run(scenario_id="variant", config={"provenance": {"source": {"dirty": True}}})
+    for frame, reason in enumerate(("RED_LIGHT_STOP_LINE_GUARD", "RED_LIGHT_STOP_LINE_GUARD", "CAUTION_TTC"), 1):
+        recorder.record_frame(
+            vehicle=_vehicle(frame, 0.0), scene=PerceptionFrame(frame, frame * .05),
+            raw_control=ControlOutput(0., 1., 0.), final_control=ControlOutput(0., 1., 0.),
+            safety_reason=reason, safety_override=True, timing=_timing(frame * 100),
+            mission_route_progress_m=7300.,
+        )
+    summary = recorder.complete(completion=True)
+    assert summary["mission_route_progress_m"] == 7300.
+    assert summary["safety_override_episodes"] == 1
+    assert summary["safety_overrides_by_reason"]["RED_LIGHT_STOP_LINE_GUARD"] == {
+        "frames": 2, "episodes": 1, "category": "traffic_signal",
+    }
+    assert summary["safety_overrides_by_reason"]["CAUTION_TTC"]["category"] == "front_hazard"
+    assert summary["provenance"]["source"]["dirty"] is True
+    audited = audit_evidence(recorder.path)
+    assert audited["safety_overrides_by_reason"] == summary["safety_overrides_by_reason"]
+    assert audited["provenance"] == summary["provenance"]
+
+
+def test_segment_missing_qwen_or_exit_evidence_cannot_pass():
+    report = evaluate_segment({}, {"end_m": 7300., "actor_ids": ["ped"]}, "P6")
+    assert report["functional_passed"] is False
+    assert report["full_8km"] == "NOT_EVALUATED"
+    assert report["checks"]["qwen_plan_used"]["passed"] is False
+    assert report["checks"]["event_exit_reached"]["passed"] is False
+
+
+def test_saved_segment_recheck_preserves_scope_and_detects_tampering(tmp_path):
+    matrix = build_matrix(tmp_path, ROOT / "config/s2_optimization_matrix.json")
+    summary = {
+        "mission_route_progress_m": 7400., "collision_count": 0, "lane_invasion_count": 0,
+        "red_light_violation_count": 0, "route_deviation_count": 0,
+        "provenance": {"qwen": {"status": "READY", "production_ready": True,
+                                  "model_id": "Qwen/Qwen3.5-2B", "qwen_mode": "planner_v2"}},
+        "acceptance": {"metrics": {
+            "qwen_acceptance": {"observed": {"routes": ["QWEN_PLAN"], "terminal_counts": {"cmd": 1}}},
+            "extension_acceptance": {"evidence": {
+                "completed_phase_ids": ["S2_P6_LATE_PEDESTRIAN_YIELD"],
+                "external_qwen_terminal_statuses": {"cmd": "SUCCEEDED"},
+                "qwen_invalid_result_count": 0, "qwen_timeout_count": 0,
+                "max_route_deviation_m": .5,
+                "actor_activation_progress_m": {"late_crossing_pedestrian": 6936.},
+                "actor_trigger_ids": ["late_crossing_pedestrian"],
+                "max_speed_after_phase_kph": {"S2_P6_LATE_PEDESTRIAN_YIELD": 38.},
+            }},
+        }},
+    }
+    run = tmp_path / "runs/case_005_late_pedestrian"
+    run.mkdir(parents=True)
+    saved = run / "event.summary.json"
+    saved.write_text(json.dumps(summary), encoding="utf-8")
+    matrix["results"] = [{"case_index": 5, "event": "late_pedestrian",
+                          "report": {"summary_sha256": hashlib.sha256(saved.read_bytes()).hexdigest()}}]
+    manifest = tmp_path / "matrix_manifest.json"
+    manifest.write_text(json.dumps(matrix), encoding="utf-8")
+    report = reevaluate_manifest(manifest, ROOT / "config/s2_optimization_matrix.json")
+    assert report["selected_tasks_status"] == "PASS"
+    assert report["not_run_task_count"] == 59
+    assert report["full_8km"] == "NOT_EVALUATED"
+    saved.write_text("{}", encoding="utf-8")
+    with pytest.raises(ValueError, match="summary hash"):
+        reevaluate_manifest(manifest, ROOT / "config/s2_optimization_matrix.json")

@@ -47,9 +47,11 @@ from .carla_perception import (
     lane_metrics,
     route_deviation_m,
     sensor_specs_for_profile,
+    sensor_specs_for_scenario,
     traffic_light_and_stop_distance,
 )
 from .contracts import DetectedObject, PerceptionFrame
+from .evidence_provenance import collect_provenance
 from .qwen_async import AsyncQwenDecisionBridge
 from .qwen_boundary import QwenInputContext
 from .qwen_remote_backend import OpenAICompatibleQwenVLBackend
@@ -2672,6 +2674,33 @@ def _evidence_recorder(args: argparse.Namespace, spec: ScenarioSpec | None = Non
     config["seed"] = getattr(args, "evidence_seed", getattr(args, "seed", None))
     config["config_path"] = getattr(args, "scenario_file", None)
     config["code_version"] = os.environ.get("CARLA_DRIVING_CODE_VERSION") or _git_code_version()
+    config["provenance"] = collect_provenance(
+        Path(__file__).resolve().parents[1], config["config_path"],
+    )
+    # Preserve a supplied deployment label while recording the actual HEAD.
+    config["provenance"]["code_version_label"] = config["code_version"]
+    if getattr(args, "qwen_service_url", None):
+        try:
+            health = QwenServiceClient(args.qwen_service_url, timeout_s=3.0).health()
+            config["provenance"]["qwen"] = {
+                key: health.get(key) for key in (
+                    "status", "model_id", "model_revision", "artifact_sha256",
+                    "production_ready", "qwen_mode",
+                )
+            }
+        except Exception as error:
+            config["provenance"]["qwen"] = {"status": "UNAVAILABLE", "error": type(error).__name__}
+    profile = getattr(args, "sensor_profile", "default")
+    config["provenance"]["sensor_specs"] = [
+        {"sensor_id": item.sensor_id, "blueprint_id": item.blueprint_id,
+         "attributes": {**dict(item.attributes), **(
+             {"sensor_tick": str(float(getattr(args, "fixed_delta_s", 0.05)))} if item.continuous else {}
+         )}}
+        for item in sensor_specs_for_scenario(profile, None if spec is None else spec.sensors)
+    ]
+    path.with_suffix(".provenance.json").write_text(
+        json.dumps(config["provenance"], ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+    )
     recorder.start_run(scenario_id=args.scenario, difficulty=getattr(args, "scenario_difficulty", "basic"), config=config, expected_route_deviation=(
         spec is not None and spec.expected.get("expected_route_deviation_event") is True
     ))
@@ -4319,7 +4348,9 @@ def run(args: argparse.Namespace) -> None:
                 )
                 sensors = attach_default_sensors(
                     session, world, ego, carla,
-                    specs=sensor_specs_for_profile(sensor_profile),
+                    specs=sensor_specs_for_scenario(
+                        sensor_profile, None if spec is None else spec.sensors,
+                    ),
                     sensor_tick_s=args.fixed_delta_s,
                 )
                 c_fusion = ConservativeSensorFusion(
@@ -6635,6 +6666,7 @@ def run(args: argparse.Namespace) -> None:
                         perception_sources=perception_sources,
                         c_safety_state=c_safety_state,
                         lane_marking_crossing_expected=lane_marking_crossing_expected,
+                        mission_route_progress_m=route_progress_m,
                     )
 
                 frames_completed += 1

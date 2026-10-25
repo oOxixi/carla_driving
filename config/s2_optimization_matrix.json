@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "maps": ["Town03_Opt"],
+  "weather_profiles": ["CloudySunset", "ClearSunset", "WetSunset"],
+  "seeds": [2026102501, 2026102502, 2026102503, 2026102504, 2026102505],
+  "fixed_delta_seconds": [0.05, 0.10],
+  "actor_longitudinal_offsets_m": [-3.0, 0.0, 3.0],
+  "actor_lateral_offsets_m": [-0.20, 0.0, 0.20],
+  "actor_speed_scales": [0.8, 1.0, 1.2],
+  "brake_time_offsets_s": [-0.5, 0.0, 0.5],
+  "pedestrian_start_offsets_s": [-0.5, 0.0, 0.5],
+  "actor_count_scales": [1.0],
+  "target_lane_relations": ["CURRENT"],
+  "sensor_conditions": ["nominal", "reduced_rgb", "sparse_lidar"],
+  "samples_per_scenario": 12,
+  "holdout_scenarios": ["scenarios/regression/REG_014_occluded_pedestrian_crossing.json"],
+  "event_windows": {
+    "bus_stop": {"start_m": 880, "end_m": 1200, "completed_commands": 1, "command_index": 1, "duration_s": 180, "actor_ids": ["bus_at_stop", "bus_passenger_01", "bus_passenger_02"], "required_actor_trigger_ids": ["bus_passenger_01", "bus_passenger_02"]},
+    "pedestrian_overtake": {"start_m": 2320, "end_m": 2830, "completed_commands": 2, "command_index": 2, "duration_s": 240, "actor_ids": ["crossing_pedestrian", "slow_vehicle"], "required_actor_trigger_ids": ["crossing_pedestrian"], "require_route_restore": true},
+    "bicycle": {"start_m": 4420, "end_m": 4800, "completed_commands": 3, "command_index": 3, "duration_s": 180, "actor_ids": ["bicycle_right"], "minimum_actor_gaps_m": {"bicycle_right": 3.0}},
+    "cut_in": {"start_m": 5130, "end_m": 5550, "completed_commands": 4, "command_index": 4, "duration_s": 180, "actor_ids": ["intersection_cut_in_car"], "required_actor_trigger_ids": ["intersection_cut_in_car"]},
+    "late_pedestrian": {"start_m": 6880, "end_m": 7300, "completed_commands": 5, "command_index": 5, "duration_s": 180, "actor_ids": ["late_crossing_pedestrian"], "required_actor_trigger_ids": ["late_crossing_pedestrian"]}
+  }
+}

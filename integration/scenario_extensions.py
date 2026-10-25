@@ -100,6 +100,8 @@ class ScenarioExtensionRuntime:
         self._qwen_requests = 0
         self._qwen_terminals: set[str] = set()
         self._qwen_status_counts: dict[str, int] = {}
+        self._terminal_status_by_id: dict[str, str] = {}
+        self._external_qwen_ids: set[str] = set()
         self._successful_terminal_s: dict[str, float] = {}
         self._submitted_command_ids: list[str] = []
         self._confirmation_commands = 0
@@ -230,6 +232,7 @@ class ScenarioExtensionRuntime:
                     self._closest_speed_to_target_kph_by_phase[phase_id] = self._last_speed_mps * 3.6
         if qwen:
             self._qwen_requests += 1
+            self._external_qwen_ids.add(command_id)
         if intent in {"STOP", "EMERGENCY_STOP"}:
             self._stop_seen = True
             self._latest_emergency_command_id = command_id or None
@@ -242,13 +245,15 @@ class ScenarioExtensionRuntime:
 
     def note_terminal(self, command_id: str, status: object) -> None:
         normalized_id = str(command_id)
+        normalized_status = str(getattr(status, "value", status)).upper()
+        self._terminal_status_by_id[normalized_id] = normalized_status
         self._qwen_terminals.add(normalized_id)
         phase_id = self._command_phase_by_id.get(normalized_id)
         if phase_id:
             self._terminal_phase_ids.add(phase_id)
-            self._completed_phase_ids.add(phase_id)
+            if normalized_status == "SUCCEEDED":
+                self._completed_phase_ids.add(phase_id)
             self._active_command_phases.discard(phase_id)
-        normalized_status = str(getattr(status, "value", status)).upper()
         self._qwen_status_counts[normalized_status] = self._qwen_status_counts.get(normalized_status, 0) + 1
         if normalized_status == "SUCCEEDED":
             self._successful_terminal_s[normalized_id] = self._last_elapsed_s
@@ -799,6 +804,18 @@ class ScenarioExtensionRuntime:
             "submitted_command_ids": list(self._submitted_command_ids),
             "terminal_command_ids": sorted(self._qwen_terminals),
             "qwen_status_counts": dict(self._qwen_status_counts),
+            "external_qwen_terminal_statuses": {
+                key: self._terminal_status_by_id[key]
+                for key in sorted(self._external_qwen_ids)
+                if key in self._terminal_status_by_id
+            },
+            "external_qwen_status_counts": {
+                status: sum(self._terminal_status_by_id.get(key) == status for key in self._external_qwen_ids)
+                for status in sorted({
+                    self._terminal_status_by_id[key] for key in self._external_qwen_ids
+                    if key in self._terminal_status_by_id
+                })
+            },
             "successful_terminal_s": dict(self._successful_terminal_s),
             "fault_started_ids": sorted(self._fault_started_s),
             "fault_recovered_ids": sorted(self._fault_recovered),
