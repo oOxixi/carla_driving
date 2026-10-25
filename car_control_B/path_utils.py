@@ -88,13 +88,35 @@ def find_nearest_index(points: Sequence[Point2D], x: float, y: float, start_inde
     return best_i
 
 
-def find_lookahead_index(points: Sequence[Point2D], start_index: int, current_xy: Point2D, lookahead_distance_m: float) -> int:
+def find_lookahead_index(points: Sequence[Point2D], start_index: int, current_xy: Point2D, lookahead_distance_m: float, *, yaw_rad: float | None = None) -> int:
     if lookahead_distance_m <= 0:
         raise ValueError("lookahead_distance_m must be positive")
-    for i in range(max(0, start_index), len(points)):
-        if distance(current_xy, points[i]) >= lookahead_distance_m:
+    start = max(0, start_index)
+    fallback = next((i for i in range(start, len(points))
+                     if distance(current_xy, points[i]) >= lookahead_distance_m), len(points) - 1)
+    if yaw_rad is None:
+        return fallback
+    def forward(index: int) -> bool:
+        dx, dy = points[index][0] - current_xy[0], points[index][1] - current_xy[1]
+        return math.cos(yaw_rad) * dx + math.sin(yaw_rad) * dy > 0.05
+    # Preserve ordinary/sparse-route targeting. Only a behind-ego candidate
+    # needs the bounded continuation search below.
+    if forward(fallback):
+        return fallback
+    # If lateral error exceeds the radius, even the nearest point is outside
+    # the circle. It can be behind ego: search the local continuation for a
+    # forward target, never a remote overlapping lap of a long mission route.
+    arc_limit = max(2.0 * lookahead_distance_m,
+                    distance(current_xy, points[start]) + lookahead_distance_m)
+    travelled = 0.0
+    for i in range(start, len(points)):
+        if i > start:
+            travelled += distance(points[i - 1], points[i])
+        if travelled > arc_limit:
+            break
+        if distance(current_xy, points[i]) >= lookahead_distance_m and forward(i):
             return i
-    return len(points) - 1
+    return fallback
 
 
 def compute_path_heading(points: Sequence[Point2D], index: int) -> float:

@@ -2602,6 +2602,53 @@ def test_acceptance_lateral_tuning_limits_steer_and_rate() -> None:
     assert controller.params.route_reacquire_search_window == 50
 
 
+def test_acceptance_lateral_uses_actual_front_wheel_steering_authority() -> None:
+    vehicle = Namespace(get_physics_control=lambda: Namespace(wheels=[
+        Namespace(max_steer_angle=70.), Namespace(max_steer_angle=70.),
+        Namespace(max_steer_angle=0.), Namespace(max_steer_angle=0.),
+    ]))
+    calibrated = _acceptance_lateral_controller(vehicle)
+    assert calibrated.params.max_steer_angle_rad == pytest.approx(math.radians(70.))
+    assert calibrated.params.max_steer == _acceptance_lateral_controller().params.max_steer
+    assert calibrated.params.max_steer_delta_per_step == _acceptance_lateral_controller().params.max_steer_delta_per_step
+
+
+@pytest.mark.parametrize("angles", [[], [70.], [0., 0.], [float("nan"), 70.], [100., 70.]])
+def test_acceptance_lateral_rejects_unusable_physics_instead_of_guessing(angles) -> None:
+    vehicle = Namespace(get_physics_control=lambda: Namespace(
+        wheels=[Namespace(max_steer_angle=a) for a in angles],
+    ))
+    with pytest.raises(ValueError, match="front-wheel maximum steering angles"):
+        _acceptance_lateral_controller(vehicle)
+
+
+@pytest.mark.parametrize("dt", [.05, .10])
+@pytest.mark.parametrize("speed", [4., 8.])
+def test_calibrated_lateral_tracks_circle_in_kinematic_rollout(dt, speed) -> None:
+    # A geometry regression, not a substitute for real CARLA tyre dynamics.
+    angle = math.radians(70.)
+    vehicle = Namespace(get_physics_control=lambda: Namespace(wheels=[
+        Namespace(max_steer_angle=70.), Namespace(max_steer_angle=70.),
+    ]))
+    controller = _acceptance_lateral_controller(vehicle)
+    radius = 25.
+    route = RouteReference(points_xy_m=[
+        (radius * math.sin(i * .02), radius * (1. - math.cos(i * .02))) for i in range(180)
+    ])
+    x, y, yaw = 0., -.2, 0.
+    errors = []
+    for tick in range(int(8. / dt)):
+        output = controller.step(VehiclePose(x, y, yaw, speed, sim_time_s=tick * dt), route)
+        assert output.status == "OK"
+        errors.append(abs(math.hypot(x, y - radius) - radius))
+        yaw_rate = speed / controller.params.wheel_base_m * math.tan(output.steer * angle)
+        x += speed * dt * math.cos(yaw + .5 * yaw_rate * dt)
+        y += speed * dt * math.sin(yaw + .5 * yaw_rate * dt)
+        yaw += yaw_rate * dt
+    assert max(errors) <= .6
+    assert errors[-1] < .2
+
+
 def test_map_warmup_restores_async_mode_left_by_interrupted_run() -> None:
     settings = Namespace(synchronous_mode=True, fixed_delta_seconds=0.05)
 

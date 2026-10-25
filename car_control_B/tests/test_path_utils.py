@@ -24,6 +24,10 @@ def test_nearest_and_lookahead():
     assert target >= 6
 
 
+def test_forward_lookahead_preserves_sparse_two_point_route():
+    assert find_lookahead_index([(0., 0.), (30., 0.)], 0, (0., 0.), 3., yaw_rad=0.) == 1
+
+
 def test_cross_track_sign():
     points = [(0.0, 0.0), (10.0, 0.0)]
     assert signed_cross_track_error(points, 0, 1.0, 1.0) > 0

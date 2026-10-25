@@ -49,6 +49,25 @@ python tools/run_s2_optimization_matrix.py \
 
 该过程核验保存的场景与 summary 哈希，并要求事件起止窗口和预算一致；不覆盖历史 manifest，不把评估代码当前的 SHA 写成历史驾驶代码版本。
 
+多次实验的覆盖率可以只读合并，不必重跑已经取得的证据：
+
+```bash
+python tools/summarize_s2_optimization_matrix.py \
+  artifacts/validation/<first-run>/matrix_manifest.json \
+  artifacts/validation/<retry-run>/matrix_manifest.json \
+  --output artifacts/validation/<new-coverage-report>.json
+```
+
+按 `case_index:event` 去重，以完成时间较晚的尝试决定当前结果，同时保留全部失败尝试。源场景、实际扰动和驾驶起止/预算必须匹配，summary 哈希必须有效。纯判定要求更新可以依据原始证据按当前规则复核，并显式记录 `requirements_revised`、原矩阵哈希和评估矩阵哈希；不改变驾驶条件或冒充原始报告。历史不同代码版本的结果只代表覆盖记录，不能签发冻结基线 Gate；冻结 Gate 必须 60/60、同一干净且有完整 SHA 的代码树。此汇总不等同于完整 8 km 或正式延迟门禁。
+
+## 横向几何与车型换算
+
+Pure Pursuit 的曲率分母使用实际选中目标点与车辆的距离，不使用仅用于选点的请求前视半径。车辆偏离路线、最近采样点已位于车后时，仅向局部连续路段寻找前向目标；搜索受弧长限制，不能跳到远处重复路线。普通前向目标与稀疏双点路线仍保留原选点行为；所有目标确实在车后时仍报 INVALID。
+
+真实运行在生成车辆后，从 `get_physics_control().wheels` 的两个前轮读取最大转角，将度换算为弧度用于归一化转向。离线未传入车辆时保留配置默认值。无效物理参数直接拒绝运行，不静默猜测。控制台 `lateral_vehicle_calibration` 记录车型、实际转角和原配置值；不修改 CARLA 车辆物理属性、归一化转向限幅或变化率限幅。
+
+这只是最大转角几何校准，尚未建模轮胎动态或按车速变化的 steering curve，不能把它描述成完整车辆辨识。运动学圆弧单测覆盖 0.05/0.10 s 与 4/8 m/s，但正式结论仍以真实 CARLA 闭环证据为准。物理参数接口见 [CARLA 官方说明](https://carla.readthedocs.io/en/latest/tuto_G_control_vehicle_physics/)。
+
 ## 证据追踪
 
 运行器现在在 run_start、summary 和独立 `.provenance.json` 中记录实际 git HEAD、dirty 状态、修改差异哈希、未跟踪文件哈希、场景文件 SHA256、Python/依赖版本、机器信息、Qwen 模型/revision/artifact fingerprint，以及传给传感器蓝图的有效参数。外部 `CARLA_DRIVING_CODE_VERSION` 标签与实际 HEAD 分开保留。

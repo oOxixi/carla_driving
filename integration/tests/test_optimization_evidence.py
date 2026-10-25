@@ -17,6 +17,7 @@ from integration.tests.test_scenario_evidence import _vehicle, _timing
 from integration.contracts import PerceptionFrame
 from tools.run_s2_optimization_matrix import build_matrix, evaluate_segment, reevaluate_manifest
 from tools.summarize_optimization_evidence import audit_evidence
+from tools.summarize_s2_optimization_matrix import summarize_manifests
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -139,7 +140,7 @@ def test_saved_segment_recheck_preserves_scope_and_detects_tampering(tmp_path):
     run.mkdir(parents=True)
     saved = run / "event.summary.json"
     saved.write_text(json.dumps(summary), encoding="utf-8")
-    matrix["results"] = [{"case_index": 5, "event": "late_pedestrian",
+    matrix["results"] = [{"case_index": 5, "event": "late_pedestrian", "runner_exit_code": 1,
                           "report": {"summary_sha256": hashlib.sha256(saved.read_bytes()).hexdigest()}}]
     manifest = tmp_path / "matrix_manifest.json"
     manifest.write_text(json.dumps(matrix), encoding="utf-8")
@@ -147,6 +148,26 @@ def test_saved_segment_recheck_preserves_scope_and_detects_tampering(tmp_path):
     assert report["selected_tasks_status"] == "PASS"
     assert report["not_run_task_count"] == 59
     assert report["full_8km"] == "NOT_EVALUATED"
+    coverage = summarize_manifests([manifest, manifest], ROOT / "config/s2_optimization_matrix.json")
+    assert coverage["executed_unique_tasks"] == 1
+    assert coverage["passed_tasks"] == 1
+    assert coverage["not_run_tasks"] == 59
+    assert coverage["frozen_baseline_gate_passed"] is False
+    matrix["event_windows"]["late_pedestrian"]["required_actor_trigger_ids"] = []
+    manifest.write_text(json.dumps(matrix), encoding="utf-8")
+    revised = summarize_manifests([manifest], ROOT / "config/s2_optimization_matrix.json")
+    assert revised["latest_tasks"]["005:late_pedestrian"]["requirements_revised"] is True
+    assert revised["passed_tasks"] == 1  # Current, stricter trigger check is satisfied by saved evidence.
+    matrix["event_windows"]["late_pedestrian"]["start_m"] += 1
+    manifest.write_text(json.dumps(matrix), encoding="utf-8")
+    with pytest.raises(ValueError, match="event geometry/window changed"):
+        summarize_manifests([manifest], ROOT / "config/s2_optimization_matrix.json")
+    matrix["event_windows"]["late_pedestrian"]["start_m"] -= 1
+    matrix["event_windows"]["late_pedestrian"]["required_actor_trigger_ids"] = ["late_crossing_pedestrian"]
+    matrix["cases"][5]["perturbation"]["seed"] += 1
+    manifest.write_text(json.dumps(matrix), encoding="utf-8")
+    with pytest.raises(ValueError, match="perturbations changed"):
+        summarize_manifests([manifest], ROOT / "config/s2_optimization_matrix.json")
     saved.write_text("{}", encoding="utf-8")
     with pytest.raises(ValueError, match="summary hash"):
         reevaluate_manifest(manifest, ROOT / "config/s2_optimization_matrix.json")

@@ -280,7 +280,10 @@ class PurePursuitController(LateralController):
             cte,
             heading_error,
         )
-        target_idx = find_lookahead_index(points, nearest, (vehicle.x_m, vehicle.y_m), lookahead)
+        target_idx = find_lookahead_index(
+            points, nearest, (vehicle.x_m, vehicle.y_m), lookahead,
+            yaw_rad=vehicle.yaw_rad,
+        )
         target = points[target_idx]
 
         dx = target[0] - vehicle.x_m
@@ -295,7 +298,13 @@ class PurePursuitController(LateralController):
             steer_math = 0.0
         else:
             alpha = math.atan2(local_y, local_x)
-            curvature = 2.0 * math.sin(alpha) / max(lookahead, 1e-6)
+            # The selected waypoint is the first sample outside the requested
+            # lookahead circle, not necessarily on that circle.  Pure Pursuit
+            # geometry uses its actual chord length.  Dividing by the requested
+            # radius oversteers sparse samples and understeers a short route end;
+            # both errors vary with resampling and can excite steering oscillation.
+            target_distance_m = math.hypot(local_x, local_y)
+            curvature = 2.0 * math.sin(alpha) / max(target_distance_m, 1e-6)
             steer_angle = math.atan(p.wheel_base_m * curvature)
             steer_math = steer_angle / max(p.max_steer_angle_rad, 1e-6)
 

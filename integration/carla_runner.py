@@ -466,14 +466,26 @@ def _actor_signed_longitudinal_clearance_m(ego: Any, actor: Any) -> float:
     )
 
 
-def _acceptance_lateral_controller() -> PurePursuitController:
+def _acceptance_lateral_controller(vehicle: Any | None = None) -> PurePursuitController:
     """Build the shared speed/curvature/error-adaptive lateral controller."""
     cfg = DEFAULT_STRATEGY.lateral
+    max_steer_angle_rad = cfg.max_steer_angle_rad
+    if vehicle is not None:
+        # VehicleControl.steer is normalized, not a wheel angle in radians.
+        # Reusing a generic 0.60-rad divisor on a 70-degree Model 3 doubles
+        # steering authority and excites rate-limited left/right oscillation.
+        # Read geometry only; never modify the simulator's vehicle physics.
+        wheels = vehicle.get_physics_control().wheels
+        angles_deg = [float(wheel.max_steer_angle) for wheel in wheels[:2]]
+        if len(angles_deg) != 2 or any(not math.isfinite(a) or not 0.0 < a < 90.0 for a in angles_deg):
+            raise ValueError("front-wheel maximum steering angles must be finite and in (0, 90) degrees")
+        max_steer_angle_rad = math.radians(min(angles_deg))
     return PurePursuitController(PurePursuitParams(
         base_lookahead_m=cfg.base_lookahead_m,
         min_lookahead_m=cfg.min_lookahead_m,
         max_lookahead_m=cfg.max_lookahead_m,
         speed_gain_s=cfg.speed_gain_s,
+        max_steer_angle_rad=max_steer_angle_rad,
         max_steer=cfg.max_steer,
         max_steer_delta_per_step=cfg.base_steer_delta_per_step,
         # Long competition routes revisit the same Town coordinates.  Track
@@ -4158,6 +4170,14 @@ def run(args: argparse.Namespace) -> None:
                 session.tick(args.timeout_s)
             ego = session.spawn_ego(bp, spawn_transform)
             ego.set_simulate_physics(True)
+            runtime.lateral = _acceptance_lateral_controller(ego)
+            print(json.dumps({
+                "record_type": "lateral_vehicle_calibration",
+                "source": "CARLA_VEHICLE_PHYSICS_FRONT_WHEELS",
+                "vehicle_type": ego.type_id,
+                "max_steer_angle_rad": runtime.lateral.params.max_steer_angle_rad,
+                "configured_max_steer_angle_rad": DEFAULT_STRATEGY.lateral.max_steer_angle_rad,
+            }), flush=True)
             # Hold the freshly spawned vehicle while route reconstruction and
             # frame-aligned sensor warm-up run. Target velocity alone does not
             # prevent gravity from rolling a vehicle on a grade.
