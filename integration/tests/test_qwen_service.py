@@ -444,7 +444,8 @@ def test_vllm_cut_in_observation_waits_for_stability_without_requiring_overtake(
 
     assert step["target"]["target_id"] == "intersection_cut_in_car"
     assert step["completion"]["type"] == "SPEED_BELOW"
-    assert step["completion"]["hold_frames"] == 120
+    assert step["completion"]["hold_frames"] == 3
+    assert step["completion"]["minimum_duration_s"] == 6.0
     assert step["timeout_s"] == 20.0
 
 
@@ -480,7 +481,7 @@ def test_vllm_avoidance_preserves_return_and_resume_subcommands() -> None:
     assert steps[0]["target"]["target_speed_mps"] == 0.0
     assert steps[0]["completion"] == {
         "type": "HOLD_FRAMES", "value": None, "lane": None,
-        "hold_frames": 120,
+        "hold_frames": 3, "minimum_duration_s": 6.0,
     }
     assert steps[0]["timeout_s"] == 20.0
     assert steps[1]["target"]["target_id"] == "slow_vehicle"

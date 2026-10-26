@@ -180,6 +180,14 @@ class PlanValidator:
                     )
             self._validate_preconditions(step["preconditions"], scene, prefix)
             self._validate_completion(behavior, completion, prefix)
+            minimum_duration = float(completion.get("minimum_duration_s", 0.0))
+            if not math.isfinite(minimum_duration):
+                raise PlanValidationError("INVALID_COMPLETION_DURATION", f"{prefix} duration must be finite")
+            if minimum_duration > float(step["timeout_s"]):
+                raise PlanValidationError(
+                    "COMPLETION_DURATION_EXCEEDS_TIMEOUT",
+                    f"{prefix} minimum completion duration exceeds step timeout",
+                )
         return plan
 
     @staticmethod

@@ -29,6 +29,8 @@ python tools/run_s2_optimization_matrix.py \
 
 `--case-index` 和 `--event` 可以重复。事件名为 `bus_stop`、`pedestrian_overtake`、`bicycle`、`cut_in`、`late_pedestrian`。相同 CARLA 世界只能顺序执行；不要与正式 S2 或队友的闭环进程并发。
 
+完整运行前的排障批次使用 `--fail-fast`：首个 FAIL/ERROR 就停止后续事件，保留日志与未执行数量。未关闭问题清单见 [完整运行前清单](main_optimization_known_issues_20261026.md)。选定事件还会核验声明的目标减速容差，而不只核验最后恢复巡航。
+
 每个实验目录包含 `matrix_manifest.json`、具体场景 JSON、各任务控制台日志，以及原始 JSONL、summary、provenance。已有目录拒绝覆盖。manifest 记录每个配置的 SHA256、具体命令、运行结果及原始 summary 哈希。
 
 ## 目标段判定

@@ -82,6 +82,7 @@ class ManeuverFSM:
         self.step_started_s: float | None = None
         self._preconditions_latched = False
         self._completion_frames = 0
+        self._completion_started_s: float | None = None
         self._terminal_emitted = False
         self._last_replan_s: float | None = None
         self._replan_count = 0
@@ -108,6 +109,7 @@ class ManeuverFSM:
         self.step_started_s = now
         self._preconditions_latched = False
         self._completion_frames = 0
+        self._completion_started_s = None
         self._terminal_emitted = False
         self._last_replan_s = None
         self._replan_count = 0
@@ -136,6 +138,7 @@ class ManeuverFSM:
                 # step.  It must not turn KEEP_LANE/turn/avoidance into a
                 # terminal command or consume the step timeout while waiting.
                 self._completion_frames = 0
+                self._completion_started_s = None
                 self.step_started_s = now
                 self.state = "WAIT_TRAFFIC_SIGNAL"
                 return self._update(safe_behavior="STOP")
@@ -145,6 +148,7 @@ class ManeuverFSM:
                 # command is active. Keep the plan active and reset its clear
                 # window instead of falsely failing at the moment it matters.
                 self._completion_frames = 0
+                self._completion_started_s = None
                 if self.step_started_s is not None and now - self.step_started_s > step.timeout_s:
                     reason = (
                         "YIELD_HAZARD_DID_NOT_CLEAR"
@@ -169,6 +173,7 @@ class ManeuverFSM:
                 # ego was between lanes, which could leave its next target
                 # behind the vehicle and permanently latch the watchdog.
                 self._completion_frames = 0
+                self._completion_started_s = None
                 if self.step_started_s is not None and now - self.step_started_s > step.timeout_s:
                     return self._step_failure(
                         step, "MANEUVER_HAZARD_DID_NOT_CLEAR", now,
@@ -205,6 +210,7 @@ class ManeuverFSM:
             )
             if unmet:
                 self._completion_frames = 0
+                self._completion_started_s = None
                 if any(condition.endswith("GAP_SAFE") for condition in unmet):
                     self.state = "WAIT_SAFE_GAP"
                 else:
@@ -240,16 +246,25 @@ class ManeuverFSM:
             )
             completion_satisfied = completion_satisfied and speed_ok and duration_ok
         if completion_satisfied:
+            if self._completion_started_s is None:
+                self._completion_started_s = now
             self._completion_frames += 1
         else:
             self._completion_frames = 0
+            self._completion_started_s = None
         required_frames = int(step.completion["hold_frames"])
-        if self._completion_frames < required_frames:
+        minimum_duration_s = float(step.completion.get("minimum_duration_s", 0.0))
+        if not math.isfinite(minimum_duration_s) or minimum_duration_s < 0.0:
+            raise ValueError("minimum_duration_s must be finite and non-negative")
+        duration_held = (self._completion_started_s is not None
+                         and now - self._completion_started_s + 1e-9 >= minimum_duration_s)
+        if self._completion_frames < required_frames or not duration_held:
             return self._update()
         completed_event = self._event("qwen_step_completed", now, "COMPLETION_HELD")
         completed_step = step
         self.step_index += 1
         self._completion_frames = 0
+        self._completion_started_s = None
         self.step_started_s = now
         next_step = self.current_step
         self._preconditions_latched = bool(
@@ -284,6 +299,8 @@ class ManeuverFSM:
                 "FAILED", "REPLAN_LIMIT_EXCEEDED", now, safe_behavior="STOP",
             )
         self._replan_count += 1
+        self._completion_frames = 0
+        self._completion_started_s = None
         self._last_replan_s = now
         self.state = "REPLAN_PENDING"
         return self._update(

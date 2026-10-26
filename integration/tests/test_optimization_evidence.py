@@ -22,6 +22,29 @@ from tools.summarize_s2_optimization_matrix import summarize_manifests
 ROOT = Path(__file__).resolve().parents[2]
 
 
+@pytest.mark.parametrize("fail_fast, count", [(True, 1), (False, 2)])
+def test_matrix_can_stop_before_followup_events_when_an_issue_remains(tmp_path, monkeypatch, fail_fast, count):
+    from types import SimpleNamespace
+    import tools.run_s2_optimization_matrix as runner
+    output = tmp_path / "experiment"
+    monkeypatch.setattr(runner, "collect_provenance", lambda *a: {})
+    calls = []
+    def fake_run(command, **kwargs):
+        calls.append(command)
+        log_dir = Path(command[command.index("--log-dir") + 1])
+        (log_dir / "mock.summary.json").write_text("{}", encoding="utf-8")
+        return SimpleNamespace(returncode=0)
+    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    argv = ["matrix", "--output-dir", str(output), "--run", "--case-index", "1",
+            "--event", "bus_stop", "--event", "bicycle"]
+    monkeypatch.setattr(runner.sys, "argv", argv + (["--fail-fast"] if fail_fast else []))
+    assert runner.main() == 1
+    report = json.loads((output / "matrix_manifest.json").read_text(encoding="utf-8"))
+    assert len(calls) == report["executed_task_count"] == count
+    assert report["stopped_after_failure"] is fail_fast
+    assert report["not_run_task_count"] == 60 - count
+
+
 def test_provenance_identifies_clean_dirty_and_untracked_sources(tmp_path):
     def git(*args):
         subprocess.run(["git", *args], cwd=tmp_path, check=True, capture_output=True)
@@ -126,6 +149,16 @@ def test_passing_the_wrong_actor_cannot_satisfy_overtake_evidence():
     summary["acceptance"]["metrics"]["extension_acceptance"]["evidence"][
         "passed_actor_ids_by_phase"]["P3"].append("slow")
     assert evaluate_segment(summary, window, "P3")["checks"]["required_actors_physically_passed"]["passed"]
+
+
+@pytest.mark.parametrize("actual, expected", [(None, False), (38., False), (10., False), (31., True)])
+def test_event_gate_requires_the_declared_reduced_speed(actual, expected):
+    evidence = {"closest_speed_to_target_kph_by_phase": {"bus": actual},
+                "target_speed_kph_by_phase": {"bus": 30.}}
+    summary = {"acceptance": {"metrics": {"extension_acceptance": {"evidence": evidence}}}}
+    report = evaluate_segment(summary, {"end_m": 1200., "actor_ids": []}, "bus",
+                              {"phase_target_speed_tolerance_kph": {"bus": 2.}})
+    assert report["checks"]["phase_target_speed_tolerance_kph:bus"]["passed"] == expected
 
 
 def test_legacy_lane_offset_without_authorization_field_is_not_assumed_lane_follow():

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from car_control_A.maneuver_fsm import ManeuverFSM
 from runtime.plan_compiler import CompiledManeuverPlan, CompiledPlanStep
 
@@ -40,6 +42,41 @@ def _snapshot(**updates):
     }
     state.update(updates)
     return state
+
+
+@pytest.mark.parametrize("dt_s", [.02, .05, .1, .2])
+def test_observation_duration_is_independent_of_control_frequency(dt_s):
+    fsm = ManeuverFSM()
+    fsm.start(_plan(_step(behavior="YIELD", timeout_s=20., completion={
+        "type": "HOLD_FRAMES", "value": None, "hold_frames": 3,
+        "minimum_duration_s": 6.,
+    })), now_s=0.)
+    for index in range(round(6. / dt_s)):
+        assert not fsm.update(_snapshot(), now_s=index * dt_s).terminal
+    assert fsm.update(_snapshot(), now_s=6.).state == "SUCCEEDED"
+
+
+@pytest.mark.parametrize("interruption", ["hazard", "signal", "false_condition", "precondition"])
+def test_duration_requires_a_new_clear_window_after_interruption(interruption):
+    fsm = ManeuverFSM()
+    fsm.start(_plan(_step(behavior="YIELD", timeout_s=30., completion={
+        "type": "HOLD_FRAMES", "value": None, "hold_frames": 3,
+        "minimum_duration_s": 6.,
+    })), now_s=0.)
+    for now in (0., 1., 5.8):
+        assert not fsm.update(_snapshot(), now_s=now).terminal
+    if interruption == "precondition":
+        fsm._preconditions_latched = False
+        snapshot = _snapshot(perception_fresh=False)
+    elif interruption == "false_condition":
+        snapshot = _snapshot(hold_condition=False)
+    else:
+        snapshot = _snapshot(emergency=True, emergency_reason=(
+            "RED_LIGHT_STOP_LINE_GUARD" if interruption == "signal" else "LOW_TTC"))
+    assert not fsm.update(snapshot, now_s=5.9).terminal
+    for now in (6., 6.1, 11.9):
+        assert not fsm.update(_snapshot(), now_s=now).terminal
+    assert fsm.update(_snapshot(), now_s=12.).state == "SUCCEEDED"
 
 
 def test_turn_completes_only_after_deterministic_hold_frames():

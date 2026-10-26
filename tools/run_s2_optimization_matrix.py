@@ -131,6 +131,14 @@ def evaluate_segment(summary: dict, window: dict, phase_id: str, phase_contract:
                 value = evidence.get(observed, {}).get(phase_id)
                 check(f"{requirement}:{phase_id}", isinstance(value, (int, float)) and value >= minimum,
                       {"actual": value, "required": minimum})
+        tolerance = phase_contract.get("phase_target_speed_tolerance_kph", {}).get(phase_id)
+        if tolerance is not None:
+            actual = evidence.get("closest_speed_to_target_kph_by_phase", {}).get(phase_id)
+            target = evidence.get("target_speed_kph_by_phase", {}).get(phase_id)
+            measured = all(type(v) in (int, float) and math.isfinite(v) for v in (actual, target))
+            check(f"phase_target_speed_tolerance_kph:{phase_id}",
+                  measured and abs(actual - target) <= tolerance,
+                  {"actual": actual, "target": target, "tolerance": tolerance})
     return {"scope": "event_segment", "full_8km": "NOT_EVALUATED",
             "phase_contract_enforced": phase_contract is not None,
             "functional_passed": all(c["passed"] for c in checks.values()), "checks": checks,
@@ -174,6 +182,7 @@ def main() -> int:
     parser.add_argument("--matrix", type=Path, default=ROOT / "config/s2_optimization_matrix.json")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--run", action="store_true")
+    parser.add_argument("--fail-fast", action="store_true", help="stop the selected batch after the first failed/error event")
     parser.add_argument("--evaluate-manifest", type=Path, help="recheck saved evidence without CARLA")
     parser.add_argument("--case-index", type=int, action="append")
     parser.add_argument("--event", action="append")
@@ -209,7 +218,9 @@ def main() -> int:
     if any(event not in matrix["event_windows"] for event in args.event):
         parser.error("unknown event")
     matrix["closed_loop_status"] = "RUNNING"
+    matrix["fail_fast"] = args.fail_fast
     save()
+    stop_requested = False
     for index in dict.fromkeys(args.case_index):
         case = matrix["cases"][index]
         scenario = output / case["scenario_path"]
@@ -256,6 +267,11 @@ def main() -> int:
             result["finished_at"] = datetime.now(timezone.utc).isoformat()
             save()
             print(json.dumps({"case_index": index, "event": event, "status": result["status"]}), flush=True)
+            if args.fail_fast and result["status"] != "PASS":
+                stop_requested = True
+                break
+        if stop_requested:
+            break
     selected_passed = all(item["status"] == "PASS" for item in matrix["results"])
     matrix["selected_tasks_status"] = "PASS" if selected_passed else "FAIL"
     matrix["executed_task_count"] = len(matrix["results"])
@@ -265,6 +281,7 @@ def main() -> int:
         else "PARTIAL_PASS" if selected_passed else "FAIL"
     )
     matrix["closed_loop_scope"] = "SELECTED_TASKS_ONLY"
+    matrix["stopped_after_failure"] = stop_requested
     save()
     return 0 if selected_passed else 1
 

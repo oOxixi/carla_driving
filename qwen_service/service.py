@@ -945,21 +945,18 @@ class VllmQwenPlannerBackend:
                 "type": completion_type,
                 "value": 0.2 if completion_type == "STOPPED" else completion_value,
                 "lane": lane if completion_type == "LANE_CENTERED" else None,
-                # A yield keeps a six-second clear-observation window. Any D
-                # emergency brake resets this counter in ManeuverFSM, so the
+                # Seconds, not 120 assumed-20-Hz frames: any D emergency
+                # brake resets the uninterrupted window in ManeuverFSM, so the
                 # following manoeuvre cannot start immediately after a hazard.
                 # Conditional SLOW_DOWN instructions must remain at the
                 # requested observation speed for six seconds before a later
                 # resume step can restore cruising speed.  This prevents
                 # "减速至30，确认安全后恢复" from collapsing into a brief speed
                 # crossing followed immediately by acceleration.
-                "hold_frames": (
-                    120
-                    if behavior == "YIELD" or (
-                        sustained_observation and not clearance_gated_slow
-                    )
-                    else 3
-                ),
+                "hold_frames": 3,
+                **({"minimum_duration_s": 6.0} if behavior == "YIELD" or (
+                    sustained_observation and not clearance_gated_slow
+                ) else {}),
             },
             "timeout_s": timeout,
             "on_failure": "SAFE_STOP",

@@ -409,7 +409,11 @@ def _speed_mps(vector: Any) -> float:
 
 def _actor_bbox_clearance_m(ego: Any, actor: Any) -> float:
     """Return conservative horizontal body-to-body clearance for two actors."""
-    center_distance_m = float(ego.get_location().distance(actor.get_location()))
+    ego_location, actor_location = ego.get_location(), actor.get_location()
+    center_distance_m = math.hypot(
+        float(ego_location.x) - float(actor_location.x),
+        float(ego_location.y) - float(actor_location.y),
+    )
     return max(
         0.0,
         center_distance_m - _actor_horizontal_radius_m(ego) - _actor_horizontal_radius_m(actor),
@@ -2898,6 +2902,13 @@ def _c_safety_speed_cap_mps(c_safety_state: Mapping[str, object] | None) -> floa
         return None
     cap = float(candidate)
     return cap if math.isfinite(cap) and cap >= 0.0 else None
+
+
+def _yield_observation_clear(c_safety_state: Mapping[str, object] | None) -> bool:
+    """A stationary ego is not proof that its sensed front corridor is clear."""
+    return bool(c_safety_state
+                and c_safety_state.get("lidar_valid") is True
+                and c_safety_state.get("recommended_action") == "KEEP_SPEED")
 
 
 def _c_safety_speed_cap_provenance(
@@ -6332,7 +6343,12 @@ def run(args: argparse.Namespace) -> None:
                                     pass_after_m=maneuver_target_pass_after_m,
                                 )
                             ),
-                            "hold_condition": True,
+                            "hold_condition": (
+                                _yield_observation_clear(c_safety_state)
+                                if maneuver_fsm.current_step is not None
+                                and maneuver_fsm.current_step.behavior == "YIELD"
+                                else True
+                            ),
                         },
                         now_s=state.sim_time_s,
                     )

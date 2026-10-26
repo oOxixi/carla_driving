@@ -55,6 +55,28 @@ def test_low_level_fields_are_rejected_at_any_depth(field):
         PlanValidator().validate(plan, scene=_scene(), now_ns=2_000_000_000)
 
 
+def test_optional_continuous_duration_is_validated_and_preserved():
+    from runtime.plan_compiler import PlanCompiler
+    plan = _plan()
+    for step in plan["steps"]:
+        step["completion"]["minimum_duration_s"] = 1.0
+    validated = PlanValidator().validate(plan, scene=_scene(), now_ns=2_000_000_000)
+    compiled = PlanCompiler().compile(validated, scene=_scene())
+    for original in plan["steps"]:
+        # Expanded maneuvers enforce the duration on their terminal step,
+        # not each preparatory gap/slow phase.
+        matching = [s for s in compiled.steps if s.source_step_id == original["step_id"]]
+        assert matching[-1].completion["minimum_duration_s"] == 1.0
+
+
+def test_duration_greater_than_timeout_is_not_an_executable_plan():
+    plan = _plan()
+    plan["steps"][0]["completion"]["minimum_duration_s"] = 6.0
+    plan["steps"][0]["timeout_s"] = 5.0
+    with pytest.raises(PlanValidationError, match="COMPLETION_DURATION_EXCEEDS_TIMEOUT"):
+        PlanValidator().validate(plan, scene=_scene(), now_ns=2_000_000_000)
+
+
 def test_unknown_fields_and_too_many_steps_are_rejected():
     unknown = _plan()
     unknown["unexpected"] = True

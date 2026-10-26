@@ -170,7 +170,8 @@ class PlanCompiler:
             CompiledPlanStep(
                 f"{source_id}.pass", source_id, "PASS_TARGET", target,
                 ("PERCEPTION_FRESH", "TARGET_VISIBLE", "NO_EMERGENCY_RISK"),
-                {"type": "TARGET_PASSED", "value": None, "lane": lane, "hold_frames": 3},
+                {"type": "TARGET_PASSED", "value": None, "lane": lane, "hold_frames": 3,
+                 **_duration_requirement(raw["completion"])},
                 timeout, failure,
             ),
         )
@@ -223,10 +224,16 @@ class PlanCompiler:
             CompiledPlanStep(
                 source_id, source_id, f"CHANGE_LANE_{direction}", target,
                 moving_preconditions,
-                {"type": "LANE_CENTERED", "value": None, "lane": "CURRENT", "hold_frames": int(raw["completion"]["hold_frames"])},
+                {"type": "LANE_CENTERED", "value": None, "lane": "CURRENT", "hold_frames": int(raw["completion"]["hold_frames"]),
+                 **_duration_requirement(raw["completion"])},
                 timeout, failure,
             ),
         )
+
+
+def _duration_requirement(completion: Mapping[str, Any]) -> dict[str, float]:
+    return ({"minimum_duration_s": float(completion["minimum_duration_s"])}
+            if "minimum_duration_s" in completion else {})
 
 
 def _copy_step(raw: Mapping[str, Any]) -> CompiledPlanStep:

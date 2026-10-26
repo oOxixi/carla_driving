@@ -12,6 +12,7 @@ from car_control_B.schemas import RouteReference, VehiclePose
 import integration.carla_runner as carla_runner
 from integration.carla_perception import EventLedger, PerceptionTimeoutError
 from integration.carla_runner import (
+    _yield_observation_clear,
     _DeferredCommand,
     _acceptance_lateral_controller,
     _road_fit_expected_contract,
@@ -101,6 +102,18 @@ from integration.carla_runner import (
     _warm_up_sensor_bridge,
     _warm_up_loaded_map,
 )
+
+
+@pytest.mark.parametrize("state, expected", [
+    (None, False), ({}, False),
+    ({"lidar_valid": False, "recommended_action": "KEEP_SPEED"}, False),
+    ({"lidar_valid": True, "recommended_action": "SLOW_DOWN"}, False),
+    ({"lidar_valid": True, "recommended_action": "EMERGENCY_BRAKE"}, False),
+    ({"lidar_valid": True, "recommended_action": "FULL_BRAKE"}, False),
+    ({"lidar_valid": True, "recommended_action": "KEEP_SPEED"}, True),
+])
+def test_yield_clear_window_requires_real_clear_sensor_state(state, expected):
+    assert _yield_observation_clear(state) is expected
 from integration.scenario_execution import ScenarioSpec
 
 
@@ -499,6 +512,15 @@ def test_actor_bbox_clearance_is_body_to_body_and_conservative() -> None:
     assert _actor_bbox_clearance_m(ego, bicycle) == pytest.approx(
         8.0 - math.hypot(2.0, 1.0) - math.hypot(1.0, 0.5)
     )
+
+
+def test_horizontal_clearance_cannot_be_inflated_by_actor_height() -> None:
+    ego = Namespace(get_location=lambda: Namespace(x=0., y=0., z=0.),
+                    bounding_box=Namespace(extent=Namespace(x=2., y=1.)))
+    target = Namespace(get_location=lambda: Namespace(x=4., y=0., z=10.),
+                       bounding_box=Namespace(extent=Namespace(x=1., y=.5)))
+    assert _actor_bbox_clearance_m(ego, target) == pytest.approx(
+        4. - math.hypot(2., 1.) - math.hypot(1., .5))
 
 
 def test_actor_signed_longitudinal_clearance_changes_sign_only_after_full_pass() -> None:
