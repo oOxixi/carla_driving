@@ -15,6 +15,7 @@ from integration.carla_runner import (
     _yield_observation_clear,
     _scenario_completion_target_groups,
     _grounded_completion_targets_passed,
+    _retained_return_step_completed,
     _DeferredCommand,
     _acceptance_lateral_controller,
     _road_fit_expected_contract,
@@ -139,6 +140,20 @@ def test_scenario_clearance_groups_reject_invented_actors():
         spec.extensions["completion_target_groups"]["bus"] = members
         with pytest.raises(ValueError):
             _scenario_completion_target_groups(spec)
+
+
+@pytest.mark.parametrize("behavior, lane, state, event_type, expected", [
+    ("CHANGE_LANE_RIGHT", "CURRENT", "PLAN_EXECUTING", "qwen_step_completed", True),
+    ("CHANGE_LANE_LEFT", "CURRENT", "PLAN_EXECUTING", "qwen_step_completed", True),
+    ("CHANGE_LANE_LEFT", "LEFT_ADJACENT", "PLAN_EXECUTING", "qwen_step_completed", False),
+    ("WAIT_SAFE_GAP", "CURRENT", "PLAN_EXECUTING", "qwen_step_completed", False),
+    ("CHANGE_LANE_RIGHT", "CURRENT", "FAILED", "qwen_step_completed", False),
+    ("CHANGE_LANE_RIGHT", "CURRENT", "PLAN_EXECUTING", "qwen_step_started", False),
+])
+def test_return_route_handoff_does_not_wait_for_later_cruise_completion(behavior, lane, state, event_type, expected):
+    plan = Namespace(steps=[Namespace(step_id="return", behavior=behavior, target={"target_lane": lane})])
+    update = Namespace(state=state, events=[Namespace(step_id="return", event_type=event_type)])
+    assert _retained_return_step_completed(update, plan) is expected
 from integration.scenario_execution import ScenarioSpec
 
 

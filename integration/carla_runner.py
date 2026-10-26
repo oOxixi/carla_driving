@@ -483,6 +483,17 @@ def _failed_maneuver_needs_route_hold(terminal_state: str, *, dynamic_out_and_ba
             and (not math.isfinite(retained_route_error_m) or retained_route_error_m > .5))
 
 
+def _retained_return_step_completed(update: ManeuverUpdate, plan: CompiledManeuverPlan | None) -> bool:
+    if plan is None or (update.state in TERMINAL_STATES and update.state != "SUCCEEDED"):
+        return False
+    completed_ids = {event.step_id for event in update.events
+                     if event.event_type == "qwen_step_completed"}
+    return any(step.step_id in completed_ids
+               and step.behavior in {"CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT", "RETURN_TO_LANE"}
+               and str(step.target.get("target_lane", "")).upper() == "CURRENT"
+               for step in plan.steps)
+
+
 def _road_fit_expected_contract(expected: Mapping[str, object]) -> dict[str, object]:
     """Keep explicit full-run limits; scope the default centre check to following."""
     contract = dict(expected)
@@ -6438,8 +6449,15 @@ def run(args: argparse.Namespace) -> None:
                         maneuver_mission_route = None
                         maneuver_mission_progress_m = None
                         maneuver_return_destination_xy = None
+                    # Restore the long mission reference as soon as the return
+                    # geometry/heading gate completes. The business plan stays
+                    # active while its following SPEED_REACHED step accelerates;
+                    # waiting for that final terminal can exhaust a short rejoin
+                    # connector during the next safe, speed-limited bend.
+                    retained_return_completed = (dynamic_out_and_back
+                        and _retained_return_step_completed(maneuver_update, maneuver_fsm.plan))
                     if (
-                        maneuver_update.state in TERMINAL_STATES
+                        (maneuver_update.state in TERMINAL_STATES or retained_return_completed)
                         and maneuver_mission_route is not None
                     ):
                         synchronized_route_index = None
@@ -6533,6 +6551,8 @@ def run(args: argparse.Namespace) -> None:
                             "mission_route_progress_m": maneuver_mission_progress_m,
                             "synchronized_route_index": synchronized_route_index,
                             "restore_source": restore_source,
+                            "restore_trigger": ("RETURN_STEP_COMPLETED" if retained_return_completed
+                                                else "PLAN_TERMINAL"),
                         }
                         print(json.dumps(restore_payload, ensure_ascii=False), flush=True)
                         if recorder is not None:
