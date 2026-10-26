@@ -88,6 +88,19 @@ def test_actual_pass_evidence_stops_at_business_terminal():
     assert evidence["actor_longitudinal_clearance_by_phase"]["phase"]["car"]["minimum_m"] == 8.
 
 
+def test_premature_restore_snapshot_cannot_be_replaced_by_later_clearance():
+    runtime = ScenarioExtensionRuntime({"proposed_acceptance": {
+        "must_clear_actor_groups_before_resume": {"bus_phase": ["bus", "passenger"]},
+    }})
+    runtime.note_command_submitted({"command_id": "cmd", "phase_id": "bus_phase"}, qwen=True)
+    runtime.note_speed_restore_clearances({"bus": -8., "passenger": 3.})
+    runtime.note_speed_restore_clearances({"bus": -20., "passenger": -8.})
+    assert runtime.evaluate(runtime.extensions["proposed_acceptance"], expected_command_count=1)["passed"] is False
+    snapshot = runtime.evidence()["target_clearances_at_speed_restore_by_phase"]
+    snapshot["bus_phase"]["clearances_m"]["passenger"] = -10.
+    assert runtime.evaluate(runtime.extensions["proposed_acceptance"], expected_command_count=1)["passed"] is False
+
+
 def test_other_actor_overtaking_ego_is_not_an_ego_pass():
     runtime = ScenarioExtensionRuntime({})
     runtime.note_command_submitted({"command_id": "cmd", "phase_id": "phase"}, qwen=True)

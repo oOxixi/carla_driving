@@ -146,6 +146,12 @@ def _referenced_actor_ids(scenario: Mapping[str, Any]) -> set[str]:
 
     for key in ("commands", "expected", "qwen_expected", "extensions"):
         visit(scenario.get(key))
+    groups = scenario.get("extensions", {}).get("completion_target_groups", {})
+    if isinstance(groups, Mapping):
+        for anchor, members in groups.items():
+            result.add(str(anchor))
+            if isinstance(members, Sequence) and not isinstance(members, (str, bytes)):
+                result.update(str(member) for member in members)
     return result
 
 

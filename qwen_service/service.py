@@ -586,6 +586,11 @@ class VllmQwenPlannerBackend:
             resume_request["command_hint"] = resume_hint
             resume = self._step(resume_request, "KEEP_LANE", index=len(steps) + 1)
             resume["preconditions"] = ["PERCEPTION_FRESH", "NO_EMERGENCY_RISK"]
+            resume["completion"] = {
+                "type": "SPEED_REACHED", "value": resume_hint["target_speed_mps"],
+                "lane": None, "hold_frames": 3,
+            }
+            resume["timeout_s"] = 60.0
             steps.append(resume)
         return steps
 
@@ -719,6 +724,7 @@ class VllmQwenPlannerBackend:
             for key in (
                 "left_lane_exists", "right_lane_exists", "left_gap_safe",
                 "right_gap_safe", "available_lanes", "return_direction",
+                "completion_target_groups",
             )
             if isinstance(lanes, Mapping) and key in lanes
         }

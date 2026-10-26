@@ -494,6 +494,37 @@ def _road_fit_expected_contract(expected: Mapping[str, object]) -> dict[str, obj
     return contract
 
 
+def _scenario_completion_target_groups(spec: ScenarioSpec | None) -> dict[str, tuple[str, ...]]:
+    raw = {} if spec is None else spec.extensions.get("completion_target_groups", {})
+    if not isinstance(raw, Mapping):
+        raise TypeError("completion_target_groups must be an object")
+    known_ids = set() if spec is None else {str(a.get("actor_id")) for a in spec.actors}
+    result = {}
+    for anchor, members in raw.items():
+        if (not isinstance(anchor, str) or anchor not in known_ids
+                or not isinstance(members, (list, tuple)) or not members
+                or any(not isinstance(member, str) or member not in known_ids for member in members)):
+            raise ValueError("completion group must contain declared actor IDs")
+        group = tuple(dict.fromkeys((anchor, *members)))
+        if len(group) > 8:
+            raise ValueError("completion group exceeds the grounded target limit")
+        result[anchor] = group
+    return result
+
+
+def _grounded_completion_targets_passed(target_id: str, aliases: Mapping[str, str],
+                                       clearances: Mapping[str, float],
+                                       groups: Mapping[str, tuple[str, ...]]) -> bool | None:
+    """Postconditions only: a selected group is clear only after every member."""
+    anchor = _physical_actor_id_for_target(target_id, aliases)
+    members = groups.get(anchor, (anchor,))
+    if anchor not in groups and anchor not in clearances:
+        return None  # Preserve the existing sensor-only completion path.
+    return all(type(clearances.get(member)) in (int, float)
+               and math.isfinite(clearances[member]) and clearances[member] <= -5.
+               for member in members)
+
+
 def _acceptance_lateral_controller(vehicle: Any | None = None) -> PurePursuitController:
     """Build the shared speed/curvature/error-adaptive lateral controller."""
     cfg = DEFAULT_STRATEGY.lateral
@@ -3671,6 +3702,7 @@ def run(args: argparse.Namespace) -> None:
     scenario_actor_progress_trackers: dict[str, RouteProgressTracker] = {}
     dynamic_out_and_back = _scenario_uses_dynamic_out_and_back(spec)
     lane_change_profile = _scenario_lane_change_profile(spec)
+    completion_target_groups = _scenario_completion_target_groups(spec)
     qwen_status = (
         "NOT_SUBMITTED" if qwen_enabled
         else "CANONICAL_READY" if args.qwen_service_url
@@ -5640,6 +5672,12 @@ def run(args: argparse.Namespace) -> None:
                             planner_state["grounded_target_ids"] = [
                                 requested_actor_id
                             ]
+                            group = completion_target_groups.get(requested_actor_id)
+                            if group and all(member in actor_distances_m for member in group):
+                                planner_state["grounded_target_ids"] = list(group)
+                                planner_state["completion_target_groups"] = {
+                                    requested_actor_id: list(group),
+                                }
                         planner_state_ready_ns = time.monotonic_ns()
                         submission = canonical_bridge.submit(
                             deferred.envelope,
@@ -6285,6 +6323,10 @@ def run(args: argparse.Namespace) -> None:
                         )
                         if current_target_id else None
                     )
+                    grounded_targets_passed = _grounded_completion_targets_passed(
+                        current_target_id, maneuver_target_aliases,
+                        actor_longitudinal_clearances_m, completion_target_groups,
+                    ) if current_target_id else None
                     maneuver_target_seen = (
                         maneuver_target_seen
                         or target_visible
@@ -6334,8 +6376,8 @@ def run(args: argparse.Namespace) -> None:
                                 or -math.inf
                             ),
                             "target_passed": (
-                                grounded_target_clearance_m <= -5.0
-                                if grounded_target_clearance_m is not None
+                                grounded_targets_passed
+                                if grounded_targets_passed is not None
                                 else _maneuver_target_passed(
                                     target_seen=maneuver_target_seen,
                                     target_visible=target_visible,
@@ -6556,6 +6598,12 @@ def run(args: argparse.Namespace) -> None:
                             step_speed = started_route_step.target.get(
                                 "target_speed_mps",
                             )
+                            if (extension_runtime is not None and step_speed is not None
+                                    and maneuver_fsm.step_index > 0
+                                    and started_route_step.behavior in {"KEEP_LANE", "SET_SPEED"}
+                                    and float(step_speed) > runtime.requested_speed_mps):
+                                extension_runtime.note_speed_restore_clearances(
+                                    actor_longitudinal_clearances_m)
                             if step_speed is not None:
                                 runtime.requested_speed_mps = float(step_speed)
                             route_step_applied = False

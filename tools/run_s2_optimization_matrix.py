@@ -109,6 +109,13 @@ def evaluate_segment(summary: dict, window: dict, phase_id: str, phase_contract:
     # must not fail a segment, but a successful plan must not hide a late
     # command or a missed activation window for the event actually exercised.
     if phase_contract is not None:
+        members = phase_contract.get("must_clear_actor_groups_before_resume", {}).get(phase_id)
+        if members is not None:
+            snapshot = evidence.get("target_clearances_at_speed_restore_by_phase", {}).get(phase_id, {})
+            clearances = snapshot.get("clearances_m", {})
+            check(f"must_clear_actor_groups_before_resume:{phase_id}", bool(members) and all(
+                type(clearances.get(member)) in (int, float)
+                and math.isfinite(clearances[member]) and clearances[member] <= -5. for member in members), snapshot)
         for requirement, observed, ids in (
             ("command_progress_windows_m", "command_progress_m_by_phase", [phase_id]),
             ("actor_activation_progress_windows_m", "actor_activation_progress_m", window["actor_ids"]),

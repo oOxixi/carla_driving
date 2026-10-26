@@ -13,6 +13,8 @@ import integration.carla_runner as carla_runner
 from integration.carla_perception import EventLedger, PerceptionTimeoutError
 from integration.carla_runner import (
     _yield_observation_clear,
+    _scenario_completion_target_groups,
+    _grounded_completion_targets_passed,
     _DeferredCommand,
     _acceptance_lateral_controller,
     _road_fit_expected_contract,
@@ -114,6 +116,29 @@ from integration.carla_runner import (
 ])
 def test_yield_clear_window_requires_real_clear_sensor_state(state, expected):
     assert _yield_observation_clear(state) is expected
+
+
+def test_clearance_group_waits_for_every_named_member_not_only_the_bus():
+    groups = {"bus": ("bus", "near_passenger", "far_passenger")}
+    clearances = {"bus": -8., "near_passenger": -20., "far_passenger": 4.}
+    assert _grounded_completion_targets_passed("bus", {}, clearances, groups) is False
+    assert _grounded_completion_targets_passed("sensor-bus", {"sensor-bus": "bus"}, clearances, groups) is False
+    clearances["far_passenger"] = -5.
+    assert _grounded_completion_targets_passed("bus", {}, clearances, groups) is True
+    del clearances["far_passenger"]
+    assert _grounded_completion_targets_passed("bus", {}, clearances, groups) is False
+    assert _grounded_completion_targets_passed("sensor-only", {}, clearances, groups) is None
+    assert _grounded_completion_targets_passed("bus", {}, clearances, {}) is True
+
+
+def test_scenario_clearance_groups_reject_invented_actors():
+    spec = Namespace(actors=({"actor_id": "bus"}, {"actor_id": "passenger"}),
+                     extensions={"completion_target_groups": {"bus": ["passenger"]}})
+    assert _scenario_completion_target_groups(spec) == {"bus": ("bus", "passenger")}
+    for members in (["invented"], "passenger", []):
+        spec.extensions["completion_target_groups"]["bus"] = members
+        with pytest.raises(ValueError):
+            _scenario_completion_target_groups(spec)
 from integration.scenario_execution import ScenarioSpec
 
 

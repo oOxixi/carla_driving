@@ -348,6 +348,9 @@
       "reason": "Town03_Opt simulator sign metadata is replaced by the explicit competition secondary-road speed contract"
     },
     "maneuver_route_mode": "dynamic_out_and_back",
+    "completion_target_groups": {
+      "bus_at_stop": ["bus_at_stop", "bus_passenger_01", "bus_passenger_02"]
+    },
     "lane_change_profile": {
       "route_distance_m": 72.0,
       "step_m": 1.0,
@@ -399,6 +402,9 @@
         "S2_P6_LATE_PEDESTRIAN_YIELD": 32.0
       },
       "phase_target_speed_tolerance_kph": {"S2_P2_BUS_STOP": 2.0},
+      "must_clear_actor_groups_before_resume": {
+        "S2_P2_BUS_STOP": ["bus_at_stop", "bus_passenger_01", "bus_passenger_02"]
+      },
       "qwen_calls_per_frame": 0,
       "allowed_qwen_actions": ["KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "YIELD", "AVOID_OBSTACLE", "CHANGE_LANE_LEFT", "RETURN_TO_LANE", "STOP"]
     },

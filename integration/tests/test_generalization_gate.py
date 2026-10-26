@@ -11,6 +11,13 @@ from integration.scenario_execution import ScenarioSpec
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def test_density_perturbation_protects_every_completion_group_member():
+    from integration.generalization_gate import _referenced_actor_ids
+    assert _referenced_actor_ids({"extensions": {"completion_target_groups": {
+        "anchor": ["member_a", "member_b"],
+    }}}) == {"anchor", "member_a", "member_b"}
+
+
 def test_matrix_covers_all_competition_maps_weather_and_timing() -> None:
     matrix = load_generalization_matrix()
     cases = tuple(matrix.cases("base"))

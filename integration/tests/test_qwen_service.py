@@ -489,6 +489,9 @@ def test_vllm_avoidance_preserves_return_and_resume_subcommands() -> None:
     assert steps[2]["timeout_s"] == 60.0
     assert steps[3]["target"]["target_id"] is None
     assert steps[3]["target"]["target_speed_mps"] == pytest.approx(40.0 / 3.6)
+    assert steps[3]["completion"] == {"type": "SPEED_REACHED", "value": 40. / 3.6,
+                                      "lane": None, "hold_frames": 3}
+    assert steps[3]["timeout_s"] == 60.0
     assert steps[3]["preconditions"] == ["PERCEPTION_FRESH", "NO_EMERGENCY_RISK"]
 
 

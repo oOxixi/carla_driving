@@ -161,6 +161,18 @@ def test_event_gate_requires_the_declared_reduced_speed(actual, expected):
     assert report["checks"]["phase_target_speed_tolerance_kph:bus"]["passed"] == expected
 
 
+@pytest.mark.parametrize("gap, expected", [(None, False), (2., False), (-4.9, False), (-5., True)])
+def test_bus_gate_requires_all_targets_clear_before_acceleration(gap, expected):
+    summary = {"acceptance": {"metrics": {"extension_acceptance": {"evidence": {
+        "target_clearances_at_speed_restore_by_phase": {"bus": {"clearances_m": {
+            "bus": -20., "passenger": gap,
+        }}},
+    }}}}}
+    report = evaluate_segment(summary, {"end_m": 1200., "actor_ids": []}, "bus",
+                              {"must_clear_actor_groups_before_resume": {"bus": ["bus", "passenger"]}})
+    assert report["checks"]["must_clear_actor_groups_before_resume:bus"]["passed"] is expected
+
+
 def test_legacy_lane_offset_without_authorization_field_is_not_assumed_lane_follow():
     stats = LaneOffsetStatistics()
     stats.observe(3.2, planned_crossing=None, route_error_m=.1)

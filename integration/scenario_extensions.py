@@ -92,6 +92,7 @@ class ScenarioExtensionRuntime:
         self._actor_event_time_s: dict[str, float] = {}
         self._actor_speed_mps: dict[str, float] = {}
         self._actor_longitudinal_by_phase: dict[str, dict[str, dict[str, float | bool]]] = {}
+        self._clearances_at_speed_restore: dict[str, dict[str, object]] = {}
         self._minimum_actor_distances_m: dict[str, float] = {}
         self._actor_distances_m: dict[str, float] = {}
         self._traffic_light_state: dict[str, str] = {}
@@ -706,6 +707,16 @@ class ScenarioExtensionRuntime:
                 0.0, self._last_route_progress_m - self._restart_route_progress_m,
             )
 
+    def note_speed_restore_clearances(self, clearances: Mapping[str, float]) -> None:
+        for phase_id in self._active_command_phases:
+            # Retain the first attempted restore: a later safe frame cannot
+            # erase an earlier premature acceleration.
+            self._clearances_at_speed_restore.setdefault(phase_id, {
+                "route_progress_m": self._last_route_progress_m,
+                "elapsed_s": self._last_elapsed_s,
+                "clearances_m": dict(clearances),
+            })
+
     def note_actor_longitudinal_clearances(self, clearances: Mapping[str, float]) -> None:
         """Audit actual passes while a business phase is active; not control input."""
         for actor_id, value in clearances.items():
@@ -857,6 +868,10 @@ class ScenarioExtensionRuntime:
                 phase: sorted(actor for actor, bounds in actors.items()
                               if bounds["passed_after_ahead"])
                 for phase, actors in self._actor_longitudinal_by_phase.items()
+            },
+            "target_clearances_at_speed_restore_by_phase": {
+                phase: {**snapshot, "clearances_m": dict(snapshot["clearances_m"])}
+                for phase, snapshot in self._clearances_at_speed_restore.items()
             },
             "qwen_outcomes": list(self._qwen_outcomes),
             "qwen_resolution_reasons": list(self._qwen_resolution_reasons),
@@ -1128,6 +1143,22 @@ class ScenarioExtensionRuntime:
                     passed = passed and value is not None and (
                         float(speed_range[0]) <= float(value) <= float(speed_range[1])
                     )
+                add(key, passed, actual, dict(required))
+            elif key == "must_clear_actor_groups_before_resume":
+                if not isinstance(required, Mapping):
+                    raise TypeError("must_clear_actor_groups_before_resume must be an object")
+                snapshots = evidence["target_clearances_at_speed_restore_by_phase"]
+                actual = {}
+                passed = bool(required)
+                for phase_id, members in required.items():
+                    if not isinstance(members, (list, tuple)) or not members:
+                        raise TypeError("clearance-group requirement must be a non-empty actor ID list")
+                    clearances = snapshots.get(str(phase_id), {}).get("clearances_m", {})
+                    actual[str(phase_id)] = {member: clearances.get(member) for member in members}
+                    passed = passed and bool(members) and all(
+                        type(clearances.get(member)) in (int, float)
+                        and math.isfinite(clearances[member]) and clearances[member] <= -5.
+                        for member in members)
                 add(key, passed, actual, dict(required))
             elif key == "phase_target_speed_tolerance_kph":
                 if not isinstance(required, Mapping):

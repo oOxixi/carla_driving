@@ -64,6 +64,14 @@
         "grounded_target_ids": {
           "type": "array", "uniqueItems": true, "maxItems": 8,
           "items": {"type": "string", "minLength": 1, "maxLength": 128}
+        },
+        "completion_target_groups": {
+          "type": "object", "maxProperties": 8,
+          "propertyNames": {"minLength": 1, "maxLength": 128},
+          "additionalProperties": {
+            "type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1, "maxLength": 128}
+          }
         }
       }
     },
