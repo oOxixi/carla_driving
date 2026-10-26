@@ -759,6 +759,7 @@ class PipelineOrchestrator:
                 "left_gap_safe", "right_gap_safe", "route_available",
                 "intersection_ahead", "stop_line_clear", "original_lane",
                 "current_lane", "return_direction", "grounded_target_ids",
+                "completion_target_groups",
             )
             capabilities = {
                 name: runtime_state[name]

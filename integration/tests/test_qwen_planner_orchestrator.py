@@ -587,6 +587,20 @@ def test_explicit_maneuver_with_existing_lane_waits_for_safe_gap() -> None:
     assert queued.feedback["safety_event"] is None
 
 
+def test_completion_group_reaches_real_model_request_without_fake_detections():
+    command = _example("driving_command")
+    command.update(intent="SLOW_DOWN", source_text="公交站减速至30公里每小时，确认安全后恢复40")
+    command["parameters"] = {"target_id": "bus", "target_speed_mps": 30. / 3.6}
+    scene = _example("perception_state")
+    groups = {"bus": ["bus", "passenger"]}
+    with PipelineOrchestrator(infer=lambda request: {}, config=OrchestratorConfig(qwen_mode="planner_v2")) as runtime:
+        queued = runtime.submit_command(command, scene, now_ns=1_100_000_000,
+            runtime_state={"grounded_target_ids": ["bus", "passenger"],
+                           "completion_target_groups": groups})
+    assert queued.model_request["scene_capabilities"]["completion_target_groups"] == groups
+    assert "passenger" not in {item["target_id"] for item in queued.model_request["targets"]}
+
+
 def test_ambiguous_voice_command_is_constrained_to_audited_hold() -> None:
     command = _example("driving_command")
     command.update({
