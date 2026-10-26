@@ -36,7 +36,7 @@
 - `s2_matrix_20261026_pass_budget_ped`：只延长预算仍 FAIL；轨迹最后采样点位于约 2610 m，目标尚未通过就出现 TARGET_BEHIND_EGO。这证明 20 s 超时还掩盖了有限参考线提前耗尽问题，不能只增加预算。
 - `s2_matrix_20261026_pass_horizon_ped`：生产 2B、WetSunset、0.10 s、Actor 速度 1.0 倍。指令发出 2500.056 m，实际超过 slow_vehicle（阶段内最小有符号车身净距 -12.593 m），碰撞/压线/闯红灯均为 0；但路口返回失败，路线误差 2.458 m，外部指令 FAILED，最终 2671.786 m。整体 FAIL，summary SHA256 `55aa8db4ed58d1581463e0e95df4761fafdba9a388c73851815a9c308b5207d3`。此实验使用旧位置 2600 m、尚未增加第 8 项平行回归保护；不能用后续源码反向补签。
 - 只读地图复现：返程锚点约 (235.59, -8.89)，普通换道找不到完整的路口后通道，拓扑路径报 `ROUTE_UNREACHABLE`，继而采用 `RETAINED_ROUTE_REJOIN`，连接原路线已转向约 90° 的部分，解释了急转和偏差。只读扫描将通道声明延长至 2700 m 后，现有贪心覆盖生成方式的全部 265 个起点均不兼容；这不证明 Town03 不存在其他合法路线，也不允许直接删除拓扑要求。
-- `s2_matrix_20261026_parallel_return_20hz`：0.05 s、CloudySunset、0.8 倍速度，使用新增平行回归保护和旧 2600 m 位置；已观察到真实 PASS_TARGET 及 `RETAINED_GLOBAL_ROUTE` 恢复，最终检查尚待运行结束。它与后续 2560 m 布局的实验分开保留。
+- `s2_matrix_20261026_parallel_return_20hz`：0.05 s、CloudySunset、0.8 倍速度，使用新增平行回归保护和旧 2600 m 位置，最终事件段 PASS。指令 2500.232 m、实际至 2978.016 m、最大路线偏差 0.408 m、普通车道保持偏移 0.451 m、恢复 38.715 km/h、恢复原路线 1 次，碰撞/压线/闯红灯均 0。summary SHA256 `78363e8514ce0267570aa028e6f999f2763590a505cc26160a917ee7ff7b50b9`。新评分的只读复核目录 `s2_matrix_20261026_20hz_strict_recheck/` 同为 PASS。它与后续 2560 m 布局的实验分开保留，不能并为同一干净源码或同一源场景覆盖率。
 
 服务适配层在原 `main_optimization` 工作目录更新，重启的是端口 18005 的 HTTP 适配进程；端口 8000 的 vLLM 模型进程、模型权重和模型身份未改变。
 
@@ -47,3 +47,27 @@
 ## 2026-10-26 代码候选冻结点
 
 最终本机代码（含 2560 m 布局、缺失证据检查及日志字段）：1270 passed、4 skipped；155 场景及官方合同静态校验 PASS。12 个新布局扰动场景生成均 STATIC_PASS，60 个任务只是配置数量，不是实际通过数。该代码先提交为可追踪候选，再在服务器干净工作树执行新布局 10 Hz 定点复测。结果在后续提交补充，不先签发通过。
+
+## 2026-10-26 干净提交实测结果
+
+代码 `b068aa4e28b53d13b6d9d7f61c4c284ee7a7f797`，`dirty=false`；服务器全量 1271 passed、3 skipped，CARLA 与生产 Qwen 的 model/revision/artifact/mode 健康检查全部 PASS。新布局事件段真实回归 **PASS**，不是完整 8 km Gate。
+
+| 项目 | case 1 / pedestrian_overtake |
+|---|---|
+| 证据目录（服务器 artifacts/validation 下） | `s2_matrix_20261026_corridor_margin_10hz/` |
+| 环境/扰动 | Town03_Opt、WetSunset、0.10 s、Actor 纵向 0 / 横向 +0.2 m / 速度 1.0 倍、reduced_rgb |
+| 生产模型 | Qwen/Qwen3.5-2B；revision `15852e8c16360a2fea060d615a32b45270f8a8fc`；artifact `4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa` |
+| 阶段指令 | 2500.012 m 发出，符合 [2500, 2560] m；外部唯一 `scenario_cmd_002=SUCCEEDED`，路线 `QWEN_PLAN` |
+| 实际超越 | slow_vehicle 先在前 +69.056 m，再在后 -28.835 m；有序标记 `seen_ahead=true / passed_after_ahead=true`，均在业务阶段终态前 |
+| 返回 | 1 次；在约 2652.665 m 恢复保留路线；本地回归起点约 2626.3 m，连接段为近似平行车道，不再连到路口转弯之后 |
+| 行驶终点/恢复速度 | 2978.271 m / 38.790 km/h；超过事件出口 2830 m |
+| 安全 | 碰撞、非计划压线、闯红灯、严重偏离事件均 0 |
+| 横向 | 最大路线偏差 0.461 m；普通车道保持最大偏移 0.478 m；规划换道贴合证据有效 |
+| 原始全量车道偏移 | 2400 帧，最大 1.767 m、均值 0.0507 m；原始全量指标未删除或改写 |
+| 场景 SHA256 | `27eee71f8302d912b0c8079eac412736f17c035befca19b7ef1b2dfe74862554` |
+| summary SHA256 | `fd8343f5c41ec5610dfc10e9106be3ed7b99d28bde95d7cf68a06685a5f8d098` |
+| 延迟（仅记录，未放行正式门禁） | sensor-to-trajectory max 846.583 ms，超过正式 150 ms 要求 |
+
+原始日志的旁路审计为 `s2_10hz_scoped_audit_b068_20261026.json`，与现场摘要的车道统计一致。完整场景 recorder 仍为 FAILED：此次从 2320 m 接续，未跑完整 8 km 及后续所有业务阶段，且正式延迟不达标；事件检查只检查本段的阶段、安全、真实目标通过和恢复合同。事件 PASS 不修改 recorder 原始状态或官方分数。
+
+新版源场景/本次干净代码的矩阵进度仅为 **1/60 PASS，59 项未执行**。前述旧位置 20 Hz PASS 只作单独历史证据。下一步应在同一候选上执行其他扰动（尤其较快慢车、稀疏 LiDAR、20 Hz）及其余事件窗口，不能跳过它们宣布泛化完成。本轮没有重新跑已通过的完整 8 km，也没有改动 main/challenge。
