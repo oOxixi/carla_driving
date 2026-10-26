@@ -322,6 +322,9 @@ def test_resume_segment_keeps_only_unfinished_commands_and_live_actors() -> None
         4460.0, 4480.0,
     ]
     assert "S2_P2_BUS_STOP" not in proposed["minimum_approach_speed_kph_by_phase"]
+    assert _scenario_completion_target_groups(resumed) == {}
+    assert "must_clear_actor_groups_before_resume" not in proposed
+    assert "bus_at_stop" in spec.extensions["completion_target_groups"]
 
 
 def test_s2_late_hazard_instructions_precede_physical_actor_actions() -> None:

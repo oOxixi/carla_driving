@@ -3339,6 +3339,15 @@ def _build_resume_segment_spec(
     }
 
     extensions = dict(spec.extensions)
+    groups = extensions.get("completion_target_groups")
+    if isinstance(groups, Mapping):
+        # A resumed later event no longer owns actors from completed phases.
+        # Remove groups whose anchor is gone; never silently drop members of
+        # a still-required group, which would weaken its safety postcondition.
+        extensions["completion_target_groups"] = {
+            anchor: members for anchor, members in groups.items()
+            if anchor in remaining_actor_ids
+        }
     proposed = dict(extensions.get("proposed_acceptance", {}))
     qwen_commands = tuple(remaining_commands)
     proposed["qwen_request_count"] = len(qwen_commands)
@@ -3352,6 +3361,7 @@ def _build_resume_segment_spec(
         "minimum_resumed_speed_kph_by_phase",
         "phase_min_speed_ranges_kph",
         "phase_target_speed_tolerance_kph",
+        "must_clear_actor_groups_before_resume",
     ):
         values = proposed.get(key)
         if not isinstance(values, Mapping):

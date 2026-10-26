@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
 from integration.evidence_provenance import collect_provenance
 from integration.generalization_gate import load_generalization_matrix, perturb_scenario
 from integration.scenario_execution import ScenarioSpec
+from integration.carla_runner import _build_resume_segment_spec, _scenario_completion_target_groups
 
 
 def _sha(path: Path) -> str:
@@ -38,7 +39,14 @@ def build_matrix(output: Path, matrix_path: Path) -> dict:
         variant = perturb_scenario(raw, case)
         path = scenarios / f"{case.case_id}.json"
         path.write_text(json.dumps(variant, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        ScenarioSpec.load(path)
+        spec = ScenarioSpec.load(path)
+        # Validate the contracts actually used by each resume subprocess, not
+        # just the whole-scene JSON. This remains CARLA-independent.
+        for window in windows.values():
+            resumed, _ = _build_resume_segment_spec(spec,
+                route_progress_m=window["start_m"], completed_command_count=window["completed_commands"],
+                target_speed_kph=40.)
+            _scenario_completion_target_groups(resumed)
         cases.append({"index": index, "case_id": case.case_id,
                       "scenario_path": str(path.relative_to(output)),
                       "scenario_sha256": _sha(path), "perturbation": asdict(case)})
