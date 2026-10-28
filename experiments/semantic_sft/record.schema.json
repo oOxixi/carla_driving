@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sample_id", "source_text", "source_sha256", "semantic_family", "group_id", "split", "label", "annotation_status", "reviews", "origin"],
+  "properties": {
+    "sample_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "source_text": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "semantic_family": {"type": "string", "minLength": 1, "maxLength": 128},
+    "group_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "split": {"enum": ["UNASSIGNED", "train", "val"]},
+    "label": {"type": ["object", "null"]},
+    "annotation_status": {"enum": ["DRAFT", "APPROVED", "REJECTED"]},
+    "reviews": {
+      "type": "array", "maxItems": 10,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["reviewer_id", "approved", "source_sha256", "label_sha256", "reviewed_at"],
+        "properties": {
+          "reviewer_id": {"type": "string", "minLength": 1, "maxLength": 128},
+          "approved": {"type": "boolean"},
+          "source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "label_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "reviewed_at": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+    "origin": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "from_frozen_test", "used_for_prompting", "used_for_tuning"],
+      "properties": {
+        "kind": {"enum": ["AUTHORED_TEXT_REQUIRES_HUMAN_REVIEW", "HUMAN_AUTHORED_TEXT", "CONSENTED_REAL_COMMAND"]},
+        "from_frozen_test": {"type": "boolean"},
+        "used_for_prompting": {"type": "boolean"},
+        "used_for_tuning": {"type": "boolean"}
+      }
+    }
+  }
+}

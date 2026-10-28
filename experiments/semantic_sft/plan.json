@@ -1,0 +1,30 @@
+{
+  "stage": "PREPARATION_ONLY_NOT_TRAINING_APPROVED",
+  "protected_baseline_sha": "f92ac6fcc8e8c55e3b3a63825b6f4386d49b6d78",
+  "base_model": "Qwen/Qwen3.5-2B",
+  "base_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "expected_base_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+  "training_entrypoint": null,
+  "model_outputs": "SEPARATE_ADAPTER_ONLY_NO_BASE_MERGE",
+  "production_gpu_policy": "DO_NOT_SHARE_WITH_RUNNING_PRODUCTION",
+  "push_to_hub": false,
+  "text_only": true,
+  "assistant_only_loss": true,
+  "max_sequence_length_candidate": 4096,
+  "candidate_lora": {
+    "status": "DRAFT_REQUIRES_INSTANTIATED_MODULE_CHECK",
+    "r": 8,
+    "alpha": 16,
+    "dropout": 0.05,
+    "target_modules_regex": "^model\\.language_model\\.layers\\.[0-9]+\\.self_attn\\.(q_proj|v_proj)$",
+    "exclude": ["visual", "mtp", "embeddings", "lm_head"],
+    "note": "Global-attention q/v only; does not adapt all hybrid layers. Not an established accuracy recipe."
+  },
+  "data_smoke_thresholds": {
+    "minimum_train": 200,
+    "minimum_val": 50,
+    "independent_reviewers": 2,
+    "required_families": ["lane_choice", "conditional_resume", "overtake_return", "negative_instruction", "yield_follow", "ambiguity"]
+  },
+  "threshold_note": "Proposed engineering data-smoke thresholds, not competition gates or evidence of model quality."
+}
