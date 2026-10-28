@@ -12,8 +12,9 @@ from qwen_service.task_understanding import (
     EXAMPLES, TaskUnderstandingPlanner, validate_extraction, evaluate_development_case,
     source_copy_schema,
     SequenceFirstUnderstandingPlanner,
+    ACTION_ZH, task_action_language,
 )
-from tools.qwen_planner_experiment import run_understand
+from tools.qwen_planner_experiment import run_understand, understanding_error_summary
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = "先左转，再将车速设为30公里每小时"
@@ -129,12 +130,14 @@ def test_development_check_detects_missing_order_and_wrong_speed_without_filling
     assert not evaluate_development_case(wrong, expected)["checks"]["speed_kph"]
 
 
-def test_literal_quote_is_not_claimed_to_prove_numeric_accuracy():
+def test_explicit_numeric_contradiction_is_rejected_without_fixing_it():
     payload = task()
     payload["steps"][1]["speed_kph"] = 50  # literal quote can be valid but extraction wrong
     model, _ = planner(payload)
     report = model.generate(SOURCE)
-    assert report["validation"] == "INTENT_SCHEMA_PASS_ONLY"
+    assert report["validation"] == "REJECTED"
+    assert "contradicts an explicit value" in report["rejection_reason"]
+    assert json.loads(report["raw_model_response"])["steps"][1]["speed_kph"] == 50
     check = evaluate_development_case(report, {"action_sequences": [["TURN_LEFT", "SET_SPEED"]], "speed_kph": [None, 30]})
     assert not check["passed"]
 
@@ -240,3 +243,81 @@ def test_development_errors_are_scored_as_failures_not_dropped():
         "action_sequences": [["TURN_LEFT", "SET_SPEED"]]}}], Broken()))[0]
     assert row["validation"] == "ERROR"
     assert row["development_evaluation"]["passed"] is False
+
+
+def test_native_action_codec_is_bijective_and_never_changes_steps_or_slots():
+    assert len(ACTION_ZH) == len(set(ACTION_ZH.values())) == 14
+    payload = task()
+    original = copy.deepcopy(payload)
+    encoded = task_action_language(payload, encode=True)
+    assert encoded["steps"][0]["action"] == "左转"
+    assert task_action_language(encoded, encode=False) == original
+    assert payload == original
+
+
+def test_native_protocol_keeps_raw_model_choices_and_independent_labels():
+    encoded = task_action_language(task(), encode=True)
+    base, calls = planner(encoded)
+    model = TaskUnderstandingPlanner(base.transport, action_language="zh")
+    row = list(run_understand([{"source_text": SOURCE, "expected": {
+        "action_sequences": [["TURN_LEFT", "SET_SPEED"]]}}], model))[0]
+    assert row["validation"] == "INTENT_SCHEMA_PASS_ONLY"
+    assert row["requested_tasks"] == task()
+    assert "设置或恢复车速" in row["raw_model_response"]
+    assert row["development_evaluation"]["passed"]
+    schema = calls[0]["extra_body"]["structured_outputs"]["json"]
+    assert schema["properties"]["steps"]["items"]["properties"]["action"]["enum"] == list(ACTION_ZH.values())
+    assert "action_sequences" not in json.dumps(calls)
+
+
+def test_native_model_cannot_mix_in_unoffered_english_codes():
+    base, _ = planner(task())
+    model = TaskUnderstandingPlanner(base.transport, action_language="zh")
+    assert model.generate(SOURCE)["validation"] == "REJECTED"
+
+
+def test_native_prohibited_action_keys_round_trip_without_inference():
+    payload = {"steps": [], "prohibited_actions": {"CHANGE_LANE_RIGHT": True}, "requires_confirmation": True}
+    encoded = task_action_language(payload, encode=True)
+    assert encoded["prohibited_actions"] == {"向右变道": True}
+    assert task_action_language(encoded, encode=False) == payload
+
+
+def test_direction_conflict_is_rejected_without_repair():
+    payload = task()
+    payload["steps"][0]["direction"] = "RIGHT"
+    model, _ = planner(payload)
+    report = model.generate(SOURCE)
+    assert report["validation"] == "REJECTED"
+    assert "contradicts its direction" in report["rejection_reason"]
+    assert json.loads(report["raw_model_response"])["steps"][0]["direction"] == "RIGHT"
+
+
+def test_explicit_gap_value_cannot_be_changed_by_model():
+    payload = task()
+    payload["steps"] = [{"action": "FOLLOW", "target_text": "自行车", "direction": None,
+                         "speed_kph": None, "gap_m": 4, "condition": None,
+                         "evidence": "跟随自行车保持3米距离"}]
+    model, _ = planner(payload)
+    row = model.generate("跟随自行车保持3米距离")
+    assert row["validation"] == "REJECTED"
+    assert "gap_m" in row["rejection_reason"]
+
+
+def test_speed_metres_per_second_is_not_misread_as_distance():
+    payload = task()
+    payload["steps"] = [{"action": "FOLLOW", "target_text": None, "direction": None,
+                         "speed_kph": None, "gap_m": 4, "condition": None,
+                         "evidence": "以3米每秒跟随"}]
+    validate_extraction("以3米每秒跟随", payload)  # gap has no supported numeral; dev labels still needed
+
+
+def test_error_head_summary_keeps_all_failures_and_never_mutates_reports():
+    reports = [{"development_evaluation": {"checks": {"action_order": False, "speed_kph": True}}},
+               {"development_evaluation": {"checks": {"action_order": False, "condition_1": False}}},
+               {"validation": "ERROR"}]
+    before = copy.deepcopy(reports)
+    summary = understanding_error_summary(reports)
+    assert summary["failed_checks"] == {"action_order": 2, "condition_1": 1}
+    assert summary["reports"] == 3
+    assert reports == before

@@ -23,6 +23,7 @@ from qwen_service.planner_audit import PlannerAuditLog, summarize_choice_audit
 from qwen_service.service import VllmQwenPlannerBackend
 from qwen_service.shadow_planner import StructuredShadowPlanner
 from qwen_service.task_understanding import TaskUnderstandingPlanner, SequenceFirstUnderstandingPlanner, evaluate_development_case
+from qwen_service.clause_understanding import ClauseFocusedUnderstandingPlanner
 
 
 def read_records(path: Path) -> list[dict]:
@@ -112,7 +113,7 @@ def run_choice(records: list[dict], transport: VllmQwenPlannerBackend, *, vision
             yield report
 
 
-def run_understand(records: list[dict], planner: TaskUnderstandingPlanner | SequenceFirstUnderstandingPlanner) -> Iterator[dict]:
+def run_understand(records: list[dict], planner: TaskUnderstandingPlanner | SequenceFirstUnderstandingPlanner | ClauseFocusedUnderstandingPlanner) -> Iterator[dict]:
     for index, record in enumerate(records):
         request = record.get("request", record)
         source = request.get("source_text")
@@ -138,6 +139,18 @@ def run_understand(records: list[dict], planner: TaskUnderstandingPlanner | Sequ
         yield report
 
 
+def understanding_error_summary(reports: list[dict]) -> dict:
+    """Post-inference diagnosis only; never feeds labels back into the planner."""
+    failures = {}
+    for report in reports:
+        evaluation = report.get("development_evaluation", {})
+        for key, passed in evaluation.get("checks", {}).items():
+            if not passed:
+                failures[key] = failures.get(key, 0) + 1
+    return {"scope": "DEVELOPMENT_ERROR_HEAD_COUNTS_NOT_FORMAL_METRICS",
+            "failed_checks": failures, "reports": len(reports)}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("capture", "audit", "choice", "shadow", "understand"))
@@ -148,7 +161,8 @@ def main() -> int:
     parser.add_argument("--vision", choices=("original", "no_rgb"), action="append")
     parser.add_argument("--max-tokens", type=int, default=2048)
     parser.add_argument("--understanding-review-rounds", type=int, choices=(0, 1), default=1)
-    parser.add_argument("--understanding-strategy", choices=("joint", "sequence_first"), default="joint",
+    parser.add_argument("--understanding-action-language", choices=("en", "zh"), default="en")
+    parser.add_argument("--understanding-strategy", choices=("joint", "sequence_first", "clause_focused"), default="joint",
                         help="sequence_first is an experimental ablation, not a promoted improvement")
     parser.add_argument("--shadow-format", choices=("full_json", "flag_sets_v1"), default="flag_sets_v1",
                         help="unique enum sets as true-key objects; original full JSON remains available")
@@ -159,6 +173,8 @@ def main() -> int:
     args = parser.parse_args()
     if args.limit < 1:
         parser.error("--limit must be positive")
+    if args.mode == "understand" and args.understanding_strategy != "joint" and args.understanding_action_language != "en":
+        parser.error("--understanding-action-language applies only to the joint strategy")
     if not math.isfinite(args.timeout_s) or args.timeout_s <= 0:
         parser.error("--timeout-s must be finite and positive")
     if args.output_dir.exists():
@@ -190,8 +206,9 @@ def main() -> int:
                 "provenance": collect_provenance(ROOT),
                 "rgb_detector_activation_verified": False,
                 "shadow_format": args.shadow_format, "max_tokens": args.max_tokens,
-                "understanding_review_rounds": args.understanding_review_rounds,
+                "understanding_review_rounds": args.understanding_review_rounds if args.understanding_strategy == "joint" else 0,
                 "understanding_strategy": args.understanding_strategy,
+                "understanding_action_language": args.understanding_action_language,
                 "understanding_effective_max_tokens": min(args.max_tokens, 1536),
                 "visions": ["text_only"] if args.mode == "understand" else args.vision or ["original", "no_rgb"],
                 "causal_benefit_measured": False}
@@ -220,9 +237,15 @@ def main() -> int:
         reports = []
         visions = args.vision or ["original", "no_rgb"]
         if args.mode == "understand":
-            planner = (SequenceFirstUnderstandingPlanner(transport, max_tokens=min(args.max_tokens, 1536))
-                       if args.understanding_strategy == "sequence_first" else TaskUnderstandingPlanner(
-                           transport, max_tokens=min(args.max_tokens, 1536), review_rounds=args.understanding_review_rounds))
+            budget = min(args.max_tokens, 1536)
+            if args.understanding_strategy == "clause_focused":
+                planner = ClauseFocusedUnderstandingPlanner(transport, max_tokens=budget)
+            elif args.understanding_strategy == "sequence_first":
+                planner = SequenceFirstUnderstandingPlanner(transport, max_tokens=budget)
+            else:
+                planner = TaskUnderstandingPlanner(transport, max_tokens=budget,
+                    review_rounds=args.understanding_review_rounds,
+                    action_language=args.understanding_action_language)
             iterator = run_understand(selected, planner)
         elif args.mode == "choice":
             transport.audit_log = PlannerAuditLog(args.output_dir / "choice_audit.jsonl")
@@ -251,6 +274,14 @@ def main() -> int:
         summary["scope"] = "TEXT_INTENT_DEVELOPMENT_ONLY_NOT_GROUNDING_OR_GATE"
         summary["development_cases"] = len(labeled)
         summary["development_passed"] = sum(r["passed"] for r in labeled)
+        summary["error_heads"] = understanding_error_summary(reports)
+        with (args.output_dir / "hard_cases.jsonl").open("x", encoding="utf-8") as stream:
+            for report in reports:
+                evaluation = report.get("development_evaluation")
+                if report["validation"] in {"ERROR", "REJECTED"} or (evaluation is not None and not evaluation["passed"]):
+                    index = report["input_index"]
+                    stream.write(json.dumps({"scope": "AUDIT_NOT_APPROVED_TRAINING_DATA", "input": selected[index],
+                                             "report": report}, ensure_ascii=False, allow_nan=False) + "\n")
     (args.output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     manifest["status"] = "COMPLETE"
     (args.output_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")

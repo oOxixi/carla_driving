@@ -8,9 +8,30 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import re
 from typing import Any, Mapping
 
 from .shadow_planner import ACTION_COMPLETIONS, _unique_object
+
+
+ACTION_ZH = {
+    "KEEP_LANE": "保持车道", "SET_SPEED": "设置或恢复车速", "SLOW_DOWN": "减速",
+    "STOP": "停车", "YIELD": "让行", "FOLLOW": "跟车",
+    "TURN_LEFT": "左转", "TURN_RIGHT": "右转",
+    "CHANGE_LANE_LEFT": "向左变道", "CHANGE_LANE_RIGHT": "向右变道",
+    "AVOID_OBSTACLE": "避障超车", "RETURN_TO_LANE": "回原车道",
+    "PULL_OVER": "靠边停车", "HOLD": "等待确认",
+}
+
+
+def task_action_language(task: Mapping[str, Any], *, encode: bool) -> dict[str, Any]:
+    """Bijective protocol translation only; never infer actions from source text."""
+    mapping = ACTION_ZH if encode else {value: key for key, value in ACTION_ZH.items()}
+    result = copy.deepcopy(dict(task))
+    for step in result["steps"]:
+        step["action"] = mapping[step["action"]]
+    result["prohibited_actions"] = {mapping[key]: value for key, value in result["prohibited_actions"].items()}
+    return result
 
 
 TASK_SCHEMA: dict[str, Any] = {
@@ -122,6 +143,19 @@ def validate_extraction(source: str, payload: Mapping[str, Any]) -> None:
             raise ValueError(f"steps[{index}] executes a model-extracted prohibited action")
         if step["condition"] is not None and step["condition"] == step["evidence"]:
             raise ValueError(f"steps[{index}] condition repeats its own action evidence")
+        # Validate explicit Arabic-number units in the model-selected evidence.
+        # Never infer missing slots, choose an action or rewrite a number.
+        for field, pattern in (
+            ("speed_kph", r"(?P<value>\d+(?:\.\d+)?)\s*(?:公里每小时|公里/小时|千米每小时|km/h|kph)"),
+            ("gap_m", r"(?P<value>\d+(?:\.\d+)?)\s*(?:米(?!每秒|/秒|/s)|metres?\b(?!\s*/\s*s)|meters?\b(?!\s*/\s*s)|m\b(?!\s*/\s*s))"),
+        ):
+            numbers = [float(m.group("value")) for m in re.finditer(pattern, step["evidence"], re.IGNORECASE)]
+            if step[field] is not None and numbers and not any(abs(float(step[field]) - n) <= 1e-6 for n in numbers):
+                raise ValueError(f"steps[{index}].{field} contradicts an explicit value in its quoted evidence")
+        required_direction = {"TURN_LEFT": "LEFT", "TURN_RIGHT": "RIGHT",
+                              "CHANGE_LANE_LEFT": "LEFT", "CHANGE_LANE_RIGHT": "RIGHT"}.get(step["action"])
+        if required_direction is not None and step["direction"] not in (None, required_direction):
+            raise ValueError(f"steps[{index}] action contradicts its direction slot")
 
 
 def source_copy_schema(source: str) -> dict[str, Any]:
@@ -143,7 +177,8 @@ def source_copy_schema(source: str) -> dict[str, Any]:
 class TaskUnderstandingPlanner:
     """No infer()/health(), no vehicle dispatch, no implicit ID grounding."""
 
-    def __init__(self, transport: Any, *, max_tokens: int = 1536, review_rounds: int = 0) -> None:
+    def __init__(self, transport: Any, *, max_tokens: int = 1536, review_rounds: int = 0,
+                 action_language: str = "en") -> None:
         if type(max_tokens) is not int or not 256 <= max_tokens <= 8192:
             raise ValueError("max_tokens must be an integer in [256, 8192]")
         self.transport = transport
@@ -151,6 +186,9 @@ class TaskUnderstandingPlanner:
         if type(review_rounds) is not int or review_rounds not in (0, 1):
             raise ValueError("review_rounds must be 0 or 1")
         self.review_rounds = review_rounds
+        if action_language not in {"en", "zh"}:
+            raise ValueError("action_language must be en or zh")
+        self.action_language = action_language
 
     def generate(self, source_text: str) -> dict[str, Any]:
         if not isinstance(source_text, str) or not source_text.strip() or len(source_text) > 1000:
@@ -163,6 +201,17 @@ class TaskUnderstandingPlanner:
             }, ensure_ascii=False)})
         messages.append({"role": "user", "content": source_text})
         schema = source_copy_schema(source_text)
+        system_prompt = SYSTEM_PROMPT
+        if self.action_language == "zh":
+            system_prompt = system_prompt.replace("TURN_LEFT/RIGHT", "左转/右转")
+            for action in sorted(ACTION_ZH, key=len, reverse=True):
+                system_prompt = system_prompt.replace(action, ACTION_ZH[action])
+            messages[0]["content"] = system_prompt
+            for message in messages:
+                if message["role"] == "assistant":
+                    message["content"] = json.dumps(task_action_language(json.loads(message["content"]), encode=True), ensure_ascii=False)
+            schema["properties"]["steps"]["items"]["properties"]["action"]["enum"] = list(ACTION_ZH.values())
+            schema["properties"]["prohibited_actions"]["properties"] = {value: {"const": True} for value in ACTION_ZH.values()}
         report: dict[str, Any] = {
             "scope": "TEXT_INTENT_ONLY_NOT_GROUNDED_NOT_EXECUTABLE_NOT_GATE",
             "model_id": self.transport.model_id, "image_sent": False,
@@ -172,6 +221,7 @@ class TaskUnderstandingPlanner:
             "prompt_sha256": hashlib.sha256(json.dumps(messages, ensure_ascii=False, sort_keys=True).encode()).hexdigest(),
             "execution_constraints_applied": False, "ready_for_vehicle_execution": False,
             "review_rounds": self.review_rounds, "attempts": [],
+            "action_language": self.action_language,
             "max_output_tokens": self.max_tokens,
             "copy_grammar_applied": len(source_text) <= 256,
             "wire_schema_sha256": hashlib.sha256(json.dumps(schema, sort_keys=True).encode()).hexdigest(),
@@ -206,6 +256,9 @@ class TaskUnderstandingPlanner:
                 if current["finish_reason"] != "stop" or not isinstance(raw, str):
                     raise ValueError("incomplete task generation")
                 task = json.loads(raw, object_pairs_hook=_unique_object)
+                if self.action_language == "zh":
+                    jsonschema.Draft202012Validator(schema).validate(task)
+                    task = task_action_language(task, encode=False)
                 validate_extraction(source_text, task)
                 current.update(validation="INTENT_SCHEMA_PASS_ONLY", requested_tasks=task)
             except (ValueError, TypeError, jsonschema.ValidationError) as error:
@@ -214,7 +267,7 @@ class TaskUnderstandingPlanner:
             if attempt < self.review_rounds:
                 # The pinned deployment has a 4096-token context. Review keeps
                 # source + candidate, not the entire few-shot history again.
-                messages = [{"role": "system", "content": SYSTEM_PROMPT},
+                messages = [{"role": "system", "content": system_prompt},
                             {"role": "user", "content": source_text},
                             {"role": "assistant", "content": raw if isinstance(raw, str) else ""},
                             {"role": "user", "content": (
