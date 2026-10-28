@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError as FutureTimeout
 from dataclasses import dataclass
 import base64
+import hashlib
 import io
 import json
 import math
@@ -24,6 +25,7 @@ from integration.qwen_plan_adapter import (
 from integration.qwen_vl_adapter import StrictQwenVLAdapter, TransformersQwen25VLBackend
 from runtime.interface_registry import InterfaceRegistry, InterfaceValidationError
 from runtime.plan_validator import PlanValidationError, PlanValidator
+from .planner_audit import PlannerAuditLog
 
 
 def _percentile(values: list[float], quantile: float) -> float | None:
@@ -459,6 +461,7 @@ class VllmQwenPlannerBackend:
         max_new_tokens: int = 256,
         image_max_side: int = 224,
         jpeg_quality: int = 75,
+        audit_path: str | Path | None = None,
     ) -> None:
         if not base_url.strip() or not model.strip():
             raise ValueError("vLLM base URL and model must be non-empty")
@@ -479,19 +482,53 @@ class VllmQwenPlannerBackend:
             raise ValueError("planner_v2 fixes images at 224x224 (64 visual tokens)")
         self.image_max_side = 224
         self.jpeg_quality = int(jpeg_quality)
+        self.audit_log = None if audit_path is None else PlannerAuditLog(audit_path)
 
     def health(self) -> tuple[bool, str]:
+        audit = getattr(self, "audit_log", None)
+        if audit is not None and audit.status()["write_errors"]:
+            return True, f"vLLM configured: {self.model_id}; AUDIT_WRITE_ERRORS={audit.status()['write_errors']}"
         return True, f"vLLM planner endpoint configured: {self.model_id}"
 
     def infer(self, request: Mapping[str, Any]) -> Mapping[str, Any]:
+        audit = getattr(self, "audit_log", None)
+        if audit is None:
+            return self._infer_choice(request, {})
+        trace: dict[str, Any] = {
+            "record_type": "qwen_choice_adapter_audit", "schema_version": "1.0",
+            "stage": "ADAPTER_ONLY", "model_id": self.model_id,
+            "recorded_at_ns": time.time_ns(),
+            "request": json.loads(json.dumps(dict(request), allow_nan=False)),
+            "status": "ERROR", "overrides": [], "image_sent": False,
+        }
+        started = time.perf_counter_ns()
+        try:
+            plan = self._infer_choice(request, trace)
+            trace.update(status="ADAPTER_RETURNED", adapter_plan=plan)
+            return plan
+        except Exception as error:
+            trace["error_type"] = type(error).__name__
+            raise
+        finally:
+            trace["elapsed_ms"] = (time.perf_counter_ns() - started) / 1e6
+            audit.append(trace)
+
+    def _infer_choice(self, request: Mapping[str, Any], trace: dict[str, Any]) -> Mapping[str, Any]:
         choice_codes = self._choice_codes(request)
+        trace["candidate_codes"] = choice_codes
         prompt = self._choice_prompt(request, choice_codes=choice_codes)
         content: list[dict[str, Any]] = []
         image_path = self._resolve_image(request.get("rgb_ref"))
         if image_path is not None:
+            image_url = self._image_data_url(image_path)
+            trace.update(image_sent=True, image_ref=request.get("rgb_ref"))
+            if getattr(self, "audit_log", None) is not None:
+                trace["encoded_image_sha256"] = hashlib.sha256(
+                    base64.b64decode(image_url.split(",", 1)[1])
+                ).hexdigest()
             content.append({
                 "type": "image_url",
-                "image_url": {"url": self._image_data_url(image_path)},
+                "image_url": {"url": image_url},
             })
         content.append({"type": "text", "text": prompt})
         response = self._client.chat.completions.create(
@@ -507,25 +544,33 @@ class VllmQwenPlannerBackend:
         choices = getattr(response, "choices", None)
         if not choices:
             raise RuntimeError("vLLM returned no planner choices")
-        raw = str(getattr(getattr(choices[0], "message", None), "content", "")).strip().upper()
+        original = str(getattr(getattr(choices[0], "message", None), "content", ""))
+        trace["raw_model_response"] = original
+        raw = original.strip().upper()
         if raw not in self._CHOICES:
             raise ValueError(f"vLLM returned invalid constrained planner choice: {raw!r}")
+        trace["model_choice_was_offered"] = raw in choice_codes
         behavior = self._CHOICES[raw]
+        trace["model_behavior"] = behavior
         routing = request.get("routing", {})
         if (
             isinstance(routing, Mapping)
             and routing.get("disposition") == "CONFIRM_SAFE"
             and behavior != "STOP"
         ):
+            trace.setdefault("overrides", []).append("CONFIRM_SAFE_TO_HOLD")
             behavior = "HOLD"
         constraints = request["constraints"]
         if constraints["must_stop"] or self._traffic_stop_required(request):
+            if behavior != "STOP":
+                trace.setdefault("overrides", []).append("HARD_STOP_CONSTRAINT")
             behavior = "STOP"
         allowed = set(constraints["allowed_behaviors"])
         normalized = behavior.removesuffix("_LEFT").removesuffix("_RIGHT")
         if behavior not in {"HOLD"} and behavior not in allowed and normalized not in allowed:
             raise ValueError(f"Qwen behavior {behavior} violates allowed_behaviors")
         steps = self._expanded_steps(request, behavior)
+        trace.update(effective_behavior=behavior, semantic_step_source="DETERMINISTIC_ADAPTER_EXPANSION")
         return {
             "schema_version": "2.0",
             "request_id": request["request_id"],
@@ -1278,6 +1323,10 @@ class QwenDecisionService:
             "max_concurrency": self.config.max_concurrency,
             "timeout_ms": self.config.timeout_ms,
             "qwen_mode": self.qwen_mode,
+            "planner_audit": (
+                self.backend.audit_log.status() if getattr(self.backend, "audit_log", None) is not None
+                else {"enabled": False}
+            ),
             "gpu": _gpu_metrics(),
         }
 

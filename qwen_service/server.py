@@ -141,6 +141,7 @@ def build_service(args: argparse.Namespace) -> QwenDecisionService:
             max_new_tokens=args.max_new_tokens,
             image_max_side=args.image_max_side,
             jpeg_quality=args.jpeg_quality,
+            audit_path=getattr(args, "planner_audit_jsonl", None),
         )
     elif args.model_path is not None:
         backend_type = LocalQwenPlannerBackend if args.qwen_mode == "planner_v2" else LocalQwenBackend
@@ -218,6 +219,8 @@ def main() -> None:
     parser.add_argument("--max-pixels", type=int, default=256 * 28 * 28)
     parser.add_argument("--image-max-side", type=int, default=224)
     parser.add_argument("--jpeg-quality", type=int, default=75)
+    parser.add_argument("--planner-audit-jsonl", type=Path,
+                        help="opt-in private adapter audit; not an execution success log")
     args = parser.parse_args()
     service = build_service(args)
     server = create_server(service, host=args.host, port=args.port)
