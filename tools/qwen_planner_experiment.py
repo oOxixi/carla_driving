@@ -22,6 +22,7 @@ from integration.qwen_profiles import (
 from qwen_service.planner_audit import PlannerAuditLog, summarize_choice_audit
 from qwen_service.service import VllmQwenPlannerBackend
 from qwen_service.shadow_planner import StructuredShadowPlanner
+from qwen_service.task_understanding import TaskUnderstandingPlanner, SequenceFirstUnderstandingPlanner, evaluate_development_case
 
 
 def read_records(path: Path) -> list[dict]:
@@ -111,15 +112,44 @@ def run_choice(records: list[dict], transport: VllmQwenPlannerBackend, *, vision
             yield report
 
 
+def run_understand(records: list[dict], planner: TaskUnderstandingPlanner | SequenceFirstUnderstandingPlanner) -> Iterator[dict]:
+    for index, record in enumerate(records):
+        request = record.get("request", record)
+        source = request.get("source_text")
+        started = time.perf_counter_ns()
+        try:
+            report = planner.generate(source)
+            if "expected" in record:
+                report["development_evaluation"] = evaluate_development_case(report, record["expected"])
+            allowed = set(request.get("constraints", {}).get("allowed_behaviors", ()))
+            if allowed:
+                report["upstream_unavailable_actions"] = sorted({
+                    step["action"] for step in report.get("requested_tasks", {}).get("steps", ())
+                    if step["action"] != "HOLD" and step["action"] not in allowed
+                    and step["action"].removesuffix("_LEFT").removesuffix("_RIGHT") not in allowed
+                })
+        except Exception as error:
+            report = {"scope": "TEXT_INTENT_ONLY_NOT_EXECUTABLE_NOT_GATE", "validation": "ERROR",
+                      "error_type": type(error).__name__, "error": str(error)}
+        if "expected" in record and "development_evaluation" not in report:
+            report["development_evaluation"] = evaluate_development_case(report, record["expected"])
+        report.update(input_index=index, case_id=record.get("case_id", request.get("request_id")),
+                      elapsed_ms=(time.perf_counter_ns() - started) / 1e6)
+        yield report
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("capture", "audit", "choice", "shadow"))
+    parser.add_argument("mode", choices=("capture", "audit", "choice", "shadow", "understand"))
     parser.add_argument("--input", type=Path, required=True, help="private JSONL requests or adapter audits")
     parser.add_argument("--output-dir", type=Path, required=True, help="new artifact directory, never overwritten")
     parser.add_argument("--base-url", default="http://127.0.0.1:8000/v1")
     parser.add_argument("--image-root", type=Path)
     parser.add_argument("--vision", choices=("original", "no_rgb"), action="append")
     parser.add_argument("--max-tokens", type=int, default=2048)
+    parser.add_argument("--understanding-review-rounds", type=int, choices=(0, 1), default=1)
+    parser.add_argument("--understanding-strategy", choices=("joint", "sequence_first"), default="joint",
+                        help="sequence_first is an experimental ablation, not a promoted improvement")
     parser.add_argument("--shadow-format", choices=("full_json", "flag_sets_v1"), default="flag_sets_v1",
                         help="unique enum sets as true-key objects; original full JSON remains available")
     parser.add_argument("--timeout-s", type=float, default=120.0)
@@ -136,7 +166,7 @@ def main() -> int:
     records = extract_requests(args.input, limit=args.limit) if args.mode == "capture" else read_records(args.input)
     selected = records if args.mode == "audit" else records[:args.limit]
     metadata = None
-    if args.mode in {"choice", "shadow"}:
+    if args.mode in {"choice", "shadow", "understand"}:
         from urllib.request import urlopen
         with urlopen(args.health_url, timeout=10) as response:
             metadata = json.load(response)
@@ -156,11 +186,14 @@ def main() -> int:
                 "status": "RUNNING",
                 "input_sha256": hashlib.sha256(args.input.read_bytes()).hexdigest(),
                 "selected_records": len(selected), "teacher_health": metadata,
-                "base_url": args.base_url if args.mode in {"choice", "shadow"} else None,
+                "base_url": args.base_url if args.mode in {"choice", "shadow", "understand"} else None,
                 "provenance": collect_provenance(ROOT),
                 "rgb_detector_activation_verified": False,
                 "shadow_format": args.shadow_format, "max_tokens": args.max_tokens,
-                "visions": args.vision or ["original", "no_rgb"],
+                "understanding_review_rounds": args.understanding_review_rounds,
+                "understanding_strategy": args.understanding_strategy,
+                "understanding_effective_max_tokens": min(args.max_tokens, 1536),
+                "visions": ["text_only"] if args.mode == "understand" else args.vision or ["original", "no_rgb"],
                 "causal_benefit_measured": False}
     (args.output_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     if args.mode == "capture":
@@ -186,7 +219,12 @@ def main() -> int:
             raise ValueError("pinned Qwen3.5-2B not exposed by configured vLLM endpoint")
         reports = []
         visions = args.vision or ["original", "no_rgb"]
-        if args.mode == "choice":
+        if args.mode == "understand":
+            planner = (SequenceFirstUnderstandingPlanner(transport, max_tokens=min(args.max_tokens, 1536))
+                       if args.understanding_strategy == "sequence_first" else TaskUnderstandingPlanner(
+                           transport, max_tokens=min(args.max_tokens, 1536), review_rounds=args.understanding_review_rounds))
+            iterator = run_understand(selected, planner)
+        elif args.mode == "choice":
             transport.audit_log = PlannerAuditLog(args.output_dir / "choice_audit.jsonl")
             iterator = run_choice(selected, transport, visions=visions)
         else:
@@ -200,7 +238,7 @@ def main() -> int:
     finally:
         transport.close()
     counts = {status: sum(r["validation"] == status for r in reports)
-              for status in ("CONTRACT_PASS_ONLY", "ADAPTER_RETURNED_NOT_VALIDATED", "REJECTED", "ERROR")}
+              for status in ("CONTRACT_PASS_ONLY", "INTENT_SCHEMA_PASS_ONLY", "ADAPTER_RETURNED_NOT_VALIDATED", "REJECTED", "ERROR")}
     summary = {"scope": "CONTRACT_VALIDITY_NOT_TASK_ACCURACY_OR_GATE", "counts": counts,
                "task_accuracy": "NOT_MEASURED", "ready_for_vehicle_execution": False}
     if args.mode == "choice":
@@ -208,12 +246,19 @@ def main() -> int:
         summary["adapter_audit"] = (
             summarize_choice_audit(read_records(audit_path)) if audit_path.stat().st_size else None
         )
+    if args.mode == "understand":
+        labeled = [r["development_evaluation"] for r in reports if "development_evaluation" in r]
+        summary["scope"] = "TEXT_INTENT_DEVELOPMENT_ONLY_NOT_GROUNDING_OR_GATE"
+        summary["development_cases"] = len(labeled)
+        summary["development_passed"] = sum(r["passed"] for r in labeled)
     (args.output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     manifest["status"] = "COMPLETE"
     (args.output_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(summary))
-    expected = "CONTRACT_PASS_ONLY" if args.mode == "shadow" else "ADAPTER_RETURNED_NOT_VALIDATED"
-    return 0 if counts[expected] == len(reports) else 1
+    expected = {"shadow": "CONTRACT_PASS_ONLY", "understand": "INTENT_SCHEMA_PASS_ONLY",
+                "choice": "ADAPTER_RETURNED_NOT_VALIDATED"}[args.mode]
+    development_ok = summary.get("development_passed", 0) == summary.get("development_cases", 0)
+    return 0 if counts[expected] == len(reports) and development_ok else 1
 
 
 if __name__ == "__main__":

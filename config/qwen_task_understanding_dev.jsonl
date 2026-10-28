@@ -1,0 +1,12 @@
+{"case_id":"DEV_TEXT_01","source_text":"将车速设为20公里每小时","expected":{"action_sequences":[["SET_SPEED"]],"speed_kph":[20]}}
+{"case_id":"DEV_TEXT_02","source_text":"向左转弯，然后把速度调整到30公里每小时","expected":{"action_sequences":[["TURN_LEFT","SET_SPEED"]],"speed_kph":[null,30],"direction":["LEFT",null]}}
+{"case_id":"DEV_TEXT_03","source_text":"先减速至25公里每小时，再向右转弯","expected":{"action_sequences":[["SLOW_DOWN","TURN_RIGHT"]],"speed_kph":[25,null],"direction":[null,"RIGHT"]}}
+{"case_id":"DEV_TEXT_04","source_text":"跟随前方车辆，确认安全后向左变道","expected":{"action_sequences":[["FOLLOW","CHANGE_LANE_LEFT"]],"direction":[null,"LEFT"],"condition_terms":{"1":["安全"]},"target_text_terms":{"0":["车辆"]}}}
+{"case_id":"DEV_TEXT_05","source_text":"先让横穿的行人通过，再继续沿原车道行驶","expected":{"action_sequences":[["YIELD","KEEP_LANE"]],"target_text_terms":{"0":["行人"]}}}
+{"case_id":"DEV_TEXT_06","source_text":"从左侧绕过前方障碍物，通过后回到原车道","expected":{"action_sequences":[["AVOID_OBSTACLE","RETURN_TO_LANE"]],"direction":["LEFT",null],"condition_terms":{"1":["通过"]}}}
+{"case_id":"DEV_TEXT_07","source_text":"前方公交站有乘客上下车，减速至30公里每小时，确认乘客离开后恢复40公里每小时","expected":{"action_sequences":[["SLOW_DOWN","SET_SPEED"]],"speed_kph":[30,40],"condition_terms":{"1":["乘客","离开"]}}}
+{"case_id":"DEV_TEXT_08","source_text":"与前方自行车保持3米距离跟随，确认其离开当前车道后恢复35公里每小时","expected":{"action_sequences":[["FOLLOW","SET_SPEED"]],"speed_kph":[null,35],"gap_m":[3,null],"condition_terms":{"1":["离开"]},"target_text_terms":{"0":["自行车"]}}}
+{"case_id":"DEV_TEXT_09","source_text":"不要向右变道，先减速至20公里每小时，再保持当前车道行驶","expected":{"action_sequences":[["SLOW_DOWN","KEEP_LANE"]],"speed_kph":[20,null],"prohibited_actions":["CHANGE_LANE_RIGHT"]}}
+{"case_id":"DEV_TEXT_10","source_text":"先减速至15公里每小时，然后靠边停车","expected":{"action_sequences":[["SLOW_DOWN","PULL_OVER"]],"speed_kph":[15,null]}}
+{"case_id":"DEV_TEXT_11","source_text":"请等待前方行人通过，然后跟随前车，最后停车","expected":{"action_sequences":[["YIELD","FOLLOW","STOP"]],"target_text_terms":{"0":["行人"],"1":["前车"]}}}
+{"case_id":"DEV_TEXT_12","source_text":"先从右侧超越慢车，再返回原车道，最后恢复45公里每小时","expected":{"action_sequences":[["AVOID_OBSTACLE","RETURN_TO_LANE","SET_SPEED"]],"speed_kph":[null,null,45],"direction":["RIGHT",null,null]}}

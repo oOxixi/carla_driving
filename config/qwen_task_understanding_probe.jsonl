@@ -1,0 +1,4 @@
+{"case_id":"PROBE_TEXT_01","source_text":"保持车道，不要超车，等前车离开后将车速设为33公里每小时","expected":{"action_sequences":[["KEEP_LANE","SET_SPEED"]],"speed_kph":[null,33],"prohibited_actions":["AVOID_OBSTACLE"],"condition_terms":{"1":["前车","离开"]}}}
+{"case_id":"PROBE_TEXT_02","source_text":"等候行人先过，再从左侧超过货车，超过后回原车道，最终恢复到38公里每小时","expected":{"action_sequences":[["YIELD","AVOID_OBSTACLE","RETURN_TO_LANE","SET_SPEED"]],"speed_kph":[null,null,null,38],"direction":[null,"LEFT",null,null],"target_text_terms":{"0":["行人"],"1":["货车"]}}}
+{"case_id":"PROBE_TEXT_03","source_text":"先与自行车保持4米跟随，安全后换到右侧车道","expected":{"action_sequences":[["FOLLOW","CHANGE_LANE_RIGHT"]],"gap_m":[4,null],"direction":[null,"RIGHT"],"condition_terms":{"1":["安全"]}}}
+{"case_id":"PROBE_TEXT_04","source_text":"左转完毕后减速至12公里每小时，再靠边停车","expected":{"action_sequences":[["TURN_LEFT","SLOW_DOWN","PULL_OVER"]],"speed_kph":[null,12,null],"direction":["LEFT",null,null]}}
