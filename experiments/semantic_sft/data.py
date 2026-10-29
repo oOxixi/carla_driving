@@ -125,6 +125,7 @@ def audit_rows(rows: list[dict], *, external_protected: set[str] | None = None,
     families = defaultdict(Counter)
     groups = defaultdict(set)
     actions = defaultdict(Counter)
+    first_reviewed_groups = defaultdict(set)
     seen_ids = set()
     seen_texts = set()
     for number, row in enumerate(rows):
@@ -207,6 +208,11 @@ def audit_rows(rows: list[dict], *, external_protected: set[str] | None = None,
                     approved_ids.add(review["reviewer_id"].strip().casefold())
             if len(approved_ids) < limits["independent_reviewers"]:
                 errors.append("TWO_INDEPENDENT_LABEL_REVIEWS_REQUIRED")
+            pending_review_errors = {"SPLIT_UNASSIGNED", "HUMAN_REVIEW_NOT_APPROVED", "TWO_INDEPENDENT_LABEL_REVIEWS_REQUIRED"}
+            if (approved_ids and row["annotation_status"] in {"DRAFT", "APPROVED"}
+                    and not (set(errors) - pending_review_errors)
+                    and row["semantic_family"].strip() and row["group_id"].strip()):
+                first_reviewed_groups[row["semantic_family"]].add(row["group_id"])
         if errors:
             issues.append({"row": number, "sample_id": sample_id, "errors": errors})
     global_errors = []
@@ -227,6 +233,12 @@ def audit_rows(rows: list[dict], *, external_protected: set[str] | None = None,
             "action_counts": {k: dict(v) for k, v in actions.items()},
             "issues": issues, "issue_counts": dict(counts), "global_errors": global_errors,
             "overlapping_groups": overlaps, "data_ready_for_tokenization": not issues and not global_errors,
+            "split_coverage_diagnostics": {
+                "scope": "FIRST_REVIEWED_GROUP_COUNTS_NOT_FINAL_SPLIT_OR_TRAINING_APPROVAL",
+                "minimum_independent_groups_for_both_splits": 2,
+                "groups_by_family": {f: sorted(first_reviewed_groups[f]) for f in limits["required_families"]},
+                "families_needing_more_groups": [f for f in limits["required_families"] if len(first_reviewed_groups[f]) < 2],
+                "note": "Two groups is only a coverage lower bound; review, exclusions and sample-size gates still apply."},
             "ready_for_training": False, "training_blockers": ["NO_TRAINER_IMPLEMENTED", "NO_APPROVED_TOKENIZER_MASK_AUDIT", "NO_ISOLATED_GPU_APPROVAL"]}
 
 

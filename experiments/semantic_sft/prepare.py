@@ -36,9 +36,12 @@ def main() -> int:
     parser.add_argument("--external-protected-registry", type=Path)
     parser.add_argument("--model-path", type=Path)
     parser.add_argument("--tokenizer-smoke", action="store_true")
+    parser.add_argument("--module-audit", action="store_true", help="instantiate meta architecture only; no model weights or CUDA")
     args = parser.parse_args()
     if args.proposals is not None and args.mode != "draft":
         parser.error("--proposals applies only to draft mode")
+    if args.module_audit and (args.mode != "environment" or args.model_path is None):
+        parser.error("--module-audit requires environment mode and a read-only --model-path")
     guard = baseline_guard()
     if not guard["passed"]:
         raise ValueError(f"changes outside isolated preparation directory: {guard['outside_changes']}")
@@ -92,7 +95,7 @@ def main() -> int:
              "label_sha256": canonical_hash(row["label"]) if isinstance(row.get("label"), dict) else None}
             for row in rows]}
     elif args.mode == "environment":
-        report = inventory(args.model_path, tokenizer_smoke=args.tokenizer_smoke)
+        report = inventory(args.model_path, tokenizer_smoke=args.tokenizer_smoke, module_audit=args.module_audit)
     elif args.mode == "export" and report["data_ready_for_tokenization"]:
         for split in ("train", "val"):
             with (output / f"{split}.jsonl").open("x", encoding="utf-8") as stream:
@@ -108,6 +111,8 @@ def main() -> int:
                       "data_ready_for_tokenization": report.get("data_ready_for_tokenization", False),
                       "ready_for_training": False, "baseline_unchanged": True}, ensure_ascii=False))
     if args.mode == "environment" and args.tokenizer_smoke and report.get("tokenizer_smoke", {}).get("status") != "PASS":
+        return 1
+    if args.mode == "environment" and args.module_audit and report.get("meta_module_audit", {}).get("status") != "PASS":
         return 1
     return 0 if args.mode in {"review", "draft", "hashes", "environment"} or report["data_ready_for_tokenization"] else 1
 

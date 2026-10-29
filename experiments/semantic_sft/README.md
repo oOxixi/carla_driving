@@ -32,7 +32,7 @@
 | `record.schema.json` | 单条数据、来源、分组、split、双人复核记录的格式 |
 | `ANNOTATION_GUIDE.md` | 任务拆解、条件、否定、目标和歧义的人工标注说明 |
 | `data.py` | 原方案保护、数据泄漏检查、审批哈希校验、SFT消息格式 |
-| `environment.py` | 依赖/权重索引只读检查、CPU tokenizer和assistant loss mask小测试 |
+| `environment.py` | 依赖/权重索引、真实meta结构目标层核验、CPU tokenizer和loss mask检查；不读取权重 |
 | `review.py` | 记录有直接人工授权的第一轮审核；CPU逐条token诊断，不启动训练或导出待批准样本 |
 | `prepare.py` | review / draft / hashes / preflight / export / environment；没有train命令 |
 | `plan.json` | 尚未批准的候选LoRA配置与工程数据门槛，不是比赛正式Gate |
@@ -40,8 +40,9 @@
 
 ## 标注与数据门槛
 
-24条种子全部生成 `DRAFT`、`label=null`、`reviews=[]`、`split=UNASSIGNED`。
+初始24条种子全部生成 `DRAFT`、`label=null`、`reviews=[]`、`split=UNASSIGNED`。
 程序不自动批准标签，不把旧Qwen输出当正确答案，不把同一模型自评当人工复核。
+最新快照已有21条用户首轮批准，另3条隔离；仍未完成双人批准，见STATUS.md。
 
 同组改写必须保持在同一split。语义类别用于分布检查，不能代替真实标签质量审核。
 两个不同reviewer必须独立确认**原句和标签**，记录两者SHA256和真实时间。
@@ -103,6 +104,11 @@ python -m experiments.semantic_sft.prepare export \
 python -m experiments.semantic_sft.prepare environment \
   --model-path /home/tiaozhansai/carla-driving-2B/models/Qwen3.5-2B \
   --tokenizer-smoke --output-dir artifacts/semantic_sft/env_<批次>
+
+# 只用config在meta设备构建真实模型结构，不加载权重、创建adapter或初始化CUDA。
+python -m experiments.semantic_sft.prepare environment \
+  --model-path /home/tiaozhansai/carla-driving-2B/models/Qwen3.5-2B \
+  --module-audit --output-dir artifacts/semantic_sft/meta_modules_<批次>
 ```
 
 哈希排除清单格式：`normalization="nfkc_casefold_remove_whitespace_v1"`、真实`publisher`、
@@ -115,9 +121,14 @@ python -m experiments.semantic_sft.prepare environment \
 - 模型架构为`Qwen3_5ForConditionalGeneration`。
 - 候选正则仅在语言主干的6层全局attention中匹配12个q/v模块，排除了visual和MTP。
   这不是“所有24层都做了LoRA”，更不是已经验证的最佳配置。
+- 2026-10-30用真实meta模型核对这12个模块与权重索引一致：q_proj形状4096x2048，
+  v_proj形状512x2048。r=8时A/B矩阵参数估算417792；不是实际PEFT注入结果或模型效果。
 - 只读tokenizer小测试可验证当前chat模板前缀和assistant结束token。
   单条单元样例通过不代表真实数据全部通过，更不代表完整Trainer已跑通。
-- 目前缺少实际模型实例上的PEFT模块匹配、数据级token长度/mask审计、独立GPU安排与训练入口。
+- 21条首轮审核标签已通过真实tokenizer逐条诊断；仍缺完整训练数据上的正式mask审计。
+- 目前缺少PEFT实际注入/冻结检查、独立GPU安排与训练入口；meta结构通过不能替代前后向训练smoke。
+- 预检额外报告首轮审核数据的独立改写组覆盖。当前禁止类仅1组，无法无泄漏地覆盖Train和Val；
+  需补新的语义模板，而不是把同组拆开或只改group_id。诊断不会自动划分数据或降低门槛。
 
 PEFT支持正则形式的target_modules，但后续仍须检查实例化模块与可训练参数：
 [官方LoRA配置说明](https://huggingface.co/docs/peft/main/package_reference/lora)。

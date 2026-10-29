@@ -45,7 +45,7 @@
 | 草稿构造 | `proposals.py` | 原句与候选绑定，不生成批准 |
 | 准备入口 | `prepare.py` | review/draft/hashes/preflight/export/environment；没有训练命令 |
 | 审核与整批诊断 | `review.py` | 首轮真实批准记录、只读CPU tokenizer检查 |
-| 环境只读检查 | `environment.py` | 依赖、候选LoRA索引、模板/assistant loss mask；不加载模型权重 |
+| 环境只读检查 | `environment.py` | 依赖、LoRA索引与真实meta目标层核对、模板/loss mask；不加载模型权重 |
 | 软件测试 | `tests/` | 独立路径、泄漏、审批、契约隔离、mask及拒绝导出检查 |
 
 ## 成果放置约定
