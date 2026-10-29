@@ -3,31 +3,36 @@
 ## 当前结论与本轮进展
 
 仍未开始训练，原驾驶代码/配置、2B服务、7B历史方案和整理后的目录未变。
-当前材料：原24条 + negative_v1新增8条，共32条。21条旧样本有用户首轮批准，3条旧契约缺口隔离；
-新8条尚未批准。0条最终双人批准，无正式Train/Val；旧批准没有延伸到新批次。
+当前材料：原24条 + negative_v1新增8条，共32条。用户已单独明确批准新增8条，
+累计29条首轮批准，3条旧契约缺口隔离；0条最终双人批准，无正式Train/Val。
 
 - 本机/服务器准备区各64项软件测试通过。
 - 新增`batches/negative_v1/`：8条禁止类候选，4个拟定组，各含2条改写；复用既有CLI，不增加批次框架。
   禁止转弯、禁止跟车、禁止靠边与肯定任务/目标/条件分开；不扩大为禁止变道、普通停车或安全制动。
 - 新批与旧24条、旧提示/开发/探针题无规范化文本完全重复；跨批语义近重复仍须人审，缺正式Test排除清单。
 - 两端均生成新批待审清单，实际export被拦截，只生成manifest/report，没有train.jsonl/val.jsonl。
-  新8条label=null、reviews=[]、DRAFT、UNASSIGNED；原21条首轮批准快照未改，旧3条隔离未放行。
+  新8条批准后另存首轮审核快照，label已填写、reviews各1条；仍DRAFT、UNASSIGNED。
+  原21条首轮批准快照未改，旧3条隔离未放行；合并只生成新的累计视图，不修改任一源批次。
 - 服务器真实Qwen3.5模型仅以meta张量构建，所有参数/缓冲均在meta，CUDA未初始化，未读取权重。
 - 候选正则与索引一致，实际匹配6个语言attention层、12个Linear；未匹配visual/MTP。
   r=8的A/B矩阵参数估算417792（FP32约1.59MiB）；尚未安装或实际注入PEFT，更不是模型成绩。
-- 新增独立改写组覆盖诊断：21条首轮审核标签共11组，禁止类仅`no_left_slow_park_02`这一组。
-  同组不能跨Train/Val；新4组尚未人审，不能提前算作已补齐这一缺口。
+- 累计29条首轮审核标签共15个拟定组，禁止类由1组增至5组；六类均满足两侧覆盖的最低2组要求。
+  仅表示该组数下界缺口已补；跨批近重复还需独立复核，不代表已冻结split、已完成保护集排除或数量充足。
+- 服务器真实tokenizer累计29/29通过，3条隔离跳过；最长358 tokens，prompt均屏蔽loss，包含assistant结束token。
+  只读CPU诊断，没有模型权重加载或训练。
 - 没有拆散同义组、放行隔离样本、伪造复核身份、改保护集或降低工程数据门槛。
 
-本轮证据：`artifacts/semantic_sft/meta_modules_20261030_verified/report.json`、
-`artifacts/semantic_sft/group_coverage_20261030/report.json`。原服务和模型仍为固定2B。
-新批复核入口：`artifacts/semantic_sft/negative_v1_20261030/draft_review_sheet.md`、
-`draft_review_queue.jsonl`；导出拦截：`artifacts/semantic_sft/negative_v1_export_20261030/report.json`。
+新批批准收据：`artifacts/semantic_sft/negative_v1_first_review_20261030/report.json`。
+累计快照/分组诊断：`artifacts/semantic_sft/cumulative_first_review_20261030/{review_queue.jsonl,manifest.json,report.json}`。
+累计token报告：`artifacts/semantic_sft/cumulative_token_audit_20261030/report.json`。
+累计导出拦截：`artifacts/semantic_sft/cumulative_export_check_20261030/report.json`；仍缺双人审核、split、规模和保护集清单。
+旧分组缺口报告`group_coverage_20261030/report.json`与原8条草稿/未批准拦截报告保留为历史，不覆盖。
+meta结构证据仍在`artifacts/semantic_sft/meta_modules_20261030_verified/report.json`，不是实际PEFT训练。
 
 ## 下一步剩余项
 
-1. 数据审核：用户先审核新增8条；另一位真实复核人审核需要保留的全部标签，不能代造身份；修改后需重审。
-2. 数据补充：已补禁止类8条候选，需确认语义和跨批分组后再决定采纳，再扩充其余类别；不能只改group_id。
+1. 数据审核：另一位真实复核人审核需要保留的29条标签与跨批近重复；不能把同一用户两次批准算成两人；修改后需重审。
+2. 数据补充：禁止类8条已获用户首轮批准，但样本规模仍不足，需扩充其余类别和独立模板；不能只改group_id。
    暂定200 Train/50 Val是本实验工程策略，不是已确认的比赛硬性规定。
 3. 数据隔离：负责人提供正式Frozen Test规范化文本哈希排除清单，再冻结独立group split。
 4. 训练环境：另建独立环境并验证PEFT注入/冻结；确认不与生产GPU共享后，才实现并运行训练smoke。

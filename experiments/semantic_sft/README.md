@@ -28,7 +28,7 @@
 | 文件 | 内容 |
 | --- | --- |
 | `seeds.jsonl` | 24条新编写的待标注文本，6类问题、12个同义改写组；不是训练成品 |
-| `batches/negative_v1/` | 独立追加的8条禁止类候选、4个拟定改写组；未批准，不覆盖旧材料 |
+| `batches/negative_v1/` | 独立追加的8条禁止类候选、4个拟定组；已获用户首轮批准，仍待最终复核 |
 | `draft_labels.jsonl` / `proposals.py` | AI编写的24条待审标签及原句绑定；不是Qwen推理结果或人工真值 |
 | `record.schema.json` | 单条数据、来源、分组、split、双人复核记录的格式 |
 | `ANNOTATION_GUIDE.md` | 任务拆解、条件、否定、目标和歧义的人工标注说明 |
@@ -43,8 +43,8 @@
 
 初始24条种子全部生成 `DRAFT`、`label=null`、`reviews=[]`、`split=UNASSIGNED`。
 程序不自动批准标签，不把旧Qwen输出当正确答案，不把同一模型自评当人工复核。
-最新快照已有21条用户首轮批准，另3条隔离；仍未完成双人批准，见STATUS.md。
-另增negative_v1批次8条未批准候选，复核和命令见[batches/negative_v1/README.md](batches/negative_v1/README.md)。
+最新累计快照有29条用户首轮批准（原21条+negative_v1新增8条），另3条隔离；仍未完成双人批准，见STATUS.md。
+各源文件仍保留AI草稿，真实批准记录在私有artifact，不把源文件自动升级为金标；命令见[batches/negative_v1/README.md](batches/negative_v1/README.md)。
 
 同组改写必须保持在同一split。语义类别用于分布检查，不能代替真实标签质量审核。
 两个不同reviewer必须独立确认**原句和标签**，记录两者SHA256和真实时间。
@@ -127,10 +127,10 @@ python -m experiments.semantic_sft.prepare environment \
   v_proj形状512x2048。r=8时A/B矩阵参数估算417792；不是实际PEFT注入结果或模型效果。
 - 只读tokenizer小测试可验证当前chat模板前缀和assistant结束token。
   单条单元样例通过不代表真实数据全部通过，更不代表完整Trainer已跑通。
-- 21条首轮审核标签已通过真实tokenizer逐条诊断；仍缺完整训练数据上的正式mask审计。
+- 累计29条首轮审核标签已通过真实tokenizer逐条诊断；仍缺完整训练数据上的正式mask审计。
 - 目前缺少PEFT实际注入/冻结检查、独立GPU安排与训练入口；meta结构通过不能替代前后向训练smoke。
-- 预检额外报告首轮审核数据的独立改写组覆盖。当前禁止类仅1组，无法无泄漏地覆盖Train和Val；
-  需补新的语义模板，而不是把同组拆开或只改group_id。诊断不会自动划分数据或降低门槛。
+- 预检额外报告首轮审核数据的改写组覆盖。新增8条获批后禁止类已有5组，六类满足最低组数；
+  这不等于已证明跨批独立或数量充足。诊断不会自动划分数据、拆散同组或降低门槛。
 
 PEFT支持正则形式的target_modules，但后续仍须检查实例化模块与可训练参数：
 [官方LoRA配置说明](https://huggingface.co/docs/peft/main/package_reference/lora)。
