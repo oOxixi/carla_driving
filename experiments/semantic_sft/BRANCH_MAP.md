@@ -38,7 +38,7 @@
 | 类别 | 文件 | 内容 |
 | --- | --- | --- |
 | 总入口 | `README.md`、本文件 | 命令、工作边界、代码去向 |
-| 进度与部署盘点 | `STATUS.md`、`SERVER_CODE_INVENTORY.md` | 最新审核/测试结果及服务器实际使用情况 |
+| 进度与部署盘点 | `STATUS.md`、`SERVER_CODE_INVENTORY.md`、`SERVER_LAYOUT.md` | 最新审核/测试结果、初次盘点与整理后的实际目录 |
 | 策略与契约 | `plan.json`、`record.schema.json`、`ANNOTATION_GUIDE.md` | 固定2B身份、独立adapter策略、记录格式、人工审核要求 |
 | 原始材料与AI建议 | `seeds.jsonl`、`draft_labels.jsonl` | 24条原句及草稿；AI建议不等于人工真值 |
 | 数据和隔离保护 | `data.py` | 路径、原方案保护、来源/标签哈希、泄漏、split、审核及导出检查 |
@@ -73,5 +73,6 @@
 
 ## 本轮整理不做什么
 
-不删除其他分支、不强推、不改变基线、不移动权重或venv、不重启端口8000/18005、不清理未提交scene修改。
-可归档候选和必须保留项见[服务器盘点](SERVER_CODE_INVENTORY.md)。
+不删除其他分支、不强推、不改变基线、不移动活动权重或venv、不重启端口8000/18005、不丢弃未提交scene修改。
+用户批准后的历史工作区整体归档、缓存删除、7B保留与恢复路径见[整理后布局](SERVER_LAYOUT.md)。
+历史A3权重随旧工作区归档，不影响当前生产模型或测试环境。

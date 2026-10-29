@@ -3,7 +3,7 @@
 本目录只做数据复核、导出和只读预检，**没有训练入口，也不会启动训练**。
 这是Qwen本体的任务适配准备，不是challenge里的Student/A3蒸馏训练。
 
-统一入口：[分支与文件索引](BRANCH_MAP.md) · [服务器正在用什么及可归档候选](SERVER_CODE_INVENTORY.md) · [最新进度](STATUS.md)。
+统一入口：[分支与文件索引](BRANCH_MAP.md) · [服务器整理后目录及恢复](SERVER_LAYOUT.md) · [初次盘点](SERVER_CODE_INVENTORY.md) · [最新进度](STATUS.md)。
 后续本项新增开发只在`qwen_semantic_adaptation`；此前相关实现已随f92基线完整继承，不重复迁移或重写原分支。
 
 ## 与原方案隔离

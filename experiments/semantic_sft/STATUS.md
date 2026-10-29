@@ -1,5 +1,17 @@
 # 2026-10-29 准备阶段状态
 
+## 最新：用户批准的结构整理（无功能代码改动）
+
+- 用户确认继续使用下划线分支qwen_semantic_adaptation，不另建连字符近似分支。
+- 服务器6个历史目录整体归档到`/home/tiaozhansai/carla-archive/20261029-layout/worktrees/`，
+  包括dirty scene、旧main验证、两处A3、旧运行包和上次审计；源码/权重/数据完整保留。
+- 73个零散文件按传输包、日志和旧启动脚本归档；CARLA仍打开的日志原位保留。
+- 67个未跟踪缓存目录在备份核验后删除，约13MB，可恢复或重新生成；没有永久删除历史源码资产。
+- main_optimization、旧2B、challenge共3160个受检源码/配置文件的哈希、HEAD与Git状态保持一致。
+  8个关键7B历史方案文件额外核验未变；当前仍用2B，未修改profile。
+- 服务及CARLA的PID和启动标识不变，8000/18005健康正常；服务器准备区51项测试通过。
+- 后续查看SERVER_LAYOUT.md；完整私有证据在归档manifest及本机artifacts/semantic_sft/server_layout_20261029。
+
 ## 分支整理与服务器盘点
 
 - 新增BRANCH_MAP.md，统一离线贡献审计、多步理解、数据审核、未来独立adapter的查找入口。
