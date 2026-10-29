@@ -28,6 +28,7 @@
 | 文件 | 内容 |
 | --- | --- |
 | `seeds.jsonl` | 24条新编写的待标注文本，6类问题、12个同义改写组；不是训练成品 |
+| `batches/negative_v1/` | 独立追加的8条禁止类候选、4个拟定改写组；未批准，不覆盖旧材料 |
 | `draft_labels.jsonl` / `proposals.py` | AI编写的24条待审标签及原句绑定；不是Qwen推理结果或人工真值 |
 | `record.schema.json` | 单条数据、来源、分组、split、双人复核记录的格式 |
 | `ANNOTATION_GUIDE.md` | 任务拆解、条件、否定、目标和歧义的人工标注说明 |
@@ -43,6 +44,7 @@
 初始24条种子全部生成 `DRAFT`、`label=null`、`reviews=[]`、`split=UNASSIGNED`。
 程序不自动批准标签，不把旧Qwen输出当正确答案，不把同一模型自评当人工复核。
 最新快照已有21条用户首轮批准，另3条隔离；仍未完成双人批准，见STATUS.md。
+另增negative_v1批次8条未批准候选，复核和命令见[batches/negative_v1/README.md](batches/negative_v1/README.md)。
 
 同组改写必须保持在同一split。语义类别用于分布检查，不能代替真实标签质量审核。
 两个不同reviewer必须独立确认**原句和标签**，记录两者SHA256和真实时间。

@@ -60,7 +60,7 @@ def draft_markdown(packets: list[dict]) -> str:
             return "—"
         return str(value).replace("|", "\\|").replace("\n", " ")
 
-    lines = ["# 首批AI待审标签", "", "以下不是人工真值，不可直接训练；所有label仍为空、审批记录仍为空。",
+    lines = ["# AI待审标签", "", "以下不是人工真值，不可直接训练；所有label仍为空、审批记录仍为空。",
              "合同缺口样本保留并隔离，不得直接批准。请按ANNOTATION_GUIDE.md进行真实双人复核。", ""]
     for packet in packets:
         proposal = packet["proposal"]

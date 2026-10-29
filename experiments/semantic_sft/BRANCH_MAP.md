@@ -41,6 +41,7 @@
 | 进度与部署盘点 | `STATUS.md`、`SERVER_CODE_INVENTORY.md`、`SERVER_LAYOUT.md` | 最新审核/测试结果、初次盘点与整理后的实际目录 |
 | 策略与契约 | `plan.json`、`record.schema.json`、`ANNOTATION_GUIDE.md` | 固定2B身份、独立adapter策略、记录格式、人工审核要求 |
 | 原始材料与AI建议 | `seeds.jsonl`、`draft_labels.jsonl` | 24条原句及草稿；AI建议不等于人工真值 |
+| 禁止类补充批次 | `batches/negative_v1/` | 8条新候选与4个拟定组，不继承旧批准、不覆盖旧样本 |
 | 数据和隔离保护 | `data.py` | 路径、原方案保护、来源/标签哈希、泄漏、split、审核及导出检查 |
 | 草稿构造 | `proposals.py` | 原句与候选绑定，不生成批准 |
 | 准备入口 | `prepare.py` | review/draft/hashes/preflight/export/environment；没有训练命令 |
@@ -57,6 +58,7 @@
 
 当前可用人工审核快照是`artifacts/semantic_sft/first_review_20261029/review_queue.jsonl`：
 21条有用户首轮批准，3条契约缺口隔离；仍未完成最终双人批准和独立split。尚无新LoRA成品。
+补充批次的待审包在`artifacts/semantic_sft/negative_v1_20261030/`，8条均未批准；不能将候选组数量当作已审核覆盖。
 
 ## 哪些方案不再作为推进方向
 

@@ -1,0 +1,8 @@
+{"sample_id":"SFT_NEG_V1_001","source_text":"不要右转，沿本车道继续行驶，到达停车标线前方时停下","semantic_family":"negative_instruction","group_id":"neg_right_turn_keep_stop_v1"}
+{"sample_id":"SFT_NEG_V1_002","source_text":"禁止右转，保持现在的车道，抵达停车标线前方时停车","semantic_family":"negative_instruction","group_id":"neg_right_turn_keep_stop_v1"}
+{"sample_id":"SFT_NEG_V1_003","source_text":"不许左转，先将车速设为23公里每小时，经过蓝色指示牌后停车","semantic_family":"negative_instruction","group_id":"neg_left_turn_speed_stop_v1"}
+{"sample_id":"SFT_NEG_V1_004","source_text":"不要左转，先设定23公里每小时的车速，通过蓝色指示牌后停下","semantic_family":"negative_instruction","group_id":"neg_left_turn_speed_stop_v1"}
+{"sample_id":"SFT_NEG_V1_005","source_text":"前方有出租车，禁止跟车，先让斑马线上的行人通过，到达停止线前方时停车","semantic_family":"negative_instruction","group_id":"neg_follow_yield_stop_v1"}
+{"sample_id":"SFT_NEG_V1_006","source_text":"前方一辆出租车，不要跟车，先礼让斑马线上的行人，随后抵达停止线前方时停住","semantic_family":"negative_instruction","group_id":"neg_follow_yield_stop_v1"}
+{"sample_id":"SFT_NEG_V1_007","source_text":"禁止靠边停车，把车速设为31公里每小时，然后继续保持本车道","semantic_family":"negative_instruction","group_id":"neg_pull_over_speed_keep_v1"}
+{"sample_id":"SFT_NEG_V1_008","source_text":"不要靠边停，先设定31公里每小时，再沿当前车道继续行驶","semantic_family":"negative_instruction","group_id":"neg_pull_over_speed_keep_v1"}
