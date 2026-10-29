@@ -30,6 +30,7 @@
 | `ANNOTATION_GUIDE.md` | 任务拆解、条件、否定、目标和歧义的人工标注说明 |
 | `data.py` | 原方案保护、数据泄漏检查、审批哈希校验、SFT消息格式 |
 | `environment.py` | 依赖/权重索引只读检查、CPU tokenizer和assistant loss mask小测试 |
+| `review.py` | 记录有直接人工授权的第一轮审核；CPU逐条token诊断，不启动训练或导出待批准样本 |
 | `prepare.py` | review / draft / hashes / preflight / export / environment；没有train命令 |
 | `plan.json` | 尚未批准的候选LoRA配置与工程数据门槛，不是比赛正式Gate |
 | `tests/` | 路径隔离、泄漏、双人审批、失效审批、mask等软件测试 |
@@ -65,6 +66,20 @@ python -m experiments.semantic_sft.prepare review \
 # 可选：生成包含AI候选标签、逐步表格和复核提示的待审包；不会填写label或批准。
 python -m experiments.semantic_sft.prepare draft \
   --output-dir artifacts/semantic_sft/ai_drafts_<批次>
+
+# 明确收到真实人工批准后，才可记录首轮审核。以下占位符必须替换为真实信息。
+# first-review仅用于尚无人工标签/记录的草稿；3条契约缺口不会被批准。
+python -m experiments.semantic_sft.review first-review \
+  --input <原草稿队列JSONL> --reviewer-id <真实审核人标识> \
+  --reviewed-at <实际记录时间含时区> \
+  --approval-reference <实际人工授权出处> --approval-quote <原批准内容> \
+  --output-dir artifacts/semantic_sft/first_review_<批次>
+
+# 可在首轮审核后提前做长度/mask诊断，但这不等于双人复核、训练数据导出或训练准入。
+python -m experiments.semantic_sft.review token-audit \
+  --input artifacts/semantic_sft/first_review_<批次>/review_queue.jsonl \
+  --model-path /home/tiaozhansai/carla-driving-2B/models/Qwen3.5-2B \
+  --output-dir artifacts/semantic_sft/token_audit_<批次>
 
 # 人工填写review_queue.jsonl中的label，再生成签审用哈希；此命令不生成审批记录。
 python -m experiments.semantic_sft.prepare hashes \

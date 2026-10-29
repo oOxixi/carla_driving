@@ -1,6 +1,22 @@
 # 2026-10-29 准备阶段状态
 
-## 本轮增量：AI待审标签，不是训练
+## 最新：首轮人工批准与整批CPU诊断
+
+- 用户在当前对话明确回复“批准，下一步”。以`human_user_current_chat`标识记录一次批准，
+  不虚构实名、队友身份或第二位审核；记录时间不是反推的原消息发送时间。
+- 21条非隔离样本已填写与该次批准绑定的`label`、源文本/标签哈希和1条审核记录。
+  三条契约缺口保持`label=null`、无批准；所有样本仍DRAFT、UNASSIGNED。
+- 本机/服务器各51项准备区测试通过；新增审核记录、防覆盖及整批token诊断测试。
+- 服务器使用本地固定2B目录的真实tokenizer：21/21长度、前缀、prompt loss屏蔽、assistant结束token
+  检查通过，最长358 tokens（候选上限4096）；3条隔离样本跳过。没有加载模型权重或启动训练。
+- 审核队列与授权收据：`artifacts/semantic_sft/first_review_20261029/{review_queue.jsonl,report.json}`。
+- 本机预检：`artifacts/semantic_sft/first_review_preflight_20261029/report.json`。
+- 两端token报告：`artifacts/semantic_sft/first_review_token_audit_20261029/report.json`。
+- 整批CPU诊断通过不是正式训练准入、PEFT兼容性验证、模型准确率或闭环成绩。
+  仍缺第二位审核、样本规模/独立split、正式保护集哈希、独立训练环境/GPU和Trainer。
+- 本机、服务器原main_optimization仍f92ac6fcc，原服务PID 6587/2535027未重启。
+
+## 上一轮：AI待审标签，不是训练
 
 - 已为24条种子编写候选多步标签及逐条复核提示，候选作者明确记为AI_ASSISTANT。
 - 真实`label`仍全部为空；0条人工批准，未分配Train/Val，未启动训练。
@@ -41,7 +57,7 @@
 - CPU tokenizer单元小测试通过：152个prompt token全部屏蔽loss，7个assistant token含结束token。
   这是单元样例，不是已完成真实训练数据mask审计。
 
-## 当前不能开始训练的原因
+## 上一轮记录的训练缺口（以页首最新进展为准）
 
 1. 24条记录的`label`仍为空，无真实双人批准。
 2. 尚未按同组划分Train/Val，数量也未达到建议的200/50工程data-smoke门槛。
