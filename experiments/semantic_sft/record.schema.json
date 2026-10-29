@@ -12,6 +12,19 @@
     "split": {"enum": ["UNASSIGNED", "train", "val"]},
     "label": {"type": ["object", "null"]},
     "annotation_status": {"enum": ["DRAFT", "APPROVED", "REJECTED"]},
+    "proposal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["author_type", "status", "source_sha256", "label_sha256", "label", "review_notes", "contract_gap"],
+      "properties": {
+        "author_type": {"const": "AI_ASSISTANT"},
+        "status": {"const": "UNREVIEWED"},
+        "source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "label_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "label": {"type": "object"},
+        "review_notes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "contract_gap": {"type": "boolean"}
+      }
+    },
     "reviews": {
       "type": "array", "maxItems": 10,
       "items": {

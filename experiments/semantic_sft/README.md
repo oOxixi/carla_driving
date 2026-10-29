@@ -25,11 +25,12 @@
 | 文件 | 内容 |
 | --- | --- |
 | `seeds.jsonl` | 24条新编写的待标注文本，6类问题、12个同义改写组；不是训练成品 |
+| `draft_labels.jsonl` / `proposals.py` | AI编写的24条待审标签及原句绑定；不是Qwen推理结果或人工真值 |
 | `record.schema.json` | 单条数据、来源、分组、split、双人复核记录的格式 |
 | `ANNOTATION_GUIDE.md` | 任务拆解、条件、否定、目标和歧义的人工标注说明 |
 | `data.py` | 原方案保护、数据泄漏检查、审批哈希校验、SFT消息格式 |
 | `environment.py` | 依赖/权重索引只读检查、CPU tokenizer和assistant loss mask小测试 |
-| `prepare.py` | review / hashes / preflight / export / environment；没有train命令 |
+| `prepare.py` | review / draft / hashes / preflight / export / environment；没有train命令 |
 | `plan.json` | 尚未批准的候选LoRA配置与工程数据门槛，不是比赛正式Gate |
 | `tests/` | 路径隔离、泄漏、双人审批、失效审批、mask等软件测试 |
 
@@ -60,6 +61,10 @@
 ```bash
 python -m experiments.semantic_sft.prepare review \
   --output-dir artifacts/semantic_sft/review_<批次>
+
+# 可选：生成包含AI候选标签、逐步表格和复核提示的待审包；不会填写label或批准。
+python -m experiments.semantic_sft.prepare draft \
+  --output-dir artifacts/semantic_sft/ai_drafts_<批次>
 
 # 人工填写review_queue.jsonl中的label，再生成签审用哈希；此命令不生成审批记录。
 python -m experiments.semantic_sft.prepare hashes \

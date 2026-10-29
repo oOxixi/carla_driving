@@ -174,6 +174,18 @@ def audit_rows(rows: list[dict], *, external_protected: set[str] | None = None,
             errors.append("ORIGIN_NOT_ELIGIBLE")
         if row.get("annotation_status") != "APPROVED":
             errors.append("HUMAN_REVIEW_NOT_APPROVED")
+        proposal = row.get("proposal")
+        if proposal is not None:
+            if proposal["source_sha256"] != row["source_sha256"]:
+                errors.append("PROPOSAL_SOURCE_MISMATCH")
+            if proposal["label_sha256"] != canonical_hash(proposal["label"]):
+                errors.append("PROPOSAL_LABEL_HASH_MISMATCH")
+            try:
+                validate_extraction(source, proposal["label"])
+            except Exception:
+                errors.append("INVALID_AI_PROPOSAL")
+            if proposal["contract_gap"]:
+                errors.append("PROPOSAL_CONTRACT_GAP_QUARANTINED")
         label = row.get("label")
         if not isinstance(label, dict):
             errors.append("MISSING_LABEL")
@@ -219,6 +231,10 @@ def audit_rows(rows: list[dict], *, external_protected: set[str] | None = None,
 
 
 def chat_record(row: dict) -> dict:
+    if row.get("annotation_status") != "APPROVED" or not isinstance(row.get("label"), dict):
+        raise ValueError("SFT export never substitutes an AI proposal for an approved human label")
+    if row.get("proposal", {}).get("contract_gap"):
+        raise ValueError("known proposal contract gaps cannot be exported as training labels")
     return {"sample_id": row["sample_id"], "group_id": row["group_id"], "messages": [
         {"role": "system", "content": SFT_SYSTEM},
         {"role": "user", "content": row["source_text"]},

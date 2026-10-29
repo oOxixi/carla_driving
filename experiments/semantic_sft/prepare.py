@@ -10,6 +10,7 @@ from integration.evidence_provenance import collect_provenance
 from .data import (ROOT, HERE, PLAN, audit_rows, baseline_guard, canonical_hash, chat_record,
                    load_jsonl, output_directory, review_packet, SFT_SYSTEM)
 from .environment import inventory
+from .proposals import draft_packets, draft_summary, draft_markdown
 
 
 def external_registry(path: Path | None) -> set[str] | None:
@@ -28,21 +29,26 @@ def external_registry(path: Path | None) -> set[str] | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("review", "hashes", "preflight", "export", "environment"))
+    parser.add_argument("mode", choices=("review", "draft", "hashes", "preflight", "export", "environment"))
     parser.add_argument("--input", type=Path)
+    parser.add_argument("--proposals", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--external-protected-registry", type=Path)
     parser.add_argument("--model-path", type=Path)
     parser.add_argument("--tokenizer-smoke", action="store_true")
     args = parser.parse_args()
+    if args.proposals is not None and args.mode != "draft":
+        parser.error("--proposals applies only to draft mode")
     guard = baseline_guard()
     if not guard["passed"]:
         raise ValueError(f"changes outside isolated preparation directory: {guard['outside_changes']}")
     output = output_directory(args.output_dir)
-    input_path = args.input or (HERE / "seeds.jsonl" if args.mode == "review" else None)
+    input_path = args.input or (HERE / "seeds.jsonl" if args.mode in {"review", "draft"} else None)
     if args.mode in {"hashes", "preflight", "export"} and input_path is None:
         parser.error("--input reviewed JSONL is required")
     rows = load_jsonl(input_path) if input_path else None
+    proposals_path = (args.proposals or HERE / "draft_labels.jsonl") if args.mode == "draft" else None
+    packets = draft_packets(rows, load_jsonl(proposals_path)) if args.mode == "draft" else None
     report = None
     if args.mode in {"preflight", "export"}:
         report = audit_rows(rows, external_protected=external_registry(args.external_protected_registry))
@@ -55,11 +61,18 @@ def main() -> int:
                 "expected_base_artifact_sha256": PLAN["expected_base_artifact_sha256"],
                 "prompt_contract_sha256": hashlib.sha256(SFT_SYSTEM.encode()).hexdigest(),
                 "input_sha256": hashlib.sha256(input_path.read_bytes()).hexdigest() if input_path else None,
+                "proposals_sha256": hashlib.sha256(proposals_path.read_bytes()).hexdigest() if proposals_path else None,
                 "exclusion_registry_sha256": hashlib.sha256(args.external_protected_registry.read_bytes()).hexdigest()
                     if args.external_protected_registry else None,
                 "status": "RUNNING", "training_started": False, "production_changed": False}
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    if args.mode == "review":
+    if args.mode == "draft":
+        with (output / "draft_review_queue.jsonl").open("x", encoding="utf-8") as stream:
+            for packet in packets:
+                stream.write(json.dumps(packet, ensure_ascii=False, allow_nan=False) + "\n")
+        (output / "draft_review_sheet.md").write_text(draft_markdown(packets), encoding="utf-8")
+        report = draft_summary(packets)
+    elif args.mode == "review":
         packets = [review_packet(seed) for seed in rows]
         with (output / "review_queue.jsonl").open("x", encoding="utf-8") as stream:
             for packet in packets:
@@ -96,7 +109,7 @@ def main() -> int:
                       "ready_for_training": False, "baseline_unchanged": True}, ensure_ascii=False))
     if args.mode == "environment" and args.tokenizer_smoke and report.get("tokenizer_smoke", {}).get("status") != "PASS":
         return 1
-    return 0 if args.mode in {"review", "hashes", "environment"} or report["data_ready_for_tokenization"] else 1
+    return 0 if args.mode in {"review", "draft", "hashes", "environment"} or report["data_ready_for_tokenization"] else 1
 
 
 if __name__ == "__main__":

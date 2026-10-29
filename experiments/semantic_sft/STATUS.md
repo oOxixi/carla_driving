@@ -1,4 +1,23 @@
-# 2026-10-28 准备阶段状态
+# 2026-10-29 准备阶段状态
+
+## 本轮增量：AI待审标签，不是训练
+
+- 已为24条种子编写候选多步标签及逐条复核提示，候选作者明确记为AI_ASSISTANT。
+- 真实`label`仍全部为空；0条人工批准，未分配Train/Val，未启动训练。
+- 21条进入普通人工复核；013/014/023因“禁止超车/禁止加速”的表达缺口保留隔离。
+- 新增`draft`命令及原句/候选哈希绑定；拒绝缺项、多项、重复ID和覆盖既有人工作业。
+- 草稿不能替代人工标签；合同缺口即使填入审批，仍被预检和导出拦截。
+- 本机、服务器准备区各42项测试通过。单元测试通过不是模型准确率或驾驶闭环通过。
+- 人工查看入口：`artifacts/semantic_sft/ai_drafts_20261029_verified/draft_review_sheet.md`；
+  可编辑待审队列：同目录`draft_review_queue.jsonl`。
+- 两端导出拦截证据：`artifacts/semantic_sft/ai_draft_export_20261029_verified/report.json`；
+  24条缺人工标签/批准/划分，3条合同缺口，另外缺样本数量及外部保护集清单；拦截符合预期。
+  实际仅产生manifest/report，没有train.jsonl或val.jsonl；命令返回1是预期拦截，不是生成任务失败。
+- 服务器额外预检：`artifacts/semantic_sft/ai_draft_preflight_20261029_verified/report.json`。
+- 本轮确认原本机/服务器HEAD仍为f92ac6fcc；服务器仅既有outputs/未跟踪。
+  原适配器PID 6587、vLLM PID 2535027未重启；两个health均HTTP 200，适配器READY且模型版本未变。
+
+以下保留上一轮环境与原方案回归记录，不把历史检查冒充本轮新运行。
 
 ## 原方案保护检查
 
