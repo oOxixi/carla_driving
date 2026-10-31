@@ -1,9 +1,10 @@
 # 独立的Qwen 2B语义微调准备区
 
-本目录只做数据复核、导出和只读预检，**没有训练入口，也不会启动训练**。
+本目录负责业务数据准备，并提供用户明确批准的**仅合成协议单元**Qwen+LoRA训练smoke。
+业务数据正式训练入口仍未启用；不得把合成smoke当作语义准确率或正式Gate。
 这是Qwen本体的任务适配准备，不是challenge里的Student/A3蒸馏训练。
 
-统一入口：[分支与文件索引](BRANCH_MAP.md) · [服务器整理后目录及恢复](SERVER_LAYOUT.md) · [初次盘点](SERVER_CODE_INVENTORY.md) · [最新进度](STATUS.md)。
+统一入口：[分支与文件索引](BRANCH_MAP.md) · [排除清单与负责人说明](EXCLUSION_HANDOFF.md) · [服务器整理后目录及恢复](SERVER_LAYOUT.md) · [最新进度](STATUS.md)。
 后续本项新增开发只在`qwen_semantic_adaptation`；此前相关实现已随f92基线完整继承，不重复迁移或重写原分支。
 
 ## 与原方案隔离
@@ -14,9 +15,9 @@
 - 原 `main_optimization`、`main`、`challenge` 不切换、不合并本阶段修改。
 - 新代码仅允许位于 `experiments/semantic_sft/`；CLI检查相对原提交是否有目录外改动。
 - 输出只能写入新工作区的 `artifacts/semantic_sft/<新目录>`，不允许覆盖已有文件。
-- 不安装或升级原环境，不重启8000/18005服务，不加载基础模型权重到GPU。
+- 不安装或升级原环境，不重启8000/18005服务；仅授权smoke在物理GPU1读取基础模型，GPU0服务不动。
 - 不覆盖、合并或发布基础权重；未来候选仅保存独立LoRA adapter。
-- 不在生产服务占用的GPU上同时启动训练。需要单独确认GPU和新训练环境。
+- 不在生产服务占用的GPU上同时训练。新.venv只读复用原Torch/Transformers，新增PEFT/Accelerate安装在新环境中。
 
 固定基础模型：`Qwen/Qwen3.5-2B`；revision：
 `15852e8c16360a2fea060d615a32b45270f8a8fc`；期望artifact fingerprint：
@@ -30,7 +31,7 @@
 | `seeds.jsonl` | 24条新编写的待标注文本，6类问题、12个同义改写组；不是训练成品 |
 | `batches/negative_v1/` | 独立追加的8条禁止类候选、4组；已记录用户批准及B2复核 |
 | `draft_labels.jsonl` / `proposals.py` | AI编写的24条待审标签及原句绑定；不是Qwen推理结果或人工真值 |
-| `record.schema.json` | 单条数据、来源、分组、split、双人复核记录的格式 |
+| `record.schema.json` | 单条数据、来源、分组、split、负责人审核记录；兼容历史双人记录 |
 | `ANNOTATION_GUIDE.md` | 任务拆解、条件、否定、目标和歧义的人工标注说明 |
 | `data.py` | 原方案保护、数据泄漏检查、审批哈希校验、SFT消息格式 |
 | `environment.py` | 依赖/权重索引、真实meta结构目标层核验、CPU tokenizer和loss mask检查；不读取权重 |
@@ -39,6 +40,10 @@
 | `split_preview.py` | 已复核记录的固定种子分组划分预览；保留隔离记录，不冻结正式split |
 | `plan.json` | 尚未批准的候选LoRA配置与工程数据门槛，不是比赛正式Gate |
 | `tests/` | 路径隔离、泄漏、双人审批、失效审批、mask等软件测试 |
+| `synthetic_smoke.py` | GPU1真实2B+LoRA合成单元训练、参数更新、adapter保存/重载；不接受业务数据输入 |
+| `build_exclusion_registry.py` | 从真实冻结集合生成文本哈希；严格区分FROZEN_TEST和INDEPENDENT_VALIDATION |
+| `batches/paraphrase_v1/build.py` | 12条新词面/参数变体草稿，沿用相关旧组，不能伪装成12个新独立模板 |
+| `evaluation/test_candidate_v1.py` | 12条独立存放的Test候选及预期草稿，负责人确认后另行冻结；不能作为训练输入 |
 
 ## 标注与数据门槛
 
@@ -49,7 +54,8 @@
 各源文件仍保留AI草稿，真实批准记录在私有artifact，不把源文件自动升级为金标；命令见[batches/negative_v1/README.md](batches/negative_v1/README.md)。
 
 同组改写必须保持在同一split。语义类别用于分布检查，不能代替真实标签质量审核。
-两个不同reviewer必须独立确认**原句和标签**，记录两者SHA256和真实时间。
+按用户2026-11-01确认的新策略，由用户作为唯一负责人最终审核原句、标签与分组，记录哈希和真实确认时间。
+不再等待B2或第二位审核；历史双人记录不删除。其他人的审核不能冒充负责人批准。
 原句或标签修改后，原审批失效。JSON中的身份字段不是数字签名：负责人必须另有真实复核记录。
 `source_sha256`绑定原句UTF-8原始字节；排重与保护集排除另用NFKC/大小写/空白规范化哈希，二者不可混用。
 
@@ -83,7 +89,7 @@ python -m experiments.semantic_sft.review first-review \
   --approval-reference <实际人工授权出处> --approval-quote <原批准内容> \
   --output-dir artifacts/semantic_sft/first_review_<批次>
 
-# 可在首轮审核后提前做长度/mask诊断，但这不等于双人复核、训练数据导出或训练准入。
+# 可在审核后做长度/mask诊断，但这不等于训练数据导出或训练准入。
 python -m experiments.semantic_sft.review token-audit \
   --input artifacts/semantic_sft/first_review_<批次>/review_queue.jsonl \
   --model-path /home/tiaozhansai/carla-driving-2B/models/Qwen3.5-2B \
@@ -120,13 +126,14 @@ python -m experiments.semantic_sft.prepare environment \
   --module-audit --output-dir artifacts/semantic_sft/meta_modules_<批次>
 ```
 
-哈希排除清单格式：`normalization="nfkc_casefold_remove_whitespace_v1"`、真实`publisher`、
-非空`text_sha256`数组。来源真实性仍需负责人确认，不得自行填假publisher来绕过排除检查。
+排除清单v2必须包含实际集合角色、frozen=true、精确source_revision、test_version、真实publisher及非空text_sha256。
+Normalization固定为nfkc_casefold_remove_whitespace_v1。Validation清单不能替代Frozen Test，来源真实性仍须负责人确认。
+完整生成与交接步骤见EXCLUSION_HANDOFF.md。
 
 ## 当前服务器只读检查结果
 
 - 原服务环境具有Torch 2.11.0、Transformers 5.14.1，缺PEFT、Datasets、Accelerate、TRL等。
-  未安装任何依赖；正式训练必须另建环境并冻结兼容版本。
+  原环境未安装/升级任何依赖。新.venv已安装PEFT 0.21.2和Accelerate 1.15.0，复用原Torch/Transformers只读文件。
 - 模型架构为`Qwen3_5ForConditionalGeneration`。
 - 候选正则仅在语言主干的6层全局attention中匹配12个q/v模块，排除了visual和MTP。
   这不是“所有24层都做了LoRA”，更不是已经验证的最佳配置。
@@ -135,7 +142,8 @@ python -m experiments.semantic_sft.prepare environment \
 - 只读tokenizer小测试可验证当前chat模板前缀和assistant结束token。
   单条单元样例通过不代表真实数据全部通过，更不代表完整Trainer已跑通。
 - 累计29条标签已通过真实tokenizer逐条诊断；B2确认未改标签，哈希逐项匹配；仍缺完整训练数据上的正式mask审计。
-- 目前缺少PEFT实际注入/冻结检查、独立GPU安排与训练入口；meta结构通过不能替代前后向训练smoke。
+- PEFT实际注入、仅LoRA可训练、GPU1前后向、独立adapter保存/重载已通过合成协议单元smoke。
+  这不等于完整业务数据训练、语义评测或正式训练环境已冻结。
 - 预检额外报告首轮审核数据的改写组覆盖。新增8条获批后禁止类已有5组，六类满足最低组数；
   这不等于已证明跨批独立或数量充足。诊断不会自动划分数据、拆散同组或降低门槛。
 

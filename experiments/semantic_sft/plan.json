@@ -1,5 +1,8 @@
 {
-  "stage": "PREPARATION_ONLY_NOT_TRAINING_APPROVED",
+  "stage": "BUSINESS_DATA_PREPARATION_SYNTHETIC_SMOKE_AUTHORIZED",
+  "synthetic_smoke_entrypoint": "experiments.semantic_sft.synthetic_smoke",
+  "review_owner_id": "human_user_current_chat",
+  "review_policy": "OWNER_FINAL_REVIEW_PLUS_AUTOMATED_CHECKS_20261101",
   "protected_baseline_sha": "f92ac6fcc8e8c55e3b3a63825b6f4386d49b6d78",
   "base_model": "Qwen/Qwen3.5-2B",
   "base_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
@@ -23,7 +26,7 @@
   "data_smoke_thresholds": {
     "minimum_train": 200,
     "minimum_val": 50,
-    "independent_reviewers": 2,
+    "independent_reviewers": 1,
     "required_families": ["lane_choice", "conditional_resume", "overtake_return", "negative_instruction", "yield_follow", "ambiguity"]
   },
   "threshold_note": "Proposed engineering data-smoke thresholds, not competition gates or evidence of model quality."

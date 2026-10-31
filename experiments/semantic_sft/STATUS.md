@@ -2,9 +2,38 @@
 
 ## 当前结论与本轮进展
 
-仍未开始训练，原驾驶代码/配置、2B服务、7B历史方案和整理后的目录未变。
+已完成用户批准的合成协议单元训练smoke，尚未开始业务数据正式训练。
+原驾驶代码/配置、GPU0上的2B服务、7B历史方案和整理后的主目录未变。
 当前材料：原24条 + negative_v1新增8条，共32条。29条已记录用户批准及B2复核，
-annotation_status=APPROVED；3条旧契约缺口继续隔离，无正式Train/Val，仍未开始训练。
+annotation_status=APPROVED；3条旧契约缺口继续隔离，无正式Train/Val，业务数据训练未开始。
+
+## 最新：训练环境、真实LoRA smoke和排除清单
+
+- 用户明确确认语义理解由其独立负责，并选择“单人最终审核＋自动校验”。review_owner_id固定为human_user_current_chat，
+  后续其真实批准可直接完成标签审核；其他人的单次记录不会冒充负责人，旧双人历史不改，新12条仍未自动批准。
+- 本机/服务器共83项准备区测试：保留旧双人策略回归，并专门验证单人负责人、非负责人、失效哈希和不允许零审核。
+- 用户明确选择“先用独立合成样本做真实Qwen+LoRA训练smoke，不作为效果成绩”。
+- 新环境位于独立工作区`.venv/`，新增PEFT 0.21.2、Accelerate 1.15.0；Torch 2.11.0/Transformers 5.14.1从原环境只读复用。
+  没有升级原环境或复制基础权重。该依赖复用不是完全自包含环境，后续正式冻结时必须保留版本/路径绑定。
+- GPU1真实加载Qwen3.5-2B，实际注入LoRA：417792参数可训练，只有语言主干LoRA参与优化。
+  2次真实反向/参数更新成功，24个adapter张量改变，保存重载logit最大差0；峰值allocated约4.62GiB。
+- 训练只用合成JSON协议单元，业务样本与新草稿使用数均为0。没有语义正确率或正式Gate结论。
+  证据/adapter：`artifacts/semantic_sft/synthetic_smoke_20261101_v1/`，status=PASS。
+- 查阅challenge提交2da949be：240例发布为Independent Validation，README明确不是Frozen Test；proxy benchmark仍等待冻结案例。
+- 已生成240例/62种唯一文本的补充排除哈希；当前29条已审核材料与新增12条草稿均无规范化完全匹配重合。
+  路径`artifacts/semantic_sft/known_holdout_exclusions_20261101/`。角色严格标INDEPENDENT_VALIDATION，不冒充正式Test。
+- 新增排除清单v2及角色校验；Validation用于补充排除，但不会解除正式Test清单缺失门槛。
+- 新补12条词面/参数变体草稿，覆盖6类并沿用相关旧group_id，不增加独立模板数，不继承既有批准。
+  当前材料总计44条：29条已审核、3条隔离、12条待审核；正式200/50工程策略仍未达到。
+  复核入口：`artifacts/semantic_sft/paraphrase_v1_20261101/draft_review_sheet.md`。
+- 用户已选择另建语义Test候选并由其确认冻结。新增12条、12个拟定评测组，六类各2条；预期标签仍为AI草稿，
+  不使用模型预测结果构造题目，不进入训练，不自动冻结或生成假FROZEN_TEST清单。
+  Test候选采用非训练记录格式，训练审核/导出会拒绝；文本完全匹配和group_id无交集不等于语义独立性已证明。
+  复核入口：`artifacts/semantic_sft/test_candidate_v1_20261101/review_sheet.md`。这12条不计入上述44条训练材料。
+- 用户本人、B2或用户指定负责人都可提供/冻结Test；不存在“必须等B2”的权限或比赛规则。
+  工具与交付信息见EXCLUSION_HANDOFF.md。正式推进仍需要真实来源、扩充审核数据、冻结split和完整业务训练验证。
+
+以下包含早期历史快照，其中“尚未训练”指当时状态，不覆盖上面的合成smoke结果。
 
 ## 最新：整组划分预览
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 
 from integration.evidence_provenance import collect_provenance
@@ -14,10 +15,14 @@ from .proposals import draft_packets, draft_summary, draft_markdown
 from .split_preview import split_preview
 
 
-def external_registry(path: Path | None) -> set[str] | None:
+def external_registry(path: Path | None, *, role="FROZEN_TEST") -> set[str] | None:
     if path is None:
         return None
     payload = json.loads(path.read_text(encoding="utf-8"))
+    if (payload.get("registry_schema_version") != 2 or payload.get("protected_set_role") != role
+            or payload.get("frozen") is not True or not payload.get("test_version")
+            or not re.fullmatch('[0-9a-f]{40}', payload.get('source_revision', ''))):
+        raise ValueError("registry must declare its actual frozen set role and exact source revision; Validation cannot substitute for Test")
     if payload.get("normalization") != "nfkc_casefold_remove_whitespace_v1" or not payload.get("publisher"):
         raise ValueError("external exclusion registry needs publisher and matching normalization")
     hashes = payload.get("text_sha256")
@@ -35,6 +40,7 @@ def main() -> int:
     parser.add_argument("--proposals", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--external-protected-registry", type=Path)
+    parser.add_argument("--supplemental-protected-registry", type=Path, help="Independent Validation exclusion; never substitutes for Frozen Test")
     parser.add_argument("--model-path", type=Path)
     parser.add_argument("--tokenizer-smoke", action="store_true")
     parser.add_argument("--module-audit", action="store_true", help="instantiate meta architecture only; no model weights or CUDA")
@@ -55,9 +61,11 @@ def main() -> int:
     packets = draft_packets(rows, load_jsonl(proposals_path)) if args.mode == "draft" else None
     report = None
     if args.mode in {"preflight", "export"}:
-        report = audit_rows(rows, external_protected=external_registry(args.external_protected_registry))
+        report = audit_rows(rows, external_protected=external_registry(args.external_protected_registry),
+                            supplemental_protected=external_registry(args.supplemental_protected_registry, role="INDEPENDENT_VALIDATION"))
     if args.mode == "split-preview":
-        candidate, quarantine, report = split_preview(rows, external_protected=external_registry(args.external_protected_registry))
+        candidate, quarantine, report = split_preview(rows, external_protected=external_registry(args.external_protected_registry),
+            supplemental_protected=external_registry(args.supplemental_protected_registry, role="INDEPENDENT_VALIDATION"))
     output.mkdir(parents=True, exist_ok=False)
     manifest = {"scope": "PREPARATION_ONLY_NO_TRAINING_OR_SERVING", "mode": args.mode,
                 "data_contract_version": "semantic_intent_review_v1",
@@ -70,6 +78,8 @@ def main() -> int:
                 "proposals_sha256": hashlib.sha256(proposals_path.read_bytes()).hexdigest() if proposals_path else None,
                 "exclusion_registry_sha256": hashlib.sha256(args.external_protected_registry.read_bytes()).hexdigest()
                     if args.external_protected_registry else None,
+                "supplemental_registry_sha256": hashlib.sha256(args.supplemental_protected_registry.read_bytes()).hexdigest()
+                    if args.supplemental_protected_registry else None,
                 "status": "RUNNING", "training_started": False, "production_changed": False}
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     if args.mode == "split-preview":

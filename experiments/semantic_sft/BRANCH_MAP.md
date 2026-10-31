@@ -46,6 +46,8 @@
 | 草稿构造 | `proposals.py` | 原句与候选绑定，不生成批准 |
 | 准备入口 | `prepare.py` | review/draft/hashes/preflight/export/environment；没有训练命令 |
 | 划分预览 | `split_preview.py`、prepare的split-preview模式 | 固定规则整组分配，3条隔离另存；不是正式split或训练数据发布 |
+| 合成训练与正式隔离准备 | `synthetic_smoke.py`、`build_exclusion_registry.py`、`EXCLUSION_HANDOFF.md` | 合成单元训练与排除角色校验，不启用业务训练Gate |
+| 词面扩充 | `batches/paraphrase_v1/build.py` | 12条待审变体沿用旧组，不增加独立模板数，不进入当前训练 |
 | 审核与整批诊断 | `review.py` | 首轮真实批准记录、只读CPU tokenizer检查 |
 | 环境只读检查 | `environment.py` | 依赖、LoRA索引与真实meta目标层核对、模板/loss mask；不加载模型权重 |
 | 软件测试 | `tests/` | 独立路径、泄漏、审批、契约隔离、mask及拒绝导出检查 |

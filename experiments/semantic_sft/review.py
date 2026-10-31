@@ -41,10 +41,15 @@ def first_review(rows, *, reviewer_id, reviewed_at, approval_reference, approval
         row["reviews"] = [{"reviewer_id": reviewer_id.strip(), "approved": True,
             "source_sha256": row["source_sha256"], "label_sha256": canonical_hash(row["label"]),
             "reviewed_at": reviewed_at}]
-        # DRAFT means final two-person approval is still pending. No split is invented.
+        if (PLAN['data_smoke_thresholds']['independent_reviewers'] == 1
+                and reviewer_id.strip().casefold() == PLAN['review_owner_id'].casefold()):
+            row['annotation_status'] = 'APPROVED'
+        # Other reviewers or legacy two-person policy remain pending; no split is invented.
         accepted.append({"sample_id": row["sample_id"], "source_sha256": row["source_sha256"],
                          "label_sha256": canonical_hash(row["label"])})
-    return updated, {"scope": "SINGLE_HUMAN_REVIEW_NOT_FINAL_APPROVAL", "reviewer_id": reviewer_id,
+    return updated, {"scope": "HUMAN_REVIEW_RECORD_NOT_TRAINING_GATE", "reviewer_id": reviewer_id,
+        "owner_finalized_rows": sum(row['annotation_status'] == 'APPROVED' for row in updated),
+        "review_policy": PLAN.get('review_policy'),
         "approval_reference": approval_reference, "approval_quote": approval_quote,
         "review_recorded_at": reviewed_at, "timestamp_note": "Authorization recorded now; not an inferred message timestamp.",
         "identity_note": "Caller-provided identity, not a verified signature; retain actual human authorization.",
@@ -57,7 +62,7 @@ def token_audit(rows, tokenizer):
     checks, skipped = [], []
     structural = audit_rows(rows)
     permitted = {"SPLIT_UNASSIGNED", "HUMAN_REVIEW_NOT_APPROVED", "MISSING_LABEL",
-                 "PROPOSAL_CONTRACT_GAP_QUARANTINED", "TWO_INDEPENDENT_LABEL_REVIEWS_REQUIRED"}
+                 "PROPOSAL_CONTRACT_GAP_QUARANTINED", "TWO_INDEPENDENT_LABEL_REVIEWS_REQUIRED", "OWNER_LABEL_REVIEW_REQUIRED"}
     if any(set(issue["errors"]) - permitted for issue in structural["issues"]):
         raise ValueError("invalid review records cannot enter token diagnostics")
     for row in rows:

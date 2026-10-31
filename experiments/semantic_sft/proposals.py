@@ -6,7 +6,7 @@ import copy
 import json
 
 from qwen_service.task_understanding import validate_extraction
-from .data import canonical_hash, protected_hashes, review_packet, source_hash, text_hash
+from .data import PLAN, canonical_hash, protected_hashes, review_packet, source_hash, text_hash
 
 
 def draft_packets(seeds: list[dict], proposals: list[dict]) -> list[dict]:
@@ -61,7 +61,7 @@ def draft_markdown(packets: list[dict]) -> str:
         return str(value).replace("|", "\\|").replace("\n", " ")
 
     lines = ["# AI待审标签", "", "以下不是人工真值，不可直接训练；所有label仍为空、审批记录仍为空。",
-             "合同缺口样本保留并隔离，不得直接批准。请按ANNOTATION_GUIDE.md进行真实双人复核。", ""]
+             "合同缺口样本保留并隔离，不得直接批准。请按ANNOTATION_GUIDE.md及当前负责人审核策略复核。", ""]
     for packet in packets:
         proposal = packet["proposal"]
         label = proposal["label"]
@@ -77,7 +77,9 @@ def draft_markdown(packets: list[dict]) -> str:
                       f"需要确认候选：`{str(label['requires_confirmation']).lower()}`。", "",
                       "复核提示：", ""])
         lines.extend("- " + note for note in proposal["review_notes"])
-        lines.extend(["", "- [ ] 复核人1已独立核对原句、任务、参数及条件。",
-                      "- [ ] 复核人2已独立核对并处理分歧。",
+        checkboxes = (["- [ ] 负责人已核对原句、任务、参数、条件和分组并最终确认。"]
+                      if PLAN['data_smoke_thresholds']['independent_reviewers'] == 1 else
+                      ["- [ ] 复核人1已独立核对原句、任务、参数及条件。", "- [ ] 复核人2已独立核对并处理分歧。"])
+        lines.extend(["", *checkboxes,
                       "", "以上勾选不自动产生JSON审批记录。", ""])
     return "\n".join(lines) + "\n"

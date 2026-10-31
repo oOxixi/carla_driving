@@ -20,10 +20,15 @@ PLAN = json.loads((HERE / "plan.json").read_text(encoding="utf-8"))
 
 
 def validate_plan_safety(plan: dict) -> None:
+    required_reviewers = plan.get('data_smoke_thresholds', {}).get('independent_reviewers')
+    if type(required_reviewers) is not int or required_reviewers not in (1, 2):
+        raise ValueError('review policy must require one owner or two independent reviewers')
     expected = {"base_model": PRODUCTION_QWEN_MODEL, "base_revision": PRODUCTION_QWEN_REVISION,
                 "expected_base_artifact_sha256": PRODUCTION_QWEN_ARTIFACT_SHA256,
                 "protected_baseline_sha": "f92ac6fcc8e8c55e3b3a63825b6f4386d49b6d78",
-                "stage": "PREPARATION_ONLY_NOT_TRAINING_APPROVED", "training_entrypoint": None,
+                "stage": "BUSINESS_DATA_PREPARATION_SYNTHETIC_SMOKE_AUTHORIZED", "training_entrypoint": None,
+                "synthetic_smoke_entrypoint": "experiments.semantic_sft.synthetic_smoke",
+                "review_owner_id": "human_user_current_chat",
                 "model_outputs": "SEPARATE_ADAPTER_ONLY_NO_BASE_MERGE", "push_to_hub": False,
                 "production_gpu_policy": "DO_NOT_SHARE_WITH_RUNNING_PRODUCTION"}
     for field, value in expected.items():
@@ -113,13 +118,14 @@ def review_packet(seed: dict) -> dict:
 
 
 def audit_rows(rows: list[dict], *, external_protected: set[str] | None = None,
+               supplemental_protected: set[str] | None = None,
                minimum_train: int | None = None, minimum_val: int | None = None) -> dict:
     import jsonschema
     validator = jsonschema.Draft202012Validator(
         json.loads((HERE / "record.schema.json").read_text(encoding="utf-8")),
         format_checker=jsonschema.FormatChecker())
     limits = PLAN["data_smoke_thresholds"]
-    protected = protected_hashes() | (external_protected or set())
+    protected = protected_hashes() | (external_protected or set()) | (supplemental_protected or set())
     issues = []
     splits = Counter()
     families = defaultdict(Counter)
@@ -206,9 +212,11 @@ def audit_rows(rows: list[dict], *, external_protected: set[str] | None = None,
                     review.get("source_sha256") == row["source_sha256"]
                 ) and review.get("reviewed_at"):
                     approved_ids.add(review["reviewer_id"].strip().casefold())
-            if len(approved_ids) < limits["independent_reviewers"]:
+            if limits["independent_reviewers"] == 1 and PLAN['review_owner_id'].casefold() not in approved_ids:
+                errors.append('OWNER_LABEL_REVIEW_REQUIRED')
+            elif len(approved_ids) < limits["independent_reviewers"]:
                 errors.append("TWO_INDEPENDENT_LABEL_REVIEWS_REQUIRED")
-            pending_review_errors = {"SPLIT_UNASSIGNED", "HUMAN_REVIEW_NOT_APPROVED", "TWO_INDEPENDENT_LABEL_REVIEWS_REQUIRED"}
+            pending_review_errors = {"SPLIT_UNASSIGNED", "HUMAN_REVIEW_NOT_APPROVED", "TWO_INDEPENDENT_LABEL_REVIEWS_REQUIRED", "OWNER_LABEL_REVIEW_REQUIRED"}
             if (approved_ids and row["annotation_status"] in {"DRAFT", "APPROVED"}
                     and not (set(errors) - pending_review_errors)
                     and row["semantic_family"].strip() and row["group_id"].strip()):
@@ -239,7 +247,7 @@ def audit_rows(rows: list[dict], *, external_protected: set[str] | None = None,
                 "groups_by_family": {f: sorted(first_reviewed_groups[f]) for f in limits["required_families"]},
                 "families_needing_more_groups": [f for f in limits["required_families"] if len(first_reviewed_groups[f]) < 2],
                 "note": "Two groups is only a coverage lower bound; review, exclusions and sample-size gates still apply."},
-            "ready_for_training": False, "training_blockers": ["NO_TRAINER_IMPLEMENTED", "NO_APPROVED_TOKENIZER_MASK_AUDIT", "NO_ISOLATED_GPU_APPROVAL"]}
+            "ready_for_training": False, "training_blockers": ["NO_BUSINESS_DATA_TRAINER_IMPLEMENTED", "FORMAL_DATA_TOKENIZER_AND_ENVIRONMENT_AUDIT_PENDING"]}
 
 
 def chat_record(row: dict) -> dict:

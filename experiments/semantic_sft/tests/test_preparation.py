@@ -110,7 +110,7 @@ def test_data_ready_never_means_training_or_gate_ready():
     report = audit_rows(rows, external_protected={"0" * 64}, minimum_train=0, minimum_val=0)
     assert report["data_ready_for_tokenization"]
     assert not report["ready_for_training"]
-    assert "NO_TRAINER_IMPLEMENTED" in report["training_blockers"]
+    assert "NO_BUSINESS_DATA_TRAINER_IMPLEMENTED" in report["training_blockers"]
 
 
 def test_external_registry_is_required_and_cannot_be_an_empty_self_assertion(tmp_path):
