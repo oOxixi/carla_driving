@@ -11,6 +11,7 @@ from .data import (ROOT, HERE, PLAN, audit_rows, baseline_guard, canonical_hash,
                    load_jsonl, output_directory, review_packet, SFT_SYSTEM)
 from .environment import inventory
 from .proposals import draft_packets, draft_summary, draft_markdown
+from .split_preview import split_preview
 
 
 def external_registry(path: Path | None) -> set[str] | None:
@@ -29,7 +30,7 @@ def external_registry(path: Path | None) -> set[str] | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("review", "draft", "hashes", "preflight", "export", "environment"))
+    parser.add_argument("mode", choices=("review", "draft", "hashes", "preflight", "export", "environment", "split-preview"))
     parser.add_argument("--input", type=Path)
     parser.add_argument("--proposals", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -47,7 +48,7 @@ def main() -> int:
         raise ValueError(f"changes outside isolated preparation directory: {guard['outside_changes']}")
     output = output_directory(args.output_dir)
     input_path = args.input or (HERE / "seeds.jsonl" if args.mode in {"review", "draft"} else None)
-    if args.mode in {"hashes", "preflight", "export"} and input_path is None:
+    if args.mode in {"hashes", "preflight", "export", "split-preview"} and input_path is None:
         parser.error("--input reviewed JSONL is required")
     rows = load_jsonl(input_path) if input_path else None
     proposals_path = (args.proposals or HERE / "draft_labels.jsonl") if args.mode == "draft" else None
@@ -55,6 +56,8 @@ def main() -> int:
     report = None
     if args.mode in {"preflight", "export"}:
         report = audit_rows(rows, external_protected=external_registry(args.external_protected_registry))
+    if args.mode == "split-preview":
+        candidate, quarantine, report = split_preview(rows, external_protected=external_registry(args.external_protected_registry))
     output.mkdir(parents=True, exist_ok=False)
     manifest = {"scope": "PREPARATION_ONLY_NO_TRAINING_OR_SERVING", "mode": args.mode,
                 "data_contract_version": "semantic_intent_review_v1",
@@ -69,7 +72,14 @@ def main() -> int:
                     if args.external_protected_registry else None,
                 "status": "RUNNING", "training_started": False, "production_changed": False}
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    if args.mode == "draft":
+    if args.mode == "split-preview":
+        for filename, records in (("split_preview.jsonl", candidate), ("quarantine.jsonl", quarantine)):
+            with (output / filename).open("x", encoding="utf-8", newline="\n") as stream:
+                for row in records:
+                    stream.write(json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n")
+        report["output_sha256"] = {name: hashlib.sha256((output / name).read_bytes()).hexdigest()
+                                   for name in ("split_preview.jsonl", "quarantine.jsonl")}
+    elif args.mode == "draft":
         with (output / "draft_review_queue.jsonl").open("x", encoding="utf-8") as stream:
             for packet in packets:
                 stream.write(json.dumps(packet, ensure_ascii=False, allow_nan=False) + "\n")
@@ -114,7 +124,7 @@ def main() -> int:
         return 1
     if args.mode == "environment" and args.module_audit and report.get("meta_module_audit", {}).get("status") != "PASS":
         return 1
-    return 0 if args.mode in {"review", "draft", "hashes", "environment"} or report["data_ready_for_tokenization"] else 1
+    return 0 if args.mode in {"review", "draft", "hashes", "environment", "split-preview"} or report["data_ready_for_tokenization"] else 1
 
 
 if __name__ == "__main__":

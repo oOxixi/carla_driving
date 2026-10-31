@@ -35,7 +35,8 @@
 | `data.py` | 原方案保护、数据泄漏检查、审批哈希校验、SFT消息格式 |
 | `environment.py` | 依赖/权重索引、真实meta结构目标层核验、CPU tokenizer和loss mask检查；不读取权重 |
 | `review.py` | 记录有直接人工授权的第一轮审核；CPU逐条token诊断，不启动训练或导出待批准样本 |
-| `prepare.py` | review / draft / hashes / preflight / export / environment；没有train命令 |
+| `prepare.py` | review / draft / hashes / preflight / export / environment / split-preview；没有train命令 |
+| `split_preview.py` | 已复核记录的固定种子分组划分预览；保留隔离记录，不冻结正式split |
 | `plan.json` | 尚未批准的候选LoRA配置与工程数据门槛，不是比赛正式Gate |
 | `tests/` | 路径隔离、泄漏、双人审批、失效审批、mask等软件测试 |
 
@@ -99,6 +100,11 @@ python -m experiments.semantic_sft.prepare preflight \
   --output-dir artifacts/semantic_sft/preflight_<批次>
 
 # 只有同一数据预检通过才会导出train.jsonl/val.jsonl；失败只输出报告。
+# 划分预览另用以下命令，仅生成候选和quarantine，不改原审核快照，不生成训练文件。
+python -m experiments.semantic_sft.prepare split-preview \
+  --input artifacts/semantic_sft/second_review_b2_20261101/review_queue.jsonl \
+  --output-dir artifacts/semantic_sft/split_preview_<新批次>
+
 python -m experiments.semantic_sft.prepare export \
   --input <人工复核后的JSONL> \
   --external-protected-registry <负责人提供的哈希清单.json> \
@@ -139,6 +145,11 @@ assistant-only loss依赖正确的chat模板边界，不能仅设一个开关就
 [TRL官方SFT说明](https://huggingface.co/docs/trl/v0.26.0/en/sft_trainer)。
 
 ## 后续顺序
+
+当前29条已审核记录的划分预览为Train 18 / Val 11，3条隔离另存。固定seed=20261101，
+每类按SHA256(seed,family,group)排序取一个完整组作Val，不看标签或模型成绩，也不强凑80/20。
+两侧覆盖6类、组无交集，但这只是小样本候选：没有正式Test排除清单，数量未到200/50，不能作为训练准入或泛化证明。
+新数据加入后分组选择可能变化，不能将此视为已经冻结的分配；旧审核快照始终保留。
 
 后续数据补充/审核 → 保护集排除与分组split冻结 → 独立环境和完整数据token/mask检查 →
 在不共享生产GPU的条件下做小规模训练smoke → 独立adapter离线评测 → 旧方案回归与多模态检查 →
