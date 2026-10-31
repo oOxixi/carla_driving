@@ -41,7 +41,7 @@
 | 进度与部署盘点 | `STATUS.md`、`SERVER_CODE_INVENTORY.md`、`SERVER_LAYOUT.md` | 最新审核/测试结果、初次盘点与整理后的实际目录 |
 | 策略与契约 | `plan.json`、`record.schema.json`、`ANNOTATION_GUIDE.md` | 固定2B身份、独立adapter策略、记录格式、人工审核要求 |
 | 原始材料与AI建议 | `seeds.jsonl`、`draft_labels.jsonl` | 24条原句及草稿；AI建议不等于人工真值 |
-| 禁止类补充批次 | `batches/negative_v1/` | 8条新候选与4个拟定组，已有单独首轮批准，不覆盖旧样本 |
+| 禁止类补充批次 | `batches/negative_v1/` | 8条与4组已记录用户批准及B2复核，不覆盖旧样本 |
 | 数据和隔离保护 | `data.py` | 路径、原方案保护、来源/标签哈希、泄漏、split、审核及导出检查 |
 | 草稿构造 | `proposals.py` | 原句与候选绑定，不生成批准 |
 | 准备入口 | `prepare.py` | review/draft/hashes/preflight/export/environment；没有训练命令 |
@@ -56,8 +56,10 @@
 - 历史驾驶/离线实验日志：保留原main_optimization的`artifacts/`和`outputs/`，不移动活动日志。
 - 未来训练结果：只能保存独立adapter；没有授权前不合并基础权重、不切换服务、不共享生产GPU训练。
 
-当前累计人工审核快照是`artifacts/semantic_sft/cumulative_first_review_20261030/review_queue.jsonl`：
-29条有用户首轮批准，3条契约缺口隔离；仍未完成最终双人批准和独立split。尚无新LoRA成品。
+当前人工审核快照是`artifacts/semantic_sft/second_review_b2_20261101/review_queue.jsonl`：
+29条已记录用户批准及B2复核，3条契约缺口隔离；尚无正式split、训练Gate或新LoRA成品。
+审核收据明确B2确认来自用户转述，不是B2直接签名；源文本/标签/分组均未修改。
+原累计首轮快照`cumulative_first_review_20261030/`保留，不覆盖。
 原24条快照`first_review_20261029/`和本批8条快照`negative_v1_first_review_20261030/`均保留，不覆盖旧审核记录。
 
 ## 哪些方案不再作为推进方向
