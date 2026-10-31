@@ -13,18 +13,23 @@ def registry(rows, publisher, version, *, role, source_revision, frozen):
         raise ValueError('real publisher and frozen Test version are required')
     if role not in {'FROZEN_TEST', 'INDEPENDENT_VALIDATION'} or frozen is not True or not re.fullmatch('[0-9a-f]{40}', source_revision):
         raise ValueError('declare actual frozen set role and exact source revision; Validation is not Test')
-    texts = []
+    texts, groups = [], []
     for row in rows:
         text = row.get('source_text')
         if not isinstance(text, str) or not text.strip():
             raise ValueError('every row must contain the exact model-input source_text')
         texts.append(text_hash(text))
+        group=row.get('group_id',row.get('evaluation_group_id'))
+        if group is not None:
+            if not isinstance(group,str) or not group.strip():
+                raise ValueError('invalid evaluation group identity')
+            groups.append(group)
     if not texts:
         raise ValueError('cannot sign an empty or fabricated exclusion registry')
     return {'registry_schema_version':2, 'protected_set_role':role, 'frozen':True, 'source_revision':source_revision,
             'normalization':'nfkc_casefold_remove_whitespace_v1', 'publisher':publisher,
             'test_version':version, 'input_rows':len(rows), 'unique_texts':len(set(texts)),
-            'text_sha256':sorted(set(texts)), 'publisher_identity_verified_by_tool':False,
+            'text_sha256':sorted(set(texts)), 'group_ids':sorted(set(groups)), 'publisher_identity_verified_by_tool':False,
             'note':'Exact normalized text exclusion only; semantic paraphrases still need group review.'}
 
 

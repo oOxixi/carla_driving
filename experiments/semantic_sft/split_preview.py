@@ -7,8 +7,8 @@ from .data import PLAN, audit_rows, canonical_hash
 SEED = 20261101
 
 
-def split_preview(rows, *, external_protected=None, supplemental_protected=None):
-    initial = audit_rows(rows, external_protected=external_protected, supplemental_protected=supplemental_protected)
+def split_preview(rows, *, external_protected=None, supplemental_protected=None, protected_groups=None):
+    initial = audit_rows(rows, external_protected=external_protected, supplemental_protected=supplemental_protected,protected_groups=protected_groups)
     issues = {issue['sample_id']: set(issue['errors']) for issue in initial['issues']}
     eligible, quarantine = [], []
     for row in rows:
@@ -42,7 +42,7 @@ def split_preview(rows, *, external_protected=None, supplemental_protected=None)
         row['split'] = 'val' if row['group_id'] in validation_groups else 'train'
     eligible.sort(key=lambda row: row['sample_id'])
     quarantine.sort(key=lambda row: row['sample_id'])
-    audit = audit_rows(eligible, external_protected=external_protected, supplemental_protected=supplemental_protected)
+    audit = audit_rows(eligible, external_protected=external_protected, supplemental_protected=supplemental_protected,protected_groups=protected_groups)
     if audit['issues'] or audit['overlapping_groups']:
         raise ValueError('candidate violates record or group boundaries')
     report = {'scope': 'SPLIT_PREVIEW_NOT_FROZEN_RELEASE_TRAINING_OR_TEST', 'seed': SEED,

@@ -119,6 +119,7 @@ def review_packet(seed: dict) -> dict:
 
 def audit_rows(rows: list[dict], *, external_protected: set[str] | None = None,
                supplemental_protected: set[str] | None = None,
+               protected_groups: set[str] | None = None,
                minimum_train: int | None = None, minimum_val: int | None = None) -> dict:
     import jsonschema
     validator = jsonschema.Draft202012Validator(
@@ -160,6 +161,8 @@ def audit_rows(rows: list[dict], *, external_protected: set[str] | None = None,
                 errors.append("DUPLICATE_NORMALIZED_TEXT")
             seen_texts.add(digest)
         split = row.get("split")
+        if row['group_id'] in (protected_groups or set()):
+            errors.append('PROTECTED_EVALUATION_GROUP')
         if split not in {"train", "val"}:
             errors.append("SPLIT_UNASSIGNED")
         else:

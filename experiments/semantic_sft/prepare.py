@@ -33,6 +33,15 @@ def external_registry(path: Path | None, *, role="FROZEN_TEST") -> set[str] | No
     return set(hashes)
 
 
+def registry_groups(path: Path | None) -> set[str]:
+    if path is None:
+        return set()
+    groups=json.loads(path.read_text(encoding='utf-8')).get('group_ids',[])
+    if not isinstance(groups,list) or any(not isinstance(g,str) or not g.strip() for g in groups):
+        raise ValueError('invalid exclusion registry group_ids')
+    return set(groups)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("review", "draft", "hashes", "preflight", "export", "environment", "split-preview"))
@@ -62,10 +71,12 @@ def main() -> int:
     report = None
     if args.mode in {"preflight", "export"}:
         report = audit_rows(rows, external_protected=external_registry(args.external_protected_registry),
-                            supplemental_protected=external_registry(args.supplemental_protected_registry, role="INDEPENDENT_VALIDATION"))
+            supplemental_protected=external_registry(args.supplemental_protected_registry, role="INDEPENDENT_VALIDATION"),
+            protected_groups=registry_groups(args.external_protected_registry)|registry_groups(args.supplemental_protected_registry))
     if args.mode == "split-preview":
         candidate, quarantine, report = split_preview(rows, external_protected=external_registry(args.external_protected_registry),
-            supplemental_protected=external_registry(args.supplemental_protected_registry, role="INDEPENDENT_VALIDATION"))
+            supplemental_protected=external_registry(args.supplemental_protected_registry, role="INDEPENDENT_VALIDATION"),
+            protected_groups=registry_groups(args.external_protected_registry)|registry_groups(args.supplemental_protected_registry))
     output.mkdir(parents=True, exist_ok=False)
     manifest = {"scope": "PREPARATION_ONLY_NO_TRAINING_OR_SERVING", "mode": args.mode,
                 "data_contract_version": "semantic_intent_review_v1",

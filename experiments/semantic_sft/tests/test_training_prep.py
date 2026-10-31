@@ -44,3 +44,17 @@ def test_smoke_uses_only_explicit_synthetic_protocol_units():
         assert messages[1]['content'].startswith('SYNTHETIC_PIPELINE_UNIT_')
         assert text_hash(messages[1]['content']) not in protected_hashes()
         assert json.loads(messages[-1]['content'])=={'unit_value':value}
+
+
+def test_protected_group_is_rejected_even_when_text_does_not_match(tmp_path):
+    from experiments.semantic_sft.data import audit_rows
+    from experiments.semantic_sft.prepare import registry_groups
+    from experiments.semantic_sft.tests.test_preparation import approved
+    row=approved()
+    result=registry([{'source_text':'DIFFERENT_UNIT_TEXT','group_id':row['group_id']}], 'UNIT', 'UNIT_TEST',
+                    role='FROZEN_TEST',source_revision='a'*40,frozen=True)
+    path=tmp_path/'groups.json'
+    path.write_text(json.dumps(result))
+    report=audit_rows([row],external_protected=external_registry(path),protected_groups=registry_groups(path))
+    assert report['issue_counts']['PROTECTED_EVALUATION_GROUP']==1
+    assert not report['data_ready_for_tokenization']

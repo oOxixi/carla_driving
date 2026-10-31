@@ -59,6 +59,8 @@ python -m experiments.semantic_sft.build_exclusion_registry \
 输入为空、字段错误、角色或revision不完整会失败，不自动猜字段或签发空清单。
 
 单纯文本哈希不能发现“不要左转”和“别向左拐”这类同义改写。仍要结合B2确认的group_id进行语义近重复审核。
+导出时应同时保留group_id（或Test候选中的evaluation_group_id）；生成器会将它们写入排除清单group_ids。
+训练预检和划分预览同时检查文本哈希与组ID：同组即使换了句子仍拒绝。不同ID的语义近重复仍需负责人审核。
 
 ## 收到正式Test清单后
 
