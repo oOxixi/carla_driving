@@ -60,7 +60,7 @@ python -m experiments.semantic_sft.release \
 
 ## 还不能宣称什么
 
-当前data_ready_for_tokenization=true，业务训练尚未开始，ready_for_training仍为false。
+发布时data_ready_for_tokenization=true、ready_for_training=false；后续已实际启动的业务训练另见STATUS.md的独立运行记录。
 后续业务训练入口已实现，见[TRAINING.md](TRAINING.md)；完整训练、保存重载与独立语义性能结果另存运行报告。
 本冻结清单中的ready_for_training=false是发布时快照，不篡改它来冒充已完成训练或正式Gate。
 原先选定的物理GPU1已被其他任务占用；新入口可显式选择实查空闲的非生产设备，GPU0禁止选择。
