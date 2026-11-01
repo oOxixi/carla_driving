@@ -26,10 +26,11 @@ def validate_plan_safety(plan: dict) -> None:
     expected = {"base_model": PRODUCTION_QWEN_MODEL, "base_revision": PRODUCTION_QWEN_REVISION,
                 "expected_base_artifact_sha256": PRODUCTION_QWEN_ARTIFACT_SHA256,
                 "protected_baseline_sha": "f92ac6fcc8e8c55e3b3a63825b6f4386d49b6d78",
-                "stage": "BUSINESS_DATA_PREPARATION_SYNTHETIC_SMOKE_AUTHORIZED", "training_entrypoint": None,
+                "stage": "BUSINESS_TEXT_LORA_TRAINING_AUTHORIZED", "training_entrypoint": "experiments.semantic_sft.train",
                 "synthetic_smoke_entrypoint": "experiments.semantic_sft.synthetic_smoke",
                 "review_owner_id": "human_user_current_chat",
                 "model_outputs": "SEPARATE_ADAPTER_ONLY_NO_BASE_MERGE", "push_to_hub": False,
+                "text_only": True, "assistant_only_loss": True,
                 "production_gpu_policy": "DO_NOT_SHARE_WITH_RUNNING_PRODUCTION"}
     for field, value in expected.items():
         if plan.get(field) != value:
@@ -250,7 +251,7 @@ def audit_rows(rows: list[dict], *, external_protected: set[str] | None = None,
                 "groups_by_family": {f: sorted(first_reviewed_groups[f]) for f in limits["required_families"]},
                 "families_needing_more_groups": [f for f in limits["required_families"] if len(first_reviewed_groups[f]) < 2],
                 "note": "Two groups is only a coverage lower bound; review, exclusions and sample-size gates still apply."},
-            "ready_for_training": False, "training_blockers": ["NO_BUSINESS_DATA_TRAINER_IMPLEMENTED", "FORMAL_DATA_TOKENIZER_AND_ENVIRONMENT_AUDIT_PENDING"]}
+            "ready_for_training": False, "training_blockers": ["FROZEN_RELEASE_HASH_AND_FULL_TOKEN_AUDIT_REQUIRED", "EXCLUSIVE_GPU_AND_MODEL_IDENTITY_CHECK_REQUIRED"]}
 
 
 def chat_record(row: dict) -> dict:

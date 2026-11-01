@@ -1,5 +1,5 @@
 {
-  "stage": "BUSINESS_DATA_PREPARATION_SYNTHETIC_SMOKE_AUTHORIZED",
+  "stage": "BUSINESS_TEXT_LORA_TRAINING_AUTHORIZED",
   "synthetic_smoke_entrypoint": "experiments.semantic_sft.synthetic_smoke",
   "review_owner_id": "human_user_current_chat",
   "review_policy": "OWNER_FINAL_REVIEW_PLUS_AUTOMATED_CHECKS_20261101",
@@ -7,7 +7,7 @@
   "base_model": "Qwen/Qwen3.5-2B",
   "base_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
   "expected_base_artifact_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
-  "training_entrypoint": null,
+  "training_entrypoint": "experiments.semantic_sft.train",
   "model_outputs": "SEPARATE_ADAPTER_ONLY_NO_BASE_MERGE",
   "production_gpu_policy": "DO_NOT_SHARE_WITH_RUNNING_PRODUCTION",
   "push_to_hub": false,
@@ -15,7 +15,7 @@
   "assistant_only_loss": true,
   "max_sequence_length_candidate": 4096,
   "candidate_lora": {
-    "status": "DRAFT_REQUIRES_INSTANTIATED_MODULE_CHECK",
+    "status": "SYNTHETIC_INJECTION_VERIFIED_NOT_ACCURACY_PROVEN",
     "r": 8,
     "alpha": 16,
     "dropout": 0.05,

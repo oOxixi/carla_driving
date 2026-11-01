@@ -1,0 +1,9 @@
+{
+  "epochs": 3,
+  "learning_rate": 0.00005,
+  "weight_decay": 0.01,
+  "gradient_accumulation": 4,
+  "max_grad_norm": 1.0,
+  "warmup_steps": 8,
+  "seed": 20261101
+}

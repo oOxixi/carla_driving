@@ -1,7 +1,7 @@
 # 独立的Qwen 2B语义微调准备区
 
-本目录负责业务数据准备，并提供用户明确批准的**仅合成协议单元**Qwen+LoRA训练smoke。
-业务数据正式训练入口仍未启用；不得把合成smoke当作语义准确率或正式Gate。
+本目录负责业务数据准备、独立合成协议smoke，以及负责人授权的冻结文本Qwen+LoRA候选训练。
+业务入口见[TRAINING.md](TRAINING.md)；不得把合成smoke或Val loss当作语义准确率或正式Gate。
 这是Qwen本体的任务适配准备，不是challenge里的Student/A3蒸馏训练。
 
 统一入口：[分支与文件索引](BRANCH_MAP.md) · [排除清单与负责人说明](EXCLUSION_HANDOFF.md) · [服务器整理后目录及恢复](SERVER_LAYOUT.md) · [最新进度](STATUS.md)。
@@ -15,7 +15,7 @@
 - 原 `main_optimization`、`main`、`challenge` 不切换、不合并本阶段修改。
 - 新代码仅允许位于 `experiments/semantic_sft/`；CLI检查相对原提交是否有目录外改动。
 - 输出只能写入新工作区的 `artifacts/semantic_sft/<新目录>`，不允许覆盖已有文件。
-- 不安装或升级原环境，不重启8000/18005服务；仅授权smoke在物理GPU1读取基础模型，GPU0服务不动。
+- 不安装或升级原环境，不重启8000/18005服务；训练只可使用启动时实查空闲的非生产GPU，GPU0禁止选择。
 - 不覆盖、合并或发布基础权重；未来候选仅保存独立LoRA adapter。
 - 不在生产服务占用的GPU上同时训练。新.venv只读复用原Torch/Transformers，新增PEFT/Accelerate安装在新环境中。
 
@@ -39,6 +39,7 @@
 | `prepare.py` | review / draft / hashes / preflight / export / environment / split-preview；没有train命令 |
 | `split_preview.py` | 已复核记录的固定种子分组划分预览；保留隔离记录，不冻结正式split |
 | `release.py` | 保留旧集合、绑定已批准新批和拟定分组，严格预检后冻结Train/Val及文件SHA256；不审批、不训练 |
+| `train.py`、`train_config.json` | 冻结数据/全量mask/真实模型指纹及空闲GPU硬检查，语言主干LoRA训练、Val选择及重载验证 |
 | `plan.json` | 尚未批准的候选LoRA配置与工程数据门槛，不是比赛正式Gate |
 | `tests/` | 路径隔离、泄漏、双人审批、失效审批、mask等软件测试 |
 | `synthetic_smoke.py` | GPU1真实2B+LoRA合成单元训练、参数更新、adapter保存/重载；不接受业务数据输入 |
@@ -55,7 +56,7 @@
 另有12条内部语义Test已确认冻结，正式排除清单见EXCLUSION_HANDOFF.md，不进入训练。
 负责人明确确认216条原句、候选标签与跨批分组后，已冻结内部发布semantic_text_sft_v1_20261101：Train206/Val51。
 257/257真实tokenizer检查通过，最长374 tokens；发布说明见[DATASET_RELEASE.md](DATASET_RELEASE.md)。
-批准的是标签与分组，不是性能Gate；仍缺业务训练入口、完整训练验证与独立效果评测，见STATUS.md。
+批准的是标签与分组，不是性能Gate；业务入口已实现，完整真实训练状态与独立效果评测须分别留证，见STATUS.md。
 各源文件仍保留AI草稿，真实批准记录在私有artifact，不把源文件自动升级为金标；命令见[batches/negative_v1/README.md](batches/negative_v1/README.md)。
 
 同组改写必须保持在同一split。语义类别用于分布检查，不能代替真实标签质量审核。
@@ -167,5 +168,5 @@ assistant-only loss依赖正确的chat模板边界，不能仅设一个开关就
 跨批语义关系需负责人复核，不合格样本不得为凑数量放行。见[batches/expansion_v2/README.md](batches/expansion_v2/README.md)。
 
 数据审核、保护集排除、split冻结和全量token/mask检查已完成。后续：
-实现并验证业务训练入口 → 启动前重查独立GPU → 业务数据训练及保存重载验证 → 独立adapter离线评测 → 旧方案回归与多模态检查 →
+启动前重查独立GPU及模型/数据哈希 → 业务数据训练及保存重载验证 → 独立adapter离线评测 → 旧方案回归与多模态检查 →
 用户确认后才考虑新端口试运行。不得直接替换原服务、权重目录或将候选合并到生产分支。

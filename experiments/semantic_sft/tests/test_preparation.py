@@ -110,7 +110,7 @@ def test_data_ready_never_means_training_or_gate_ready():
     report = audit_rows(rows, external_protected={"0" * 64}, minimum_train=0, minimum_val=0)
     assert report["data_ready_for_tokenization"]
     assert not report["ready_for_training"]
-    assert "NO_BUSINESS_DATA_TRAINER_IMPLEMENTED" in report["training_blockers"]
+    assert "FROZEN_RELEASE_HASH_AND_FULL_TOKEN_AUDIT_REQUIRED" in report["training_blockers"]
 
 
 def test_external_registry_is_required_and_cannot_be_an_empty_self_assertion(tmp_path):
@@ -189,7 +189,7 @@ def test_lora_index_selection_excludes_mtp_vision_and_linear_attention(tmp_path)
 @pytest.mark.parametrize("field,value", [("base_model", "Qwen/Qwen3.5-7B"),
     ("base_revision", "main"), ("training_entrypoint", "train.py"),
     ("push_to_hub", True), ("model_outputs", "MERGE_INTO_BASE"),
-    ("production_gpu_policy", "SHARE_PRODUCTION_GPU")])
+    ("production_gpu_policy", "SHARE_PRODUCTION_GPU"), ("text_only", False), ("assistant_only_loss", False)])
 def test_unsafe_plan_changes_are_explicitly_blocked(field, value):
     changed = copy.deepcopy(PLAN)
     changed[field] = value
