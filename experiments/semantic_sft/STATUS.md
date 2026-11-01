@@ -3,12 +3,43 @@
 ## 当前结论与本轮进展
 
 本轮新增Frozen Test组ID排除：registry保留group_ids，预检与split-preview拒绝同组训练样本，不能只改写文本绕过。
-本机/服务器84项测试通过。12条Test冻结及12条扩充批准的范围正在等待用户明确确认；尚未登记为已冻结/已批准。
+用户明确选择“两份都确认，按此继续”，已登记12条Test冻结及12条扩充批准。
 
 已完成用户批准的合成协议单元训练smoke，尚未开始业务数据正式训练。
 原驾驶代码/配置、GPU0上的2B服务、7B历史方案和整理后的主目录未变。
-当前材料：原24条 + negative_v1新增8条，共32条。29条已记录用户批准及B2复核，
-annotation_status=APPROVED；3条旧契约缺口继续隔离，无正式Train/Val，业务数据训练未开始。
+当前训练材料44条：41条已审核（原29条加新批准12条），3条旧契约缺口继续隔离。
+另有12条负责人确认冻结的内部语义Test，不计入训练材料。业务数据训练未开始。
+
+## 最新：Test冻结、扩充批准与正式隔离预检
+
+- 冻结版本semantic_text_test_v1_20261101：12条、12个评测组，源候选内容SHA与负责人已查看版本相同。
+  批准原句/范围、记录时间、源码revision、冻结案例哈希保存在freeze_receipt.json；不伪称官方隐藏Test或已通过性能Gate。
+- 正式Test排除清单包含12个文本哈希及12个评测组ID，发布者为本任务负责人。
+  路径：`artifacts/semantic_sft/frozen_test_v1_20261101/exclusion_registry.json`。
+- 新12条扩充已按单人负责人策略APPROVED，旧29条审批和3条隔离记录逐字段保留；没有改标签、group_id或原快照。
+- 新累计视图：`artifacts/semantic_sft/approved_cumulative_20261101/`，41条候选为Train26/Val15，六类均覆盖，
+  Train/Val组交集0；与冻结Test的文本/组交集0，与240例Independent Validation的规范化文本重合0。
+- 服务器41/41 tokenizer诊断通过，最长358 tokens，prompt屏蔽loss、assistant结束token均正常。
+  报告：`artifacts/semantic_sft/approved_41_token_audit_20261101/report.json`。
+- 两端实际export仅余INSUFFICIENT_TRAIN_ROWS与INSUFFICIENT_VAL_ROWS；正式Test清单缺失已解决。
+  证据：`artifacts/semantic_sft/formal_preflight_frozen_test_20261101/report.json`。
+- 这只完成数据来源/审核/隔离检查；Train26/Val15仍是候选，未冻结业务数据发布，200/50工程规模仍不足。
+  正式业务训练入口、完整数据审计和性能评测仍未完成，不把合成smoke或小样本当正式训练。
+
+## 最新：按负责人选择，先扩充到200/50再训练
+
+- 用户明确选择“继续扩充至200 Train/50 Val后再训练”，不在41条上启动业务试训。
+- 新增expansion_v2：216条AI模板构造的未审草稿，六类各36条，拟补Train180/Val36；审核及分组确认后目标为206/51。
+- 48个模板槽位中，46个拟定新组、2个沿用旧歧义组；同组词面/参数变体不拆分。不是216个独立模板或真实Teacher样本。
+- 拟定分组在看模型成绩前声明；旧41条集合保留。跨批近义关系尚需审核，不能据新ID宣称语义独立性。
+- 草稿均label=null、reviews=[]、split=UNASSIGNED；预期标签只在proposal中，不生成训练文件或审批。
+- 规范化完全重复、旧保护文本、Frozen Test文本/组及已知Independent Validation排除检查通过。
+  这不是语义近重复自动通过。新增肯定式TURN_LEFT/TURN_RIGHT；两侧均覆盖转弯、左右变道、HOLD和YIELD。
+- 当前交付入口：`artifacts/semantic_sft/expansion_v2_20261101_review03/review_index.md`（48组概览），
+  `draft_review_sheet.md`（216条完整标签），`report.json`绑定文件SHA256。此前生成草稿保留为开发快照，不作为当前待审版本。
+- 本机85项准备区测试通过；服务器同步验证结果以本轮交付检查为准。没有启动新的模型训练或改生产服务。
+
+以下内容记录此前准备过程；其中“Test未冻结/新增12条未批准”是历史快照，以本节为准。
 
 ## 最新：训练环境、真实LoRA smoke和排除清单
 
@@ -94,12 +125,12 @@ meta结构证据仍在`artifacts/semantic_sft/meta_modules_20261030_verified/rep
 
 ## 下一步剩余项
 
-1. 审核维护：当前29条及跨批分组已记录B2通过；后续新增或修改内容需要对应审核，不能自动继承本次批准。
-2. 数据补充：当前只有29条已审核标签，样本规模仍不足，需扩充各类别和独立模板；不能只改group_id。
-   暂定200 Train/50 Val是本实验工程策略，不是已确认的比赛硬性规定。
-3. 数据隔离：负责人提供正式Frozen Test规范化文本哈希排除清单，再冻结独立group split。
-4. 训练环境：使用tiaozhansai物理GPU1，另建独立环境并验证PEFT注入/冻结，启动前重查设备；不改GPU0服务。
-   环境、训练入口和数据门槛仍未完成，不能把已找到空闲GPU记成训练已就绪。
+1. 审核维护：当前41条已审核；新216条逐条标签及跨批分组待负责人确认，不能继承旧批准。
+2. 数据发布：审核后按实际合格数量检查200/50工程门槛、冻结整组split，保留3条旧隔离材料。
+   不强凑数量、不拆同义组；若合组或剔除后不足，则继续补充。此门槛不是比赛硬性规定。
+3. 数据隔离：已冻结内部Test及正式排除清单，后续每次导出都须携带Test和补充Validation保护清单。
+4. 训练验证：独立环境和合成smoke已通过；仍需完整业务数据token/mask审计、业务trainer及保存重载/评测验证。
+   后续用物理GPU1，启动前重查设备；不改GPU0服务，不把合成协议结果当业务准确率。
 5. 契约缺口：013/014/023继续隔离；需要精确区分禁止超车/禁止加速的独立设计，不能误禁所有绕障/调速。
 
 以下为历史快照，旧测试数量和旧缺口不代表当前进度。

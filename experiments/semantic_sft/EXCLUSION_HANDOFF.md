@@ -2,6 +2,14 @@
 
 ## 当前真实状态
 
+用户已明确确认冻结12条内部语义Test，版本`semantic_text_test_v1_20261101`。
+正式FROZEN_TEST清单：`artifacts/semantic_sft/frozen_test_v1_20261101/exclusion_registry.json`，含12个文本哈希及12个组ID。
+旁边cases.jsonl保存冻结案例，freeze_receipt.json绑定负责人批准、原候选哈希、源码revision和冻结案例文件哈希。
+41条已审核训练材料与该Test文本和组ID均无交集；这不是语义独立性的机器证明或官方隐藏Test身份声明。
+原候选目录保持原样，不因正式冻结而覆盖其历史草稿状态。
+
+以下是另行保留的Independent Validation补充排除来源，不与新冻结Test混用：
+
 已核对GitHub challenge提交`2da949be62eccade91e62dc081e5776e652e485a`：
 
 - `challenge/dataset/governance/b1_closeout_v1/independent_validation_v1/`发布了240例冻结的Independent Validation。
@@ -20,10 +28,10 @@
 此前提到B2仅依据团队分工。关键是集合来源可追溯、角色明确且训练/调参/选模使用历史透明，而不是提供者的称呼。
 生成器publisher填写实际提供人或团队，不冒用B2。若尚无测试集，可另建候选集，经负责人确认范围与隔离后冻结。
 
-## 负责人需要补充什么
+## 后续新增或更换Test版本时需要什么
 
 用户已选择由本项目另建Test候选：当前12条在`artifacts/semantic_sft/test_candidate_v1_20261101/review_sheet.md`。
-这些题还未冻结，预期标签需用户审核，且须确认与训练材料的语义模板关系，不能提前签发FROZEN_TEST清单。
+这些历史候选已由用户确认并另存冻结版本；后续改题或改标签应另立版本、重新审核，不覆盖现有冻结集或根据其成绩反复调参。
 
 请用户本人或指定负责人给出**最终冻结Test**的以下信息：
 
