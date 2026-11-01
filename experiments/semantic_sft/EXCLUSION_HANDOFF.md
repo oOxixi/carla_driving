@@ -5,7 +5,7 @@
 用户已明确确认冻结12条内部语义Test，版本`semantic_text_test_v1_20261101`。
 正式FROZEN_TEST清单：`artifacts/semantic_sft/frozen_test_v1_20261101/exclusion_registry.json`，含12个文本哈希及12个组ID。
 旁边cases.jsonl保存冻结案例，freeze_receipt.json绑定负责人批准、原候选哈希、源码revision和冻结案例文件哈希。
-41条已审核训练材料与该Test文本和组ID均无交集；这不是语义独立性的机器证明或官方隐藏Test身份声明。
+最新257条已审核Train/Val与该Test文本和组ID均无交集；这不是语义独立性的机器证明或官方隐藏Test身份声明。
 原候选目录保持原样，不因正式冻结而覆盖其历史草稿状态。
 
 以下是另行保留的Independent Validation补充排除来源，不与新冻结Test混用：

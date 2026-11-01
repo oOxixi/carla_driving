@@ -48,7 +48,8 @@
 | 划分预览 | `split_preview.py`、prepare的split-preview模式 | 固定规则整组分配，3条隔离另存；不是正式split或训练数据发布 |
 | 合成训练与正式隔离准备 | `synthetic_smoke.py`、`build_exclusion_registry.py`、`EXCLUSION_HANDOFF.md` | 合成单元训练与排除角色校验，不启用业务训练Gate |
 | 词面扩充 | `batches/paraphrase_v1/build.py` | 12条沿用旧组的变体已由负责人批准，不增加独立模板数 |
-| 规模扩充 | `batches/expansion_v2/` | 216条新待审草稿、拟定180/36；分组索引和完整逐条表，不自动批准 |
+| 规模扩充 | `batches/expansion_v2/` | 生成器仅输出草稿；本批216条另存负责人批准快照，不改原草稿 |
+| 冻结发布 | `release.py`、`DATASET_RELEASE.md` | 审核/隔离/分组门槛、Train206/Val51及发布包查找入口 |
 | 审核与整批诊断 | `review.py` | 首轮真实批准记录、只读CPU tokenizer检查 |
 | 环境只读检查 | `environment.py` | 依赖、LoRA索引与真实meta目标层核对、模板/loss mask；不加载模型权重 |
 | 软件测试 | `tests/` | 独立路径、泄漏、审批、契约隔离、mask及拒绝导出检查 |
@@ -60,11 +61,12 @@
 - 历史驾驶/离线实验日志：保留原main_optimization的`artifacts/`和`outputs/`，不移动活动日志。
 - 未来训练结果：只能保存独立adapter；没有授权前不合并基础权重、不切换服务、不共享生产GPU训练。
 
-当前累计审核视图是`artifacts/semantic_sft/approved_cumulative_20261101/`：41条已审核、3条隔离，
-候选Train26/Val15。Frozen Test 12条及排除清单位于`frozen_test_v1_20261101/`，不进入训练。
-新216条复核入口位于`artifacts/semantic_sft/expansion_v2_20261101_review03/review_index.md`，均未批准。
+当前冻结发布是`artifacts/semantic_sft/releases/semantic_text_sft_v1_20261101/`：257条已审核，
+Train206/Val51、3条隔离。Frozen Test 12条及排除清单位于`frozen_test_v1_20261101/`，不进入训练。
+新216条的原草稿`expansion_v2_20261101_review03/`保持未审历史状态，实际批准快照另存`expansion_v2_approved_20261101/`。
+此前41条的`approved_cumulative_20261101/`及26/15小样本预览保留，不覆盖。
 此前29条用户批准及B2复核快照`second_review_b2_20261101/`保留；B2确认来源为用户转述，不是B2直接签名。
-尚无正式业务split或新业务LoRA成品；只有另存的合成协议单元smoke adapter，不能部署为语义候选。
+业务Train/Val已冻结，但尚无业务LoRA成品；只有另存的合成协议单元smoke adapter，不能部署为语义候选。
 原累计首轮快照`cumulative_first_review_20261030/`保留，不覆盖。
 原24条快照`first_review_20261029/`和本批8条快照`negative_v1_first_review_20261030/`均保留，不覆盖旧审核记录。
 

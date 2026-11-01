@@ -38,6 +38,7 @@
 | `review.py` | 记录有直接人工授权的第一轮审核；CPU逐条token诊断，不启动训练或导出待批准样本 |
 | `prepare.py` | review / draft / hashes / preflight / export / environment / split-preview；没有train命令 |
 | `split_preview.py` | 已复核记录的固定种子分组划分预览；保留隔离记录，不冻结正式split |
+| `release.py` | 保留旧集合、绑定已批准新批和拟定分组，严格预检后冻结Train/Val及文件SHA256；不审批、不训练 |
 | `plan.json` | 尚未批准的候选LoRA配置与工程数据门槛，不是比赛正式Gate |
 | `tests/` | 路径隔离、泄漏、双人审批、失效审批、mask等软件测试 |
 | `synthetic_smoke.py` | GPU1真实2B+LoRA合成单元训练、参数更新、adapter保存/重载；不接受业务数据输入 |
@@ -50,9 +51,11 @@
 
 初始24条种子全部生成 `DRAFT`、`label=null`、`reviews=[]`、`split=UNASSIGNED`。
 程序不自动批准标签，不把旧Qwen输出当正确答案，不把同一模型自评当人工复核。
-最新累计训练材料41条已审核（原29条加新批准12条），另3条隔离；原历史B2记录保留，新批由负责人单人确认。
+最新累计训练材料257条已审核（原41条加新批准216条），另3条隔离；原历史B2记录保留，新批由负责人单人确认。
 另有12条内部语义Test已确认冻结，正式排除清单见EXCLUSION_HANDOFF.md，不进入训练。
-批准的是标签与分组，不是训练Gate；Test冻结与排除已完成，仍缺审核后的样本规模、split冻结及完整业务训练验证，见STATUS.md。
+负责人明确确认216条原句、候选标签与跨批分组后，已冻结内部发布semantic_text_sft_v1_20261101：Train206/Val51。
+257/257真实tokenizer检查通过，最长374 tokens；发布说明见[DATASET_RELEASE.md](DATASET_RELEASE.md)。
+批准的是标签与分组，不是性能Gate；仍缺业务训练入口、完整训练验证与独立效果评测，见STATUS.md。
 各源文件仍保留AI草稿，真实批准记录在私有artifact，不把源文件自动升级为金标；命令见[batches/negative_v1/README.md](batches/negative_v1/README.md)。
 
 同组改写必须保持在同一split。语义类别用于分布检查，不能代替真实标签质量审核。
@@ -67,8 +70,7 @@
 原B1/Student数据不自动导入：输出契约、来源和split需要另行审核。
 
 `plan.json`暂定200条Train、50条Val，且两侧覆盖6类。这只是建议的工程data-smoke门槛，
-不是样本足够、训练有效或比赛通过的证明。当前已审核候选26/15不满足要求。
-用户已明确选择先补到200/50再训练；新增216条仍待审核，拟定总量206/51不等于已批准数量。
+不是样本足够、训练有效或比赛通过的证明。当前冻结206/51已满足数量门槛，但这不证明泛化或实际模型效果。
 即使数据通过预检，也仅是 `data_ready_for_tokenization`，`ready_for_training`仍为false。
 
 ## 命令
@@ -157,13 +159,13 @@ assistant-only loss依赖正确的chat模板边界，不能仅设一个开关就
 
 ## 后续顺序
 
-当前41条已审核记录的划分预览为Train 26 / Val 15，3条隔离另存。固定seed=20261101，
+上一轮41条已审核记录的划分预览为Train 26 / Val 15，3条隔离另存。固定seed=20261101，
 每类按SHA256(seed,family,group)排序取一个完整组作Val，不看标签或模型成绩，也不强凑80/20。
-两侧覆盖6类、组无交集，与已冻结Test无文本/组交集，但数量未到200/50，不能作为训练准入或泛化证明。
+这是原小样本预览的历史规则。当前发布保留其集合，并按审核确认的新批分组补为206/51；无组交集。
 旧审核快照始终保留。新增expansion_v2在看模型成绩之前声明拟定分组，保留旧组既有集合；
 不能再次用小样本split-preview的“每类只取一个Val组”规则重排整批，以免丢失Val规模或拆散旧改写组。
 跨批语义关系需负责人复核，不合格样本不得为凑数量放行。见[batches/expansion_v2/README.md](batches/expansion_v2/README.md)。
 
-后续数据补充/审核 → 保护集排除与分组split冻结 → 独立环境和完整数据token/mask检查 →
-在不共享生产GPU的条件下做小规模训练smoke → 独立adapter离线评测 → 旧方案回归与多模态检查 →
+数据审核、保护集排除、split冻结和全量token/mask检查已完成。后续：
+实现并验证业务训练入口 → 启动前重查独立GPU → 业务数据训练及保存重载验证 → 独立adapter离线评测 → 旧方案回归与多模态检查 →
 用户确认后才考虑新端口试运行。不得直接替换原服务、权重目录或将候选合并到生产分支。
