@@ -23,4 +23,13 @@ Teacher、FP32 Student 各跑一次，复用作业 38 的模型和控制代码�
 
 先围绕这两种失效做成对变体，每组跨多条路线、指令改述和多个 seed，覆盖正确的停车/不停车、可变道/被占、可回道/间隙未打开。先冻结通过条件（任务完成、车道事实、碰撞/违规、错误动作及终态），再运行；按场景族报告通过数/总数及失效类型，不用堆同一路线帧数充样本。若做正式泛化结论，另封存从未用于选权重或调代码的路线、指令和种子；本批四场后续只作为已曝光开发回归。
 
+## 追加诊断：原始输出与零速来源
+
+作业 40 对 02、04 做隔离复测，保留同样的模型、场景和判分，只在临时快照记录 Student logits、解码后的计划与每帧零速分支。四个闭环判定与作业 39 一致。
+
+- **02 的 STOP 由解码约束替换出来。** Student 长度头首选两步，首步原始首选左变道，次步原始首选 `SET_SPEED`（logit 3.193，速度头 3.707 m/s，约 13.34 km/h）。请求虽不要求停车（`must_stop=false`），但可行集合只有 `CHANGE_LANE_LEFT/KEEP_LANE/SLOW_DOWN/STOP`，屏蔽了 `SET_SPEED`；`STOP` 是次步剩余候选的第一名（−4.869）。首步原始速度约 20.35 km/h 是另一项数值偏差。优先核对“明确变道且保持速度”在请求约束中如何表达，不盲修长度头或取消停车安全选项，也不认为仅开放 `SET_SPEED` 就能让首步速度达标。
+- **04 的直接零速触发是回道期间的相邻车道间隙守卫。** Student 原始首选与最终动作均为 `AVOID_OBSTACLE → RETURN_TO_LANE`。回道步 289 帧触发零速，Teacher 106 帧；这些帧均为 `lane_waiting=true`，`route_recovery_hold=false`，且 C 层、场景扩展、单传感器故障的独立 cap 均为空。Student 的 289 帧中有 158 帧右侧占用输入为真；其余 131 帧占用输入未报右侧占用，但守卫还检查地图是否存在右侧驾驶车道、感知目标与连续三帧安全，不能把它们直接当作误检。下一步应记录触发守卫的具体谓词，并对照回道参考路线与自行车相对位置；不直接放松守卫。
+
+作业 40 证据目录：`artifacts/numeric_speed_conditioned_20261112/new4_layers.KmDNGatX/`，包括 `frozen_inputs.sha256`、`student.log`（`diagnostic_student_raw`）和逐角色 `runner.log`（`diagnostic_zero_speed_source`）。临时记录代码和原始日志不在本提交里。
+
 证据：`tiaozhansai` 作业 39，`artifacts/numeric_speed_conditioned_20261112/paired_new4.viIyStGN/`（`frozen_inputs.sha256`、各角色 `runner.log`、`evidence/*.jsonl` 和验收摘要）。`run.log` SHA256 `202bd49367d9d27ced656609e60ae9a26fbdce51e0350fbdeb6c424e73d8152e`。基线版本和模型哈希见 [83 场 FP32 交接](CARLA83_FP32_HANDOFF.md)。本提交只交接分析，不纳入四个实验场景、日志、权重或代码改动。
