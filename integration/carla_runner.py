@@ -307,6 +307,8 @@ def _record_maneuver_update(
     monitor: QwenScenarioMonitor | None,
     recorder: ScenarioEvidenceRecorder | None,
     extension_runtime: ScenarioExtensionRuntime | None = None,
+    completed_step: CompiledPlanStep | None = None,
+    actual_speed_mps: float | None = None,
 ) -> None:
     """Persist step/terminal events and feed only plan-owned terminals to acceptance."""
     for event in update.events:
@@ -320,6 +322,14 @@ def _record_maneuver_update(
             )
         if event.event_type == "qwen_replan_triggered" and monitor is not None:
             monitor.record_replan()
+        if (
+            event.event_type == "qwen_step_completed" and monitor is not None
+            and completed_step is not None and event.step_id == completed_step.step_id
+        ):
+            monitor.record_step_completion(
+                event.command_id, event.plan_id, completed_step.step_id, completed_step.behavior,
+                completed_step.target.get("target_speed_mps"), actual_speed_mps,
+            )
         if event.event_type == "qwen_terminal":
             if extension_runtime is not None:
                 extension_runtime.note_terminal(event.command_id, event.state)
@@ -329,6 +339,7 @@ def _record_maneuver_update(
                     event.state,
                     command_id=event.command_id,
                     reason_code=event.reason_code,
+                    plan_id=event.plan_id,
                 )
             if recorder is not None and event.state in {
                 "SUCCEEDED", "FAILED", "SAFETY_OVERRIDE",
@@ -717,6 +728,37 @@ def _scenario_startup_maneuver(spec: ScenarioSpec) -> str:
     return _scenario_maneuver(spec)
 
 
+
+def _scenario_anchor_maneuver(spec: ScenarioSpec) -> str:
+    """Select topology required by the full mission without executing it early."""
+    startup = _scenario_startup_maneuver(spec)
+
+    # Dynamic out-and-back lane changes deliberately start on the mission
+    # lane and construct their manoeuvre route only when the command arrives.
+    if _scenario_uses_dynamic_out_and_back(spec):
+        return startup
+
+    # A later TURN must be physically reachable from the selected startup
+    # anchor even when the vehicle initially follows the current lane.
+    for command in spec.commands:
+        envelope = command.envelope
+        intent = str(envelope.get("intent", "")).strip().upper()
+
+        if intent in {"TURN_LEFT", "TURN_RIGHT"}:
+            return intent
+
+        if intent == "TURN":
+            parameters = envelope.get("parameters", {})
+            direction = (
+                str(parameters.get("direction", "")).strip().upper()
+                if isinstance(parameters, Mapping)
+                else ""
+            )
+            if direction in {"LEFT", "RIGHT"}:
+                return f"TURN_{direction}"
+
+    return startup
+
 def _scenario_lane_change_profile(
     spec: ScenarioSpec | None,
 ) -> Mapping[str, object] | None:
@@ -758,6 +800,7 @@ def _planner_runtime_state(
     ego: Any,
     scene: PerceptionFrame,
     route: RouteReference,
+    adjacent_gap_occupied: tuple[bool, bool] | None = None,
 ) -> dict[str, object]:
     """Expose only deterministic lane/route facts needed by Planner V2."""
     waypoint = world_map.get_waypoint(ego.get_location(), project_to_road=True)
@@ -767,7 +810,12 @@ def _planner_runtime_state(
     def driving(candidate: Any | None) -> bool:
         if candidate is None:
             return False
-        return str(getattr(candidate, "lane_type", "Driving")).split(".")[-1].upper() == "DRIVING"
+        lane_id = getattr(waypoint, "lane_id", 0)
+        candidate_id = getattr(candidate, "lane_id", 0)
+        return (
+            str(getattr(candidate, "lane_type", "Driving")).split(".")[-1].upper() == "DRIVING"
+            and (not lane_id or not candidate_id or lane_id * candidate_id > 0)
+        )
 
     left_exists, right_exists = driving(left), driving(right)
     available = ["CURRENT"]
@@ -787,6 +835,9 @@ def _planner_runtime_state(
         and (item.bbox_xyxy_norm[0] + item.bbox_xyxy_norm[2]) / 2.0 > 0.6
         for item in scene.detected_objects
     )
+    if adjacent_gap_occupied is not None:
+        left_gap_blocked |= adjacent_gap_occupied[0]
+        right_gap_blocked |= adjacent_gap_occupied[1]
     intersection_ahead = bool(getattr(waypoint, "is_junction", False))
     if waypoint is not None and not intersection_ahead:
         frontier = (waypoint,)
@@ -815,6 +866,18 @@ def _planner_runtime_state(
         ),
         "current_lane": str(getattr(waypoint, "lane_id", "unknown")),
     }
+
+def _lane_step_blocked(
+    step: CompiledPlanStep | None, capabilities: Mapping[str, object], *, perception_fresh: bool = True,
+) -> bool:
+    if step is None or step.behavior not in {"CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}:
+        return False
+    side = step.behavior.rsplit("_", 1)[-1].lower()
+    return not (
+        perception_fresh
+        and capabilities.get(f"{side}_lane_exists") is True
+        and capabilities.get(f"{side}_gap_safe") is True
+    )
 
 
 def _apply_compiled_plan_route(
@@ -848,7 +911,8 @@ def _apply_compiled_plan_route(
     if route_behavior is None:
         return replace(current_route, target_speed_mps=target_speed), target_speed, None
     if (
-        prevalidated_maneuver_route is not None
+        route_behavior in {"CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}
+        and prevalidated_maneuver_route is not None
         and (
             current_route.points_xy_m == prevalidated_maneuver_route.points_xy_m
             or _route_starts_near_ego(prevalidated_maneuver_route, ego)
@@ -892,6 +956,28 @@ def _apply_compiled_plan_route(
             **route_parameters,
         )
     return route, target_speed, route_behavior
+
+
+def _build_pass_target_continuation(
+    *,
+    world_map: Any,
+    ego: Any,
+    target_speed_mps: float,
+    mission_distance_m: float,
+) -> RouteReference:
+    """Continue PASS_TARGET forward in ego's current lane.
+
+    CHANGE_LANE_* references are finite.  After the outbound lane change has
+    completed, PASS_TARGET needs a fresh forward reference in the adjacent
+    lane until the target has been cleared and RETURN_TO_LANE explicitly
+    requests the return.
+    """
+    return build_route_reference(
+        world_map,
+        ego,
+        target_speed_mps,
+        distance_m=max(60.0, float(mission_distance_m)),
+    )
 
 
 def _route_starts_near_ego(
@@ -1032,10 +1118,21 @@ def _maneuver_lane_label(
     return label
 
 
+def _mission_speed_after_maneuver(
+    original_mission_speed_mps: float,
+    persistent_speed_mps: float | None,
+) -> float:
+    """Restore route geometry without discarding an explicit SET_SPEED."""
+    if persistent_speed_mps is not None:
+        return float(persistent_speed_mps)
+    return float(original_mission_speed_mps)
+
+
 def _retain_route_for_maneuver(
     *,
     topology_coverage_planning: bool,
     dynamic_out_and_back: bool,
+    must_finish_route: bool = False,
     lane_change_step_count: int,
     route_behavior: str | None,
 ) -> bool:
@@ -1047,9 +1144,14 @@ def _retain_route_for_maneuver(
     to be planned from the vehicle's terminal pose. Dynamic out-and-back plans
     retain their original route until their explicit return leg completes.
     """
+    finite_route_maneuver = (
+        route_behavior is not None
+        or lane_change_step_count > 0
+    )
     return bool(
         (dynamic_out_and_back and lane_change_step_count >= 2)
         or (topology_coverage_planning and route_behavior is not None)
+        or (must_finish_route and finite_route_maneuver)
     )
 
 
@@ -3292,6 +3394,37 @@ def _import_carla_api() -> Any:
     )
 
 
+
+def _maneuver_junction_exited(
+    *,
+    junction_seen: bool,
+    current_is_junction: bool,
+    heading_change_deg: float,
+    distance_from_start_m: float,
+    behavior: str | None,
+) -> bool:
+    """Return whether an explicit turn maneuver has completed the junction.
+
+    Prefer CARLA's waypoint junction transition when it is available.  Some
+    valid turns do not expose a reliable ``is_junction`` transition, so an
+    explicit TURN_LEFT/TURN_RIGHT step may use a conservative geometric
+    fallback after a substantial heading change and forward displacement.
+    """
+    if (
+        junction_seen
+        and not current_is_junction
+        and heading_change_deg >= 25.0
+    ):
+        return True
+
+    return (
+        behavior in {"TURN_LEFT", "TURN_RIGHT"}
+        and not current_is_junction
+        and heading_change_deg >= 70.0
+        and distance_from_start_m >= 8.0
+    )
+
+
 def run(args: argparse.Namespace) -> None:
     driving_policy = load_driving_policy(getattr(args, "driving_policy", None))
     args.driving_policy = str(driving_policy.source_path)
@@ -3454,8 +3587,11 @@ def run(args: argparse.Namespace) -> None:
     maneuver_target_seen = False
     maneuver_target_pass_after_m: float | None = None
     maneuver_route_steps_applied: set[str] = set()
+    lane_route_source: tuple[str, str] | None = None
+    lane_clear_frames = 0
     maneuver_mission_route: RouteReference | None = None
     maneuver_mission_progress_m: float | None = None
+    maneuver_persistent_speed_mps: float | None = None
     maneuver_return_destination_xy: tuple[float, float] | None = None
     scenario_actor_progress_trackers: dict[str, RouteProgressTracker] = {}
     dynamic_out_and_back = _scenario_uses_dynamic_out_and_back(spec)
@@ -3670,7 +3806,7 @@ def run(args: argparse.Namespace) -> None:
         if (
             road_fit_required or seeded_route_anchor or adjacent_lane_anchor_required
         ) and not managed_route_planning:
-            maneuver = _scenario_startup_maneuver(spec)
+            maneuver = _scenario_anchor_maneuver(spec)
             if configured_anchor_index is not None:
                 anchor_index = configured_anchor_index
                 topology_route = build_scenario_route_reference(
@@ -4916,6 +5052,7 @@ def run(args: argparse.Namespace) -> None:
                 qwen_rgb_measurement: Any | None = None
                 current_rgb: Any | None = None
                 current_multiview_rgb: Mapping[str, Any] = {}
+                adjacent_gap_occupied: tuple[bool, bool] | None = None
                 sensor_ready_ns: int | None = None
                 perception_start_ns = time.monotonic_ns()
                 try:
@@ -4928,6 +5065,7 @@ def run(args: argparse.Namespace) -> None:
                         qwen_rgb_measurement = sample.rgb
                         current_rgb = sample.rgb
                         current_multiview_rgb = sample.multi_view_rgb
+                        adjacent_gap_occupied = sample.adjacent_gap_occupied
                         perception_sources = dict(sample.source_by_field)
                         c_safety_state = sample.safety_summary.to_dict()
                         if extension_runtime is not None:
@@ -5321,7 +5459,7 @@ def run(args: argparse.Namespace) -> None:
                                 )
                         image_staged_ns = time.monotonic_ns()
                         planner_state = _planner_runtime_state(
-                            world_map, ego, scene, route,
+                            world_map, ego, scene, route, adjacent_gap_occupied,
                         )
                         requested_actor_id = (
                             deferred.envelope.get("parameters", {}).get(
@@ -5617,6 +5755,9 @@ def run(args: argparse.Namespace) -> None:
                                     else None
                                 )
                                 maneuver_route_steps_applied.clear()
+                                lane_route_source = None
+                                lane_clear_frames = 0
+                                maneuver_persistent_speed_mps = None
                                 maneuver_return_destination_xy = None
                                 maneuver_lane_ids = {"CURRENT": state.lane_id}
                                 plan_waypoint = world_map.get_waypoint(
@@ -5642,31 +5783,42 @@ def run(args: argparse.Namespace) -> None:
                                     }
                                 )
                                 route_before_maneuver = route
-                                route, compiled_speed, route_behavior = _apply_compiled_plan_route(
-                                    orchestration.compiled_plan,
-                                    world_map=world_map,
-                                    ego=ego,
-                                    current_route=route,
-                                    requested_speed_mps=runtime.requested_speed_mps,
-                                    distance_m=(
-                                        args.route_distance_m
-                                        if spec is None
-                                        else _scenario_route_distance_m(spec)
-                                    ),
-                                    prevalidated_maneuver_route=(
-                                        None
-                                        if dynamic_out_and_back
-                                        else prevalidated_avoid_route or topology_route
-                                    ),
-                                    lane_change_profile=lane_change_profile,
-                                )
+                                if maneuver_fsm.current_step.behavior.startswith("CHANGE_LANE_"):
+                                    # Hold the existing geometry until the live
+                                    # FSM has actually cleared its entry gate.
+                                    compiled_speed, route_behavior = runtime.requested_speed_mps, None
+                                else:
+                                    route, compiled_speed, route_behavior = _apply_compiled_plan_route(
+                                        orchestration.compiled_plan,
+                                        world_map=world_map,
+                                        ego=ego,
+                                        current_route=route,
+                                        requested_speed_mps=runtime.requested_speed_mps,
+                                        distance_m=(
+                                            args.route_distance_m
+                                            if spec is None
+                                            else _scenario_route_distance_m(spec)
+                                        ),
+                                        prevalidated_maneuver_route=(
+                                            None
+                                            if dynamic_out_and_back
+                                            else prevalidated_avoid_route or topology_route
+                                        ),
+                                        lane_change_profile=lane_change_profile,
+                                    )
                                 maneuver_mission_route = (
                                     route_before_maneuver
                                     if _retain_route_for_maneuver(
                                         topology_coverage_planning=topology_coverage_planning,
                                         dynamic_out_and_back=dynamic_out_and_back,
+                                        must_finish_route=(
+                                            spec is not None
+                                            and spec.expected.get("must_finish_route") is True
+                                        ),
                                         lane_change_step_count=len(lane_change_steps),
-                                        route_behavior=route_behavior,
+                                        route_behavior=route_behavior or (
+                                            maneuver_fsm.current_step.behavior if lane_change_steps else None
+                                        ),
                                     )
                                     else None
                                 )
@@ -5797,6 +5949,30 @@ def run(args: argparse.Namespace) -> None:
                         }
                 if raw_control_override is None:
                     raw_control_override = perception_control_override
+                guarded_lane_step = (
+                    maneuver_fsm.current_step
+                    if maneuver_fsm.state not in TERMINAL_STATES
+                    else None
+                )
+                guard_lane_route = (
+                    guarded_lane_step is not None
+                    and guarded_lane_step.behavior.startswith("CHANGE_LANE_")
+                    and (
+                        guarded_lane_step.step_id not in maneuver_route_steps_applied
+                        or lane_route_source == (guarded_lane_step.step_id, state.lane_id)
+                    )
+                )
+                lane_waiting = (
+                    guard_lane_route and _lane_step_blocked(
+                        guarded_lane_step, _planner_runtime_state(world_map, ego, scene, route, adjacent_gap_occupied),
+                        perception_fresh=args.perception_mode != "sensors" or adjacent_gap_occupied is not None,
+                    )
+                )
+                if not guard_lane_route or lane_waiting:
+                    lane_clear_frames = 0
+                else:
+                    lane_clear_frames += 1
+                lane_waiting = guard_lane_route and lane_clear_frames < 3
                 effective_route = route
                 extension_speed_cap_mps = (
                     None if extension_frame is None else extension_frame.speed_limit_mps
@@ -5813,7 +5989,7 @@ def run(args: argparse.Namespace) -> None:
                         scenario_sensor_fault_speed_cap_mps,
                     )
                 ) else None
-                if route_recovery_hold:
+                if route_recovery_hold or lane_waiting:
                     effective_route = _route_recovery_hold_reference(state)
                     active_speed_cap_mps = 0.0
                 elif finish_contract_route:
@@ -5925,12 +6101,14 @@ def run(args: argparse.Namespace) -> None:
                     maneuver_step_before_update = maneuver_fsm.current_step
                     lane_marking_crossing_expected = (
                         maneuver_step_before_update is not None
+                        and maneuver_step_before_update.step_id in maneuver_route_steps_applied
+                        and not lane_waiting
                         and maneuver_step_before_update.behavior in {
                             "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT", "RETURN_TO_LANE",
                         }
                     )
                     plan_capabilities = _planner_runtime_state(
-                        world_map, ego, scene, route,
+                        world_map, ego, scene, route, adjacent_gap_occupied,
                     )
                     current_waypoint = world_map.get_waypoint(
                         ego.get_location(), project_to_road=True,
@@ -6011,10 +6189,16 @@ def run(args: argparse.Namespace) -> None:
                             "speed_mps": state.speed_mps,
                             "lane": lane_label,
                             "lateral_error_m": scene.lane_offset_m or 0.0,
-                            "junction_exited": (
-                                maneuver_junction_seen
-                                and not current_is_junction
-                                and heading_change_deg >= 25.0
+                            "junction_exited": _maneuver_junction_exited(
+                                junction_seen=maneuver_junction_seen,
+                                current_is_junction=current_is_junction,
+                                heading_change_deg=heading_change_deg,
+                                distance_from_start_m=distance_from_plan_start_m,
+                                behavior=(
+                                    None
+                                    if maneuver_step_before_update is None
+                                    else maneuver_step_before_update.behavior
+                                ),
                             ),
                             "target_visible": target_visible,
                             "target_seen": maneuver_target_seen,
@@ -6044,6 +6228,8 @@ def run(args: argparse.Namespace) -> None:
                         monitor=qwen_scenario_monitor,
                         recorder=recorder,
                         extension_runtime=extension_runtime,
+                        completed_step=maneuver_step_before_update,
+                        actual_speed_mps=state.speed_mps,
                     )
                     if maneuver_update.state == "SUCCEEDED":
                         step_feedback = runtime.complete_active(
@@ -6118,9 +6304,14 @@ def run(args: argparse.Namespace) -> None:
                                 if callable(synchronize_route_progress)
                                 else None
                             )
+                            restored_mission_speed_mps = _mission_speed_after_maneuver(
+                                maneuver_mission_route.target_speed_mps,
+                                maneuver_persistent_speed_mps,
+                            )
+                            runtime.requested_speed_mps = restored_mission_speed_mps
                             route = replace(
                                 maneuver_mission_route,
-                                target_speed_mps=runtime.requested_speed_mps,
+                                target_speed_mps=restored_mission_speed_mps,
                             )
                         restore_payload = {
                             "record_type": "qwen_mission_route_restored",
@@ -6144,14 +6335,25 @@ def run(args: argparse.Namespace) -> None:
                             extension_runtime.note_mission_route_restored()
                         maneuver_mission_route = None
                         maneuver_mission_progress_m = None
+                        maneuver_persistent_speed_mps = None
                         maneuver_return_destination_xy = None
                     started_route_step = (
                         maneuver_update.current_step
-                        if any(
-                            event.event_type == "qwen_step_started"
-                            for event in maneuver_update.events
+                        if maneuver_update.current_step is not None
+                        and (
+                            any(event.event_type == "qwen_step_started" for event in maneuver_update.events)
+                            or (
+                                maneuver_update.state == "CHANGING_LANE"
+                                and maneuver_update.current_step.behavior.startswith("CHANGE_LANE_")
+                            )
                         )
-                        and maneuver_update.current_step is not None
+                        and not _lane_step_blocked(maneuver_update.current_step, plan_capabilities)
+                        and (
+                            not maneuver_update.current_step.behavior.startswith("CHANGE_LANE_")
+                            or (
+                                maneuver_update.current_step is guarded_lane_step and not lane_waiting
+                            )
+                        )
                         and maneuver_update.current_step.step_id
                         not in maneuver_route_steps_applied
                         else None
@@ -6199,6 +6401,11 @@ def run(args: argparse.Namespace) -> None:
                             )
                             if step_speed is not None:
                                 runtime.requested_speed_mps = float(step_speed)
+                                if started_route_step.behavior == "SET_SPEED":
+                                    # SET_SPEED is a persistent mission-state
+                                    # update. Finite maneuver target speeds are
+                                    # temporary execution speeds.
+                                    maneuver_persistent_speed_mps = float(step_speed)
                             route_step_applied = False
                             deferred_dynamic_lane_change = _is_deferred_dynamic_lane_change(
                                 started_route_step,
@@ -6299,12 +6506,38 @@ def run(args: argparse.Namespace) -> None:
                                             destination_waypoint.lane_id
                                         )
                                 route_step_applied = True
+                            elif (
+                                dynamic_out_and_back
+                                and started_route_step.behavior == "PASS_TARGET"
+                            ):
+                                # CHANGE_LANE_* uses a finite maneuver reference.
+                                # Once the outbound lane change completes, PASS_TARGET
+                                # must continue forward in the ego's current adjacent
+                                # lane instead of exhausting that finite reference.
+                                #
+                                # Replanning STRAIGHT from the current map pose keeps
+                                # the vehicle in its present lane until the semantic
+                                # RETURN_TO_LANE step explicitly requests the return.
+                                route = _build_pass_target_continuation(
+                                    world_map=world_map,
+                                    ego=ego,
+                                    target_speed_mps=runtime.requested_speed_mps,
+                                    mission_distance_m=(
+                                        args.route_distance_m
+                                        if spec is None
+                                        else _scenario_route_distance_m(spec)
+                                    ),
+                                )
+                                runtime.lateral.reset(preserve_steer=True)
+                                route_step_applied = True
                             else:
                                 route = replace(
                                     route,
                                     target_speed_mps=runtime.requested_speed_mps,
                                 )
                             maneuver_route_steps_applied.add(started_route_step.step_id)
+                            if started_route_step.behavior.startswith("CHANGE_LANE_"):
+                                lane_route_source = started_route_step.step_id, state.lane_id
                             print(json.dumps({
                                 "record_type": (
                                     "qwen_step_route_applied"

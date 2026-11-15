@@ -45,6 +45,9 @@ class BehaviorFSM:
     def state(self) -> BehaviorState:
         return self._state
 
+    def terminal_feedback(self, command_id: str) -> ExecutionFeedback | None:
+        return self._terminal.get(command_id)
+
     def submit(self, command: DrivingCommand, *, now_s: float) -> BehaviorResult:
         previous = self._terminal.get(command.command_id)
         if previous is not None:

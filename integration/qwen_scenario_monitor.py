@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+import math
 from typing import Any
 
 from runtime.plan_validator import FORBIDDEN_LOW_LEVEL_FIELDS
@@ -47,6 +48,16 @@ class QwenScenarioMonitor:
         ):
             raise ValueError("qwen_expected calls must satisfy 0 <= min <= max")
         self.expected = dict(expected)
+        speed = expected.get("final_set_speed")
+        if "final_set_speed" in expected and (
+            not isinstance(speed, Mapping) or set(speed) != {"kph", "tolerance_kph"}
+            or not all(type(v) in (int, float) and math.isfinite(v) and v >= 0 for v in speed.values())
+            or minimum != 1 or maximum != 1 or expected.get("expected_terminal") != "SUCCEEDED"
+        ):
+            raise ValueError("final_set_speed requires finite nonnegative kph/tolerance_kph and one successful plan")
+        self.final_set_speed = None if speed is None else dict(speed)
+        self.completed_steps: dict[tuple[str, str], dict[str, Any]] = {}
+        self.successful_plan: tuple[str, str] | None = None
         self.routes: list[str] = []
         self.command_ids: set[str] = set()
         self.qwen_calls = 0
@@ -100,12 +111,24 @@ class QwenScenarioMonitor:
     def record_replan(self) -> None:
         self.replans += 1
 
+    def record_step_completion(
+        self, command_id: str, plan_id: str, step_id: str, behavior: str,
+        target_speed_mps: float | None, actual_speed_mps: float | None,
+    ) -> None:
+        if self.final_set_speed is None or command_id not in self.command_ids:
+            return
+        self.completed_steps[(command_id, plan_id)] = {
+            "command_id": command_id, "plan_id": plan_id, "step_id": step_id, "behavior": behavior,
+            "target_kph": _observed_kph(target_speed_mps), "actual_kph": _observed_kph(actual_speed_mps),
+        }
+
     def record_terminal(
         self,
         status: Any,
         *,
         command_id: str | None = None,
         reason_code: Any | None = None,
+        plan_id: str | None = None,
     ) -> None:
         value = getattr(status, "value", status)
         normalized = str(value).upper()
@@ -121,6 +144,8 @@ class QwenScenarioMonitor:
         if reason_code is not None:
             self.terminal_reasons.append(str(reason_code).strip().upper())
         self.terminal_counts[key] = self.terminal_counts.get(key, 0) + 1
+        if normalized == "SUCCEEDED" and normalized_id in self.command_ids and plan_id:
+            self.successful_plan = (normalized_id, plan_id)
 
     def finalize(self) -> QwenScenarioReport:
         expected_behaviors = {
@@ -156,6 +181,15 @@ class QwenScenarioMonitor:
             "replans": self.replans <= int(self.expected.get("allowed_replans", 0)),
             "low_level_boundary": not self.forbidden_paths,
         }
+        speed_evidence = {}
+        if self.final_set_speed is not None:
+            step = self.completed_steps.get(self.successful_plan)
+            target, tolerance = self.final_set_speed["kph"], self.final_set_speed["tolerance_kph"]
+            valid_step = step is not None and step["behavior"] == "SET_SPEED"
+            for name in ("target_kph", "actual_kph"):
+                value = step[name] if valid_step else None
+                checks[f"final_set_speed_{name}"] = value is not None and abs(value - target) <= tolerance + 1e-9
+            speed_evidence = {"final_set_speed": {"expected": self.final_set_speed, "observed": step}}
         failures = tuple(name for name, passed in checks.items() if not passed)
         return QwenScenarioReport(
             passed=not failures,
@@ -170,8 +204,15 @@ class QwenScenarioMonitor:
                 "terminal_counts": dict(self.terminal_counts),
                 "replans": self.replans,
                 "forbidden_paths": list(self.forbidden_paths),
+                **speed_evidence,
             },
         )
+
+
+def _observed_kph(speed_mps: float | None) -> float | None:
+    if type(speed_mps) not in (int, float) or not math.isfinite(speed_mps) or speed_mps < 0:
+        return None
+    return speed_mps * 3.6
 
 
 def _forbidden_paths(value: Any, path: str = "<root>") -> list[str]:

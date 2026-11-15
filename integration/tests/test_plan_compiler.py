@@ -16,7 +16,7 @@ def _plan():
 def test_primitive_steps_compile_without_low_level_control():
     compiled = PlanCompiler().compile(_plan())
     assert [step.behavior for step in compiled.steps] == [
-        "SLOW_DOWN", "WAIT_SAFE_GAP", "CHANGE_LANE_LEFT",
+        "SLOW_DOWN", "CHANGE_LANE_LEFT",
     ]
     assert "LEFT_LANE_EXISTS" in compiled.steps[1].preconditions
     assert "LEFT_GAP_SAFE" in compiled.steps[1].preconditions
@@ -113,3 +113,19 @@ def test_avoid_then_return_derives_opposite_direction_from_avoid_lane():
     assert "RIGHT_GAP_SAFE" in compiled.steps[-2].preconditions
     assert "RIGHT_GAP_SAFE" not in compiled.steps[-1].preconditions
     assert "NO_EMERGENCY_RISK" in compiled.steps[-1].preconditions
+
+
+def test_ordinary_lane_change_uses_gap_safe_as_precondition_not_separate_step():
+    compiled = PlanCompiler().compile(_plan())
+
+    behaviors = [step.behavior for step in compiled.steps]
+
+    assert "WAIT_SAFE_GAP" not in behaviors
+
+    lane_step = next(
+        step for step in compiled.steps
+        if step.behavior == "CHANGE_LANE_LEFT"
+    )
+    assert "PERCEPTION_FRESH" in lane_step.preconditions
+    assert "LEFT_LANE_EXISTS" in lane_step.preconditions
+    assert "LEFT_GAP_SAFE" in lane_step.preconditions

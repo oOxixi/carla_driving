@@ -382,3 +382,44 @@ def test_new_plan_supersedes_old_plan_with_explicit_terminal():
     assert update.events[0].state == "SUPERSEDED"
     assert update.events[0].command_id == "cmd-1"
     assert update.events[-1].command_id == "cmd-2"
+
+
+def test_lane_change_execution_timeout_reports_step_timeout_after_gap_latched():
+    lane = _step(
+        behavior="CHANGE_LANE_LEFT",
+        preconditions=("PERCEPTION_FRESH", "LEFT_GAP_SAFE"),
+        completion={
+            "type": "LANE_CENTERED",
+            "value": None,
+            "lane": "LEFT_ADJACENT",
+            "hold_frames": 2,
+        },
+        timeout_s=1.0,
+    )
+
+    fsm = ManeuverFSM()
+    fsm.start(_plan(lane), now_s=0.0)
+
+    executing = fsm.update(
+        _snapshot(
+            left_gap_safe=True,
+            lane="CURRENT",
+            lateral_error_m=0.0,
+        ),
+        now_s=0.1,
+    )
+    assert executing.state == "CHANGING_LANE"
+    assert executing.terminal is False
+
+    timeout = fsm.update(
+        _snapshot(
+            left_gap_safe=False,
+            lane="LEFT_ADJACENT",
+            lateral_error_m=1.0,
+        ),
+        now_s=1.1,
+    )
+
+    assert timeout.state == "FAILED"
+    assert timeout.safe_behavior == "STOP"
+    assert timeout.events[-1].reason_code == "STEP_TIMEOUT"

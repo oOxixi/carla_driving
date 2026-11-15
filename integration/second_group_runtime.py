@@ -14,6 +14,7 @@ import time
 from typing import Any
 from uuid import uuid4
 
+from car_control_A import ExecutionStatus
 from runtime.interface_registry import InterfaceRegistry
 from runtime.orchestrator import OrchestrationResult, PipelineOrchestrator
 
@@ -58,6 +59,8 @@ class _PendingSlow:
     source_text: str
     wait_command_id: str
     grounded_target_ids: tuple[str, ...] = ()
+    approach_speed_mps: float | None = None
+    approach_intent: str = "TURN"
 
 
 class CanonicalRuntimeBridge:
@@ -120,6 +123,15 @@ class CanonicalRuntimeBridge:
 
         feedbacks = () if result.feedback is None else (result.feedback,)
         wait_envelope = self._pending_safety_envelope(canonical)
+        approach_speed = None
+        if not self.has_pending:
+            if canonical["intent"] == "TURN":
+                approach_speed = self.vehicle_runtime.requested_speed_mps
+            elif (canonical["intent"] == "KEEP_LANE"
+                  and envelope_status == "valid" and not canonical["requires_confirmation"]):
+                approach_speed = canonical["parameters"].get(
+                    "target_speed_mps", self.vehicle_runtime.requested_speed_mps,
+                )
         wait_adapted = self.vehicle_runtime.submit_voice(wait_envelope, now_s=sim_time_s)
         if result.disposition == "SLOW_PENDING":
             grounded_target_ids = tuple(
@@ -134,6 +146,8 @@ class CanonicalRuntimeBridge:
                 canonical["command_id"], canonical["source_text"],
                 str(wait_envelope["command_id"]),
                 grounded_target_ids,
+                approach_speed if wait_adapted.control_authorized else None,
+                canonical["intent"],
             )
         return CanonicalSubmission(
             canonical, state, result, None, wait_envelope, wait_adapted, feedbacks,
@@ -248,6 +262,7 @@ class CanonicalRuntimeBridge:
                 ))
                 continue
 
+            approach_speed = self._resume_approach_speed(pending, result, current_state)
             adapted = self.vehicle_runtime.submit_voice(runtime_envelope, now_s=sim_time_s)
             if not adapted.control_authorized:
                 feedback = self._feedback(
@@ -263,12 +278,37 @@ class CanonicalRuntimeBridge:
                     (feedback,), vehicle_feedback, result,
                 ))
                 continue
+            if approach_speed is not None:
+                # A synthetic wait STOP is not a new mission speed. D still
+                # arbitrates the resumed command on the current sensor frame.
+                self.vehicle_runtime.requested_speed_mps = approach_speed
             feedbacks = () if result.feedback is None else (result.feedback,)
             resolutions.append(CanonicalResolution(
                 result.command_id, result.disposition, runtime_envelope, adapted,
                 feedbacks, None, result,
             ))
         return tuple(resolutions)
+
+    def _resume_approach_speed(self, pending, result, scene) -> float | None:
+        if pending is None or not pending.approach_speed_mps or result.compiled_plan is None:
+            return None
+        control = result.control_command
+        resumable = {"KEEP_LANE"} if pending.approach_intent == "KEEP_LANE" else {"TURN_LEFT", "TURN_RIGHT"}
+        if (control["behavior"] not in resumable
+                or control["target"].get("target_speed_mps") is not None
+                or self.vehicle_runtime.safety_latched
+                or scene["stale"] or not scene["sync"]["within_tolerance"]
+                or scene["risk_level"] != "LOW" or scene["traffic_light"] not in {"GREEN", "UNKNOWN"}):
+            return None
+        active = self.vehicle_runtime.active_command_id
+        if active != pending.wait_command_id:
+            if active is not None:
+                return None
+            terminal = self.vehicle_runtime.fsm.terminal_feedback(pending.wait_command_id)
+            if terminal is None or terminal.status != ExecutionStatus.SUCCEEDED:
+                return None
+        speed_limit = scene.get("speed_limit_mps")
+        return min(pending.approach_speed_mps, float(speed_limit)) if speed_limit is not None else pending.approach_speed_mps
 
     def fail_all_pending(
         self,

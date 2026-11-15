@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from types import SimpleNamespace
 import threading
 import time
 
+import pytest
+
+from car_control_A import ExecutionStatus
 from integration.contracts import DetectedObject, PerceptionFrame
-from integration.second_group_runtime import CanonicalRuntimeBridge
+from integration.second_group_runtime import CanonicalRuntimeBridge, _PendingSlow
 from runtime import OrchestratorConfig, PipelineOrchestrator
 
 
@@ -14,6 +19,7 @@ class _VehicleRuntime:
         self.submitted: list[dict] = []
         self.active_command_id: str | None = None
         self.requested_speed_mps = 10.0
+        self.safety_latched = False
 
     def submit_voice(self, envelope, *, now_s):
         payload = dict(envelope)
@@ -31,6 +37,34 @@ class _VehicleRuntime:
         return SimpleNamespace(
             command_id=command_id, status="FAILED", emitted_at_s=now_s, detail=detail,
         )
+
+
+@pytest.mark.parametrize(("intent", "behavior"), [("TURN", "TURN_RIGHT"), ("KEEP_LANE", "KEEP_LANE")])
+@pytest.mark.parametrize(("case", "expected"), [
+    ("same_wait", 3.0), ("completed_wait", 3.0), ("speed_cap", 2.0),
+    ("different_command", None), ("override", None), ("watchdog", None),
+    ("red", None), ("yellow", None), ("stale", None), ("explicit", None), ("zero_approach", None),
+    ("mismatch", None),
+])
+def test_moving_plan_resumes_only_safe_approach_speed(intent, behavior, case, expected):
+    runtime = _VehicleRuntime()
+    runtime.safety_latched = case == "watchdog"
+    runtime.active_command_id = {
+        "different_command": "other", "completed_wait": None, "override": None,
+    }.get(case, "wait")
+    runtime.fsm = SimpleNamespace(terminal_feedback=lambda _: SimpleNamespace(
+        status=ExecutionStatus.SAFETY_OVERRIDE if case == "override" else ExecutionStatus.SUCCEEDED,
+    ))
+    pending = _PendingSlow("cmd", "cmd", "wait", approach_speed_mps=0.0 if case == "zero_approach" else 3.0,
+                           approach_intent=intent)
+    result = SimpleNamespace(compiled_plan={"steps": []}, control_command={
+        "behavior": ({"KEEP_LANE": "TURN_RIGHT", "TURN_RIGHT": "KEEP_LANE"}[behavior] if case == "mismatch" else behavior),
+        "target": {"target_speed_mps": 4.0 if case == "explicit" else None},
+    })
+    scene = {"stale": case == "stale", "sync": {"within_tolerance": True}, "risk_level": "LOW",
+             "traffic_light": {"red": "RED", "yellow": "YELLOW"}.get(case, "GREEN"),
+             "speed_limit_mps": 2.0 if case == "speed_cap" else None}
+    assert CanonicalRuntimeBridge(runtime, None)._resume_approach_speed(pending, result, scene) == expected
 
 
 def _voice(command_id: str, intent: str, *, text: str, parameters=None, confirm=False):
@@ -84,6 +118,78 @@ def _scene(frame: int = 10, *, with_vehicle: bool = True) -> PerceptionFrame:
         lead_speed_mps=3.0 if with_vehicle else None,
         speed_limit_mps=8.0, detected_objects=objects,
     )
+
+
+def test_validated_turn_recovers_pre_wait_speed_without_using_the_second_step():
+    class Runtime(_VehicleRuntime):
+        safety_latched = False
+
+        def submit_voice(self, envelope, *, now_s):
+            if envelope["intent"] == "STOP":
+                self.requested_speed_mps = 0.0
+            return super().submit_voice(envelope, now_s=now_s)
+
+    example = Path(__file__).resolve().parents[2] / "interfaces/examples/maneuver_plan.json"
+
+    def infer(request):
+        value = json.loads(example.read_text(encoding="utf-8"))
+        value.update(request_id=request["request_id"], command_id=request["command_id"],
+                     created_at_ns=request["created_at_ns"] + 1, valid_until_ns=request["deadline_ns"])
+        first, last = value["steps"]
+        first.update(behavior="TURN_RIGHT", preconditions=["PERCEPTION_FRESH", "INTERSECTION_AHEAD"])
+        first["target"].update(target_lane="ROUTE_BRANCH", route_direction="RIGHT", target_speed_mps=None)
+        first["completion"].update(type="JUNCTION_EXITED", value=None)
+        last.update(behavior="SET_SPEED", preconditions=["PERCEPTION_FRESH"])
+        last["target"].update(target_lane="CURRENT", target_speed_mps=15/3.6)
+        last["completion"].update(type="SPEED_REACHED", lane=None, value=15/3.6)
+        return value
+
+    runtime = Runtime()
+    runtime.requested_speed_mps = 3.0
+    with PipelineOrchestrator(infer=infer, config=OrchestratorConfig(qwen_mode="planner_v2")) as orchestrator:
+        bridge = CanonicalRuntimeBridge(runtime, orchestrator)
+        bridge.submit(_voice("turn", "TURN", text="前方右转，转弯后保持十五公里每小时",
+                             parameters={"direction": "RIGHT", "target_speed_mps": 15/3.6}),
+                      _scene(with_vehicle=False), SimpleNamespace(speed_mps=2.0),
+                      sim_time_s=0.5, perception_mode="sensors", received_at_ns=1_000_000_000,
+                      runtime_state={"intersection_ahead": True, "route_available": True})
+        assert runtime.requested_speed_mps == 0
+        resolved = bridge.poll(_scene(11, with_vehicle=False), SimpleNamespace(speed_mps=2.0),
+                               sim_time_s=0.55, perception_mode="sensors", captured_at_ns=1_100_000_000, wait_timeout_ms=100)
+        assert len(resolved) == 1 and resolved[0].disposition == "SLOW_READY", resolved
+    assert runtime.requested_speed_mps == 3.0
+
+
+@pytest.mark.parametrize(("previous", "requested", "expected"), [(0.0, 4.0, 4.0), (3.0, None, 3.0), (3.0, 0.0, 0.0)])
+def test_validated_keep_lane_uses_existing_driving_speed_without_inventing_one(previous, requested, expected):
+    from integration.runtime_loop import ControlRuntime
+    from car_control_B.pure_pursuit import PurePursuitController
+
+    example = Path(__file__).resolve().parents[2] / "interfaces/examples/maneuver_plan.json"
+
+    def infer(request):
+        plan = json.loads(example.read_text(encoding="utf-8"))
+        plan.update(request_id=request["request_id"], command_id=request["command_id"],
+                    created_at_ns=request["created_at_ns"] + 1, valid_until_ns=request["deadline_ns"])
+        step = plan["steps"][0]
+        step.update(behavior="KEEP_LANE", preconditions=["PERCEPTION_FRESH"])
+        step["target"].update(target_speed_mps=None)
+        step["completion"].update(type="HOLD_FRAMES", value=None)
+        plan["steps"] = [step]
+        return plan
+
+    runtime = ControlRuntime(PurePursuitController(), default_speed_mps=previous)
+    with PipelineOrchestrator(infer=infer, config=OrchestratorConfig(qwen_mode="planner_v2")) as orchestrator:
+        bridge = CanonicalRuntimeBridge(runtime, orchestrator)
+        bridge.submit(_voice("keep", "KEEP_LANE", text="保持当前车道行驶", parameters={
+            "target_speed_mps": requested,
+        }), _scene(with_vehicle=False), SimpleNamespace(speed_mps=0.0),
+                      sim_time_s=0.5, perception_mode="sensors", received_at_ns=1_000_000_000)
+        assert runtime.requested_speed_mps == 0.0
+        resolved = bridge.poll(_scene(11, with_vehicle=False), SimpleNamespace(speed_mps=0.0),
+                               sim_time_s=0.55, perception_mode="sensors", captured_at_ns=1_100_000_000, wait_timeout_ms=100)
+        assert len(resolved) == 1 and resolved[0].disposition == "SLOW_READY", resolved
+    assert runtime.requested_speed_mps == expected
 
 
 def test_atomic_command_fails_closed_when_qwen_is_unavailable() -> None:

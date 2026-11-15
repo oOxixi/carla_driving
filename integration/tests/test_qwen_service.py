@@ -344,6 +344,37 @@ def test_vllm_red_light_restricts_choice_to_stop() -> None:
     assert backend._choice_codes(request) == ["D"]
 
 
+@pytest.mark.parametrize(("exists", "safe", "codes", "reason"), [
+    (True, True, ["G"], None),
+    (True, False, ["A", "C"], "LANE_GAP_UNSAFE"),
+    (False, False, ["A"], "TARGET_LANE_UNAVAILABLE"),
+])
+def test_vllm_lane_choice_can_defer_or_decline_without_changing_direction(exists, safe, codes, reason) -> None:
+    from types import SimpleNamespace
+
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    backend.max_new_tokens, backend.model_id = 1, "real-adapter-test"
+    backend._client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(
+        create=lambda **_: SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=codes[0]))]),
+    )))
+    request = _request()
+    request["rgb_ref"] = None
+    request["scene_summary"]["traffic_light"] = "UNKNOWN"
+    request["constraints"].update(must_stop=False, allowed_behaviors=["CHANGE_LANE", "KEEP_LANE", "SLOW_DOWN", "STOP"])
+    request["command_hint"] = {"intent": "CHANGE_LANE", "direction": "LEFT", "target": None, "target_speed_mps": None}
+    request["scene_capabilities"] = {
+        "left_lane_exists": exists, "left_gap_safe": safe, "right_lane_exists": True,
+        "right_gap_safe": True, "available_lanes": ["CURRENT", "RIGHT_ADJACENT"] + (["LEFT_ADJACENT"] if exists else []),
+    }
+    plan = backend.infer(request)
+    assert backend._choice_codes(request) == codes
+    assert ("CHANGE_LANE_LEFT" if safe else "KEEP_LANE") == plan["steps"][0]["behavior"]
+    if reason:
+        assert plan["reason_code"].endswith(":" + reason)
+    request["constraints"]["must_stop"] = True
+    assert backend._choice_codes(request) == ["D"]
+
+
 def test_vllm_choice_constraint_narrows_pedestrian_slow_down_to_longitudinal_actions() -> None:
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
     request = _request()
@@ -724,8 +755,9 @@ def test_vllm_pull_over_uses_validator_compatible_completion() -> None:
 def test_vllm_ambiguous_route_is_forced_to_hold_after_model_choice() -> None:
     class _Completions:
         @staticmethod
-        def create(**_kwargs):
-            message = type("Message", (), {"content": "G"})()
+        def create(**kwargs):
+            code = kwargs["extra_body"]["structured_outputs"]["choice"][0]
+            message = type("Message", (), {"content": code})()
             return type("Response", (), {"choices": [type("Choice", (), {"message": message})()]})()
 
     backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
@@ -742,6 +774,7 @@ def test_vllm_ambiguous_route_is_forced_to_hold_after_model_choice() -> None:
         "reasons": ["CONFIRMATION_REQUIRED"], "safe_wait_behavior": "STOP",
     }
     request["scene_capabilities"] = {}
+    request["constraints"]["allowed_behaviors"] = ["KEEP_LANE", "STOP"]
     plan = backend.infer(request)
     assert plan["steps"][0]["behavior"] == "HOLD"
 
@@ -773,3 +806,106 @@ def test_vllm_confirm_safe_preserves_model_stop() -> None:
     plan = backend.infer(request)
 
     assert plan["steps"][0]["behavior"] == "STOP"
+
+
+def test_vllm_expands_post_turn_speed_into_persistent_set_speed() -> None:
+    backend = object.__new__(VllmQwenPlannerBackend)
+
+    request = _request()
+    request["source_text"] = "前方第一个路口右转，转弯后保持十五公里每小时"
+    request["command_hint"] = {
+        "intent": "TURN",
+        "direction": "RIGHT",
+        "target_speed_mps": 15.0 / 3.6,
+        "target": None,
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "SET_SPEED", "SLOW_DOWN", "STOP", "TURN",
+    ]
+    request["constraints"]["max_target_speed_mps"] = 8.333333333333334
+    request["constraints"]["speed_limit_mps"] = 8.333333333333334
+
+    steps = backend._expanded_steps(request, "TURN_RIGHT")
+
+    assert [step["behavior"] for step in steps] == [
+        "TURN_RIGHT",
+        "SET_SPEED",
+    ]
+    assert steps[0]["target"]["target_speed_mps"] == pytest.approx(15.0 / 3.6)
+    assert steps[1]["target"]["target_speed_mps"] == pytest.approx(15.0 / 3.6)
+    assert steps[1]["completion"]["type"] == "SPEED_REACHED"
+
+
+def test_vllm_does_not_expand_turn_speed_without_post_turn_semantics() -> None:
+    backend = object.__new__(VllmQwenPlannerBackend)
+
+    request = _request()
+    request["source_text"] = "以十五公里每小时右转"
+    request["command_hint"] = {
+        "intent": "TURN",
+        "direction": "RIGHT",
+        "target_speed_mps": 15.0 / 3.6,
+        "target": None,
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "SET_SPEED", "SLOW_DOWN", "STOP", "TURN",
+    ]
+    request["constraints"]["max_target_speed_mps"] = 8.333333333333334
+    request["constraints"]["speed_limit_mps"] = 8.333333333333334
+
+    steps = backend._expanded_steps(request, "TURN_RIGHT")
+
+    assert [step["behavior"] for step in steps] == ["TURN_RIGHT"]
+    assert steps[0]["target"]["target_speed_mps"] == pytest.approx(15.0 / 3.6)
+
+
+def test_vllm_expands_post_lane_change_speed_into_persistent_set_speed() -> None:
+    backend = object.__new__(VllmQwenPlannerBackend)
+
+    request = _request()
+    request["source_text"] = "确认安全后向左变道并保持二十公里每小时"
+    request["command_hint"] = {
+        "intent": "CHANGE_LANE",
+        "direction": "LEFT",
+        "target_speed_mps": 20.0 / 3.6,
+        "target": None,
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "CHANGE_LANE", "SET_SPEED", "STOP",
+    ]
+    request["constraints"]["max_target_speed_mps"] = 8.333333333333334
+    request["constraints"]["speed_limit_mps"] = 8.333333333333334
+
+    steps = backend._expanded_steps(request, "CHANGE_LANE_LEFT")
+
+    assert [step["behavior"] for step in steps] == [
+        "CHANGE_LANE_LEFT",
+        "SET_SPEED",
+    ]
+    assert steps[0]["target"]["target_speed_mps"] == pytest.approx(20.0 / 3.6)
+    assert steps[1]["target"]["target_speed_mps"] == pytest.approx(20.0 / 3.6)
+    assert steps[0]["timeout_s"] == pytest.approx(20.0)
+
+
+def test_vllm_does_not_expand_lane_change_speed_without_persistent_semantics() -> None:
+    backend = object.__new__(VllmQwenPlannerBackend)
+
+    request = _request()
+    request["source_text"] = "以二十公里每小时向左变道"
+    request["command_hint"] = {
+        "intent": "CHANGE_LANE",
+        "direction": "LEFT",
+        "target_speed_mps": 20.0 / 3.6,
+        "target": None,
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "CHANGE_LANE", "SET_SPEED", "STOP",
+    ]
+    request["constraints"]["max_target_speed_mps"] = 8.333333333333334
+    request["constraints"]["speed_limit_mps"] = 8.333333333333334
+
+    steps = backend._expanded_steps(request, "CHANGE_LANE_LEFT")
+
+    assert [step["behavior"] for step in steps] == ["CHANGE_LANE_LEFT"]
+    assert steps[0]["target"]["target_speed_mps"] == pytest.approx(20.0 / 3.6)
+    assert steps[0]["timeout_s"] == pytest.approx(20.0)

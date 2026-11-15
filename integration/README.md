@@ -1,5 +1,7 @@
 # 车辆侧正式全流程
 
+> 历史说明：本页部分能力/感知来源表述早于 RGB 检测与 Planner V2 完整接入，不能直接当作当前实现状态。当前功能与源码入口见 [车辆模块](../docs/architecture/modules/vehicle.md)，已知文字漂移见 [审计台账](../docs/architecture/AUDIT.md)。运行字段来源以所选模式及 `perception_sources` 实际记录为准。
+
 ## 1. 范围与数据流
 
 车辆侧不修改 `voice_group/`。入口接收语音组产生的命令对象，随后按固定顺序执行：

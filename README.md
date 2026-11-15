@@ -10,6 +10,9 @@ python -m integration.carla_runner
 A 状态机 → B 横向控制 + C 纵向控制 → D 安全仲裁 → 唯一 `apply_control()`。
 Qwen 只能给出高层 `ManeuverPlan`，不能直接下发方向盘、油门或刹车，也不能绕过 D。
 
+Student FP32 的 CARLA 83 场仿真交接、模型身份与证据索引见
+[当前仿真 HANDOFF](challenge/distillation/CARLA83_FP32_HANDOFF.md)；该结果与基础赛道长里程验收分开。
+
 ## 当前正式范围
 
 - 模型：只使用服务器上的 Qwen 2B 生产服务；更大模型不属于当前测试主线。

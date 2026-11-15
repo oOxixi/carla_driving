@@ -58,12 +58,30 @@ def voice_envelope_to_driving_command(
     if not isinstance(parameters, Mapping):
         parameters = {}
     canonical_parameters: dict[str, Any] = {}
-    speed = parameters.get("speed")
-    if speed is not None and type(speed) in (int, float) and not isinstance(speed, bool):
-        unit = str(parameters.get("unit", "km/h")).lower().replace(" ", "")
-        target = float(speed) / 3.6 if unit in {"km/h", "kph", "kmh", "公里/小时", "千米/小时"} else float(speed)
-        if math.isfinite(target) and target >= 0.0:
-            canonical_parameters["target_speed_mps"] = target
+
+    # Prefer an already-canonical SI speed when it is valid.  Fall back to the
+    # legacy speed + unit representation when the direct field is absent or
+    # invalid.
+    target_speed_mps: float | None = None
+    direct_target_speed = parameters.get("target_speed_mps")
+    if (
+        type(direct_target_speed) in (int, float)
+        and not isinstance(direct_target_speed, bool)
+    ):
+        candidate = float(direct_target_speed)
+        if math.isfinite(candidate) and candidate >= 0.0:
+            target_speed_mps = candidate
+
+    if target_speed_mps is None:
+        speed = parameters.get("speed")
+        if speed is not None and type(speed) in (int, float) and not isinstance(speed, bool):
+            unit = str(parameters.get("unit", "km/h")).lower().replace(" ", "")
+            candidate = float(speed) / 3.6 if unit in {"km/h", "kph", "kmh", "公里/小时", "千米/小时"} else float(speed)
+            if math.isfinite(candidate) and candidate >= 0.0:
+                target_speed_mps = candidate
+
+    if target_speed_mps is not None:
+        canonical_parameters["target_speed_mps"] = target_speed_mps
     direction = str(parameters.get("direction", "")).upper()
     if direction not in {"LEFT", "RIGHT", "STRAIGHT"}:
         if intent.endswith("_LEFT"):

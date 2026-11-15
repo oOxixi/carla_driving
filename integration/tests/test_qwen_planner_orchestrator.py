@@ -607,3 +607,63 @@ def test_ambiguous_voice_command_is_constrained_to_audited_hold() -> None:
     assert queued.disposition == "SLOW_PENDING"
     assert queued.model_request["constraints"]["allowed_behaviors"] == ["STOP"]
     assert queued.model_request["routing"]["disposition"] == "CONFIRM_SAFE"
+
+
+def test_lane_change_with_persistent_post_speed_allows_set_speed_behavior():
+    command = _example("driving_command")
+    command.update({
+        "command_id": "lane-speed-compound",
+        "source_text": "确认安全后向左变道并保持二十公里每小时",
+        "intent": "CHANGE_LANE",
+        "parameters": {
+            "direction": "LEFT",
+            "target_speed_mps": 20.0 / 3.6,
+        },
+    })
+    scene = _example("perception_state")
+
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(
+            command,
+            scene,
+            now_ns=1_100_000_000,
+            runtime_state={"left_lane_exists": True},
+        )
+
+    assert queued.disposition == "SLOW_PENDING"
+    allowed = queued.model_request["constraints"]["allowed_behaviors"]
+    assert "CHANGE_LANE" in allowed
+    assert "SET_SPEED" in allowed
+
+
+def test_lane_change_maneuver_speed_does_not_allow_persistent_set_speed():
+    command = _example("driving_command")
+    command.update({
+        "command_id": "lane-speed-local",
+        "source_text": "以二十公里每小时向左变道",
+        "intent": "CHANGE_LANE",
+        "parameters": {
+            "direction": "LEFT",
+            "target_speed_mps": 20.0 / 3.6,
+        },
+    })
+    scene = _example("perception_state")
+
+    with PipelineOrchestrator(
+        infer=lambda _request: {},
+        config=OrchestratorConfig(qwen_mode="planner_v2"),
+    ) as runtime:
+        queued = runtime.submit_command(
+            command,
+            scene,
+            now_ns=1_100_000_000,
+            runtime_state={"left_lane_exists": True},
+        )
+
+    assert queued.disposition == "SLOW_PENDING"
+    allowed = queued.model_request["constraints"]["allowed_behaviors"]
+    assert "CHANGE_LANE" in allowed
+    assert "SET_SPEED" not in allowed

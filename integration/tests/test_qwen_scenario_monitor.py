@@ -135,3 +135,53 @@ def test_monitor_accepts_every_command_on_qwen_route():
 
     assert report.passed is True
     assert report.checks["route"] is True
+
+
+@pytest.mark.parametrize("behavior,target,actual,plan,passes", [
+    ("SET_SPEED", 20, 20, "p", True),
+    ("SET_SPEED", 20, 18, "p", True),
+    ("SET_SPEED", 10.26, 10.26, "p", False),
+    ("SET_SPEED", 20, 16, "p", False),
+    ("SET_SPEED", 20, None, "p", False),
+    ("SET_SPEED", 20, float("nan"), "p", False),
+    ("SET_SPEED", 20, 20, "other-plan", False),
+    ("KEEP_LANE", 20, 20, "p", False),
+])
+def test_final_speed_requires_target_and_vehicle_evidence_from_successful_plan(behavior, target, actual, plan, passes):
+    monitor = QwenScenarioMonitor(_expected(max_calls=1, expected_behaviors=["CHANGE_LANE_LEFT", "SET_SPEED"],
+        final_set_speed={"kph": 20, "tolerance_kph": 2}))
+    monitor.record_routing("QWEN_PLAN", qwen_submitted=True, command_id="c")
+    monitor.record_behavior("CHANGE_LANE_LEFT")
+    monitor.record_behavior("SET_SPEED")
+    monitor.record_step_completion("c", "p", "step-1", "CHANGE_LANE_LEFT", 20/3.6, 20/3.6)
+    monitor.record_step_completion("c", plan, "step-2", behavior, target/3.6, None if actual is None else actual/3.6)
+    monitor.record_terminal("SUCCEEDED", command_id="c", plan_id="p")
+    assert monitor.finalize().passed is passes
+
+
+@pytest.mark.parametrize("speed", [None, {}, {"kph": True, "tolerance_kph": 2}, {"kph": 20, "tolerance_kph": -1}])
+def test_monitor_rejects_malformed_final_speed_contract(speed):
+    with pytest.raises(ValueError, match="final_set_speed"):
+        QwenScenarioMonitor(_expected(max_calls=1, final_set_speed=speed))
+
+
+def test_runner_records_same_step_speed_before_terminal():
+    from car_control_A.maneuver_fsm import ManeuverEvent, ManeuverUpdate
+    from integration.carla_runner import _record_maneuver_update
+    from runtime.plan_compiler import CompiledPlanStep
+
+    monitor = QwenScenarioMonitor(_expected(max_calls=1, expected_behaviors=["SET_SPEED"],
+        final_set_speed={"kph": 20, "tolerance_kph": 2}))
+    monitor.record_routing("QWEN_PLAN", qwen_submitted=True, command_id="c")
+    monitor.record_behavior("SET_SPEED")
+    step = CompiledPlanStep("step-2", "step-2", "SET_SPEED", {"target_speed_mps": 20/3.6},
+        (), {"type": "SPEED_REACHED"}, 10.0, "STOP")
+    events = (
+        ManeuverEvent("qwen_step_completed", "c", "p", "step-2", "PLAN_EXECUTING", "COMPLETION_HELD", 1.0),
+        ManeuverEvent("qwen_terminal", "c", "p", None, "SUCCEEDED", "PLAN_COMPLETE", 1.0),
+    )
+    _record_maneuver_update(ManeuverUpdate("SUCCEEDED", None, events, None, True),
+        monitor=monitor, recorder=None, completed_step=step, actual_speed_mps=19/3.6)
+    report = monitor.finalize()
+    assert report.passed
+    assert report.observed["final_set_speed"]["observed"]["actual_kph"] == pytest.approx(19)

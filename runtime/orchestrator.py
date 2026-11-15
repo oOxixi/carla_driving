@@ -548,7 +548,13 @@ class PipelineOrchestrator:
                 command_id,
                 decision_ns,
                 "EXECUTING",
-                "validated Qwen plan dispatched",
+                (
+                    "Requested lane unavailable; keeping current lane"
+                    if str(plan.get("reason_code", "")).endswith(":TARGET_LANE_UNAVAILABLE")
+                    else "Requested lane gap unsafe; deferring lane change"
+                    if str(plan.get("reason_code", "")).endswith(":LANE_GAP_UNSAFE")
+                    else "validated Qwen plan dispatched"
+                ),
                 None,
                 safety_event_reason=self._plan_safety_event_reason(
                     plan, result.job.perception, result.job.request,
@@ -780,6 +786,64 @@ class PipelineOrchestrator:
             }
         return self.registry.validate("model_request", payload)
 
+    @staticmethod
+    def _persistent_post_maneuver_speed_requested(
+        command: Mapping[str, Any],
+    ) -> bool:
+        """Return whether a maneuver explicitly requests a persistent speed."""
+        parameters = command.get("parameters", {})
+        if not isinstance(parameters, Mapping):
+            return False
+
+        target_speed = parameters.get("target_speed_mps")
+        if (
+            type(target_speed) not in (int, float)
+            or isinstance(target_speed, bool)
+            or not math.isfinite(float(target_speed))
+            or float(target_speed) < 0.0
+        ):
+            return False
+
+        intent = str(command.get("intent", "")).upper()
+        source = str(command.get("source_text", "")).casefold()
+
+        if intent == "TURN":
+            markers = (
+                "转弯后保持",
+                "左转后保持",
+                "右转后保持",
+                "转向后保持",
+                "拐弯后保持",
+                "然后保持",
+                "随后保持",
+                "之后保持",
+                "after turning",
+                "after the turn",
+                "then maintain",
+                "then keep",
+                "afterward maintain",
+            )
+        elif intent == "CHANGE_LANE":
+            markers = (
+                "变道并保持",
+                "换道并保持",
+                "变更车道并保持",
+                "变道后保持",
+                "换道后保持",
+                "变更车道后保持",
+                "change lanes and maintain",
+                "change lane and maintain",
+                "change lanes and keep",
+                "change lane and keep",
+                "after changing lanes",
+                "after changing lane",
+                "after the lane change",
+            )
+        else:
+            return False
+
+        return any(marker in source for marker in markers)
+
     def _allowed_model_behaviors(
         self,
         command: Mapping[str, Any],
@@ -814,6 +878,15 @@ class PipelineOrchestrator:
         }
         if routing.features.requires_maneuver and intent in maneuver_by_intent:
             permitted = set(maneuver_by_intent[intent])
+            if intent == "CHANGE_LANE" and self.config.qwen_mode == "planner_v2":
+                permitted.update(("KEEP_LANE", "SLOW_DOWN"))
+            if (
+                intent == "CHANGE_LANE"
+                and self._persistent_post_maneuver_speed_requested(command)
+            ):
+                # A lane change is finite. An explicitly requested persistent
+                # post-maneuver speed is a separate legal SET_SPEED action.
+                permitted.add("SET_SPEED")
             # A compound obstacle-avoidance instruction may begin by yielding
             # to a pedestrian before executing its lane-change manoeuvre.  The
             # top-level parser still correctly classifies the whole sequence as

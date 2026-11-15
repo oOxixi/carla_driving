@@ -283,6 +283,7 @@ class PerceptionSample:
     radar: Any | None
     safety_summary: SafetyStateSummary
     multi_view_rgb: Mapping[str, Any] = field(default_factory=dict)
+    adjacent_gap_occupied: tuple[bool, bool] | None = None
 
 
 def _make_transform(carla_api: Any, mount: SensorMount) -> Any:
@@ -468,6 +469,13 @@ def adjacent_lidar_distances_m(
         & (points[:, 1] <= outer_lateral_m)
     )
     return left, right
+
+
+def adjacent_lidar_gap_occupied(measurement: Any) -> tuple[bool, bool]:
+    # Keep side/rear occupancy out of the front object list: those objects
+    # cannot ground an ahead target in a maneuver or longitudinal controller.
+    left, right = adjacent_lidar_distances_m(measurement, min_forward_m=-30.0)
+    return left is not None, right is not None
 
 
 @dataclass(frozen=True, slots=True)
@@ -929,6 +937,7 @@ class CarlaPerceptionBridge:
         try:
             lead_distance = front_lidar_distance_m(lidar)
             adjacent_distances = adjacent_lidar_distances_m(lidar)
+            adjacent_gap_occupied = adjacent_lidar_gap_occupied(lidar)
         except (TypeError, ValueError) as error:
             raise PerceptionDataError(
                 f"LiDAR frame {frame} is unusable; normal control must be suppressed"
@@ -1134,5 +1143,5 @@ class CarlaPerceptionBridge:
         )
         return PerceptionSample(
             perception, sensor_ready_ns, MappingProxyType(sources),
-            rgb, lidar, radar, safety_summary, multi_view_rgb,
+            rgb, lidar, radar, safety_summary, multi_view_rgb, adjacent_gap_occupied,
         )

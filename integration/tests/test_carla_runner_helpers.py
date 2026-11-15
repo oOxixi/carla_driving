@@ -31,6 +31,7 @@ from integration.carla_runner import (
     _dynamic_return_destination_xy,
     _physical_actor_id_for_target,
     _maneuver_lane_label,
+    _mission_speed_after_maneuver,
     _retain_route_for_maneuver,
     _map_contract_name,
     _maneuver_target_distance_m,
@@ -72,6 +73,7 @@ from integration.carla_runner import (
     _scenario_requires_adjacent_lane_anchor,
     _scenario_requires_target_lane_occupancy,
     _scenario_startup_maneuver,
+    _scenario_anchor_maneuver,
     _scenario_actor_lanes_fit_route,
     _scenario_uses_dynamic_out_and_back,
     _scenario_maneuver,
@@ -837,6 +839,103 @@ def test_single_sensor_fault_applies_degraded_speed_cap_only_while_partially_ava
     assert _single_sensor_fault_speed_cap_mps({"lidar"}, 1.5) == pytest.approx(1.5)
     assert _single_sensor_fault_speed_cap_mps(set(), 4.2) is None
     assert _single_sensor_fault_speed_cap_mps({"front_rgb", "lidar"}, 4.2) is None
+
+
+def test_pass_target_continuation_replans_forward_from_live_adjacent_lane(
+    monkeypatch,
+) -> None:
+    """PASS_TARGET must not keep an exhausted outbound lane-change reference."""
+    ego = Namespace(get_location=lambda: Namespace(x=40.0, y=3.5))
+    expected = RouteReference(
+        [(40.0, 3.5), (80.0, 3.5), (120.0, 3.5)],
+        target_speed_mps=4.0,
+    )
+    calls = []
+
+    def fake_build_route_reference(
+        world_map,
+        live_ego,
+        target_speed_mps,
+        *,
+        turn_direction="STRAIGHT",
+        distance_m=500.0,
+        step_m=2.0,
+    ):
+        calls.append({
+            "world_map": world_map,
+            "ego": live_ego,
+            "target_speed_mps": target_speed_mps,
+            "turn_direction": turn_direction,
+            "distance_m": distance_m,
+            "step_m": step_m,
+        })
+        return expected
+
+    monkeypatch.setattr(
+        carla_runner,
+        "build_route_reference",
+        fake_build_route_reference,
+    )
+
+    world_map = object()
+    route = carla_runner._build_pass_target_continuation(
+        world_map=world_map,
+        ego=ego,
+        target_speed_mps=4.0,
+        mission_distance_m=72.0,
+    )
+
+    assert route is expected
+    assert calls == [{
+        "world_map": world_map,
+        "ego": ego,
+        "target_speed_mps": 4.0,
+        "turn_direction": "STRAIGHT",
+        "distance_m": 72.0,
+        "step_m": 2.0,
+    }]
+
+
+def test_pass_target_continuation_has_minimum_forward_horizon(
+    monkeypatch,
+) -> None:
+    """Short missions still receive enough route for PASS_TARGET clearance."""
+    captured = {}
+
+    def fake_build_route_reference(
+        _world_map,
+        _ego,
+        target_speed_mps,
+        *,
+        turn_direction="STRAIGHT",
+        distance_m=500.0,
+        step_m=2.0,
+    ):
+        captured["speed"] = target_speed_mps
+        captured["direction"] = turn_direction
+        captured["distance"] = distance_m
+        return RouteReference(
+            [(0.0, 0.0), (60.0, 0.0)],
+            target_speed_mps=target_speed_mps,
+        )
+
+    monkeypatch.setattr(
+        carla_runner,
+        "build_route_reference",
+        fake_build_route_reference,
+    )
+
+    carla_runner._build_pass_target_continuation(
+        world_map=object(),
+        ego=object(),
+        target_speed_mps=3.5,
+        mission_distance_m=20.0,
+    )
+
+    assert captured["speed"] == pytest.approx(3.5)
+    assert captured["direction"] == "STRAIGHT"
+    assert captured["distance"] == pytest.approx(60.0)
+
 
 
 def test_compiled_maneuver_applies_only_the_first_step_before_fsm_advances() -> None:
@@ -2172,6 +2271,29 @@ def test_planner_closes_only_the_lidar_observed_adjacent_gap() -> None:
     assert state["left_gap_safe"] is False
     assert state["right_gap_safe"] is True
 
+    from integration.carla_runner import _lane_step_blocked
+
+    left_step = Namespace(behavior="CHANGE_LANE_LEFT")
+    right_step = Namespace(behavior="CHANGE_LANE_RIGHT")
+    assert _lane_step_blocked(left_step, state)
+    assert not _lane_step_blocked(right_step, state)
+    assert _lane_step_blocked(right_step, state, perception_fresh=False)
+    adjacent_only = _planner_runtime_state(
+        world_map, ego, PerceptionFrame(2, 0.10),
+        Namespace(points_xy_m=((0.0, 0.0), (20.0, 0.0))),
+        adjacent_gap_occupied=(False, True),
+    )
+    assert not _lane_step_blocked(left_step, adjacent_only)
+    assert _lane_step_blocked(right_step, adjacent_only)
+
+    left_lane.lane_id = 1  # A physically adjacent oncoming lane is not drivable.
+    opposing = _planner_runtime_state(
+        world_map, ego, PerceptionFrame(3, 0.15),
+        Namespace(points_xy_m=((0.0, 0.0), (20.0, 0.0))),
+    )
+    assert opposing["left_lane_exists"] is False
+    assert _lane_step_blocked(left_step, opposing)
+
 
 def test_front_gap_expected_value_is_a_hard_completion_contract() -> None:
     from integration.scenario_execution import ScenarioSpec
@@ -2538,3 +2660,185 @@ def test_basic_scenario_rejects_runtime_health_fail_safe() -> None:
     assert not _runtime_health_completed({"WATCHDOG_ALERT"})
     assert not _runtime_health_completed({"INTEGRATION_FAILURE"})
     assert not _runtime_health_completed({"PERCEPTION_PERCEPTIONTIMEOUTERROR"})
+
+
+def test_mission_speed_after_maneuver_restores_original_without_persistent_speed():
+    assert _mission_speed_after_maneuver(
+        6.0,
+        None,
+    ) == pytest.approx(6.0)
+
+
+def test_mission_speed_after_maneuver_preserves_explicit_set_speed():
+    assert _mission_speed_after_maneuver(
+        6.0,
+        15.0 / 3.6,
+    ) == pytest.approx(15.0 / 3.6)
+
+
+def test_retain_route_for_must_finish_deferred_single_lane_change():
+    assert _retain_route_for_maneuver(
+        topology_coverage_planning=False,
+        dynamic_out_and_back=False,
+        must_finish_route=True,
+        lane_change_step_count=1,
+        route_behavior=None,
+    )
+
+
+def test_do_not_retain_route_for_deferred_single_lane_change_without_finish_contract():
+    assert not _retain_route_for_maneuver(
+        topology_coverage_planning=False,
+        dynamic_out_and_back=False,
+        must_finish_route=False,
+        lane_change_step_count=1,
+        route_behavior=None,
+    )
+
+
+def test_maneuver_junction_exited_uses_observed_junction_transition():
+    from integration.carla_runner import _maneuver_junction_exited
+
+    assert _maneuver_junction_exited(
+        junction_seen=True,
+        current_is_junction=False,
+        heading_change_deg=30.0,
+        distance_from_start_m=4.0,
+        behavior="TURN_RIGHT",
+    ) is True
+
+
+def test_maneuver_junction_exited_allows_turn_geometric_fallback():
+    from integration.carla_runner import _maneuver_junction_exited
+
+    assert _maneuver_junction_exited(
+        junction_seen=False,
+        current_is_junction=False,
+        heading_change_deg=89.0,
+        distance_from_start_m=20.0,
+        behavior="TURN_RIGHT",
+    ) is True
+
+
+def test_maneuver_junction_exited_rejects_insufficient_heading_change():
+    from integration.carla_runner import _maneuver_junction_exited
+
+    assert _maneuver_junction_exited(
+        junction_seen=False,
+        current_is_junction=False,
+        heading_change_deg=40.0,
+        distance_from_start_m=20.0,
+        behavior="TURN_RIGHT",
+    ) is False
+
+
+def test_maneuver_junction_exited_fallback_is_turn_only():
+    from integration.carla_runner import _maneuver_junction_exited
+
+    assert _maneuver_junction_exited(
+        junction_seen=False,
+        current_is_junction=False,
+        heading_change_deg=89.0,
+        distance_from_start_m=20.0,
+        behavior="CHANGE_LANE_LEFT",
+    ) is False
+
+
+def test_c03_startup_anchor_requires_future_turn_topology() -> None:
+    root = Path(__file__).resolve().parents[2] / "scenarios"
+    spec = ScenarioSpec.load(
+        root
+        / "targeted_collection"
+        / "batch_a"
+        / "TC_C03_true_4step_follow_left.json"
+    )
+
+    # Runtime behavior remains FOLLOW until the TURN phase is triggered.
+    assert _scenario_startup_maneuver(spec) == "FOLLOW"
+
+    # Startup topology must nevertheless make the future left turn reachable.
+    assert _scenario_anchor_maneuver(spec) == "TURN_LEFT"
+
+
+def test_turn_route_does_not_reuse_prevalidated_lane_change_route(monkeypatch):
+    """TURN must build its own directional route even when a cached route is nearby."""
+    from types import SimpleNamespace
+
+    import integration.carla_runner as runner
+    from car_control_A.routing import RouteReference
+
+    cached_route = RouteReference(
+        points_xy_m=((0.0, 0.0), (20.0, 0.0)),
+        curvature_per_m=0.0,
+        target_speed_mps=5.0,
+    )
+
+    turn_route = RouteReference(
+        points_xy_m=(
+            (0.0, 0.0),
+            (5.0, 0.0),
+            (8.0, -3.0),
+            (8.0, -10.0),
+        ),
+        curvature_per_m=0.1,
+        target_speed_mps=10.0 / 3.6,
+    )
+
+    class Ego:
+        def get_location(self):
+            return SimpleNamespace(x=0.0, y=0.0)
+
+    observed = {}
+
+    def fake_build_route_reference(
+        world_map,
+        anchor,
+        target_speed_mps,
+        *,
+        turn_direction,
+        distance_m,
+        **kwargs,
+    ):
+        observed["turn_direction"] = turn_direction
+        observed["target_speed_mps"] = target_speed_mps
+        observed["distance_m"] = distance_m
+        return turn_route
+
+    monkeypatch.setattr(
+        runner,
+        "build_route_reference",
+        fake_build_route_reference,
+    )
+
+    compiled = {
+        "steps": [
+            {
+                "behavior": "TURN_LEFT",
+                "target": {
+                    "target_speed_mps": 10.0 / 3.6,
+                },
+            },
+        ],
+    }
+
+    route, speed, behavior = runner._apply_compiled_plan_route(
+        compiled,
+        world_map=object(),
+        ego=Ego(),
+        current_route=cached_route,
+        requested_speed_mps=5.0,
+        distance_m=80.0,
+        prevalidated_maneuver_route=cached_route,
+    )
+
+    assert behavior == "TURN_LEFT"
+    assert speed == pytest.approx(10.0 / 3.6)
+
+    # RC-TURN-02 regression:
+    # TURN must not reuse a cached/prevalidated lane-change route.
+    assert route is turn_route
+    assert route is not cached_route
+
+    assert observed["turn_direction"] == "LEFT"
+    assert observed["target_speed_mps"] == pytest.approx(10.0 / 3.6)
+    assert observed["distance_m"] == pytest.approx(80.0)

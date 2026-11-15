@@ -216,7 +216,7 @@ class DeterministicPlannerV2Backend:
                 steps.append(_planner_step(
                     "s1", f"CHANGE_LANE_{direction}", speed=requested_speed,
                     lane=lane, completion="LANE_CENTERED", completion_value=None,
-                    timeout_s=12.0,
+                    timeout_s=20.0,
                 ))
                 reason = "DETERMINISTIC_STRUCTURED_COMMAND_HINT"
             else:
@@ -289,7 +289,7 @@ class DeterministicPlannerV2Backend:
                         "PERCEPTION_FRESH", "LEFT_LANE_EXISTS", "LEFT_GAP_SAFE",
                         "NO_EMERGENCY_RISK",
                     ), completion="LANE_CENTERED", completion_value=None,
-                    timeout_s=12.0, failure="SAFE_STOP",
+                    timeout_s=20.0, failure="SAFE_STOP",
                 ))
                 if any(token in lower for token in ("公里", "km", "速度", "speed")):
                     steps.append(_planner_step(
@@ -508,7 +508,7 @@ class VllmQwenPlannerBackend:
         if not choices:
             raise RuntimeError("vLLM returned no planner choices")
         raw = str(getattr(getattr(choices[0], "message", None), "content", "")).strip().upper()
-        if raw not in self._CHOICES:
+        if raw not in choice_codes:
             raise ValueError(f"vLLM returned invalid constrained planner choice: {raw!r}")
         behavior = self._CHOICES[raw]
         routing = request.get("routing", {})
@@ -526,6 +526,7 @@ class VllmQwenPlannerBackend:
         if behavior not in {"HOLD"} and behavior not in allowed and normalized not in allowed:
             raise ValueError(f"Qwen behavior {behavior} violates allowed_behaviors")
         steps = self._expanded_steps(request, behavior)
+        lane_block = self._lane_block_reason(request) if behavior in {"KEEP_LANE", "SLOW_DOWN", "HOLD"} else None
         return {
             "schema_version": "2.0",
             "request_id": request["request_id"],
@@ -538,7 +539,9 @@ class VllmQwenPlannerBackend:
             "requires_confirmation": False,
             "created_at_ns": int(request["created_at_ns"]),
             "valid_until_ns": int(request["deadline_ns"]),
-            "reason_code": f"QWEN_VLLM_CHOICE_{raw}_{behavior}",
+            "reason_code": f"QWEN_VLLM_CHOICE_{raw}_{behavior}" + (
+                f":{lane_block}" if lane_block else ""
+            ),
             "model_id": self.model_id,
         }
 
@@ -565,6 +568,37 @@ class VllmQwenPlannerBackend:
             yield_request["command_hint"] = yield_hint
             steps.append(self._step(yield_request, "YIELD", index=1))
         steps.append(self._step(request, behavior, index=len(steps) + 1))
+
+        if (
+            behavior in {
+                "TURN_LEFT",
+                "TURN_RIGHT",
+                "CHANGE_LANE_LEFT",
+                "CHANGE_LANE_RIGHT",
+            }
+            and self._persistent_post_maneuver_speed_requested(request)
+        ):
+            # TURN_* and CHANGE_LANE_* are finite maneuvers. A separately
+            # requested persistent cruise speed must be represented explicitly
+            # by SET_SPEED after the finite maneuver completes.
+            speed_request = dict(request)
+            speed_hint = dict(request.get("command_hint", {}))
+            speed_hint["intent"] = "SET_SPEED"
+            speed_hint["direction"] = None
+            speed_hint["target"] = None
+            speed_request["command_hint"] = speed_hint
+
+            speed_step = self._step(
+                speed_request,
+                "SET_SPEED",
+                index=len(steps) + 1,
+            )
+            speed_step["preconditions"] = [
+                "PERCEPTION_FRESH",
+                "NO_EMERGENCY_RISK",
+            ]
+            steps.append(speed_step)
+
         if len(steps) > 1 and behavior == "AVOID_OBSTACLE":
             steps[-1]["preconditions"] = [
                 "PERCEPTION_FRESH", "NO_EMERGENCY_RISK",
@@ -604,6 +638,65 @@ class VllmQwenPlannerBackend:
         return mentions_pedestrian and mentions_overtake and expresses_order
 
     @staticmethod
+    def _persistent_post_maneuver_speed_requested(
+        request: Mapping[str, Any],
+    ) -> bool:
+        """Return whether a finite maneuver requests a persistent speed."""
+        hint = request.get("command_hint", {})
+        if not isinstance(hint, Mapping):
+            return False
+
+        target_speed = hint.get("target_speed_mps")
+        if (
+            type(target_speed) not in (int, float)
+            or isinstance(target_speed, bool)
+            or not math.isfinite(float(target_speed))
+            or float(target_speed) < 0.0
+        ):
+            return False
+
+        intent = str(hint.get("intent", "")).upper()
+        source = str(request.get("source_text", "")).casefold()
+
+        if intent == "TURN":
+            markers = (
+                "转弯后保持",
+                "左转后保持",
+                "右转后保持",
+                "转向后保持",
+                "拐弯后保持",
+                "然后保持",
+                "随后保持",
+                "之后保持",
+                "after turning",
+                "after the turn",
+                "then maintain",
+                "then keep",
+                "afterward maintain",
+            )
+        elif intent in {"CHANGE_LANE", "CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}:
+            markers = (
+                "变道并保持",
+                "换道并保持",
+                "变更车道并保持",
+                "变道后保持",
+                "换道后保持",
+                "变更车道后保持",
+                "change lanes and maintain",
+                "change lane and maintain",
+                "change lanes and keep",
+                "change lane and keep",
+                "after changing lanes",
+                "after changing lane",
+                "after the lane change",
+            )
+        else:
+            return False
+
+        return any(marker in source for marker in markers)
+
+
+    @staticmethod
     def _resume_requested(request: Mapping[str, Any]) -> bool:
         source = str(request.get("source_text", "")).casefold()
         return any(token in source for token in (
@@ -627,12 +720,20 @@ class VllmQwenPlannerBackend:
         ))
 
     def _choice_codes(self, request: Mapping[str, Any]) -> list[str]:
-        if self._traffic_stop_required(request):
+        if request["constraints"]["must_stop"] or self._traffic_stop_required(request):
             # A red signal is a non-negotiable legal constraint just like
             # ``must_stop``. Qwen remains invoked and audited, but must not be
             # offered propulsion that downstream D would instantly override.
             return ["D"]
         allowed = set(request["constraints"]["allowed_behaviors"])
+        lane_block = self._lane_block_reason(request)
+        if lane_block:
+            # Don't change direction or dispatch a lateral plan when its
+            # requested lane is absent or the presently observed gap is unsafe.
+            fallback = ["A"] if "KEEP_LANE" in allowed else []
+            if lane_block == "LANE_GAP_UNSAFE" and "SLOW_DOWN" in allowed:
+                fallback.append("C")
+            return fallback or (["D"] if (request.get("routing") or {}).get("disposition") == "CONFIRM_SAFE" else ["N"])
         hint = request.get("command_hint", {})
         direction = (
             str(hint.get("direction", "")).upper()
@@ -682,6 +783,19 @@ class VllmQwenPlannerBackend:
                 if not self._CHOICES[code].endswith("_" + opposite)
             ]
         return codes or ["D"]
+
+    @staticmethod
+    def _lane_block_reason(request: Mapping[str, Any]) -> str | None:
+        hint = request.get("command_hint") or {}
+        side = str(hint.get("direction") or "").lower()
+        if hint.get("intent") != "CHANGE_LANE" or side not in {"left", "right"}:
+            return None
+        caps = request.get("scene_capabilities") or {}
+        if caps.get(f"{side}_lane_exists") is not True:
+            return "TARGET_LANE_UNAVAILABLE"
+        if caps.get(f"{side}_gap_safe") is not True:
+            return "LANE_GAP_UNSAFE"
+        return None
 
     @staticmethod
     def _traffic_stop_required(request: Mapping[str, Any]) -> bool:
@@ -908,7 +1022,7 @@ class VllmQwenPlannerBackend:
             behavior.startswith("TURN_") or behavior == "RETURN_TO_LANE"
         ) else 20.0 if behavior in {
             "AVOID_OBSTACLE", "YIELD",
-        } or sustained_observation else 12.0 if behavior.startswith("CHANGE_LANE_") else 8.0
+        } or sustained_observation else 20.0 if behavior.startswith("CHANGE_LANE_") else 8.0
         completion_value = target_speed
         if completion_type == "TARGET_GAP_REACHED":
             completion_value = 2.0

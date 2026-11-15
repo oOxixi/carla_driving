@@ -1,0 +1,148 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "TC_C02_yield_left_3step",
+  "category": "qwen_fullchain",
+  "official_level": "advanced",
+  "description": "Targeted Collection: 行人让行完成后才左转，随后恢复定速的真实三阶段闭环。",
+  "map": "Town03",
+  "weather": "ClearNoon",
+  "seed": 250102,
+  "runtime": {
+    "sync_mode": true,
+    "fixed_delta_seconds": 0.05,
+    "duration_s": 75
+  },
+  "ego_spawn": {
+    "x": 0,
+    "y": 0,
+    "z": 0.5,
+    "yaw_deg": 0
+  },
+  "route": {
+    "coordinate_type": "scenario_local_xy_m",
+    "points_xy_m": [
+      [
+        0,
+        0
+      ],
+      [
+        25,
+        0
+      ],
+      [
+        35,
+        8
+      ],
+      [
+        35,
+        40
+      ],
+      [
+        35,
+        70
+      ]
+    ],
+    "resample_interval_m": 1.0,
+    "finish_radius_m": 3.0
+  },
+  "commands": [
+    {
+      "time_s": 0,
+      "source_text": "前方有行人横穿，停车让行",
+      "intent": "YIELD",
+      "parameters": {},
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "C2_YIELD",
+      "trigger": {
+        "type": "scenario_started"
+      }
+    },
+    {
+      "time_s": 0,
+      "source_text": "行人通过后，在前方路口左转",
+      "intent": "TURN_LEFT",
+      "parameters": {
+        "target_speed_kph": 10
+      },
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "C2_TURN",
+      "trigger": {
+        "type": "previous_command_succeeded",
+        "phase_id": "C2_YIELD"
+      }
+    },
+    {
+      "time_s": 0,
+      "source_text": "左转完成后，将速度设置为十五公里每小时",
+      "intent": "SET_SPEED",
+      "parameters": {
+        "target_speed_kph": 15
+      },
+      "intent_confidence": 0.99,
+      "status": "valid",
+      "confirm_required": false,
+      "phase_id": "C2_SPEED",
+      "trigger": {
+        "type": "previous_command_succeeded",
+        "phase_id": "C2_TURN"
+      }
+    }
+  ],
+  "actors": [
+    {
+      "actor_id": "crossing_pedestrian",
+      "type": "walker.pedestrian",
+      "spawn": {
+        "x": 26,
+        "y": 5.5,
+        "z": 0.5,
+        "yaw_deg": -90.0
+      },
+      "behavior": {
+        "mode": "crossing",
+        "target_xy_m": [
+          26,
+          -5.5
+        ],
+        "start_time_s": 0,
+        "speed_mps": 1.2
+      }
+    }
+  ],
+  "qwen_expected": {
+    "route": "QWEN_PLAN",
+    "min_calls": 3,
+    "max_calls": 3,
+    "expected_behaviors": [
+      "YIELD",
+      "TURN_LEFT",
+      "SET_SPEED"
+    ],
+    "expected_terminal": "SUCCEEDED",
+    "allowed_replans": 0,
+    "forbidden_low_level_fields": true
+  },
+  "expected": {
+    "must_no_collision": true,
+    "must_no_pedestrian_collision": true,
+    "must_finish_route": true,
+    "must_execute_commands_in_order": true
+  },
+  "extensions": {
+    "phase_plan": [
+      "C2_YIELD",
+      "C2_TURN",
+      "C2_SPEED"
+    ],
+    "proposed_acceptance": {
+      "qwen_request_count": 3,
+      "all_commands_must_have_terminal_status": true,
+      "expected_phase_count": 3,
+      "all_phases_must_complete": true
+    }
+  }
+}

@@ -205,3 +205,56 @@ def test_unsupported_slow_manoeuvre_fails_closed_instead_of_inventing_steer() ->
             "issued_at_ns": 100,
             "deadline_ns": 1_000_000_100,
         }, source_text="向左变道")
+
+
+def test_direct_target_speed_mps_is_preserved_at_canonical_boundary() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "turn-right-with-speed",
+        "source_text": "前方第一个路口右转，转弯后保持十五公里每小时",
+        "intent": "TURN",
+        "parameters": {
+            "direction": "RIGHT",
+            "target_speed_mps": 15.0 / 3.6,
+        },
+        "confidence": 0.97,
+        "valid_duration_s": 30.0,
+    }, received_at_ns=100)
+
+    assert command["intent"] == "TURN"
+    assert command["parameters"]["direction"] == "RIGHT"
+    assert command["parameters"]["target_speed_mps"] == pytest.approx(15.0 / 3.6)
+
+
+def test_direct_target_speed_mps_takes_precedence_over_legacy_speed() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "speed-precedence",
+        "source_text": "保持目标速度",
+        "intent": "TURN",
+        "parameters": {
+            "direction": "RIGHT",
+            "target_speed_mps": 4.0,
+            "speed": 36.0,
+            "unit": "km/h",
+        },
+        "confidence": 0.95,
+        "valid_duration_s": 30.0,
+    }, received_at_ns=100)
+
+    assert command["parameters"]["target_speed_mps"] == pytest.approx(4.0)
+
+
+def test_invalid_direct_target_speed_falls_back_to_legacy_speed() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "speed-fallback",
+        "source_text": "保持二十公里每小时",
+        "intent": "SET_SPEED",
+        "parameters": {
+            "target_speed_mps": float("nan"),
+            "speed": 20.0,
+            "unit": "km/h",
+        },
+        "confidence": 0.95,
+        "valid_duration_s": 30.0,
+    }, received_at_ns=100)
+
+    assert command["parameters"]["target_speed_mps"] == pytest.approx(20.0 / 3.6)

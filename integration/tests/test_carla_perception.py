@@ -28,6 +28,7 @@ from integration.carla_perception import (
     attach_default_sensors,
     attach_event_sensors,
     adjacent_lidar_distances_m,
+    adjacent_lidar_gap_occupied,
     front_lidar_distance_m,
     front_radar_target,
     traffic_light_and_stop_distance,
@@ -376,6 +377,18 @@ def test_lidar_exposes_adjacent_lane_obstacles_without_polluting_front_gap() -> 
     assert adjacent.distance_m == pytest.approx(left)
     assert (adjacent.bbox_xyxy_norm[0] + adjacent.bbox_xyxy_norm[2]) / 2.0 < 0.4
     assert sample.frame.lead_distance_m == pytest.approx(11.84, abs=0.02)
+
+
+@pytest.mark.parametrize("longitudinal_m", [13.0, 0.0, -11.0, -25.0])
+def test_gap_detects_the_same_neighbour_ahead_alongside_and_behind(longitudinal_m) -> None:
+    measurement = Measurement(45, [
+        [longitudinal_m - 0.2, -3.3, -1.0],
+        [longitudinal_m, -3.5, -1.1],
+        [longitudinal_m + 0.2, -3.7, -0.9],
+    ])
+    assert adjacent_lidar_gap_occupied(measurement) == (True, False)
+    if longitudinal_m <= 0:
+        assert adjacent_lidar_distances_m(measurement) == (None, None)
 
 
 def test_front_radar_target_rejects_off_corridor_and_nonfinite_returns() -> None:
