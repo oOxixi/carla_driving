@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "scenario_id": "CARLA83_NEW_04_timed_bicycle_return",
+  "category": "regression", "official_level": "challenge",
+  "description": "傍晚改时序组合：自行车提前减速，须安全绕过施工区并回原车道完成路线。",
+  "tags": ["generalization_pilot", "compound_variant"],
+  "map": "Town03", "weather": "CloudySunset", "seed": 6124,
+  "runtime": {"sync_mode": true, "fixed_delta_seconds": 0.05, "duration_s": 50, "max_startup_wait_s": 10},
+  "ego_spawn": {"x": 0.0, "y": 0.0, "z": 0.5, "yaw_deg": 0.0},
+  "route": {"coordinate_type": "scenario_local_xy_m", "points_xy_m": [[0, 0], [8, -1], [14, -3.5], [32, -3.5], [55, -3.5], [65, -2], [75, -0.5], [85, 0]], "resample_interval_m": 1.0, "finish_radius_m": 3.0},
+  "commands": [{"time_s": 1, "source_text": "等有安全空隙，从左边绕过施工区和慢行自行车，全部通过以后回到原车道", "intent": "AVOID_OBSTACLE", "parameters": {"direction": "LEFT", "target_speed_kph": 16}, "intent_confidence": 0.95, "status": "valid", "confirm_required": false}],
+  "actors": [
+    {"actor_id": "work_zone", "type": "static.prop", "blueprint_id": "static.prop.warningconstruction", "spawn": {"x": 32, "y": 0, "z": 0.5, "yaw_deg": 0}},
+    {"actor_id": "bicycle_lead", "type": "vehicle", "blueprint_id": "vehicle.bh.crossbike", "spawn": {"x": 23, "y": 0, "z": 0.5, "yaw_deg": 0}, "behavior": {"mode": "lead_vehicle", "initial_speed_mps": 2.0, "target_speed_mps": 0.4, "brake_at_s": 6}}
+  ],
+  "sensors": {"front_rgb": {"enabled": true, "width": 800, "height": 600, "fov": 90, "save_every_n_frames": 5}, "lidar": {"enabled": true}, "collision": {"enabled": true}, "lane_invasion": {"enabled": true}},
+  "controllers": {"A_runtime": {"only_apply_control_owner": true}, "B_lateral": {"enabled": true}, "C_longitudinal": {"enabled": true}, "D_safety": {"enabled": true, "must_run_before_apply_control": true}},
+  "logging": {"required_files": ["frame_log.jsonl", "event_log.jsonl", "result.json", "score_report.json", "qwen_requests.jsonl"]},
+  "expected": {"must_no_collision": true, "must_generate_logs": true, "must_finish_route": true, "final_control_no_throttle_brake_overlap": true, "required_real_actor_types": ["vehicle", "static.prop"], "min_front_gap_m": 2.5, "expected_safety_override_allowed": true},
+  "extensions": {"route_anchor_spawn_index": 135, "qwen_policy": {"required_for_every_voice_event": true, "safety_preemption": true, "high_level_only": true}, "input_mode": "raw_text_qwen", "proposed_acceptance": {"must_return_to_original_lane": true}}
+}

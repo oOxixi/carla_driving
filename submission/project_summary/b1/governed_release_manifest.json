@@ -1,0 +1,325 @@
+{
+  "aggregate_counts": {
+    "calibration": 300,
+    "dev": 1158,
+    "frozen_test": 0,
+    "hard_negative_published": 309,
+    "independent_validation": 240,
+    "train": 6037
+  },
+  "auxiliary_dataset_identities": {
+    "calibration_v1": "challenge/dataset/governance/b1_closeout_v1/calibration_identity.json",
+    "independent_validation_v1": "challenge/dataset/governance/b1_closeout_v1/independent_validation_v1/dataset_identity.json"
+  },
+  "dataset_version": "b1_governed_dataset_closeout_v1",
+  "policy": {
+    "historical_releases_immutable": true,
+    "new_release_identity_is_additive": true,
+    "temporary_jsonl_not_governed_input": true
+  },
+  "releases": [
+    {
+      "bindings": {
+        "content_bound_pass": {
+          "available": false,
+          "reason": "HISTORICAL_SCHEMA_VARIANT_OR_NOT_APPLICABLE"
+        },
+        "governance_report": {
+          "available": false,
+          "reason": "HISTORICAL_SCHEMA_VARIANT_OR_NOT_APPLICABLE"
+        },
+        "provenance_manifest": {
+          "available": false,
+          "reason": "HISTORICAL_SCHEMA_VARIANT_OR_NOT_APPLICABLE"
+        },
+        "release_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d2_v1_1/release_manifest.json",
+          "sha256": "cf153d2f536f9180241f02a9d644aca6da2a508beb785591399dbb75b847462f",
+          "size_bytes": 3142
+        },
+        "split_manifest": {
+          "available": false,
+          "reason": "HISTORICAL_SCHEMA_VARIANT_OR_NOT_APPLICABLE"
+        }
+      },
+      "counts": {
+        "dev": 539,
+        "hard_negative": 0,
+        "train": 2513
+      },
+      "dataset_version": "d2_v1_1",
+      "immutability": "FROZEN_EXISTING_RELEASE",
+      "release_id": "d2_v1_1",
+      "release_path": "challenge/dataset/releases/d2_v1_1",
+      "role": "BASE_TRAIN_DEV",
+      "status": "B1_SIGNED_PASS"
+    },
+    {
+      "bindings": {
+        "content_bound_pass": {
+          "available": false,
+          "reason": "HISTORICAL_SCHEMA_VARIANT_OR_NOT_APPLICABLE"
+        },
+        "governance_report": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_wave1_addon_v1/governance_report.json",
+          "sha256": "6a97749e5d8444ae05ce4d2cc2fd2b3060db495cb5160ed7be96668ba9d56350",
+          "size_bytes": 1107
+        },
+        "provenance_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_wave1_addon_v1/provenance_manifest.json",
+          "sha256": "b0b6cb68f2a37f0fde7e9bbccd33ed55d8ae1e3ab74c81034c49f9efb9fa431a",
+          "size_bytes": 567
+        },
+        "release_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_wave1_addon_v1/release_manifest.json",
+          "sha256": "dcd1bd1d0a34683e62e70a206760e691c0cd04b779f063d58a1fcf98837554bd",
+          "size_bytes": 1837
+        },
+        "split_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_wave1_addon_v1/split_manifest.json",
+          "sha256": "cd0fbe157d8ae34cade5358bd30a2a3a17c5a1fa03e3e6e499caa13b885406cc",
+          "size_bytes": 318270
+        }
+      },
+      "counts": {
+        "dev": 308,
+        "hard_negative": 308,
+        "train": 1747
+      },
+      "dataset_version": "b1_d3_wave1_addon_v1",
+      "immutability": "FROZEN_EXISTING_RELEASE",
+      "release_id": "d3_wave1_addon_v1",
+      "release_path": "challenge/dataset/releases/d3_wave1_addon_v1",
+      "role": "TRAIN_DEV_ADDON",
+      "status": "B1_RELEASE_CANDIDATE"
+    },
+    {
+      "bindings": {
+        "content_bound_pass": {
+          "available": false,
+          "reason": "HISTORICAL_SCHEMA_VARIANT_OR_NOT_APPLICABLE"
+        },
+        "governance_report": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_wave2_safe_short_v1/governance_report.json",
+          "sha256": "948be448ace4d06f4d9e32e99c134cc08a9efc95ff16157c27963b3f27de63f3",
+          "size_bytes": 994
+        },
+        "provenance_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_wave2_safe_short_v1/provenance_manifest.json",
+          "sha256": "792001682e880ad0b1177ff60246a73a0d4f5a5ef65bfa515d141ac1a6586009",
+          "size_bytes": 1850
+        },
+        "release_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_wave2_safe_short_v1/release_manifest.json",
+          "sha256": "b8056484a3c5b7345d59536edbae5516a602d29811151fb3736ce25aff4fa57b",
+          "size_bytes": 1786
+        },
+        "split_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_wave2_safe_short_v1/split_manifest.json",
+          "sha256": "eacd95e057cdca590bb13af60d1235fe8340f5f86ade30f1f45a1d19729d9760",
+          "size_bytes": 73397
+        }
+      },
+      "counts": {
+        "dev": 56,
+        "hard_negative": 0,
+        "train": 318
+      },
+      "dataset_version": "b1_d3_wave2_safe_short_v1",
+      "immutability": "FROZEN_EXISTING_RELEASE",
+      "release_id": "d3_wave2_safe_short_v1",
+      "release_path": "challenge/dataset/releases/d3_wave2_safe_short_v1",
+      "role": "TRAIN_DEV_ADDON",
+      "status": "B1_RELEASE_CANDIDATE"
+    },
+    {
+      "bindings": {
+        "content_bound_pass": {
+          "available": false,
+          "reason": "HISTORICAL_SCHEMA_VARIANT_OR_NOT_APPLICABLE"
+        },
+        "governance_report": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_targeted_gap_strict_v1/governance_report.json",
+          "sha256": "1100a5a30db8708714b009c2832f4b3d92e5abf0cbd93b4e3eea4491a488df21",
+          "size_bytes": 1063
+        },
+        "provenance_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_targeted_gap_strict_v1/provenance_manifest.json",
+          "sha256": "e330dc5adb6a4f3bba481455dddc8675764a33daa49cfc2fbda40a4fab891390",
+          "size_bytes": 1373
+        },
+        "release_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_targeted_gap_strict_v1/release_manifest.json",
+          "sha256": "6fb35bdfd06556dfce01ca09e868c1289b7c440e803fc9fdc4176f31299ff59d",
+          "size_bytes": 1884
+        },
+        "split_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_targeted_gap_strict_v1/split_manifest.json",
+          "sha256": "1e544f7651b91b698682e7182bd7572aaa63b96ad6620906e46ef7d3bdff2f76",
+          "size_bytes": 54965
+        }
+      },
+      "counts": {
+        "dev": 99,
+        "hard_negative": 0,
+        "train": 561
+      },
+      "dataset_version": "b1_d3_targeted_gap_strict_v1",
+      "immutability": "FROZEN_EXISTING_RELEASE",
+      "release_id": "d3_targeted_gap_strict_v1",
+      "release_path": "challenge/dataset/releases/d3_targeted_gap_strict_v1",
+      "role": "TRAIN_DEV_ADDON",
+      "status": "B1_RELEASE_CANDIDATE"
+    },
+    {
+      "bindings": {
+        "content_bound_pass": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_turn_gap_60_strict_v1/B1_CONTENT_BOUND_PASS.json",
+          "sha256": "a0a1b1befcd99fbdce6ff9f995f963a9ed763c418390e45e41fbdd20cd87f956",
+          "size_bytes": 1091
+        },
+        "governance_report": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_turn_gap_60_strict_v1/governance_report.json",
+          "sha256": "fb270eda39f87219ae639ffe2519accf134c23341f396f501d03b5d5fbc5b5f7",
+          "size_bytes": 709
+        },
+        "provenance_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_turn_gap_60_strict_v1/provenance_manifest.json",
+          "sha256": "a88a92859b61b2051a37dc850f4a9612857d10b97d0af1ec9e4c7c35fc240a3e",
+          "size_bytes": 1570
+        },
+        "release_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_turn_gap_60_strict_v1/release_manifest.json",
+          "sha256": "f28e67ba9a1d6fce43f865334541e6c32bdb14fb15e49abc78cfb1b87fac791f",
+          "size_bytes": 23566
+        },
+        "split_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_turn_gap_60_strict_v1/split_manifest.json",
+          "sha256": "7532ef131e1e8f03edfc87d5b0c83a5f7c92d7d03c0215417ab5fbd661aa62a0",
+          "size_bytes": 17099
+        }
+      },
+      "counts": {
+        "dev": 29,
+        "hard_negative": 0,
+        "train": 171
+      },
+      "dataset_version": "b1_d3_turn_gap_60_strict_v1",
+      "immutability": "FROZEN_EXISTING_RELEASE",
+      "release_id": "d3_turn_gap_60_strict_v1",
+      "release_path": "challenge/dataset/releases/d3_turn_gap_60_strict_v1",
+      "role": "TRAIN_DEV_ADDON",
+      "status": "B1_RELEASE_CANDIDATE"
+    },
+    {
+      "bindings": {
+        "content_bound_pass": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_gap300_strict_v1/B1_CONTENT_BOUND_PASS.json",
+          "sha256": "e1aefc5a0c5df31f1738d400314d80d8bb2667e9a5468ee6819d705b3355b332",
+          "size_bytes": 307
+        },
+        "governance_report": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_gap300_strict_v1/governance_report.json",
+          "sha256": "1638dc4eb02557cf19b14b55194e8fa5449537009eb76f8f621a445532bb5d64",
+          "size_bytes": 992
+        },
+        "provenance_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_gap300_strict_v1/provenance_manifest.json",
+          "sha256": "20ea6be56175808f6dfd923cbd3ad58840f37308a00df946224168bf9a859fc8",
+          "size_bytes": 1393
+        },
+        "release_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_gap300_strict_v1/release_manifest.json",
+          "sha256": "a2fbe23674dfa984bba9e5623b931583f0ed53479ac5846b1fe3535a2a465427",
+          "size_bytes": 1878
+        },
+        "split_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/d3_gap300_strict_v1/split_manifest.json",
+          "sha256": "15796bb1d3a6c7824c2fdb5a22d3ab0a15fd0654f453fe20cf40aab79f8fa8f5",
+          "size_bytes": 55430
+        }
+      },
+      "counts": {
+        "dev": 123,
+        "hard_negative": 0,
+        "train": 697
+      },
+      "dataset_version": "b1_d3_gap300_strict_v1",
+      "immutability": "FROZEN_EXISTING_RELEASE",
+      "release_id": "d3_gap300_strict_v1",
+      "release_path": "challenge/dataset/releases/d3_gap300_strict_v1",
+      "role": "TRAIN_DEV_ADDON",
+      "status": "B1_RELEASE_CANDIDATE"
+    },
+    {
+      "bindings": {
+        "content_bound_pass": {
+          "available": true,
+          "path": "challenge/dataset/releases/b1_ms34_supplement_v1/B1_CONTENT_BOUND_PASS.json",
+          "sha256": "1968e66ab358db189edecb6ca88307c3d70c931534eef4727479da2ed55ca0e4",
+          "size_bytes": 860
+        },
+        "governance_report": {
+          "available": true,
+          "path": "challenge/dataset/releases/b1_ms34_supplement_v1/governance_report.json",
+          "sha256": "59135a9a557fe86b48f371d9b9637dcd4dbf2ee1d7664490511de3ee9a9aebdf",
+          "size_bytes": 883
+        },
+        "provenance_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/b1_ms34_supplement_v1/provenance_manifest.json",
+          "sha256": "84499fb01d94c716bbd7ce7ea805d0ab9491c3ab74110396ccd8ead85faecbde",
+          "size_bytes": 1364
+        },
+        "release_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/b1_ms34_supplement_v1/release_manifest.json",
+          "sha256": "96cf7f42795d604ff93e023426dd51f1f4ebfcc96d0c8e94f0383123c26e8972",
+          "size_bytes": 5581
+        },
+        "split_manifest": {
+          "available": true,
+          "path": "challenge/dataset/releases/b1_ms34_supplement_v1/split_manifest.json",
+          "sha256": "2b47bd568efc069d0eb1cf6d8220b03cb6f18c869d4ac33f9146a9b67b63793f",
+          "size_bytes": 3050
+        }
+      },
+      "counts": {
+        "dev": 4,
+        "hard_negative": 1,
+        "train": 30
+      },
+      "dataset_version": "b1_ms34_supplement_v1",
+      "immutability": "FROZEN_EXISTING_RELEASE",
+      "release_id": "b1_ms34_supplement_v1",
+      "release_path": "challenge/dataset/releases/b1_ms34_supplement_v1",
+      "role": "TRAIN_DEV_ADDON",
+      "status": "B1_RELEASE_CANDIDATE"
+    }
+  ],
+  "schema_version": "1.0",
+  "status": "B1_GOVERNED_RELEASE_SET"
+}

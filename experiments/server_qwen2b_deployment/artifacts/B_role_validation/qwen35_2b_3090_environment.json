@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-02T16:37:14.133955+00:00",
+  "scope": "local_rtx3090_qwen35_2b_cu130",
+  "source_code_commit": "da9dfc13597ab4e9254c12b8851813d8bbf27642",
+  "python": "3.11.15",
+  "torch": "2.11.0+cu130",
+  "torch_cuda_runtime": "13.0",
+  "vllm": "0.26.0",
+  "gpu_0": "NVIDIA GeForce RTX 3090, 580.173.02, 24576 MiB",
+  "bf16_supported": true,
+  "model": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "weight_file": "model.safetensors-00001-of-00001.safetensors",
+  "weight_bytes": 4548221488,
+  "weight_sha256": "aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1",
+  "runtime_overrides": {
+    "CUDA_VISIBLE_DEVICES": "0",
+    "VLLM_USE_FLASHINFER_SAMPLER": "0",
+    "dtype": "bfloat16",
+    "max_model_len": 2048,
+    "max_num_seqs": 1,
+    "gpu_memory_utilization": 0.7
+  },
+  "notes": [
+    "CUDA 13.0 is provided by the isolated Python environment.",
+    "System CUDA 12.3 and the existing 7B environment were not modified."
+  ]
+}

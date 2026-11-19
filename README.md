@@ -13,6 +13,9 @@ Qwen 只能给出高层 `ManeuverPlan`，不能直接下发方向盘、油门或
 Student FP32 的 CARLA 83 场仿真交接、模型身份与证据索引见
 [当前仿真 HANDOFF](challenge/distillation/CARLA83_FP32_HANDOFF.md)；该结果与基础赛道长里程验收分开。
 
+项目总结、历次扩样、最新可引用指标和服务器实验交付见
+[项目汇报与证据索引](submission/project_summary/README.md)。实验归档不替换下述运行链。
+
 ## 当前正式范围
 
 - 模型：只使用服务器上的 Qwen 2B 生产服务；更大模型不属于当前测试主线。

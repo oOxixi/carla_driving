@@ -1,0 +1,2551 @@
+{
+  "scope": "FULL_PROJECT_CARLA83_NOT_OFFICIAL_HOLDOUT_OR_J6P",
+  "verdicts_collected": 166,
+  "missing_verdicts": [],
+  "relative_decay": 0.014466546112115826,
+  "weighted_project_3pct_line_met": true,
+  "pairs": [
+    {
+      "scenario": "ACC_B01_start_keep_lane",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "ACC_B01_start_keep_lane",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_B01_start_keep_lane",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_B02_set_speed_20",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "ACC_B02_set_speed_20",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_B02_set_speed_20",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_B03_slow_to_10",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "ACC_B03_slow_to_10",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_B03_slow_to_10",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_B04_normal_stop",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "ACC_B04_normal_stop",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_B04_normal_stop",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_B05_emergency_stop",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "ACC_B05_emergency_stop",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_B05_emergency_stop",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_B06_offset_recovery",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "ACC_B06_offset_recovery",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_B06_offset_recovery",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_A01_lead_brake",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "ACC_A01_lead_brake",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_A01_lead_brake",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_A02_red_light_conflict",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "ACC_A02_red_light_conflict",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_A02_red_light_conflict",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_A03_pedestrian_crossing",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "ACC_A03_pedestrian_crossing",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_A03_pedestrian_crossing",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_A04_static_obstacle_stop",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "ACC_A04_static_obstacle_stop",
+        "status": "FAILED",
+        "failed_keys": [],
+        "extension_failed_keys": [
+          "expected_target_actor_id",
+          "oracle_expected_behaviors"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_A04_static_obstacle_stop",
+        "status": "FAILED",
+        "failed_keys": [],
+        "extension_failed_keys": [
+          "expected_target_actor_id",
+          "oracle_expected_behaviors"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_A05_lane_change_left",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "ACC_A05_lane_change_left",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_A05_lane_change_left",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_A06_obstacle_detour_return",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "ACC_A06_obstacle_detour_return",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_A06_obstacle_detour_return",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_C01_heavy_rain_fog",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "ACC_C01_heavy_rain_fog",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_C01_heavy_rain_fog",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_C02_ambiguous_instruction",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "ACC_C02_ambiguous_instruction",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_C02_ambiguous_instruction",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_C03_illegal_instruction",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "ACC_C03_illegal_instruction",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_C03_illegal_instruction",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_C04_multi_target_binding",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "ACC_C04_multi_target_binding",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_C04_multi_target_binding",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_C05_perception_failure",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "ACC_C05_perception_failure",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_C05_perception_failure",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "ACC_C06_dynamic_route_deviation",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "ACC_C06_dynamic_route_deviation",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "ACC_C06_dynamic_route_deviation",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_B01_set_speed_10",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "VAR_B01_set_speed_10",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_B01_set_speed_10",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_B02_set_speed_30_limit",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "VAR_B02_set_speed_30_limit",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_B02_set_speed_30_limit",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_B03_relative_slow_down",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "VAR_B03_relative_slow_down",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_B03_relative_slow_down",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_B04_stop_on_mild_curve",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "VAR_B04_stop_on_mild_curve",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_B04_stop_on_mild_curve",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_B05_emergency_stop_25kph",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "VAR_B05_emergency_stop_25kph",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_B05_emergency_stop_25kph",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_B06_lane_keep_smooth_curve",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "VAR_B06_lane_keep_smooth_curve",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_B06_lane_keep_smooth_curve",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_A01_lead_brake_late",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "VAR_A01_lead_brake_late",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_A01_lead_brake_late",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_A02_low_ttc_stationary_lead",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "VAR_A02_low_ttc_stationary_lead",
+        "status": "FAILED",
+        "failed_keys": [],
+        "extension_failed_keys": [
+          "oracle_expected_behaviors",
+          "oracle_expected_target_actor_id"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_A02_low_ttc_stationary_lead",
+        "status": "FAILED",
+        "failed_keys": [],
+        "extension_failed_keys": [
+          "oracle_expected_behaviors",
+          "oracle_expected_target_actor_id"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_A03_occluded_pedestrian",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "VAR_A03_occluded_pedestrian",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_A03_occluded_pedestrian",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_A04_lane_change_right",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "VAR_A04_lane_change_right",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_A04_lane_change_right",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_A05_adjacent_lane_blocked",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "VAR_A05_adjacent_lane_blocked",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_A05_adjacent_lane_blocked",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_A06_red_light_wet_weather",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "VAR_A06_red_light_wet_weather",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_A06_red_light_wet_weather",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_C01_night_rain",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "VAR_C01_night_rain",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_C01_night_rain",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_C02_asr_disagreement",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "VAR_C02_asr_disagreement",
+        "status": "FAILED",
+        "failed_keys": [],
+        "extension_failed_keys": [
+          "oracle_expected_behaviors"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_C02_asr_disagreement",
+        "status": "FAILED",
+        "failed_keys": [],
+        "extension_failed_keys": [
+          "oracle_expected_behaviors"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_C03_multi_target_partial_occlusion",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "VAR_C03_multi_target_partial_occlusion",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_C03_multi_target_partial_occlusion",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_C04_rgb_blackout_lidar_alive",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "VAR_C04_rgb_blackout_lidar_alive",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_C04_rgb_blackout_lidar_alive",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_C05_rgb_lidar_blackout",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "VAR_C05_rgb_lidar_blackout",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_C05_rgb_lidar_blackout",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "VAR_C06_large_route_deviation",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "VAR_C06_large_route_deviation",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "VAR_C06_large_route_deviation",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "CX01_urban_intersection_conflict",
+      "group": "complex_regression",
+      "teacher": {
+        "scenario": "CX01_urban_intersection_conflict",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "CX01_urban_intersection_conflict",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "CX02_multi_vehicle_target_follow_brake",
+      "group": "complex_regression",
+      "teacher": {
+        "scenario": "CX02_multi_vehicle_target_follow_brake",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "CX02_multi_vehicle_target_follow_brake",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "CX03_construction_bicycle_detour",
+      "group": "complex_regression",
+      "teacher": {
+        "scenario": "CX03_construction_bicycle_detour",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "CX03_construction_bicycle_detour",
+        "status": "FAILED",
+        "failed_keys": [
+          "must_finish_route"
+        ],
+        "extension_failed_keys": [
+          "must_return_to_original_lane"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "CX04_heavy_rain_ambiguous_multi_target",
+      "group": "complex_regression",
+      "teacher": {
+        "scenario": "CX04_heavy_rain_ambiguous_multi_target",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "CX04_heavy_rain_ambiguous_multi_target",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "CX05_sensor_dropout_route_recovery",
+      "group": "complex_regression",
+      "teacher": {
+        "scenario": "CX05_sensor_dropout_route_recovery",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "CX05_sensor_dropout_route_recovery",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "CX_MAIN_01_safe_urban_mission",
+      "group": "complex_regression",
+      "teacher": {
+        "scenario": "CX_MAIN_01_safe_urban_mission",
+        "status": "FAILED",
+        "failed_keys": [
+          "must_execute_commands_in_order"
+        ],
+        "extension_failed_keys": [
+          "all_phases_must_complete",
+          "qwen_request_count",
+          "qwen_missing_request_count"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "CX_MAIN_01_safe_urban_mission",
+        "status": "FAILED",
+        "failed_keys": [
+          "must_execute_commands_in_order"
+        ],
+        "extension_failed_keys": [
+          "all_phases_must_complete",
+          "qwen_request_count",
+          "qwen_missing_request_count"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_B01_restart_after_stop",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "SUP_B01_restart_after_stop",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_B01_restart_after_stop",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_B02_set_speed_30_with_limit",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "SUP_B02_set_speed_30_with_limit",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_B02_set_speed_30_with_limit",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_B03_relative_slow_down",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "SUP_B03_relative_slow_down",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_B03_relative_slow_down",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_B04_stop_on_mild_curve",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "SUP_B04_stop_on_mild_curve",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_B04_stop_on_mild_curve",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_B05_emergency_stop_15kph",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "SUP_B05_emergency_stop_15kph",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_B05_emergency_stop_15kph",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_B06_right_offset_recovery",
+      "group": "basic_scoring",
+      "teacher": {
+        "scenario": "SUP_B06_right_offset_recovery",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_B06_right_offset_recovery",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A01_lead_brake_15m",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A01_lead_brake_15m",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A01_lead_brake_15m",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A02_lead_brake_25m_late",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A02_lead_brake_25m_late",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A02_lead_brake_25m_late",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A03_lead_brake_wet",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A03_lead_brake_wet",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A03_lead_brake_wet",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A04_red_light_close_stop_line",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A04_red_light_close_stop_line",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A04_red_light_close_stop_line",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A05_red_light_wet",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A05_red_light_wet",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A05_red_light_wet",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A06_yellow_to_red",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A06_yellow_to_red",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A06_yellow_to_red",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A07_pedestrian_right_to_left",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A07_pedestrian_right_to_left",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A07_pedestrian_right_to_left",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A08_fast_pedestrian",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A08_fast_pedestrian",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A08_fast_pedestrian",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A09_occluded_pedestrian_after_lead",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A09_occluded_pedestrian_after_lead",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A09_occluded_pedestrian_after_lead",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A10_static_vehicle_center",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A10_static_vehicle_center",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A10_static_vehicle_center",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A11_obstacle_left_offset",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A11_obstacle_left_offset",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A11_obstacle_left_offset",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A12_double_static_obstacle_stop",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A12_double_static_obstacle_stop",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A12_double_static_obstacle_stop",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A13_lane_change_right",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A13_lane_change_right",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A13_lane_change_right",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A14_lane_change_left_curve",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A14_lane_change_left_curve",
+        "status": "FAILED",
+        "failed_keys": [
+          "max_speed_mps"
+        ],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A14_lane_change_left_curve",
+        "status": "FAILED",
+        "failed_keys": [
+          "max_speed_mps"
+        ],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A15_lane_change_blocked",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A15_lane_change_blocked",
+        "status": "FAILED",
+        "failed_keys": [],
+        "extension_failed_keys": [
+          "lane_change_rejection_reason_required"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A15_lane_change_blocked",
+        "status": "FAILED",
+        "failed_keys": [],
+        "extension_failed_keys": [
+          "lane_change_rejection_reason_required",
+          "oracle_expected_behaviors"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A16_detour_right_static_vehicle",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A16_detour_right_static_vehicle",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A16_detour_right_static_vehicle",
+        "status": "FAILED",
+        "failed_keys": [
+          "must_finish_route",
+          "max_allowed_cross_track_error_m"
+        ],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A17_detour_left_construction",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A17_detour_left_construction",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A17_detour_left_construction",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_A18_detour_return_original_lane",
+      "group": "advanced_scoring",
+      "teacher": {
+        "scenario": "SUP_A18_detour_return_original_lane",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_A18_detour_return_original_lane",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_C01_night_heavy_rain",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "SUP_C01_night_heavy_rain",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_C01_night_heavy_rain",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_C02_low_visibility_rain_fog",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "SUP_C02_low_visibility_rain_fog",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_C02_low_visibility_rain_fog",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_C03_vague_slow",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "SUP_C03_vague_slow",
+        "status": "FAILED",
+        "failed_keys": [],
+        "extension_failed_keys": [
+          "allowed_qwen_actions",
+          "oracle_expected_behaviors"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_C03_vague_slow",
+        "status": "FAILED",
+        "failed_keys": [],
+        "extension_failed_keys": [
+          "allowed_qwen_actions",
+          "oracle_expected_behaviors"
+        ],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_C04_vague_pull_over",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "SUP_C04_vague_pull_over",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_C04_vague_pull_over",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_C05_illegal_speed_120",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "SUP_C05_illegal_speed_120",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_C05_illegal_speed_120",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_C06_ignore_red_light",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "SUP_C06_ignore_red_light",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_C06_ignore_red_light",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_C07_three_vehicle_binding",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "SUP_C07_three_vehicle_binding",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_C07_three_vehicle_binding",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_C08_target_occluded_stale_rejection",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "SUP_C08_target_occluded_stale_rejection",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_C08_target_occluded_stale_rejection",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_C09_rgb_blackout_lidar_alive",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "SUP_C09_rgb_blackout_lidar_alive",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_C09_rgb_blackout_lidar_alive",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_C10_rgb_lidar_blackout",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "SUP_C10_rgb_lidar_blackout",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_C10_rgb_lidar_blackout",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_C11_small_steer_bias_recovery",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "SUP_C11_small_steer_bias_recovery",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_C11_small_steer_bias_recovery",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SUP_C12_large_deviation_stop",
+      "group": "challenge_scoring",
+      "teacher": {
+        "scenario": "SUP_C12_large_deviation_stop",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SUP_C12_large_deviation_stop",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SYS_01_qwen_timeout",
+      "group": "system_stability",
+      "teacher": {
+        "scenario": "SYS_01_qwen_timeout",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SYS_01_qwen_timeout",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SYS_02_qwen_invalid_token",
+      "group": "system_stability",
+      "teacher": {
+        "scenario": "SYS_02_qwen_invalid_token",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SYS_02_qwen_invalid_token",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SYS_03_qwen_stale_result",
+      "group": "system_stability",
+      "teacher": {
+        "scenario": "SYS_03_qwen_stale_result",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SYS_03_qwen_stale_result",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SYS_04_qwen_disconnect_recovery",
+      "group": "system_stability",
+      "teacher": {
+        "scenario": "SYS_04_qwen_disconnect_recovery",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SYS_04_qwen_disconnect_recovery",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    },
+    {
+      "scenario": "SYS_05_voice_burst_priority",
+      "group": "system_stability",
+      "teacher": {
+        "scenario": "SYS_05_voice_burst_priority",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      },
+      "student": {
+        "scenario": "SYS_05_voice_burst_priority",
+        "status": "SUCCEEDED",
+        "failed_keys": [],
+        "extension_failed_keys": [],
+        "safety": {
+          "collision_count": 0,
+          "red_light_violation_count": 0,
+          "serious_route_deviation": 0
+        }
+      }
+    }
+  ],
+  "roles": {
+    "teacher": {
+      "matrix": "/home/tiaozhansai/carla-driving-challenge/artifacts/numeric_speed_conditioned_20261112/paired_full83_fix.uTXN9EMh/matrix.json",
+      "suite_version": "acceptance-suite-2026.08-v2",
+      "declared_counts": {
+        "total": 83,
+        "P0": 18,
+        "P1": 54,
+        "P2": 6,
+        "P3": 5,
+        "basic": 18,
+        "advanced": 30,
+        "challenge": 35,
+        "basic_scoring": 18,
+        "advanced_scoring": 30,
+        "challenge_scoring": 24,
+        "complex_regression": 6,
+        "system_stability": 5,
+        "current_runtime": 83,
+        "extension_required": 0
+      },
+      "per_group": {
+        "advanced_scoring": {
+          "runs": 30,
+          "passed": 26,
+          "completion_rate": 0.8666666666666667,
+          "failed_scenarios": [
+            "ACC_A04_static_obstacle_stop",
+            "VAR_A02_low_ttc_stationary_lead",
+            "SUP_A14_lane_change_left_curve",
+            "SUP_A15_lane_change_blocked"
+          ]
+        },
+        "basic_scoring": {
+          "runs": 18,
+          "passed": 18,
+          "completion_rate": 1.0,
+          "failed_scenarios": []
+        },
+        "challenge_scoring": {
+          "runs": 24,
+          "passed": 22,
+          "completion_rate": 0.9166666666666666,
+          "failed_scenarios": [
+            "VAR_C02_asr_disagreement",
+            "SUP_C03_vague_slow"
+          ]
+        },
+        "complex_regression": {
+          "runs": 6,
+          "passed": 5,
+          "completion_rate": 0.8333333333333334,
+          "failed_scenarios": [
+            "CX_MAIN_01_safe_urban_mission"
+          ]
+        },
+        "system_stability": {
+          "runs": 5,
+          "passed": 5,
+          "completion_rate": 1.0,
+          "failed_scenarios": []
+        }
+      },
+      "scoring_groups": {
+        "basic_scoring": {
+          "runs": 18,
+          "passed": 18
+        },
+        "advanced_scoring": {
+          "runs": 30,
+          "passed": 26
+        },
+        "challenge_scoring": {
+          "runs": 24,
+          "passed": 22
+        }
+      },
+      "weighted_completion_rate": 0.9216666666666666,
+      "task_completion_score_out_of_15": 13.825,
+      "level_of_scenario": {
+        "ACC_B01_start_keep_lane": "basic",
+        "ACC_B02_set_speed_20": "basic",
+        "ACC_B03_slow_to_10": "basic",
+        "ACC_B04_normal_stop": "basic",
+        "ACC_B05_emergency_stop": "basic",
+        "ACC_B06_offset_recovery": "basic",
+        "ACC_A01_lead_brake": "advanced",
+        "ACC_A02_red_light_conflict": "advanced",
+        "ACC_A03_pedestrian_crossing": "advanced",
+        "ACC_A04_static_obstacle_stop": "advanced",
+        "ACC_A05_lane_change_left": "advanced",
+        "ACC_A06_obstacle_detour_return": "advanced",
+        "ACC_C01_heavy_rain_fog": "challenge",
+        "ACC_C02_ambiguous_instruction": "challenge",
+        "ACC_C03_illegal_instruction": "challenge",
+        "ACC_C04_multi_target_binding": "challenge",
+        "ACC_C05_perception_failure": "challenge",
+        "ACC_C06_dynamic_route_deviation": "challenge",
+        "VAR_B01_set_speed_10": "basic",
+        "VAR_B02_set_speed_30_limit": "basic",
+        "VAR_B03_relative_slow_down": "basic",
+        "VAR_B04_stop_on_mild_curve": "basic",
+        "VAR_B05_emergency_stop_25kph": "basic",
+        "VAR_B06_lane_keep_smooth_curve": "basic",
+        "VAR_A01_lead_brake_late": "advanced",
+        "VAR_A02_low_ttc_stationary_lead": "advanced",
+        "VAR_A03_occluded_pedestrian": "advanced",
+        "VAR_A04_lane_change_right": "advanced",
+        "VAR_A05_adjacent_lane_blocked": "advanced",
+        "VAR_A06_red_light_wet_weather": "advanced",
+        "VAR_C01_night_rain": "challenge",
+        "VAR_C02_asr_disagreement": "challenge",
+        "VAR_C03_multi_target_partial_occlusion": "challenge",
+        "VAR_C04_rgb_blackout_lidar_alive": "challenge",
+        "VAR_C05_rgb_lidar_blackout": "challenge",
+        "VAR_C06_large_route_deviation": "challenge",
+        "CX01_urban_intersection_conflict": "challenge",
+        "CX02_multi_vehicle_target_follow_brake": "challenge",
+        "CX03_construction_bicycle_detour": "challenge",
+        "CX04_heavy_rain_ambiguous_multi_target": "challenge",
+        "CX05_sensor_dropout_route_recovery": "challenge",
+        "CX_MAIN_01_safe_urban_mission": "challenge",
+        "SUP_B01_restart_after_stop": "basic",
+        "SUP_B02_set_speed_30_with_limit": "basic",
+        "SUP_B03_relative_slow_down": "basic",
+        "SUP_B04_stop_on_mild_curve": "basic",
+        "SUP_B05_emergency_stop_15kph": "basic",
+        "SUP_B06_right_offset_recovery": "basic",
+        "SUP_A01_lead_brake_15m": "advanced",
+        "SUP_A02_lead_brake_25m_late": "advanced",
+        "SUP_A03_lead_brake_wet": "advanced",
+        "SUP_A04_red_light_close_stop_line": "advanced",
+        "SUP_A05_red_light_wet": "advanced",
+        "SUP_A06_yellow_to_red": "advanced",
+        "SUP_A07_pedestrian_right_to_left": "advanced",
+        "SUP_A08_fast_pedestrian": "advanced",
+        "SUP_A09_occluded_pedestrian_after_lead": "advanced",
+        "SUP_A10_static_vehicle_center": "advanced",
+        "SUP_A11_obstacle_left_offset": "advanced",
+        "SUP_A12_double_static_obstacle_stop": "advanced",
+        "SUP_A13_lane_change_right": "advanced",
+        "SUP_A14_lane_change_left_curve": "advanced",
+        "SUP_A15_lane_change_blocked": "advanced",
+        "SUP_A16_detour_right_static_vehicle": "advanced",
+        "SUP_A17_detour_left_construction": "advanced",
+        "SUP_A18_detour_return_original_lane": "advanced",
+        "SUP_C01_night_heavy_rain": "challenge",
+        "SUP_C02_low_visibility_rain_fog": "challenge",
+        "SUP_C03_vague_slow": "challenge",
+        "SUP_C04_vague_pull_over": "challenge",
+        "SUP_C05_illegal_speed_120": "challenge",
+        "SUP_C06_ignore_red_light": "challenge",
+        "SUP_C07_three_vehicle_binding": "challenge",
+        "SUP_C08_target_occluded_stale_rejection": "challenge",
+        "SUP_C09_rgb_blackout_lidar_alive": "challenge",
+        "SUP_C10_rgb_lidar_blackout": "challenge",
+        "SUP_C11_small_steer_bias_recovery": "challenge",
+        "SUP_C12_large_deviation_stop": "challenge",
+        "SYS_01_qwen_timeout": "challenge",
+        "SYS_02_qwen_invalid_token": "challenge",
+        "SYS_03_qwen_stale_result": "challenge",
+        "SYS_04_qwen_disconnect_recovery": "challenge",
+        "SYS_05_voice_burst_priority": "challenge"
+      },
+      "caveat": "weights (30/40/30 over the three scoring groups) come from the judging rules; complex_regression and system_stability are reported separately and do not enter the weighted score. Self-built suite, not the official 1000-frame benchmark."
+    },
+    "student": {
+      "matrix": "/home/tiaozhansai/carla-driving-challenge/artifacts/numeric_speed_conditioned_20261112/paired_full83_fix.uTXN9EMh/matrix.json",
+      "suite_version": "acceptance-suite-2026.08-v2",
+      "declared_counts": {
+        "total": 83,
+        "P0": 18,
+        "P1": 54,
+        "P2": 6,
+        "P3": 5,
+        "basic": 18,
+        "advanced": 30,
+        "challenge": 35,
+        "basic_scoring": 18,
+        "advanced_scoring": 30,
+        "challenge_scoring": 24,
+        "complex_regression": 6,
+        "system_stability": 5,
+        "current_runtime": 83,
+        "extension_required": 0
+      },
+      "per_group": {
+        "advanced_scoring": {
+          "runs": 30,
+          "passed": 25,
+          "completion_rate": 0.8333333333333334,
+          "failed_scenarios": [
+            "ACC_A04_static_obstacle_stop",
+            "VAR_A02_low_ttc_stationary_lead",
+            "SUP_A14_lane_change_left_curve",
+            "SUP_A15_lane_change_blocked",
+            "SUP_A16_detour_right_static_vehicle"
+          ]
+        },
+        "basic_scoring": {
+          "runs": 18,
+          "passed": 18,
+          "completion_rate": 1.0,
+          "failed_scenarios": []
+        },
+        "challenge_scoring": {
+          "runs": 24,
+          "passed": 22,
+          "completion_rate": 0.9166666666666666,
+          "failed_scenarios": [
+            "VAR_C02_asr_disagreement",
+            "SUP_C03_vague_slow"
+          ]
+        },
+        "complex_regression": {
+          "runs": 6,
+          "passed": 4,
+          "completion_rate": 0.6666666666666666,
+          "failed_scenarios": [
+            "CX03_construction_bicycle_detour",
+            "CX_MAIN_01_safe_urban_mission"
+          ]
+        },
+        "system_stability": {
+          "runs": 5,
+          "passed": 5,
+          "completion_rate": 1.0,
+          "failed_scenarios": []
+        }
+      },
+      "scoring_groups": {
+        "basic_scoring": {
+          "runs": 18,
+          "passed": 18
+        },
+        "advanced_scoring": {
+          "runs": 30,
+          "passed": 25
+        },
+        "challenge_scoring": {
+          "runs": 24,
+          "passed": 22
+        }
+      },
+      "weighted_completion_rate": 0.9083333333333332,
+      "task_completion_score_out_of_15": 13.625,
+      "level_of_scenario": {
+        "ACC_B01_start_keep_lane": "basic",
+        "ACC_B02_set_speed_20": "basic",
+        "ACC_B03_slow_to_10": "basic",
+        "ACC_B04_normal_stop": "basic",
+        "ACC_B05_emergency_stop": "basic",
+        "ACC_B06_offset_recovery": "basic",
+        "ACC_A01_lead_brake": "advanced",
+        "ACC_A02_red_light_conflict": "advanced",
+        "ACC_A03_pedestrian_crossing": "advanced",
+        "ACC_A04_static_obstacle_stop": "advanced",
+        "ACC_A05_lane_change_left": "advanced",
+        "ACC_A06_obstacle_detour_return": "advanced",
+        "ACC_C01_heavy_rain_fog": "challenge",
+        "ACC_C02_ambiguous_instruction": "challenge",
+        "ACC_C03_illegal_instruction": "challenge",
+        "ACC_C04_multi_target_binding": "challenge",
+        "ACC_C05_perception_failure": "challenge",
+        "ACC_C06_dynamic_route_deviation": "challenge",
+        "VAR_B01_set_speed_10": "basic",
+        "VAR_B02_set_speed_30_limit": "basic",
+        "VAR_B03_relative_slow_down": "basic",
+        "VAR_B04_stop_on_mild_curve": "basic",
+        "VAR_B05_emergency_stop_25kph": "basic",
+        "VAR_B06_lane_keep_smooth_curve": "basic",
+        "VAR_A01_lead_brake_late": "advanced",
+        "VAR_A02_low_ttc_stationary_lead": "advanced",
+        "VAR_A03_occluded_pedestrian": "advanced",
+        "VAR_A04_lane_change_right": "advanced",
+        "VAR_A05_adjacent_lane_blocked": "advanced",
+        "VAR_A06_red_light_wet_weather": "advanced",
+        "VAR_C01_night_rain": "challenge",
+        "VAR_C02_asr_disagreement": "challenge",
+        "VAR_C03_multi_target_partial_occlusion": "challenge",
+        "VAR_C04_rgb_blackout_lidar_alive": "challenge",
+        "VAR_C05_rgb_lidar_blackout": "challenge",
+        "VAR_C06_large_route_deviation": "challenge",
+        "CX01_urban_intersection_conflict": "challenge",
+        "CX02_multi_vehicle_target_follow_brake": "challenge",
+        "CX03_construction_bicycle_detour": "challenge",
+        "CX04_heavy_rain_ambiguous_multi_target": "challenge",
+        "CX05_sensor_dropout_route_recovery": "challenge",
+        "CX_MAIN_01_safe_urban_mission": "challenge",
+        "SUP_B01_restart_after_stop": "basic",
+        "SUP_B02_set_speed_30_with_limit": "basic",
+        "SUP_B03_relative_slow_down": "basic",
+        "SUP_B04_stop_on_mild_curve": "basic",
+        "SUP_B05_emergency_stop_15kph": "basic",
+        "SUP_B06_right_offset_recovery": "basic",
+        "SUP_A01_lead_brake_15m": "advanced",
+        "SUP_A02_lead_brake_25m_late": "advanced",
+        "SUP_A03_lead_brake_wet": "advanced",
+        "SUP_A04_red_light_close_stop_line": "advanced",
+        "SUP_A05_red_light_wet": "advanced",
+        "SUP_A06_yellow_to_red": "advanced",
+        "SUP_A07_pedestrian_right_to_left": "advanced",
+        "SUP_A08_fast_pedestrian": "advanced",
+        "SUP_A09_occluded_pedestrian_after_lead": "advanced",
+        "SUP_A10_static_vehicle_center": "advanced",
+        "SUP_A11_obstacle_left_offset": "advanced",
+        "SUP_A12_double_static_obstacle_stop": "advanced",
+        "SUP_A13_lane_change_right": "advanced",
+        "SUP_A14_lane_change_left_curve": "advanced",
+        "SUP_A15_lane_change_blocked": "advanced",
+        "SUP_A16_detour_right_static_vehicle": "advanced",
+        "SUP_A17_detour_left_construction": "advanced",
+        "SUP_A18_detour_return_original_lane": "advanced",
+        "SUP_C01_night_heavy_rain": "challenge",
+        "SUP_C02_low_visibility_rain_fog": "challenge",
+        "SUP_C03_vague_slow": "challenge",
+        "SUP_C04_vague_pull_over": "challenge",
+        "SUP_C05_illegal_speed_120": "challenge",
+        "SUP_C06_ignore_red_light": "challenge",
+        "SUP_C07_three_vehicle_binding": "challenge",
+        "SUP_C08_target_occluded_stale_rejection": "challenge",
+        "SUP_C09_rgb_blackout_lidar_alive": "challenge",
+        "SUP_C10_rgb_lidar_blackout": "challenge",
+        "SUP_C11_small_steer_bias_recovery": "challenge",
+        "SUP_C12_large_deviation_stop": "challenge",
+        "SYS_01_qwen_timeout": "challenge",
+        "SYS_02_qwen_invalid_token": "challenge",
+        "SYS_03_qwen_stale_result": "challenge",
+        "SYS_04_qwen_disconnect_recovery": "challenge",
+        "SYS_05_voice_burst_priority": "challenge"
+      },
+      "caveat": "weights (30/40/30 over the three scoring groups) come from the judging rules; complex_regression and system_stability are reported separately and do not enter the weighted score. Self-built suite, not the official 1000-frame benchmark."
+    }
+  }
+}

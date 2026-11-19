@@ -1,0 +1,142 @@
+{
+  "frames": 60,
+  "per_target": {
+    "front": {
+      "visible_frames": 60,
+      "detection_matched_frames": 52,
+      "track_matched_frames": 46,
+      "track_continuity_visible_fraction": 0.7666666666666667,
+      "id_switches_across_matches": 3,
+      "fragmentation_gaps": 6,
+      "track_ids": [
+        "T-0002",
+        "T-0004",
+        "T-0005",
+        "T-0007"
+      ],
+      "confirmation_frame": 10440,
+      "confirmation_latency_frames_from_first_matched": 5,
+      "confirmed_matched_frames": 31,
+      "point_precision_conservative": 1.0,
+      "selected_points": 225,
+      "semantic_target_approx": 225,
+      "position_surface_proxy_vs_actor_center_p95_m": 1.8819447690934652,
+      "position_surface_proxy_vs_actor_center_max_m": 1.9743876676562029,
+      "position_samples": 37,
+      "velocity_error_p50_mps": 0.32301528979829974,
+      "velocity_error_p95_mps": 2.826603565362033,
+      "velocity_error_max_mps": 5.175855525481516,
+      "velocity_samples": 34
+    },
+    "adjacent": {
+      "visible_frames": 60,
+      "detection_matched_frames": 60,
+      "track_matched_frames": 60,
+      "track_continuity_visible_fraction": 1.0,
+      "id_switches_across_matches": 0,
+      "fragmentation_gaps": 0,
+      "track_ids": [
+        "T-0001"
+      ],
+      "confirmation_frame": null,
+      "confirmation_latency_frames_from_first_matched": null,
+      "confirmed_matched_frames": 0,
+      "point_precision_conservative": 1.0,
+      "selected_points": 9,
+      "semantic_target_approx": 9,
+      "position_surface_proxy_vs_actor_center_p95_m": 2.4631523552411663,
+      "position_surface_proxy_vs_actor_center_max_m": 2.4640091442379433,
+      "position_samples": 3,
+      "velocity_error_p50_mps": 2.0305394060987383,
+      "velocity_error_p95_mps": 3.3698829841258613,
+      "velocity_error_max_mps": 3.518698937239986,
+      "velocity_samples": 2
+    }
+  },
+  "channel_transition_events": [
+    {
+      "role": "front",
+      "from_frame": 10450,
+      "to_frame": 10451,
+      "from": "auxiliary",
+      "to": "formal",
+      "outcome": "unassessable"
+    },
+    {
+      "role": "front",
+      "from_frame": 10451,
+      "to_frame": 10452,
+      "from": "formal",
+      "to": "auxiliary",
+      "outcome": "unassessable"
+    },
+    {
+      "role": "front",
+      "from_frame": 10453,
+      "to_frame": 10454,
+      "from": "auxiliary",
+      "to": "formal",
+      "outcome": "unassessable"
+    },
+    {
+      "role": "front",
+      "from_frame": 10456,
+      "to_frame": 10457,
+      "from": "formal",
+      "to": "auxiliary",
+      "outcome": "preserved"
+    },
+    {
+      "role": "front",
+      "from_frame": 10457,
+      "to_frame": 10458,
+      "from": "auxiliary",
+      "to": "formal",
+      "outcome": "preserved"
+    },
+    {
+      "role": "front",
+      "from_frame": 10486,
+      "to_frame": 10487,
+      "from": "formal",
+      "to": "auxiliary",
+      "outcome": "unassessable"
+    },
+    {
+      "role": "front",
+      "from_frame": 10487,
+      "to_frame": 10488,
+      "from": "auxiliary",
+      "to": "formal",
+      "outcome": "unassessable"
+    }
+  ],
+  "channel_transition_counts": {
+    "unassessable": 5,
+    "preserved": 2
+  },
+  "track_id_changes_physical_actor": [],
+  "observed_semantic_other_vehicle_mixed_count": 0,
+  "confirmed_with_other_vehicle_points_count": 0,
+  "confirmed_semantic_unverified_count": 0,
+  "confirmed_without_iou_actor_match_count": 0,
+  "formal_chain_unchanged_frames": 60,
+  "unique_point_ownership_frames": 60,
+  "all_track_ids": [
+    "T-0001",
+    "T-0002",
+    "T-0003",
+    "T-0004",
+    "T-0005",
+    "T-0006",
+    "T-0007",
+    "T-0008",
+    "T-0009"
+  ],
+  "all_confirmed_frames": 31,
+  "may_enter_follow_count": 0,
+  "match_method": "post-freeze 2D projected actor box IoU >=0.30, one-to-one; ambiguous tracks not considered valid identity; semantic LiDAR approximate 8cm nearest point",
+  "velocity_truth": "successive simulator actor center differences / frame time; surface-proxy velocity is not vehicle center speed",
+  "position_note": "surface proxy distance to actor center is not a vehicle-center position error and includes physical surface-to-center offset",
+  "C1_gate_note": "C1 is not automatically passed; research parameters and observed metrics require review; no transition means channel migration not tested"
+}

@@ -1,0 +1,183 @@
+{
+  "scenario": "three_cars_same_frame",
+  "map": "Carla/Maps/Town05_Opt",
+  "frame": 42626,
+  "camera_size": [
+    800,
+    450
+  ],
+  "ego_lane": -2,
+  "targets": [
+    {
+      "id": "C-0001",
+      "class": "car",
+      "confidence": 0.682,
+      "bbox": [
+        0.38777539134025574,
+        0.42713478207588196,
+        0.4396318197250366,
+        0.49050045013427734
+      ],
+      "distance_m": 18.1,
+      "sensor_status": "FUSED_UNVALIDATED",
+      "lidar_points": 27,
+      "radar_points": 48,
+      "world_position": [
+        203.848,
+        -31.711,
+        1.088
+      ],
+      "ego_lane": -2,
+      "lane_relation": "LEFT",
+      "longitudinal_relation": "AHEAD",
+      "same_lane": false,
+      "delta_s_m": 17.819,
+      "lateral_offset_m": 0.348,
+      "target_road_id": 34,
+      "target_lane_id": -1,
+      "ego_road_id": 34,
+      "ego_lane_id": -2,
+      "reason": "MATCHED"
+    },
+    {
+      "id": "C-0002",
+      "class": "car",
+      "confidence": 0.626,
+      "bbox": [
+        0.4802221357822418,
+        0.4227087199687958,
+        0.5208349227905273,
+        0.4733709394931793
+      ],
+      "distance_m": 21.73,
+      "sensor_status": "FUSED_UNVALIDATED",
+      "lidar_points": 20,
+      "radar_points": 110,
+      "world_position": [
+        206.961,
+        -35.661,
+        1.29
+      ],
+      "ego_lane": -2,
+      "lane_relation": "CURRENT",
+      "longitudinal_relation": "AHEAD",
+      "same_lane": true,
+      "delta_s_m": 21.733,
+      "lateral_offset_m": 0.007,
+      "target_road_id": 34,
+      "target_lane_id": -2,
+      "ego_road_id": 34,
+      "ego_lane_id": -2,
+      "reason": "MATCHED"
+    },
+    {
+      "id": "C-0003",
+      "class": "car",
+      "confidence": 0.545,
+      "bbox": [
+        0.5540640354156494,
+        0.4258837103843689,
+        0.6121191382408142,
+        0.49199581146240234
+      ],
+      "distance_m": 18.19,
+      "sensor_status": "FUSED_UNVALIDATED",
+      "lidar_points": 36,
+      "radar_points": 56,
+      "world_position": [
+        210.149,
+        -31.878,
+        1.192
+      ],
+      "ego_lane": -2,
+      "lane_relation": "RIGHT",
+      "longitudinal_relation": "AHEAD",
+      "same_lane": false,
+      "delta_s_m": 17.912,
+      "lateral_offset_m": 0.35,
+      "target_road_id": 34,
+      "target_lane_id": -3,
+      "ego_road_id": 34,
+      "ego_lane_id": -2,
+      "reason": "MATCHED"
+    }
+  ],
+  "evaluation": {
+    "checks": [
+      {
+        "step": "A",
+        "pass": true,
+        "reason": "expected CURRENT AHEAD; got CURRENT AHEAD",
+        "id": "C-0002"
+      },
+      {
+        "step": "B",
+        "pass": true,
+        "reason": "expected LEFT AHEAD; got LEFT AHEAD",
+        "id": "C-0001"
+      },
+      {
+        "step": "C",
+        "pass": true,
+        "reason": "expected RIGHT AHEAD; got RIGHT AHEAD",
+        "id": "C-0003"
+      },
+      {
+        "step": "candidate",
+        "pass": true,
+        "reason": "follow list must contain only the uniquely matched A",
+        "actual": [
+          "C-0002"
+        ],
+        "expected_ids": [
+          "C-0002"
+        ]
+      }
+    ],
+    "passed": true,
+    "iou": {
+      "C-0001": {
+        "A": 0.0,
+        "B": 0.606,
+        "C": 0.0
+      },
+      "C-0002": {
+        "A": 0.754,
+        "B": 0.0,
+        "C": 0.0
+      },
+      "C-0003": {
+        "A": 0.0,
+        "B": 0.0,
+        "C": 0.707
+      }
+    },
+    "assigned": {
+      "B": [
+        "C-0001"
+      ],
+      "A": [
+        "C-0002"
+      ],
+      "C": [
+        "C-0003"
+      ]
+    },
+    "candidates": [
+      "C-0002"
+    ]
+  },
+  "sensor_frames": {
+    "camera": 42626,
+    "lidar": 42626,
+    "radar": 42626
+  },
+  "sim_time_s": 249.44352520955727,
+  "status": "PASS",
+  "notes": [
+    "truth used only in evaluation",
+    "fusion requires three preceding matching frames",
+    "no model or control input",
+    "experimental fusion not formally validated"
+  ]
+}

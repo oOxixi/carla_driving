@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-02T17:38:41.991683+00:00",
+  "dataset_kind": "latency_gate_only_no_correctness",
+  "model": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "base_url": "http://127.0.0.1:8000/v1",
+  "image": "/home/tiaozhansai/carla-driving-2B/artifacts/qwen_carla_closed_loop_0727/run_003/media/rgb_00140499.png",
+  "warmups": 5,
+  "measurements_requested": 10,
+  "gpu": {
+    "available": true,
+    "name": "NVIDIA GeForce RTX 3090",
+    "compute_capability": "8.6",
+    "memory_mib": 24576.0,
+    "driver_version": "580.173.02"
+  },
+  "latency_ms": {
+    "count": 10,
+    "mean_ms": 106.4278113,
+    "p50_ms": 104.4335485,
+    "p95_ms": 119.92954939999998,
+    "max_ms": 128.699801,
+    "threshold_ms": 300.0,
+    "status": "PASS",
+    "run_correctness_next": true
+  },
+  "status": "PASS"
+}

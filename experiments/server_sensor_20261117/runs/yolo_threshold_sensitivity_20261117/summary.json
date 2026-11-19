@@ -1,0 +1,67 @@
+[
+  {
+    "threshold": 0.35,
+    "matched": 10,
+    "all_boxes": 10,
+    "low_boxes": 0,
+    "unmatched_low": 0,
+    "shared_all": 2,
+    "shared_low": 0,
+    "low_3d_supported": 0,
+    "recovered": 0,
+    "lost_baseline": 0,
+    "strong_group_changes": 0
+  },
+  {
+    "threshold": 0.3,
+    "matched": 14,
+    "all_boxes": 14,
+    "low_boxes": 4,
+    "unmatched_low": 0,
+    "shared_all": 3,
+    "shared_low": 1,
+    "low_3d_supported": 0,
+    "recovered": 4,
+    "lost_baseline": 0,
+    "strong_group_changes": 0
+  },
+  {
+    "threshold": 0.25,
+    "matched": 14,
+    "all_boxes": 14,
+    "low_boxes": 4,
+    "unmatched_low": 0,
+    "shared_all": 3,
+    "shared_low": 1,
+    "low_3d_supported": 0,
+    "recovered": 4,
+    "lost_baseline": 0,
+    "strong_group_changes": 0
+  },
+  {
+    "threshold": 0.2,
+    "matched": 19,
+    "all_boxes": 19,
+    "low_boxes": 9,
+    "unmatched_low": 0,
+    "shared_all": 3,
+    "shared_low": 1,
+    "low_3d_supported": 0,
+    "recovered": 9,
+    "lost_baseline": 0,
+    "strong_group_changes": 0
+  },
+  {
+    "threshold": 0.15,
+    "matched": 22,
+    "all_boxes": 23,
+    "low_boxes": 13,
+    "unmatched_low": 1,
+    "shared_all": 5,
+    "shared_low": 3,
+    "low_3d_supported": 0,
+    "recovered": 12,
+    "lost_baseline": 0,
+    "strong_group_changes": 0
+  }
+]

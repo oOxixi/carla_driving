@@ -1,0 +1,335 @@
+{
+  "schema_version": "1.0",
+  "generated_at_utc": "2026-11-13T17:54:54.809166+00:00",
+  "condition": "clean",
+  "manifest": "/home/tiaozhansai/carla-driving-challenge/voice_group/test_samples/manifest.json",
+  "audio_root": "/home/tiaozhansai/carla-driving-challenge/voice_group/test_samples",
+  "git": {
+    "commit": "ca353478af8130bf5d2f9622cade4c25284776da",
+    "dirty": false,
+    "status": []
+  },
+  "model_preload": {
+    "cascade_enabled": false,
+    "primary_load_ms": 18027.0,
+    "nlu_warmup_ms": 15.1,
+    "verifier_load_ms": 0.1,
+    "total_load_ms": 18042.1
+  },
+  "sample_limit": null,
+  "synthetic_noise": null,
+  "noise_calibration": null,
+  "overall": {
+    "total": 250,
+    "inference_success": 250,
+    "asr_confidence_available": 0,
+    "asr_confidence_coverage": 0.0,
+    "verification_confidence_available": 0,
+    "verification_confidence_coverage": 0.0,
+    "verification_triggered": 0,
+    "verification_semantic_agreement": 0,
+    "verification_confirmation_gates": 41,
+    "verification_disagreement_gates": 0,
+    "asr_exact_accuracy": 0.956,
+    "asr_character_accuracy": 0.992445,
+    "intent_accuracy": 0.996,
+    "slot_accuracy": 0.992,
+    "latency": {
+      "asr_ms": {
+        "count": 250,
+        "mean_ms": 85.589,
+        "p95_ms": 92.52,
+        "p99_ms": 134.951,
+        "max_ms": 423.4
+      },
+      "verification_ms": {
+        "count": 0,
+        "mean_ms": null,
+        "p95_ms": null,
+        "p99_ms": null,
+        "max_ms": null
+      },
+      "nlu_ms": {
+        "count": 250,
+        "mean_ms": 4.829,
+        "p95_ms": 17.255,
+        "p99_ms": 18.551,
+        "max_ms": 19.6
+      },
+      "total_ms": {
+        "count": 250,
+        "mean_ms": 90.426,
+        "p95_ms": 105.17,
+        "p99_ms": 142.597,
+        "max_ms": 423.7
+      }
+    }
+  },
+  "by_language": {
+    "东北话": {
+      "total": 50,
+      "inference_success": 50,
+      "asr_confidence_available": 0,
+      "asr_confidence_coverage": 0.0,
+      "verification_confidence_available": 0,
+      "verification_confidence_coverage": 0.0,
+      "verification_triggered": 0,
+      "verification_semantic_agreement": 0,
+      "verification_confirmation_gates": 11,
+      "verification_disagreement_gates": 0,
+      "asr_exact_accuracy": 0.96,
+      "asr_character_accuracy": 0.992933,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "latency": {
+        "asr_ms": {
+          "count": 50,
+          "mean_ms": 82.038,
+          "p95_ms": 90.73,
+          "p99_ms": 94.858,
+          "max_ms": 97.7
+        },
+        "verification_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "nlu_ms": {
+          "count": 50,
+          "mean_ms": 5.154,
+          "p95_ms": 18.04,
+          "p99_ms": 18.551,
+          "max_ms": 18.6
+        },
+        "total_ms": {
+          "count": 50,
+          "mean_ms": 87.21,
+          "p95_ms": 99.73,
+          "p99_ms": 108.765,
+          "max_ms": 109.5
+        }
+      }
+    },
+    "台湾国语": {
+      "total": 50,
+      "inference_success": 50,
+      "asr_confidence_available": 0,
+      "asr_confidence_coverage": 0.0,
+      "verification_confidence_available": 0,
+      "verification_confidence_coverage": 0.0,
+      "verification_triggered": 0,
+      "verification_semantic_agreement": 0,
+      "verification_confirmation_gates": 5,
+      "verification_disagreement_gates": 0,
+      "asr_exact_accuracy": 0.96,
+      "asr_character_accuracy": 0.993808,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 0.96,
+      "latency": {
+        "asr_ms": {
+          "count": 50,
+          "mean_ms": 90.802,
+          "p95_ms": 87.965,
+          "p99_ms": 259.103,
+          "max_ms": 423.4
+        },
+        "verification_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "nlu_ms": {
+          "count": 50,
+          "mean_ms": 4.468,
+          "p95_ms": 16.175,
+          "p99_ms": 17.951,
+          "max_ms": 18.0
+        },
+        "total_ms": {
+          "count": 50,
+          "mean_ms": 95.278,
+          "p95_ms": 100.8,
+          "p99_ms": 266.214,
+          "max_ms": 423.7
+        }
+      }
+    },
+    "普通话": {
+      "total": 50,
+      "inference_success": 50,
+      "asr_confidence_available": 0,
+      "asr_confidence_coverage": 0.0,
+      "verification_confidence_available": 0,
+      "verification_confidence_coverage": 0.0,
+      "verification_triggered": 0,
+      "verification_semantic_agreement": 0,
+      "verification_confirmation_gates": 7,
+      "verification_disagreement_gates": 0,
+      "asr_exact_accuracy": 1.0,
+      "asr_character_accuracy": 1.0,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "latency": {
+        "asr_ms": {
+          "count": 50,
+          "mean_ms": 84.686,
+          "p95_ms": 107.29,
+          "p99_ms": 141.785,
+          "max_ms": 163.1
+        },
+        "verification_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "nlu_ms": {
+          "count": 50,
+          "mean_ms": 4.542,
+          "p95_ms": 17.47,
+          "p99_ms": 18.963,
+          "max_ms": 19.6
+        },
+        "total_ms": {
+          "count": 50,
+          "mean_ms": 89.232,
+          "p95_ms": 113.23,
+          "p99_ms": 155.398,
+          "max_ms": 179.8
+        }
+      }
+    },
+    "粤语": {
+      "total": 50,
+      "inference_success": 50,
+      "asr_confidence_available": 0,
+      "asr_confidence_coverage": 0.0,
+      "verification_confidence_available": 0,
+      "verification_confidence_coverage": 0.0,
+      "verification_triggered": 0,
+      "verification_semantic_agreement": 0,
+      "verification_confirmation_gates": 10,
+      "verification_disagreement_gates": 0,
+      "asr_exact_accuracy": 0.92,
+      "asr_character_accuracy": 0.985455,
+      "intent_accuracy": 0.98,
+      "slot_accuracy": 1.0,
+      "latency": {
+        "asr_ms": {
+          "count": 50,
+          "mean_ms": 84.884,
+          "p95_ms": 90.25,
+          "p99_ms": 100.664,
+          "max_ms": 108.7
+        },
+        "verification_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "nlu_ms": {
+          "count": 50,
+          "mean_ms": 4.552,
+          "p95_ms": 16.855,
+          "p99_ms": 18.655,
+          "max_ms": 18.9
+        },
+        "total_ms": {
+          "count": 50,
+          "mean_ms": 89.434,
+          "p95_ms": 102.615,
+          "p99_ms": 112.528,
+          "max_ms": 118.8
+        }
+      }
+    },
+    "陕西话": {
+      "total": 50,
+      "inference_success": 50,
+      "asr_confidence_available": 0,
+      "asr_confidence_coverage": 0.0,
+      "verification_confidence_available": 0,
+      "verification_confidence_coverage": 0.0,
+      "verification_triggered": 0,
+      "verification_semantic_agreement": 0,
+      "verification_confirmation_gates": 8,
+      "verification_disagreement_gates": 0,
+      "asr_exact_accuracy": 0.94,
+      "asr_character_accuracy": 0.98951,
+      "intent_accuracy": 1.0,
+      "slot_accuracy": 1.0,
+      "latency": {
+        "asr_ms": {
+          "count": 50,
+          "mean_ms": 85.534,
+          "p95_ms": 88.065,
+          "p99_ms": 121.77,
+          "max_ms": 149.7
+        },
+        "verification_ms": {
+          "count": 0,
+          "mean_ms": null,
+          "p95_ms": null,
+          "p99_ms": null,
+          "max_ms": null
+        },
+        "nlu_ms": {
+          "count": 50,
+          "mean_ms": 5.43,
+          "p95_ms": 16.19,
+          "p99_ms": 17.255,
+          "max_ms": 17.5
+        },
+        "total_ms": {
+          "count": 50,
+          "mean_ms": 90.976,
+          "p95_ms": 100.91,
+          "p99_ms": 129.22,
+          "max_ms": 154.7
+        }
+      }
+    }
+  },
+  "inference_errors": [],
+  "intent_failures": [
+    {
+      "index": 153,
+      "language": "粤语",
+      "audio": "/home/tiaozhansai/carla-driving-challenge/voice_group/test_samples/dialect/yueyu/0011.mp3",
+      "reference_text": "马上刹！",
+      "expected_intent": "EMERGENCY_STOP",
+      "expected_slots": {},
+      "inference_ok": true,
+      "source_text": "马上！",
+      "actual_intent": "UNKNOWN",
+      "actual_slots": {},
+      "status": "ambiguous",
+      "confirm_required": true,
+      "ambiguity_type": "UNKNOWN",
+      "asr_verification": null,
+      "asr_confidence": null,
+      "verification_confidence": null,
+      "asr_exact": false,
+      "reference_chars": 3,
+      "edit_distance": 1,
+      "intent_ok": false,
+      "slots_ok": true,
+      "latency": {
+        "asr_ms": 81.5,
+        "nlu_ms": 3.8,
+        "total_ms": 85.3
+      }
+    }
+  ],
+  "publication": {
+    "scope": "aggregate_only",
+    "records_excluded": 250
+  }
+}

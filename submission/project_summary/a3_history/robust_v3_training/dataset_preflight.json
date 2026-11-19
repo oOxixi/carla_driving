@@ -1,0 +1,508 @@
+{
+  "valid": true,
+  "train_path": "/home/tiaozhansai/carla-driving-challenge/artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+  "validation_path": "/home/tiaozhansai/carla-driving-challenge/artifacts/a3_b1_closeout_positive_view_v1/val.jsonl",
+  "expected_dataset_version": "b1_governed_closeout_v1_a3_strict_positive_v1",
+  "expected_teacher_identity": {
+    "git_sha": null,
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_fingerprint_sha256": "4bbf183b7b7f1ab9fb9eb325f189f4449d65e9fe664cbfe4bcc58a33888657fa",
+    "allowed_missing_provenance_classes": [
+      "HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    ]
+  },
+  "train": {
+    "records": 5856,
+    "valid_records": 5856,
+    "sample_classes": {
+      "complex": 1150,
+      "normal": 4240,
+      "safety_critical": 466
+    },
+    "behaviors": {
+      "AVOID_OBSTACLE": 324,
+      "CHANGE_LANE_LEFT": 246,
+      "CHANGE_LANE_RIGHT": 234,
+      "FOLLOW": 608,
+      "KEEP_LANE": 726,
+      "PULL_OVER": 44,
+      "RETURN_TO_LANE": 324,
+      "SET_SPEED": 1824,
+      "SLOW_DOWN": 244,
+      "STOP": 1131,
+      "TURN_LEFT": 302,
+      "TURN_RIGHT": 192,
+      "YIELD": 128
+    },
+    "plan_lengths": {
+      "1": 5430,
+      "2": 396,
+      "3": 15,
+      "4": 15
+    },
+    "target_counts": {
+      "1": 2934,
+      "2": 2685,
+      "3": 184,
+      "4": 37,
+      "5": 16
+    },
+    "dataset_versions": {
+      "b1_governed_closeout_v1_a3_strict_positive_v1": 5856
+    }
+  },
+  "validation": {
+    "records": 1108,
+    "valid_records": 1108,
+    "sample_classes": {
+      "complex": 257,
+      "normal": 759,
+      "safety_critical": 92
+    },
+    "behaviors": {
+      "AVOID_OBSTACLE": 69,
+      "CHANGE_LANE_LEFT": 44,
+      "CHANGE_LANE_RIGHT": 54,
+      "FOLLOW": 134,
+      "KEEP_LANE": 125,
+      "PULL_OVER": 6,
+      "RETURN_TO_LANE": 69,
+      "SET_SPEED": 345,
+      "SLOW_DOWN": 36,
+      "STOP": 174,
+      "TURN_LEFT": 67,
+      "TURN_RIGHT": 66,
+      "YIELD": 24
+    },
+    "plan_lengths": {
+      "1": 1009,
+      "2": 95,
+      "3": 2,
+      "4": 2
+    },
+    "target_counts": {
+      "1": 604,
+      "2": 461,
+      "3": 31,
+      "4": 8,
+      "5": 4
+    },
+    "dataset_versions": {
+      "b1_governed_closeout_v1_a3_strict_positive_v1": 1108
+    }
+  },
+  "errors": [],
+  "error_count": 0,
+  "warnings": [
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5827,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5827,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5828,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5828,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5829,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5829,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5830,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5830,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5831,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5831,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5832,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5832,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5833,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5833,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5834,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5834,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5835,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5835,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5836,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5836,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5837,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5837,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5838,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5838,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5839,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5839,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5840,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5840,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5841,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5841,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5842,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5842,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5843,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5843,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5844,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5844,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5845,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5845,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5846,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5846,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5847,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5847,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5848,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5848,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5849,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5849,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5850,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5850,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5851,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5851,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5852,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5852,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5853,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5853,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5854,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5854,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5855,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5855,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5856,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/train.jsonl",
+      "line": 5856,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/val.jsonl",
+      "line": 1105,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/val.jsonl",
+      "line": 1105,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/val.jsonl",
+      "line": 1106,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/val.jsonl",
+      "line": 1106,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/val.jsonl",
+      "line": 1107,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/val.jsonl",
+      "line": 1107,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/val.jsonl",
+      "line": 1108,
+      "code": "GOVERNED_MISSING_TEACHER_REVISION",
+      "message": "Teacher revision is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    },
+    {
+      "path": "artifacts/a3_b1_closeout_positive_view_v1/val.jsonl",
+      "line": 1108,
+      "code": "GOVERNED_MISSING_TEACHER_FINGERPRINT",
+      "message": "Teacher fingerprint is absent under HISTORICAL_RUNTIME_IDENTITY_CONTENT_BOUND"
+    }
+  ],
+  "warning_count": 68
+}

@@ -1,0 +1,452 @@
+{
+  "far": {
+    "D": {
+      "R0": {
+        "vehicles": 150,
+        "matched": 140,
+        "candidate_at_least_3": 0,
+        "located": 0,
+        "pure_selected": 0,
+        "selected_points": {
+          "selected_target": 0,
+          "selected_background": 0,
+          "selected_other_vehicle": 0,
+          "selected_unmatched": 0
+        },
+        "precision_scored": null,
+        "candidate_target_background": 0,
+        "candidate_multi_vehicle": 0,
+        "abs_range_error_p50_p95_max": null,
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 140,
+          "NO_MATCHED_DETECTION": 10
+        }
+      },
+      "R1": {
+        "vehicles": 150,
+        "matched": 140,
+        "candidate_at_least_3": 80,
+        "located": 80,
+        "pure_selected": 80,
+        "selected_points": {
+          "selected_target": 240,
+          "selected_background": 0,
+          "selected_other_vehicle": 0,
+          "selected_unmatched": 0
+        },
+        "precision_scored": 1.0,
+        "candidate_target_background": 0,
+        "candidate_multi_vehicle": 0,
+        "abs_range_error_p50_p95_max": [
+          0.1356155419763958,
+          0.16316563072117418,
+          0.16316563072117418
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 80,
+          "NO_PLAUSIBLE_CLUSTER": 60,
+          "NO_MATCHED_DETECTION": 10
+        }
+      },
+      "R2": {
+        "vehicles": 150,
+        "matched": 140,
+        "candidate_at_least_3": 110,
+        "located": 110,
+        "pure_selected": 110,
+        "selected_points": {
+          "selected_target": 330,
+          "selected_background": 0,
+          "selected_other_vehicle": 0,
+          "selected_unmatched": 0
+        },
+        "precision_scored": 1.0,
+        "candidate_target_background": 0,
+        "candidate_multi_vehicle": 0,
+        "abs_range_error_p50_p95_max": [
+          0.12640680821210282,
+          0.1884492467051615,
+          0.1884492467051615
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 110,
+          "NO_PLAUSIBLE_CLUSTER": 30,
+          "NO_MATCHED_DETECTION": 10
+        }
+      },
+      "R3": {
+        "vehicles": 150,
+        "matched": 140,
+        "candidate_at_least_3": 110,
+        "located": 90,
+        "pure_selected": 90,
+        "selected_points": {
+          "selected_target": 270,
+          "selected_background": 0,
+          "selected_other_vehicle": 0,
+          "selected_unmatched": 0
+        },
+        "precision_scored": 1.0,
+        "candidate_target_background": 0,
+        "candidate_multi_vehicle": 0,
+        "abs_range_error_p50_p95_max": [
+          0.1263932738471567,
+          0.1884492467051615,
+          0.1884492467051615
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 90,
+          "NO_PLAUSIBLE_CLUSTER": 30,
+          "MULTIPLE_PLAUSIBLE_CLUSTERS": 20,
+          "NO_MATCHED_DETECTION": 10
+        }
+      },
+      "R4": {
+        "vehicles": 150,
+        "matched": 140,
+        "candidate_at_least_3": 110,
+        "located": 110,
+        "pure_selected": 110,
+        "selected_points": {
+          "selected_target": 530,
+          "selected_background": 0,
+          "selected_other_vehicle": 0,
+          "selected_unmatched": 0
+        },
+        "precision_scored": 1.0,
+        "candidate_target_background": 0,
+        "candidate_multi_vehicle": 0,
+        "abs_range_error_p50_p95_max": [
+          0.12640680821210282,
+          0.1884492467051615,
+          0.1884492467051615
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 110,
+          "NO_PLAUSIBLE_CLUSTER": 30,
+          "NO_MATCHED_DETECTION": 10
+        }
+      },
+      "R5": {
+        "vehicles": 150,
+        "matched": 140,
+        "candidate_at_least_3": 140,
+        "located": 140,
+        "pure_selected": 140,
+        "selected_points": {
+          "selected_target": 710,
+          "selected_background": 0,
+          "selected_other_vehicle": 0,
+          "selected_unmatched": 0
+        },
+        "precision_scored": 1.0,
+        "candidate_target_background": 0,
+        "candidate_multi_vehicle": 0,
+        "abs_range_error_p50_p95_max": [
+          0.13942641251140842,
+          0.30295391781648107,
+          0.30295391781648107
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 140,
+          "NO_MATCHED_DETECTION": 10
+        }
+      }
+    },
+    "A": {
+      "R0": {
+        "vehicles": 150,
+        "matched": 140,
+        "candidate_at_least_3": 0,
+        "located": 0,
+        "pure_selected": 0,
+        "selected_points": {
+          "selected_target": 0,
+          "selected_background": 0,
+          "selected_other_vehicle": 0,
+          "selected_unmatched": 0
+        },
+        "precision_scored": null,
+        "candidate_target_background": 0,
+        "candidate_multi_vehicle": 0,
+        "abs_range_error_p50_p95_max": null,
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 94,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "NO_MATCHED_DETECTION": 10
+        }
+      },
+      "R1": {
+        "vehicles": 150,
+        "matched": 140,
+        "candidate_at_least_3": 13,
+        "located": 13,
+        "pure_selected": 13,
+        "selected_points": {
+          "selected_target": 39,
+          "selected_background": 0,
+          "selected_other_vehicle": 0,
+          "selected_unmatched": 0
+        },
+        "precision_scored": 1.0,
+        "candidate_target_background": 0,
+        "candidate_multi_vehicle": 0,
+        "abs_range_error_p50_p95_max": [
+          0.12640680821210282,
+          0.15217388367829868,
+          0.16316563072117418
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 81,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "ONE_SELECTED_CLUSTER": 13,
+          "NO_MATCHED_DETECTION": 10
+        }
+      },
+      "R2": {
+        "vehicles": 150,
+        "matched": 140,
+        "candidate_at_least_3": 17,
+        "located": 17,
+        "pure_selected": 17,
+        "selected_points": {
+          "selected_target": 51,
+          "selected_background": 0,
+          "selected_other_vehicle": 0,
+          "selected_unmatched": 0
+        },
+        "precision_scored": 1.0,
+        "candidate_target_background": 0,
+        "candidate_multi_vehicle": 0,
+        "abs_range_error_p50_p95_max": [
+          0.1263932738471567,
+          0.14850996799734018,
+          0.16316563072117418
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 77,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "ONE_SELECTED_CLUSTER": 17,
+          "NO_MATCHED_DETECTION": 10
+        }
+      },
+      "R3": {
+        "vehicles": 150,
+        "matched": 140,
+        "candidate_at_least_3": 20,
+        "located": 20,
+        "pure_selected": 20,
+        "selected_points": {
+          "selected_target": 60,
+          "selected_background": 0,
+          "selected_other_vehicle": 0,
+          "selected_unmatched": 0
+        },
+        "precision_scored": 1.0,
+        "candidate_target_background": 0,
+        "candidate_multi_vehicle": 0,
+        "abs_range_error_p50_p95_max": [
+          0.12640004102962976,
+          0.6925020205788712,
+          0.6925020205788712
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 74,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "ONE_SELECTED_CLUSTER": 20,
+          "NO_MATCHED_DETECTION": 10
+        }
+      },
+      "R4": {
+        "vehicles": 150,
+        "matched": 140,
+        "candidate_at_least_3": 34,
+        "located": 34,
+        "pure_selected": 34,
+        "selected_points": {
+          "selected_target": 129,
+          "selected_background": 0,
+          "selected_other_vehicle": 0,
+          "selected_unmatched": 0
+        },
+        "precision_scored": 1.0,
+        "candidate_target_background": 0,
+        "candidate_multi_vehicle": 0,
+        "abs_range_error_p50_p95_max": [
+          0.1448242757406888,
+          0.25634215142765265,
+          0.46190003828976955
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 34,
+          "NO_PLAUSIBLE_CLUSTER": 60,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "NO_MATCHED_DETECTION": 10
+        }
+      },
+      "R5": {
+        "vehicles": 150,
+        "matched": 140,
+        "candidate_at_least_3": 68,
+        "located": 68,
+        "pure_selected": 68,
+        "selected_points": {
+          "selected_target": 250,
+          "selected_background": 0,
+          "selected_other_vehicle": 0,
+          "selected_unmatched": 0
+        },
+        "precision_scored": 1.0,
+        "candidate_target_background": 0,
+        "candidate_multi_vehicle": 0,
+        "abs_range_error_p50_p95_max": [
+          0.15399649477570776,
+          0.33996100402569446,
+          0.46190003828976955
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 68,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "NO_PLAUSIBLE_CLUSTER": 26,
+          "NO_MATCHED_DETECTION": 10
+        }
+      }
+    }
+  },
+  "overlap_controls": {
+    "R0": {
+      "frames": 54,
+      "expected": 108,
+      "located": 66,
+      "selected_target": 1124,
+      "selected_background": 0,
+      "selected_other_vehicle": 0,
+      "unmatched_semantic": 0,
+      "unmatched_detection": 0,
+      "candidate_multi_vehicle": 0,
+      "candidate_target_background": 0,
+      "abs_range_error_p50_p95_max": [
+        0.059318417001488655,
+        0.1679852301543847,
+        1.2512324098294485
+      ]
+    },
+    "R1": {
+      "frames": 54,
+      "expected": 108,
+      "located": 74,
+      "selected_target": 1533,
+      "selected_background": 0,
+      "selected_other_vehicle": 0,
+      "unmatched_semantic": 0,
+      "unmatched_detection": 0,
+      "candidate_multi_vehicle": 0,
+      "candidate_target_background": 0,
+      "abs_range_error_p50_p95_max": [
+        0.05617748952733148,
+        0.8786763149735479,
+        1.3524600729083573
+      ]
+    },
+    "R2": {
+      "frames": 54,
+      "expected": 108,
+      "located": 76,
+      "selected_target": 1559,
+      "selected_background": 0,
+      "selected_other_vehicle": 0,
+      "unmatched_semantic": 0,
+      "unmatched_detection": 0,
+      "candidate_multi_vehicle": 0,
+      "candidate_target_background": 0,
+      "abs_range_error_p50_p95_max": [
+        0.05221925312739728,
+        0.8444436394807262,
+        1.3524600729083573
+      ]
+    },
+    "R3": {
+      "frames": 54,
+      "expected": 108,
+      "located": 74,
+      "selected_target": 1566,
+      "selected_background": 0,
+      "selected_other_vehicle": 0,
+      "unmatched_semantic": 0,
+      "unmatched_detection": 0,
+      "candidate_multi_vehicle": 0,
+      "candidate_target_background": 0,
+      "abs_range_error_p50_p95_max": [
+        0.04927621273600735,
+        0.16411644014684373,
+        1.1195555513591522
+      ]
+    },
+    "R4": {
+      "frames": 54,
+      "expected": 108,
+      "located": 75,
+      "selected_target": 1593,
+      "selected_background": 0,
+      "selected_other_vehicle": 0,
+      "unmatched_semantic": 0,
+      "unmatched_detection": 0,
+      "candidate_multi_vehicle": 0,
+      "candidate_target_background": 0,
+      "abs_range_error_p50_p95_max": [
+        0.050711585049068475,
+        0.14877022996908643,
+        1.1148675522786107
+      ]
+    },
+    "R5": {
+      "frames": 54,
+      "expected": 108,
+      "located": 76,
+      "selected_target": 1601,
+      "selected_background": 0,
+      "selected_other_vehicle": 0,
+      "unmatched_semantic": 0,
+      "unmatched_detection": 0,
+      "candidate_multi_vehicle": 0,
+      "candidate_target_background": 0,
+      "abs_range_error_p50_p95_max": [
+        0.05221925312739728,
+        0.14791587147471796,
+        1.1148675522786107
+      ]
+    }
+  },
+  "overlap_paired_comparison_to_R0": {
+    "R1": {
+      "n": 64,
+      "absolute_error_increased": 0,
+      "absolute_error_decreased": 6,
+      "max_increase_m": 0.0
+    },
+    "R2": {
+      "n": 64,
+      "absolute_error_increased": 0,
+      "absolute_error_decreased": 6,
+      "max_increase_m": 0.0
+    },
+    "R3": {
+      "n": 63,
+      "absolute_error_increased": 0,
+      "absolute_error_decreased": 7,
+      "max_increase_m": 0.0
+    },
+    "R4": {
+      "n": 65,
+      "absolute_error_increased": 0,
+      "absolute_error_decreased": 9,
+      "max_increase_m": 0.0
+    },
+    "R5": {
+      "n": 65,
+      "absolute_error_increased": 0,
+      "absolute_error_decreased": 9,
+      "max_increase_m": 0.0
+    }
+  }
+}

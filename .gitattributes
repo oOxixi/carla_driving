@@ -13,3 +13,11 @@
 # Pin their checkout representation so Linux and Windows validate the same bytes.
 CARLA-Language-Benchmark/datasets/final_benchmark/CARLA_language_benchmark_v1_normalized.json text eol=crlf
 metrics/reference_5070/** text eol=crlf
+
+# Server evidence and signed manifests use LF on every checkout. The archived
+# Git patch has unified-diff context lines where leading spaces are significant.
+submission/project_summary/closure/** text eol=lf
+submission/project_summary/a3_history/robust_v3_training/** text eol=lf
+submission/project_summary/b1/governed_release_manifest.json text eol=lf
+submission/project_summary/voice/manifests/** text eol=lf
+experiments/server_main_optimization_20261028/source.patch text eol=lf -whitespace

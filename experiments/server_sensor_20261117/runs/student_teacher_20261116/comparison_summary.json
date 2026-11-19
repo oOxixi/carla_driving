@@ -1,0 +1,500 @@
+{
+  "40m_base": {
+    "case": "40m",
+    "model": "base",
+    "scenario_id": "EXPERIMENT_TEMPORAL_40M",
+    "frame": 3643384,
+    "frames": 150,
+    "status": "FAILED",
+    "completion": false,
+    "collisions": 0,
+    "safety_override_frames": 130,
+    "min_gap_m": null,
+    "terminal": {
+      "qwen-wait-83fc6d93fdc047e0a95b480f5a0cdae9": "SAFETY_OVERRIDE",
+      "scenario_cmd_000": "REJECTED"
+    },
+    "disposition": "REJECTED",
+    "reason": "SEMANTIC_LOW_TARGET_CONFIDENCE",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_grounding": {
+      "abstained": false,
+      "raw_choice": "B",
+      "selection_source": "MODEL_VISUAL",
+      "target_id": "C-0002"
+    },
+    "target_expected": "lead_target",
+    "target_verdict": "与其他车辆投影吻合",
+    "target_evidence": "匹配 相邻车道干扰车，IoU 0.791；预期 预期前车",
+    "projection_iou": {
+      "distractor_adjacent": 0.791,
+      "distractor_far": 0.0,
+      "lead_target": 0.018
+    },
+    "failed_checks": [
+      "min_front_gap_m"
+    ],
+    "checks": [
+      {
+        "actual": true,
+        "detail": "requires logs_generated",
+        "key": "must_generate_logs",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": null,
+        "detail": "min_gap_m must be >= expected minimum",
+        "key": "min_front_gap_m",
+        "required": 2.5,
+        "status": "FAIL"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": [
+          "vehicle"
+        ],
+        "detail": "all declared safety-critical actor types must be physically spawned",
+        "key": "required_real_actor_types",
+        "required": [
+          "vehicle"
+        ],
+        "status": "PASS"
+      },
+      {
+        "actual": 130,
+        "detail": "permission only; takeover is not required",
+        "key": "expected_safety_override_allowed",
+        "required": "allowed",
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "applied final controls must never overlap throttle and brake",
+        "key": "final_control_no_throttle_brake_overlap",
+        "required": 0,
+        "status": "PASS"
+      }
+    ],
+    "definition": "同帧检测框与模拟车辆三维框投影的 IoU 仅是事后近似核查；多车同时重叠不判定身份。"
+  },
+  "40m_student": {
+    "case": "40m",
+    "model": "student",
+    "scenario_id": "EXPERIMENT_TEMPORAL_40M",
+    "frame": 3645068,
+    "frames": 150,
+    "status": "FAILED",
+    "completion": false,
+    "collisions": 0,
+    "safety_override_frames": 131,
+    "min_gap_m": null,
+    "terminal": {
+      "qwen-wait-8dd793cb81d149ae80f4275eb211b326": "SAFETY_OVERRIDE",
+      "scenario_cmd_000": "REJECTED"
+    },
+    "disposition": "REJECTED",
+    "reason": "SEMANTIC_LOW_TARGET_CONFIDENCE",
+    "model_id": "student-v0-r3-fp32",
+    "model_grounding": {
+      "target_id": "C-0001"
+    },
+    "target_expected": "lead_target",
+    "target_verdict": "遮挡重叠，无法判断",
+    "target_evidence": "检测框与多辆车的投影 IoU 均不低于 0.3",
+    "projection_iou": {
+      "distractor_adjacent": 0.076,
+      "distractor_far": 0.464,
+      "lead_target": 0.784
+    },
+    "failed_checks": [
+      "min_front_gap_m"
+    ],
+    "checks": [
+      {
+        "actual": true,
+        "detail": "requires logs_generated",
+        "key": "must_generate_logs",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": null,
+        "detail": "min_gap_m must be >= expected minimum",
+        "key": "min_front_gap_m",
+        "required": 2.5,
+        "status": "FAIL"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": [
+          "vehicle"
+        ],
+        "detail": "all declared safety-critical actor types must be physically spawned",
+        "key": "required_real_actor_types",
+        "required": [
+          "vehicle"
+        ],
+        "status": "PASS"
+      },
+      {
+        "actual": 131,
+        "detail": "permission only; takeover is not required",
+        "key": "expected_safety_override_allowed",
+        "required": "allowed",
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "applied final controls must never overlap throttle and brake",
+        "key": "final_control_no_throttle_brake_overlap",
+        "required": 0,
+        "status": "PASS"
+      }
+    ],
+    "definition": "同帧检测框与模拟车辆三维框投影的 IoU 仅是事后近似核查；多车同时重叠不判定身份。"
+  },
+  "60m_base": {
+    "case": "60m",
+    "model": "base",
+    "scenario_id": "EXPERIMENT_TEMPORAL_60M",
+    "frame": 3646756,
+    "frames": 150,
+    "status": "FAILED",
+    "completion": false,
+    "collisions": 0,
+    "safety_override_frames": 61,
+    "min_gap_m": null,
+    "terminal": {
+      "qwen-wait-0f73864a688f4f59abbabe9881b3f567": "SAFETY_OVERRIDE",
+      "scenario_cmd_000": "REJECTED"
+    },
+    "disposition": "REJECTED",
+    "reason": "SEMANTIC_LOW_TARGET_CONFIDENCE",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_grounding": {
+      "abstained": false,
+      "raw_choice": "B",
+      "selection_source": "MODEL_VISUAL",
+      "target_id": "C-0002"
+    },
+    "target_expected": "lead_target",
+    "target_verdict": "与预期目标投影吻合",
+    "target_evidence": "匹配 预期前车，IoU 0.703；预期 预期前车",
+    "projection_iou": {
+      "distractor_adjacent": 0.118,
+      "distractor_far": 0.11,
+      "lead_target": 0.703
+    },
+    "failed_checks": [
+      "min_front_gap_m"
+    ],
+    "checks": [
+      {
+        "actual": true,
+        "detail": "requires logs_generated",
+        "key": "must_generate_logs",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": null,
+        "detail": "min_gap_m must be >= expected minimum",
+        "key": "min_front_gap_m",
+        "required": 2.5,
+        "status": "FAIL"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": [
+          "vehicle"
+        ],
+        "detail": "all declared safety-critical actor types must be physically spawned",
+        "key": "required_real_actor_types",
+        "required": [
+          "vehicle"
+        ],
+        "status": "PASS"
+      },
+      {
+        "actual": 61,
+        "detail": "permission only; takeover is not required",
+        "key": "expected_safety_override_allowed",
+        "required": "allowed",
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "applied final controls must never overlap throttle and brake",
+        "key": "final_control_no_throttle_brake_overlap",
+        "required": 0,
+        "status": "PASS"
+      }
+    ],
+    "definition": "同帧检测框与模拟车辆三维框投影的 IoU 仅是事后近似核查；多车同时重叠不判定身份。"
+  },
+  "60m_student": {
+    "case": "60m",
+    "model": "student",
+    "scenario_id": "EXPERIMENT_TEMPORAL_60M",
+    "frame": 3648261,
+    "frames": 150,
+    "status": "FAILED",
+    "completion": false,
+    "collisions": 0,
+    "safety_override_frames": 59,
+    "min_gap_m": null,
+    "terminal": {
+      "qwen-wait-b350e7c0101f4745adbf4bb179e3d50c": "SAFETY_OVERRIDE",
+      "scenario_cmd_000": "REJECTED"
+    },
+    "disposition": "REJECTED",
+    "reason": "SEMANTIC_LOW_TARGET_CONFIDENCE",
+    "model_id": "student-v0-r3-fp32",
+    "model_grounding": {
+      "target_id": "C-0005"
+    },
+    "target_expected": "lead_target",
+    "target_verdict": "与其他车辆投影吻合",
+    "target_evidence": "匹配 相邻车道干扰车，IoU 0.697；预期 预期前车",
+    "projection_iou": {
+      "distractor_adjacent": 0.697,
+      "distractor_far": 0.0,
+      "lead_target": 0.057
+    },
+    "failed_checks": [
+      "min_front_gap_m"
+    ],
+    "checks": [
+      {
+        "actual": true,
+        "detail": "requires logs_generated",
+        "key": "must_generate_logs",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": null,
+        "detail": "min_gap_m must be >= expected minimum",
+        "key": "min_front_gap_m",
+        "required": 2.5,
+        "status": "FAIL"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": [
+          "vehicle"
+        ],
+        "detail": "all declared safety-critical actor types must be physically spawned",
+        "key": "required_real_actor_types",
+        "required": [
+          "vehicle"
+        ],
+        "status": "PASS"
+      },
+      {
+        "actual": 59,
+        "detail": "permission only; takeover is not required",
+        "key": "expected_safety_override_allowed",
+        "required": "allowed",
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "applied final controls must never overlap throttle and brake",
+        "key": "final_control_no_throttle_brake_overlap",
+        "required": 0,
+        "status": "PASS"
+      }
+    ],
+    "definition": "同帧检测框与模拟车辆三维框投影的 IoU 仅是事后近似核查；多车同时重叠不判定身份。"
+  },
+  "occlusion_base": {
+    "case": "occlusion",
+    "model": "base",
+    "scenario_id": "EXPERIMENT_CROP_OCCLUSION",
+    "frame": 3649782,
+    "frames": 150,
+    "status": "FAILED",
+    "completion": false,
+    "collisions": 0,
+    "safety_override_frames": 27,
+    "min_gap_m": null,
+    "terminal": {
+      "qwen-wait-12b0b7301d6f43858baad5f7049e96bd": "FAILED",
+      "scenario_cmd_000": "REJECTED"
+    },
+    "disposition": "REJECTED",
+    "reason": "QWEN_LOW_CONFIDENCE",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "model_grounding": {
+      "abstained": true,
+      "raw_choice": "Z",
+      "selection_source": "NONE",
+      "target_id": null
+    },
+    "target_expected": "occluder_near",
+    "target_verdict": "模型未选择目标",
+    "target_evidence": "无有效候选或模型未选择",
+    "projection_iou": {},
+    "failed_checks": [
+      "min_front_gap_m"
+    ],
+    "checks": [
+      {
+        "actual": true,
+        "detail": "requires logs_generated",
+        "key": "must_generate_logs",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": null,
+        "detail": "min_gap_m must be >= expected minimum",
+        "key": "min_front_gap_m",
+        "required": 2.5,
+        "status": "FAIL"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": [
+          "vehicle"
+        ],
+        "detail": "all declared safety-critical actor types must be physically spawned",
+        "key": "required_real_actor_types",
+        "required": [
+          "vehicle"
+        ],
+        "status": "PASS"
+      },
+      {
+        "actual": 27,
+        "detail": "permission only; takeover is not required",
+        "key": "expected_safety_override_allowed",
+        "required": "allowed",
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "applied final controls must never overlap throttle and brake",
+        "key": "final_control_no_throttle_brake_overlap",
+        "required": 0,
+        "status": "PASS"
+      }
+    ],
+    "definition": "同帧检测框与模拟车辆三维框投影的 IoU 仅是事后近似核查；多车同时重叠不判定身份。"
+  },
+  "occlusion_student": {
+    "case": "occlusion",
+    "model": "student",
+    "scenario_id": "EXPERIMENT_CROP_OCCLUSION",
+    "frame": 3651370,
+    "frames": 150,
+    "status": "FAILED",
+    "completion": false,
+    "collisions": 0,
+    "safety_override_frames": 15,
+    "min_gap_m": null,
+    "terminal": {
+      "qwen-wait-2362559fe47e4a17b6200d4fd55cdcc0": "FAILED",
+      "scenario_cmd_000": "REJECTED"
+    },
+    "disposition": "REJECTED",
+    "reason": "SEMANTIC_LOW_TARGET_CONFIDENCE",
+    "model_id": "student-v0-r3-fp32",
+    "model_grounding": {
+      "target_id": "C-0009"
+    },
+    "target_expected": "occluder_near",
+    "target_verdict": "与其他车辆投影吻合",
+    "target_evidence": "匹配 相邻车道干扰车，IoU 0.637；预期 近处遮挡车",
+    "projection_iou": {
+      "distractor_far": 0.0,
+      "distractor_adjacent": 0.637,
+      "lead_target": 0.065,
+      "occluder_near": 0.066
+    },
+    "failed_checks": [
+      "min_front_gap_m"
+    ],
+    "checks": [
+      {
+        "actual": true,
+        "detail": "requires logs_generated",
+        "key": "must_generate_logs",
+        "required": true,
+        "status": "PASS"
+      },
+      {
+        "actual": null,
+        "detail": "min_gap_m must be >= expected minimum",
+        "key": "min_front_gap_m",
+        "required": 2.5,
+        "status": "FAIL"
+      },
+      {
+        "actual": 0,
+        "detail": "collision_count must be zero",
+        "key": "must_no_collision",
+        "required": 0,
+        "status": "PASS"
+      },
+      {
+        "actual": [
+          "vehicle"
+        ],
+        "detail": "all declared safety-critical actor types must be physically spawned",
+        "key": "required_real_actor_types",
+        "required": [
+          "vehicle"
+        ],
+        "status": "PASS"
+      },
+      {
+        "actual": 15,
+        "detail": "permission only; takeover is not required",
+        "key": "expected_safety_override_allowed",
+        "required": "allowed",
+        "status": "PASS"
+      },
+      {
+        "actual": 0,
+        "detail": "applied final controls must never overlap throttle and brake",
+        "key": "final_control_no_throttle_brake_overlap",
+        "required": 0,
+        "status": "PASS"
+      }
+    ],
+    "definition": "同帧检测框与模拟车辆三维框投影的 IoU 仅是事后近似核查；多车同时重叠不判定身份。"
+  }
+}

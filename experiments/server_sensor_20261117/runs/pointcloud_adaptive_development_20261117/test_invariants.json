@@ -1,0 +1,6 @@
+{
+  "cluster_parity": true,
+  "depth_separation_synthetic": true,
+  "geometry_rejected_unknown_no_assigned": true,
+  "precluster_unchanged": true
+}

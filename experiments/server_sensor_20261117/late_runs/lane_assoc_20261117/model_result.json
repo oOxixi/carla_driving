@@ -1,0 +1,189 @@
+{
+  "frame": 42626,
+  "candidate_ids": [
+    "C-0002"
+  ],
+  "note": "one sensor-generated candidate only; offline probe, no control; safety acceptance not checked",
+  "request_common": {
+    "schema_version": "1.0",
+    "request_id": "laneassoc-frame-42626",
+    "command_id": "laneassoc-follow",
+    "created_at_ns": 3015901693811361,
+    "deadline_ns": 3015931693811361,
+    "source_text": "跟随最近的同车道正前方车辆，不要跟相邻车道或远处车辆",
+    "rgb_ref": "artifacts/runtime/lane_assoc_20261117/model_input.jpg",
+    "command_hint": {
+      "intent": "FOLLOW",
+      "target_speed_mps": 5.0,
+      "direction": null,
+      "target": null
+    },
+    "scene_summary": {
+      "frame_id": 42626,
+      "sim_time_s": 249.44352520955727,
+      "traffic_light": "UNKNOWN",
+      "risk_level": "UNKNOWN",
+      "min_gap_m": null,
+      "ttc_s": null
+    },
+    "constraints": {
+      "allowed_behaviors": [
+        "STOP",
+        "FOLLOW"
+      ],
+      "speed_limit_mps": null,
+      "max_target_speed_mps": 5.0,
+      "must_stop": false
+    },
+    "scene_capabilities": {
+      "current_lane": "-2",
+      "available_lanes": [
+        "CURRENT",
+        "LEFT_ADJACENT",
+        "RIGHT_ADJACENT"
+      ],
+      "left_lane_exists": true,
+      "right_lane_exists": true,
+      "left_gap_safe": false,
+      "right_gap_safe": false,
+      "route_available": false,
+      "intersection_ahead": false,
+      "stop_line_clear": false
+    },
+    "routing": {
+      "disposition": "QWEN_PLAN",
+      "score": 2,
+      "reasons": [
+        "COMPLEX_MANEUVER"
+      ],
+      "safe_wait_behavior": "STOP"
+    },
+    "targets": [
+      {
+        "target_id": "C-0002",
+        "class": "vehicle",
+        "confidence": 0.626,
+        "distance_m": 21.73,
+        "relation": "center_ahead",
+        "relative_speed_mps": null
+      }
+    ]
+  },
+  "student": {
+    "behavior": "FOLLOW",
+    "target_id": "C-0002",
+    "confidence": 0.8130324482917786,
+    "requires_confirmation": false,
+    "raw_pointer_top": 0,
+    "raw_pointer_scores": [
+      4.771,
+      -3.4164,
+      -1.222,
+      -6.6733,
+      -7.4071,
+      -6.2924,
+      -6.8447,
+      -6.6457,
+      -0.1501
+    ],
+    "pass": true,
+    "production_ready": false,
+    "plan": {
+      "schema_version": "2.0",
+      "request_id": "laneassoc-frame-42626",
+      "command_id": "laneassoc-follow",
+      "plan_id": "student-laneassoc-frame-42626-6fafb5246615",
+      "plan_type": "MANEUVER_SEQUENCE",
+      "steps": [
+        {
+          "step_id": "step-1",
+          "behavior": "FOLLOW",
+          "target": {
+            "target_id": "C-0002",
+            "target_lane": null,
+            "target_speed_mps": 4.000317573547363,
+            "time_gap_s": 2.0,
+            "route_direction": null
+          },
+          "preconditions": [
+            "PERCEPTION_FRESH",
+            "NO_EMERGENCY_RISK",
+            "TARGET_VISIBLE"
+          ],
+          "completion": {
+            "type": "TARGET_GAP_REACHED",
+            "value": 5.0,
+            "lane": null,
+            "hold_frames": 3
+          },
+          "timeout_s": 10.0,
+          "on_failure": "SAFE_STOP"
+        }
+      ],
+      "replan_conditions": [
+        "NEW_EMERGENCY_OBJECT",
+        "ROUTE_DEVIATION"
+      ],
+      "confidence": 0.8130324482917786,
+      "requires_confirmation": false,
+      "created_at_ns": 3015901693811361,
+      "valid_until_ns": 3015931693811361,
+      "reason_code": "STUDENT_V0_STRUCTURED",
+      "model_id": "student-v0-r3-fp32"
+    }
+  },
+  "teacher": {
+    "behavior": "HOLD",
+    "target_id": null,
+    "raw_choice": "Z",
+    "abstained": true,
+    "pass": false,
+    "plan": {
+      "schema_version": "2.0",
+      "request_id": "laneassoc-frame-42626",
+      "command_id": "laneassoc-follow",
+      "plan_id": "plan-laneassoc-frame-42626",
+      "plan_type": "MANEUVER_SEQUENCE",
+      "steps": [
+        {
+          "step_id": "step-1",
+          "behavior": "HOLD",
+          "target": {
+            "target_id": null,
+            "target_lane": "CURRENT",
+            "target_speed_mps": 0.0,
+            "time_gap_s": null,
+            "route_direction": null
+          },
+          "preconditions": [
+            "PERCEPTION_FRESH"
+          ],
+          "completion": {
+            "type": "HOLD_FRAMES",
+            "value": null,
+            "lane": null,
+            "hold_frames": 3
+          },
+          "timeout_s": 8.0,
+          "on_failure": "SAFE_STOP"
+        }
+      ],
+      "replan_conditions": [
+        "NEW_EMERGENCY_OBJECT",
+        "ROUTE_DEVIATION"
+      ],
+      "confidence": 0.9,
+      "requires_confirmation": true,
+      "model_grounding": {
+        "raw_choice": "Z",
+        "selection_source": "NONE",
+        "target_id": null,
+        "abstained": true
+      },
+      "created_at_ns": 3015901693811361,
+      "valid_until_ns": 3015931693811361,
+      "reason_code": "QWEN_VLLM_CHOICE_Z_HOLD",
+      "model_id": "Qwen/Qwen3.5-2B"
+    }
+  }
+}

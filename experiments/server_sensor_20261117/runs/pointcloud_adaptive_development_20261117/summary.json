@@ -1,0 +1,1112 @@
+{
+  "final": {
+    "dev": {
+      "Baseline": {
+        "frames": 24,
+        "expected": 39,
+        "matched": 22,
+        "located": 4,
+        "points": {
+          "target": 16,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 16,
+        "recall_denominator": 161,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 22,
+        "error_count": 4,
+        "abs_error_p50_p95_max": [
+          0.11808533894400242,
+          0.21739747967755993,
+          0.2245806931480061
+        ],
+        "latency_p50_p95_max_ms": [
+          12.0401995,
+          20.250613699999995,
+          22.779048
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 17,
+          "ONE_SELECTED_CLUSTER": 4,
+          "INSUFFICIENT_LIDAR_POINTS": 1
+        }
+      },
+      "V1": {
+        "frames": 24,
+        "expected": 39,
+        "matched": 22,
+        "located": 12,
+        "points": {
+          "target": 79,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 79,
+        "recall_denominator": 161,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 22,
+        "error_count": 12,
+        "abs_error_p50_p95_max": [
+          0.08521458536495885,
+          0.3012323014351622,
+          0.3018140429907703
+        ],
+        "latency_p50_p95_max_ms": [
+          12.8116855,
+          20.0764597,
+          20.927013
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 12,
+          "NO_PLAUSIBLE_CLUSTER": 9,
+          "INSUFFICIENT_LIDAR_POINTS": 1
+        }
+      },
+      "V2": {
+        "frames": 24,
+        "expected": 39,
+        "matched": 22,
+        "located": 12,
+        "points": {
+          "target": 75,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 75,
+        "recall_denominator": 161,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 22,
+        "error_count": 12,
+        "abs_error_p50_p95_max": [
+          0.08521458536495885,
+          0.3012323014351622,
+          0.3018140429907703
+        ],
+        "latency_p50_p95_max_ms": [
+          12.2259165,
+          27.37126144999999,
+          32.347454
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 12,
+          "NO_PLAUSIBLE_CLUSTER": 9,
+          "INSUFFICIENT_LIDAR_POINTS": 1
+        }
+      },
+      "V3": {
+        "frames": 24,
+        "expected": 39,
+        "matched": 22,
+        "located": 12,
+        "points": {
+          "target": 75,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 75,
+        "recall_denominator": 161,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 22,
+        "error_count": 12,
+        "abs_error_p50_p95_max": [
+          0.08521458536495885,
+          0.3012323014351622,
+          0.3018140429907703
+        ],
+        "latency_p50_p95_max_ms": [
+          12.687103,
+          25.20473549999999,
+          32.863916
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 12,
+          "NO_PLAUSIBLE_CLUSTER": 9,
+          "INSUFFICIENT_LIDAR_POINTS": 1
+        }
+      },
+      "fixed_1.20": {
+        "frames": 24,
+        "expected": 39,
+        "matched": 22,
+        "located": 13,
+        "points": {
+          "target": 97,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 97,
+        "recall_denominator": 161,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 22,
+        "error_count": 13,
+        "abs_error_p50_p95_max": [
+          0.08736554057561108,
+          0.3011794158391979,
+          0.3018140429907703
+        ],
+        "latency_p50_p95_max_ms": [
+          12.348852,
+          20.590283299999996,
+          33.581492
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 13,
+          "NO_PLAUSIBLE_CLUSTER": 8,
+          "INSUFFICIENT_LIDAR_POINTS": 1
+        }
+      }
+    },
+    "oldA": {
+      "Baseline": {
+        "frames": 50,
+        "expected": 150,
+        "matched": 140,
+        "located": 0,
+        "points": {
+          "target": 0,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": null,
+        "recall_numerator": 0,
+        "recall_denominator": 418,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 140,
+        "error_count": 0,
+        "abs_error_p50_p95_max": null,
+        "latency_p50_p95_max_ms": [
+          27.429715,
+          36.3259894,
+          46.321745
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 94,
+          "INSUFFICIENT_LIDAR_POINTS": 46
+        }
+      },
+      "V1": {
+        "frames": 50,
+        "expected": 150,
+        "matched": 140,
+        "located": 48,
+        "points": {
+          "target": 178,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 178,
+        "recall_denominator": 418,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 140,
+        "error_count": 48,
+        "abs_error_p50_p95_max": [
+          0.1448460523163817,
+          0.30295391781648107,
+          0.46190003828976955
+        ],
+        "latency_p50_p95_max_ms": [
+          28.6499285,
+          46.30851995,
+          48.298248
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 46,
+          "ONE_SELECTED_CLUSTER": 48,
+          "INSUFFICIENT_LIDAR_POINTS": 46
+        }
+      },
+      "V2": {
+        "frames": 50,
+        "expected": 150,
+        "matched": 140,
+        "located": 15,
+        "points": {
+          "target": 48,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 48,
+        "recall_denominator": 418,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 140,
+        "error_count": 15,
+        "abs_error_p50_p95_max": [
+          0.12640680821210282,
+          0.1884492467051615,
+          0.1884492467051615
+        ],
+        "latency_p50_p95_max_ms": [
+          28.155279999999998,
+          40.30424314999999,
+          46.372639
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 79,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "ONE_SELECTED_CLUSTER": 15
+        }
+      },
+      "V3": {
+        "frames": 50,
+        "expected": 150,
+        "matched": 140,
+        "located": 15,
+        "points": {
+          "target": 48,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 48,
+        "recall_denominator": 418,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 140,
+        "error_count": 15,
+        "abs_error_p50_p95_max": [
+          0.12640680821210282,
+          0.1884492467051615,
+          0.1884492467051615
+        ],
+        "latency_p50_p95_max_ms": [
+          27.61773,
+          40.0371883,
+          43.241136
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 79,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "ONE_SELECTED_CLUSTER": 15
+        }
+      },
+      "fixed_1.20": {
+        "frames": 50,
+        "expected": 150,
+        "matched": 140,
+        "located": 68,
+        "points": {
+          "target": 250,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 250,
+        "recall_denominator": 418,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 140,
+        "error_count": 68,
+        "abs_error_p50_p95_max": [
+          0.15399649477570776,
+          0.33996100402569446,
+          0.46190003828976955
+        ],
+        "latency_p50_p95_max_ms": [
+          28.680793,
+          42.249818999999995,
+          50.583688
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 68,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "NO_PLAUSIBLE_CLUSTER": 26
+        }
+      }
+    },
+    "holdout": {
+      "Baseline": {
+        "frames": 21,
+        "expected": 35,
+        "matched": 10,
+        "located": 1,
+        "points": {
+          "target": 11,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 11,
+        "recall_denominator": 89,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 2,
+        "group_count": 10,
+        "error_count": 1,
+        "abs_error_p50_p95_max": [
+          0.02211140727397165,
+          0.02211140727397165,
+          0.02211140727397165
+        ],
+        "latency_p50_p95_max_ms": [
+          10.993542,
+          18.809459,
+          18.849781
+        ],
+        "reasons": {
+          "MULTIPLE_PLAUSIBLE_CLUSTERS": 2,
+          "NO_PLAUSIBLE_CLUSTER": 7,
+          "ONE_SELECTED_CLUSTER": 1
+        }
+      },
+      "V1": {
+        "frames": 21,
+        "expected": 35,
+        "matched": 10,
+        "located": 4,
+        "points": {
+          "target": 46,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 46,
+        "recall_denominator": 89,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 10,
+        "error_count": 4,
+        "abs_error_p50_p95_max": [
+          0.01680891828149278,
+          0.2624441986094358,
+          0.3048558676686355
+        ],
+        "latency_p50_p95_max_ms": [
+          9.685389,
+          15.440993,
+          20.634772
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 4,
+          "NO_PLAUSIBLE_CLUSTER": 6
+        }
+      },
+      "V2": {
+        "frames": 21,
+        "expected": 35,
+        "matched": 10,
+        "located": 4,
+        "points": {
+          "target": 38,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 38,
+        "recall_denominator": 89,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 10,
+        "error_count": 4,
+        "abs_error_p50_p95_max": [
+          0.01680891828149278,
+          0.2624441986094358,
+          0.3048558676686355
+        ],
+        "latency_p50_p95_max_ms": [
+          7.138099,
+          16.799936,
+          19.350668
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 4,
+          "NO_PLAUSIBLE_CLUSTER": 6
+        }
+      },
+      "V3": {
+        "frames": 21,
+        "expected": 35,
+        "matched": 10,
+        "located": 4,
+        "points": {
+          "target": 38,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 38,
+        "recall_denominator": 89,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 10,
+        "error_count": 4,
+        "abs_error_p50_p95_max": [
+          0.01680891828149278,
+          0.2624441986094358,
+          0.3048558676686355
+        ],
+        "latency_p50_p95_max_ms": [
+          12.161536,
+          16.269593,
+          19.673736
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 4,
+          "NO_PLAUSIBLE_CLUSTER": 6
+        }
+      },
+      "fixed_1.20": {
+        "frames": 21,
+        "expected": 35,
+        "matched": 10,
+        "located": 7,
+        "points": {
+          "target": 77,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 77,
+        "recall_denominator": 89,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 10,
+        "error_count": 7,
+        "abs_error_p50_p95_max": [
+          0.07391167438201407,
+          0.26254411415163675,
+          0.3048558676686355
+        ],
+        "latency_p50_p95_max_ms": [
+          12.608411,
+          24.409531,
+          25.714084
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 7,
+          "NO_PLAUSIBLE_CLUSTER": 3
+        }
+      }
+    }
+  },
+  "alpha_scans": {
+    "dev": {
+      "R0": {
+        "frames": 24,
+        "expected": 39,
+        "matched": 22,
+        "located": 4,
+        "points": {
+          "target": 16,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 16,
+        "recall_denominator": 161,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 22,
+        "error_count": 4,
+        "abs_error_p50_p95_max": [
+          0.11808533894400242,
+          0.21739747967755993,
+          0.2245806931480061
+        ],
+        "latency_p50_p95_max_ms": [
+          15.098774500000001,
+          23.00923065,
+          23.151569
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 17,
+          "ONE_SELECTED_CLUSTER": 4,
+          "INSUFFICIENT_LIDAR_POINTS": 1
+        }
+      },
+      "alpha_1.1": {
+        "frames": 24,
+        "expected": 39,
+        "matched": 22,
+        "located": 7,
+        "points": {
+          "target": 29,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 29,
+        "recall_denominator": 161,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 1,
+        "group_count": 22,
+        "error_count": 7,
+        "abs_error_p50_p95_max": [
+          0.14236833771488477,
+          0.2878427031532503,
+          0.3018140429907703
+        ],
+        "latency_p50_p95_max_ms": [
+          15.283825499999999,
+          23.57901475,
+          48.27
+        ],
+        "reasons": {
+          "MULTIPLE_PLAUSIBLE_CLUSTERS": 1,
+          "NO_PLAUSIBLE_CLUSTER": 13,
+          "ONE_SELECTED_CLUSTER": 7,
+          "INSUFFICIENT_LIDAR_POINTS": 1
+        }
+      },
+      "alpha_1.2": {
+        "frames": 24,
+        "expected": 39,
+        "matched": 22,
+        "located": 9,
+        "points": {
+          "target": 43,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 43,
+        "recall_denominator": 161,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 1,
+        "group_count": 22,
+        "error_count": 9,
+        "abs_error_p50_p95_max": [
+          0.20539622351913067,
+          0.34569469989966845,
+          0.37494847117226726
+        ],
+        "latency_p50_p95_max_ms": [
+          15.518368500000001,
+          23.05323285,
+          24.479109
+        ],
+        "reasons": {
+          "MULTIPLE_PLAUSIBLE_CLUSTERS": 1,
+          "NO_PLAUSIBLE_CLUSTER": 11,
+          "ONE_SELECTED_CLUSTER": 9,
+          "INSUFFICIENT_LIDAR_POINTS": 1
+        }
+      },
+      "alpha_1.3": {
+        "frames": 24,
+        "expected": 39,
+        "matched": 22,
+        "located": 10,
+        "points": {
+          "target": 59,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 59,
+        "recall_denominator": 161,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 1,
+        "group_count": 22,
+        "error_count": 10,
+        "abs_error_p50_p95_max": [
+          0.2149884583335684,
+          0.301338072627091,
+          0.3018140429907703
+        ],
+        "latency_p50_p95_max_ms": [
+          15.668268000000001,
+          25.701175699999993,
+          50.680536
+        ],
+        "reasons": {
+          "MULTIPLE_PLAUSIBLE_CLUSTERS": 1,
+          "NO_PLAUSIBLE_CLUSTER": 10,
+          "ONE_SELECTED_CLUSTER": 10,
+          "INSUFFICIENT_LIDAR_POINTS": 1
+        }
+      },
+      "alpha_1.4": {
+        "frames": 24,
+        "expected": 39,
+        "matched": 22,
+        "located": 12,
+        "points": {
+          "target": 75,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 75,
+        "recall_denominator": 161,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 22,
+        "error_count": 12,
+        "abs_error_p50_p95_max": [
+          0.08521458536495885,
+          0.3012323014351622,
+          0.3018140429907703
+        ],
+        "latency_p50_p95_max_ms": [
+          15.3479355,
+          24.804667599999995,
+          50.67058
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 12,
+          "NO_PLAUSIBLE_CLUSTER": 9,
+          "INSUFFICIENT_LIDAR_POINTS": 1
+        }
+      },
+      "alpha_1.5": {
+        "frames": 24,
+        "expected": 39,
+        "matched": 22,
+        "located": 12,
+        "points": {
+          "target": 79,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 79,
+        "recall_denominator": 161,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 22,
+        "error_count": 12,
+        "abs_error_p50_p95_max": [
+          0.08521458536495885,
+          0.3012323014351622,
+          0.3018140429907703
+        ],
+        "latency_p50_p95_max_ms": [
+          15.154224500000002,
+          24.1685232,
+          50.174393
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 12,
+          "NO_PLAUSIBLE_CLUSTER": 9,
+          "INSUFFICIENT_LIDAR_POINTS": 1
+        }
+      },
+      "fixed_1.20": {
+        "frames": 24,
+        "expected": 39,
+        "matched": 22,
+        "located": 13,
+        "points": {
+          "target": 97,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 97,
+        "recall_denominator": 161,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 22,
+        "error_count": 13,
+        "abs_error_p50_p95_max": [
+          0.08736554057561108,
+          0.3011794158391979,
+          0.3018140429907703
+        ],
+        "latency_p50_p95_max_ms": [
+          15.893881,
+          24.507852599999996,
+          48.488231
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 13,
+          "NO_PLAUSIBLE_CLUSTER": 8,
+          "INSUFFICIENT_LIDAR_POINTS": 1
+        }
+      }
+    },
+    "oldA": {
+      "R0": {
+        "frames": 50,
+        "expected": 150,
+        "matched": 140,
+        "located": 0,
+        "points": {
+          "target": 0,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": null,
+        "recall_numerator": 0,
+        "recall_denominator": 418,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 140,
+        "error_count": 0,
+        "abs_error_p50_p95_max": null,
+        "latency_p50_p95_max_ms": [
+          30.0903855,
+          55.81476929999996,
+          66.855492
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 94,
+          "INSUFFICIENT_LIDAR_POINTS": 46
+        }
+      },
+      "alpha_1.1": {
+        "frames": 50,
+        "expected": 150,
+        "matched": 140,
+        "located": 13,
+        "points": {
+          "target": 39,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 39,
+        "recall_denominator": 418,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 140,
+        "error_count": 13,
+        "abs_error_p50_p95_max": [
+          0.12640680821210282,
+          0.15217388367829868,
+          0.16316563072117418
+        ],
+        "latency_p50_p95_max_ms": [
+          29.914682,
+          53.081559899999995,
+          63.904194
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 81,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "ONE_SELECTED_CLUSTER": 13
+        }
+      },
+      "alpha_1.2": {
+        "frames": 50,
+        "expected": 150,
+        "matched": 140,
+        "located": 17,
+        "points": {
+          "target": 51,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 51,
+        "recall_denominator": 418,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 140,
+        "error_count": 17,
+        "abs_error_p50_p95_max": [
+          0.1263932738471567,
+          0.14850996799734018,
+          0.16316563072117418
+        ],
+        "latency_p50_p95_max_ms": [
+          30.437634,
+          49.263563449999964,
+          62.866409
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 77,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "ONE_SELECTED_CLUSTER": 17
+        }
+      },
+      "alpha_1.3": {
+        "frames": 50,
+        "expected": 150,
+        "matched": 140,
+        "located": 17,
+        "points": {
+          "target": 52,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 52,
+        "recall_denominator": 418,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 140,
+        "error_count": 17,
+        "abs_error_p50_p95_max": [
+          0.1263932738471567,
+          0.14850996799734018,
+          0.16316563072117418
+        ],
+        "latency_p50_p95_max_ms": [
+          29.9831565,
+          47.92159179999996,
+          63.404776
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 77,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "ONE_SELECTED_CLUSTER": 17
+        }
+      },
+      "alpha_1.4": {
+        "frames": 50,
+        "expected": 150,
+        "matched": 140,
+        "located": 30,
+        "points": {
+          "target": 100,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 100,
+        "recall_denominator": 418,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 140,
+        "error_count": 30,
+        "abs_error_p50_p95_max": [
+          0.1448460523163817,
+          0.6925015582534357,
+          0.6925020205788712
+        ],
+        "latency_p50_p95_max_ms": [
+          30.5404355,
+          46.41809634999998,
+          64.830273
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 64,
+          "ONE_SELECTED_CLUSTER": 30,
+          "INSUFFICIENT_LIDAR_POINTS": 46
+        }
+      },
+      "alpha_1.5": {
+        "frames": 50,
+        "expected": 150,
+        "matched": 140,
+        "located": 48,
+        "points": {
+          "target": 178,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 178,
+        "recall_denominator": 418,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 140,
+        "error_count": 48,
+        "abs_error_p50_p95_max": [
+          0.1448460523163817,
+          0.30295391781648107,
+          0.46190003828976955
+        ],
+        "latency_p50_p95_max_ms": [
+          30.6612955,
+          46.09517029999998,
+          64.930785
+        ],
+        "reasons": {
+          "NO_PLAUSIBLE_CLUSTER": 46,
+          "ONE_SELECTED_CLUSTER": 48,
+          "INSUFFICIENT_LIDAR_POINTS": 46
+        }
+      },
+      "fixed_1.20": {
+        "frames": 50,
+        "expected": 150,
+        "matched": 140,
+        "located": 68,
+        "points": {
+          "target": 250,
+          "other_vehicle": 0,
+          "background": 0,
+          "unmatched_semantic": 0
+        },
+        "precision": 1.0,
+        "recall_numerator": 250,
+        "recall_denominator": 418,
+        "candidate_multi_vehicle": 0,
+        "candidate_target_background": 0,
+        "candidate_unmatched_semantic": 0,
+        "merged_detection_groups": 0,
+        "ambiguity_groups": 0,
+        "group_count": 140,
+        "error_count": 68,
+        "abs_error_p50_p95_max": [
+          0.15399649477570776,
+          0.33996100402569446,
+          0.46190003828976955
+        ],
+        "latency_p50_p95_max_ms": [
+          30.786961499999997,
+          47.92330085,
+          65.988592
+        ],
+        "reasons": {
+          "ONE_SELECTED_CLUSTER": 68,
+          "INSUFFICIENT_LIDAR_POINTS": 46,
+          "NO_PLAUSIBLE_CLUSTER": 26
+        }
+      }
+    }
+  },
+  "stress_frames": 36,
+  "stress_by_variant": {
+    "Baseline": {
+      "selected": 27,
+      "selected_multi": 0,
+      "selected_background": 0,
+      "geometry_rejections": 0
+    },
+    "V1": {
+      "selected": 29,
+      "selected_multi": 0,
+      "selected_background": 0,
+      "geometry_rejections": 0
+    },
+    "V2": {
+      "selected": 28,
+      "selected_multi": 0,
+      "selected_background": 0,
+      "geometry_rejections": 0
+    },
+    "V3": {
+      "selected": 25,
+      "selected_multi": 0,
+      "selected_background": 0,
+      "geometry_rejections": 3
+    },
+    "fixed_1.20": {
+      "selected": 28,
+      "selected_multi": 0,
+      "selected_background": 0,
+      "geometry_rejections": 0
+    }
+  },
+  "interpretation": "Offline prototype; no production deployment; independent validation is too small and negative examples insufficient."
+}

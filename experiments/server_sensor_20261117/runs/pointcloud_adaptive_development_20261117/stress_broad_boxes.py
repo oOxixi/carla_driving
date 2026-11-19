@@ -1,0 +1,21 @@
+"""Separately labelled synthetic detector-failure stress using real saved sensor frames."""
+import json,types,pathlib,numpy as np
+from eval_helpers import ROOT,P,truth_labels,experimental,sample_new
+from tools.pointcloud_p0.replay_io import read
+D=json.loads((ROOT/'depth_profile.json').read_text());G=json.loads((ROOT/'geometry_profile.json').read_text());variants={'Baseline':{},'V1':{'alpha':1.5},'V2':{'alpha':1.5,'depth_profile':D},'V3':{'alpha':1.5,'depth_profile':D,'geometry_profile':G},'fixed_1.20':{'fixed_radius':1.2}};sources=['pointcloud_overlap20_raw_20261117','pointcloud_overlap_sweep_raw_20261117','pointcloud_overlap_focus_raw_20261117','pointcloud_overlap_holdout_raw_20261117'];records=[];input_count=0
+for name in sources:
+ for f in sorted((P/name).glob('*/*/result.json')):
+  d,l,r,rad,ego,objs=read(f.parent);ts=d['sensors']['timestamps'];l.timestamp=float(ts['lidar']);r.timestamp=float(ts['rgb']);rad.timestamp=float(ts['radar']);assert max(l.timestamp,r.timestamp,rad.timestamp)-min(l.timestamp,r.timestamp,rad.timestamp)<=.001;matches={z['id']:z['gt_match']['role'] for z in d['evaluation']['detections'] if z['gt_match']};different={role:next((o for o in objs if matches.get(o.track_id)==role),None) for role in d['evaluation']['gt_actor_ids']};different={k:v for k,v in different.items() if v is not None}
+  if len(different)<2:continue
+  selected=list(different.values())[:2];boxes=[o.bbox_xyxy_norm for o in selected];combined=(min(b[0] for b in boxes),min(b[1] for b in boxes),max(b[2] for b in boxes),max(b[3] for b in boxes));obj=types.SimpleNamespace(track_id='SYNTHETIC_WIDE_BOX',class_name='car',confidence=max(o.confidence for o in selected),bbox_xyxy_norm=combined);sample={'lid':l,'semantic':f.parent/'semantic_lidar.bin','sem_transform':d['semantic_transform']};labels=truth_labels(sample);actors=set(d['evaluation']['gt_actor_ids'].values());input_count+=1
+  for v,kw in variants.items():
+   loc=experimental.localize_groups([obj],l,r,rad,ego,**kw);g=loc['groups'][0];ng=np.asarray(g['nonground_point_indices'],dtype=int);pts=loc['lidar_ego'][ng];multi=0;mix=0;unknown_components=0
+   if len(pts)>=3 and len(pts)<=2500:
+    med=float(np.median(np.linalg.norm(pts[:,:2],axis=1)));eps=g['experimental_epsilon_m'];tau=experimental._limit(kw.get('depth_profile'),med)
+    for component in experimental._depth_components(pts,eps,tau):
+     a=labels[ng[component]];found={int(t) for t in a if t in actors};multi+=int(len(found)>1);mix+=int(bool(found) and any(t not in actors and t!=-1 for t in a));unknown_components+=int(np.any(a==-1))
+   sel=np.asarray(g['selected_point_indices'],dtype=int);a=labels[sel];found={int(t) for t in a if t in actors};bg=sum(t not in actors and t!=-1 for t in a);records.append({'dataset':name,'case':d['case'],'repeat':d['repeat'],'frame':d['frame'],'variant':v,'synthetic_wide_box':list(combined),'original_detection_ids':[o.track_id for o in selected],'candidate_multi_vehicle':multi,'candidate_vehicle_background':mix,'candidate_unscored':unknown_components,'status':g['status'],'reason':g['reason'],'selected_total':len(sel),'selected_vehicle_count':len(found),'selected_cross_vehicle':len(found)>1,'selected_background':int(bg),'selected_unmatched':int(np.sum(a==-1)),'geometry_rejected':g.get('geometry_rejected',[])})
+assert input_count>0 and len(records)==input_count*len(variants)
+(ROOT/'synthetic_wide_box_stress.json').write_text(json.dumps({'definition':'Replace two matched real YOLO boxes by their union and remove the separate detections, imitating a detector failure. Uses actual saved LiDAR and semantic labels. Diagnostic stress only, not natural YOLO performance or independent full pipeline verification.','frames':input_count,'rows':records},indent=2)+'\n')
+for v in variants:
+ z=[x for x in records if x['variant']==v];print(v,'frames',len(z),'located',sum(x['status']=='LOCATED_UNVALIDATED' for x in z),'candidate_multi',sum(x['candidate_multi_vehicle'] for x in z),'candidate_background',sum(x['candidate_vehicle_background'] for x in z),'selected_multi',sum(x['selected_cross_vehicle'] for x in z),'selected_bg_points',sum(x['selected_background'] for x in z),'reasons',__import__('collections').Counter(x['reason'] for x in z))

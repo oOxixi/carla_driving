@@ -1,0 +1,48 @@
+{
+  "selected": {
+    "alpha": 1.5,
+    "coverage": 12,
+    "recall_points": 79,
+    "precision": 1.0,
+    "merged_detection_groups": 0
+  },
+  "ranking": [
+    {
+      "alpha": 1.1,
+      "coverage": 7,
+      "recall_points": 29,
+      "precision": 1.0,
+      "merged_detection_groups": 0
+    },
+    {
+      "alpha": 1.2,
+      "coverage": 9,
+      "recall_points": 43,
+      "precision": 1.0,
+      "merged_detection_groups": 0
+    },
+    {
+      "alpha": 1.3,
+      "coverage": 10,
+      "recall_points": 59,
+      "precision": 1.0,
+      "merged_detection_groups": 0
+    },
+    {
+      "alpha": 1.4,
+      "coverage": 12,
+      "recall_points": 75,
+      "precision": 1.0,
+      "merged_detection_groups": 0
+    },
+    {
+      "alpha": 1.5,
+      "coverage": 12,
+      "recall_points": 79,
+      "precision": 1.0,
+      "merged_detection_groups": 0
+    }
+  ],
+  "rule": "development new scenes only; eligible precision >=99%, no merged matched detection groups; maximize localized expected vehicles, then matched-box point recall numerator, then smaller alpha; oldA and holdout not used for selection",
+  "warning": "exploratory selection, candidate point-level merges separately require audit"
+}

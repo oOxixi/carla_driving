@@ -1,0 +1,47 @@
+{
+  "primary_cases": [
+    [
+      "holdout_extra_250_25",
+      "C-0002"
+    ],
+    [
+      "holdout_250_30",
+      "C-0002"
+    ],
+    [
+      "holdout_extra_250_21",
+      "C-0002"
+    ],
+    [
+      "holdout_extra_250_39",
+      "C-0002"
+    ],
+    [
+      "holdout_extra_250_47",
+      "C-0001"
+    ]
+  ],
+  "baseline": {
+    "tp": 0,
+    "selected": 0,
+    "eligible_target": 42,
+    "conditional_precision": null,
+    "conditional_recall": 0.0,
+    "selected_geometric_candidates": 0,
+    "geometric_clusters": 0,
+    "other_vehicle_mixed_clusters": 0,
+    "trusted_outputs": 0
+  },
+  "exploratory": {
+    "tp": 11,
+    "selected": 11,
+    "eligible_target": 42,
+    "conditional_precision": 1.0,
+    "conditional_recall": 0.2619047619047619,
+    "selected_geometric_candidates": 1,
+    "geometric_clusters": 1,
+    "other_vehicle_mixed_clusters": 0,
+    "trusted_outputs": 0
+  },
+  "formal_scope": "same saved frames; offline YOLO 0.35, tracker, entire localize_groups return; excludes lane, FOLLOW, policy, runtime and dynamic scenarios"
+}

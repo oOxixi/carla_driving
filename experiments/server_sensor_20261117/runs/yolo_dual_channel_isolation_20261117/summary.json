@@ -1,0 +1,20 @@
+{
+  "frames": 21,
+  "targets": 35,
+  "formal_boxes": 10,
+  "auxiliary_boxes": 9,
+  "candidate_matched_automatically": 9,
+  "formal_replay_unchanged_frames": 21,
+  "truth_pure_unambiguous_cluster": 0,
+  "aux_visual_only": 5,
+  "aux_ambiguous": 4,
+  "cross_class_formal_overlap_flags": 2,
+  "manual_reviews_completed": 0,
+  "background_false_positives_confirmed": null,
+  "radar_not_used_for_aux": true,
+  "production_unchanged": true,
+  "formal_protection": "all LiDAR points projecting into any formal detection box withheld, regardless of state, plus all formally ASSIGNED points",
+  "ground_note": "auxiliary localizer refits ground on remaining points; may differ from formal ground model",
+  "mask_note": "CARLA reconstructed instance masks not original frame semantic annotation",
+  "radar_note": "sensor timestamps same for current samples but independent identity and real-time synchronisation not validated; diagnostic only"
+}

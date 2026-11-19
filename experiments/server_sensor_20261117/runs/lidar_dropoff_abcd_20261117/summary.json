@@ -1,0 +1,168 @@
+{
+  "A": {
+    "frame_samples": 50,
+    "target_observations": 150,
+    "matched": 140,
+    "raw_lidar_avg": 5372.04,
+    "target_raw_avg": 3.1466666666666665,
+    "target_raw_minmax": [
+      1,
+      5
+    ],
+    "box_points_avg": 3.3,
+    "nonground_avg": 3.1357142857142857,
+    "largest_component_avg": 1.0357142857142858,
+    "largest_component_counts": {
+      "1": 135,
+      "2": 5
+    },
+    "valid_cluster_total": 0,
+    "located": 0,
+    "failure_reasons": {
+      "NO_PLAUSIBLE_CLUSTER": 94,
+      "INSUFFICIENT_LIDAR_POINTS": 46,
+      "NO_MATCHED_DETECTION": 10
+    },
+    "box_audit": {
+      "target": 418,
+      "other_vehicle": 0,
+      "background": 44,
+      "unmatched": 0
+    },
+    "selected_target": 0,
+    "selected_background": 0,
+    "selected_other_vehicle": 0,
+    "selected_unmatched": 0,
+    "precision": null,
+    "processing_ms_p50_p95": [
+      29.678,
+      62.419599999999974
+    ],
+    "offline_seed_target_avg": 2.82,
+    "offline_seed_located": 0
+  },
+  "B": {
+    "frame_samples": 50,
+    "target_observations": 150,
+    "matched": 140,
+    "raw_lidar_avg": 9756.7,
+    "target_raw_avg": 5.4,
+    "target_raw_minmax": [
+      5,
+      6
+    ],
+    "box_points_avg": 5.714285714285714,
+    "nonground_avg": 5.428571428571429,
+    "largest_component_avg": 1.2857142857142858,
+    "largest_component_counts": {
+      "1": 100,
+      "2": 40
+    },
+    "valid_cluster_total": 0,
+    "located": 0,
+    "failure_reasons": {
+      "NO_PLAUSIBLE_CLUSTER": 140,
+      "NO_MATCHED_DETECTION": 10
+    },
+    "box_audit": {
+      "target": 730,
+      "other_vehicle": 0,
+      "background": 70,
+      "unmatched": 0
+    },
+    "selected_target": 0,
+    "selected_background": 0,
+    "selected_other_vehicle": 0,
+    "selected_unmatched": 0,
+    "precision": null,
+    "processing_ms_p50_p95": [
+      28.1685,
+      43.604699999999994
+    ],
+    "offline_seed_target_avg": 5.4,
+    "offline_seed_located": 0
+  },
+  "C": {
+    "frame_samples": 50,
+    "target_observations": 150,
+    "matched": 140,
+    "raw_lidar_avg": 5373.66,
+    "target_raw_avg": 3.1466666666666665,
+    "target_raw_minmax": [
+      1,
+      5
+    ],
+    "box_points_avg": 3.3,
+    "nonground_avg": 3.1357142857142857,
+    "largest_component_avg": 1.0357142857142858,
+    "largest_component_counts": {
+      "1": 135,
+      "2": 5
+    },
+    "valid_cluster_total": 0,
+    "located": 0,
+    "failure_reasons": {
+      "NO_PLAUSIBLE_CLUSTER": 94,
+      "INSUFFICIENT_LIDAR_POINTS": 46,
+      "NO_MATCHED_DETECTION": 10
+    },
+    "box_audit": {
+      "target": 418,
+      "other_vehicle": 0,
+      "background": 44,
+      "unmatched": 0
+    },
+    "selected_target": 0,
+    "selected_background": 0,
+    "selected_other_vehicle": 0,
+    "selected_unmatched": 0,
+    "precision": null,
+    "processing_ms_p50_p95": [
+      24.514000000000003,
+      39.527999999999984
+    ],
+    "offline_seed_target_avg": 2.82,
+    "offline_seed_located": 0
+  },
+  "D": {
+    "frame_samples": 50,
+    "target_observations": 150,
+    "matched": 140,
+    "raw_lidar_avg": 9760.2,
+    "target_raw_avg": 5.4,
+    "target_raw_minmax": [
+      5,
+      6
+    ],
+    "box_points_avg": 5.714285714285714,
+    "nonground_avg": 5.428571428571429,
+    "largest_component_avg": 1.2857142857142858,
+    "largest_component_counts": {
+      "1": 100,
+      "2": 40
+    },
+    "valid_cluster_total": 0,
+    "located": 0,
+    "failure_reasons": {
+      "NO_PLAUSIBLE_CLUSTER": 140,
+      "NO_MATCHED_DETECTION": 10
+    },
+    "box_audit": {
+      "target": 730,
+      "other_vehicle": 0,
+      "background": 70,
+      "unmatched": 0
+    },
+    "selected_target": 0,
+    "selected_background": 0,
+    "selected_other_vehicle": 0,
+    "selected_unmatched": 0,
+    "precision": null,
+    "processing_ms_p50_p95": [
+      27.896,
+      42.130349999999986
+    ],
+    "offline_seed_target_avg": 5.4,
+    "offline_seed_located": 0
+  }
+}

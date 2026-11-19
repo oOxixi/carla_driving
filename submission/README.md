@@ -1,5 +1,7 @@
 # 比赛提交材料
 
+- [项目汇报与证据索引](project_summary/README.md)：区分阶段成果、最新实测与待验证项。
+
 - `current/technical_solution.md`：当前技术方案源文件。
 - `templates/DEMO_RECORD.md`：每个正式场景的人工演示记录模板。
 - `templates/EVIDENCE_INDEX.json`：证据文件、哈希、范围和结果索引模板。

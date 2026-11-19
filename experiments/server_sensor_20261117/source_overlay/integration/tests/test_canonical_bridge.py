@@ -1,0 +1,291 @@
+from __future__ import annotations
+
+from types import SimpleNamespace
+
+import pytest
+
+from integration.canonical_bridge import (
+    control_command_to_voice_envelope,
+    perception_frame_to_state,
+    voice_envelope_to_driving_command,
+)
+from integration.contracts import DetectedObject, PerceptionFrame
+
+
+def test_voice_complex_intent_becomes_canonical_deadline_request() -> None:
+    command = voice_envelope_to_driving_command({
+        "schema_version": "1.0",
+        "command_id": "voice-1",
+        "source_text": "跟随前车",
+        "intent": "FOLLOW_ROUTE",
+        "parameters": {},
+        "confidence": 0.95,
+        "intent_confidence": 0.95,
+        "status": "valid",
+        "ambiguity_type": "NONE",
+        "confirm_required": True,
+        "valid_duration_s": 3.0,
+    }, received_at_ns=100)
+    assert command["intent"] == "FOLLOW"
+    assert command["deadline_ns"] == 3_000_000_100
+    assert command["requires_confirmation"] is True
+
+
+def test_direct_follow_intent_remains_follow_at_canonical_boundary() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "follow-direct",
+        "source_text": "跟随正前方车辆",
+        "intent": "FOLLOW",
+        "parameters": {"speed": 18, "unit": "km/h"},
+        "confidence": 0.95,
+        "valid_duration_s": 30.0,
+    }, received_at_ns=100)
+
+    assert command["intent"] == "FOLLOW"
+    assert command["parameters"]["target_speed_mps"] == pytest.approx(5.0)
+
+
+def test_directional_lane_change_keeps_declared_intent_and_direction() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "lane-left",
+        "source_text": "向左变道",
+        "intent": "CHANGE_LANE_LEFT",
+        "parameters": {"speed": 12, "unit": "km/h"},
+        "confidence": 0.95,
+        "valid_duration_s": 30.0,
+    }, received_at_ns=100)
+
+    assert command["intent"] == "CHANGE_LANE"
+    assert command["parameters"]["direction"] == "LEFT"
+    assert command["parameters"]["target_speed_mps"] == pytest.approx(12 / 3.6)
+
+
+def test_scenario_target_actor_alias_is_preserved_for_qwen_binding() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "avoid-bike",
+        "source_text": "避让右前方非机动车",
+        "intent": "AVOID_OBSTACLE",
+        "parameters": {
+            "target_actor_id": "bicycle_right",
+            "direction": "LEFT",
+        },
+        "confidence": 0.98,
+        "valid_duration_s": 30.0,
+    }, received_at_ns=100)
+
+    assert command["intent"] == "AVOID_OBSTACLE"
+    assert command["parameters"]["target_id"] == "bicycle_right"
+    assert command["parameters"]["direction"] == "LEFT"
+
+
+def test_pedestrian_yield_remains_a_yield_at_the_canonical_boundary() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "yield-pedestrian",
+        "source_text": "前方行人横穿，减速让行，安全后继续",
+        "intent": "YIELD",
+        "parameters": {"target_actor_id": "crossing_pedestrian"},
+        "confidence": 0.98,
+        "valid_duration_s": 60.0,
+    }, received_at_ns=100)
+
+    assert command["intent"] == "YIELD"
+    assert command["parameters"]["target_id"] == "crossing_pedestrian"
+
+
+def test_hold_voice_intent_maps_to_canonical_stop() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "hold-1",
+        "source_text": "目标看不清时先保持安全",
+        "intent": "HOLD",
+        "parameters": {},
+        "intent_confidence": 0.95,
+        "valid_duration_s": 3.0,
+    }, received_at_ns=1000)
+
+    assert command["intent"] == "STOP"
+
+
+def test_legacy_perception_becomes_schema_valid_state_with_explicit_missing_radar() -> None:
+    scene = PerceptionFrame(
+        10, 0.5, lead_distance_m=10.0, lead_speed_mps=1.0,
+        detected_objects=(DetectedObject(2, "car", 0.9, (0.4, 0.3, 0.6, 0.8), 10.0),),
+    )
+    state = perception_frame_to_state(
+        scene, SimpleNamespace(speed_mps=5.0),
+        captured_at_ns=1000, perception_mode="sensors",
+    )
+    assert state["objects"][0]["class"] == "vehicle"
+    assert state["objects"][0]["ttc_s"] == pytest.approx(2.5)
+    assert state["risk_level"] == "HIGH"
+    assert state["modality_valid"]["radar"] is False
+    assert state["sync"]["missing_modalities"] == ["RADAR"]
+    assert state["objects"][0]["track_id"] == "legacy-vehicle-000"
+
+
+def test_sensor_acquisition_failure_is_stale_and_explicitly_invalid() -> None:
+    state = perception_frame_to_state(
+        PerceptionFrame(11, 0.55), SimpleNamespace(speed_mps=0.0),
+        captured_at_ns=1001, perception_mode="sensor_failure",
+    )
+    assert state["stale"] is True
+    assert state["sync"]["within_tolerance"] is False
+    assert state["modality_valid"] == {
+        "rgb": False, "radar": False, "lidar": False, "vehicle_state": True,
+    }
+    assert state["degraded_reason_codes"] == ["SENSOR_ACQUISITION_FAILURE"]
+
+
+def test_aligned_radar_mode_marks_all_live_modalities_valid() -> None:
+    state = perception_frame_to_state(
+        PerceptionFrame(12, 0.6), SimpleNamespace(speed_mps=0.0),
+        captured_at_ns=1002, perception_mode="sensors_radar",
+    )
+    assert state["modality_valid"] == {
+        "rgb": True, "radar": True, "lidar": True, "vehicle_state": True,
+    }
+    assert state["sync"]["missing_modalities"] == []
+    assert state["degraded_reason_codes"] == []
+
+
+def test_qwen_follow_plan_maps_to_existing_deterministic_longitudinal_runtime() -> None:
+    envelope = control_command_to_voice_envelope({
+        "command_id": "voice-1",
+        "behavior": "FOLLOW",
+        "target": {"target_speed_mps": 3.0},
+        "confidence": 0.95,
+        "reason_code": "UNIQUE_TARGET",
+        "issued_at_ns": 100,
+        "deadline_ns": 1_000_000_100,
+    }, source_text="跟随前车")
+    assert envelope["intent"] == "SLOW_DOWN"
+    assert envelope["parameters"] == {"speed": 3.0, "unit": "m/s"}
+
+
+def test_compiled_qwen_yield_maps_to_bounded_longitudinal_slow_down() -> None:
+    envelope = control_command_to_voice_envelope({
+        "command_id": "yield-pedestrian",
+        "path_type": "SLOW",
+        "source": "QWEN_DECISION_PLAN",
+        "behavior": "YIELD",
+        "target": {"target_speed_mps": 30.0 / 3.6},
+        "confidence": 0.95,
+        "reason_code": "PEDESTRIAN_CROSSING",
+        "issued_at_ns": 100,
+        "deadline_ns": 10_000_000_100,
+    }, source_text="前方行人横穿，减速让行")
+
+    assert envelope["intent"] == "SLOW_DOWN"
+    assert envelope["parameters"] == {
+        "speed": pytest.approx(30.0 / 3.6),
+        "unit": "m/s",
+    }
+
+
+def test_uncompiled_yield_still_fails_closed() -> None:
+    with pytest.raises(ValueError, match="cannot execute"):
+        control_command_to_voice_envelope({
+            "command_id": "yield-unvalidated",
+            "behavior": "YIELD",
+            "target": {"target_speed_mps": 3.0},
+            "confidence": 0.95,
+            "reason_code": "MODEL",
+            "issued_at_ns": 100,
+            "deadline_ns": 1_000_000_100,
+        }, source_text="让行")
+
+
+def test_unsupported_slow_manoeuvre_fails_closed_instead_of_inventing_steer() -> None:
+    with pytest.raises(ValueError, match="cannot execute"):
+        control_command_to_voice_envelope({
+            "command_id": "voice-1",
+            "behavior": "CHANGE_LANE_LEFT",
+            "target": {"target_speed_mps": 3.0},
+            "confidence": 0.95,
+            "reason_code": "MODEL",
+            "issued_at_ns": 100,
+            "deadline_ns": 1_000_000_100,
+        }, source_text="向左变道")
+
+
+def test_direct_target_speed_mps_is_preserved_at_canonical_boundary() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "turn-right-with-speed",
+        "source_text": "前方第一个路口右转，转弯后保持十五公里每小时",
+        "intent": "TURN",
+        "parameters": {
+            "direction": "RIGHT",
+            "target_speed_mps": 15.0 / 3.6,
+        },
+        "confidence": 0.97,
+        "valid_duration_s": 30.0,
+    }, received_at_ns=100)
+
+    assert command["intent"] == "TURN"
+    assert command["parameters"]["direction"] == "RIGHT"
+    assert command["parameters"]["target_speed_mps"] == pytest.approx(15.0 / 3.6)
+
+
+def test_direct_target_speed_mps_takes_precedence_over_legacy_speed() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "speed-precedence",
+        "source_text": "保持目标速度",
+        "intent": "TURN",
+        "parameters": {
+            "direction": "RIGHT",
+            "target_speed_mps": 4.0,
+            "speed": 36.0,
+            "unit": "km/h",
+        },
+        "confidence": 0.95,
+        "valid_duration_s": 30.0,
+    }, received_at_ns=100)
+
+    assert command["parameters"]["target_speed_mps"] == pytest.approx(4.0)
+
+
+def test_invalid_direct_target_speed_falls_back_to_legacy_speed() -> None:
+    command = voice_envelope_to_driving_command({
+        "command_id": "speed-fallback",
+        "source_text": "保持二十公里每小时",
+        "intent": "SET_SPEED",
+        "parameters": {
+            "target_speed_mps": float("nan"),
+            "speed": 20.0,
+            "unit": "km/h",
+        },
+        "confidence": 0.95,
+        "valid_duration_s": 30.0,
+    }, received_at_ns=100)
+
+    assert command["parameters"]["target_speed_mps"] == pytest.approx(20.0 / 3.6)
+
+
+def test_geometry_quality_and_distance_reference_do_not_claim_calibration():
+    projected = DetectedObject(2, 'car', .9, (.4, .3, .6, .8), 10.2, 'C-1',
+                               (10.1, 1.0, .3), 'RGB_LIDAR_PROJECTED', 'SAME')
+    uncertain = DetectedObject(2, 'car', .8, (.7, .3, .9, .8), None, 'C-2')
+    scene = PerceptionFrame(10, .5, detected_objects=(projected, uncertain))
+    state = perception_frame_to_state(scene, SimpleNamespace(speed_mps=0.0),
+                                      captured_at_ns=1000, perception_mode='sensors')
+    first, second = state['objects']
+    assert first['confidence'] == .9
+    assert first['position_quality'] == 'UNVALIDATED_PROJECTION'
+    assert first['lane_quality'] == 'UNVALIDATED_MAP'
+    assert first['distance_reference'] == 'EGO_ORIGIN_TO_LIDAR_SURFACE'
+    assert first['sources'] == ['RGB', 'LIDAR']
+    assert second['position_quality'] == second['lane_quality'] == 'UNKNOWN'
+    assert second['distance_reference'] == 'UNSPECIFIED'
+    assert second['sources'] == ['RGB']
+
+
+def test_temporal_geometry_is_explicitly_marked_unvalidated():
+    target = DetectedObject(2, 'car', .9, (.4, .3, .6, .8), 40.0, 'C-1',
+                            (40.0, 0.0, .3), 'RGB_LIDAR_TEMPORAL', 'UNKNOWN')
+    state = perception_frame_to_state(PerceptionFrame(10, .5, detected_objects=(target,)),
+                                      SimpleNamespace(speed_mps=0.0), captured_at_ns=1000,
+                                      perception_mode='sensors')
+    item = state['objects'][0]
+    assert item['geometry_source'] == 'RGB_LIDAR_TEMPORAL'
+    assert item['position_quality'] == 'UNVALIDATED_TEMPORAL'
+    assert item['sources'] == ['RGB', 'LIDAR']
+    assert item['distance_m'] == 40.0

@@ -1,0 +1,73 @@
+{
+  "recordings": 20,
+  "completed": 20,
+  "errors": [],
+  "expected_vehicles": 40,
+  "baseline_located": 20,
+  "new_located": 23,
+  "baseline_coverage": 0.5,
+  "new_coverage": 0.575,
+  "assigned_point_truth": {
+    "target": 572
+  },
+  "scored_precision": 1.0,
+  "unscored_assigned": 0,
+  "point_recall_within_matched_boxes": 0.7096774193548387,
+  "point_recall_numerator": 572,
+  "point_recall_denominator": 806,
+  "target_labeled_environment": 0,
+  "pair_metrics": {
+    "same_total": 5,
+    "same_grouped": 3,
+    "different_total": 17,
+    "different_grouped": 0,
+    "unknown_pairs": 0,
+    "overlap_same_total": 5,
+    "overlap_same_grouped": 3,
+    "overlap_different_total": 0,
+    "overlap_different_grouped": 0
+  },
+  "range_errors_absolute": {
+    "n": 23,
+    "p50": 0.0464983749638499,
+    "p95": 0.15601730980300765
+  },
+  "baseline_range_errors_absolute": {
+    "n": 20,
+    "p50": 0.04717081357741293,
+    "p95": 0.2142911884225559
+  },
+  "cases": {
+    "adjacent": {
+      "runs": 5,
+      "expected": 10,
+      "baseline_located": 8,
+      "new_located": 8
+    },
+    "duplicate": {
+      "runs": 5,
+      "expected": 10,
+      "baseline_located": 4,
+      "new_located": 7
+    },
+    "night_new": {
+      "runs": 5,
+      "expected": 10,
+      "baseline_located": 4,
+      "new_located": 4
+    },
+    "occlusion_new": {
+      "runs": 5,
+      "expected": 10,
+      "baseline_located": 4,
+      "new_located": 4
+    }
+  },
+  "definitions": {
+    "precision": "assigned points with auditable ground truth only; unmatched semantic/detection reported separately",
+    "recall": "labeled target points within matched detection boxes; missed detections excluded from this conditional denominator",
+    "pair": "independent projected-box IoU>=0.3 with 0.05 margin; unscored ambiguous pairs reported",
+    "range": "only samples where actor nearest bounding-box surface truth was saved; failed original samples may lack it",
+    "timestamps": "historical raw timestamps unavailable, replay uses same recorded frame IDs and equal placeholders"
+  }
+}

@@ -1,0 +1,1971 @@
+{
+  "definitions": {
+    "detection": "one-to-one full actor projected bbox IoU >=0.3; includes occluded actors",
+    "point_precision": "among semantic-matched points for uniquely assigned detections; semantic matching tolerance 0.08m, unmatched listed separately",
+    "radar": "point in CARLA actor OBB expanded 0.2m; outside/overlap unconfirmed, not necessarily wrong",
+    "center_error": "median visible surface point vs physical bounding-box center; NOT estimated vehicle center",
+    "surface_error": "min/p10 lidar horizontal radius versus nearest 2D OBB distance; may be negative",
+    "percentiles": "absolute errors of detected-and-located-matched vehicles only",
+    "unlocatable": "expected GT vehicles missing detection, unmatched or without valid cluster; no successes-only denominator",
+    "runs": "five static distance variations per category on one map; correlated, not independent generalization"
+  },
+  "cases": {
+    "near": {
+      "label": "近距离",
+      "runs": 5,
+      "expected": 15,
+      "detections": 15,
+      "matched_detections": 15,
+      "localized_predictions": 15,
+      "located_matched": 15,
+      "box_lidar": {
+        "total": 3597,
+        "semantic_matched": 3597,
+        "target": 2390,
+        "other": 1207,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 0.6644425910480957,
+        "other_fraction": 0.3355574089519044
+      },
+      "selected_lidar": {
+        "total": 2228,
+        "semantic_matched": 2228,
+        "target": 2228,
+        "other": 0,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 1.0,
+        "other_fraction": 0.0
+      },
+      "radar": {
+        "total": 1886,
+        "target": 1886,
+        "other_vehicle": 0,
+        "ambiguous": 0,
+        "outside_actor_boxes": 0
+      },
+      "errors": {
+        "cluster_center_vs_vehicle_center_3d_m": {
+          "n": 15,
+          "p50": 2.189,
+          "p95": 2.232
+        },
+        "longitudinal_center_difference_m": {
+          "n": 15,
+          "p50": 2.157,
+          "p95": 2.221
+        },
+        "lateral_center_difference_m": {
+          "n": 15,
+          "p50": 0.42,
+          "p95": 0.604
+        },
+        "rear_longitudinal_error_m": {
+          "n": 15,
+          "p50": 0.024,
+          "p95": 0.032
+        },
+        "nearest_surface_range_error_m": {
+          "n": 15,
+          "p50": 0.242,
+          "p95": 0.299
+        },
+        "p10_surface_range_error_m": {
+          "n": 15,
+          "p50": 0.303,
+          "p95": 0.383
+        }
+      },
+      "unknown_reasons": {},
+      "sample_details": [
+        {
+          "case": "near",
+          "repeat": 0,
+          "frame": 437767,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "near",
+          "repeat": 1,
+          "frame": 437771,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "near",
+          "repeat": 2,
+          "frame": 437775,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "near",
+          "repeat": 3,
+          "frame": 437779,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "near",
+          "repeat": 4,
+          "frame": 437783,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        }
+      ],
+      "detection_recall": 1.0,
+      "detection_precision": 1.0,
+      "unlocatable_expected": 0,
+      "unlocatable_fraction": 0.0
+    },
+    "middle": {
+      "label": "中距离",
+      "runs": 5,
+      "expected": 15,
+      "detections": 15,
+      "matched_detections": 15,
+      "localized_predictions": 15,
+      "located_matched": 15,
+      "box_lidar": {
+        "total": 463,
+        "semantic_matched": 463,
+        "target": 380,
+        "other": 83,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 0.8207343412526998,
+        "other_fraction": 0.17926565874730022
+      },
+      "selected_lidar": {
+        "total": 241,
+        "semantic_matched": 241,
+        "target": 241,
+        "other": 0,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 1.0,
+        "other_fraction": 0.0
+      },
+      "radar": {
+        "total": 933,
+        "target": 933,
+        "other_vehicle": 0,
+        "ambiguous": 0,
+        "outside_actor_boxes": 0
+      },
+      "errors": {
+        "cluster_center_vs_vehicle_center_3d_m": {
+          "n": 15,
+          "p50": 2.283,
+          "p95": 2.32
+        },
+        "longitudinal_center_difference_m": {
+          "n": 15,
+          "p50": 2.278,
+          "p95": 2.3
+        },
+        "lateral_center_difference_m": {
+          "n": 15,
+          "p50": 0.106,
+          "p95": 0.31
+        },
+        "rear_longitudinal_error_m": {
+          "n": 15,
+          "p50": 0.037,
+          "p95": 0.05
+        },
+        "nearest_surface_range_error_m": {
+          "n": 15,
+          "p50": 0.162,
+          "p95": 0.201
+        },
+        "p10_surface_range_error_m": {
+          "n": 15,
+          "p50": 0.198,
+          "p95": 0.234
+        }
+      },
+      "unknown_reasons": {},
+      "sample_details": [
+        {
+          "case": "middle",
+          "repeat": 0,
+          "frame": 437787,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "middle",
+          "repeat": 1,
+          "frame": 437791,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "middle",
+          "repeat": 2,
+          "frame": 437795,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "middle",
+          "repeat": 3,
+          "frame": 437799,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "middle",
+          "repeat": 4,
+          "frame": 437803,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        }
+      ],
+      "detection_recall": 1.0,
+      "detection_precision": 1.0,
+      "unlocatable_expected": 0,
+      "unlocatable_fraction": 0.0
+    },
+    "far": {
+      "label": "远距离",
+      "runs": 5,
+      "expected": 15,
+      "detections": 14,
+      "matched_detections": 14,
+      "localized_predictions": 11,
+      "located_matched": 11,
+      "box_lidar": {
+        "total": 108,
+        "semantic_matched": 108,
+        "target": 84,
+        "other": 24,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 0.7777777777777778,
+        "other_fraction": 0.2222222222222222
+      },
+      "selected_lidar": {
+        "total": 53,
+        "semantic_matched": 53,
+        "target": 53,
+        "other": 0,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 1.0,
+        "other_fraction": 0.0
+      },
+      "radar": {
+        "total": 303,
+        "target": 303,
+        "other_vehicle": 0,
+        "ambiguous": 0,
+        "outside_actor_boxes": 0
+      },
+      "errors": {
+        "cluster_center_vs_vehicle_center_3d_m": {
+          "n": 11,
+          "p50": 2.286,
+          "p95": 2.354
+        },
+        "longitudinal_center_difference_m": {
+          "n": 11,
+          "p50": 2.265,
+          "p95": 2.342
+        },
+        "lateral_center_difference_m": {
+          "n": 11,
+          "p50": 0.169,
+          "p95": 0.577
+        },
+        "rear_longitudinal_error_m": {
+          "n": 11,
+          "p50": 0.05,
+          "p95": 0.621
+        },
+        "nearest_surface_range_error_m": {
+          "n": 11,
+          "p50": 0.115,
+          "p95": 0.712
+        },
+        "p10_surface_range_error_m": {
+          "n": 11,
+          "p50": 0.128,
+          "p95": 0.74
+        }
+      },
+      "unknown_reasons": {
+        "NO_PLAUSIBLE_CLUSTER": 1,
+        "INSUFFICIENT_LIDAR_POINTS": 2
+      },
+      "sample_details": [
+        {
+          "case": "far",
+          "repeat": 0,
+          "frame": 437807,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "far",
+          "repeat": 1,
+          "frame": 437811,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "far",
+          "repeat": 2,
+          "frame": 437815,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 2,
+          "unmatched": []
+        },
+        {
+          "case": "far",
+          "repeat": 3,
+          "frame": 437819,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 2,
+          "unmatched": []
+        },
+        {
+          "case": "far",
+          "repeat": 4,
+          "frame": 437823,
+          "expected": 3,
+          "matched": 2,
+          "located_matched": 1,
+          "unmatched": [
+            "C"
+          ]
+        }
+      ],
+      "detection_recall": 0.9333333333333333,
+      "detection_precision": 1.0,
+      "unlocatable_expected": 4,
+      "unlocatable_fraction": 0.26666666666666666
+    },
+    "occlusion": {
+      "label": "部分遮挡",
+      "runs": 5,
+      "expected": 20,
+      "detections": 19,
+      "matched_detections": 19,
+      "localized_predictions": 18,
+      "located_matched": 18,
+      "box_lidar": {
+        "total": 560,
+        "semantic_matched": 560,
+        "target": 440,
+        "other": 120,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 0.7857142857142857,
+        "other_fraction": 0.21428571428571427
+      },
+      "selected_lidar": {
+        "total": 266,
+        "semantic_matched": 266,
+        "target": 266,
+        "other": 0,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 1.0,
+        "other_fraction": 0.0
+      },
+      "radar": {
+        "total": 885,
+        "target": 885,
+        "other_vehicle": 0,
+        "ambiguous": 0,
+        "outside_actor_boxes": 0
+      },
+      "errors": {
+        "cluster_center_vs_vehicle_center_3d_m": {
+          "n": 18,
+          "p50": 2.284,
+          "p95": 2.337
+        },
+        "longitudinal_center_difference_m": {
+          "n": 18,
+          "p50": 2.263,
+          "p95": 2.297
+        },
+        "lateral_center_difference_m": {
+          "n": 18,
+          "p50": 0.184,
+          "p95": 0.627
+        },
+        "rear_longitudinal_error_m": {
+          "n": 18,
+          "p50": 0.039,
+          "p95": 0.061
+        },
+        "nearest_surface_range_error_m": {
+          "n": 18,
+          "p50": 0.164,
+          "p95": 0.194
+        },
+        "p10_surface_range_error_m": {
+          "n": 18,
+          "p50": 0.185,
+          "p95": 0.219
+        }
+      },
+      "unknown_reasons": {
+        "MULTIPLE_PLAUSIBLE_CLUSTERS": 1
+      },
+      "sample_details": [
+        {
+          "case": "occlusion",
+          "repeat": 0,
+          "frame": 437827,
+          "expected": 4,
+          "matched": 4,
+          "located_matched": 4,
+          "unmatched": []
+        },
+        {
+          "case": "occlusion",
+          "repeat": 1,
+          "frame": 437831,
+          "expected": 4,
+          "matched": 4,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "occlusion",
+          "repeat": 2,
+          "frame": 437835,
+          "expected": 4,
+          "matched": 4,
+          "located_matched": 4,
+          "unmatched": []
+        },
+        {
+          "case": "occlusion",
+          "repeat": 3,
+          "frame": 437839,
+          "expected": 4,
+          "matched": 4,
+          "located_matched": 4,
+          "unmatched": []
+        },
+        {
+          "case": "occlusion",
+          "repeat": 4,
+          "frame": 437843,
+          "expected": 4,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": [
+            "A"
+          ]
+        }
+      ],
+      "detection_recall": 0.95,
+      "detection_precision": 1.0,
+      "unlocatable_expected": 2,
+      "unlocatable_fraction": 0.1
+    },
+    "sparse": {
+      "label": "点云稀疏",
+      "runs": 5,
+      "expected": 15,
+      "detections": 15,
+      "matched_detections": 15,
+      "localized_predictions": 0,
+      "located_matched": 0,
+      "box_lidar": {
+        "total": 19,
+        "semantic_matched": 19,
+        "target": 17,
+        "other": 2,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 0.8947368421052632,
+        "other_fraction": 0.10526315789473684
+      },
+      "selected_lidar": {
+        "total": 0,
+        "semantic_matched": 0,
+        "target": 0,
+        "other": 0,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": null,
+        "target_fraction": null,
+        "other_fraction": null
+      },
+      "radar": {
+        "total": 0,
+        "target": 0,
+        "other_vehicle": 0,
+        "ambiguous": 0,
+        "outside_actor_boxes": 0
+      },
+      "errors": {
+        "cluster_center_vs_vehicle_center_3d_m": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        },
+        "longitudinal_center_difference_m": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        },
+        "lateral_center_difference_m": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        },
+        "rear_longitudinal_error_m": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        },
+        "nearest_surface_range_error_m": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        },
+        "p10_surface_range_error_m": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        }
+      },
+      "unknown_reasons": {
+        "INSUFFICIENT_LIDAR_POINTS": 15
+      },
+      "sample_details": [
+        {
+          "case": "sparse",
+          "repeat": 0,
+          "frame": 437847,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 0,
+          "unmatched": []
+        },
+        {
+          "case": "sparse",
+          "repeat": 1,
+          "frame": 437851,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 0,
+          "unmatched": []
+        },
+        {
+          "case": "sparse",
+          "repeat": 2,
+          "frame": 437855,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 0,
+          "unmatched": []
+        },
+        {
+          "case": "sparse",
+          "repeat": 3,
+          "frame": 437859,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 0,
+          "unmatched": []
+        },
+        {
+          "case": "sparse",
+          "repeat": 4,
+          "frame": 437863,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 0,
+          "unmatched": []
+        }
+      ],
+      "detection_recall": 1.0,
+      "detection_precision": 1.0,
+      "unlocatable_expected": 15,
+      "unlocatable_fraction": 1.0
+    },
+    "close": {
+      "label": "多车紧邻",
+      "runs": 5,
+      "expected": 15,
+      "detections": 16,
+      "matched_detections": 15,
+      "localized_predictions": 15,
+      "located_matched": 15,
+      "box_lidar": {
+        "total": 426,
+        "semantic_matched": 417,
+        "target": 339,
+        "other": 78,
+        "unknown": 0,
+        "unscorable": 9,
+        "semantic_coverage": 1.0,
+        "target_fraction": 0.8129496402877698,
+        "other_fraction": 0.18705035971223022
+      },
+      "selected_lidar": {
+        "total": 213,
+        "semantic_matched": 213,
+        "target": 213,
+        "other": 0,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 1.0,
+        "other_fraction": 0.0
+      },
+      "radar": {
+        "total": 937,
+        "target": 937,
+        "other_vehicle": 0,
+        "ambiguous": 0,
+        "outside_actor_boxes": 0
+      },
+      "errors": {
+        "cluster_center_vs_vehicle_center_3d_m": {
+          "n": 15,
+          "p50": 2.301,
+          "p95": 2.329
+        },
+        "longitudinal_center_difference_m": {
+          "n": 15,
+          "p50": 2.287,
+          "p95": 2.32
+        },
+        "lateral_center_difference_m": {
+          "n": 15,
+          "p50": 0.09,
+          "p95": 0.284
+        },
+        "rear_longitudinal_error_m": {
+          "n": 15,
+          "p50": 0.036,
+          "p95": 0.057
+        },
+        "nearest_surface_range_error_m": {
+          "n": 15,
+          "p50": 0.153,
+          "p95": 0.177
+        },
+        "p10_surface_range_error_m": {
+          "n": 15,
+          "p50": 0.177,
+          "p95": 0.201
+        }
+      },
+      "unknown_reasons": {
+        "NO_PLAUSIBLE_CLUSTER": 1
+      },
+      "sample_details": [
+        {
+          "case": "close",
+          "repeat": 0,
+          "frame": 437867,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "close",
+          "repeat": 1,
+          "frame": 437871,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "close",
+          "repeat": 2,
+          "frame": 437875,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "close",
+          "repeat": 3,
+          "frame": 437879,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "close",
+          "repeat": 4,
+          "frame": 437883,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        }
+      ],
+      "detection_recall": 1.0,
+      "detection_precision": 0.9375,
+      "unlocatable_expected": 0,
+      "unlocatable_fraction": 0.0
+    },
+    "rain": {
+      "label": "雨天",
+      "runs": 5,
+      "expected": 15,
+      "detections": 14,
+      "matched_detections": 14,
+      "localized_predictions": 14,
+      "located_matched": 14,
+      "box_lidar": {
+        "total": 427,
+        "semantic_matched": 427,
+        "target": 350,
+        "other": 77,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 0.819672131147541,
+        "other_fraction": 0.18032786885245902
+      },
+      "selected_lidar": {
+        "total": 230,
+        "semantic_matched": 230,
+        "target": 230,
+        "other": 0,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 1.0,
+        "other_fraction": 0.0
+      },
+      "radar": {
+        "total": 808,
+        "target": 808,
+        "other_vehicle": 0,
+        "ambiguous": 0,
+        "outside_actor_boxes": 0
+      },
+      "errors": {
+        "cluster_center_vs_vehicle_center_3d_m": {
+          "n": 14,
+          "p50": 2.28,
+          "p95": 2.321
+        },
+        "longitudinal_center_difference_m": {
+          "n": 14,
+          "p50": 2.275,
+          "p95": 2.3
+        },
+        "lateral_center_difference_m": {
+          "n": 14,
+          "p50": 0.112,
+          "p95": 0.312
+        },
+        "rear_longitudinal_error_m": {
+          "n": 14,
+          "p50": 0.037,
+          "p95": 0.051
+        },
+        "nearest_surface_range_error_m": {
+          "n": 14,
+          "p50": 0.163,
+          "p95": 0.203
+        },
+        "p10_surface_range_error_m": {
+          "n": 14,
+          "p50": 0.199,
+          "p95": 0.234
+        }
+      },
+      "unknown_reasons": {},
+      "sample_details": [
+        {
+          "case": "rain",
+          "repeat": 0,
+          "frame": 437887,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "rain",
+          "repeat": 1,
+          "frame": 437891,
+          "expected": 3,
+          "matched": 2,
+          "located_matched": 2,
+          "unmatched": [
+            "A"
+          ]
+        },
+        {
+          "case": "rain",
+          "repeat": 2,
+          "frame": 437895,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "rain",
+          "repeat": 3,
+          "frame": 437899,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "rain",
+          "repeat": 4,
+          "frame": 437903,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        }
+      ],
+      "detection_recall": 0.9333333333333333,
+      "detection_precision": 1.0,
+      "unlocatable_expected": 1,
+      "unlocatable_fraction": 0.06666666666666667
+    },
+    "night": {
+      "label": "夜间",
+      "runs": 5,
+      "expected": 15,
+      "detections": 15,
+      "matched_detections": 14,
+      "localized_predictions": 13,
+      "located_matched": 13,
+      "box_lidar": {
+        "total": 586,
+        "semantic_matched": 533,
+        "target": 392,
+        "other": 141,
+        "unknown": 0,
+        "unscorable": 53,
+        "semantic_coverage": 1.0,
+        "target_fraction": 0.7354596622889306,
+        "other_fraction": 0.26454033771106944
+      },
+      "selected_lidar": {
+        "total": 209,
+        "semantic_matched": 209,
+        "target": 209,
+        "other": 0,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 1.0,
+        "other_fraction": 0.0
+      },
+      "radar": {
+        "total": 856,
+        "target": 856,
+        "other_vehicle": 0,
+        "ambiguous": 0,
+        "outside_actor_boxes": 0
+      },
+      "errors": {
+        "cluster_center_vs_vehicle_center_3d_m": {
+          "n": 13,
+          "p50": 2.274,
+          "p95": 2.321
+        },
+        "longitudinal_center_difference_m": {
+          "n": 13,
+          "p50": 2.273,
+          "p95": 2.298
+        },
+        "lateral_center_difference_m": {
+          "n": 13,
+          "p50": 0.106,
+          "p95": 0.314
+        },
+        "rear_longitudinal_error_m": {
+          "n": 13,
+          "p50": 0.037,
+          "p95": 0.051
+        },
+        "nearest_surface_range_error_m": {
+          "n": 13,
+          "p50": 0.162,
+          "p95": 0.189
+        },
+        "p10_surface_range_error_m": {
+          "n": 13,
+          "p50": 0.187,
+          "p95": 0.234
+        }
+      },
+      "unknown_reasons": {
+        "INSUFFICIENT_LIDAR_POINTS": 2
+      },
+      "sample_details": [
+        {
+          "case": "night",
+          "repeat": 0,
+          "frame": 437907,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 2,
+          "unmatched": []
+        },
+        {
+          "case": "night",
+          "repeat": 1,
+          "frame": 437911,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "night",
+          "repeat": 2,
+          "frame": 437915,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "night",
+          "repeat": 3,
+          "frame": 437919,
+          "expected": 3,
+          "matched": 2,
+          "located_matched": 2,
+          "unmatched": [
+            "C"
+          ]
+        },
+        {
+          "case": "night",
+          "repeat": 4,
+          "frame": 437923,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        }
+      ],
+      "detection_recall": 0.9333333333333333,
+      "detection_precision": 0.9333333333333333,
+      "unlocatable_expected": 2,
+      "unlocatable_fraction": 0.13333333333333333
+    },
+    "fog": {
+      "label": "雾天",
+      "runs": 5,
+      "expected": 15,
+      "detections": 15,
+      "matched_detections": 15,
+      "localized_predictions": 15,
+      "located_matched": 15,
+      "box_lidar": {
+        "total": 502,
+        "semantic_matched": 502,
+        "target": 405,
+        "other": 97,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 0.8067729083665338,
+        "other_fraction": 0.19322709163346613
+      },
+      "selected_lidar": {
+        "total": 241,
+        "semantic_matched": 241,
+        "target": 241,
+        "other": 0,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 1.0,
+        "other_fraction": 0.0
+      },
+      "radar": {
+        "total": 946,
+        "target": 946,
+        "other_vehicle": 0,
+        "ambiguous": 0,
+        "outside_actor_boxes": 0
+      },
+      "errors": {
+        "cluster_center_vs_vehicle_center_3d_m": {
+          "n": 15,
+          "p50": 2.283,
+          "p95": 2.32
+        },
+        "longitudinal_center_difference_m": {
+          "n": 15,
+          "p50": 2.278,
+          "p95": 2.3
+        },
+        "lateral_center_difference_m": {
+          "n": 15,
+          "p50": 0.106,
+          "p95": 0.31
+        },
+        "rear_longitudinal_error_m": {
+          "n": 15,
+          "p50": 0.037,
+          "p95": 0.05
+        },
+        "nearest_surface_range_error_m": {
+          "n": 15,
+          "p50": 0.162,
+          "p95": 0.201
+        },
+        "p10_surface_range_error_m": {
+          "n": 15,
+          "p50": 0.198,
+          "p95": 0.234
+        }
+      },
+      "unknown_reasons": {},
+      "sample_details": [
+        {
+          "case": "fog",
+          "repeat": 0,
+          "frame": 437927,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "fog",
+          "repeat": 1,
+          "frame": 437931,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "fog",
+          "repeat": 2,
+          "frame": 437935,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "fog",
+          "repeat": 3,
+          "frame": 437939,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "fog",
+          "repeat": 4,
+          "frame": 437943,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        }
+      ],
+      "detection_recall": 1.0,
+      "detection_precision": 1.0,
+      "unlocatable_expected": 0,
+      "unlocatable_fraction": 0.0
+    },
+    "default_mid": {
+      "label": "默认32线中距离",
+      "runs": 5,
+      "expected": 15,
+      "detections": 16,
+      "matched_detections": 15,
+      "localized_predictions": 5,
+      "located_matched": 5,
+      "box_lidar": {
+        "total": 165,
+        "semantic_matched": 164,
+        "target": 117,
+        "other": 47,
+        "unknown": 0,
+        "unscorable": 1,
+        "semantic_coverage": 1.0,
+        "target_fraction": 0.7134146341463414,
+        "other_fraction": 0.2865853658536585
+      },
+      "selected_lidar": {
+        "total": 18,
+        "semantic_matched": 18,
+        "target": 18,
+        "other": 0,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 1.0,
+        "other_fraction": 0.0
+      },
+      "radar": {
+        "total": 390,
+        "target": 390,
+        "other_vehicle": 0,
+        "ambiguous": 0,
+        "outside_actor_boxes": 0
+      },
+      "errors": {
+        "cluster_center_vs_vehicle_center_3d_m": {
+          "n": 5,
+          "p50": 2.309,
+          "p95": 2.333
+        },
+        "longitudinal_center_difference_m": {
+          "n": 5,
+          "p50": 2.245,
+          "p95": 2.309
+        },
+        "lateral_center_difference_m": {
+          "n": 5,
+          "p50": 0.0,
+          "p95": 0.38
+        },
+        "rear_longitudinal_error_m": {
+          "n": 5,
+          "p50": 0.109,
+          "p95": 1.031
+        },
+        "nearest_surface_range_error_m": {
+          "n": 5,
+          "p50": 0.119,
+          "p95": 1.176
+        },
+        "p10_surface_range_error_m": {
+          "n": 5,
+          "p50": 0.127,
+          "p95": 1.184
+        }
+      },
+      "unknown_reasons": {
+        "NO_PLAUSIBLE_CLUSTER": 9,
+        "MULTIPLE_PLAUSIBLE_CLUSTERS": 1,
+        "INSUFFICIENT_LIDAR_POINTS": 1
+      },
+      "sample_details": [
+        {
+          "case": "default_mid",
+          "repeat": 0,
+          "frame": 458560,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 1,
+          "unmatched": []
+        },
+        {
+          "case": "default_mid",
+          "repeat": 1,
+          "frame": 458564,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 3,
+          "unmatched": []
+        },
+        {
+          "case": "default_mid",
+          "repeat": 2,
+          "frame": 458568,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 1,
+          "unmatched": []
+        },
+        {
+          "case": "default_mid",
+          "repeat": 3,
+          "frame": 458572,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 0,
+          "unmatched": []
+        },
+        {
+          "case": "default_mid",
+          "repeat": 4,
+          "frame": 458576,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 0,
+          "unmatched": []
+        }
+      ],
+      "detection_recall": 1.0,
+      "detection_precision": 0.9375,
+      "unlocatable_expected": 10,
+      "unlocatable_fraction": 0.6666666666666666
+    },
+    "default_far": {
+      "label": "默认32线远距离",
+      "runs": 5,
+      "expected": 15,
+      "detections": 14,
+      "matched_detections": 14,
+      "localized_predictions": 0,
+      "located_matched": 0,
+      "box_lidar": {
+        "total": 42,
+        "semantic_matched": 42,
+        "target": 37,
+        "other": 5,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": 1.0,
+        "target_fraction": 0.8809523809523809,
+        "other_fraction": 0.11904761904761904
+      },
+      "selected_lidar": {
+        "total": 0,
+        "semantic_matched": 0,
+        "target": 0,
+        "other": 0,
+        "unknown": 0,
+        "unscorable": 0,
+        "semantic_coverage": null,
+        "target_fraction": null,
+        "other_fraction": null
+      },
+      "radar": {
+        "total": 0,
+        "target": 0,
+        "other_vehicle": 0,
+        "ambiguous": 0,
+        "outside_actor_boxes": 0
+      },
+      "errors": {
+        "cluster_center_vs_vehicle_center_3d_m": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        },
+        "longitudinal_center_difference_m": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        },
+        "lateral_center_difference_m": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        },
+        "rear_longitudinal_error_m": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        },
+        "nearest_surface_range_error_m": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        },
+        "p10_surface_range_error_m": {
+          "n": 0,
+          "p50": null,
+          "p95": null
+        }
+      },
+      "unknown_reasons": {
+        "NO_PLAUSIBLE_CLUSTER": 8,
+        "INSUFFICIENT_LIDAR_POINTS": 6
+      },
+      "sample_details": [
+        {
+          "case": "default_far",
+          "repeat": 0,
+          "frame": 458580,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 0,
+          "unmatched": []
+        },
+        {
+          "case": "default_far",
+          "repeat": 1,
+          "frame": 458584,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 0,
+          "unmatched": []
+        },
+        {
+          "case": "default_far",
+          "repeat": 2,
+          "frame": 458588,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 0,
+          "unmatched": []
+        },
+        {
+          "case": "default_far",
+          "repeat": 3,
+          "frame": 458592,
+          "expected": 3,
+          "matched": 3,
+          "located_matched": 0,
+          "unmatched": []
+        },
+        {
+          "case": "default_far",
+          "repeat": 4,
+          "frame": 458596,
+          "expected": 3,
+          "matched": 2,
+          "located_matched": 0,
+          "unmatched": [
+            "C"
+          ]
+        }
+      ],
+      "detection_recall": 0.9333333333333333,
+      "detection_precision": 1.0,
+      "unlocatable_expected": 15,
+      "unlocatable_fraction": 1.0
+    }
+  },
+  "run_errors": [],
+  "overall": {
+    "runs": 55,
+    "expected": 170,
+    "detections": 168,
+    "matched_detections": 165,
+    "localized_predictions": 121,
+    "located_matched": 121,
+    "box_lidar": {
+      "total": 6895,
+      "semantic_matched": 6832,
+      "target": 4951,
+      "other": 1881,
+      "unknown": 0,
+      "unscorable": 63,
+      "semantic_coverage": 1.0,
+      "target_fraction": 0.7246779859484778,
+      "other_fraction": 0.27532201405152223
+    },
+    "selected_lidar": {
+      "total": 3699,
+      "semantic_matched": 3699,
+      "target": 3699,
+      "other": 0,
+      "unknown": 0,
+      "unscorable": 0,
+      "semantic_coverage": 1.0,
+      "target_fraction": 1.0,
+      "other_fraction": 0.0
+    },
+    "radar": {
+      "total": 7944,
+      "target": 7944,
+      "other_vehicle": 0,
+      "ambiguous": 0,
+      "outside_actor_boxes": 0
+    },
+    "errors": {
+      "cluster_center_vs_vehicle_center_3d_m": {
+        "n": 121,
+        "p50": 2.28,
+        "p95": 2.331
+      },
+      "longitudinal_center_difference_m": {
+        "n": 121,
+        "p50": 2.268,
+        "p95": 2.314
+      },
+      "lateral_center_difference_m": {
+        "n": 121,
+        "p50": 0.118,
+        "p95": 0.558
+      },
+      "rear_longitudinal_error_m": {
+        "n": 121,
+        "p50": 0.037,
+        "p95": 0.082
+      },
+      "nearest_surface_range_error_m": {
+        "n": 121,
+        "p50": 0.16,
+        "p95": 0.277
+      },
+      "p10_surface_range_error_m": {
+        "n": 121,
+        "p50": 0.187,
+        "p95": 0.346
+      }
+    },
+    "unknown_reasons": {
+      "NO_PLAUSIBLE_CLUSTER": 19,
+      "INSUFFICIENT_LIDAR_POINTS": 26,
+      "MULTIPLE_PLAUSIBLE_CLUSTERS": 2
+    },
+    "sample_details": [
+      {
+        "case": "near",
+        "repeat": 0,
+        "frame": 437767,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "near",
+        "repeat": 1,
+        "frame": 437771,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "near",
+        "repeat": 2,
+        "frame": 437775,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "near",
+        "repeat": 3,
+        "frame": 437779,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "near",
+        "repeat": 4,
+        "frame": 437783,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "middle",
+        "repeat": 0,
+        "frame": 437787,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "middle",
+        "repeat": 1,
+        "frame": 437791,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "middle",
+        "repeat": 2,
+        "frame": 437795,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "middle",
+        "repeat": 3,
+        "frame": 437799,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "middle",
+        "repeat": 4,
+        "frame": 437803,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "far",
+        "repeat": 0,
+        "frame": 437807,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "far",
+        "repeat": 1,
+        "frame": 437811,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "far",
+        "repeat": 2,
+        "frame": 437815,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 2,
+        "unmatched": []
+      },
+      {
+        "case": "far",
+        "repeat": 3,
+        "frame": 437819,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 2,
+        "unmatched": []
+      },
+      {
+        "case": "far",
+        "repeat": 4,
+        "frame": 437823,
+        "expected": 3,
+        "matched": 2,
+        "located_matched": 1,
+        "unmatched": [
+          "C"
+        ]
+      },
+      {
+        "case": "occlusion",
+        "repeat": 0,
+        "frame": 437827,
+        "expected": 4,
+        "matched": 4,
+        "located_matched": 4,
+        "unmatched": []
+      },
+      {
+        "case": "occlusion",
+        "repeat": 1,
+        "frame": 437831,
+        "expected": 4,
+        "matched": 4,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "occlusion",
+        "repeat": 2,
+        "frame": 437835,
+        "expected": 4,
+        "matched": 4,
+        "located_matched": 4,
+        "unmatched": []
+      },
+      {
+        "case": "occlusion",
+        "repeat": 3,
+        "frame": 437839,
+        "expected": 4,
+        "matched": 4,
+        "located_matched": 4,
+        "unmatched": []
+      },
+      {
+        "case": "occlusion",
+        "repeat": 4,
+        "frame": 437843,
+        "expected": 4,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": [
+          "A"
+        ]
+      },
+      {
+        "case": "sparse",
+        "repeat": 0,
+        "frame": 437847,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 0,
+        "unmatched": []
+      },
+      {
+        "case": "sparse",
+        "repeat": 1,
+        "frame": 437851,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 0,
+        "unmatched": []
+      },
+      {
+        "case": "sparse",
+        "repeat": 2,
+        "frame": 437855,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 0,
+        "unmatched": []
+      },
+      {
+        "case": "sparse",
+        "repeat": 3,
+        "frame": 437859,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 0,
+        "unmatched": []
+      },
+      {
+        "case": "sparse",
+        "repeat": 4,
+        "frame": 437863,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 0,
+        "unmatched": []
+      },
+      {
+        "case": "close",
+        "repeat": 0,
+        "frame": 437867,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "close",
+        "repeat": 1,
+        "frame": 437871,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "close",
+        "repeat": 2,
+        "frame": 437875,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "close",
+        "repeat": 3,
+        "frame": 437879,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "close",
+        "repeat": 4,
+        "frame": 437883,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "rain",
+        "repeat": 0,
+        "frame": 437887,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "rain",
+        "repeat": 1,
+        "frame": 437891,
+        "expected": 3,
+        "matched": 2,
+        "located_matched": 2,
+        "unmatched": [
+          "A"
+        ]
+      },
+      {
+        "case": "rain",
+        "repeat": 2,
+        "frame": 437895,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "rain",
+        "repeat": 3,
+        "frame": 437899,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "rain",
+        "repeat": 4,
+        "frame": 437903,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "night",
+        "repeat": 0,
+        "frame": 437907,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 2,
+        "unmatched": []
+      },
+      {
+        "case": "night",
+        "repeat": 1,
+        "frame": 437911,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "night",
+        "repeat": 2,
+        "frame": 437915,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "night",
+        "repeat": 3,
+        "frame": 437919,
+        "expected": 3,
+        "matched": 2,
+        "located_matched": 2,
+        "unmatched": [
+          "C"
+        ]
+      },
+      {
+        "case": "night",
+        "repeat": 4,
+        "frame": 437923,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "fog",
+        "repeat": 0,
+        "frame": 437927,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "fog",
+        "repeat": 1,
+        "frame": 437931,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "fog",
+        "repeat": 2,
+        "frame": 437935,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "fog",
+        "repeat": 3,
+        "frame": 437939,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "fog",
+        "repeat": 4,
+        "frame": 437943,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "default_mid",
+        "repeat": 0,
+        "frame": 458560,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 1,
+        "unmatched": []
+      },
+      {
+        "case": "default_mid",
+        "repeat": 1,
+        "frame": 458564,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 3,
+        "unmatched": []
+      },
+      {
+        "case": "default_mid",
+        "repeat": 2,
+        "frame": 458568,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 1,
+        "unmatched": []
+      },
+      {
+        "case": "default_mid",
+        "repeat": 3,
+        "frame": 458572,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 0,
+        "unmatched": []
+      },
+      {
+        "case": "default_mid",
+        "repeat": 4,
+        "frame": 458576,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 0,
+        "unmatched": []
+      },
+      {
+        "case": "default_far",
+        "repeat": 0,
+        "frame": 458580,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 0,
+        "unmatched": []
+      },
+      {
+        "case": "default_far",
+        "repeat": 1,
+        "frame": 458584,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 0,
+        "unmatched": []
+      },
+      {
+        "case": "default_far",
+        "repeat": 2,
+        "frame": 458588,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 0,
+        "unmatched": []
+      },
+      {
+        "case": "default_far",
+        "repeat": 3,
+        "frame": 458592,
+        "expected": 3,
+        "matched": 3,
+        "located_matched": 0,
+        "unmatched": []
+      },
+      {
+        "case": "default_far",
+        "repeat": 4,
+        "frame": 458596,
+        "expected": 3,
+        "matched": 2,
+        "located_matched": 0,
+        "unmatched": [
+          "C"
+        ]
+      }
+    ],
+    "detection_recall": 0.9705882352941176,
+    "detection_precision": 0.9821428571428571,
+    "unlocatable_expected": 49,
+    "unlocatable_fraction": 0.28823529411764703
+  },
+  "status": "COMPLETED"
+}

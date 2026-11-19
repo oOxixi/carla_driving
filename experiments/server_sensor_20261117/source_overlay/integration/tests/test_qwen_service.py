@@ -1,0 +1,912 @@
+from __future__ import annotations
+
+import base64
+import copy
+import json
+from pathlib import Path
+import socket
+import threading
+import time
+
+import pytest
+from PIL import Image
+
+from integration.qwen_plan_adapter import QwenPlanParseError
+from qwen_service import (
+    DeterministicPlannerV2Backend,
+    DeterministicTestBackend,
+    QwenDecisionService,
+    QwenServiceConfig,
+    ServiceFailure,
+    UnavailableBackend,
+    VllmQwenPlannerBackend,
+)
+from qwen_service.server import _configure_low_latency_socket
+
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_qwen_http_socket_disables_nagle_delay() -> None:
+    calls: list[tuple[int, int, int]] = []
+
+    class Connection:
+        def setsockopt(self, level: int, option: int, value: int) -> None:
+            calls.append((level, option, value))
+
+    _configure_low_latency_socket(Connection())
+
+    assert calls == [(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)]
+
+
+def _request() -> dict:
+    payload = json.loads((ROOT / "interfaces" / "examples" / "model_request.json").read_text(encoding="utf-8"))
+    now = time.monotonic_ns()
+    payload["created_at_ns"] = now
+    payload["deadline_ns"] = now + 1_000_000_000
+    return payload
+
+
+def test_service_returns_strict_high_level_plan_and_metrics() -> None:
+    service = QwenDecisionService(DeterministicTestBackend())
+    try:
+        result = service.infer(_request())
+        assert result["behavior"] == "FOLLOW"
+        assert result["target_id"] == "vehicle-right-01"
+        assert not {"throttle", "brake", "steer"}.intersection(result)
+        metrics = service.metrics()
+        assert metrics["counts"]["success"] == 1
+        assert metrics["latency_ms"]["count"] == 1
+        assert service.health()["production_ready"] is False
+    finally:
+        service.close()
+
+
+def test_service_rejects_expired_and_unknown_fields() -> None:
+    service = QwenDecisionService(DeterministicTestBackend())
+    try:
+        expired = _request()
+        expired["created_at_ns"] = 1
+        expired["deadline_ns"] = 2
+        with pytest.raises(ServiceFailure) as caught:
+            service.infer(expired)
+        assert caught.value.error_code == "REQUEST_EXPIRED"
+        unknown = _request()
+        unknown["unexpected"] = True
+        with pytest.raises(ServiceFailure) as caught:
+            service.infer(unknown)
+        assert caught.value.error_code == "INVALID_REQUEST"
+    finally:
+        service.close()
+
+
+def test_service_unavailable_is_explicit_503() -> None:
+    service = QwenDecisionService(UnavailableBackend("weights absent"))
+    try:
+        with pytest.raises(ServiceFailure) as caught:
+            service.infer(_request())
+        assert caught.value.status_code == 503
+        assert caught.value.error_code == "MODEL_UNAVAILABLE"
+        assert service.health()["status"] == "DEGRADED"
+    finally:
+        service.close()
+
+
+def test_service_enforces_timeout_and_keeps_capacity_bounded() -> None:
+    release = threading.Event()
+
+    class SlowBackend(DeterministicTestBackend):
+        production_ready = True
+
+        def infer(self, request):
+            release.wait(1.0)
+            return super().infer(request)
+
+    service = QwenDecisionService(
+        SlowBackend(), config=QwenServiceConfig(timeout_ms=5.0, max_concurrency=1),
+    )
+    try:
+        with pytest.raises(ServiceFailure) as timeout:
+            service.infer(_request())
+        assert timeout.value.error_code == "MODEL_TIMEOUT"
+        with pytest.raises(ServiceFailure) as busy:
+            service.infer(_request())
+        assert busy.value.error_code == "CONCURRENCY_LIMIT"
+    finally:
+        release.set()
+        service.close(wait=True)
+
+
+def test_service_rejects_model_id_mismatch() -> None:
+    class WrongBackend(DeterministicTestBackend):
+        def infer(self, request):
+            plan = dict(super().infer(request))
+            plan["command_id"] = "wrong"
+            return plan
+
+    service = QwenDecisionService(WrongBackend())
+    try:
+        with pytest.raises(ServiceFailure) as caught:
+            service.infer(_request())
+        assert caught.value.error_code == "MODEL_ID_MISMATCH"
+    finally:
+        service.close()
+
+
+def test_planner_v2_service_returns_strict_maneuver_plan():
+    request = _request()
+    request["source_text"] = "跟随前方车辆"
+    request["routing"] = {
+        "disposition": "QWEN_PLAN", "score": 5,
+        "reasons": ["VISUAL_REFERENCE", "COMPLEX_MANEUVER"],
+        "safe_wait_behavior": "SLOW_DOWN",
+    }
+    request["scene_capabilities"] = {}
+    service = QwenDecisionService(
+        DeterministicPlannerV2Backend(), qwen_mode="planner_v2",
+    )
+    try:
+        result = service.infer(request)
+        assert result["schema_version"] == "2.0"
+        assert result["steps"][0]["behavior"] == "FOLLOW"
+        assert result["steps"][0]["target"]["target_id"] == "vehicle-right-01"
+        assert service.health()["qwen_mode"] == "planner_v2"
+        assert service.metrics()["counts"]["success"] == 1
+    finally:
+        service.close()
+
+
+def test_planner_v2_service_rejects_low_level_model_output():
+    class UnsafePlanner(DeterministicPlannerV2Backend):
+        def infer(self, request):
+            plan = copy.deepcopy(super().infer(request))
+            plan["steps"][0]["steer"] = 0.8
+            return plan
+
+    request = _request()
+    service = QwenDecisionService(UnsafePlanner(), qwen_mode="planner_v2")
+    try:
+        with pytest.raises(ServiceFailure) as caught:
+            service.infer(request)
+        assert caught.value.error_code == "LOW_LEVEL_OUTPUT_FORBIDDEN"
+        assert caught.value.status_code == 502
+    finally:
+        service.close()
+
+
+def test_planner_v2_service_classifies_malformed_generation_as_bad_gateway():
+    class MalformedPlanner(DeterministicPlannerV2Backend):
+        def infer(self, request):
+            raise QwenPlanParseError("MODEL_OUTPUT_MUST_BE_BARE_JSON_OBJECT")
+
+    service = QwenDecisionService(MalformedPlanner(), qwen_mode="planner_v2")
+    try:
+        with pytest.raises(ServiceFailure) as caught:
+            service.infer(_request())
+        assert caught.value.status_code == 502
+        assert caught.value.error_code == "INVALID_MODEL_OUTPUT"
+        assert service.metrics()["counts"]["invalid"] == 1
+    finally:
+        service.close()
+
+
+def test_planner_v2_stub_preserves_lane_change_then_speed_sequence():
+    request = _request()
+    request["source_text"] = "确认安全后向左变道并保持二十公里每小时"
+    request["routing"] = {
+        "disposition": "QWEN_PLAN", "score": 8,
+        "reasons": ["MULTI_ACTION", "SEQUENCE", "COMPLEX_MANEUVER"],
+        "safe_wait_behavior": "SLOW_DOWN",
+    }
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT", "LEFT_ADJACENT"],
+        "left_lane_exists": True,
+        "left_gap_safe": True,
+    }
+    service = QwenDecisionService(
+        DeterministicPlannerV2Backend(), qwen_mode="planner_v2",
+    )
+    try:
+        plan = service.infer(request)
+        assert [step["behavior"] for step in plan["steps"]] == [
+            "CHANGE_LANE_LEFT", "SET_SPEED",
+        ]
+        assert plan["steps"][0]["timeout_s"] >= 12.0
+    finally:
+        service.close()
+
+
+def test_planner_v2_stub_uses_structured_keep_lane_speed_hint():
+    request = _request()
+    request["source_text"] = "保持当前车道，提速至60公里每小时"
+    request["command_hint"] = {
+        "intent": "KEEP_LANE", "direction": None,
+        "target_speed_mps": 16.67, "target": None,
+    }
+    request["constraints"]["max_target_speed_mps"] = 13.88
+    request["constraints"]["speed_limit_mps"] = 13.88
+    service = QwenDecisionService(
+        DeterministicPlannerV2Backend(), qwen_mode="planner_v2",
+    )
+    try:
+        plan = service.infer(request)
+        assert [step["behavior"] for step in plan["steps"]] == ["KEEP_LANE"]
+        assert plan["steps"][0]["target"]["target_speed_mps"] == pytest.approx(13.88)
+        assert plan["steps"][0]["completion"]["type"] == "HOLD_FRAMES"
+        assert plan["steps"][0]["timeout_s"] == 8.0
+    finally:
+        service.close()
+
+
+def test_planner_v2_stub_grounds_avoid_and_return_in_sensor_target():
+    request = _request()
+    request["source_text"] = "绕过前方障碍物后回到当前车道"
+    request["routing"] = {
+        "disposition": "QWEN_PLAN", "score": 9,
+        "reasons": ["MULTI_ACTION", "SEQUENCE", "VISUAL_REFERENCE"],
+        "safe_wait_behavior": "SLOW_DOWN",
+    }
+    request["targets"] = [{
+        "target_id": "legacy-obstacle-000", "class": "obstacle",
+        "distance_m": 18.0, "relative_speed_mps": 0.0,
+        "confidence": 1.0, "relation": "center_ahead",
+    }]
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT", "LEFT_ADJACENT"],
+        "left_lane_exists": True,
+        "left_gap_safe": True,
+    }
+    service = QwenDecisionService(
+        DeterministicPlannerV2Backend(), qwen_mode="planner_v2",
+    )
+    try:
+        plan = service.infer(request)
+        assert [step["behavior"] for step in plan["steps"]] == [
+            "AVOID_OBSTACLE", "RETURN_TO_LANE",
+        ]
+        assert plan["steps"][0]["target"]["target_id"] == "legacy-obstacle-000"
+        assert plan["steps"][0]["target"]["target_lane"] == "LEFT_ADJACENT"
+    finally:
+        service.close()
+
+
+def test_vllm_prompt_does_not_leak_hint_and_is_bounded() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "follow the vehicle directly ahead " * 100
+    request["command_hint"] = {"intent": "KEEP_LANE", "target_speed_mps": 9.0}
+    request["targets"] = [
+        {"target_id": f"target-{index}", "class": "vehicle", "distance_m": 10 + index,
+         "relative_speed_mps": 0.0, "confidence": 0.9, "relation": "center_ahead"}
+        for index in range(20)
+    ]
+    request["scene_capabilities"] = {"left_lane_exists": True, "right_lane_exists": True}
+    prompt = backend._choice_prompt(request)
+    assert '"hint"' not in prompt
+    assert "KEEP_LANE\",\"target_speed_mps" not in prompt
+    assert len(prompt) < 3000
+
+
+def test_vllm_choice_constraint_excludes_disallowed_lane_changes() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["constraints"]["allowed_behaviors"] = [
+        "KEEP_LANE", "SLOW_DOWN", "STOP", "YIELD",
+    ]
+
+    codes = backend._choice_codes(request)
+    prompt = backend._choice_prompt(request, choice_codes=codes)
+
+    assert codes == ["A", "C", "D", "E"]
+    assert "G=CHANGE_LANE_LEFT" not in prompt
+    assert "H=CHANGE_LANE_RIGHT" not in prompt
+
+
+def test_vllm_choice_constraint_narrows_explicit_right_avoid_to_whole_maneuver() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "AVOID_OBSTACLE", "direction": "RIGHT",
+        "target_speed_mps": None, "target": None,
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "CHANGE_LANE", "TURN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "STOP",
+    ]
+
+    codes = backend._choice_codes(request)
+
+    assert codes == ["K"]
+
+
+def test_vllm_explicit_maneuver_allows_stop_only_for_emergency_scene() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "AVOID_OBSTACLE", "direction": "RIGHT",
+        "target_speed_mps": None, "target": None,
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "AVOID_OBSTACLE", "STOP",
+    ]
+    request["scene_summary"]["risk_level"] = "EMERGENCY"
+
+    assert backend._choice_codes(request) == ["D", "K"]
+
+
+def test_vllm_red_light_restricts_choice_to_stop() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "KEEP_LANE", "direction": None, "target_speed_mps": 5.0,
+    }
+    request["scene_summary"]["traffic_light"] = "RED"
+
+    assert backend._choice_codes(request) == ["D"]
+
+
+def test_vllm_choice_constraint_narrows_pedestrian_slow_down_to_longitudinal_actions() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "SLOW_DOWN", "direction": None,
+        "target_speed_mps": None, "target": "crossing_pedestrian",
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "KEEP_LANE", "SET_SPEED", "SLOW_DOWN", "STOP", "YIELD", "FOLLOW",
+        "CHANGE_LANE", "TURN", "AVOID_OBSTACLE", "RETURN_TO_LANE", "PULL_OVER",
+    ]
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT", "RIGHT_ADJACENT"],
+        "left_lane_exists": False,
+        "right_lane_exists": True,
+    }
+
+    codes = backend._choice_codes(request)
+
+    assert codes == ["C"]
+
+
+def test_vllm_pedestrian_slow_down_preserves_resume_subcommand() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "看到横穿行人，减速避让，确认行人离开后继续"
+    request["command_hint"] = {
+        "intent": "SLOW_DOWN", "direction": None,
+        "target_speed_mps": None, "target": "crossing_pedestrian",
+    }
+    request["constraints"]["max_target_speed_mps"] = 8.0
+    request["targets"] = [{
+        "target_id": "crossing_pedestrian", "class": "pedestrian",
+        "distance_m": 20.0, "relation": "center_ahead",
+    }]
+
+    steps = backend._expanded_steps(request, "SLOW_DOWN")
+
+    assert [step["behavior"] for step in steps] == ["SLOW_DOWN", "KEEP_LANE"]
+    assert steps[0]["target"]["target_id"] == "crossing_pedestrian"
+    assert steps[0]["target"]["target_speed_mps"] == pytest.approx(3.0)
+    assert steps[1]["target"]["target_id"] is None
+    assert steps[1]["target"]["target_speed_mps"] == pytest.approx(8.0)
+    assert steps[1]["preconditions"] == ["PERCEPTION_FRESH", "NO_EMERGENCY_RISK"]
+
+
+def test_vllm_slow_down_preserves_explicit_thirty_kph_target() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = (
+        "前方公交站有行人上下车，靠边减速至30公里每小时，"
+        "确认安全后继续行驶"
+    )
+    request["command_hint"] = {
+        "intent": "SLOW_DOWN", "direction": None,
+        "target_speed_mps": 30.0 / 3.6, "target": "bus_at_stop",
+    }
+    request["scene_capabilities"] = {
+        "grounded_target_ids": ["bus_at_stop"],
+    }
+    request["constraints"]["max_target_speed_mps"] = 40.0 / 3.6
+
+    step = backend._step(request, "SLOW_DOWN", index=1)
+
+    assert step["target"]["target_speed_mps"] == pytest.approx(30.0 / 3.6)
+    assert step["target"]["target_id"] == "bus_at_stop"
+    assert step["completion"]["type"] == "TARGET_PASSED"
+    assert step["completion"]["value"] == pytest.approx(6.0)
+    assert step["completion"]["hold_frames"] == 3
+    assert step["timeout_s"] == 35.0
+
+
+def test_vllm_cut_in_observation_waits_for_stability_without_requiring_overtake() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = (
+        "右侧私家车可能加塞，先减速至30公里每小时观察，"
+        "确认安全后恢复40公里每小时行驶"
+    )
+    request["command_hint"] = {
+        "intent": "SLOW_DOWN", "direction": None,
+        "target_speed_mps": 30.0 / 3.6, "target": "intersection_cut_in_car",
+    }
+    request["scene_capabilities"] = {
+        "grounded_target_ids": ["intersection_cut_in_car"],
+    }
+    request["constraints"]["max_target_speed_mps"] = 40.0 / 3.6
+
+    step = backend._step(request, "SLOW_DOWN", index=1)
+
+    assert step["target"]["target_id"] == "intersection_cut_in_car"
+    assert step["completion"]["type"] == "SPEED_BELOW"
+    assert step["completion"]["hold_frames"] == 120
+    assert step["timeout_s"] == 20.0
+
+
+def test_vllm_avoidance_preserves_return_and_resume_subcommands() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = (
+        "看到横穿行人，减速避让后向左变道超越慢车，"
+        "完成后回到原车道并恢复40公里每小时"
+    )
+    request["command_hint"] = {
+        "intent": "AVOID_OBSTACLE", "direction": "LEFT",
+        "target_speed_mps": 8.0, "target": "slow_vehicle",
+    }
+    request["constraints"]["max_target_speed_mps"] = 40.0 / 3.6
+    request["targets"] = [
+        {
+            "target_id": "crossing_pedestrian", "class": "pedestrian",
+            "distance_m": 20.0, "relation": "center_ahead",
+        },
+        {
+            "target_id": "slow_vehicle", "class": "vehicle",
+            "distance_m": 35.0, "relation": "center_ahead",
+        },
+    ]
+
+    steps = backend._expanded_steps(request, "AVOID_OBSTACLE")
+
+    assert [step["behavior"] for step in steps] == [
+        "YIELD", "AVOID_OBSTACLE", "RETURN_TO_LANE", "KEEP_LANE",
+    ]
+    assert steps[0]["target"]["target_id"] == "crossing_pedestrian"
+    assert steps[0]["target"]["target_speed_mps"] == 0.0
+    assert steps[0]["completion"] == {
+        "type": "HOLD_FRAMES", "value": None, "lane": None,
+        "hold_frames": 120,
+    }
+    assert steps[0]["timeout_s"] == 20.0
+    assert steps[1]["target"]["target_id"] == "slow_vehicle"
+    assert steps[1]["preconditions"] == ["PERCEPTION_FRESH", "NO_EMERGENCY_RISK"]
+    assert steps[2]["timeout_s"] == 60.0
+    assert steps[3]["target"]["target_id"] is None
+    assert steps[3]["target"]["target_speed_mps"] == pytest.approx(40.0 / 3.6)
+    assert steps[3]["preconditions"] == ["PERCEPTION_FRESH", "NO_EMERGENCY_RISK"]
+
+
+def test_vllm_grounds_unavailable_named_target_to_visible_forward_object() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "AVOID_OBSTACLE", "direction": "LEFT",
+        "target_speed_mps": 7.0, "target": "slow_vehicle",
+    }
+    request["targets"] = [{
+        "target_id": "crossing_pedestrian", "class": "pedestrian",
+        "distance_m": 20.0, "relation": "center_ahead",
+    }]
+
+    step = backend._step(request, "AVOID_OBSTACLE", index=1)
+
+    assert step["target"]["target_id"] == "crossing_pedestrian"
+
+
+def test_vllm_yield_does_not_invent_unavailable_semantic_target_id() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "YIELD", "direction": None,
+        "target_speed_mps": 30.0 / 3.6,
+        "target": "late_crossing_pedestrian",
+    }
+    request["targets"] = []
+
+    step = backend._step(request, "YIELD", index=1)
+
+    assert step["target"]["target_id"] is None
+    assert step["target"]["target_speed_mps"] == 0.0
+
+
+def test_vllm_keep_lane_does_not_require_a_named_context_actor() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "KEEP_LANE", "direction": None,
+        "target_speed_mps": 8.0, "target": "bus_at_stop",
+    }
+
+    step = backend._step(request, "KEEP_LANE", index=1)
+
+    assert step["target"]["target_id"] is None
+
+
+def test_vllm_avoid_step_preserves_explicit_right_target_lane() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "AVOID_OBSTACLE", "direction": "RIGHT",
+        "target_speed_mps": None, "target": None,
+    }
+    request["scene_capabilities"] = {
+        "available_lanes": ["CURRENT", "RIGHT_ADJACENT"],
+        "right_lane_exists": True, "right_gap_safe": True,
+    }
+
+    step = backend._step(request, "AVOID_OBSTACLE", index=1)
+
+    assert step["target"]["target_lane"] == "RIGHT_ADJACENT"
+    assert step["target"]["target_speed_mps"] == pytest.approx(3.0)
+
+
+def test_vllm_lane_change_without_requested_speed_uses_safe_maneuver_default() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {
+        "intent": "CHANGE_LANE", "direction": "RIGHT",
+        "target_speed_mps": None, "target": None,
+    }
+
+    step = backend._step(request, "CHANGE_LANE_RIGHT", index=1)
+
+    assert step["target"]["target_speed_mps"] == pytest.approx(3.0)
+
+
+def test_vllm_turn_timeout_allows_approach_and_junction_exit() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "前方300米路口右转，转弯前减速至25公里每小时"
+    request["command_hint"] = {
+        "intent": "TURN", "direction": "RIGHT",
+        "target_speed_mps": 25.0 / 3.6, "target": None,
+    }
+
+    step = backend._step(request, "TURN_RIGHT", index=1)
+
+    assert step["target"]["target_lane"] == "ROUTE_BRANCH"
+    assert step["target"]["route_direction"] == "RIGHT"
+    assert step["completion"]["type"] == "JUNCTION_EXITED"
+    assert step["timeout_s"] >= 60.0
+
+
+def test_vllm_set_speed_is_clamped_to_runtime_limit() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {"intent": "SET_SPEED", "target_speed_mps": 33.3}
+    request["constraints"]["max_target_speed_mps"] = 8.0
+
+    step = backend._step(request, "SET_SPEED", index=1)
+
+    assert step["target"]["target_speed_mps"] == 8.0
+
+
+def test_vllm_reuses_already_normalized_jpeg_without_reencoding(tmp_path) -> None:
+    path = tmp_path / "normalized.jpg"
+    Image.new("RGB", (224, 224), (32, 64, 96)).save(path, format="JPEG", quality=75)
+    original = path.read_bytes()
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    backend.image_max_side = 224
+    backend.jpeg_quality = 75
+
+    data_url = backend._image_data_url(path)
+
+    assert base64.b64decode(data_url.split(",", 1)[1]) == original
+
+
+def test_vllm_follow_binds_center_ahead_not_nearest_distractor() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "跟随正前方同车道车辆，不要跟左右车辆"
+    request["scene_capabilities"] = {}
+    request["targets"] = [
+        {"target_id": "left-distractor", "distance_m": 10.0, "relation": "left_ahead"},
+        {"target_id": "lead-target", "distance_m": 20.0, "relation": "center_ahead"},
+    ]
+    step = backend._step(request, "FOLLOW", index=1)
+    assert step["target"]["target_id"] == "lead-target"
+    assert step["completion"]["type"] == "TARGET_GAP_REACHED"
+    assert step["completion"]["value"] == 2.0
+
+
+def test_vllm_follow_prefers_vehicle_over_nearer_center_obstacle() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "跟随正前方车辆"
+    request["scene_capabilities"] = {}
+    request["targets"] = [
+        {
+            "target_id": "temporary_occluder", "class": "obstacle",
+            "distance_m": 22.0, "relation": "center_ahead",
+        },
+        {
+            "target_id": "target_front", "class": "vehicle",
+            "distance_m": 28.0, "relation": "center_ahead",
+        },
+    ]
+
+    step = backend._step(request, "FOLLOW", index=1)
+
+    assert step["target"]["target_id"] == "target_front"
+
+
+def test_vllm_follow_uses_range_grounded_generic_target_without_rgb_class() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "跟随同车道正前方车辆"
+    request["scene_capabilities"] = {}
+    request["targets"] = [{
+        "target_id": "C-0001", "class": "obstacle",
+        "distance_m": 27.0, "relation": "center_ahead",
+    }]
+
+    step = backend._step(request, "FOLLOW", index=1)
+
+    assert step["target"]["target_id"] == "C-0001"
+
+
+def test_vllm_follow_does_not_bind_known_pedestrian_as_vehicle() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["source_text"] = "跟随同车道正前方车辆"
+    request["scene_capabilities"] = {}
+    request["targets"] = [{
+        "target_id": "pedestrian-1", "class": "pedestrian",
+        "distance_m": 18.0, "relation": "center_ahead",
+    }]
+
+    step = backend._step(request, "FOLLOW", index=1)
+
+    assert step["target"]["target_id"] is None
+
+
+def test_vllm_stop_never_depends_on_a_transient_scene_target() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["command_hint"] = {"intent": "EMERGENCY_STOP"}
+    request["targets"] = [{
+        "target_id": "transient-obstacle", "class": "obstacle",
+        "distance_m": 12.0, "relation": "center_ahead",
+    }]
+
+    step = backend._step(request, "STOP", index=1)
+
+    assert step["target"]["target_id"] is None
+
+
+def test_vllm_visual_slow_down_binds_target_and_reduces_hinted_speed() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["scene_capabilities"] = {}
+    request["command_hint"] = {"intent": "KEEP_LANE", "target_speed_mps": 5.0}
+    request["targets"] = [{
+        "target_id": "blocker-001", "distance_m": 26.0, "relation": "center_ahead",
+    }]
+
+    step = backend._step(request, "SLOW_DOWN", index=1)
+
+    assert step["target"]["target_id"] == "blocker-001"
+    assert step["target"]["target_speed_mps"] == pytest.approx(3.0)
+
+
+def test_vllm_keep_lane_without_speed_has_valid_hold_completion() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["scene_capabilities"] = {}
+    request["command_hint"] = {"intent": "KEEP_LANE", "target_speed_mps": None}
+    step = backend._step(request, "KEEP_LANE", index=1)
+    assert step["completion"]["type"] == "HOLD_FRAMES"
+    assert step["completion"]["value"] is None
+
+
+def test_vllm_pull_over_uses_validator_compatible_completion() -> None:
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    request = _request()
+    request["scene_capabilities"] = {"available_lanes": ["CURRENT", "SHOULDER"]}
+    request["command_hint"] = {
+        "intent": "PULL_OVER", "target_speed_mps": 2.0, "target": None,
+    }
+
+    step = backend._step(request, "PULL_OVER", index=1)
+
+    assert step["target"]["target_lane"] == "SHOULDER"
+    assert step["target"]["target_speed_mps"] == 0.0
+    assert step["completion"]["type"] == "STOPPED"
+
+
+def test_vllm_ambiguous_route_is_forced_to_hold_after_model_choice() -> None:
+    class _Completions:
+        @staticmethod
+        def create(**_kwargs):
+            message = type("Message", (), {"content": "G"})()
+            return type("Response", (), {"choices": [type("Choice", (), {"message": message})()]})()
+
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    backend._client = type("Client", (), {
+        "chat": type("Chat", (), {"completions": _Completions()})(),
+    })()
+    backend.model_id = "test"
+    backend.image_root = None
+    backend.max_new_tokens = 1
+    request = _request()
+    request["rgb_ref"] = None
+    request["routing"] = {
+        "disposition": "CONFIRM_SAFE", "score": 9,
+        "reasons": ["CONFIRMATION_REQUIRED"], "safe_wait_behavior": "STOP",
+    }
+    request["scene_capabilities"] = {}
+    plan = backend.infer(request)
+    assert plan["steps"][0]["behavior"] == "HOLD"
+
+
+def test_vllm_confirm_safe_preserves_model_stop() -> None:
+    class _Completions:
+        @staticmethod
+        def create(**_kwargs):
+            message = type("Message", (), {"content": "D"})()
+            return type("Response", (), {
+                "choices": [type("Choice", (), {"message": message})()],
+            })()
+
+    backend = VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    backend._client = type("Client", (), {
+        "chat": type("Chat", (), {"completions": _Completions()})(),
+    })()
+    backend.model_id = "test"
+    backend.image_root = None
+    backend.max_new_tokens = 1
+    request = _request()
+    request["rgb_ref"] = None
+    request["routing"] = {
+        "disposition": "CONFIRM_SAFE", "score": 9,
+        "reasons": ["CONFIRMATION_REQUIRED"], "safe_wait_behavior": "STOP",
+    }
+    request["scene_capabilities"] = {}
+
+    plan = backend.infer(request)
+
+    assert plan["steps"][0]["behavior"] == "STOP"
+
+
+def test_vllm_expands_post_turn_speed_into_persistent_set_speed() -> None:
+    backend = object.__new__(VllmQwenPlannerBackend)
+
+    request = _request()
+    request["source_text"] = "前方第一个路口右转，转弯后保持十五公里每小时"
+    request["command_hint"] = {
+        "intent": "TURN",
+        "direction": "RIGHT",
+        "target_speed_mps": 15.0 / 3.6,
+        "target": None,
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "SET_SPEED", "SLOW_DOWN", "STOP", "TURN",
+    ]
+    request["constraints"]["max_target_speed_mps"] = 8.333333333333334
+    request["constraints"]["speed_limit_mps"] = 8.333333333333334
+
+    steps = backend._expanded_steps(request, "TURN_RIGHT")
+
+    assert [step["behavior"] for step in steps] == [
+        "TURN_RIGHT",
+        "SET_SPEED",
+    ]
+    assert steps[0]["target"]["target_speed_mps"] == pytest.approx(15.0 / 3.6)
+    assert steps[1]["target"]["target_speed_mps"] == pytest.approx(15.0 / 3.6)
+    assert steps[1]["completion"]["type"] == "SPEED_REACHED"
+
+
+def test_vllm_does_not_expand_turn_speed_without_post_turn_semantics() -> None:
+    backend = object.__new__(VllmQwenPlannerBackend)
+
+    request = _request()
+    request["source_text"] = "以十五公里每小时右转"
+    request["command_hint"] = {
+        "intent": "TURN",
+        "direction": "RIGHT",
+        "target_speed_mps": 15.0 / 3.6,
+        "target": None,
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "SET_SPEED", "SLOW_DOWN", "STOP", "TURN",
+    ]
+    request["constraints"]["max_target_speed_mps"] = 8.333333333333334
+    request["constraints"]["speed_limit_mps"] = 8.333333333333334
+
+    steps = backend._expanded_steps(request, "TURN_RIGHT")
+
+    assert [step["behavior"] for step in steps] == ["TURN_RIGHT"]
+    assert steps[0]["target"]["target_speed_mps"] == pytest.approx(15.0 / 3.6)
+
+
+def test_vllm_expands_post_lane_change_speed_into_persistent_set_speed() -> None:
+    backend = object.__new__(VllmQwenPlannerBackend)
+
+    request = _request()
+    request["source_text"] = "确认安全后向左变道并保持二十公里每小时"
+    request["command_hint"] = {
+        "intent": "CHANGE_LANE",
+        "direction": "LEFT",
+        "target_speed_mps": 20.0 / 3.6,
+        "target": None,
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "CHANGE_LANE", "SET_SPEED", "STOP",
+    ]
+    request["constraints"]["max_target_speed_mps"] = 8.333333333333334
+    request["constraints"]["speed_limit_mps"] = 8.333333333333334
+
+    steps = backend._expanded_steps(request, "CHANGE_LANE_LEFT")
+
+    assert [step["behavior"] for step in steps] == [
+        "CHANGE_LANE_LEFT",
+        "SET_SPEED",
+    ]
+    assert steps[0]["target"]["target_speed_mps"] == pytest.approx(20.0 / 3.6)
+    assert steps[1]["target"]["target_speed_mps"] == pytest.approx(20.0 / 3.6)
+    assert steps[0]["timeout_s"] == pytest.approx(20.0)
+
+
+def test_vllm_does_not_expand_lane_change_speed_without_persistent_semantics() -> None:
+    backend = object.__new__(VllmQwenPlannerBackend)
+
+    request = _request()
+    request["source_text"] = "以二十公里每小时向左变道"
+    request["command_hint"] = {
+        "intent": "CHANGE_LANE",
+        "direction": "LEFT",
+        "target_speed_mps": 20.0 / 3.6,
+        "target": None,
+    }
+    request["constraints"]["allowed_behaviors"] = [
+        "CHANGE_LANE", "SET_SPEED", "STOP",
+    ]
+    request["constraints"]["max_target_speed_mps"] = 8.333333333333334
+    request["constraints"]["speed_limit_mps"] = 8.333333333333334
+
+    steps = backend._expanded_steps(request, "CHANGE_LANE_LEFT")
+
+    assert [step["behavior"] for step in steps] == ["CHANGE_LANE_LEFT"]
+    assert steps[0]["target"]["target_speed_mps"] == pytest.approx(20.0 / 3.6)
+    assert steps[0]["timeout_s"] == pytest.approx(20.0)
+
+@pytest.mark.parametrize('model_answer,expected_target,expected_abstain', [('B','V2',False),('Z',None,True)])
+def test_joint_visual_choice_reports_real_model_code_and_target(tmp_path,model_answer,expected_target,expected_abstain):
+    from types import SimpleNamespace
+    image_path=tmp_path/'frame.jpg'
+    Image.new('RGB',(224,224),'white').save(image_path)
+    calls=[]
+    class Completions:
+        @staticmethod
+        def create(**kwargs):
+            calls.append(kwargs)
+            return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=model_answer))])
+    backend=VllmQwenPlannerBackend.__new__(VllmQwenPlannerBackend)
+    backend._client=SimpleNamespace(chat=SimpleNamespace(completions=Completions()))
+    backend.model_id='test-model';backend.image_root=tmp_path;backend.max_new_tokens=1
+    backend.image_max_side=224;backend.jpeg_quality=75
+    req=_request();req['rgb_ref']='frame.jpg'
+    req['source_text']='跟随那辆车';req['command_hint']={'intent':'FOLLOW'}
+    req['targets']=[{'target_id':'V1','class':'vehicle','distance_m':10,'confidence':.9,'relation':'center_ahead'},
+                    {'target_id':'V2','class':'vehicle','distance_m':20,'confidence':.9,'relation':'center_ahead'}]
+    req['constraints']['allowed_behaviors']=['FOLLOW','STOP']
+    req['target_grounding']={'status':'AMBIGUOUS','reason':'MULTIPLE_CANDIDATES','candidate_ids':['V1','V2'],'resolved_id':None,
+      'visual_candidates':[{'target_id':'V1','label':'T1','bbox_xyxy_norm':[.1,.1,.3,.5]},
+                           {'target_id':'V2','label':'T2','bbox_xyxy_norm':[.5,.1,.8,.5]}]}
+    plan=backend.infer(req)
+    assert len(calls)==1
+    assert calls[0]['extra_body']['structured_outputs']['choice']==['A','B','Z']
+    prompt=calls[0]['messages'][0]['content'][-1]['text']
+    assert 'B=FOLLOW target=T2 id=V2' in prompt
+    assert plan['model_grounding']['raw_choice']==model_answer
+    assert plan['model_grounding']['target_id']==expected_target
+    assert plan['model_grounding']['abstained'] is expected_abstain
+    assert plan['requires_confirmation'] is expected_abstain
+    if expected_target: assert plan['steps'][0]['target']['target_id']==expected_target

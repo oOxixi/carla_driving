@@ -1,0 +1,38 @@
+{
+  "bins": [
+    {
+      "upper_m": 25,
+      "limit_m": 1.3719772153116967,
+      "pure_cluster_count": 11,
+      "fallback_used": false
+    },
+    {
+      "upper_m": 35,
+      "limit_m": 1.3719772153116967,
+      "pure_cluster_count": 2,
+      "fallback_used": true
+    },
+    {
+      "upper_m": 45,
+      "limit_m": 1.3719772153116967,
+      "pure_cluster_count": 1,
+      "fallback_used": true
+    },
+    {
+      "upper_m": 55,
+      "limit_m": 1.3719772153116967,
+      "pure_cluster_count": 0,
+      "fallback_used": true
+    },
+    {
+      "upper_m": 1000000.0,
+      "limit_m": 1.3719772153116967,
+      "pure_cluster_count": 0,
+      "fallback_used": true
+    }
+  ],
+  "fallback_m": 1.3719772153116967,
+  "rule": "development-only maximum pure-candidate radial spread in each distance bin plus 0.08 m matching tolerance; fewer than 5 candidates uses pooled maximum; experimental only",
+  "observed_mixed_candidates": 0,
+  "warning": "no guarantee of physical vehicle bounds, validate on independent diverse scenes"
+}

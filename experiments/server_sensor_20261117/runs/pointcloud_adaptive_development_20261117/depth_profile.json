@@ -1,0 +1,42 @@
+{
+  "bins": [
+    {
+      "upper_m": 25,
+      "limit_m": 0.3269641492411985,
+      "positive_pairs": 85,
+      "negative_pairs": 0,
+      "fallback_used": false
+    },
+    {
+      "upper_m": 35,
+      "limit_m": 0.45620348489900037,
+      "positive_pairs": 12,
+      "negative_pairs": 0,
+      "fallback_used": false
+    },
+    {
+      "upper_m": 45,
+      "limit_m": 0.39212490172912295,
+      "positive_pairs": 7,
+      "negative_pairs": 0,
+      "fallback_used": true
+    },
+    {
+      "upper_m": 55,
+      "limit_m": 0.39212490172912295,
+      "positive_pairs": 0,
+      "negative_pairs": 0,
+      "fallback_used": true
+    },
+    {
+      "upper_m": 1000000.0,
+      "limit_m": 0.39212490172912295,
+      "positive_pairs": 0,
+      "negative_pairs": 0,
+      "fallback_used": true
+    }
+  ],
+  "fallback_m": 0.39212490172912295,
+  "rule": "per distance bin 95th percentile of within-actor radial differences for geometrically connectable development-only pairs; fewer than 10 pairs uses pooled 95th percentile",
+  "model_selection_only": "experimental; no production threshold approved"
+}

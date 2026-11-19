@@ -1,0 +1,115 @@
+{
+  "recordings": 55,
+  "completed": 55,
+  "errors": [],
+  "expected_vehicles": 170,
+  "baseline_located": 121,
+  "new_located": 122,
+  "baseline_coverage": 0.711764705882353,
+  "new_coverage": 0.7176470588235294,
+  "assigned_point_truth": {
+    "target": 3722
+  },
+  "scored_precision": 1.0,
+  "unscored_assigned": 0,
+  "point_recall_within_matched_boxes": 0.7517673197333872,
+  "point_recall_numerator": 3722,
+  "point_recall_denominator": 4951,
+  "target_labeled_environment": 0,
+  "pair_metrics": {
+    "same_total": 1,
+    "same_grouped": 1,
+    "different_total": 171,
+    "different_grouped": 0,
+    "unknown_pairs": 6,
+    "overlap_same_total": 1,
+    "overlap_same_grouped": 1,
+    "overlap_different_total": 4,
+    "overlap_different_grouped": 0
+  },
+  "range_errors_absolute": {
+    "n": 121,
+    "p50": 0.1596399628360139,
+    "p95": 0.2767956017166444
+  },
+  "baseline_range_errors_absolute": {
+    "n": 121,
+    "p50": 0.15964128404824507,
+    "p95": 0.2767936017993833
+  },
+  "cases": {
+    "close": {
+      "runs": 5,
+      "expected": 15,
+      "baseline_located": 15,
+      "new_located": 15
+    },
+    "default_far": {
+      "runs": 5,
+      "expected": 15,
+      "baseline_located": 0,
+      "new_located": 0
+    },
+    "default_mid": {
+      "runs": 5,
+      "expected": 15,
+      "baseline_located": 5,
+      "new_located": 5
+    },
+    "far": {
+      "runs": 5,
+      "expected": 15,
+      "baseline_located": 11,
+      "new_located": 11
+    },
+    "fog": {
+      "runs": 5,
+      "expected": 15,
+      "baseline_located": 15,
+      "new_located": 15
+    },
+    "middle": {
+      "runs": 5,
+      "expected": 15,
+      "baseline_located": 15,
+      "new_located": 15
+    },
+    "near": {
+      "runs": 5,
+      "expected": 15,
+      "baseline_located": 15,
+      "new_located": 15
+    },
+    "night": {
+      "runs": 5,
+      "expected": 15,
+      "baseline_located": 13,
+      "new_located": 14
+    },
+    "occlusion": {
+      "runs": 5,
+      "expected": 20,
+      "baseline_located": 18,
+      "new_located": 18
+    },
+    "rain": {
+      "runs": 5,
+      "expected": 15,
+      "baseline_located": 14,
+      "new_located": 14
+    },
+    "sparse": {
+      "runs": 5,
+      "expected": 15,
+      "baseline_located": 0,
+      "new_located": 0
+    }
+  },
+  "definitions": {
+    "precision": "assigned points with auditable ground truth only; unmatched semantic/detection reported separately",
+    "recall": "labeled target points within matched detection boxes; missed detections excluded from this conditional denominator",
+    "pair": "independent projected-box IoU>=0.3 with 0.05 margin; unscored ambiguous pairs reported",
+    "range": "only samples where actor nearest bounding-box surface truth was saved; failed original samples may lack it",
+    "timestamps": "historical raw timestamps unavailable, replay uses same recorded frame IDs and equal placeholders"
+  }
+}

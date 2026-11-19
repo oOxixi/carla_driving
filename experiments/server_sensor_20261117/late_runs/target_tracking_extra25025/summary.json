@@ -1,0 +1,63 @@
+{
+  "frames": 30,
+  "both_boxes_frames": 30,
+  "separated_pairs_frames": 19,
+  "both_confirmed_frames": [
+    17393,
+    17394,
+    17395,
+    17397,
+    17398,
+    17401,
+    17402,
+    17403,
+    17404,
+    17406,
+    17407,
+    17409,
+    17413,
+    17414,
+    17415
+  ],
+  "states": {
+    "formal": {
+      "TENTATIVE_3D": 4,
+      "AMBIGUOUS": 3,
+      "VISUAL_ONLY": 8,
+      "CONFIRMED_TRACK": 15
+    },
+    "auxiliary": {
+      "TENTATIVE_3D": 4,
+      "VISUAL_ONLY": 5,
+      "AMBIGUOUS": 6,
+      "CONFIRMED_TRACK": 15
+    }
+  },
+  "track_ids": {
+    "formal": [
+      "F-0001"
+    ],
+    "auxiliary": [
+      "A-0002"
+    ]
+  },
+  "formal_unchanged_frames": 30,
+  "unique_points_frames": 30,
+  "aux_cluster_frames": 25,
+  "aux_selected_points": 174,
+  "aux_target_approx": 174,
+  "aux_other_vehicle_approx": 0,
+  "aux_other_known": 0,
+  "aux_unknown_semantic": 0,
+  "micro_precision_conservative": 1.0,
+  "conditional_recall_micro": 0.36401673640167365,
+  "eligible_target_approx": 478,
+  "different_vehicle_merged_frames": 0,
+  "surface_abs_error_p95_m": 0.5952356668619926,
+  "surface_abs_error_max_m": 0.6090836770607879,
+  "elapsed_processing_p50_ms": 134.8064139019698,
+  "elapsed_processing_p95_ms": 176.25722477678207,
+  "processing_latency_note": "Offline replay includes ONNX inference, duplicate formal recalculation and audit instrumentation. Not a real-time or comparable baseline measurement.",
+  "semantic_note": "Approximate nearest semantic return within 8 cm, unmatched conservatively counted against precision. Recall is conditional on candidate eligible points, not full vehicle recall.",
+  "truth_role_note": "T/N are the reconstructed scene actors, used only after frozen decisions; cluster assignments are checked by semantic points, not ground-truth-derived tracker decisions."
+}

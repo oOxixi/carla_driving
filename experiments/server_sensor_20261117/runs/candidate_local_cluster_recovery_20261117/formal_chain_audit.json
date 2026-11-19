@@ -1,0 +1,76 @@
+{
+  "frames": [
+    {
+      "case": "holdout_250_30",
+      "formal_detector_boxes": 0,
+      "aux_boxes": 2,
+      "formal_yolo_and_tracker_equal": true,
+      "formal_group_all_fields_equal": true,
+      "local_cluster_recovery_exercised": true,
+      "original_formal_group_not_mutated": true,
+      "formal_selected_or_reserved_points_not_in_aux": true
+    },
+    {
+      "case": "holdout_extra_250_21",
+      "formal_detector_boxes": 1,
+      "aux_boxes": 1,
+      "formal_yolo_and_tracker_equal": true,
+      "formal_group_all_fields_equal": true,
+      "local_cluster_recovery_exercised": true,
+      "original_formal_group_not_mutated": true,
+      "formal_selected_or_reserved_points_not_in_aux": true
+    },
+    {
+      "case": "holdout_extra_250_25",
+      "formal_detector_boxes": 1,
+      "aux_boxes": 1,
+      "formal_yolo_and_tracker_equal": true,
+      "formal_group_all_fields_equal": true,
+      "local_cluster_recovery_exercised": true,
+      "original_formal_group_not_mutated": true,
+      "formal_selected_or_reserved_points_not_in_aux": true
+    },
+    {
+      "case": "holdout_extra_250_39",
+      "formal_detector_boxes": 1,
+      "aux_boxes": 1,
+      "formal_yolo_and_tracker_equal": true,
+      "formal_group_all_fields_equal": true,
+      "local_cluster_recovery_exercised": true,
+      "original_formal_group_not_mutated": true,
+      "formal_selected_or_reserved_points_not_in_aux": true
+    },
+    {
+      "case": "holdout_extra_250_41",
+      "formal_detector_boxes": 0,
+      "aux_boxes": 1,
+      "formal_yolo_and_tracker_equal": true,
+      "formal_group_all_fields_equal": true,
+      "local_cluster_recovery_exercised": true,
+      "original_formal_group_not_mutated": true,
+      "formal_selected_or_reserved_points_not_in_aux": true
+    },
+    {
+      "case": "holdout_extra_250_47",
+      "formal_detector_boxes": 0,
+      "aux_boxes": 1,
+      "formal_yolo_and_tracker_equal": true,
+      "formal_group_all_fields_equal": true,
+      "local_cluster_recovery_exercised": true,
+      "original_formal_group_not_mutated": true,
+      "formal_selected_or_reserved_points_not_in_aux": true
+    },
+    {
+      "case": "holdout_extra_250_49",
+      "formal_detector_boxes": 0,
+      "aux_boxes": 1,
+      "formal_yolo_and_tracker_equal": true,
+      "formal_group_all_fields_equal": true,
+      "local_cluster_recovery_exercised": true,
+      "original_formal_group_not_mutated": true,
+      "formal_selected_or_reserved_points_not_in_aux": true
+    }
+  ],
+  "scope": "same saved frames; offline YOLO 0.35, tracker, entire localize_groups return; excludes lane, FOLLOW, policy, runtime and dynamic scenarios",
+  "model_sha256": "c3517177a74c47589e29cffe92883b8310046434fc1f886ee00ee3f6fa782b0f"
+}
