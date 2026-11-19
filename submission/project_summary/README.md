@@ -6,6 +6,7 @@
 
 | 范围 | 可引用结果 | 不代表什么 |
 | --- | --- | --- |
+| CARLA 累计 227 场（原 83 场 + 新增 144 场多工况） | 据项目补充汇总，新增 144 场在 Teacher 和 Student 上均完成全链路测试，**各通过 144/144**。累计 Teacher **220/227（96.92%）**、Student **218/227（96.04%）**，相差 **0.88 个百分点** | 按场计数，未加权。新增批次的场景清单和逐场判定尚未归档；不替代固定 83 场加权成绩，也不等同于官方盲测或长里程验收 |
 | [Teacher / Student FP32，项目固定 83 场](../../challenge/distillation/CARLA83_FP32_HANDOFF.md)，作业 38 | [166/166 次有效判定](closure/carla83_paired_report.json)；分别通过 76/83、74/83。按基础/进阶/挑战 30/40/30 加权为 **92.17% / 90.83%**，FP32 相对衰减 **1.4467%**，在本矩阵的 3% 线内；双方碰撞、闯红灯、严重路线偏离均为 0 | 不是盲测、官方长里程、INT8、实板或语音效果 |
 | [额外四场闭环与计分合同](../../scenarios/development/CARLA83_NEW_VALIDATION.md)，作业 39/40 | Teacher **4/4**、FP32 Student **2/4**，零碰撞、零闯红灯；Student 1 次严重路线偏离。[同次日志归因](../../challenge/distillation/CARLA_GENERALIZATION_HANDOFF_20261116.md)表明：一例是多步解码掩码把设速替换成额外停车；一例已理解回道，但间隙守卫导致停滞超时 | 不与原 83 场相加计算衰减，不能据此把问题统归于量化或蒸馏 |
 | [干净语音 ASR 主模型](voice/asr_clean_250_primary_only.md)，11 月 13 日 UTC | 五语言各 50 条，实际音频 250 条。逐句完全匹配 **95.60%**，字符 **99.24%**，意图 **99.60%**，槽位 **99.20%**；端到端 P95 **105.17 ms** | 不代表 2,598 条扩充版、带噪、车控闭环或 ONNX 快路径 |
@@ -19,7 +20,7 @@
 | --- | --- |
 | 语音 | 原 250 条是两套扩充清单共同子集。干净和带噪各 [2,598 条 clean](voice/manifests/data_short_clean_manifest.json) / [2,598 条 noisy](voice/manifests/data_short_noisy_50dba_manifest.json)，按条件配对；每套 1,000 个 source ID、957 条不同正文。多音色/方言合成音频，不能当不同真人录音，也不能把配对总数当作独立样本。[数据审计](voice/data_short_dataset_audit.json)、[准备报告](voice/GROUP1_TASK5_6_DATASET_PREP.md)、[历史交付](voice/GROUP1_TASK5_6_FINAL_DELIVERABLE.md)。原始外部音频包没有随 Git 发布。 |
 | 文本规划 | [CARLA Language Benchmark](../../CARLA-Language-Benchmark/) 的 6,192 条是文本，不是语音。曾有早期 4,652 条文本版本，不和后来的 6,192 条相加。 |
-| 项目仿真 | 冻结 [83 场矩阵](../../scenarios/acceptance_suite/matrix.json)仍为 83 场。新增四个定向闭环变体及对应 JSON，索引共 **162 份场景定义**；不是 162 次闭环通过。另有 11 月 17 日同步感知数据和[施工示意场景](../../experiments/server_roadworks_20261118/)；不混入正式验收。 |
+| 项目仿真 | 冻结 [83 场矩阵](../../scenarios/acceptance_suite/matrix.json)不变。另完成 144 场多工况扩样的双模型测试，累计口径为 **227 场**，不再另加上表的四场诊断。Git 场景索引仍列 **162 份定义**（含四个定向诊断），是不同口径。另有 11 月 17 日同步感知数据和[施工示意场景](../../experiments/server_roadworks_20261118/)，不混入正式验收。 |
 | Qwen 语义 | [早期冻结 v1](../../experiments/semantic_sft/DATASET_RELEASE.md) 206 Train / 51 Dev，[v2](../../experiments/semantic_sft/DATASET_RELEASE_V2.md) 254 / 75，有历史内部 12 条冻结排除；V14/V15 使用 306 / 75，[含 11 条经审查的新 Train](../../experiments/semantic_sft/V14_PUBLIC11_RESULT_20261109.md)，不得报作独立验证。 |
 | Teacher 蒸馏数据 | [B1 D2 v1.1](b1/d2_v1_1_README.md) 2,513 Train / 539 Val / 540 Reserved；8 条终态异常隔离。[后续治理关闭交付](b1/B1_HANDOFF.md) 合计 6,037 Train / 1,158 Dev，另有不入训练的 Calibration 300 和 Independent Validation 240；该交付未指定 Frozen Test。阶段版本不能相加，B1 数据治理 PASS 也不是 B2 性能 Gate。 |
 
